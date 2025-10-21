@@ -23,6 +23,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Ensure the backend's virtual environment (if present) is available on PATH so
+# that locally installed `uv`, `uvicorn`, or other helpers can be discovered
+# without manual activation.
+if [[ -d "${REPO_ROOT}/web-backend/.venv/bin" ]]; then
+  export PATH="${REPO_ROOT}/web-backend/.venv/bin:${PATH}"
+fi
+
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Error: '$1' command not found. Please install it before running this script." >&2
@@ -46,14 +53,34 @@ COMPOSE_CMD=( $(resolve_compose) )
 require_cmd "npm"
 require_cmd "docker"
 
+BACKEND_RUNNER=()
+
 if command -v uv >/dev/null 2>&1; then
   BACKEND_RUNNER=(uv run uvicorn)
 elif command -v uvicorn >/dev/null 2>&1; then
   BACKEND_RUNNER=(uvicorn)
 else
-  echo "Error: neither 'uv' nor 'uvicorn' is available in PATH." >&2
-  echo "Install uv (https://github.com/astral-sh/uv) or provide uvicorn in your environment." >&2
-  exit 1
+  # Fall back to python -m uvicorn if the module is installed.
+  PYTHON_CANDIDATES=()
+  if [[ -x "${REPO_ROOT}/web-backend/.venv/bin/python" ]]; then
+    PYTHON_CANDIDATES+=("${REPO_ROOT}/web-backend/.venv/bin/python")
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CANDIDATES+=("$(command -v python3)")
+  fi
+
+  for py_cmd in "${PYTHON_CANDIDATES[@]}"; do
+    if "$py_cmd" -c "import uvicorn" >/dev/null 2>&1; then
+      BACKEND_RUNNER=("$py_cmd" -m uvicorn)
+      break
+    fi
+  done
+
+  if [[ ${#BACKEND_RUNNER[@]} -eq 0 ]]; then
+    echo "Error: could not find a way to run uvicorn." >&2
+    echo "Install uv (https://github.com/astral-sh/uv) or ensure uvicorn is installed in your Python environment." >&2
+    exit 1
+  fi
 fi
 
 BACKEND_PORT="${BACKEND_PORT:-8000}"
