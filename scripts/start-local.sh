@@ -3,6 +3,8 @@
 #
 # The script assumes that all dependencies (npm packages, Python environment,
 # Docker images, etc.) have already been fetched while you had internet access.
+# It will attempt to install missing frontend/backend packages using your local
+# caches (via `npm install` and `uv sync --frozen`).
 #
 # Usage:
 #   ./scripts/start-local.sh [--pbf /path/to/data.osm.pbf] [--no-import]
@@ -23,12 +25,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Ensure the backend's virtual environment (if present) is available on PATH so
-# that locally installed `uv`, `uvicorn`, or other helpers can be discovered
-# without manual activation.
-if [[ -d "${REPO_ROOT}/web-backend/.venv/bin" ]]; then
-  export PATH="${REPO_ROOT}/web-backend/.venv/bin:${PATH}"
-fi
+add_backend_venv_to_path() {
+  if [[ -d "${REPO_ROOT}/web-backend/.venv/bin" ]]; then
+    export PATH="${REPO_ROOT}/web-backend/.venv/bin:${PATH}"
+  fi
+}
+
+add_backend_venv_to_path
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -53,14 +56,61 @@ COMPOSE_CMD=( $(resolve_compose) )
 require_cmd "npm"
 require_cmd "docker"
 
+ensure_backend_env() {
+  if command -v uv >/dev/null 2>&1; then
+    if [[ ! -d "${REPO_ROOT}/web-backend/.venv" ]]; then
+      echo "Creating backend virtual environment with 'uv sync --frozen'..."
+      (cd "${REPO_ROOT}/web-backend" && uv sync --frozen)
+    elif ! (cd "${REPO_ROOT}/web-backend" && uv run python -c "import httpx" >/dev/null 2>&1); then
+      echo "Updating backend dependencies with 'uv sync --frozen'..."
+      (cd "${REPO_ROOT}/web-backend" && uv sync --frozen)
+    fi
+    return
+  fi
+
+  local backend_python="${REPO_ROOT}/web-backend/.venv/bin/python"
+  if [[ ! -x "$backend_python" ]]; then
+    echo "Error: backend dependencies are missing and 'uv' is not installed." >&2
+    echo "Install uv (https://github.com/astral-sh/uv) and run 'uv sync --frozen' in web-backend/," >&2
+    echo "or activate your own virtual environment with the required packages before rerunning the script." >&2
+    exit 1
+  fi
+
+  if ! "$backend_python" -c "import httpx" >/dev/null 2>&1; then
+    echo "Error: the Python environment at web-backend/.venv/ is missing required packages (e.g. httpx)." >&2
+    echo "Activate that environment and install the dependencies (for example via 'uv sync --frozen') before rerunning the script." >&2
+    exit 1
+  fi
+}
+
+ensure_backend_env
+add_backend_venv_to_path
+
+ensure_frontend_deps() {
+  if [[ -d "${REPO_ROOT}/web/node_modules" && -x "${REPO_ROOT}/web/node_modules/.bin/vite" ]]; then
+    return
+  fi
+
+  echo "Installing frontend dependencies with 'npm install'..."
+  (cd "${REPO_ROOT}/web" && npm install)
+
+  if [[ ! -x "${REPO_ROOT}/web/node_modules/.bin/vite" ]]; then
+    echo "Error: Vite binary not found after 'npm install'. Ensure npm dependencies are cached locally and retry." >&2
+    exit 1
+  fi
+}
+
+ensure_frontend_deps
+
 BACKEND_RUNNER=()
 
 if command -v uv >/dev/null 2>&1; then
   BACKEND_RUNNER=(uv run uvicorn)
+elif [[ -x "${REPO_ROOT}/web-backend/.venv/bin/uvicorn" ]]; then
+  BACKEND_RUNNER=("${REPO_ROOT}/web-backend/.venv/bin/uvicorn")
 elif command -v uvicorn >/dev/null 2>&1; then
   BACKEND_RUNNER=(uvicorn)
 else
-  # Fall back to python -m uvicorn if the module is installed.
   PYTHON_CANDIDATES=()
   if [[ -x "${REPO_ROOT}/web-backend/.venv/bin/python" ]]; then
     PYTHON_CANDIDATES+=("${REPO_ROOT}/web-backend/.venv/bin/python")
@@ -174,10 +224,6 @@ echo "Starting Python web backend on port ${BACKEND_PORT}..."
   "${BACKEND_RUNNER[@]}" main:app --host 127.0.0.1 --port "$BACKEND_PORT" --reload
 ) &
 PIDS+=($!)
-
-if [[ ! -d "$REPO_ROOT/web/node_modules" ]]; then
-  echo "Warning: node_modules directory not found; run 'npm install' in web/ before using this script." >&2
-fi
 
 echo "Starting Vite frontend on http://${VITE_HOST}:${FRONTEND_PORT} ..."
 (
