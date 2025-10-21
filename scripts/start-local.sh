@@ -198,6 +198,25 @@ if [[ -n "$PBF_PATH" && ! -f "$PBF_PATH" ]]; then
   exit 1
 fi
 
+if [[ -n "$PBF_PATH" ]]; then
+  if command -v realpath >/dev/null 2>&1; then
+    PBF_ABS_PATH="$(realpath "$PBF_PATH")"
+  else
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "Error: need 'realpath' or 'python3' to resolve absolute path for '$PBF_PATH'." >&2
+      exit 1
+    fi
+    PBF_ABS_PATH="$(python3 - <<'PY'
+import os
+import sys
+print(os.path.abspath(sys.argv[1]))
+PY
+"$PBF_PATH")"
+  fi
+  PBF_DIR_NAME="$(dirname "$PBF_ABS_PATH")"
+  PBF_BASE_NAME="$(basename "$PBF_ABS_PATH")"
+fi
+
 cleanup() {
   local exit_code=$?
   echo
@@ -236,8 +255,8 @@ echo "Starting tileserver container..."
 
 if [[ -n "$PBF_PATH" && $RUN_IMPORT -ne 0 ]]; then
   echo "Importing '$PBF_PATH' into PostGIS via Imposm..."
-  "${COMPOSE_CMD[@]}" run --rm -v "$PBF_PATH:/data.osm.pbf:ro" imposm import \
-    -read /data.osm.pbf \
+  "${COMPOSE_CMD[@]}" run --rm -v "${PBF_DIR_NAME}:/imposm-input:ro" imposm import \
+    -read "/imposm-input/${PBF_BASE_NAME}" \
     -write \
     -optimize \
     -deployproduction \
