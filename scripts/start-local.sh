@@ -217,8 +217,8 @@ PIDS=()
 
 cd "$REPO_ROOT"
 
-echo "Building and starting database and tileserver containers..."
-"${COMPOSE_CMD[@]}" up --build -d db tegola >/dev/null
+echo "Building and starting database container..."
+"${COMPOSE_CMD[@]}" up --build -d db >/dev/null
 
 wait_for_postgres() {
   echo -n "Waiting for Postgres to become ready"
@@ -230,6 +230,9 @@ wait_for_postgres() {
 }
 
 wait_for_postgres
+
+echo "Starting tileserver container..."
+"${COMPOSE_CMD[@]}" up --build -d tegola >/dev/null
 
 if [[ -n "$PBF_PATH" && $RUN_IMPORT -ne 0 ]]; then
   echo "Importing '$PBF_PATH' into PostGIS via Imposm..."
