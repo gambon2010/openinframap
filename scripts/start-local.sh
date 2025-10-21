@@ -268,7 +268,12 @@ echo "Starting tileserver container..."
 
 if [[ -n "$PBF_PATH" && $RUN_IMPORT -ne 0 ]]; then
   echo "Importing '$PBF_PATH' into PostGIS via Imposm..."
-  "${COMPOSE_CMD[@]}" run --rm -v "${PBF_IMPORT_DIR}:/imposm-input:ro" imposm import \
+  volume_opts="ro"
+  if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+    volume_opts="ro,z"
+  fi
+
+  "${COMPOSE_CMD[@]}" run --rm -v "${PBF_IMPORT_DIR}:/imposm-input:${volume_opts}" imposm import \
     -read "/imposm-input/${PBF_BASE_NAME}" \
     -overwritecache \
     -write \
