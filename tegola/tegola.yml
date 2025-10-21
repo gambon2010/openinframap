@@ -1,5 +1,9 @@
 webserver:
   port: :80
+  headers:
+    Access-Control-Allow-Origin: "*"
+    Access-Control-Allow-Methods: "GET, OPTIONS"
+    Access-Control-Allow-Headers: "Origin, X-Requested-With, Content-Type, Accept"
 
 cache: 
   type: file

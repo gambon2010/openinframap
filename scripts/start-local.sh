@@ -165,6 +165,12 @@ if [[ -z "${VITE_TILES_URL:-}" ]]; then
 else
   FRONTEND_TILES_URL="$VITE_TILES_URL"
 fi
+
+if [[ -z "${VITE_TILES_LOCAL_ROUTER:-}" ]]; then
+  FRONTEND_TILES_REWRITE="1"
+else
+  FRONTEND_TILES_REWRITE="$VITE_TILES_LOCAL_ROUTER"
+fi
 PBF_PATH=""
 RUN_IMPORT=1
 
@@ -296,7 +302,7 @@ apply_sql_file() {
   fi
 
   echo "Applying schema $(basename "$sql_file")..."
-  "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres < "$sql_file"
+  "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d osm < "$sql_file"
 }
 
 apply_sql_file "${REPO_ROOT}/schema/functions.sql"
@@ -336,6 +342,7 @@ echo "Starting Vite frontend on http://${VITE_HOST}:${FRONTEND_PORT} ..."
   cd "$REPO_ROOT/web"
   VITE_BACKEND_URL="$FRONTEND_BACKEND_URL" \
   VITE_TILES_URL="$FRONTEND_TILES_URL" \
+  VITE_TILES_LOCAL_ROUTER="$FRONTEND_TILES_REWRITE" \
   npm run dev -- --host "$VITE_HOST" --port "$FRONTEND_PORT"
 ) &
 PIDS+=($!)
