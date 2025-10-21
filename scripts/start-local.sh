@@ -198,6 +198,7 @@ if [[ -n "$PBF_PATH" && ! -f "$PBF_PATH" ]]; then
   exit 1
 fi
 
+PBF_IMPORT_DIR=""
 if [[ -n "$PBF_PATH" ]]; then
   if command -v realpath >/dev/null 2>&1; then
     PBF_ABS_PATH="$(realpath "$PBF_PATH")"
@@ -213,8 +214,17 @@ print(os.path.abspath(sys.argv[1]))
 PY
 "$PBF_PATH")"
   fi
-  PBF_DIR_NAME="$(dirname "$PBF_ABS_PATH")"
+
+  if ! command -v mktemp >/dev/null 2>&1; then
+    echo "Error: 'mktemp' is required to stage PBF data for import." >&2
+    exit 1
+  fi
+
   PBF_BASE_NAME="$(basename "$PBF_ABS_PATH")"
+  PBF_IMPORT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/openinframap-pbf.XXXXXX")"
+  cp "$PBF_ABS_PATH" "${PBF_IMPORT_DIR}/${PBF_BASE_NAME}"
+  chmod 0644 "${PBF_IMPORT_DIR}/${PBF_BASE_NAME}"
+  chmod 0755 "$PBF_IMPORT_DIR"
 fi
 
 cleanup() {
@@ -227,6 +237,9 @@ cleanup() {
       wait "$pid" 2>/dev/null || true
     fi
   done
+  if [[ -n "${PBF_IMPORT_DIR}" && -d "$PBF_IMPORT_DIR" ]]; then
+    rm -rf "$PBF_IMPORT_DIR"
+  fi
   "${COMPOSE_CMD[@]}" down >/dev/null 2>&1 || true
   exit "$exit_code"
 }
@@ -255,7 +268,7 @@ echo "Starting tileserver container..."
 
 if [[ -n "$PBF_PATH" && $RUN_IMPORT -ne 0 ]]; then
   echo "Importing '$PBF_PATH' into PostGIS via Imposm..."
-  "${COMPOSE_CMD[@]}" run --rm -v "${PBF_DIR_NAME}:/imposm-input:ro" imposm import \
+  "${COMPOSE_CMD[@]}" run --rm -v "${PBF_IMPORT_DIR}:/imposm-input:ro" imposm import \
     -read "/imposm-input/${PBF_BASE_NAME}" \
     -overwritecache \
     -write \
