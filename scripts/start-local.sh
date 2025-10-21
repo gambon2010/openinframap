@@ -287,6 +287,20 @@ SQL
 
 ensure_database_extensions
 
+apply_sql_file() {
+  local sql_file="$1"
+
+  if [[ ! -f "$sql_file" ]]; then
+    echo "Error: SQL file '$sql_file' not found." >&2
+    exit 1
+  fi
+
+  echo "Applying schema $(basename "$sql_file")..."
+  "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres < "$sql_file"
+}
+
+apply_sql_file "${REPO_ROOT}/schema/functions.sql"
+
 echo "Starting tileserver container..."
 "${COMPOSE_CMD[@]}" up --build -d tegola >/dev/null
 
