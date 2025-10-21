@@ -257,6 +257,7 @@ if [[ -n "$PBF_PATH" && $RUN_IMPORT -ne 0 ]]; then
   echo "Importing '$PBF_PATH' into PostGIS via Imposm..."
   "${COMPOSE_CMD[@]}" run --rm -v "${PBF_DIR_NAME}:/imposm-input:ro" imposm import \
     -read "/imposm-input/${PBF_BASE_NAME}" \
+    -overwritecache \
     -write \
     -optimize \
     -deployproduction \
