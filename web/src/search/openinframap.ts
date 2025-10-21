@@ -4,6 +4,7 @@
 import { SearchResult, ISearchProvider } from './search'
 import { formatVoltage, formatPower } from '../l10n'
 import { t } from 'i18next'
+import { backendBaseUrl } from '../config'
 
 type OIMResult = {
   name: string
@@ -23,7 +24,7 @@ type OIMResponse = {
 }
 
 export default class OIMSearchProvider implements ISearchProvider {
-  url = 'https://openinframap.org/search/typeahead'
+  url = `${backendBaseUrl}/search/typeahead`
   baseScore: number = 0.9
   language: string
   regionNames: Intl.DisplayNames

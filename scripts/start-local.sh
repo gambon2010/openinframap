@@ -152,6 +152,12 @@ BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 VITE_HOST="${VITE_HOST:-127.0.0.1}"
 DATABASE_URL="${DATABASE_URL:-postgresql://osm:osm@localhost:5432/osm}"
+LOCAL_BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}"
+if [[ -z "${VITE_BACKEND_URL:-}" ]]; then
+  FRONTEND_BACKEND_URL="$LOCAL_BACKEND_URL"
+else
+  FRONTEND_BACKEND_URL="$VITE_BACKEND_URL"
+fi
 PBF_PATH=""
 RUN_IMPORT=1
 
@@ -243,7 +249,7 @@ PIDS+=($!)
 echo "Starting Vite frontend on http://${VITE_HOST}:${FRONTEND_PORT} ..."
 (
   cd "$REPO_ROOT/web"
-  npm run dev -- --host "$VITE_HOST" --port "$FRONTEND_PORT"
+  VITE_BACKEND_URL="$FRONTEND_BACKEND_URL" npm run dev -- --host "$VITE_HOST" --port "$FRONTEND_PORT"
 ) &
 PIDS+=($!)
 

@@ -8,6 +8,7 @@ import friendlyNames from '../friendlynames.ts'
 import friendlyIcons from '../friendlyicons.ts'
 import { el, mount, setChildren, RedomElement } from 'redom'
 import { ClickRouter } from '../click-router.ts'
+import { buildBackendUrl } from '../config'
 
 const hidden_keys = [
   'osm_id',
@@ -372,7 +373,7 @@ class InfoPopup {
   }
 
   async fetch_wikidata(id: string, imageContainer: RedomElement, linksContainer: RedomElement) {
-    const data = await fetch(`https://openinframap.org/wikidata/${id}`).then((response) => {
+    const data = await fetch(buildBackendUrl(`/wikidata/${id}`)).then((response) => {
       return response.json()
     })
 
