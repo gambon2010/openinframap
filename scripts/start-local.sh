@@ -25,13 +25,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-add_backend_venv_to_path() {
+add_backend_env_to_path() {
+  if [[ -n "${VIRTUAL_ENV:-}" && -d "${VIRTUAL_ENV}/bin" ]]; then
+    export PATH="${VIRTUAL_ENV}/bin:${PATH}"
+  fi
+
   if [[ -d "${REPO_ROOT}/web-backend/.venv/bin" ]]; then
     export PATH="${REPO_ROOT}/web-backend/.venv/bin:${PATH}"
   fi
 }
 
-add_backend_venv_to_path
+add_backend_env_to_path
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -56,6 +60,8 @@ COMPOSE_CMD=( $(resolve_compose) )
 require_cmd "npm"
 require_cmd "docker"
 
+BACKEND_PYTHON=""
+
 ensure_backend_env() {
   if command -v uv >/dev/null 2>&1; then
     if [[ ! -d "${REPO_ROOT}/web-backend/.venv" ]]; then
@@ -68,23 +74,55 @@ ensure_backend_env() {
     return
   fi
 
-  local backend_python="${REPO_ROOT}/web-backend/.venv/bin/python"
-  if [[ ! -x "$backend_python" ]]; then
-    echo "Error: backend dependencies are missing and 'uv' is not installed." >&2
-    echo "Install uv (https://github.com/astral-sh/uv) and run 'uv sync --frozen' in web-backend/," >&2
-    echo "or activate your own virtual environment with the required packages before rerunning the script." >&2
-    exit 1
+  local python_candidates=()
+
+  if [[ -n "${VIRTUAL_ENV:-}" && -x "${VIRTUAL_ENV}/bin/python" ]]; then
+    python_candidates+=("${VIRTUAL_ENV}/bin/python")
   fi
 
-  if ! "$backend_python" -c "import httpx" >/dev/null 2>&1; then
-    echo "Error: the Python environment at web-backend/.venv/ is missing required packages (e.g. httpx)." >&2
-    echo "Activate that environment and install the dependencies (for example via 'uv sync --frozen') before rerunning the script." >&2
-    exit 1
+  if [[ -x "${REPO_ROOT}/web-backend/.venv/bin/python" ]]; then
+    python_candidates+=("${REPO_ROOT}/web-backend/.venv/bin/python")
   fi
+
+  if command -v python3 >/dev/null 2>&1; then
+    python_candidates+=("$(command -v python3)")
+  fi
+
+  if command -v python >/dev/null 2>&1; then
+    python_candidates+=("$(command -v python)")
+  fi
+
+  # Deduplicate while preserving order
+  local -A seen=()
+  local unique_candidates=()
+  for candidate in "${python_candidates[@]}"; do
+    if [[ -n "${seen[$candidate]+x}" ]]; then
+      continue
+    fi
+    unique_candidates+=("$candidate")
+    seen[$candidate]=1
+  done
+
+  for py_cmd in "${unique_candidates[@]}"; do
+    if "$py_cmd" -c "import httpx, uvicorn" >/dev/null 2>&1; then
+      BACKEND_PYTHON="$py_cmd"
+      return
+    fi
+  done
+
+  if [[ -x "${REPO_ROOT}/web-backend/.venv/bin/python" ]]; then
+    echo "Error: the Python environment at web-backend/.venv/ is missing required packages (e.g. httpx, uvicorn)." >&2
+    echo "Activate that environment and install the dependencies (for example via 'uv sync --frozen') before rerunning the script." >&2
+  else
+    echo "Error: backend dependencies are missing and no suitable Python environment was found." >&2
+    echo "Install uv (https://github.com/astral-sh/uv) and run 'uv sync --frozen' in web-backend/," >&2
+    echo "or activate your own virtual environment with the required packages before rerunning the script." >&2
+  fi
+  exit 1
 }
 
 ensure_backend_env
-add_backend_venv_to_path
+add_backend_env_to_path
 
 ensure_frontend_deps() {
   if [[ -d "${REPO_ROOT}/web/node_modules" && -x "${REPO_ROOT}/web/node_modules/.bin/vite" ]]; then
@@ -106,31 +144,8 @@ BACKEND_RUNNER=()
 
 if command -v uv >/dev/null 2>&1; then
   BACKEND_RUNNER=(uv run uvicorn)
-elif [[ -x "${REPO_ROOT}/web-backend/.venv/bin/uvicorn" ]]; then
-  BACKEND_RUNNER=("${REPO_ROOT}/web-backend/.venv/bin/uvicorn")
-elif command -v uvicorn >/dev/null 2>&1; then
-  BACKEND_RUNNER=(uvicorn)
 else
-  PYTHON_CANDIDATES=()
-  if [[ -x "${REPO_ROOT}/web-backend/.venv/bin/python" ]]; then
-    PYTHON_CANDIDATES+=("${REPO_ROOT}/web-backend/.venv/bin/python")
-  fi
-  if command -v python3 >/dev/null 2>&1; then
-    PYTHON_CANDIDATES+=("$(command -v python3)")
-  fi
-
-  for py_cmd in "${PYTHON_CANDIDATES[@]}"; do
-    if "$py_cmd" -c "import uvicorn" >/dev/null 2>&1; then
-      BACKEND_RUNNER=("$py_cmd" -m uvicorn)
-      break
-    fi
-  done
-
-  if [[ ${#BACKEND_RUNNER[@]} -eq 0 ]]; then
-    echo "Error: could not find a way to run uvicorn." >&2
-    echo "Install uv (https://github.com/astral-sh/uv) or ensure uvicorn is installed in your Python environment." >&2
-    exit 1
-  fi
+  BACKEND_RUNNER=("${BACKEND_PYTHON}" -m uvicorn)
 fi
 
 BACKEND_PORT="${BACKEND_PORT:-8000}"
