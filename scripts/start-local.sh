@@ -244,7 +244,6 @@ if [[ -n "$PBF_PATH" && $RUN_IMPORT -ne 0 ]]; then
     -mapping /mapping.json \
     -cachedir /imposm-cache \
     -diffdir /imposm-diff \
-    -expiretiles-dir /imposm-expiry \
     -connection postgis://osm:osm@db/osm
 fi
 
