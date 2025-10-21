@@ -263,6 +263,30 @@ wait_for_postgres() {
 
 wait_for_postgres
 
+ensure_database_extensions() {
+  echo "Ensuring database role, database, and extensions exist..."
+
+  "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres <<'SQL'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'osm') THEN
+    CREATE ROLE osm PASSWORD 'osm' LOGIN;
+  END IF;
+END
+$$;
+SQL
+
+  if ! "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'osm'" | grep -q 1; then
+    "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres -c "CREATE DATABASE osm OWNER osm"
+  fi
+
+  for ext in postgis hstore intarray; do
+    "${COMPOSE_CMD[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d osm -c "CREATE EXTENSION IF NOT EXISTS ${ext}"
+  done
+}
+
+ensure_database_extensions
+
 echo "Starting tileserver container..."
 "${COMPOSE_CMD[@]}" up --build -d tegola >/dev/null
 
