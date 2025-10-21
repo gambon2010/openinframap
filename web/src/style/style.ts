@@ -9,6 +9,7 @@ import style_oim_water from './style_oim_water.js'
 import style_oim_other_pipelines from './style_oim_other_pipelines.js'
 import style_osmose from './style_osmose.js'
 import { StyleSpecification } from 'maplibre-gl'
+import { buildTilesUrl } from '../config'
 
 const oim_attribution =
   '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://openinframap.org/copyright">Open Infrastructure Map</a>'
@@ -57,50 +58,50 @@ const style: StyleSpecification = {
   sources: {
     basemap: {
       type: 'vector',
-      tiles: ['https://openinframap.org/20250311/{z}/{x}/{y}.mvt'],
+      tiles: [buildTilesUrl('/20250311/{z}/{x}/{y}.mvt')],
       maxzoom: 15,
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
     },
     blackmarble: {
       type: 'raster',
-      tiles: ['https://openinframap.org/black-marble-2023/{z}/{x}/{y}.webp'],
+      tiles: [buildTilesUrl('/black-marble-2023/{z}/{x}/{y}.webp')],
       maxzoom: 8,
       attribution:
         '<a href="https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VNP46A4/">NASA Black Marble 2023</a>'
     },
     power: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/power/{z}/{x}/{y}.pbf'],
+      tiles: [buildTilesUrl('/map/power/{z}/{x}/{y}.pbf')],
       maxzoom: 17,
       attribution: oim_attribution
     },
     petroleum: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/petroleum/{z}/{x}/{y}.pbf'],
+      tiles: [buildTilesUrl('/map/petroleum/{z}/{x}/{y}.pbf')],
       maxzoom: 17,
       attribution: oim_attribution
     },
     telecoms: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/telecoms/{z}/{x}/{y}.pbf'],
+      tiles: [buildTilesUrl('/map/telecoms/{z}/{x}/{y}.pbf')],
       maxzoom: 17,
       attribution: oim_attribution
     },
     water: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/water/{z}/{x}/{y}.pbf'],
+      tiles: [buildTilesUrl('/map/water/{z}/{x}/{y}.pbf')],
       maxzoom: 17,
       attribution: oim_attribution
     },
     solar_heatmap: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/solar_heatmap/{z}/{x}/{y}.pbf'],
+      tiles: [buildTilesUrl('/map/solar_heatmap/{z}/{x}/{y}.pbf')],
       maxzoom: 17,
       attribution: oim_attribution
     },
     other_pipeline: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/other_pipeline/{z}/{x}/{y}.pbf'],
+      tiles: [buildTilesUrl('/map/other_pipeline/{z}/{x}/{y}.pbf')],
       maxzoom: 17,
       attribution: oim_attribution
     },
