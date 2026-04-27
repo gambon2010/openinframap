@@ -56,11 +56,24 @@ docker compose up -d db
 
 # ---------------------------------------------------------------------------
 # 3. Wait for Postgres to be ready
+#    On a fresh volume the postgis/postgis image runs init scripts (creating
+#    the osm user/db) before Postgres accepts connections.  We wait until
+#    we can actually run a query as the osm user, not just until pg_isready
+#    returns (which can happen before the init scripts finish).
 # ---------------------------------------------------------------------------
 echo "==> Waiting for Postgres to be ready..."
-until docker compose exec -T db pg_isready -U "$DB_USER" -d "$DB_NAME" -q 2>/dev/null; do
-    echo "    ...not ready yet, retrying in 2s"
+MAX_WAIT=120
+elapsed=0
+until docker compose exec -T db psql -U "$DB_USER" "$DB_NAME" -c "SELECT 1" -q >/dev/null 2>&1; do
+    if [[ "$elapsed" -ge "$MAX_WAIT" ]]; then
+        echo ""
+        echo "ERROR: Postgres did not become ready within ${MAX_WAIT}s."
+        echo "       Check container logs with: docker compose logs db"
+        exit 1
+    fi
+    echo "    ...not ready yet, retrying in 2s (${elapsed}s elapsed)"
     sleep 2
+    elapsed=$((elapsed + 2))
 done
 echo "    Postgres is accepting connections."
 
