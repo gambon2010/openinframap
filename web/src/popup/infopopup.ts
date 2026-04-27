@@ -1,6 +1,7 @@
 import './infopopup.css'
 
 import i18next, { t } from 'i18next'
+import { BACKEND_BASE_URL } from '../config.js'
 import maplibregl, { LngLat, MapGeoJSONFeature, Popup } from 'maplibre-gl'
 import { titleCase } from 'title-case'
 import { local_name_tags, formatVoltage, formatFrequency, formatPower } from '../l10n.ts'
@@ -373,7 +374,7 @@ class InfoPopup {
   }
 
   async fetch_wikidata(id: string, imageContainer: RedomElement, linksContainer: RedomElement) {
-    const data = await fetch(`https://openinframap.org/wikidata/${id}`).then((response) => {
+    const data = await fetch(`${BACKEND_BASE_URL}/wikidata/${id}`).then((response) => {
       return response.json()
     })
 
