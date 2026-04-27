@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import re
+from pathlib import Path
 from typing import Optional
 import httpx
 from async_lru import alru_cache
@@ -13,6 +14,8 @@ from more_itertools import windowed
 VOLTAGE_SCALE = [0, 10, 25, 52, 132, 220, 330, 550]
 
 logger = logging.getLogger(__name__)
+
+WIKIDATA_JSON_DIR = Path(__file__).parent.parent / "data" / "wikidata_json"
 
 
 async def get_countries():
@@ -227,10 +230,19 @@ async def get_wikidata(wikidata_id: str, client: httpx.AsyncClient) -> Optional[
     if not re.match(r"^Q[0-9]+$", wikidata_id):
         return None
 
-    response = await client.get(
-        f"https://www.wikidata.org/wiki/Special:EntityData/{wikidata_id}.json",
-        follow_redirects=True,
-    )
+    # Check disk cache written by scripts/fetch_images.py
+    cache_file = WIKIDATA_JSON_DIR / f"{wikidata_id}.json"
+    if cache_file.exists():
+        return json.loads(cache_file.read_text())
+
+    try:
+        response = await client.get(
+            f"https://www.wikidata.org/wiki/Special:EntityData/{wikidata_id}.json",
+            follow_redirects=True,
+        )
+    except httpx.ConnectError:
+        logger.warning("No network: could not fetch wikidata entity %s", wikidata_id)
+        return None
 
     if response.status_code == 404:
         return None
@@ -255,7 +267,12 @@ async def get_commons_thumbnail(
         f"&iiprop=url&iiurlwidth={width}&format=json"
     )
 
-    resp = await client.get(url, follow_redirects=True)
+    try:
+        resp = await client.get(url, follow_redirects=True)
+    except httpx.ConnectError:
+        logger.warning("No network: could not fetch Commons thumbnail for %s", filename)
+        return None
+
     if resp.status_code != 200:
         raise HTTPException(503, "Error while fetching wikimedia commons image")
     data = resp.json()

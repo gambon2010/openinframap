@@ -25,6 +25,7 @@ Wikimedia API etiquette: https://www.mediawiki.org/wiki/API:Etiquette
 """
 
 import argparse
+import json
 import re
 import sys
 import time
@@ -37,6 +38,7 @@ import psycopg2
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 IMAGES_DIR = REPO_ROOT / "data" / "images"
+WIKIDATA_JSON_DIR = REPO_ROOT / "data" / "wikidata_json"
 
 THUMBNAIL_WIDTH = 300
 API_DELAY = 1.1    # seconds between MediaWiki API calls (Wikidata / Commons)
@@ -108,29 +110,32 @@ def chunks(lst: list, n: int):
 # Wikimedia API calls
 # ---------------------------------------------------------------------------
 
-def fetch_image_filenames(client: httpx.Client, ids: list[str]) -> dict[str, str]:
+def fetch_entity_data(client: httpx.Client, ids: list[str]) -> dict[str, dict]:
     """
-    Batch-fetch P18 (image) property from Wikidata for up to 50 IDs.
-    Returns {wikidata_id: commons_filename}.
+    Batch-fetch labels, sitelinks and claims from Wikidata for up to 50 IDs.
+    Saves each entity to data/wikidata_json/<id>.json for offline use.
+    Returns {wikidata_id: entity_dict}.
     """
     resp = client.get(
         "https://www.wikidata.org/w/api.php",
         params={
             "action": "wbgetentities",
             "ids": "|".join(ids),
-            "props": "claims",
+            # sitelinks/urls includes the full Wikipedia URL in each sitelink entry
+            "props": "claims|labels|sitelinks/urls",
             "format": "json",
         },
     )
     resp.raise_for_status()
-    result: dict[str, str] = {}
+    result: dict[str, dict] = {}
     for entity_id, entity in resp.json().get("entities", {}).items():
-        claims = entity.get("claims", {})
-        if "P18" not in claims:
+        if "missing" in entity:
             continue
-        snak = claims["P18"][0]["mainsnak"]
-        if snak.get("datatype") == "commonsMedia":
-            result[entity_id.upper()] = snak["datavalue"]["value"]
+        uid = entity_id.upper()
+        result[uid] = entity
+        cache_file = WIKIDATA_JSON_DIR / f"{uid}.json"
+        if not cache_file.exists():
+            cache_file.write_text(json.dumps(entity))
     return result
 
 
@@ -183,6 +188,7 @@ def main() -> None:
     args = parser.parse_args()
 
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    WIKIDATA_JSON_DIR.mkdir(parents=True, exist_ok=True)
 
     print("Connecting to database...")
     try:
@@ -195,41 +201,55 @@ def main() -> None:
     conn.close()
     print(f"  {len(all_ids)} distinct wikidata IDs found")
 
-    todo = sorted(id_ for id_ in all_ids if not local_path(id_))
+    # An ID is fully done when we have both the entity JSON and the image.
+    todo_json  = sorted(id_ for id_ in all_ids if not (WIKIDATA_JSON_DIR / f"{id_}.json").exists())
+    todo_image = sorted(id_ for id_ in all_ids if not local_path(id_))
+    todo = sorted(set(todo_json) | set(todo_image))
+
     already_cached = len(all_ids) - len(todo)
-    print(f"  {already_cached} already cached, {len(todo)} to fetch")
+    print(f"  {already_cached} fully cached, {len(todo)} need work "
+          f"({len(todo_json)} missing entity JSON, {len(todo_image)} missing image)")
 
     if not todo:
         print("Nothing to do.")
         return
 
-    print(f"\nEstimated time: ~{len(todo) * IMAGE_DELAY / 60:.0f} min "
+    print(f"\nEstimated time: ~{len(todo_image) * IMAGE_DELAY / 60:.0f} min "
           f"(1 image/sec + API batching)")
 
     headers = {"User-Agent": USER_AGENT}
     with httpx.Client(headers=headers, timeout=30) as client:
 
         # ----------------------------------------------------------------
-        # Step 1 — get P18 image filenames from Wikidata (50 IDs/request)
+        # Step 1 — fetch entity data from Wikidata (50 IDs/request)
+        #          saves labels+sitelinks+claims to data/wikidata_json/
         # ----------------------------------------------------------------
-        print(f"\nStep 1/3  Wikidata P18 claims ({len(todo)} IDs, 50/request, 1 req/sec)")
+        print(f"\nStep 1/3  Wikidata entity data ({len(todo)} IDs, 50/request, 1 req/sec)")
         id_to_filename: dict[str, str] = {}
         batches = list(chunks(todo, 50))
         for i, batch in enumerate(batches, 1):
             print(f"  batch {i}/{len(batches)} ({len(batch)} IDs) ...", end=" ", flush=True)
             try:
-                got = fetch_image_filenames(client, batch)
-                id_to_filename.update(got)
-                print(f"{len(got)} have images")
+                entities = fetch_entity_data(client, batch)
+                for uid, entity in entities.items():
+                    if local_path(uid):
+                        continue
+                    claims = entity.get("claims", {})
+                    if "P18" not in claims:
+                        continue
+                    snak = claims["P18"][0]["mainsnak"]
+                    if snak.get("datatype") == "commonsMedia":
+                        id_to_filename[uid] = snak["datavalue"]["value"]
+                print(f"{len(entities)} fetched, {len(id_to_filename)} need images so far")
             except httpx.HTTPError as e:
                 print(f"FAILED ({e})", file=sys.stderr)
             if i < len(batches):
                 time.sleep(API_DELAY)
 
         if not id_to_filename:
-            print("No P18 image claims found — nothing to download.")
+            print("Entity JSON saved. No new images to download.")
             return
-        print(f"  {len(id_to_filename)} IDs have a P18 image")
+        print(f"  {len(id_to_filename)} IDs need image downloads")
 
         # ----------------------------------------------------------------
         # Step 2 — get thumbnail URLs from Commons (50 files/request)
@@ -275,8 +295,9 @@ def main() -> None:
             if i < len(download_map):
                 time.sleep(IMAGE_DELAY)
 
-    print(f"\nDone — {ok} downloaded, {fail} failed, {already_cached} already cached.")
-    print(f"Images saved to: {IMAGES_DIR}")
+    print(f"\nDone — {ok} images downloaded, {fail} failed, {already_cached} fully cached.")
+    print(f"Images:      {IMAGES_DIR}")
+    print(f"Entity JSON: {WIKIDATA_JSON_DIR}")
 
 
 if __name__ == "__main__":
