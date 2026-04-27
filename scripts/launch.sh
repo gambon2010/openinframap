@@ -61,6 +61,7 @@ check_cmd docker     "https://docs.docker.com/get-docker/"          || MISSING=1
 check_cmd uv         "https://docs.astral.sh/uv/"                   || MISSING=1
 check_cmd node       "https://nodejs.org/"                          || MISSING=1
 check_cmd npm        "comes with Node.js"                           || MISSING=1
+check_cmd unzip      "dnf install unzip  /  apt install unzip"      || MISSING=1
 check_cmd shp2pgsql  "dnf install postgis  /  apt install postgis"  || MISSING=1
 
 if [[ "$MISSING" -eq 1 ]]; then
