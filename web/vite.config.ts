@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/stats': { target: backendUrl, changeOrigin: true },
         '/about': { target: backendUrl, changeOrigin: true },
-        '/static': { target: backendUrl, changeOrigin: true }
+        '/static': { target: backendUrl, changeOrigin: true },
+        '/local-images': { target: backendUrl, changeOrigin: true }
       }
     },
 

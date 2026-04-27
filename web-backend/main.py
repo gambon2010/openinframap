@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+from pathlib import Path
 from typing import AsyncIterator, TypedDict
 import httpx
 from starlette.responses import PlainTextResponse, RedirectResponse
@@ -11,6 +12,9 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 import bokeh.resources
 import json
+
+IMAGES_DIR = Path(__file__).parent.parent / "data" / "images"
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 from bokeh.embed import json_item
 
@@ -65,6 +69,7 @@ app = Starlette(
     lifespan=lifespan,
     routes=[
         Mount("/static", app=StaticFiles(directory="static"), name="static"),
+        Mount("/local-images", app=StaticFiles(directory=str(IMAGES_DIR)), name="local-images"),
         Route("/sitemap.xml", sitemap),
     ],
     middleware=[
