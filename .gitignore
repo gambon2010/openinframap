@@ -1,5 +1,6 @@
 *.xml
 *.mml
+*.osm.pbf
 mapping.json
 config.toml
 __pycache__
