@@ -126,7 +126,28 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Done
+# 6. Apply schema/stats.sql
+#    Creates the stats schema and tables used by the web-backend /stats page.
+#    Tables are empty locally (no historical data), but their existence is
+#    required — the backend queries them on every /stats request.
+#    Skip if the stats schema already exists.
+# ---------------------------------------------------------------------------
+STATS_EXIST=$(
+    docker compose exec -T db \
+        psql -U "$DB_USER" "$DB_NAME" -tAc \
+        "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'stats'"
+)
+
+if [[ "$STATS_EXIST" == "1" ]]; then
+    echo "==> stats schema already present — skipping."
+else
+    echo "==> Applying schema/stats.sql..."
+    docker compose exec -T db psql -U "$DB_USER" "$DB_NAME" < schema/stats.sql
+    echo "==> Stats schema applied."
+fi
+
+# ---------------------------------------------------------------------------
+# 7. Done
 # ---------------------------------------------------------------------------
 echo ""
 echo "========================================================"
