@@ -12,8 +12,8 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./schema/dev-init.sql:/docker-entrypoint-initdb.d/90-dev-init.sql
-      - ./schema/functions.sql:/docker-entrypoint-initdb.d/91-functions.sql
+      - ./schema/dev-init.sql:/docker-entrypoint-initdb.d/90-dev-init.sql:z
+      - ./schema/functions.sql:/docker-entrypoint-initdb.d/91-functions.sql:z
 
   imposm:
     build: imposm
