@@ -95,7 +95,7 @@ if [[ "$TABLE_EXISTS" == "1" ]]; then
 else
     echo "==> Running imposm import (may take several minutes for a regional PBF)..."
     docker compose run --rm --build \
-        -v "$PBF_PATH:/data.osm.pbf" \
+        -v "$PBF_PATH:/data.osm.pbf:z" \
         imposm import \
         -connection "postgis://osm:osm@db/osm" \
         -mapping /mapping.json \
