@@ -1,4 +1,5 @@
 import i18next from 'i18next'
+import { TILE_BASE_URL, OIM_TILES } from '../config.js'
 import style_base from './style_base.js'
 import style_labels from './style_labels.js'
 import style_oim_power from './style_oim_power.js'
@@ -57,13 +58,13 @@ const style: StyleSpecification = {
   sources: {
     basemap: {
       type: 'vector',
-      tiles: ['https://openinframap.org/20250311/{z}/{x}/{y}.mvt'],
+      tiles: [`${TILE_BASE_URL}/20250311/{z}/{x}/{y}.mvt`],
       maxzoom: 15,
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
     },
     blackmarble: {
       type: 'raster',
-      tiles: ['https://openinframap.org/black-marble-2024/{z}/{x}/{y}.webp'],
+      tiles: [`${TILE_BASE_URL}/black-marble-2024/{z}/{x}/{y}.webp`],
       tileSize: 256,
       maxzoom: 8,
       attribution:
@@ -71,37 +72,37 @@ const style: StyleSpecification = {
     },
     power: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/power/{z}/{x}/{y}.pbf'],
+      tiles: [`${OIM_TILES}/power/{z}/{x}/{y}.pbf`],
       maxzoom: 17,
       attribution: oim_attribution
     },
     petroleum: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/petroleum/{z}/{x}/{y}.pbf'],
+      tiles: [`${OIM_TILES}/petroleum/{z}/{x}/{y}.pbf`],
       maxzoom: 17,
       attribution: oim_attribution
     },
     telecoms: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/telecoms/{z}/{x}/{y}.pbf'],
+      tiles: [`${OIM_TILES}/telecoms/{z}/{x}/{y}.pbf`],
       maxzoom: 17,
       attribution: oim_attribution
     },
     water: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/water/{z}/{x}/{y}.pbf'],
+      tiles: [`${OIM_TILES}/water/{z}/{x}/{y}.pbf`],
       maxzoom: 17,
       attribution: oim_attribution
     },
     solar_heatmap: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/solar_heatmap/{z}/{x}/{y}.pbf'],
+      tiles: [`${OIM_TILES}/solar_heatmap/{z}/{x}/{y}.pbf`],
       maxzoom: 17,
       attribution: oim_attribution
     },
     other_pipeline: {
       type: 'vector',
-      tiles: ['https://openinframap.org/map/other_pipeline/{z}/{x}/{y}.pbf'],
+      tiles: [`${OIM_TILES}/other_pipeline/{z}/{x}/{y}.pbf`],
       maxzoom: 17,
       attribution: oim_attribution
     },

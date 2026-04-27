@@ -1,0 +1,9 @@
+# Local development overrides.
+# Docker Compose merges this with docker-compose.yml automatically.
+#
+# Exposes the database port to the host so the web-backend (running outside
+# Docker via uvicorn) can connect to postgresql://osm:osm@localhost:5432/osm.
+services:
+  db:
+    ports:
+      - "5432:5432"

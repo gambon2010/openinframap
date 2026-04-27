@@ -1,5 +1,6 @@
 """Endpoints to proxy WikiData requests for info popups on the map"""
 
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
@@ -7,8 +8,14 @@ from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse, Response
 
 from data import get_commons_thumbnail, get_wikidata
-from main import app
+from main import app, IMAGES_DIR
 from util import cache_for
+
+
+def _local_thumbnail(wikidata_id: str) -> Optional[str]:
+    """Return a /local-images/… URL if we have a cached image, else None."""
+    matches = list(IMAGES_DIR.glob(f"{wikidata_id}.*"))
+    return f"/local-images/{matches[0].name}" if matches else None
 
 
 @app.route("/wikidata/{wikidata_id}")
@@ -42,11 +49,15 @@ async def wikidata_json(wikidata_id: str, http_client: httpx.AsyncClient) -> Opt
 
     if "P18" in data["claims"] and data["claims"]["P18"][0]["mainsnak"]["datatype"] == "commonsMedia":
         response["image"] = data["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"]
-        image_data = await get_commons_thumbnail(
-            data["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"], http_client
-        )
-        if image_data is not None:
-            response["thumbnail"] = image_data["imageinfo"][0]["thumburl"]
+        local = _local_thumbnail(wikidata_id)
+        if local:
+            response["thumbnail"] = local
+        else:
+            image_data = await get_commons_thumbnail(
+                data["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"], http_client
+            )
+            if image_data is not None:
+                response["thumbnail"] = image_data["imageinfo"][0]["thumburl"]
 
     for wikidata_property, name in WIKIDATA_EXTERNAL.items():
         if wikidata_property in data["claims"]:

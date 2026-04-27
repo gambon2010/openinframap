@@ -1,6 +1,7 @@
 import './infopopup.css'
 
 import i18next, { t } from 'i18next'
+import { BACKEND_BASE_URL } from '../config.js'
 import maplibregl, { LngLat, MapGeoJSONFeature, Popup } from 'maplibre-gl'
 import { titleCase } from 'title-case'
 import { local_name_tags, formatVoltage, formatFrequency, formatPower } from '../l10n.ts'
@@ -347,7 +348,7 @@ class InfoPopup {
       mount(
         footer,
         el('a.oim-button', t('more_info', 'More info'), {
-          href: '/stats/object/plant/' + feature.properties['osm_id'],
+          href: `${BACKEND_BASE_URL}/stats/object/plant/` + feature.properties['osm_id'],
           target: '_blank'
         })
       )
@@ -373,9 +374,16 @@ class InfoPopup {
   }
 
   async fetch_wikidata(id: string, imageContainer: RedomElement, linksContainer: RedomElement) {
-    const data = await fetch(`https://openinframap.org/wikidata/${id}`).then((response) => {
-      return response.json()
-    })
+    let data: any
+    try {
+      const response = await fetch(`${BACKEND_BASE_URL}/wikidata/${id}`)
+      if (!response.ok) return
+      data = await response.json()
+    } catch {
+      return
+    }
+
+    if (!data?.sitelinks) return
 
     if (data['thumbnail']) {
       mount(
