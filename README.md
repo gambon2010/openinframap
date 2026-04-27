@@ -1,19 +1,56 @@
+# Open Infrastructure Map — Offline Local Dev Fork
+
+This is a fork of [openinframap/openinframap](https://github.com/openinframap/openinframap)
+configured for **fully offline local development**.
+
+The goal is a stack where, after initial setup, nothing calls `openinframap.org` at runtime.
+All external service URLs are controlled by environment variables and default to production,
+so the project still works out of the box for contributors who just clone without a `.env`.
+
+## What's different from upstream
+
+| Area | Change |
+|------|--------|
+| **Backend/frontend URLs** | Configurable via `VITE_BACKEND_BASE_URL` / `VITE_TILE_BASE_URL` in `web/.env` |
+| **Dev server routing** | Vite proxies `/stats`, `/about`, `/static`, `/local-images` to the local backend |
+| **Search** | OpenCage geocoder (online-only) disabled; DB search + coordinate parsing only |
+| **Background toggle** | Hidden — single tile source for local dev |
+| **Wikidata image cache** | `scripts/fetch_images.py` pre-downloads thumbnails and entity JSON to `data/` |
+| **Offline Wikidata popups** | Backend serves cached entity JSON and images; falls back to remote if not cached |
+| **Setup scripts** | `scripts/launch.sh`, `scripts/setup-local-db.sh`, `scripts/update-db.sh` |
+
+## Getting started
+
+See **[docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md)** for the full setup guide.
+
+The short version:
+
+```bash
+# 1. Get a regional PBF (Netherlands ~200 MB)
+mkdir -p data
+curl -L https://download.geofabrik.de/europe/netherlands-latest.osm.pbf -o data/region.osm.pbf
+
+# 2. Bootstrap everything (DB import, Tegola, .env files)
+bash scripts/launch.sh
+
+# 3. Pre-cache Wikidata images for offline use
+uv run scripts/fetch_images.py
+
+# 4. Start the backend
+cd web-backend && uv run uvicorn main:app --reload
+
+# 5. Start the frontend (separate terminal)
+cd web && npm run dev
+# → http://localhost:5173
+```
+
+## Upstream project
+
+The upstream project is [Open Infrastructure Map](https://openinframap.org), a map of the
+world's infrastructure from [OpenStreetMap](https://www.openstreetmap.org).
+
 [![IRC](https://img.shields.io/badge/IRC-%23osm--infrastructure-brightgreen)](https://webchat.oftc.net/?channels=osm-infrastructure)
 [![Matrix](https://img.shields.io/matrix/osm-infrastructure:matrix.org?server_fqdn=matrix.org&logo=matrix)](https://matrix.to/#/#osm-infrastructure:matrix.org)
-[![Mastodon](https://img.shields.io/badge/dynamic/json?label=Mastodon&color=6364ff&query=followers_count&url=https://en.osm.town/api/v1/accounts/lookup?acct=OpenInfraMap&logo=mastodon)](https://en.osm.town/@OpenInfraMap)
 
-# Open Infrastructure Map
-This is the main repository for [Open Infrastructure Map](https://openinframap.org), a map showing the world's
-infrastructure from [OpenStreetMap](https://www.openstreetmap.org).
-
-![Screenshot of OpenInfraMap](./docs/screenshots/main.png)
-
-## Translations
-We're aiming to make OpenInfraMap multilingual - if you can help translate, please
-[contribute on Weblate](https://hosted.weblate.org/engage/open-infrastructure-map/).
-[![Translation status](https://hosted.weblate.org/widget/open-infrastructure-map/multi-auto.svg)](https://hosted.weblate.org/engage/open-infrastructure-map/)
-
-Anyone can add a new language to Weblate - once the translation is more than 75% complete, please raise [an issue](https://github.com/openinframap/openinframap/issues) so we can enable it on the website.
-
-## Development
-For details on how to develop Open Infrastructure Map, see the [architecture documentation](./docs/architecture.md).
+For architecture details see [docs/architecture.md](./docs/architecture.md).
+For contributing to upstream see [openinframap/openinframap](https://github.com/openinframap/openinframap).

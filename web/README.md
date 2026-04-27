@@ -1,29 +1,60 @@
 # Web Frontend
 
-The web frontend for Open Infrastructure Map, written in Typescript and built with Vite.
+The web frontend for Open Infrastructure Map, written in TypeScript and built with Vite.
 
-Develop using:
+## Local development
+
+Copy the example env file and configure it:
 
 ```bash
-    npm install
-    npm start
+cp .env.example .env
 ```
 
-This should load a development website instance at [http://localhost:5173](http://localhost:5173).
+Edit `.env` and set `VITE_BACKEND_BASE_URL=http://localhost:8000` to point at your local
+backend (see `web-backend/`). `VITE_TILE_BASE_URL` defaults to production tiles and can be
+left as-is unless you are running a local tile server.
 
-By default, this will use the production backend services from openinframap.org, so it's easier to
-get started.
+Install dependencies and start the dev server:
+
+```bash
+npm install
+npm run dev   # → http://localhost:5173
+```
+
+The Vite dev server proxies `/stats`, `/about`, `/static`, and `/local-images` to the
+backend URL configured in `.env`, so backend-rendered pages load correctly.
+
+## Fork-specific behaviour
+
+This fork disables the **OpenCage geocoder** (online-only service). Search uses the local
+DB backend (`/search/typeahead`) and coordinate parsing only. To re-enable OpenCage,
+uncomment the provider in `src/search/search.ts`.
+
+The **background tile switcher** (OSM / nighttime lights) is hidden. The OSM background
+is always active. This reflects the single-tile-source local setup.
 
 ## Testing
 
-Code style is checked using [Prettier](https://prettier.io/) and [ESLint](https://eslint.org/). To
-run the linting checks, use `npm run lint`.
+Code style is checked with [Prettier](https://prettier.io/) and [ESLint](https://eslint.org/):
 
-There is currently a minimal test suite using [Vitest](https://vitest.dev/) which is run using
-`npm test`. This requires the development server to be running.
+```bash
+npm run lint
+```
+
+There is a minimal test suite using [Vitest](https://vitest.dev/):
+
+```bash
+npm test   # requires the dev server to be running
+```
 
 ## Translation
 
-Translation is handled using [i18next](https://www.i18next.com/). If you add a translation string,
-you also need to add it to the [locales/en/translation.json](./locales/en/translation.json) file in
-order for it to be picked up by Weblate.
+Translation is handled using [i18next](https://www.i18next.com/). If you add a translation
+string, add it to [locales/en/translation.json](./locales/en/translation.json) so it is
+picked up by Weblate in the upstream project.
+
+To extract new strings:
+
+```bash
+npm run extract
+```

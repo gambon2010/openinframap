@@ -1,9 +1,8 @@
 # Local Development
 
 This guide gets you from a fresh clone to a fully offline working stack
-(frontend + backend + database). No requests to openinframap.org at runtime,
-except tile requests which default to production and can be overridden via
-environment variable.
+(frontend + backend + database + cached Wikidata images). After setup, no
+requests go to `openinframap.org` at runtime.
 
 ---
 
@@ -12,10 +11,10 @@ environment variable.
 | Tool | Minimum version | Notes |
 |------|----------------|-------|
 | Docker + Compose v2 | Docker 24 | `docker compose` (not `docker-compose`) |
-| [uv](https://docs.astral.sh/uv/) | any recent | Python package manager for the backend |
+| [uv](https://docs.astral.sh/uv/) | any recent | Python package manager for the backend and scripts |
 | Node.js + npm | Node 20 | Used by the frontend |
 | shp2pgsql | any | Only needed for the optional EEZ import; part of PostGIS client tools (`postgis-client` / `postgis` package) |
-| Free disk space | ~5 GB | PBF ~200 MB, Docker volumes ~2 GB, node_modules ~1 GB |
+| Free disk space | ~6 GB | PBF ~200 MB, Docker volumes ~2 GB, node_modules ~1 GB, Wikidata image cache ~100 MB |
 
 ---
 
@@ -52,17 +51,31 @@ This script:
 - Starts the `db` Docker Compose service (PostGIS)
 - Waits for Postgres to be ready
 - Runs imposm to import the PBF (skipped if already imported)
-- Applies `schema/views.sql` (skipped if already applied)
+- Applies `schema/views.sql` and `schema/stats.sql` (skipped if already applied)
 - Prints instructions for the optional EEZ import (see below)
 
-Re-running the script after a successful import is safe — it detects existing
-data and skips the heavy steps.
+Re-running after a successful import is safe — it detects existing data and
+skips the heavy steps.
 
-> **Port exposure:** `docker-compose.override.yml` maps port 5432 to the host
-> so the backend (running outside Docker) can reach the database. Docker Compose
-> picks this up automatically — no extra steps needed.
+### 4. Cache Wikidata images and metadata (optional but recommended)
 
-### 4. Configure and start the backend
+This pre-downloads Wikidata entity metadata and Wikimedia Commons thumbnails
+so feature popups work fully offline.
+
+```bash
+# Fast: cache entity JSON only (~10 sec, gives offline popup metadata)
+uv run scripts/fetch_images.py --json-only
+
+# Full: also download thumbnail images (~8 min at 1 image/sec)
+uv run scripts/fetch_images.py
+```
+
+The script is idempotent — re-running skips already-cached items.
+Files are saved to `data/wikidata_json/` and `data/images/` (both gitignored).
+
+See [Wikidata image cache](#wikidata-image-cache) for more details.
+
+### 5. Configure and start the backend
 
 ```bash
 cd web-backend
@@ -72,7 +85,7 @@ uv run uvicorn main:app --reload
 
 The backend listens on `http://localhost:8000`. Leave this terminal running.
 
-### 5. Configure and start the frontend
+### 6. Configure and start the frontend
 
 In a separate terminal:
 
@@ -111,6 +124,9 @@ VITE_TILE_BASE_URL=https://openinframap.org
 
 # Web-backend — point at your local uvicorn process.
 VITE_BACKEND_BASE_URL=http://localhost:8000
+
+# Optional: point directly at a local Tegola instance.
+# VITE_TEGOLA_URL=http://localhost:8080
 ```
 
 ### `web-backend/.env`
@@ -126,40 +142,64 @@ DATABASE_URL=postgresql://osm:osm@localhost:5432/osm
 
 ## What works, what doesn't
 
-### Works out of the box
+### Works out of the box (no extra steps)
 
-- **Map loads** — tiles are fetched from production openinframap.org by default
-  (or your configured tile server)
-- **Wikidata info popups** — the `/wikidata/{id}` proxy endpoint fetches from
-  Wikidata API; works without EEZ data
-- **All non-data routes** — `/about`, `/copyright`, static assets
+- **Map loads** — tiles come from production `openinframap.org` by default
+- **Search** — DB-backed search against your local database (`/search/typeahead`); coordinate parsing
+- **Backend pages** — `/stats`, `/about`, `/copyright` proxied from the local backend through Vite
+- **Wikidata popups** — falls back to live Wikidata API if no local cache exists
+
+### Works after image cache step (step 4)
+
+- **Offline Wikidata popups** — labels, Wikipedia/Commons links, thumbnails all served from disk;
+  no network required
+- **P361 "part of" hierarchy** — parent entities (e.g. a wind farm for a turbine) are also cached
 
 ### Works after EEZ import (optional)
 
-- **Search (`/search/typeahead`)** — requires the `countries.country_eez_sub`
-  materialized view; returns 500 without it
-- **Area/stats pages (`/stats/area/*`)** — same dependency; returns 404/500
-  without it
+The EEZ (maritime boundary) shapefile must be imported manually — it requires a form submission at
+[marineregions.org](https://www.marineregions.org/sources.php#unioneezcountry). See the output of
+`setup-local-db.sh` for step-by-step instructions.
 
-See the setup script output for step-by-step EEZ import instructions.
+- **Area/country stats pages** (`/stats/area/*`) — require `countries.country_eez_sub`
+- **Country attribution** on features — same dependency
 
 ### Doesn't work regardless
 
-- **Map data outside the imported region** — tiles will be blank; only the
-  area covered by your PBF is in the local database
-- **Live OSM diff updates** — imposm is run once for the initial import; the
-  database does not update automatically
-- **Production stats charts** — these query the full global dataset; local
-  data will produce incomplete results
+- **Map data outside the imported region** — tiles will be blank; only the area covered by your PBF
+  is in the local database
+- **Live OSM diff updates** — imposm is run once for the initial import; the database does not
+  update automatically
+- **OpenCage geocoding** — disabled in this fork (online-only service); DB search still works
+
+---
+
+## Wikidata image cache
+
+When a user clicks a feature with a `wikidata` tag (e.g. a power plant), the popup calls
+`/wikidata/{id}` on the backend. Normally this proxies to `wikidata.org` and
+`commons.wikimedia.org`. With the local cache:
+
+1. The backend checks `data/wikidata_json/{id}.json` for entity metadata (labels, sitelinks, claims)
+2. If a local image exists in `data/images/{id}.*`, it is served at `/local-images/{id}.*`
+3. Only if no local cache exists does the backend call Wikimedia's APIs
+
+The cache is built by `scripts/fetch_images.py`, which respects
+[Wikimedia's API etiquette](https://www.mediawiki.org/wiki/API:Etiquette):
+descriptive User-Agent, no concurrent requests, 1 API request/sec, batch queries (50 IDs/request).
+
+```bash
+uv run scripts/fetch_images.py --json-only   # metadata only, ~10 sec
+uv run scripts/fetch_images.py               # metadata + images, ~8 min
+```
 
 ---
 
 ## Tile server
 
-By default `VITE_TILE_BASE_URL` is unset and falls back to
-`https://openinframap.org`, so the map renders using production tiles even
-when running the backend locally. This is intentional — it keeps the
-out-of-the-box experience working without any additional services.
+By default `VITE_TILE_BASE_URL` falls back to `https://openinframap.org`, so the map renders using
+production tiles. This is intentional — it keeps the out-of-the-box experience working without
+running Tegola.
 
 To run tiles locally (requires a completed database import):
 
@@ -180,19 +220,22 @@ VITE_TILE_BASE_URL=http://localhost:8080
 There is no continuous diff update. To refresh with a newer PBF:
 
 ```bash
-# Wipe the Postgres volume and reimport
-docker compose down -v
-curl -L https://download.geofabrik.de/europe/netherlands-latest.osm.pbf \
-     -o data/region.osm.pbf
-bash scripts/setup-local-db.sh
+bash scripts/update-db.sh   # wipes and reimports from data/region.osm.pbf
+
+# Then re-run the image cache script to pick up any new wikidata IDs:
+uv run scripts/fetch_images.py
 ```
 
-The imposm cache volumes (`imposm_cache`, `imposm_diff`, `imposm_expiry`) are
-also removed by `docker compose down -v`. If you want to preserve them for
-faster incremental imports, remove only the `postgres_data` volume manually.
+`update-db.sh` wipes the Postgres volume and reimports from scratch. To also
+wipe Docker volumes manually:
+
+```bash
+docker compose down -v
+bash scripts/setup-local-db.sh
+```
 
 ---
 
 ## Troubleshooting
 
-_This section is intentionally empty — fill it in as you encounter issues._
+_Fill this in as you encounter issues._
