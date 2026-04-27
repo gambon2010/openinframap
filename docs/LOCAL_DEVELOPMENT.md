@@ -58,6 +58,10 @@ This script:
 Re-running the script after a successful import is safe — it detects existing
 data and skips the heavy steps.
 
+> **Port exposure:** `docker-compose.override.yml` maps port 5432 to the host
+> so the backend (running outside Docker) can reach the database. Docker Compose
+> picks this up automatically — no extra steps needed.
+
 ### 4. Configure and start the backend
 
 ```bash
