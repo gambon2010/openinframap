@@ -348,7 +348,7 @@ class InfoPopup {
       mount(
         footer,
         el('a.oim-button', t('more_info', 'More info'), {
-          href: '/stats/object/plant/' + feature.properties['osm_id'],
+          href: `${BACKEND_BASE_URL}/stats/object/plant/` + feature.properties['osm_id'],
           target: '_blank'
         })
       )
