@@ -374,9 +374,16 @@ class InfoPopup {
   }
 
   async fetch_wikidata(id: string, imageContainer: RedomElement, linksContainer: RedomElement) {
-    const data = await fetch(`${BACKEND_BASE_URL}/wikidata/${id}`).then((response) => {
-      return response.json()
-    })
+    let data: any
+    try {
+      const response = await fetch(`${BACKEND_BASE_URL}/wikidata/${id}`)
+      if (!response.ok) return
+      data = await response.json()
+    } catch {
+      return
+    }
+
+    if (!data?.sitelinks) return
 
     if (data['thumbnail']) {
       mount(

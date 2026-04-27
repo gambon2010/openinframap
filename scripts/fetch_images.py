@@ -178,12 +178,43 @@ def download_image(client: httpx.Client, url: str, wikidata_id: str) -> Path:
 # Main
 # ---------------------------------------------------------------------------
 
+def collect_p361_ids(entities: dict[str, dict]) -> set[str]:
+    """
+    Return Wikidata IDs referenced by P361 ("part of") claims in the given
+    entities that are not already cached on disk.
+
+    P361 links a feature to its parent — e.g. an offshore wind turbine to its
+    wind farm. The backend resolves these recursively to build the popup's
+    "part of" section. Without pre-caching them the section is silently empty
+    when offline.
+    """
+    ids: set[str] = set()
+    for entity in entities.values():
+        for claim in entity.get("claims", {}).get("P361", []):
+            try:
+                ref_id = claim["mainsnak"]["datavalue"]["value"]["id"].upper()
+            except (KeyError, TypeError):
+                continue
+            if WIKIDATA_RE.match(ref_id) and not (WIKIDATA_JSON_DIR / f"{ref_id}.json").exists():
+                ids.add(ref_id)
+    return ids
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Cache Wikimedia thumbnails locally.")
     parser.add_argument(
         "--db-url",
         default="postgresql://osm:osm@localhost:5432/osm",
         help="PostgreSQL connection URL (default: postgresql://osm:osm@localhost:5432/osm)",
+    )
+    parser.add_argument(
+        "--json-only",
+        action="store_true",
+        help=(
+            "Only fetch and cache entity JSON (labels, sitelinks, claims). "
+            "Skips image download (~10 sec vs ~8 min). "
+            "Sufficient for offline popup metadata; run without this flag later to add images."
+        ),
     )
     args = parser.parse_args()
 
@@ -201,21 +232,23 @@ def main() -> None:
     conn.close()
     print(f"  {len(all_ids)} distinct wikidata IDs found")
 
-    # An ID is fully done when we have both the entity JSON and the image.
     todo_json  = sorted(id_ for id_ in all_ids if not (WIKIDATA_JSON_DIR / f"{id_}.json").exists())
     todo_image = sorted(id_ for id_ in all_ids if not local_path(id_))
-    todo = sorted(set(todo_json) | set(todo_image))
+    todo = sorted(set(todo_json) | set(todo_image if not args.json_only else []))
 
-    already_cached = len(all_ids) - len(todo)
-    print(f"  {already_cached} fully cached, {len(todo)} need work "
-          f"({len(todo_json)} missing entity JSON, {len(todo_image)} missing image)")
+    already_cached = len(all_ids) - len(set(todo_json) | set(todo_image))
+    print(f"  {already_cached} fully cached  |  "
+          f"{len(todo_json)} missing entity JSON  |  "
+          f"{len(todo_image)} missing image"
+          + ("  [--json-only: skipping images]" if args.json_only else ""))
 
     if not todo:
         print("Nothing to do.")
         return
 
-    print(f"\nEstimated time: ~{len(todo_image) * IMAGE_DELAY / 60:.0f} min "
-          f"(1 image/sec + API batching)")
+    if not args.json_only:
+        print(f"\nEstimated time: ~{len(todo_image) * IMAGE_DELAY / 60:.0f} min "
+              f"(use --json-only for metadata-only run in ~10 sec)")
 
     headers = {"User-Agent": USER_AGENT}
     with httpx.Client(headers=headers, timeout=30) as client:
@@ -224,13 +257,16 @@ def main() -> None:
         # Step 1 — fetch entity data from Wikidata (50 IDs/request)
         #          saves labels+sitelinks+claims to data/wikidata_json/
         # ----------------------------------------------------------------
-        print(f"\nStep 1/3  Wikidata entity data ({len(todo)} IDs, 50/request, 1 req/sec)")
+        print(f"\nStep 1{'/' + ('1' if args.json_only else '3')}  "
+              f"Wikidata entity data ({len(todo)} IDs, 50/request, 1 req/sec)")
         id_to_filename: dict[str, str] = {}
+        all_fetched: dict[str, dict] = {}
         batches = list(chunks(todo, 50))
         for i, batch in enumerate(batches, 1):
             print(f"  batch {i}/{len(batches)} ({len(batch)} IDs) ...", end=" ", flush=True)
             try:
                 entities = fetch_entity_data(client, batch)
+                all_fetched.update(entities)
                 for uid, entity in entities.items():
                     if local_path(uid):
                         continue
@@ -240,11 +276,30 @@ def main() -> None:
                     snak = claims["P18"][0]["mainsnak"]
                     if snak.get("datatype") == "commonsMedia":
                         id_to_filename[uid] = snak["datavalue"]["value"]
-                print(f"{len(entities)} fetched, {len(id_to_filename)} need images so far")
+                print(f"{len(entities)} fetched")
             except httpx.HTTPError as e:
                 print(f"FAILED ({e})", file=sys.stderr)
             if i < len(batches):
                 time.sleep(API_DELAY)
+
+        # Follow P361 ("part of") links one level deep so the popup's
+        # "part of" section is populated offline.
+        p361_ids = collect_p361_ids(all_fetched)
+        if p361_ids:
+            print(f"\n  Following {len(p361_ids)} P361 'part of' references...")
+            for i, batch in enumerate(chunks(sorted(p361_ids), 50), 1):
+                time.sleep(API_DELAY)
+                print(f"    batch {i}: {len(batch)} IDs ...", end=" ", flush=True)
+                try:
+                    entities = fetch_entity_data(client, batch)
+                    print(f"{len(entities)} cached")
+                except httpx.HTTPError as e:
+                    print(f"FAILED ({e})", file=sys.stderr)
+
+        if args.json_only:
+            print(f"\nDone (--json-only) — entity JSON cached for {len(all_fetched)} IDs.")
+            print(f"Run without --json-only to download {len(id_to_filename)} images.")
+            return
 
         if not id_to_filename:
             print("Entity JSON saved. No new images to download.")
