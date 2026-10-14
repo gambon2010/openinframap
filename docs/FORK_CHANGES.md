@@ -365,6 +365,12 @@ by `launch.sh`.
   `web-backend/src/`, SQLAlchemy + asyncpg, PWA, new languages). The fork's code was
   adapted: `src.main:app`, `postgresql+asyncpg://` URLs (`launch.sh` migrates existing
   `.env` files), and the image cache path (the repo-root `data/`).
+- **Popups without the backend:** substation and line popups failed to open at all
+  when the backend was unreachable (the circuits lookup read from an empty response);
+  they now open without circuit details.
+- **Backend after rebuilds:** `build-region.sh` and `import-db.sh` remove all
+  containers to start a fresh database, which stopped the backend and left the
+  frontend without it. They now restart it if it was running.
 - **`npm start`**, not `npm run dev`: upstream renamed the command and every doc was
   out of date.
 - **Docs** generally: README, `CLAUDE.md`, this file and `LOCAL_DEVELOPMENT.md`.

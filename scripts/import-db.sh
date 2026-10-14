@@ -92,6 +92,8 @@ run_with_timer "Checking the export isn't damaged" verify
 section "Restoring..."
 log_build "$REGION_ID  import started from $(basename "$DUMP")"
 trap 'status=$?; [[ "$status" == 0 ]] || log_build "$REGION_ID  import FAILED (exit $status)"' EXIT
+# The backend container goes down with everything else; bring it back afterwards.
+BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
 docker compose --progress quiet down -v --remove-orphans
 start_db
 ok "Fresh database ready."
@@ -127,6 +129,10 @@ run_with_timer "Checking search indexes" create_search_indexes
 # Recreate Tegola so it doesn't serve tiles cached from the old data.
 docker compose --progress quiet up -d --force-recreate tegola </dev/null
 ok "Tile server running on http://localhost:7800"
+if [[ -n "$BACKEND_WAS_RUNNING" ]]; then
+    up_services backend
+    ok "Backend restarted on http://localhost:$BACKEND_PORT"
+fi
 # Use this region's offline background map if it was copied along (data/basemap/).
 select_basemap "$REGION_ID"
 
