@@ -1,0 +1,164 @@
+.oim-map-sources-control {
+  min-height: 30px;
+  min-width: 30px;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>')
+    white;
+  background-repeat: no-repeat;
+  background-size: 20px 20px;
+  background-position: center;
+}
+
+.oim-map-sources-panel {
+  display: none;
+  position: absolute;
+  z-index: 1000;
+  width: min(380px, calc(100vw - 80px));
+  overflow: hidden;
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.9rem;
+}
+
+.oim-map-sources-panel.visible {
+  display: block;
+}
+
+.oim-map-sources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3em 0.3em 0.3em 8px;
+  background-color: var(--oim-light-grey);
+}
+
+.oim-map-sources-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.oim-map-sources-close {
+  border: 0;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.3em;
+  color: var(--oim-text-color-light);
+}
+
+.oim-map-sources-body {
+  padding: 8px 10px 10px;
+}
+
+.oim-map-sources-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.oim-map-sources-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 4px 6px;
+  font-family: var(--oim-font-family-monospace);
+  font-size: 0.8rem;
+  border: 1px solid var(--oim-dark-grey);
+  border-radius: var(--oim-radius-small);
+}
+
+.oim-map-sources-origin,
+.oim-map-sources-note {
+  margin: 4px 0;
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+
+.oim-map-sources-buttons {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.oim-map-sources-buttons button {
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--oim-dark-grey);
+  border-radius: var(--oim-radius-small);
+  background: white;
+  font-size: 0.85rem;
+}
+
+.oim-map-sources-buttons .oim-map-sources-primary {
+  font-weight: bold;
+}
+
+.oim-map-sources-status {
+  margin: 4px 0;
+  font-size: 0.85rem;
+}
+
+.oim-map-sources-status:empty {
+  display: none;
+}
+
+.oim-map-sources-status.ok {
+  color: #1b7a33;
+}
+
+.oim-map-sources-status.error {
+  color: #b3261e;
+}
+
+.oim-map-sources-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #1a5fb4;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.oim-map-sources-info-icon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.35em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.8em;
+  font-weight: bold;
+  font-style: normal;
+  line-height: 1.1em;
+  text-align: center;
+  vertical-align: 0.05em;
+}
+
+.oim-map-sources-help {
+  display: none;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: var(--oim-radius-small);
+  background-color: var(--oim-light-grey);
+  font-size: 0.8rem;
+}
+
+.oim-map-sources-help.visible {
+  display: block;
+}
+
+.oim-map-sources-help p {
+  margin: 4px 0;
+}
+
+.oim-map-sources-help pre {
+  margin: 4px 0;
+  padding: 4px 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: white;
+  border-radius: var(--oim-radius-small);
+  font-size: 0.75rem;
+}

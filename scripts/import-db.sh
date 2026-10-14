@@ -117,10 +117,14 @@ restore() {
         --no-owner --no-privileges --exit-on-error -L /tmp/restore-list < "$DUMP"
 }
 run_with_timer "Restoring the database" restore
+# Exports made before search indexes were part of the build don't have them.
+run_with_timer "Checking search indexes" create_search_indexes
 
 # Recreate Tegola so it doesn't serve tiles cached from the old data.
 docker compose --progress quiet up -d --force-recreate tegola </dev/null
 ok "Tile server running on http://localhost:7800"
+# Use this region's offline background map if it was copied along (data/basemap/).
+select_basemap "$REGION_ID"
 
 ELAPSED=$((SECONDS - START))
 log_build "$REGION_ID  imported in $((ELAPSED / 60))m $((ELAPSED % 60))s (OSM data as of $OSM_TIMESTAMP)"

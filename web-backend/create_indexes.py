@@ -3,12 +3,38 @@ Programmatically create search indexes for tables. This has to be run manually a
 `ADMIN_DATABASE_URL` must be set to a connection with the privileges to create indexes.
 """
 
+from typing import Optional
+
 from databases import Database
 
 from src.config import config
 from src.views.search import SEARCH_LANGUAGES
 
+# (table, name expression) pairs searched by src/views/search.py.
+NAME_COLUMNS = [
+    ("osm_power_substation", "tags->'name'"),
+    ("power_substation_relation", "name"),
+    ("osm_power_plant", "tags->'name'"),
+    ("power_plant_relation", "name"),
+]
+
+
+def word_indexes(suffix: str, lang_tag: Optional[str] = None) -> list[str]:
+    """Trigram indexes for matching a word anywhere in a name ("Centrale de Vianden")."""
+    queries = []
+    for table, column in NAME_COLUMNS:
+        expr = f"tags->'{lang_tag}'" if lang_tag else column
+        queries.append(
+            f"""CREATE INDEX CONCURRENTLY IF NOT EXISTS {table}_name_words{suffix}
+                ON {table} USING gin (lower({expr}) gin_trgm_ops)
+                WHERE {expr} IS NOT NULL"""
+        )
+    return queries
+
+
 MAIN_INDEXES = [
+    # Trusted extension: the database owner can enable it.
+    "CREATE EXTENSION IF NOT EXISTS pg_trgm",
     """CREATE INDEX CONCURRENTLY IF NOT EXISTS osm_power_substation_name
         ON osm_power_substation(substr(lower(tags->'name'), 1, 20) text_pattern_ops)
         WHERE tags->'name' IS NOT NULL""",
@@ -21,7 +47,7 @@ MAIN_INDEXES = [
     """CREATE INDEX CONCURRENTLY IF NOT EXISTS power_plant_relation_name
         ON power_plant_relation(substr(lower(name), 1, 20) text_pattern_ops)
         WHERE name IS NOT NULL""",
-]
+] + word_indexes("")
 
 
 async def create_indexes():
@@ -47,7 +73,7 @@ async def create_indexes():
             f"""CREATE INDEX CONCURRENTLY IF NOT EXISTS power_plant_relation_name_{lang}
                 ON power_plant_relation(substr(lower(tags->'name:{lang}'), 1, 20) text_pattern_ops)
                 WHERE tags->'name:{lang}' IS NOT NULL""",
-        ]
+        ] + word_indexes(f"_{lang}", f"name:{lang}")
         for query in queries:
             print(".", end="", flush=True)
             await database.execute(query)

@@ -222,7 +222,8 @@
     "labels": "Labels",
     "title": "Layers",
     "other-pipelines": "Other Pipelines",
-    "osmose-power": "Osmose (Power)"
+    "osmose-power": "Osmose (Power)",
+    "needs-internet": "needs internet"
   },
   "construction": "under construction",
   "disused": "disused",
@@ -231,5 +232,27 @@
     "clear": "Clear search",
     "no-results": "No results found"
   },
-  "openstreetmap": "OpenStreetMap"
+  "openstreetmap": "OpenStreetMap",
+  "sources": {
+    "name": "Map sources",
+    "basemap": "Background map tiles",
+    "close": "Close",
+    "apply": "Use this URL",
+    "reset": "Reset to default",
+    "session-note": "Changes here only last until you close this tab.",
+    "how-default": "How do I change the default?",
+    "help-1": "To change the default for this copy of the project, set",
+    "help-2": "in",
+    "help-3": "Then restart the frontend (Ctrl+C in its window, then",
+    "help-4": "Remove the line to go back to the openinframap.org background map.",
+    "help-5": "The URL must contain {z}, {x} and {y}, and the tiles must use the Protomaps basemap layers. To get an offline background map for your region, run \"bash scripts/build-region.sh\": it downloads one and sets this for you.",
+    "load-error": "Couldn't load background tiles from this URL. Check it's right and the server is running.",
+    "invalid-start": "The URL must start with http://, https:// or /.",
+    "invalid-template": "The URL must contain {z}, {x} and {y}.",
+    "applied": "Background map switched for this tab.",
+    "reset-done": "Back to the default background map.",
+    "origin-session": "Changed for this tab only.",
+    "origin-env": "Default, from VITE_BASEMAP_URL in web/.env.",
+    "origin-builtin": "Default: the openinframap.org background map."
+  }
 }

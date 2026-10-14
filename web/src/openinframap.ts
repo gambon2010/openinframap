@@ -3,12 +3,14 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { t } from 'i18next'
 import { mount } from 'redom'
 
-import { LayerSwitcher, URLHash, Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
+import { URLHash, Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
+import OIMLayerSwitcher, { imageLoads } from './layer-switcher.ts'
 import '@russss/maplibregl-layer-switcher/maplibregl-layer-switcher.css'
 
 import EditButton from './edit-control.js'
 import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
+import MapSourcesControl from './map-sources/map-sources.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
@@ -19,7 +21,7 @@ import { SymbolLoader } from './symbol-loader.ts'
 import { ClickRouter } from './click-router.js'
 import { CircuitInspector } from './circuit/circuitinspector.ts'
 import { OpenInfraMapAPI } from './api.ts'
-import { BACKEND_BASE_URL } from './config.js'
+import { BACKEND_BASE_URL, TILE_BASE_URL } from './config.js'
 
 export default class OpenInfraMap {
   map?: maplibregl.Map
@@ -52,15 +54,26 @@ export default class OpenInfraMap {
     }
   }
 
+  // The night-lights background only exists online: grey it out when its tiles
+  // can't be fetched, and check again when the browser goes online/offline.
+  checkNightLights(layer_switcher: OIMLayerSwitcher) {
+    const check = async () => {
+      const online = navigator.onLine && (await imageLoads(`${TILE_BASE_URL}/black-marble-2024/0/0/0.webp`))
+      layer_switcher.setUnavailable('N', online ? null : t('layers.needs-internet', 'needs internet'))
+    }
+    check()
+    window.addEventListener('online', check)
+    window.addEventListener('offline', check)
+  }
+
   init() {
-    const layer_switcher = new LayerSwitcher(
+    const layer_switcher = new OIMLayerSwitcher(
       [
-        // Background toggle hidden for local dev — single tile source only.
-        // Re-enable when adding multi-source support:
-        // new LayerGroup(t('layers.background'), [
-        //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
-        //   new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
-        // ]),
+        new LayerGroup(t('layers.background'), [
+          new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
+          // Online only (tiles from openinframap.org): greyed out when unreachable, below.
+          new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
+        ]),
         new LayerGroup(t('layers.overlays'), [
           new Layer('L', t('layers.labels'), 'label_', true),
           new Layer('B', t('layers.borders'), 'boundaries_', true)
@@ -120,7 +133,9 @@ export default class OpenInfraMap {
     map.addControl(new maplibregl.ScaleControl({}), 'bottom-left')
 
     map.addControl(new KeyControl(), 'top-right')
+    map.addControl(new MapSourcesControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
+    this.checkNightLights(layer_switcher)
     map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
     new InfoPopup({

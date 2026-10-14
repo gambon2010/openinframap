@@ -2,7 +2,7 @@ import './search.css'
 import i18next, { t } from 'i18next'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
-// import OpenCageSearch from './opencage' // disabled for local dev (online-only)
+import OpenCageSearch from './opencage'
 import CoordinatesSearch from './coordinates'
 import OIMSearchProvider from './openinframap'
 
@@ -34,8 +34,10 @@ export default class OIMSearch implements IControl {
   constructor() {
     this.searchProviders = [
       new CoordinatesSearch(),
-      // OpenCage disabled for local dev — online-only service. Re-enable by uncommenting:
-      // new OpenCageSearch('oc_gs_a595f2059dee41d6b7073647aec5c303', i18next.language),
+      // Place search (towns, addresses). It's an online service: offline, it just
+      // returns nothing and the other providers still work (see search() below).
+      // OpenCage API key will only work on openinframap.org or localhost. Thanks to OpenCage for sponsoring!
+      new OpenCageSearch('oc_gs_a595f2059dee41d6b7073647aec5c303', i18next.language),
       new OIMSearchProvider(i18next.language)
     ]
 
@@ -237,27 +239,33 @@ export default class OIMSearch implements IControl {
     })
 
     this.dropdown.appendChild(list)
-    // OpenCage attribution hidden — OpenCageSearch is disabled for local dev.
-    // Restore when re-enabling OpenCageSearch above:
-    // this.dropdown.appendChild(
-    //   el(
-    //     'div',
-    //     { className: 'oim-search-footer' },
-    //     el('a', 'Place search powered by OpenCage', {
-    //       href: 'https://opencagedata.com',
-    //       target: '_blank',
-    //       rel: 'noopener noreferrer'
-    //     })
-    //   )
-    // )
+    this.dropdown.appendChild(
+      el(
+        'div',
+        { className: 'oim-search-footer' },
+        el('a', 'Place search powered by OpenCage', {
+          href: 'https://opencagedata.com',
+          target: '_blank',
+          rel: 'noopener noreferrer'
+        })
+      )
+    )
   }
 
   async search(query: string): Promise<SearchResult[]> {
-    const results = await Promise.all(this.searchProviders.map((provider) => provider.search(query, 5)))
+    // One provider failing (e.g. place search while offline) mustn't hide the
+    // results of the others.
+    const settled = await Promise.allSettled(
+      this.searchProviders.map((provider) => provider.search(query, 5))
+    )
+    const results = settled.flatMap((result) => {
+      if (result.status === 'fulfilled') {
+        return result.value
+      }
+      console.warn('Search provider failed:', result.reason)
+      return []
+    })
 
-    return results
-      .flat()
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
+    return results.sort((a, b) => b.score - a.score).slice(0, 10)
   }
 }
