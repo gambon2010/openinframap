@@ -282,5 +282,21 @@
     "photon-origin-none": "Not used. Places in your region are found without it.",
     "photon-help-1": "Photon is a search server for addresses and places from OpenStreetMap. Cities, towns and villages in the region you built are found without it; Photon adds street addresses and places elsewhere. The setup scripts don't install it: see",
     "photon-help-2": "To use one by default, set"
+  },
+  "route": {
+    "title": "Grid connection",
+    "from": "From",
+    "to": "To",
+    "from-here": "Route from here",
+    "to-here": "Route to here",
+    "clear": "Clear",
+    "pick": "Click a substation or power plant and choose \"{{end}}\"",
+    "searching": "Looking for connections over lines of 110 kV or more…",
+    "error": "Couldn't reach the backend to find connections.",
+    "select": "Show only this path",
+    "via": "via",
+    "note": "Physical connections in OpenStreetMap, not how power actually flows.",
+    "unnamed-substation": "Unnamed substation",
+    "unnamed-plant": "Unnamed power plant"
   }
 }

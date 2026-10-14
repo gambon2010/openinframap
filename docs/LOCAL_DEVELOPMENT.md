@@ -296,6 +296,15 @@ VITE_PHOTON_URL=http://localhost:2322
 or try it for the current tab in the **Map sources** panel ("Address search
 (Photon, optional)"), which also checks that the server answers.
 
+## Grid connections between two stations (prototype)
+
+Click a substation or power plant and choose **Route from here**, then another and
+choose **Route to here**. A panel lists up to three distinct paths over lines of
+110 kV and more (length, voltages, stations on the way), and the map draws them in
+different colours; click a path to show only that one, × to clear. The route is kept
+in the map link, so you can share it. Needs a database built with this feature
+(`build-region.sh` builds the network automatically).
+
 ## Wikidata image cache
 
 When you click a feature with a `wikidata` tag, the popup asks the backend for

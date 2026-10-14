@@ -20,6 +20,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Search](#search)
 - [Background map](#background-map)
 - [Wikidata popups and image cache](#wikidata-popups-and-image-cache)
+- [Grid connections between two stations (prototype)](#grid-connections-between-two-stations-prototype)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
 - [Merging from upstream](#merging-from-upstream)
@@ -359,6 +360,44 @@ by `launch.sh`.
 
 ---
 
+## Grid connections between two stations (prototype)
+
+*Branch `grid-routing`.* Pick a substation or power plant as the start and another
+as the end; the map shows how they're connected over lines of **110 kV and more**
+(smaller lines aren't interesting at this scale), with up to three distinct paths.
+
+- **Network** (`schema/grid.sql`, a build step after `views.sql`): OpenStreetMap
+  stores lines as drawings, not connections, so the build turns in-service lines of
+  110 kV and more into nodes and edges. Lines connect only where they share a vertex
+  (the same pylon); lines that merely cross in the air don't. Line ends and shared
+  pylons inside or near a substation (within 100 map units of its outline, 250 of a
+  point; ~65 m / ~160 m in central Europe) become that station's node; power plants
+  count where no substation does. Tables `grid_node` and `grid_edge`.
+- **Paths** (`web-backend/src/views/grid.py`, `GET /grid/route?from=substation/<id>&to=plant/<id>&paths=3`):
+  loads the network around both ends, then uses networkx's shortest simple paths
+  and keeps up to three that share at most 70% of their length (so a route that only
+  swaps one parallel circuit isn't listed twice). Parallel circuits between the same
+  two stations are drawn together. A station without a ≥110 kV line uses the nearest
+  station on that grid within a few km, with a notice.
+- **Map** (`web/src/grid-route/`): "Route from here" / "Route to here" buttons in
+  substation and plant popups; a panel listing each path (length, voltages, stations
+  passed through); paths drawn in different colours, side by side where they share
+  lines; clicking a path shows only that one. The selection is kept in the map link
+  (`route=s123_p-456`), so it can be shared.
+- **Measured:** the network builds in about a second for Luxembourg or Saarland.
+  Saarland: 57 substations, 274 line stretches, 925 km; 56 of the 57 substations form
+  one connected grid. UA Merzig → UA Rehlingen gives 12.6 km (direct 110 kV), 24.8 km
+  (via Saarwellingen) and 60.6 km (via Wadern and Lebach); across Saarland, two
+  routes of 93-95 km that split around Bexbach and Heinitz.
+- **Limits:** paths are physical connections in OpenStreetMap, not how power flows;
+  a missing line or substation in OpenStreetMap can hide a connection; both ends
+  must be in the built region (France–Germany needs Europe or a custom region);
+  exports made before this have no network (the panel says to rebuild). Not yet
+  tested on a continent; the search loads the grid around both ends.
+- New dependency: `networkx` (backend), `types-networkx` (dev).
+
+---
+
 ## Smaller fixes
 
 - **Upstream merge.** The upstream changes since June were merged (backend moved to
@@ -406,12 +445,15 @@ Upstream files changed by the fork, and how much (so conflicts are expected here
 | `web/src/search/openinframap.ts` | Backend URL configurable; place descriptions |
 | `web/src/api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
 | `web/src/style/style.ts`, `style_base.ts`, `config.ts` | Tile URLs configurable (`VITE_*`, session override) |
-| `web/src/openinframap.ts` | Map sources control; background switch hidden |
+| `web/src/openinframap.ts` | Map sources and grid route controls; background switch hidden |
+| `web/src/popup/infopopup.ts` | "Route from here / to here" buttons for substations and plants |
+| `web-backend/src/views/__init__.py`, `pyproject.toml`, `uv.lock` | Grid route view; networkx |
 | `web/src/elements/external-links.ts` | Popup crash fix |
 | `web/vite.config.ts` | Proxies backend routes, PWA exclusions |
 | `web/index.html` | "export (online)" label |
 
-Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/search/photon.ts`,
+Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/grid-route/`, `web/src/search/photon.ts`,
+`web-backend/src/views/grid.py`, `schema/grid.sql`,
 `imposm/places.py`, `schema/places.sql`, `schema/eez.sql`, `schema/local-stats.sql`,
 `docker-compose.override.yml` and the docs is fork-only.
 

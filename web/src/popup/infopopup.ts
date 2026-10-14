@@ -12,6 +12,7 @@ import { ClickRouter } from '../click-router.ts'
 import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
+import GridRouteControl, { StationKind } from '../grid-route/grid-route.ts'
 
 const hidden_keys = [
   'osm_id',
@@ -173,6 +174,7 @@ interface InfoPopupOptions {
   min_zoom: number
   api: OpenInfraMapAPI
   circuit_inspector: CircuitInspector
+  grid_route?: GridRouteControl // fork: route between stations
 }
 
 class InfoPopup {
@@ -183,6 +185,7 @@ class InfoPopup {
   friendlyNames: { [key: string]: string }
   api: OpenInfraMapAPI
   circuit_inspector: CircuitInspector
+  grid_route?: GridRouteControl
 
   constructor(options: InfoPopupOptions) {
     this.api = options.api
@@ -191,6 +194,7 @@ class InfoPopup {
     this.popup_obj = null
     this.friendlyNames = friendlyNames()
     this.circuit_inspector = options.circuit_inspector
+    this.grid_route = options.grid_route
   }
 
   add(map: Map, clickRouter: ClickRouter) {
@@ -390,6 +394,37 @@ class InfoPopup {
           href: `${BACKEND_BASE_URL}/stats/object/plant/` + feature.properties['osm_id'],
           target: '_blank'
         })
+      )
+    }
+
+    // Fork: route between stations over the ≥110 kV grid (src/grid-route/).
+    const station_kind: StationKind | null = layer_id.startsWith('power_substation')
+      ? 'substation'
+      : layer_id.startsWith('power_plant')
+        ? 'plant'
+        : null
+    if (this.grid_route && station_kind && feature.properties['osm_id'] !== undefined) {
+      const station = {
+        kind: station_kind,
+        osm_id: Number(feature.properties['osm_id']),
+        name: feature.properties['name'] || null
+      }
+      const route = this.grid_route
+      const button = (label: string, end: 'from' | 'to') =>
+        el('button.oim-button', label, {
+          type: 'button',
+          onclick: () => {
+            route.setEnd(end, station)
+            this.popup_obj?.remove()
+          }
+        })
+      mount(
+        content,
+        el(
+          'div.oim-route-buttons',
+          button(t('route.from-here', 'Route from here'), 'from'),
+          button(t('route.to-here', 'Route to here'), 'to')
+        )
       )
     }
     return content

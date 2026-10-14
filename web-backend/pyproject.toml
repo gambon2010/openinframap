@@ -22,6 +22,7 @@ dependencies = [
     "geojson>=3.3.0",
     "asgiref>=3.11.1",
     "shapely>=2.1.2",
+    "networkx>=3.7",
 ]
 
 [tool.ruff]
@@ -41,5 +42,6 @@ dev = [
     "pytest>=8.3.4",
     "pytest-asyncio>=0.25.3",
     "ruff>=0.9.7",
+    "types-networkx>=3.6.1.20261006",
     "types-shapely>=2.1.0.20260603",
 ]

@@ -10,6 +10,7 @@ import EditButton from './edit-control.js'
 import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
 import MapSourcesControl from './map-sources/map-sources.ts'
+import GridRouteControl from './grid-route/grid-route.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
@@ -104,6 +105,8 @@ export default class OpenInfraMap {
     const clickRouter = new ClickRouter(map, map_style.layers)
     new SymbolLoader(map)
     const circuit_inspector = new CircuitInspector(map, url_hash, api)
+    // Before url_hash.enable(), which reads a route from the link once.
+    const grid_route = new GridRouteControl(url_hash)
 
     map.dragRotate.disable()
     map.touchZoomRotate.disableRotation()
@@ -126,11 +129,13 @@ export default class OpenInfraMap {
     map.addControl(layer_switcher, 'top-right')
     map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
+    map.addControl(grid_route, 'top-left')
     new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
       min_zoom: 6,
       api,
-      circuit_inspector
+      circuit_inspector,
+      grid_route
     }).add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
 

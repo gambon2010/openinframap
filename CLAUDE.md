@@ -64,7 +64,7 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 
 ### Setup scripts (`/scripts/`, fork-only)
 - `lib/common.sh`: shared helpers (paths, prompts, `run_with_timer`, `db_psql`/`db_query`, EEZ import, `start_app`, `create_search_indexes`, export manifest helpers). Source it; don't run it.
-- `build-region.sh`: region menu → download to `data/osm/` → osmium filter → `docker compose down -v` → imposm import → `views.sql`, `stats.sql`, `places.sql` → search indexes → EEZ (`schema/eez.sql`) → stats snapshot (`schema/local-stats.sql`) → `oim_build_info` table → Tegola → optional offline background map (`pmtiles extract` of the region's Geofabrik outline from Protomaps' daily build into `data/basemap/`, then `select_basemap` sets `VITE_BASEMAP_URL` in `web/.env`). All prompts happen before the first long step.
+- `build-region.sh`: region menu → download to `data/osm/` → osmium filter → `docker compose down -v` → imposm import → `views.sql`, `stats.sql`, `places.sql` → `grid.sql` (power grid network) → search indexes → EEZ (`schema/eez.sql`) → stats snapshot (`schema/local-stats.sql`) → `oim_build_info` table → Tegola → optional offline background map (`pmtiles extract` of the region's Geofabrik outline from Protomaps' daily build into `data/basemap/`, then `select_basemap` sets `VITE_BASEMAP_URL` in `web/.env`). All prompts happen before the first long step.
 - `export-db.sh` / `import-db.sh`: `pg_dump` of the `public`, `countries` and `stats` schemas plus a JSON manifest. The restore skips objects a fresh DB already has (PostGIS, `spatial_ref_sys`, functions from `functions.sql`) but must keep functions from `views.sql` (Tegola needs them).
 - `launch.sh`, `start.sh`: start everything; the frontend runs in a new terminal window via `open_in_terminal`.
 - `osm_filter.py`: generates the osmium `tags-filter` expressions from the imposm mapping.
@@ -75,6 +75,7 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 - `functions.sql`: PL/pgSQL helper functions (must be loaded before `views.sql`)
 - `views.sql`: views/materialized views and functions that Tegola queries for tile rendering
 - `stats.sql`: the `stats` schema; `jobs/update-stats.sql` is upstream's production job
+- `grid.sql` (fork-only): `grid_node` / `grid_edge`, the ≥110 kV network used by `/grid/route` (`web-backend/src/views/grid.py`, networkx) and `web/src/grid-route/`
 - `eez.sql`, `local-stats.sql`, `places.sql` (fork-only): EEZ views; fast per-country stats snapshot; one point per place in `osm_place` for search
 
 ### Tile server (`/tegola/`)
