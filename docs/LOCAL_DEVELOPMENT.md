@@ -265,7 +265,7 @@ DATABASE_URL=postgresql+asyncpg://osm:osm@localhost:5432/osm
 |---------|----------|
 | Infrastructure map (power, telecoms, pipelines, water) | Yes, from local Tegola |
 | Background map (roads, buildings, labels) | Yes if you downloaded it for the region; otherwise from openinframap.org |
-| Night-lights background (Layers → Background) | No: online only. Greyed out with "(needs internet)" when unreachable |
+| Night-lights background | Not available: online only, and its switch is hidden |
 | Search for power plants and substations | Yes. Names that start with what you type come first, then names with a word that does ("vianden" also finds "Centrale de Vianden") |
 | Search for coordinates | Yes |
 | Search for towns and addresses | No: OpenCage, online only. Only accepted from `localhost`, so open the map at http://localhost:5173, not the computer's IP address |

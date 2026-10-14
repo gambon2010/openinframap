@@ -278,13 +278,14 @@ region:
   until a background map is downloaded.
 
 **Night lights** (NASA Black Marble: the Earth at night) is an alternative background
-in the layer menu. It only exists online (tiles from openinframap.org), so the fork
-had hidden the whole Background switch. It's back, through a small wrapper around
-the layer switcher (`web/src/layer-switcher.ts`): on load, and whenever the browser
-goes online or offline, the app checks whether a night-lights tile can be fetched
-(5 s timeout). If not, the option is greyed out with "(needs internet)", and if it
-was selected (e.g. from a saved map link) the map falls back to OpenStreetMap.
-Tested in a browser both ways.
+in upstream's layer menu. It only exists online (tiles from openinframap.org), so the
+fork hides the whole Background switch (OpenStreetMap / Nighttime Lights).
+
+*Tried and reverted:* bringing the switch back with night lights greyed out when
+offline. It worked, but broke saved map links: links made while the switch was hidden
+list their layers without `A` (OpenStreetMap), e.g. `#6/50.4/8.7/B,L`, and the
+restored switch then turned the background off, leaving a dark, empty map. If it's
+re-enabled later, links without a background layer must default to OpenStreetMap.
 
 **Map sources panel** (`web/src/map-sources/`, a button under the key): shows the
 background-map URL in use and its origin (built-in, `web/.env`, or this tab), lets
@@ -351,12 +352,12 @@ Upstream files changed by the fork, and how much (so conflicts are expected here
 | `web/src/search/search.ts` | `Promise.allSettled` |
 | `web/src/search/openinframap.ts`, `api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
 | `web/src/style/style.ts`, `style_base.ts`, `config.ts` | Tile URLs configurable (`VITE_*`, session override) |
-| `web/src/openinframap.ts` | Map sources control; layer switcher wrapper, night lights greyed out when unreachable |
+| `web/src/openinframap.ts` | Map sources control; background switch hidden |
 | `web/src/elements/external-links.ts` | Popup crash fix |
 | `web/vite.config.ts` | Proxies backend routes, PWA exclusions |
 | `web/index.html` | "export (online)" label |
 
-Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/layer-switcher.ts`, `schema/eez.sql`, `schema/local-stats.sql`,
+Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `schema/eez.sql`, `schema/local-stats.sql`,
 `docker-compose.override.yml` and the docs is fork-only.
 
 After merging, check: `bash scripts/build-region.sh --region luxembourg --rebuild

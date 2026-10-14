@@ -224,14 +224,3 @@ canvas:focus {
 .layer-switcher-list h4 {
   border-bottom: 1px solid var(--oim-light-grey) !important;
 }
-
-/* Layers that can't load right now (e.g. night lights while offline). */
-.layer-switcher-unavailable label {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.layer-switcher-note {
-  font-size: 0.85em;
-  font-style: italic;
-}

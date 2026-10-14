@@ -33,9 +33,9 @@ and the OpenCage geocoder for towns and addresses. OpenCage needs internet and o
 requests from `localhost`. Providers run with `Promise.allSettled`, so one failing (e.g.
 OpenCage offline) doesn't hide the others' results.
 
-The **background switcher** (OpenStreetMap / nighttime lights) works as upstream, but
-night lights only exist online: `src/layer-switcher.ts` greys the option out with
-"(needs internet)" when its tiles can't be fetched.
+The **background switcher** (OpenStreetMap / nighttime lights) is hidden: night lights
+only exist online. Re-enabling it needs care, because saved map links made without it
+have no background layer in their list and would show an empty background.
 
 The **Map sources** panel (`src/map-sources/`, server icon under the key) shows the
 background-map URL in use and can change it for the current tab. The background map

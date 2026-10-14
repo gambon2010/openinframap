@@ -39,7 +39,7 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
 | **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |
-| **UI** | Map sources panel; the night-lights background is greyed out when there's no internet |
+| **UI** | Map sources panel; background switch (OpenStreetMap / online-only night lights) hidden |
 
 ## Upstream project
 
