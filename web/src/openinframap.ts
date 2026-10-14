@@ -9,6 +9,7 @@ import '@russss/maplibregl-layer-switcher/maplibregl-layer-switcher.css'
 import EditButton from './edit-control.js'
 import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
+import MapSourcesControl from './map-sources/map-sources.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
@@ -55,8 +56,9 @@ export default class OpenInfraMap {
   init() {
     const layer_switcher = new LayerSwitcher(
       [
-        // Background toggle hidden for local dev — single tile source only.
-        // Re-enable when adding multi-source support:
+        // Background switch hidden: night lights are online-only, and showing the
+        // switch breaks saved map links without an "A" in their layer list (the
+        // background then turns off). See docs/FORK_CHANGES.md.
         // new LayerGroup(t('layers.background'), [
         //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
         //   new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
@@ -120,6 +122,7 @@ export default class OpenInfraMap {
     map.addControl(new maplibregl.ScaleControl({}), 'bottom-left')
 
     map.addControl(new KeyControl(), 'top-right')
+    map.addControl(new MapSourcesControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
     map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')

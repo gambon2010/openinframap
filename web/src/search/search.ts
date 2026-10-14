@@ -2,7 +2,7 @@ import './search.css'
 import i18next, { t } from 'i18next'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
-// import OpenCageSearch from './opencage' // disabled for local dev (online-only)
+import PhotonSearch from './photon'
 import CoordinatesSearch from './coordinates'
 import OIMSearchProvider from './openinframap'
 
@@ -34,9 +34,12 @@ export default class OIMSearch implements IControl {
   constructor() {
     this.searchProviders = [
       new CoordinatesSearch(),
-      // OpenCage disabled for local dev — online-only service. Re-enable by uncommenting:
-      // new OpenCageSearch('oc_gs_a595f2059dee41d6b7073647aec5c303', i18next.language),
-      new OIMSearchProvider(i18next.language)
+      // Fork: places (cities, towns, villages…) come from the local database via
+      // OIMSearchProvider, so upstream's online OpenCage geocoder isn't used.
+      // Photon only searches when a server is configured (VITE_PHOTON_URL or the
+      // Map sources panel); if it's unreachable the other providers still work.
+      new OIMSearchProvider(i18next.language),
+      new PhotonSearch(i18next.language)
     ]
 
     this.input = el('input', {
@@ -237,27 +240,41 @@ export default class OIMSearch implements IControl {
     })
 
     this.dropdown.appendChild(list)
-    // OpenCage attribution hidden — OpenCageSearch is disabled for local dev.
-    // Restore when re-enabling OpenCageSearch above:
-    // this.dropdown.appendChild(
-    //   el(
-    //     'div',
-    //     { className: 'oim-search-footer' },
-    //     el('a', 'Place search powered by OpenCage', {
-    //       href: 'https://opencagedata.com',
-    //       target: '_blank',
-    //       rel: 'noopener noreferrer'
-    //     })
-    //   )
-    // )
   }
 
   async search(query: string): Promise<SearchResult[]> {
-    const results = await Promise.all(this.searchProviders.map((provider) => provider.search(query, 5)))
+    // One provider failing (e.g. place search while offline) mustn't hide the
+    // results of the others.
+    const settled = await Promise.allSettled(
+      this.searchProviders.map((provider) => provider.search(query, 5))
+    )
+    const results = settled.flatMap((result) => {
+      if (result.status === 'fulfilled') {
+        return result.value
+      }
+      console.warn('Search provider failed:', result.reason)
+      return []
+    })
 
-    return results
-      .flat()
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
+    return dropDuplicates(results.sort((a, b) => b.score - a.score)).slice(0, 10)
   }
+}
+
+// The same place can come from more than one provider (local database and
+// Photon), or twice from one (mapped as a point and an area). Keep the
+// best-scored result for each name within about 5 km.
+const DUPLICATE_DISTANCE = 0.05
+
+function dropDuplicates(results: SearchResult[]): SearchResult[] {
+  const kept: SearchResult[] = []
+  for (const result of results) {
+    const duplicate = kept.some(
+      (k) =>
+        k.name.toLowerCase() === result.name.toLowerCase() &&
+        Math.abs(k.latitude - result.latitude) < DUPLICATE_DISTANCE &&
+        Math.abs(k.longitude - result.longitude) < DUPLICATE_DISTANCE
+    )
+    if (!duplicate) kept.push(result)
+  }
+  return kept
 }

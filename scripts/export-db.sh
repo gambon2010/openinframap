@@ -132,4 +132,9 @@ echo "To use it on another computer, copy this project folder (e.g. to a USB dri
 echo "and run bash scripts/launch.sh there — it will offer \"Import ready-made\" for"
 echo "$REGION_NAME. You can leave out data/osm/ (the raw downloads, $(du -sh "$OSM_DIR" 2>/dev/null | cut -f1)); it's only"
 echo "needed to rebuild from scratch."
+if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]]; then
+    echo ""
+    echo "Keep data/basemap/ in the copy too: it holds the offline background map"
+    echo "for $REGION_NAME ($(human_size "$(stat -c%s "$BASEMAP_DIR/$REGION_ID.pmtiles")"))."
+fi
 echo ""

@@ -61,6 +61,17 @@ services:
     depends_on:
       - db
 
+  # Offline background map: serves data/basemap/<region>.pmtiles (Protomaps
+  # extracts made by scripts/build-region.sh) at
+  # http://localhost:8090/<region>/{z}/{x}/{y}.mvt. Also used to cut extracts.
+  basemap:
+    image: protomaps/go-pmtiles:v1.28.0
+    command: ["serve", "/data", "--cors=*"]
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./data/basemap:/data:ro,z
+
   # Helper image for scripts/build-region.sh. Not started by `docker compose up`.
   osmium:
     build: tools/osmium

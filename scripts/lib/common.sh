@@ -11,6 +11,10 @@ EEZ_ZIP="$DATA_DIR/$EEZ_NAME.zip"
 EEZ_DOWNLOAD_URL="https://marineregions.org/download_file.php?name=$EEZ_NAME.zip"
 EEZ_INFO_URL="https://marineregions.org/sources.php#unioneezcountry"
 BUILD_LOG="$OSM_DIR/build-history.log"
+# Offline background maps (Protomaps extracts), served by the `basemap` service.
+BASEMAP_DIR="$DATA_DIR/basemap"
+BASEMAP_PORT=8090
+WEB_ENV="$REPO_ROOT/web/.env"
 # Ready-made databases made by scripts/export-db.sh, imported by import-db.sh.
 EXPORTS_DIR="$DATA_DIR/exports"
 DOCKER_IMAGES_TAR="$EXPORTS_DIR/docker-images.tar.gz"
@@ -87,6 +91,17 @@ run_with_timer() {
     fi
     rm -f "$log"
     ok "$label ($(( SECONDS - start ))s)"
+}
+
+# Name indexes for search (as on openinframap.org), using upstream's
+# web-backend/create_indexes.py from the backend image. Without them search
+# gets slow on large regions. Indexes that already exist are skipped.
+create_search_indexes() {
+    # Rebuild the image so script changes are picked up; offline, use the existing one.
+    docker compose --progress quiet build backend </dev/null 2>/dev/null || true
+    docker compose --progress quiet run --rm --no-deps -T \
+        -e ADMIN_DATABASE_URL="postgresql://$DB_USER:osm@db:5432/$DB_NAME" \
+        --entrypoint /app/.venv/bin/python backend create_indexes.py </dev/null
 }
 
 # Run a SQL file against the osm database (for use with run_with_timer).
@@ -218,11 +233,11 @@ db_volume_exists() {
     docker volume inspect "$(compose_project)_postgres_data" >/dev/null 2>&1
 }
 
-# Docker images needed to run (db, tegola, backend) and build (imposm, osmium) offline.
+# Docker images needed to run (db, tegola, backend, basemap) and build (imposm, osmium) offline.
 project_images() {
     local project
     project=$(compose_project)
-    docker compose config --format json </dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["db"]["image"])'
+    docker compose config --format json </dev/null | python3 -c 'import json,sys; s=json.load(sys.stdin)["services"]; print(s["db"]["image"]); print(s["basemap"]["image"])'
     echo "$project-tegola" "$project-backend" "$project-imposm" "$project-osmium" | tr ' ' '\n'
 }
 
@@ -332,6 +347,14 @@ APP_URL="http://localhost:5173"
 BACKEND_PORT=8001
 FRONTEND_PORT=5173
 
+# Start Compose services, rebuilding their images first so code changes are
+# picked up (fast when nothing changed). Offline the build fails, so fall back
+# to the existing images (e.g. loaded from data/exports/docker-images.tar.gz).
+up_services() {
+    docker compose --progress quiet up -d --build "$@" </dev/null 2>/dev/null \
+        || docker compose --progress quiet up -d "$@" </dev/null
+}
+
 open_browser() {
     if command -v xdg-open &>/dev/null; then
         xdg-open "$1" >/dev/null 2>&1 &
@@ -351,7 +374,7 @@ start_app() {
     else
         # Create the cache folders first, or Docker creates them owned by root.
         mkdir -p "$DATA_DIR/images" "$DATA_DIR/wikidata_json"
-        docker compose --progress quiet up -d backend </dev/null
+        up_services backend
         ok "Backend started (Docker). Its log: docker compose logs -f backend"
     fi
     if port_in_use "$FRONTEND_PORT"; then
@@ -389,4 +412,72 @@ print_manual_start() {
     echo "    cd web && npm install && npm start"
     echo ""
     echo "  Then open: $APP_URL"
+}
+
+basemap_image() {
+    docker compose config --format json </dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["basemap"]["image"])'
+}
+
+# Create web/.env with the local-stack defaults if it doesn't exist yet.
+ensure_web_env() {
+    [[ -f "$WEB_ENV" ]] && return
+    cat > "$WEB_ENV" <<'ENV'
+VITE_TILE_BASE_URL=https://openinframap.org
+VITE_TEGOLA_URL=http://localhost:7800
+VITE_BACKEND_BASE_URL=http://localhost:8001
+# Background map: openinframap.org unless VITE_BASEMAP_URL is set. build-region.sh
+# sets it when you download a background map for offline use; you can also point
+# it at your own Protomaps-schema tile server (full {z}/{x}/{y} URL template):
+# VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt
+# Optional Photon server for street-address search (not set up by the scripts):
+# VITE_PHOTON_URL=http://localhost:2322
+ENV
+}
+
+# set_env_line FILE KEY VALUE — set KEY=VALUE, replacing an existing KEY line.
+# An empty VALUE removes the line.
+set_env_line() {
+    local file="$1" key="$2" value="$3"
+    touch "$file"
+    grep -v "^$key=" "$file" > "$file.tmp" || true
+    [[ -n "$value" ]] && echo "$key=$value" >> "$file.tmp"
+    mv "$file.tmp" "$file"
+}
+
+has_local_basemaps() {
+    compgen -G "$BASEMAP_DIR/*.pmtiles" >/dev/null
+}
+
+# Point the frontend at the local background map for region $1 if there is one,
+# and start the server. A setting pointing at a local map that no longer exists
+# is removed, so the map falls back to the online one.
+select_basemap() {
+    local region="$1" current url
+    ensure_web_env
+    current=$(grep -E '^VITE_BASEMAP_URL=' "$WEB_ENV" | cut -d= -f2- || true)
+    if [[ -f "$BASEMAP_DIR/$region.pmtiles" ]]; then
+        url="http://localhost:$BASEMAP_PORT/$region/{z}/{x}/{y}.mvt"
+        if [[ "$current" != "$url" ]]; then
+            set_env_line "$WEB_ENV" VITE_BASEMAP_URL "$url"
+            BASEMAP_CHANGED=1
+        fi
+        mkdir -p "$BASEMAP_DIR"
+        docker compose --progress quiet up -d basemap </dev/null
+        ok "Offline background map: $region (http://localhost:$BASEMAP_PORT)"
+    elif [[ "$current" == "http://localhost:$BASEMAP_PORT/"* \
+            && ! -f "$BASEMAP_DIR/$(echo "${current#http://localhost:$BASEMAP_PORT/}" | cut -d/ -f1).pmtiles" ]]; then
+        set_env_line "$WEB_ENV" VITE_BASEMAP_URL ""
+        BASEMAP_CHANGED=1
+        info "Background map: online (openinframap.org)."
+    fi
+    if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
+        warn "Restart the frontend to switch background maps (Ctrl+C in its window, then bash scripts/start.sh)."
+    fi
+}
+
+# Start the background-map server if any background map has been downloaded.
+start_basemap_if_present() {
+    if has_local_basemaps; then
+        docker compose --progress quiet up -d basemap </dev/null
+    fi
 }

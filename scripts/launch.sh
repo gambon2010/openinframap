@@ -36,7 +36,18 @@ check_cmd unzip   "dnf install unzip  /  apt install unzip"     || MISSING=1
 check_cmd uv      "optional — https://docs.astral.sh/uv/ (for the offline Wikidata cache)" || true
 
 # ---------------------------------------------------------------------------
-# 2. Database — build one unless a finished build already exists
+# 2. Frontend .env — before the database step, which may add the offline
+#    background-map setting to it
+# ---------------------------------------------------------------------------
+if [[ -f "$WEB_ENV" ]]; then
+    section "web/.env already exists — skipping."
+else
+    section "Creating web/.env..."
+    ensure_web_env
+fi
+
+# ---------------------------------------------------------------------------
+# 3. Database — build one unless a finished build already exists
 # ---------------------------------------------------------------------------
 section "Checking the map database..."
 REGION=""
@@ -47,30 +58,14 @@ fi
 
 if [[ -n "$REGION" ]]; then
     ok "Already built: $REGION (OSM data as of $(build_info osm_timestamp))"
-    if ! ask_yes_no "Keep it?" y; then
+    if ask_yes_no "Keep it?" y; then
+        select_basemap "$(build_info region_id)"
+    else
         bash "$REPO_ROOT/scripts/build-region.sh" --no-images
     fi
 else
     info "No map database yet — let's build one."
     bash "$REPO_ROOT/scripts/build-region.sh" --no-images
-fi
-
-# ---------------------------------------------------------------------------
-# 3. Frontend .env
-# ---------------------------------------------------------------------------
-WEB_ENV="$REPO_ROOT/web/.env"
-if [[ -f "$WEB_ENV" ]]; then
-    section "web/.env already exists — skipping."
-else
-    section "Creating web/.env..."
-    cat > "$WEB_ENV" <<'EOF'
-VITE_TILE_BASE_URL=https://openinframap.org
-VITE_TEGOLA_URL=http://localhost:7800
-VITE_BACKEND_BASE_URL=http://localhost:8001
-# Basemap tiles come from openinframap.org. To use your own Protomaps-schema
-# tile server instead, set a full URL template:
-# VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt
-EOF
 fi
 
 # ---------------------------------------------------------------------------
@@ -95,8 +90,9 @@ fi
 # 5. Tile server
 # ---------------------------------------------------------------------------
 section "Starting the Tegola tile server..."
-docker compose --progress quiet up -d tegola </dev/null
+up_services tegola
 ok "Running on http://localhost:7800"
+start_basemap_if_present
 
 # ---------------------------------------------------------------------------
 # 6. Start the app — each server in its own terminal window

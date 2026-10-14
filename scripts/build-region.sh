@@ -24,8 +24,13 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-GEOFABRIK_INDEX_URL="https://download.geofabrik.de/index-v1-nogeom.json"
-GEOFABRIK_INDEX="$OSM_DIR/geofabrik-index.json"
+# Full index: includes each region's outline, used to cut its background map.
+GEOFABRIK_INDEX_URL="https://download.geofabrik.de/index-v1.json"
+GEOFABRIK_INDEX="$OSM_DIR/geofabrik-index-v1.json"
+# Offline background map: cut from Protomaps' daily world build.
+PROTOMAPS_BUILDS_URL="https://build-metadata.protomaps.dev/builds.json"
+PROTOMAPS_BASE="https://build.protomaps.com"
+REDUCED_MAXZOOM=13
 CONTINENTS=(africa antarctica asia australia-oceania central-america europe north-america russia south-america)
 TEST_REGION=luxembourg
 # The whole world isn't a Geofabrik region; it comes from openstreetmap.org (weekly).
@@ -42,6 +47,8 @@ Usage: bash scripts/build-region.sh [options]
   --images        Also cache Wikidata images (slow: can take hours)
   --no-images     Don't cache Wikidata images and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
+  --basemap MODE  Offline background map: full, reduced (zoom 13) or none.
+                  Default: ask (with --yes: keep the one you have, else none)
   --rebuild       Build from scratch even if data/exports/ has a ready-made export
   --refresh       Download a newer Geofabrik extract if there is one (by default
                   an extract you already downloaded is reused, and you're asked)
@@ -56,6 +63,7 @@ FETCH_IMAGES=""
 USE_FILTER=1
 REFRESH=""
 REBUILD=0
+BASEMAP_MODE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --region)    REGION_ID="${2:?--region needs a value}"; shift 2 ;;
@@ -65,6 +73,7 @@ while [[ $# -gt 0 ]]; do
         --no-filter) USE_FILTER=0; shift ;;
         --refresh)   REFRESH=1; shift ;;
         --rebuild)   REBUILD=1; shift ;;
+        --basemap)   BASEMAP_MODE="${2:?--basemap needs full, reduced or none}"; shift 2 ;;
         --yes|-y)    ASSUME_YES=1; shift ;;
         -h|--help)   usage; exit 0 ;;
         *)           usage; die "Unknown option: $1" ;;
@@ -117,6 +126,34 @@ else:
 PY
 }
 
+# Write region $1's outline from the Geofabrik index to file $2 (GeoJSON).
+geofabrik_outline() {
+    python3 -c 'import json, sys
+index, region, out = sys.argv[1:]
+for feature in json.load(open(index))["features"]:
+    if feature["properties"]["id"] == region and feature.get("geometry"):
+        json.dump(feature["geometry"], open(out, "w"))
+        sys.exit(0)
+sys.exit(1)' "$GEOFABRIK_INDEX" "$1" "$2"
+}
+
+# pmtiles CLI from the basemap service's image, with data/basemap/ at /out.
+pmtiles() {
+    docker run --rm --user "$(id -u):$(id -g)" -v "$BASEMAP_DIR:/out:z" "$(basemap_image)" "$@"
+}
+
+# Size in bytes of the background map for BASEMAP_AREA, up to zoom $1 (empty = all).
+basemap_size() {
+    local args=("${BASEMAP_AREA[@]}")
+    [[ -n "${1:-}" ]] && args+=("--maxzoom=$1")
+    pmtiles extract "$PROTOMAPS_BASE/$PROTOMAPS_BUILD" /out/.dry-run.pmtiles "${args[@]}" --dry-run 2>&1 \
+        | sed -n 's/.*archive size of \([0-9.]*\) \([kMGT]*B\).*/\1 \2/p' | tail -1 \
+        | python3 -c 'import sys
+parts = sys.stdin.read().split()
+units = {"B": 1, "kB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12}
+print(int(float(parts[0]) * units[parts[1]]) if len(parts) == 2 else 0)'
+}
+
 remote_size() {
     curl -sIL --connect-timeout 3 --max-time 10 "$1" | tr -d '\r' | awk 'tolower($1)=="content-length:" {n=$2} END {print n+0}'
 }
@@ -160,6 +197,12 @@ show_local_files() {
         fi
     done
     [[ "$found" == 1 ]] || info "No region downloads yet (they're kept in data/osm/)."
+    for f in "$BASEMAP_DIR"/*.pmtiles; do
+        [[ -f "$f" ]] || continue
+        found=1
+        ok "$(printf '%-22s %7s  offline background map, %s detail' "$(basename "$f" .pmtiles)" \
+            "$(human_size "$(stat -c%s "$f")")" "$(manifest_get "${f%.pmtiles}.json" detail 2>/dev/null || echo unknown)")"
+    done
     if [[ -f "$EEZ_ZIP" ]]; then
         ok "EEZ country boundaries"
     else
@@ -279,6 +322,13 @@ docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required ('d
 # ---------------------------------------------------------------------------
 # 2. Questions — everything interactive happens here
 # ---------------------------------------------------------------------------
+# Run osmium with the source extract mounted at /src.osm.pbf and data/osm at /osm.
+docker compose --progress quiet --profile tools build osmium </dev/null
+osmium() {
+    docker compose --progress quiet --profile tools run --rm -T --user "$(id -u):$(id -g)" \
+        -v "$PBF_SOURCE:/src.osm.pbf:ro,z" -v "$OSM_DIR:/osm:z" osmium "$@"
+}
+
 show_local_files
 
 section "Choosing a region..."
@@ -423,6 +473,86 @@ elif [[ -z "$FETCH_IMAGES" ]]; then
     fi
 fi
 
+# ---------------------------------------------------------------------------
+# Offline background map (streets, buildings, place names)
+# ---------------------------------------------------------------------------
+BASEMAP_FILE="$BASEMAP_DIR/$REGION_ID.pmtiles"
+BASEMAP_MANIFEST="${BASEMAP_FILE%.pmtiles}.json"
+BASEMAP_AREA=()
+PROTOMAPS_BUILD=""
+BASEMAP_SIZE=0
+case "$BASEMAP_MODE" in
+    ""|full|reduced|none) ;;
+    *) die "--basemap must be full, reduced or none." ;;
+esac
+[[ -z "$BASEMAP_MODE" && "$ASSUME_YES" == 1 ]] && BASEMAP_MODE=none
+if [[ "$BASEMAP_MODE" != none ]]; then
+    section "Background map"
+    mkdir -p "$BASEMAP_DIR"
+    read -r PROTOMAPS_BUILD PLANET_BASEMAP_SIZE < <(curl -sf --max-time 20 "$PROTOMAPS_BUILDS_URL" \
+        | python3 -c 'import json,sys; b=json.load(sys.stdin)[-1]; print(b["key"], b.get("size", 0))' 2>/dev/null) || true
+    # Which area to cut out: the Geofabrik outline, the file's bounding box, or everything.
+    if [[ "$REGION_ID" != "$PLANET_ID" ]]; then
+        if [[ -n "$PBF_URL" ]] && geofabrik_outline "$REGION_ID" "$BASEMAP_DIR/.area-$REGION_ID.geojson"; then
+            BASEMAP_AREA=("--region=/out/.area-$REGION_ID.geojson")
+        elif [[ -f "$PBF_SOURCE" ]]; then
+            BBOX=$(osmium fileinfo -g header.boxes /src.osm.pbf 2>/dev/null | tr -d '() ' | head -1 || true)
+            [[ "$BBOX" =~ ^-?[0-9.]+,-?[0-9.]+,-?[0-9.]+,-?[0-9.]+$ ]] && BASEMAP_AREA=("--bbox=$BBOX")
+        fi
+    fi
+    if [[ -f "$BASEMAP_FILE" && -z "$BASEMAP_MODE" ]]; then
+        ok "Already downloaded: $(manifest_get "$BASEMAP_MANIFEST" detail) detail, $(human_size "$(stat -c%s "$BASEMAP_FILE")"), map data from $(manifest_get "$BASEMAP_MANIFEST" build | cut -c1-8)."
+        if [[ -z "$PROTOMAPS_BUILD" ]] || ! ask_yes_no "Download it again with the latest map data?" n; then
+            BASEMAP_MODE=keep
+        fi
+    fi
+    if [[ "$BASEMAP_MODE" == keep ]]; then
+        :
+    elif [[ -z "$PROTOMAPS_BUILD" ]]; then
+        warn "Can't reach Protomaps — the background map will come from openinframap.org (online)."
+        BASEMAP_MODE=none
+    elif [[ "$REGION_ID" != "$PLANET_ID" && ${#BASEMAP_AREA[@]} -eq 0 ]]; then
+        warn "Can't tell which area this region covers, so there's no offline background map for it."
+        BASEMAP_MODE=none
+    else
+        info "The background map (streets, buildings, place names) normally comes from"
+        info "openinframap.org over the internet. Download it for this region to use the"
+        info "map fully offline. Checking sizes..."
+        if [[ "$REGION_ID" == "$PLANET_ID" ]]; then
+            FULL_SIZE=$PLANET_BASEMAP_SIZE
+        else
+            FULL_SIZE=$(basemap_size)
+        fi
+        REDUCED_SIZE=$(basemap_size "$REDUCED_MAXZOOM")
+        if [[ -z "$BASEMAP_MODE" ]]; then
+            DEFAULT_CHOICE=1
+            [[ "$FULL_SIZE" -gt $((10 * 1000 * 1000 * 1000)) ]] && DEFAULT_CHOICE=2
+            echo ""
+            printf "      1) Full detail     %8s  streets and individual buildings at every zoom\n" "$(human_size "$FULL_SIZE")"
+            printf "      2) Reduced detail  %8s  streets and places; blurry when zoomed in close\n" "$(human_size "$REDUCED_SIZE")"
+            printf "      3) Skip            %8s  keep using the online background map\n" "—"
+            echo ""
+            while true; do
+                read -r -p "    Choose [1-3, default $DEFAULT_CHOICE]: " CHOICE || die "Aborted."
+                case "${CHOICE:-$DEFAULT_CHOICE}" in
+                    1) BASEMAP_MODE=full; break ;;
+                    2) BASEMAP_MODE=reduced; break ;;
+                    3) BASEMAP_MODE=none; break ;;
+                esac
+            done
+        fi
+        if [[ "$BASEMAP_MODE" == full || "$BASEMAP_MODE" == reduced ]]; then
+            BASEMAP_SIZE=$FULL_SIZE
+            [[ "$BASEMAP_MODE" == reduced ]] && BASEMAP_SIZE=$REDUCED_SIZE
+            BASEMAP_FREE=$(free_bytes "$BASEMAP_DIR")
+            if [[ "$BASEMAP_SIZE" -gt "$BASEMAP_FREE" ]]; then
+                ask_yes_no "It needs $(human_size "$BASEMAP_SIZE") but only $(human_size "$BASEMAP_FREE") is free in data/basemap/. Continue anyway?" n \
+                    || BASEMAP_MODE=none
+            fi
+        fi
+    fi
+fi
+
 echo ""
 info "${BOLD}That's all the questions.${RESET} The rest runs on its own — for a continent this"
 info "can take a few hours, mostly downloading. Safe to interrupt and re-run."
@@ -453,13 +583,6 @@ if [[ "$DO_DOWNLOAD" == 1 ]]; then
     [[ -n "$REMOTE_MD5" ]] && echo "$REMOTE_MD5" > "$PBF_SOURCE.md5"
     ok "Downloaded $(human_size "$(stat -c%s "$PBF_SOURCE")")."
 fi
-
-# Run osmium with the source extract mounted at /src.osm.pbf and data/osm at /osm.
-docker compose --progress quiet --profile tools build osmium
-osmium() {
-    docker compose --progress quiet --profile tools run --rm -T --user "$(id -u):$(id -g)" \
-        -v "$PBF_SOURCE:/src.osm.pbf:ro,z" -v "$OSM_DIR:/osm:z" osmium "$@"
-}
 
 OSM_TIMESTAMP=$(osmium fileinfo -g header.option.osmosis_replication_timestamp /src.osm.pbf 2>/dev/null || true)
 
@@ -517,6 +640,8 @@ docker compose --progress quiet run --rm --build \
 section "Creating views..."
 run_with_timer "Creating map views" run_sql_file schema/views.sql
 run_with_timer "Creating stats tables" run_sql_file schema/stats.sql
+run_with_timer "Preparing place search" run_sql_file schema/places.sql
+run_with_timer "Creating search indexes" create_search_indexes
 
 # ---------------------------------------------------------------------------
 # 6. EEZ country boundaries
@@ -553,7 +678,40 @@ docker compose --progress quiet up -d --build --force-recreate tegola
 ok "Running on http://localhost:7800"
 
 # ---------------------------------------------------------------------------
-# 9. Wikidata images
+# 9. Offline background map — after the database, so a failure here doesn't
+#    cost the build; the map then just keeps using the online background
+# ---------------------------------------------------------------------------
+download_basemap() {
+    local partial="$BASEMAP_DIR/.$REGION_ID.partial.pmtiles" args=("${BASEMAP_AREA[@]}")
+    if [[ "$REGION_ID" == "$PLANET_ID" && "$BASEMAP_MODE" == full ]]; then
+        # The whole world is just the build file itself: download it (resumable).
+        curl -L --fail --progress-bar -C - -o "$partial" "$PROTOMAPS_BASE/$PROTOMAPS_BUILD" || return 1
+    else
+        [[ "$BASEMAP_MODE" == reduced ]] && args+=("--maxzoom=$REDUCED_MAXZOOM")
+        rm -f "$partial"
+        pmtiles extract "$PROTOMAPS_BASE/$PROTOMAPS_BUILD" "/out/$(basename "$partial")" "${args[@]}" || return 1
+    fi
+    mv "$partial" "$BASEMAP_FILE"
+    python3 -c 'import json, sys
+json.dump({"region_id": sys.argv[2], "build": sys.argv[3], "detail": sys.argv[4],
+           "downloaded_at": sys.argv[5]}, open(sys.argv[1], "w"), indent=2)' \
+        "$BASEMAP_MANIFEST" "$REGION_ID" "$PROTOMAPS_BUILD" "$BASEMAP_MODE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+if [[ "$BASEMAP_MODE" == full || "$BASEMAP_MODE" == reduced ]]; then
+    section "Downloading the background map ($BASEMAP_MODE detail, $(human_size "$BASEMAP_SIZE"))..."
+    if download_basemap; then
+        ok "Saved $(human_size "$(stat -c%s "$BASEMAP_FILE")") → data/basemap/$REGION_ID.pmtiles"
+    else
+        warn "Downloading the background map failed, so the map will use the online one."
+        warn "Re-run this script to try again."
+    fi
+fi
+section "Background map"
+select_basemap "$REGION_ID"
+[[ -f "$BASEMAP_FILE" ]] || info "Using the online background map (openinframap.org)."
+
+# ---------------------------------------------------------------------------
+# 10. Wikidata images
 # ---------------------------------------------------------------------------
 if [[ "$FETCH_IMAGES" == 1 ]]; then
     section "Caching Wikidata data and images (already-cached ones are skipped)..."

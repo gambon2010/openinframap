@@ -24,8 +24,12 @@ start_db
 REGION=$(build_info region_name)
 [[ -n "$REGION" ]] || die "The map database was never finished. Build it with: bash scripts/build-region.sh"
 ok "Map database: $REGION (OSM data as of $(build_info osm_timestamp))"
-docker compose --progress quiet up -d tegola </dev/null
+up_services tegola
 ok "Tile server running on http://localhost:7800"
+if [[ -f "$BASEMAP_DIR/$(build_info region_id).pmtiles" ]]; then
+    start_basemap_if_present
+    ok "Offline background map running on http://localhost:$BASEMAP_PORT"
+fi
 
 section "Starting the app..."
 if ! start_app; then

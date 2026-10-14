@@ -9,6 +9,7 @@ import { BACKEND_BASE_URL } from '../config.js'
 type OIMResult = {
   name: string
   type: string
+  place_type?: string
   operator?: string
   voltage?: number
   output?: number
@@ -70,6 +71,10 @@ export default class OIMSearchProvider implements ISearchProvider {
       description += `${t('names.power.substation')} (${formatVoltage(result.voltage / 1000)})`
     } else if (result.type === 'plant' && result.output) {
       description += `${t('names.power.plant')} (${formatPower(result.output / 1e6)})`
+    } else if (result.type === 'place' && result.place_type) {
+      // Fork: local place search (cities, towns, villages…), see imposm/places.py.
+      const fallback = result.place_type.charAt(0).toUpperCase() + result.place_type.slice(1)
+      description += t(`search.place.${result.place_type}`, fallback)
     } else {
       description += `${result.type}`
     }

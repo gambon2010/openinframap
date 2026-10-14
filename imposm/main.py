@@ -5,6 +5,7 @@ import power  # noqa
 import telecoms  # noqa
 import petroleum  # noqa
 import water  # noqa
+import places  # noqa  (fork: local place search)
 
 
 data = {
@@ -35,7 +36,7 @@ data = {
             "ele",
             "attribution",
             "tracktype",
-            "place",
+            # "place" is kept: the fork's places table (places.py) is matched on it.
             "leisure",
             "railway",
             "bicycle",

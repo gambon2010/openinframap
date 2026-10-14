@@ -1,38 +1,45 @@
 # Open Infrastructure Map — Offline Local Dev Fork
 
 This is a fork of [openinframap/openinframap](https://github.com/openinframap/openinframap)
-configured for **fully offline local development**.
+that runs Open Infrastructure Map **entirely on your own computer**: your own database,
+tile server and backend, built from OpenStreetMap data for the region you choose, from
+one country up to the whole world. A built database can be exported and copied (e.g. on
+a USB drive) to a computer without internet access.
 
-The goal is a stack where, after initial setup, nothing calls `openinframap.org` at runtime.
-All external service URLs are controlled by environment variables and default to production,
-so the project still works out of the box for contributors who just clone without a `.env`.
-
-## What's different from upstream
-
-| Area | Change |
-|------|--------|
-| **Backend/frontend URLs** | Configurable via `VITE_BACKEND_BASE_URL` / `VITE_TILE_BASE_URL` in `web/.env` |
-| **Dev server routing** | Vite proxies `/stats`, `/about`, `/static`, `/local-images` to the local backend |
-| **Search** | OpenCage geocoder (online-only) disabled; DB search + coordinate parsing only |
-| **Background toggle** | Hidden — single tile source for local dev |
-| **Wikidata image cache** | `scripts/fetch_images.py` pre-downloads thumbnails and entity JSON to `data/` |
-| **Offline Wikidata popups** | Backend serves cached entity JSON and images; falls back to remote if not cached |
-| **Setup scripts** | `scripts/launch.sh` (first-time setup), `scripts/start.sh` (start everything + open the map), `scripts/build-region.sh` (interactive region download + import), `scripts/export-db.sh` / `scripts/import-db.sh` (share a built database, e.g. on a USB drive) |
+The background map can be downloaded per region (full or reduced detail) and served
+locally too; otherwise it comes from openinframap.org. The search box finds places
+(cities down to hamlets) offline; street addresses need an optional Photon server.
 
 ## Getting started
 
-See **[docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md)** for the full setup guide.
-
-The short version:
+Needs Docker, Node.js/npm, curl, python3 and unzip.
 
 ```bash
-# First time: pick a region, build the database, create .env files,
+# First time: pick a region, build (or import) the database, create .env files,
 # then start the app and open it in your browser
 bash scripts/launch.sh
 
 # Every time after that: start everything and open the map
 bash scripts/start.sh
 ```
+
+Full guide: **[docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md)**.
+What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)**.
+
+## What's different from upstream
+
+| Area | Change |
+|------|--------|
+| **Setup** | `scripts/launch.sh` (first time) and `scripts/start.sh` (every day): start everything, open the frontend in a terminal window and the map in the browser |
+| **Data** | `scripts/build-region.sh`: pick any Geofabrik region or the whole world, download (kept and reused), filter to infrastructure with osmium, import, views, search indexes, EEZ boundaries and per-country stats, all unattended after a few questions |
+| **Sharing** | `scripts/export-db.sh` / `scripts/import-db.sh`: save a built database (plus the Docker images) and restore it elsewhere in minutes, offline too |
+| **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Map sources panel to see and change the URL for the current tab |
+| **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
+| **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; power plants and substations also match words inside names ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
+| **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
+| **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
+| **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |
+| **UI** | Map sources panel; background switch (OpenStreetMap / online-only night lights) hidden |
 
 ## Upstream project
 

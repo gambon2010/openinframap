@@ -27,7 +27,9 @@ IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 @contextlib.asynccontextmanager
 async def lifespan(app: Starlette) -> AsyncGenerator[State]:
-    db_engine = create_async_engine(DATABASE_URL)
+    # pool_pre_ping: survive the database being recreated underneath us
+    # (e.g. scripts/build-region.sh or import-db.sh while the backend runs).
+    db_engine = create_async_engine(DATABASE_URL, pool_pre_ping=True)
     async with (
         httpx.AsyncClient(
             headers={"User-Agent": "Open Infrastructure Map backend (https://openinframap.org)"}
