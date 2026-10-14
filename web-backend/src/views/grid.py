@@ -29,6 +29,9 @@ MAX_OVERLAP = 0.7
 # How far a station without its own ≥110 kV line may be from one that has
 # (EPSG:3857 units, roughly 4-7 km in Europe).
 NEAREST_STATION = 7500
+# A grid station closer than this (metres) is the same station mapped twice in
+# OpenStreetMap (e.g. a substation's outline and its site relation): no notice.
+SAME_STATION = 300
 STATION_KINDS = ("substation", "plant")
 
 
@@ -86,9 +89,12 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
             404, f"No line of 110 kV or more reaches {label}, and there's no station on that grid nearby."
         )
     node = dict(nearest._mapping)
+    distance = node.pop("distance")
+    if distance < SAME_STATION:
+        return node, None
     notice = (
         f"No line of 110 kV or more reaches {label}; using the nearest station on that grid, "
-        f"{node['name'] or 'an unnamed ' + node['kind']} ({node.pop('distance') / 1000:.1f} km away)."
+        f"{node['name'] or 'an unnamed ' + node['kind']} ({distance / 1000:.1f} km away)."
     )
     return node, notice
 

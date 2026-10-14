@@ -470,7 +470,8 @@ class InfoPopup {
   }
 
   async circuits_section(response) {
-    if (response.circuits.length == 0) {
+    // Fork: no response when the backend is unreachable; show the popup without circuits.
+    if (!response?.circuits || response.circuits.length == 0) {
       return []
     }
 

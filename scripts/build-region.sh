@@ -620,6 +620,8 @@ fi
 # 5. Fresh database + imposm import
 # ---------------------------------------------------------------------------
 section "Creating a fresh database..."
+# The backend container goes down with everything else; bring it back afterwards.
+BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
 # -v removes this project's volumes only (database, imposm cache).
 docker compose --progress quiet down -v --remove-orphans
 start_db
@@ -677,6 +679,10 @@ SQL
 section "Starting the Tegola tile server..."
 docker compose --progress quiet up -d --build --force-recreate tegola
 ok "Running on http://localhost:7800"
+if [[ -n "$BACKEND_WAS_RUNNING" ]]; then
+    up_services backend
+    ok "Backend restarted on http://localhost:$BACKEND_PORT"
+fi
 
 # ---------------------------------------------------------------------------
 # 9. Offline background map — after the database, so a failure here doesn't

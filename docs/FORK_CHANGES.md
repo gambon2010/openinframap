@@ -394,7 +394,14 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   must be in the built region (France–Germany needs Europe or a custom region);
   exports made before this have no network (the panel says to rebuild). Not yet
   tested on a continent; the search loads the grid around both ends.
+- A station mapped twice in OpenStreetMap (e.g. a substation's outline and its site
+  relation, different IDs) is matched silently if within 300 m.
 - New dependency: `networkx` (backend), `types-networkx` (dev).
+- **Fixes found while testing with real clicks:** substation and line popups failed
+  to open at all when the backend was unreachable (the circuits lookup read from an
+  empty response); they now open without circuit details. And `build-region.sh` /
+  `import-db.sh` stopped the backend (rebuilding removes all containers) without
+  starting it again; they now restart it if it was running.
 
 ---
 
