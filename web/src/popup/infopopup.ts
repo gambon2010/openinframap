@@ -2,6 +2,7 @@ import './infopopup.css'
 
 import i18next, { t } from 'i18next'
 import { LngLat, MapGeoJSONFeature, Popup, Map } from 'maplibre-gl'
+import { BACKEND_BASE_URL } from '../config.js'
 import { titleCase } from 'title-case'
 import { local_name_tags, formatVoltage, formatFrequency, formatPower } from '../l10n.ts'
 import friendlyNames from '../friendlynames.ts'
@@ -386,7 +387,7 @@ class InfoPopup {
       mount(
         footer,
         el('a.oim-button', t('more_info', 'More info'), {
-          href: '/stats/object/plant/' + feature.properties['osm_id'],
+          href: `${BACKEND_BASE_URL}/stats/object/plant/` + feature.properties['osm_id'],
           target: '_blank'
         })
       )

@@ -1,5 +1,6 @@
 *.xml
 *.mml
+*.osm.pbf
 mapping.json
 config.toml
 __pycache__
@@ -7,3 +8,6 @@ __pycache__
 web/dist
 .DS_Store
 .vscode
+data/
+data/images/
+data/wikidata_json/

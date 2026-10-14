@@ -1,5 +1,6 @@
 node_modules/
 .DS_Store
+.env
 
 locales/*/translation_old.json
 public/*.png

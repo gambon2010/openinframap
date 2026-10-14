@@ -41,7 +41,7 @@ export default class ExternalLinks {
   }
 
   updateWikidata(id: string, data: any) {
-    if (!data) {
+    if (!data?.sitelinks) {
       return
     }
     for (const lang of [i18next.language.split('-')[0], 'en']) {

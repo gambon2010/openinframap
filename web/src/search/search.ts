@@ -2,7 +2,7 @@ import './search.css'
 import i18next, { t } from 'i18next'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
-import OpenCageSearch from './opencage'
+// import OpenCageSearch from './opencage' // disabled for local dev (online-only)
 import CoordinatesSearch from './coordinates'
 import OIMSearchProvider from './openinframap'
 
@@ -34,8 +34,8 @@ export default class OIMSearch implements IControl {
   constructor() {
     this.searchProviders = [
       new CoordinatesSearch(),
-      // OpenCage API key will only work on openinframap.org or localhost. Thanks to OpenCage for sponsoring!
-      new OpenCageSearch('oc_gs_a595f2059dee41d6b7073647aec5c303', i18next.language),
+      // OpenCage disabled for local dev — online-only service. Re-enable by uncommenting:
+      // new OpenCageSearch('oc_gs_a595f2059dee41d6b7073647aec5c303', i18next.language),
       new OIMSearchProvider(i18next.language)
     ]
 
@@ -237,17 +237,19 @@ export default class OIMSearch implements IControl {
     })
 
     this.dropdown.appendChild(list)
-    this.dropdown.appendChild(
-      el(
-        'div',
-        { className: 'oim-search-footer' },
-        el('a', 'Place search powered by OpenCage', {
-          href: 'https://opencagedata.com',
-          target: '_blank',
-          rel: 'noopener noreferrer'
-        })
-      )
-    )
+    // OpenCage attribution hidden — OpenCageSearch is disabled for local dev.
+    // Restore when re-enabling OpenCageSearch above:
+    // this.dropdown.appendChild(
+    //   el(
+    //     'div',
+    //     { className: 'oim-search-footer' },
+    //     el('a', 'Place search powered by OpenCage', {
+    //       href: 'https://opencagedata.com',
+    //       target: '_blank',
+    //       rel: 'noopener noreferrer'
+    //     })
+    //   )
+    // )
   }
 
   async search(query: string): Promise<SearchResult[]> {

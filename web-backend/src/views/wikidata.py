@@ -8,8 +8,15 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from .. import Request
+from ..config import IMAGES_DIR
 from ..data import get_commons_thumbnail, get_wikidata
 from ..util import cache_for
+
+
+def _local_thumbnail(wikidata_id: str) -> Optional[str]:
+    """Return a /local-images/… URL if we have a cached image, else None."""
+    matches = list(IMAGES_DIR.glob(f"{wikidata_id}.*"))
+    return f"/local-images/{matches[0].name}" if matches else None
 
 
 @cache_for(86400)
@@ -42,11 +49,15 @@ async def wikidata_json(wikidata_id: str, http_client: httpx.AsyncClient) -> Opt
 
     if "P18" in data["claims"] and data["claims"]["P18"][0]["mainsnak"]["datatype"] == "commonsMedia":
         response["image"] = data["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"]
-        image_data = await get_commons_thumbnail(
-            data["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"], http_client
-        )
-        if image_data is not None:
-            response["thumbnail"] = image_data["imageinfo"][0]["thumburl"]
+        local = _local_thumbnail(wikidata_id)
+        if local:
+            response["thumbnail"] = local
+        else:
+            image_data = await get_commons_thumbnail(
+                data["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"], http_client
+            )
+            if image_data is not None:
+                response["thumbnail"] = image_data["imageinfo"][0]["thumburl"]
 
     for wikidata_property, name in WIKIDATA_EXTERNAL.items():
         if wikidata_property in data["claims"]:

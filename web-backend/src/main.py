@@ -18,9 +18,11 @@ from starlette.staticfiles import StaticFiles
 from src.openapi import schema_endpoint
 
 from . import State
-from .config import DATABASE_URL, DEBUG
+from .config import DATABASE_URL, DEBUG, IMAGES_DIR
 from .sitemap import sitemap
 from .views import routes
+
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @contextlib.asynccontextmanager
@@ -54,6 +56,7 @@ class DBSessionMiddleware:
 
 routes = [
     Mount("/static", app=StaticFiles(directory="src/static"), name="static"),
+    Mount("/local-images", app=StaticFiles(directory=str(IMAGES_DIR)), name="local-images"),
     Route("/sitemap.xml", sitemap),
 ] + routes
 

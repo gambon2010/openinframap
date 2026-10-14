@@ -19,6 +19,7 @@ import { SymbolLoader } from './symbol-loader.ts'
 import { ClickRouter } from './click-router.js'
 import { CircuitInspector } from './circuit/circuitinspector.ts'
 import { OpenInfraMapAPI } from './api.ts'
+import { BACKEND_BASE_URL } from './config.js'
 
 export default class OpenInfraMap {
   map?: maplibregl.Map
@@ -54,10 +55,12 @@ export default class OpenInfraMap {
   init() {
     const layer_switcher = new LayerSwitcher(
       [
-        new LayerGroup(t('layers.background'), [
-          new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
-          new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
-        ]),
+        // Background toggle hidden for local dev — single tile source only.
+        // Re-enable when adding multi-source support:
+        // new LayerGroup(t('layers.background'), [
+        //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
+        //   new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
+        // ]),
         new LayerGroup(t('layers.overlays'), [
           new Layer('L', t('layers.labels'), 'label_', true),
           new Layer('B', t('layers.borders'), 'boundaries_', true)
@@ -83,7 +86,7 @@ export default class OpenInfraMap {
 
     layer_switcher.setInitialVisibility(map_style)
 
-    const api = new OpenInfraMapAPI('https://openinframap.org')
+    const api = new OpenInfraMapAPI(BACKEND_BASE_URL)
 
     const map = new maplibregl.Map(
       url_hash.init({
