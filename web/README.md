@@ -28,10 +28,11 @@ backend URL configured in `.env`, so backend-rendered pages load correctly.
 
 ## Fork-specific behaviour
 
-**Search** (`src/search/`) combines coordinates, the local backend (`/search/typeahead`)
-and the OpenCage geocoder for towns and addresses. OpenCage needs internet and only accepts
-requests from `localhost`. Providers run with `Promise.allSettled`, so one failing (e.g.
-OpenCage offline) doesn't hide the others' results.
+**Search** (`src/search/`) combines coordinates, the local backend (`/search/typeahead`:
+infrastructure and places such as cities and villages) and, if configured, a Photon server
+for addresses (`VITE_PHOTON_URL` or the Map sources panel). Upstream's OpenCage geocoder is
+removed. Providers run with `Promise.allSettled`, so one failing doesn't hide the others'
+results, and same-name results within ~5 km are merged.
 
 The **background switcher** (OpenStreetMap / nighttime lights) is hidden: night lights
 only exist online. Re-enabling it needs care, because saved map links made without it

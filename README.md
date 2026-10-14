@@ -7,8 +7,8 @@ one country up to the whole world. A built database can be exported and copied (
 a USB drive) to a computer without internet access.
 
 The background map can be downloaded per region (full or reduced detail) and served
-locally too; otherwise it comes from openinframap.org. Place search (towns, addresses)
-still needs the internet.
+locally too; otherwise it comes from openinframap.org. The search box finds places
+(cities down to hamlets) offline; street addresses need an optional Photon server.
 
 ## Getting started
 
@@ -35,7 +35,7 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Sharing** | `scripts/export-db.sh` / `scripts/import-db.sh`: save a built database (plus the Docker images) and restore it elsewhere in minutes, offline too |
 | **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Map sources panel to see and change the URL for the current tab |
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
-| **Search** | Local power plant and substation search also matches words inside names ("vianden" → "Centrale de Vianden"), with indexes; coordinates; OpenCage place search when online; one failing source no longer hides the others |
+| **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; power plants and substations also match words inside names ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
 | **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |

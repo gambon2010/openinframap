@@ -229,7 +229,26 @@
   "coordinates": "Coordinates",
   "search": {
     "clear": "Clear search",
-    "no-results": "No results found"
+    "no-results": "No results found",
+    "place": {
+      "country": "Country",
+      "state": "State",
+      "province": "Province",
+      "region": "Region",
+      "county": "County",
+      "municipality": "Municipality",
+      "city": "City",
+      "town": "Town",
+      "village": "Village",
+      "hamlet": "Hamlet",
+      "borough": "Borough",
+      "suburb": "Suburb",
+      "quarter": "Quarter",
+      "neighbourhood": "Neighbourhood",
+      "island": "Island",
+      "islet": "Islet",
+      "archipelago": "Archipelago"
+    }
   },
   "openstreetmap": "OpenStreetMap",
   "sources": {
@@ -252,6 +271,16 @@
     "reset-done": "Back to the default background map.",
     "origin-session": "Changed for this tab only.",
     "origin-env": "Default, from VITE_BASEMAP_URL in web/.env.",
-    "origin-builtin": "Default: the openinframap.org background map."
+    "origin-builtin": "Default: the openinframap.org background map.",
+    "photon": "Address search (Photon, optional)",
+    "photon-placeholder": "e.g. http://localhost:2322 (empty = not used)",
+    "photon-off": "Not using Photon. Places in your region are still found.",
+    "photon-checking": "Checking Photon…",
+    "photon-ok": "Photon is answering; search uses it in this tab.",
+    "photon-error": "Couldn't reach Photon at this URL. Check it's right and the server is running.",
+    "photon-origin-env": "Default, from VITE_PHOTON_URL in web/.env.",
+    "photon-origin-none": "Not used. Places in your region are found without it.",
+    "photon-help-1": "Photon is a search server for addresses and places from OpenStreetMap. Cities, towns and villages in the region you built are found without it; Photon adds street addresses and places elsewhere. The setup scripts don't install it: see",
+    "photon-help-2": "To use one by default, set"
   }
 }

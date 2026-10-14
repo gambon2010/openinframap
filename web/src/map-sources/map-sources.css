@@ -162,3 +162,9 @@
   border-radius: var(--oim-radius-small);
   font-size: 0.75rem;
 }
+
+.oim-map-sources-row + .oim-map-sources-row {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--oim-grey);
+}

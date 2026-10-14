@@ -2,8 +2,9 @@
 
 This guide gets you from a fresh clone to Open Infrastructure Map running on your
 own computer: your own database, tile servers and backend, built from OpenStreetMap
-data for the region you choose. Once set up, everything except place search (towns,
-addresses) can work without internet.
+data for the region you choose. Once set up, everything can work without internet,
+including searching for places; only street-address search needs an optional Photon
+server.
 
 For *what* the fork changed and *why*, see [FORK_CHANGES.md](./FORK_CHANGES.md).
 
@@ -87,7 +88,7 @@ All questions come first; after that it runs unattended:
    the imposm mapping, so the imported data is the same, just much faster
    (Russia: 3.9 GB → 53 MB).
 3. **Wipe** the local database and **import** with imposm.
-4. **Views, stats tables and search indexes.**
+4. **Views, stats tables, places for the search box and search indexes.**
 5. **EEZ country boundaries** (see [below](#eez-country-boundaries)) and a
    per-country stats snapshot.
 6. **Restart Tegola** so it doesn't serve tiles from the old data.
@@ -238,6 +239,8 @@ VITE_BACKEND_BASE_URL=http://localhost:8001
 # Background map server (Protomaps schema), full {z}/{x}/{y} URL. build-region.sh
 # sets it when you download an offline background map.
 VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt
+# Optional Photon server for street-address search (not set up by the scripts).
+# VITE_PHOTON_URL=http://localhost:2322
 ```
 
 ### Changing the background map without editing `.env`
@@ -266,9 +269,10 @@ DATABASE_URL=postgresql+asyncpg://osm:osm@localhost:5432/osm
 | Infrastructure map (power, telecoms, pipelines, water) | Yes, from local Tegola |
 | Background map (roads, buildings, labels) | Yes if you downloaded it for the region; otherwise from openinframap.org |
 | Night-lights background | Not available: online only, and its switch is hidden |
+| Search for places (countries, cities, towns, villages, hamlets, suburbs, islands) | Yes, for the built region. Cities and towns are listed before infrastructure with the same name |
 | Search for power plants and substations | Yes. Names that start with what you type come first, then names with a word that does ("vianden" also finds "Centrale de Vianden") |
 | Search for coordinates | Yes |
-| Search for towns and addresses | No: OpenCage, online only. Only accepted from `localhost`, so open the map at http://localhost:5173, not the computer's IP address |
+| Search for street addresses | Only with a [Photon](#optional-photon-address-search) server |
 | `/stats` and country pages | Yes (need the EEZ boundaries) |
 | Wikidata popups | Yes, for what's in the cache; otherwise fetched online |
 
@@ -276,6 +280,21 @@ The map only has data for the region you built; elsewhere the infrastructure lay
 are empty. There are no live updates: rebuild to refresh.
 
 ---
+
+## Optional: Photon address search
+
+Places in your region are found without any extra setup. For street addresses (and
+places outside your region) the app can also ask a
+[Photon](https://github.com/komoot/photon) server. Setting one up isn't handled by
+the scripts: pre-built indexes are large (Europe 32 GB, world 63 GB). Once you have
+one, set it in `web/.env` and restart the frontend:
+
+```
+VITE_PHOTON_URL=http://localhost:2322
+```
+
+or try it for the current tab in the **Map sources** panel ("Address search
+(Photon, optional)"), which also checks that the server answers.
 
 ## Wikidata image cache
 
@@ -317,8 +336,9 @@ on port 8001 or 5173, e.g. a backend you started by hand. Stop it, or use it.
 **Search finds nothing / the country pages return 500.** The EEZ boundaries weren't
 imported. Re-run `build-region.sh` with the zip in `data/`.
 
-**Place search doesn't find towns.** It needs internet, and only works when the map
-is opened at `localhost` (not `127.0.0.1` or the computer's IP).
+**Place search doesn't find towns.** Places come from the database built after this
+feature was added; rebuild the region (or import a newer export) once. Only places
+in the built region are found.
 
 **The backend returns errors right after a rebuild.** A backend running on the host
 reconnects on its own now; if you're on an old checkout, restart it. The Docker

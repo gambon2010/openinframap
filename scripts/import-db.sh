@@ -97,6 +97,10 @@ start_db
 ok "Fresh database ready."
 
 restore() {
+    # Extensions aren't part of the export (it only has the data schemas), but
+    # the search indexes need pg_trgm. It's a trusted extension, so the database
+    # owner can enable it.
+    db_psql -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
     # A fresh database already has PostGIS, its spatial_ref_sys table and the
     # helper functions from schema/functions.sql, so leave out of the restore
     # every function that already exists. (Functions from views.sql, which

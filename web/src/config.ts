@@ -7,31 +7,43 @@ export const TILE_BASE_URL: string = import.meta.env.VITE_TILE_BASE_URL ?? 'http
 export const DEFAULT_BASEMAP_URL = `${TILE_BASE_URL}/20250311/{z}/{x}/{y}.mvt`
 export const CONFIGURED_BASEMAP_URL: string = import.meta.env.VITE_BASEMAP_URL || DEFAULT_BASEMAP_URL
 
-const BASEMAP_SESSION_KEY = 'oim-basemap-url'
+export const BASEMAP_SESSION_KEY = 'oim-basemap-url'
 
-// Session storage lasts until the tab is closed. It can be unavailable
-// (privacy settings), so every access is guarded.
-export function getSessionBasemapUrl(): string | null {
+// Optional Photon geocoder (https://github.com/komoot/photon) for searching
+// addresses and places beyond the local database, e.g. http://localhost:2322.
+// Empty = not used. Setting up Photon isn't handled by the scripts.
+export const CONFIGURED_PHOTON_URL: string = import.meta.env.VITE_PHOTON_URL || ''
+export const PHOTON_SESSION_KEY = 'oim-photon-url'
+
+// Per-tab overrides from the Map sources panel. Session storage lasts until the
+// tab is closed. It can be unavailable (privacy settings), so every access is
+// guarded. A null value means "no override".
+export function getSessionUrl(key: string): string | null {
   try {
-    return sessionStorage.getItem(BASEMAP_SESSION_KEY)
+    return sessionStorage.getItem(key)
   } catch {
     return null
   }
 }
 
-export function setSessionBasemapUrl(url: string | null) {
+export function setSessionUrl(key: string, url: string | null) {
   try {
-    if (url) {
-      sessionStorage.setItem(BASEMAP_SESSION_KEY, url)
+    if (url === null) {
+      sessionStorage.removeItem(key)
     } else {
-      sessionStorage.removeItem(BASEMAP_SESSION_KEY)
+      sessionStorage.setItem(key, url)
     }
   } catch {
     // Not persisted; the change still applies until the page is reloaded.
   }
 }
 
-export const BASEMAP_URL: string = getSessionBasemapUrl() || CONFIGURED_BASEMAP_URL
+export const BASEMAP_URL: string = getSessionUrl(BASEMAP_SESSION_KEY) || CONFIGURED_BASEMAP_URL
+
+/** The Photon URL in use right now ('' = none); read on every search so changes apply live. */
+export function getPhotonUrl(): string {
+  return getSessionUrl(PHOTON_SESSION_KEY) ?? CONFIGURED_PHOTON_URL
+}
 
 export const BACKEND_BASE_URL: string = import.meta.env.VITE_BACKEND_BASE_URL ?? 'https://openinframap.org'
 

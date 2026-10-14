@@ -429,6 +429,8 @@ VITE_BACKEND_BASE_URL=http://localhost:8001
 # sets it when you download a background map for offline use; you can also point
 # it at your own Protomaps-schema tile server (full {z}/{x}/{y} URL template):
 # VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt
+# Optional Photon server for street-address search (not set up by the scripts):
+# VITE_PHOTON_URL=http://localhost:2322
 ENV
 }
 

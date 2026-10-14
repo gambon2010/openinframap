@@ -64,7 +64,7 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 
 ### Setup scripts (`/scripts/`, fork-only)
 - `lib/common.sh`: shared helpers (paths, prompts, `run_with_timer`, `db_psql`/`db_query`, EEZ import, `start_app`, `create_search_indexes`, export manifest helpers). Source it; don't run it.
-- `build-region.sh`: region menu → download to `data/osm/` → osmium filter → `docker compose down -v` → imposm import → `views.sql`, `stats.sql` → search indexes → EEZ (`schema/eez.sql`) → stats snapshot (`schema/local-stats.sql`) → `oim_build_info` table → Tegola → optional offline background map (`pmtiles extract` of the region's Geofabrik outline from Protomaps' daily build into `data/basemap/`, then `select_basemap` sets `VITE_BASEMAP_URL` in `web/.env`). All prompts happen before the first long step.
+- `build-region.sh`: region menu → download to `data/osm/` → osmium filter → `docker compose down -v` → imposm import → `views.sql`, `stats.sql`, `places.sql` → search indexes → EEZ (`schema/eez.sql`) → stats snapshot (`schema/local-stats.sql`) → `oim_build_info` table → Tegola → optional offline background map (`pmtiles extract` of the region's Geofabrik outline from Protomaps' daily build into `data/basemap/`, then `select_basemap` sets `VITE_BASEMAP_URL` in `web/.env`). All prompts happen before the first long step.
 - `export-db.sh` / `import-db.sh`: `pg_dump` of the `public`, `countries` and `stats` schemas plus a JSON manifest. The restore skips objects a fresh DB already has (PostGIS, `spatial_ref_sys`, functions from `functions.sql`) but must keep functions from `views.sql` (Tegola needs them).
 - `launch.sh`, `start.sh`: start everything; the frontend runs in a new terminal window via `open_in_terminal`.
 - `osm_filter.py`: generates the osmium `tags-filter` expressions from the imposm mapping.
@@ -75,24 +75,24 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 - `functions.sql`: PL/pgSQL helper functions (must be loaded before `views.sql`)
 - `views.sql`: views/materialized views and functions that Tegola queries for tile rendering
 - `stats.sql`: the `stats` schema; `jobs/update-stats.sql` is upstream's production job
-- `eez.sql`, `local-stats.sql` (fork-only): EEZ views; fast per-country stats snapshot for local builds
+- `eez.sql`, `local-stats.sql`, `places.sql` (fork-only): EEZ views; fast per-country stats snapshot; one point per place in `osm_place` for search
 
 ### Tile server (`/tegola/`)
 The `config.toml` Tegola reads is **generated**; never edit it directly. Edit `tegola.yml` (server config) and `layers.yml` (layer definitions), then regenerate with `generate_tegola_config.py`. A second Docker image (`Dockerfile.expiry`) handles cache invalidation via the imposm expiry list. Tegola caches tiles inside its container, so recreate it after replacing the data.
 
 ### Frontend (`/web/`)
-MapLibre GL JS map with i18next for internationalisation. The Background layer group (OpenStreetMap / night lights) is commented out in `src/openinframap.ts`; re-enabling it breaks saved links whose layer list has no `A`. URLs come from `web/src/config.ts` (`VITE_*` variables). Search (`src/search/`) combines coordinates, OpenCage (online, accepted only from `localhost`) and the backend, via `Promise.allSettled`. Tests use Vitest with Puppeteer for browser-level integration tests.
+MapLibre GL JS map with i18next for internationalisation. The Background layer group (OpenStreetMap / night lights) is commented out in `src/openinframap.ts`; re-enabling it breaks saved links whose layer list has no `A`. URLs come from `web/src/config.ts` (`VITE_*` variables). Search (`src/search/`) combines coordinates, the backend (infrastructure and places) and an optional Photon server (`VITE_PHOTON_URL` / Map sources panel), via `Promise.allSettled`, merging same-name results within ~5 km. OpenCage was removed. Tests use Vitest with Puppeteer for browser-level integration tests.
 
 ### Backend (`/web-backend/`)
 Starlette ASGI app (code under `src/`, entry point `src.main:app`) using SQLAlchemy async + asyncpg (`pool_pre_ping` so it survives DB rebuilds). Bokeh + Pandas generate stats charts. Runs as the `backend` Compose service (port 8001, built from `web-backend/Dockerfile`, entrypoint `/app/.venv/bin/uvicorn` to avoid `uv run` syncing at startup), mounting `data/images` and `data/wikidata_json`. Requires `DATABASE_URL` with the `postgresql+asyncpg://` scheme. Search name indexes (btree + `pg_trgm`) are created by `create_indexes.py`; keep it in sync with `src/views/search.py`.
 
 ### Imposm (`/imposm/`)
-Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that defines which OSM tags are imported into which tables. Changing it changes the osmium filter (generated) and the schema fingerprint stored in builds and exports.
+Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that defines which OSM tags are imported into which tables. `places.py` (fork) adds `osm_place` for the search box. Changing it changes the osmium filter (generated) and the schema fingerprint stored in builds and exports.
 
 ## Environment Variables
 
 `launch.sh` creates both files if missing:
-- `web/.env`: `VITE_TILE_BASE_URL` (night lights, and background map default: openinframap.org), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded). The map style needs Protomaps-schema background tiles. The Map sources panel (`web/src/map-sources/`) overrides it per tab via `sessionStorage`.
+- `web/.env`: `VITE_TILE_BASE_URL` (night lights, and background map default: openinframap.org), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts). The map style needs Protomaps-schema background tiles. The Map sources panel (`web/src/map-sources/`) overrides it per tab via `sessionStorage`.
 - `web-backend/.env`: `DATABASE_URL` for running the backend on the host (the Docker service sets its own)
 
 ## Gotchas

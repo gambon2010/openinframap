@@ -640,6 +640,7 @@ docker compose --progress quiet run --rm --build \
 section "Creating views..."
 run_with_timer "Creating map views" run_sql_file schema/views.sql
 run_with_timer "Creating stats tables" run_sql_file schema/stats.sql
+run_with_timer "Preparing place search" run_sql_file schema/places.sql
 run_with_timer "Creating search indexes" create_search_indexes
 
 # ---------------------------------------------------------------------------

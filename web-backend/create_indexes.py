@@ -16,6 +16,7 @@ NAME_COLUMNS = [
     ("power_substation_relation", "name"),
     ("osm_power_plant", "tags->'name'"),
     ("power_plant_relation", "name"),
+    ("osm_place", "name"),  # fork: local place search (imposm/places.py)
 ]
 
 
@@ -47,6 +48,9 @@ MAIN_INDEXES = [
     """CREATE INDEX CONCURRENTLY IF NOT EXISTS power_plant_relation_name
         ON power_plant_relation(substr(lower(name), 1, 20) text_pattern_ops)
         WHERE name IS NOT NULL""",
+    """CREATE INDEX CONCURRENTLY IF NOT EXISTS osm_place_name
+        ON osm_place(substr(lower(name), 1, 20) text_pattern_ops)
+        WHERE name IS NOT NULL""",
 ] + word_indexes("")
 
 
@@ -72,6 +76,9 @@ async def create_indexes():
                 WHERE tags->'name:{lang}' IS NOT NULL""",
             f"""CREATE INDEX CONCURRENTLY IF NOT EXISTS power_plant_relation_name_{lang}
                 ON power_plant_relation(substr(lower(tags->'name:{lang}'), 1, 20) text_pattern_ops)
+                WHERE tags->'name:{lang}' IS NOT NULL""",
+            f"""CREATE INDEX CONCURRENTLY IF NOT EXISTS osm_place_name_{lang}
+                ON osm_place(substr(lower(tags->'name:{lang}'), 1, 20) text_pattern_ops)
                 WHERE tags->'name:{lang}' IS NOT NULL""",
         ] + word_indexes(f"_{lang}", f"name:{lang}")
         for query in queries:

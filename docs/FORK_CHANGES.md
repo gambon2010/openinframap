@@ -214,27 +214,78 @@ imposm's working tables. A `pg_dump` is smaller, portable and verifiable.
 
 ## Search
 
-Three problems, all fixed:
+The search box combines three sources: coordinates, the backend's local database
+search, and optionally a Photon server.
 
-1. **One failing source blanked all results.** The search box waited for its three
-   sources (coordinates, OpenCage places, the backend) with `Promise.all`, so if any
-   one failed you saw nothing. Now `Promise.allSettled` in `web/src/search/search.ts`;
-   this bug is in upstream too.
-2. **No place search.** The fork had switched off OpenCage (towns, addresses) as
-   online-only. It's back on: online it works, offline it adds nothing. Upstream's key
-   only accepts requests from `localhost`; tested, it works from
-   `http://localhost:5173` and is refused from other origins.
-3. **Names only matched at the start.** "Vianden" found the substation "Vianden" but
-   not the plant "Centrale de Vianden". `web-backend/src/views/search.py` now also
-   matches names where any word starts with the query (Postgres `\m` word-start regex;
-   "ian" doesn't match). Ranking: exact name, then name prefix (the old results, in
-   their old order), then word matches; within each, the largest first.
+**One failing source no longer blanks the results.** The box waited for all sources
+with `Promise.all`, so if any one failed (e.g. an online service while offline) you
+saw nothing. Now `Promise.allSettled` in `web/src/search/search.ts`; this bug is in
+upstream too.
+
+**Word matching.** "Vianden" found the substation "Vianden" but not the plant
+"Centrale de Vianden". `web-backend/src/views/search.py` now also matches names
+where any word starts with the query (Postgres `\m` word-start regex; "ian" doesn't
+match). Exact names first, then name prefix (the old results), then word matches.
+
+### Places, offline (replaces OpenCage)
+
+Upstream finds towns and addresses with OpenCage, an online service whose key only
+works from `localhost`. The fork imports places itself, so the search box finds
+cities, towns and villages offline, for the region you built:
+
+- **Import:** `imposm/places.py` (fork-only, one import line in `imposm/main.py`)
+  adds an `osm_place` table: countries, states, regions, counties, municipalities,
+  cities, towns, villages, hamlets, boroughs, suburbs, quarters, neighbourhoods,
+  islands, islets, archipelagos, with population. Upstream's mapping dropped the
+  `place` tag at read time, so it's taken off that drop list.
+- **Pre-filter made exact:** `scripts/osm_filter.py` now keeps only the OSM object
+  types each tag needs (e.g. `n/place=country,state,…` for points only, `nwr/` for
+  settlements, which are also mapped as areas). Big administrative places are points
+  only: their outlines are huge and the search needs one point. Re-verified on Bremen:
+  filtered and unfiltered imports identical in all 50 tables.
+- **Preparation** (`schema/places.sql`, run by builds after the import): an area
+  containing a point with the same name and type is dropped (the same place mapped
+  twice), remaining areas become a point inside them, unnamed places are removed.
+  Russia: 343 MB → 93 MB, 355,000 → 177,000 places, Novosibirsk & co. no longer
+  listed twice.
+- **Search** (`search_places` in `search.py`): same name matching; ordered by match
+  quality, then importance (country … town before infrastructure, villages, hamlets
+  and neighbourhoods after it), then population. Works without the EEZ boundaries
+  (the country is just left out). Results show e.g. "Town, Luxembourg".
+- **Indexes:** `create_indexes.py` covers `osm_place` like the other tables.
+- **Cost, measured on Russia:** database 1.11 GB (+~10%), places table 93 MB
+  including indexes, preparation 10 s, imposm import 46 s; searches take 6-60 ms.
+  So hamlets and neighbourhoods are included.
+- **OpenCage removed** (`web/src/search/opencage.ts` deleted, no attribution
+  footer). Upstream's older, unused `web/src/geocoder.ts` is left untouched.
+- **Merging:** the frontend drops a result with the same name within ~5 km of a
+  better-scored one (local place vs Photon, or point vs area).
+
+Existing databases and exports have no places until rebuilt; the search then simply
+returns no places.
+
+### Photon (optional, configured by hand)
+
+[Photon](https://github.com/komoot/photon) is an OpenStreetMap geocoder with street
+addresses. Setting it up isn't handled by the scripts (pre-built indexes are 32 GB
+for Europe, 63 GB for the world, and the per-country ones are outdated), but the app
+can use one:
+
+- `VITE_PHOTON_URL` in `web/.env` (e.g. `http://localhost:2322`); empty = not used.
+- A **Photon row in the Map sources panel** shows where the setting comes from, can
+  set or clear it for the current tab, checks the server answers, and explains how to
+  set the default.
+- `web/src/search/photon.ts` queries `<url>/api` on every search; tested against
+  photon.komoot.io ("Alexanderplatz" → Berlin; its "Bremen, Germany" merged with the
+  local result).
 
 **Search indexes.** Production creates name indexes with
 `web-backend/create_indexes.py`; local builds never did. Builds and imports now run
-it from the backend image (~5 s for Luxembourg). It also creates 56 `pg_trgm` trigram
-indexes (names and the 13 search languages) so word matching stays fast on big
-regions. `pg_trgm` is a "trusted" extension, so the database owner can enable it.
+it from the backend image (~5 s for Luxembourg). It also creates `pg_trgm` trigram
+indexes (names in the 13 search languages, 70 in all) so word matching stays fast on
+big regions. `pg_trgm` is a "trusted" extension, so the database owner can enable it.
+Exports don't contain extensions, so `import-db.sh` enables it before restoring;
+without that, restoring an export with these indexes failed.
 
 ---
 
@@ -327,8 +378,8 @@ by `launch.sh`.
   geocoder, preferring local services and falling back to the online ones, with the
   panel showing and overriding each URL.
 - **Node.js and npm must be installed** on the computer running the frontend.
-- **Place search** (towns, addresses) needs internet, and works only via `localhost`.
-- **Backend search** only covers power plants and substations (upstream design).
+- **Street addresses** need a Photon server (not set up by the scripts); places
+  (cities down to hamlets) are found offline for the built region.
 - **No live updates**: data is a snapshot; rebuild to refresh.
 - **Time estimates for the whole world** are scaled from the Russia build; the first
   real world build will show actual numbers in `build-history.log`.
@@ -342,22 +393,26 @@ Upstream files changed by the fork, and how much (so conflicts are expected here
 
 | File | Change |
 |------|--------|
+| `imposm/main.py` | Imports `places.py`; keeps the `place` tag |
 | `docker-compose.yml` | Added `backend`, `basemap` and `osmium` services; `:z` SELinux labels on mounts |
 | `schema/dev-init.sql` | Database from `template_postgis`, pre-installs `intarray` / `hstore` |
 | `schema/functions.sql` | Function order fixed for fresh installs |
-| `web-backend/create_indexes.py` | `pg_trgm` extension and trigram indexes |
+| `web-backend/create_indexes.py` | `pg_trgm` extension, trigram indexes, `osm_place` |
 | `web-backend/src/main.py` | `pool_pre_ping`; `/local-images` mount |
-| `web-backend/src/views/search.py` | Word-start matching and ranking |
+| `web-backend/src/views/search.py` | Word-start matching, ranking, local place search |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
-| `web/src/search/search.ts` | `Promise.allSettled` |
-| `web/src/search/openinframap.ts`, `api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
+| `web/src/search/search.ts` | `Promise.allSettled`; OpenCage replaced by Photon; duplicate merging |
+| `web/src/search/opencage.ts` | Deleted |
+| `web/src/search/openinframap.ts` | Backend URL configurable; place descriptions |
+| `web/src/api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
 | `web/src/style/style.ts`, `style_base.ts`, `config.ts` | Tile URLs configurable (`VITE_*`, session override) |
 | `web/src/openinframap.ts` | Map sources control; background switch hidden |
 | `web/src/elements/external-links.ts` | Popup crash fix |
 | `web/vite.config.ts` | Proxies backend routes, PWA exclusions |
 | `web/index.html` | "export (online)" label |
 
-Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `schema/eez.sql`, `schema/local-stats.sql`,
+Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/search/photon.ts`,
+`imposm/places.py`, `schema/places.sql`, `schema/eez.sql`, `schema/local-stats.sql`,
 `docker-compose.override.yml` and the docs is fork-only.
 
 After merging, check: `bash scripts/build-region.sh --region luxembourg --rebuild
