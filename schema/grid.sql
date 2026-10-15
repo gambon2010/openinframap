@@ -1,6 +1,9 @@
 -- Fork: power grid network for routing between two stations (/grid/route).
 --
--- Turns power lines of 110 kV and more into nodes and edges:
+-- Turns power lines of 10 kV and more (with a known voltage) into nodes and
+-- edges. Routes run over 110 kV and more; the lower voltages are only used to
+-- connect a station that isn't on that grid (e.g. a wind farm on a 65 kV line)
+-- to the nearest station that is:
 --   * Lines connect where they share a vertex (the same pylon). Lines that only
 --     cross each other in the air don't connect.
 --   * Every line end or shared pylon inside or close to a substation (or a
@@ -17,7 +20,7 @@ DROP TABLE IF EXISTS grid_node;
 \set station_polygon_snap 100
 \set station_point_snap 250
 
--- 1. Lines to route over: in service, 110 kV and more.
+-- 1. Lines: in service, 10 kV and more.
 CREATE TEMP TABLE grid_line AS
 SELECT row_number() OVER () AS line_id,
        osm_id,
@@ -26,8 +29,8 @@ SELECT row_number() OVER () AS line_id,
        tags -> 'name' AS name,
        geometry AS geom
   FROM osm_power_line
- WHERE type IN ('line', 'cable')
-   AND convert_voltage(voltage) >= 110000
+ WHERE type IN ('line', 'cable', 'minor_line')
+   AND convert_voltage(voltage) >= 10000
    AND coalesce(construction, '') = ''
    AND coalesce(disused, '') = ''
    AND NOT (tags ? 'construction:power' OR tags ? 'disused:power');
@@ -40,19 +43,7 @@ SELECT line_id, (dp).path[1] AS idx, (dp).geom AS geom,
 CREATE INDEX ON grid_vertex (key);
 CREATE INDEX ON grid_vertex (line_id, idx);
 
--- 3. Junctions: line ends, and vertices shared by more than one line.
-CREATE TEMP TABLE grid_junction AS
-WITH shared AS (
-    SELECT key FROM grid_vertex GROUP BY key HAVING count(DISTINCT line_id) > 1
-), last AS (
-    SELECT line_id, max(idx) AS last_idx FROM grid_vertex GROUP BY line_id
-)
-SELECT v.line_id, v.idx, v.key, v.geom
-  FROM grid_vertex AS v
-  JOIN last USING (line_id)
- WHERE v.idx = 1 OR v.idx = last.last_idx OR v.key IN (SELECT key FROM shared);
-
--- 4. Stations a junction can belong to. Substations first; plants only count
+-- 3. Stations a junction can belong to. Substations first; plants only count
 --    where no substation claims the junction.
 CREATE TEMP TABLE grid_station AS
 SELECT 'substation' AS kind, osm_id, name, voltage AS voltage_tag, geometry AS geom,
@@ -67,6 +58,22 @@ SELECT 'plant', osm_id, name, NULL, geometry,
        1
   FROM power_plant;
 CREATE INDEX ON grid_station USING gist (geom);
+
+-- 4. Junctions: line ends, vertices shared by more than one line, and vertices
+--    inside a station's outline (a line running through a substation or a
+--    wind farm connects to it).
+CREATE TEMP TABLE grid_junction AS
+WITH shared AS (
+    SELECT key FROM grid_vertex GROUP BY key HAVING count(DISTINCT line_id) > 1
+), last AS (
+    SELECT line_id, max(idx) AS last_idx FROM grid_vertex GROUP BY line_id
+)
+SELECT v.line_id, v.idx, v.key, v.geom
+  FROM grid_vertex AS v
+  JOIN last USING (line_id)
+ WHERE v.idx = 1 OR v.idx = last.last_idx OR v.key IN (SELECT key FROM shared)
+    OR EXISTS (SELECT 1 FROM grid_station AS s
+                WHERE GeometryType(s.geom) <> 'POINT' AND ST_Intersects(s.geom, v.geom));
 
 -- Each distinct junction position -> the best station within reach, if any.
 CREATE TEMP TABLE grid_key_station AS
@@ -143,6 +150,7 @@ SELECT l.osm_id, a.node_id, b.node_id, l.voltage, l.voltage_tag, l.name,
 CREATE INDEX ON grid_edge USING gist (geom);
 CREATE INDEX ON grid_edge (source);
 CREATE INDEX ON grid_edge (target);
+CREATE INDEX ON grid_edge (voltage);
 CREATE INDEX ON grid_node USING gist (geom);
 CREATE INDEX ON grid_node (kind, osm_id);
 ANALYZE grid_node;

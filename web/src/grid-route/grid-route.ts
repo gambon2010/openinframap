@@ -30,14 +30,20 @@ type RoutePath = {
   geometry: MultiLineString
 }
 
+// A station not on the ≥110 kV grid is first connected to it over lower
+// voltages (e.g. a wind farm's 65 kV line to the nearest 220 kV substation).
+type AccessLeg = RoutePath & { end: 'from' | 'to' }
+
 type RouteResponse = {
   from: Station
   to: Station
   notices: string[]
+  access: AccessLeg[]
   paths: RoutePath[]
 }
 
 const SOURCE = 'grid_route'
+const ACCESS_COLOUR = '#444444'
 export const PATH_COLOURS = ['#e6007e', '#0072ce', '#ff8c00', '#2e9e44', '#8e44ad']
 
 // Hash format: s<osm_id> for substations, p<osm_id> for plants, joined by "_".
@@ -68,6 +74,7 @@ export default class GridRouteControl implements IControl {
   _from?: Station
   _to?: Station
   _paths: RoutePath[] = []
+  _access: AccessLeg[] = []
   _selected: number | null = null
   _request = 0
 
@@ -97,9 +104,18 @@ export default class GridRouteControl implements IControl {
       if (map.getSource(SOURCE)) return
       map.addSource(SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({
+        id: 'grid_route_access',
+        type: 'line',
+        source: SOURCE,
+        filter: ['==', ['get', 'kind'], 'access'],
+        layout: { 'line-cap': 'butt', 'line-join': 'round' },
+        paint: { 'line-color': ACCESS_COLOUR, 'line-width': 4, 'line-dasharray': [2, 1.5] }
+      })
+      map.addLayer({
         id: 'grid_route_casing',
         type: 'line',
         source: SOURCE,
+        filter: ['==', ['get', 'kind'], 'path'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
           'line-color': '#ffffff',
@@ -112,6 +128,7 @@ export default class GridRouteControl implements IControl {
         id: 'grid_route',
         type: 'line',
         source: SOURCE,
+        filter: ['==', ['get', 'kind'], 'path'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
           'line-color': ['get', 'colour'],
@@ -162,6 +179,7 @@ export default class GridRouteControl implements IControl {
       this._urlHash.setParameter('route', this._from || this._to ? parts.join('_') : null)
     }
     this._paths = []
+    this._access = []
     this._selected = null
     this.draw()
     if (!this._from || !this._to) {
@@ -187,6 +205,7 @@ export default class GridRouteControl implements IControl {
       this._from = { ...this._from, name: data.from.name }
       this._to = { ...this._to, name: data.to.name }
       this._paths = data.paths
+      this._access = data.access || []
       this.draw()
       this.render(undefined, false, data.notices)
       this.zoom()
@@ -209,17 +228,21 @@ export default class GridRouteControl implements IControl {
         properties: {
           colour: PATH_COLOURS[i % PATH_COLOURS.length],
           offset: (i - (count - 1) / 2) * 5,
-          opacity: this._selected === null || this._selected === i ? 1 : 0.2
+          opacity: this._selected === null || this._selected === i ? 1 : 0.2,
+          kind: 'path'
         }
       }))
       .reverse() // first path on top
+    for (const leg of this._access) {
+      features.push({ type: 'Feature', geometry: leg.geometry, properties: { kind: 'access' } })
+    }
     source.setData({ type: 'FeatureCollection', features })
   }
 
   zoom(index?: number) {
-    if (!this._map || !this._paths.length) return
+    if (!this._map || !(this._paths.length || this._access.length)) return
     const bounds = new LngLatBounds()
-    const paths = index === undefined ? this._paths : [this._paths[index]]
+    const paths = index === undefined ? [...this._paths, ...this._access] : [this._paths[index]]
     for (const path of paths) {
       for (const line of path.geometry.coordinates) {
         for (const coord of line) bounds.extend(coord as [number, number])
@@ -264,6 +287,42 @@ export default class GridRouteControl implements IControl {
     ]
     for (const notice of notices) children.push(el('p', { class: 'oim-route-notice' }, notice))
     if (message) children.push(el('p', { class: isError ? 'oim-route-error' : 'oim-route-status' }, message))
+
+    if (this._access.length) {
+      const legs = this._access.map((leg) => {
+        const [first, ...rest] = leg.stations
+        const last = rest.pop()
+        return el(
+          'div',
+          { class: 'oim-route-access' },
+          el('span', { class: 'oim-route-swatch oim-route-swatch-access' }),
+          el(
+            'div',
+            `${first ? stationLabel(first) : ''} → ${last ? stationLabel(last) : ''}: `,
+            el('strong', `${leg.length_km.toLocaleString()} km`),
+            ' · ',
+            leg.voltages_kv.map((v) => `${v} kV`).join(', '),
+            ...(rest.length
+              ? [
+                  el(
+                    'div',
+                    { class: 'oim-route-via' },
+                    t('route.via', 'via') + ' ' + rest.map(stationLabel).join(', ')
+                  )
+                ]
+              : [])
+          )
+        )
+      })
+      children.push(
+        el(
+          'div',
+          { class: 'oim-route-access-list' },
+          el('div', { class: 'oim-route-access-title' }, t('route.access', 'Connection to the 110 kV+ grid')),
+          ...legs
+        )
+      )
+    }
 
     if (this._paths.length) {
       const list = el('ol', { class: 'oim-route-paths' })

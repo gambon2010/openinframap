@@ -1,8 +1,10 @@
 """
 Fork (prototype): paths through the power grid between two stations.
 
-Uses the grid_node / grid_edge tables built by schema/grid.sql, which only
-contain lines of 110 kV and more.
+Uses the grid_node / grid_edge tables built by schema/grid.sql (lines of 10 kV
+and more). Routes run over lines of 110 kV and more; a station only on a lower
+voltage (e.g. a wind farm on a 65 kV line) gets an "access" leg to the nearest
+station on that grid.
 
     GET /grid/route?from=substation/123&to=plant/456&paths=3
 """
@@ -26,8 +28,14 @@ CANDIDATES = 200
 # A path sharing more than this fraction of its length with an already chosen
 # one is a near-duplicate (e.g. the same route with one hop on a parallel line).
 MAX_OVERLAP = 0.7
-# How far a station without its own ≥110 kV line may be from one that has
-# (EPSG:3857 units, roughly 4-7 km in Europe).
+# Routes run over lines of this voltage and more. A station that isn't on that
+# grid is first connected to it over lower-voltage lines (an "access" leg) of at
+# most ACCESS_MAX metres, searched within ACCESS_RADIUS (EPSG:3857 units).
+BACKBONE_VOLTAGE = 110000
+ACCESS_MAX = 50000
+ACCESS_RADIUS = 60000
+# A station with no line of known voltage at all may use the nearest station
+# with one, this close (EPSG:3857 units, roughly 4-7 km in Europe).
 NEAREST_STATION = 7500
 # A grid station closer than this (metres) is the same station mapped twice in
 # OpenStreetMap (e.g. a substation's outline and its site relation): no notice.
@@ -86,35 +94,27 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
     label = station._mapping["name"] or f"this {kind}"
     if not nearest:
         raise HTTPException(
-            404, f"No line of 110 kV or more reaches {label}, and there's no station on that grid nearby."
+            404, f"No power line of known voltage reaches {label}, and there's no station with one nearby."
         )
     node = dict(nearest._mapping)
     distance = node.pop("distance")
     if distance < SAME_STATION:
         return node, None
     notice = (
-        f"No line of 110 kV or more reaches {label}; using the nearest station on that grid, "
+        f"No power line of known voltage reaches {label}; using the nearest station with one, "
         f"{node['name'] or 'an unnamed ' + node['kind']} ({distance / 1000:.1f} km away)."
     )
     return node, notice
 
 
-async def load_graph(database: AsyncConnection, a: dict, b: dict) -> tuple["nx.Graph[int]", dict[int, dict]]:
-    """The grid around both stations: a simple graph (shortest of parallel lines as weight)."""
-    edges = await database.execute(
-        text(
-            """SELECT e.edge_id, e.source, e.target, e.voltage, e.name, e.length_m,
-                      ST_AsGeoJSON(ST_Transform(e.geom, 4326)) AS geometry
-                 FROM grid_edge AS e
-                WHERE e.geom && ST_Expand(
-                          ST_MakeLine(CAST(:a AS geometry), CAST(:b AS geometry)),
-                          GREATEST(100000, ST_Distance(CAST(:a AS geometry), CAST(:b AS geometry)) / 2))"""
-        ),
-        {"a": a["geom"], "b": b["geom"]},
-    )
+EDGE_COLUMNS = """e.edge_id, e.source, e.target, e.voltage, e.name, e.length_m,
+                  ST_AsGeoJSON(ST_Transform(e.geom, 4326)) AS geometry"""
+
+
+def build_graph(rows: Any, edge_info: dict[int, dict]) -> "nx.Graph[int]":
+    """A simple graph from edge rows; parallel lines become one hop (shortest as weight)."""
     graph: nx.Graph[int] = nx.Graph()
-    edge_info: dict[int, dict] = {}
-    for row in edges:
+    for row in rows:
         e = dict(row._mapping)
         edge_info[e["edge_id"]] = e
         u, v = e["source"], e["target"]
@@ -124,7 +124,54 @@ async def load_graph(database: AsyncConnection, a: dict, b: dict) -> tuple["nx.G
             data["length"] = min(data["length"], e["length_m"])
         else:
             graph.add_edge(u, v, length=e["length_m"], edges=[e["edge_id"]])
-    return graph, edge_info
+    return graph
+
+
+async def load_backbone(
+    database: AsyncConnection, a: dict, b: dict, edge_info: dict[int, dict]
+) -> "nx.Graph[int]":
+    """Lines of 110 kV and more around both ends."""
+    rows = await database.execute(
+        text(
+            f"""SELECT {EDGE_COLUMNS}
+                 FROM grid_edge AS e
+                WHERE e.voltage >= :min_voltage
+                  AND e.geom && ST_Expand(
+                          ST_MakeLine(CAST(:a AS geometry), CAST(:b AS geometry)),
+                          GREATEST(100000, ST_Distance(CAST(:a AS geometry), CAST(:b AS geometry)) / 2))"""
+        ),
+        {"a": a["geom"], "b": b["geom"], "min_voltage": BACKBONE_VOLTAGE},
+    )
+    return build_graph(rows, edge_info)
+
+
+async def access_leg(
+    database: AsyncConnection, node: dict, backbone: "nx.Graph[int]", edge_info: dict[int, dict]
+) -> Optional[list[int]]:
+    """Shortest path over lines of any voltage from a station that isn't on the
+    ≥110 kV grid (e.g. a wind farm on a 65 kV line) to the nearest node that is.
+    [node] if it's already on that grid, None if no such node is within reach."""
+    if node["node_id"] in backbone:
+        return [node["node_id"]]
+    rows = await database.execute(
+        text(
+            f"""SELECT {EDGE_COLUMNS}
+                 FROM grid_edge AS e
+                WHERE e.geom && ST_Expand(CAST(:geom AS geometry), :radius)"""
+        ),
+        {"geom": node["geom"], "radius": ACCESS_RADIUS},
+    )
+    local = build_graph(rows, edge_info)
+    if node["node_id"] not in local:
+        return None
+    lengths = nx.single_source_dijkstra_path_length(
+        local, node["node_id"], cutoff=ACCESS_MAX, weight="length"
+    )
+    reachable = [n for n in lengths if n in backbone]
+    if not reachable:
+        return None
+    entry = min(reachable, key=lambda n: lengths[n])
+    return list(nx.dijkstra_path(local, node["node_id"], entry, weight="length"))
 
 
 async def node_names(database: AsyncConnection, node_ids: set[int]) -> dict[int, dict]:
@@ -162,6 +209,26 @@ def station_summary(node: dict) -> dict[str, Any]:
     return {"kind": node["kind"], "osm_id": node["osm_id"], "name": node["name"]}
 
 
+def describe(path: list[int], edge_info: dict[int, dict], names: dict[int, dict]) -> dict[str, Any]:
+    """Length, voltages, stations and geometry of a node path (all parallel lines drawn)."""
+    hops = list(zip(path, path[1:]))
+    by_pair: dict[frozenset[int], list[dict]] = {}
+    for e in edge_info.values():
+        by_pair.setdefault(frozenset((e["source"], e["target"])), []).append(e)
+    edges = [e for u, v in hops for e in by_pair.get(frozenset((u, v)), [])]
+    return {
+        "length_km": round(
+            sum(min(e["length_m"] for e in by_pair[frozenset((u, v))]) for u, v in hops) / 1000, 1
+        ),
+        "voltages_kv": sorted({e["voltage"] // 1000 for e in edges}, reverse=True),
+        "stations": [station_summary(names[n]) for n in path if n in names],
+        "geometry": {
+            "type": "MultiLineString",
+            "coordinates": [json.loads(e["geometry"])["coordinates"] for e in edges],
+        },
+    }
+
+
 async def route(request: Request) -> Response:
     database = get_db(request)
     if not (await database.execute(text("SELECT to_regclass('grid_edge') IS NOT NULL"))).scalar():
@@ -181,31 +248,45 @@ async def route(request: Request) -> Response:
     if a["node_id"] == b["node_id"]:
         raise HTTPException(400, "Both ends are the same station on the grid")
 
-    graph, edge_info = await load_graph(database, a, b)
-    paths = distinct_paths(graph, a["node_id"], b["node_id"], count)
-    names = await node_names(database, {node for path in paths for node in path})
+    edge_info: dict[int, dict] = {}
+    backbone = await load_backbone(database, a, b, edge_info)
+    legs = []
+    for end, node in (("from", a), ("to", b)):
+        leg = await access_leg(database, node, backbone, edge_info)
+        if leg is None:
+            notices.append(
+                f"{node['name'] or 'This ' + node['kind']} isn't connected to the grid of 110 kV and "
+                f"more within {ACCESS_MAX // 1000} km along lines of known voltage."
+            )
+        legs.append(leg)
 
-    results = []
-    for path in paths:
-        edge_ids = [edge for u, v in zip(path, path[1:]) for edge in graph[u][v]["edges"]]
-        results.append(
-            {
-                "length_km": round(sum(graph[u][v]["length"] for u, v in zip(path, path[1:])) / 1000, 1),
-                "voltages_kv": sorted({edge_info[e]["voltage"] // 1000 for e in edge_ids}, reverse=True),
-                "stations": [station_summary(names[n]) for n in path if n in names],
-                "geometry": {
-                    "type": "MultiLineString",
-                    "coordinates": [json.loads(edge_info[e]["geometry"])["coordinates"] for e in edge_ids],
-                },
-            }
-        )
-    if not results:
+    paths: list[list[int]] = []
+    # Both ends reach the ≥110 kV grid at the same station: the access legs are the whole connection.
+    same_entry = bool(legs[0] and legs[1] and legs[0][-1] == legs[1][-1])
+    if legs[0] and legs[1] and not same_entry:
+        paths = distinct_paths(backbone, legs[0][-1], legs[1][-1], count)
+
+    all_nodes = {n for path in paths for n in path} | {n for leg in legs if leg for n in leg}
+    names = await node_names(database, all_nodes)
+    access = []
+    for end, leg in zip(("from", "to"), legs):
+        if leg and len(leg) > 1:
+            path = leg if end == "from" else list(reversed(leg))
+            access.append({"end": end, **describe(path, edge_info, names)})
+    results = [describe(path, edge_info, names) for path in paths]
+    if not results and legs[0] and legs[1] and not same_entry:
         notices.append(
             "No connection found over lines of 110 kV or more. OpenStreetMap may be missing a line, "
             "or the stations aren't connected at this voltage within the built region."
         )
     return JSONResponse(
-        {"from": station_summary(a), "to": station_summary(b), "notices": notices, "paths": results}
+        {
+            "from": station_summary(a),
+            "to": station_summary(b),
+            "notices": notices,
+            "access": access,
+            "paths": results,
+        }
     )
 
 
