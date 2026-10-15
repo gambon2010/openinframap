@@ -14,6 +14,7 @@ import { t } from 'i18next'
 import { el, mount, setChildren } from 'redom'
 import { BACKEND_BASE_URL } from '../config.js'
 import './grid-route.css'
+import { closeButton, minimiseButton, updateMinimiseButton } from '../info-panel/info-panel.ts'
 
 export type StationKind = 'substation' | 'plant'
 
@@ -124,6 +125,7 @@ export default class GridRouteControl implements IControl {
   _urlHash: URLHash
   _container!: HTMLDivElement
   _body!: HTMLDivElement
+  _minimise!: HTMLButtonElement
   _from?: Station
   _to?: Station
   _paths: Route[] = []
@@ -138,17 +140,18 @@ export default class GridRouteControl implements IControl {
   onAdd(map: Map) {
     this._map = map
     this._body = el('div', { class: 'oim-route-body' })
-    const close = el('button', '×', {
-      class: 'oim-route-close',
-      type: 'button',
-      title: t('route.clear', 'Clear'),
-      'aria-label': t('route.clear', 'Clear')
-    })
-    close.onclick = () => this.clear()
+    // Minimise keeps the routes on the map; close clears them.
+    this._minimise = minimiseButton(() => this.setMinimised(!this._container.classList.contains('minimised')))
+    const close = closeButton(() => this.clear())
     this._container = el(
       'div',
       { class: 'maplibregl-ctrl oim-route-panel' },
-      el('div', { class: 'oim-route-header' }, el('h2', t('route.title', 'Grid connection')), close),
+      el(
+        'div',
+        { class: 'oim-route-header' },
+        el('h2', t('route.title', 'Grid connection')),
+        el('div', { class: 'oim-route-buttons-top' }, this._minimise, close)
+      ),
       this._body
     ) as HTMLDivElement
 
@@ -193,6 +196,12 @@ export default class GridRouteControl implements IControl {
     this._map = undefined
   }
 
+  setMinimised(minimised: boolean) {
+    if (!this._container) return // a route from the link is read before the panel exists
+    this._container.classList.toggle('minimised', minimised)
+    updateMinimiseButton(this._minimise, minimised)
+  }
+
   /** Called from the info popup's buttons. */
   setEnd(end: 'from' | 'to', station: Station) {
     if (end === 'from') this._from = station
@@ -222,6 +231,7 @@ export default class GridRouteControl implements IControl {
     }
     this._paths = []
     this._selected = null
+    this.setMinimised(false)
     this.draw()
     if (!this._from || !this._to) {
       this.render()

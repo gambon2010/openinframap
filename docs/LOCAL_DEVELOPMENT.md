@@ -308,9 +308,11 @@ those lines to the nearest station on the 110 kV+ grid; those stretches show
 their lower voltage in the breakdown. The route is kept
 in the map link, so you can share it.
 
-Clicking a **power line** highlights the whole line up to the stations at its ends
-while its popup is open; the popup names those stations and the length, and
-**Show whole line** zooms to it. Needs a database built with this feature
+Clicking anything on the map shows its details in a **panel on the left** (not a
+popup over the map) and highlights it: icons get a glowing circle, areas an
+outline, lines a glow. A **power line** is highlighted up to the stations at its
+ends; the panel names them and the length, and **Show whole line** zooms to it.
+**–** minimises a panel (the highlight stays), **×** closes it (the highlight goes). Needs a database built with this feature
 (`build-region.sh` builds the network automatically).
 
 ## Wikidata image cache

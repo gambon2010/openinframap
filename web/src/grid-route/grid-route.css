@@ -17,23 +17,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.3em 0.3em 0.3em 8px;
+  padding: 0 0 0 8px;
   background-color: var(--oim-light-grey);
 }
 
 .oim-route-header h2 {
   margin: 0;
   font-size: 1.05rem;
-}
-
-.oim-route-close {
-  border: 0;
-  background: transparent;
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 0.3em;
-  color: var(--oim-text-color-light);
 }
 
 .oim-route-body {
@@ -170,4 +160,19 @@
   cursor: pointer;
   font-size: inherit;
   text-decoration: underline;
+}
+
+.oim-route-buttons-top {
+  display: flex;
+  align-self: flex-start;
+}
+
+/* Minimised: only the title bar stays; the routes stay on the map. */
+.oim-route-panel.minimised .oim-route-body {
+  display: none;
+}
+
+/* With feature details above it, keep both on screen. */
+.oim-info-panel.visible ~ .oim-route-panel .oim-route-body {
+  max-height: 35vh;
 }

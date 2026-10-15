@@ -305,5 +305,10 @@
     "length": "Highlighted: {{length}}",
     "incomplete": "(very long, shown in part)",
     "show-all": "Show whole line"
+  },
+  "panel": {
+    "minimise": "Minimise",
+    "restore": "Restore",
+    "close": "Close"
   }
 }

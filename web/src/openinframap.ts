@@ -11,7 +11,8 @@ import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
 import MapSourcesControl from './map-sources/map-sources.ts'
 import GridRouteControl from './grid-route/grid-route.ts'
-import LineHighlight from './grid-route/line-highlight.ts'
+import FeatureHighlight from './grid-route/highlight.ts'
+import InfoPanel from './info-panel/info-panel.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
@@ -130,6 +131,9 @@ export default class OpenInfraMap {
     map.addControl(layer_switcher, 'top-right')
     map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
+    // Left side, top to bottom: search, feature details, grid connection.
+    const info_panel = new InfoPanel()
+    map.addControl(info_panel, 'top-left')
     map.addControl(grid_route, 'top-left')
     new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
@@ -137,7 +141,8 @@ export default class OpenInfraMap {
       api,
       circuit_inspector,
       grid_route,
-      line_highlight: new LineHighlight(map)
+      panel: info_panel,
+      highlight: new FeatureHighlight(map)
     }).add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
 

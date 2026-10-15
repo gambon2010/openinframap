@@ -391,11 +391,21 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   one connected grid. UA Merzig → UA Rehlingen gives 12.6 km (direct 110 kV), 24.8 km
   (via Saarwellingen) and 60.6 km (via Wadern and Lebach); across Saarland, two
   routes of 93-95 km that split around Bexbach and Heinitz.
-- **Where a line goes** (`web/src/grid-route/line-highlight.ts`,
+- **Details in a side panel** (`web/src/info-panel/`): clicking a feature shows its
+  details in a panel on the left, under the search box and above the Grid
+  connection panel, instead of a popup over the map (which hid what you clicked).
+  Both panels have minimise (keeps the highlight / routes on the map, shrinks to the
+  title) and close (removes them). Clicking another feature replaces the details;
+  Escape closes them. (The Osmose validation popups are unchanged.)
+- **Highlight of the selected feature** (`web/src/grid-route/highlight.ts`): points
+  get a glowing circle, areas (substations, plants, wind farms) an outline and light
+  fill, lines a glow; the pieces of a feature in all loaded tiles are collected, so
+  big areas are highlighted whole. Drawn below labels and icons so they stay readable.
+- **Where a line goes** (`web/src/grid-route/highlight.ts`,
   `GET /grid/line/<osm_id>`): clicking a power line highlights the whole connection
-  it belongs to while its popup is open, not just the clicked piece (OpenStreetMap
+  it belongs to while its details are shown, not just the clicked piece (OpenStreetMap
   splits lines into many pieces). The backend follows stretches of the same voltage
-  through junctions and branch points, stopping at stations; the popup says
+  through junctions and branch points, stopping at stations; the panel says
   "Connects Heisdorf – Roost · 13.3 km" and has a "Show whole line" link that zooms
   to it. Lines without a known voltage (not in the network) highlight just
   themselves.
@@ -478,13 +488,13 @@ Upstream files changed by the fork, and how much (so conflicts are expected here
 | `web/src/api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
 | `web/src/style/style.ts`, `style_base.ts`, `config.ts` | Tile URLs configurable (`VITE_*`, session override) |
 | `web/src/openinframap.ts` | Map sources and grid route controls; background switch hidden |
-| `web/src/popup/infopopup.ts` | "Route from here / to here" buttons for substations and plants |
+| `web/src/popup/infopopup.ts` | Details shown in the side panel instead of a popup; feature highlight; "Route from here / to here" buttons |
 | `web-backend/src/views/__init__.py`, `pyproject.toml`, `uv.lock` | Grid route view; networkx |
 | `web/src/elements/external-links.ts` | Popup crash fix |
 | `web/vite.config.ts` | Proxies backend routes, PWA exclusions |
 | `web/index.html` | "export (online)" label |
 
-Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/grid-route/`, `web/src/search/photon.ts`,
+Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/info-panel/`, `web/src/grid-route/`, `web/src/search/photon.ts`,
 `web-backend/src/views/grid.py`, `schema/grid.sql`,
 `imposm/places.py`, `schema/places.sql`, `schema/eez.sql`, `schema/local-stats.sql`,
 `docker-compose.override.yml` and the docs is fork-only.

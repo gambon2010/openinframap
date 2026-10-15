@@ -1,7 +1,7 @@
 import './infopopup.css'
 
 import i18next, { t } from 'i18next'
-import { LngLat, MapGeoJSONFeature, Popup, Map } from 'maplibre-gl'
+import { MapGeoJSONFeature, Map } from 'maplibre-gl'
 import { BACKEND_BASE_URL } from '../config.js'
 import { titleCase } from 'title-case'
 import { local_name_tags, formatVoltage, formatFrequency, formatPower } from '../l10n.ts'
@@ -13,7 +13,8 @@ import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
 import GridRouteControl, { StationKind } from '../grid-route/grid-route.ts'
-import LineHighlight from '../grid-route/line-highlight.ts'
+import FeatureHighlight from '../grid-route/highlight.ts'
+import InfoPanel from '../info-panel/info-panel.ts'
 
 const hidden_keys = [
   'osm_id',
@@ -176,39 +177,41 @@ interface InfoPopupOptions {
   api: OpenInfraMapAPI
   circuit_inspector: CircuitInspector
   grid_route?: GridRouteControl // fork: route between stations
-  line_highlight?: LineHighlight // fork: highlight where a power line goes
+  // Fork: details go in a side panel instead of a popup, and the feature is highlighted.
+  panel: InfoPanel
+  highlight?: FeatureHighlight
 }
 
 class InfoPopup {
   layers: string[]
   min_zoom: any
-  popup_obj: Popup | null
+  panel: InfoPanel
   _map!: Map
   friendlyNames: { [key: string]: string }
   api: OpenInfraMapAPI
   circuit_inspector: CircuitInspector
   grid_route?: GridRouteControl
-  line_highlight?: LineHighlight
+  highlight?: FeatureHighlight
 
   constructor(options: InfoPopupOptions) {
     this.api = options.api
     this.layers = options.layers
     this.min_zoom = options.min_zoom
-    this.popup_obj = null
+    this.panel = options.panel
     this.friendlyNames = friendlyNames()
     this.circuit_inspector = options.circuit_inspector
     this.grid_route = options.grid_route
-    this.line_highlight = options.line_highlight
+    this.highlight = options.highlight
   }
 
   add(map: Map, clickRouter: ClickRouter) {
     this._map = map
 
-    clickRouter.registerHandler(this.layers, (f, l) => this.popup(f, l))
+    clickRouter.registerHandler(this.layers, (f) => this.popup(f))
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.popup_obj) {
-        this.popup_obj.remove()
+      if (e.key === 'Escape' && this.panel.isOpen()) {
+        this.panel.close()
       }
     })
   }
@@ -419,7 +422,7 @@ class InfoPopup {
           type: 'button',
           onclick: () => {
             route.setEnd(end, station)
-            this.popup_obj?.remove()
+            this.panel.close()
           }
         })
       mount(
@@ -434,35 +437,25 @@ class InfoPopup {
     return content
   }
 
-  async popup(feature: MapGeoJSONFeature, location: LngLat) {
-    if (this.popup_obj && this.popup_obj.isOpen()) {
-      this.popup_obj.remove()
-    }
-
+  async popup(feature: MapGeoJSONFeature) {
     if (import.meta.env.DEV) {
-      console.info('Clicked feature on layer', feature.layer.id, 'at', location, '\n', feature.properties)
+      console.info('Clicked feature on layer', feature.layer.id, '\n', feature.properties)
     }
 
-    this.popup_obj = new Popup()
-      .setLngLat(location)
-      .setDOMContent(await this.popupHtml(feature))
-      .addTo(this._map)
-      .addClassName('oim-popup')
-      .addClassName('oim-popup-info')
+    const content = await this.popupHtml(feature)
+    const highlight = this.highlight
+    highlight?.showFeature(feature)
+    this.panel.show(content, () => highlight?.clear())
 
-    // Fork: highlight where a power line goes while its popup is open.
-    const highlight = this.line_highlight
+    // Power lines: highlight the whole line up to its stations, and say which.
     if (
       highlight &&
       feature.layer.id.startsWith('power_line') &&
       feature.properties['osm_id'] !== undefined
     ) {
-      const popup = this.popup_obj
-      popup.on('close', () => highlight.clear())
-      const info = await highlight.show(Number(feature.properties['osm_id']))
-      if (info && popup.isOpen()) {
-        const footer = popup.getElement().querySelector('.oim-info-footer')
-        footer?.parentElement?.insertBefore(info, footer)
+      const info = await highlight.showLine(Number(feature.properties['osm_id']))
+      if (info && content.isConnected) {
+        content.insertBefore(info, content.querySelector('.oim-info-footer'))
       }
     }
   }
@@ -481,7 +474,7 @@ class InfoPopup {
             el('button', 'view', {
               onclick: () => {
                 this.circuit_inspector.show(c['circuit']['id'])
-                this.popup_obj?.remove()
+                this.panel.close()
               }
             })
           )
