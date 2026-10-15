@@ -306,7 +306,11 @@ different colours; click a path to show only that one, × to clear. A station th
 is only on a lower voltage (e.g. a wind farm on a 65 kV line) is connected over
 those lines to the nearest station on the 110 kV+ grid; those stretches show
 their lower voltage in the breakdown. The route is kept
-in the map link, so you can share it. Needs a database built with this feature
+in the map link, so you can share it.
+
+Clicking a **power line** highlights the whole line up to the stations at its ends
+while its popup is open; the popup names those stations and the length, and
+**Show whole line** zooms to it. Needs a database built with this feature
 (`build-region.sh` builds the network automatically).
 
 ## Wikidata image cache

@@ -299,5 +299,11 @@
     "unnamed-plant": "Unnamed power plant",
     "junction": "line junction",
     "total": "Total"
+  },
+  "line": {
+    "connects": "Connects {{stations}} · {{length}}",
+    "length": "Highlighted: {{length}}",
+    "incomplete": "(very long, shown in part)",
+    "show-all": "Show whole line"
   }
 }

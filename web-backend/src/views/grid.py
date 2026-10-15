@@ -313,6 +313,118 @@ async def route(request: Request) -> Response:
     )
 
 
-routes = [Route("/grid/route", endpoint=route)]
+# Stretches of line followed from a clicked line before giving up (a very long
+# corridor without substations, or a data error looping through junctions).
+MAX_LINE_EDGES = 2000
+
+
+async def line(request: Request) -> Response:
+    """Where a power line goes: the clicked line plus every connected stretch of
+    the same voltage, through junctions, up to the stations at its ends.
+
+        GET /grid/line/<osm_id>
+    """
+    database = get_db(request)
+    try:
+        osm_id = int(request.path_params["osm_id"])
+    except ValueError:
+        raise HTTPException(400, "Invalid line id")
+
+    has_grid = (await database.execute(text("SELECT to_regclass('grid_edge') IS NOT NULL"))).scalar()
+    edges: dict[int, dict] = {}
+    if has_grid:
+        start = await database.execute(
+            text(f"SELECT {EDGE_COLUMNS} FROM grid_edge AS e WHERE e.line_osm_id = :osm_id"),
+            {"osm_id": osm_id},
+        )
+        edges = {row._mapping["edge_id"]: dict(row._mapping) for row in start}
+
+    if not edges:
+        # Not in the network (no known voltage, or below 10 kV): just the line itself.
+        rows = await database.execute(
+            text(
+                """SELECT ST_AsGeoJSON(ST_Transform(geometry, 4326)) AS geometry,
+                          ST_Length(ST_Transform(geometry, 4326)::geography) AS length_m
+                     FROM osm_power_line WHERE osm_id = :osm_id"""
+            ),
+            {"osm_id": osm_id},
+        )
+        found = [dict(r._mapping) for r in rows]
+        if not found:
+            raise HTTPException(404, "Line not found")
+        return JSONResponse(
+            {
+                "stations": [],
+                "length_km": round(sum(r["length_m"] for r in found) / 1000, 1),
+                "voltages_kv": [],
+                "complete": True,
+                "geometry": {
+                    "type": "MultiLineString",
+                    "coordinates": [json.loads(r["geometry"])["coordinates"] for r in found],
+                },
+            }
+        )
+
+    voltage = max(e["voltage"] for e in edges.values())
+    nodes = await database.execute(
+        text("SELECT node_id, kind, osm_id, name FROM grid_node WHERE node_id = ANY(:ids)"),
+        {"ids": list({n for e in edges.values() for n in (e["source"], e["target"])})},
+    )
+    node_info = {r._mapping["node_id"]: dict(r._mapping) for r in nodes}
+    # Follow the line through junctions (pylons shared with other lines, branch
+    # points) but not through stations.
+    frontier = [n for n, info in node_info.items() if info["kind"] == "junction"]
+    seen = set(frontier)
+    complete = True
+    while frontier:
+        if len(edges) >= MAX_LINE_EDGES:
+            complete = False
+            break
+        rows = await database.execute(
+            text(
+                f"""SELECT {EDGE_COLUMNS} FROM grid_edge AS e
+                     WHERE (e.source = ANY(:ids) OR e.target = ANY(:ids)) AND e.voltage = :voltage"""
+            ),
+            {"ids": frontier, "voltage": voltage},
+        )
+        new_nodes: set[int] = set()
+        for row in rows:
+            e = dict(row._mapping)
+            if e["edge_id"] not in edges:
+                edges[e["edge_id"]] = e
+                new_nodes.update((e["source"], e["target"]))
+        new_nodes -= seen
+        if not new_nodes:
+            break
+        found_nodes = await database.execute(
+            text("SELECT node_id, kind, osm_id, name FROM grid_node WHERE node_id = ANY(:ids)"),
+            {"ids": list(new_nodes)},
+        )
+        for r in found_nodes:
+            node_info[r._mapping["node_id"]] = dict(r._mapping)
+        seen |= new_nodes
+        frontier = [n for n in new_nodes if node_info[n]["kind"] == "junction"]
+
+    stations = [station_summary(info) for info in node_info.values() if info["kind"] != "junction"]
+    # Parallel circuits between the same two points count once in the length.
+    by_pair: dict[frozenset[int], float] = {}
+    for e in edges.values():
+        pair = frozenset((e["source"], e["target"]))
+        by_pair[pair] = min(by_pair.get(pair, e["length_m"]), e["length_m"])
+    return JSONResponse(
+        {
+            "stations": sorted(stations, key=lambda s: s["name"] or ""),
+            "length_km": round(sum(by_pair.values()) / 1000, 1),
+            "voltages_kv": [voltage // 1000],
+            "complete": complete,
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [json.loads(e["geometry"])["coordinates"] for e in edges.values()],
+            },
+        }
+    )
+
+
+routes = [Route("/grid/route", endpoint=route), Route("/grid/line/{osm_id}", endpoint=line)]
 
 __all__ = ["routes"]

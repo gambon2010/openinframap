@@ -11,6 +11,7 @@ import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
 import MapSourcesControl from './map-sources/map-sources.ts'
 import GridRouteControl from './grid-route/grid-route.ts'
+import LineHighlight from './grid-route/line-highlight.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
@@ -135,7 +136,8 @@ export default class OpenInfraMap {
       min_zoom: 6,
       api,
       circuit_inspector,
-      grid_route
+      grid_route,
+      line_highlight: new LineHighlight(map)
     }).add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
 

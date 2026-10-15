@@ -153,3 +153,21 @@
   color: var(--oim-text-color);
   font-weight: bold;
 }
+
+.oim-line-connects {
+  margin: 6px 0;
+  padding: 4px 6px;
+  border-left: 4px solid #ffd400;
+  background: #fffbe6;
+  font-size: 0.85rem;
+}
+
+.oim-line-show-all {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1a5fb4;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}

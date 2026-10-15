@@ -34,7 +34,7 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Data** | `scripts/build-region.sh`: pick any Geofabrik region or the whole world, download (kept and reused), filter to infrastructure with osmium, import, views, search indexes, EEZ boundaries and per-country stats, all unattended after a few questions |
 | **Sharing** | `scripts/export-db.sh` / `scripts/import-db.sh`: save a built database (plus the Docker images) and restore it elsewhere in minutes, offline too |
 | **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Map sources panel to see and change the URL for the current tab |
-| **Grid connections** (prototype) | Pick two substations or plants; the map shows up to three paths between them over lines of 110 kV and more |
+| **Grid connections** (prototype) | Pick two substations or plants; the map shows up to three paths between them over lines of 110 kV and more, stretch by stretch. Clicking a power line highlights where it goes |
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
 | **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; power plants and substations also match words inside names ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |

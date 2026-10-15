@@ -13,6 +13,7 @@ import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
 import GridRouteControl, { StationKind } from '../grid-route/grid-route.ts'
+import LineHighlight from '../grid-route/line-highlight.ts'
 
 const hidden_keys = [
   'osm_id',
@@ -175,6 +176,7 @@ interface InfoPopupOptions {
   api: OpenInfraMapAPI
   circuit_inspector: CircuitInspector
   grid_route?: GridRouteControl // fork: route between stations
+  line_highlight?: LineHighlight // fork: highlight where a power line goes
 }
 
 class InfoPopup {
@@ -186,6 +188,7 @@ class InfoPopup {
   api: OpenInfraMapAPI
   circuit_inspector: CircuitInspector
   grid_route?: GridRouteControl
+  line_highlight?: LineHighlight
 
   constructor(options: InfoPopupOptions) {
     this.api = options.api
@@ -195,6 +198,7 @@ class InfoPopup {
     this.friendlyNames = friendlyNames()
     this.circuit_inspector = options.circuit_inspector
     this.grid_route = options.grid_route
+    this.line_highlight = options.line_highlight
   }
 
   add(map: Map, clickRouter: ClickRouter) {
@@ -445,6 +449,22 @@ class InfoPopup {
       .addTo(this._map)
       .addClassName('oim-popup')
       .addClassName('oim-popup-info')
+
+    // Fork: highlight where a power line goes while its popup is open.
+    const highlight = this.line_highlight
+    if (
+      highlight &&
+      feature.layer.id.startsWith('power_line') &&
+      feature.properties['osm_id'] !== undefined
+    ) {
+      const popup = this.popup_obj
+      popup.on('close', () => highlight.clear())
+      const info = await highlight.show(Number(feature.properties['osm_id']))
+      if (info && popup.isOpen()) {
+        const footer = popup.getElement().querySelector('.oim-info-footer')
+        footer?.parentElement?.insertBefore(info, footer)
+      }
+    }
   }
 
   circuits_table(circuits: Array<object>) {

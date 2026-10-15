@@ -391,6 +391,14 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   one connected grid. UA Merzig → UA Rehlingen gives 12.6 km (direct 110 kV), 24.8 km
   (via Saarwellingen) and 60.6 km (via Wadern and Lebach); across Saarland, two
   routes of 93-95 km that split around Bexbach and Heinitz.
+- **Where a line goes** (`web/src/grid-route/line-highlight.ts`,
+  `GET /grid/line/<osm_id>`): clicking a power line highlights the whole connection
+  it belongs to while its popup is open, not just the clicked piece (OpenStreetMap
+  splits lines into many pieces). The backend follows stretches of the same voltage
+  through junctions and branch points, stopping at stations; the popup says
+  "Connects Heisdorf – Roost · 13.3 km" and has a "Show whole line" link that zooms
+  to it. Lines without a known voltage (not in the network) highlight just
+  themselves.
 - **Limits:** paths are physical connections in OpenStreetMap, not how power flows;
   a missing line or substation in OpenStreetMap can hide a connection; both ends
   must be in the built region (France–Germany needs Europe or a custom region);
