@@ -294,10 +294,10 @@
     "searching": "Looking for connections over lines of 110 kV or more…",
     "error": "Couldn't reach the backend to find connections.",
     "select": "Show only this path",
-    "via": "via",
     "note": "Physical connections in OpenStreetMap, not how power actually flows.",
     "unnamed-substation": "Unnamed substation",
     "unnamed-plant": "Unnamed power plant",
-    "lower": "incl. {{km}} km at {{kv}} kV from {{from}} to {{to}}"
+    "junction": "line junction",
+    "total": "Total"
   }
 }

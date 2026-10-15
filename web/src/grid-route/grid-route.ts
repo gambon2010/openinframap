@@ -23,10 +23,19 @@ export type Station = {
   name?: string | null
 }
 
+// A stretch between two consecutive stations; null = a junction between lines.
+type Segment = {
+  from: Station | null
+  to: Station | null
+  length_km: number
+  voltages_kv: number[]
+}
+
 type RoutePath = {
   length_km: number
   voltages_kv: number[]
   stations: Station[]
+  segments: Segment[]
   geometry: MultiLineString
 }
 
@@ -35,7 +44,7 @@ type RoutePath = {
 type AccessLeg = RoutePath & { end: 'from' | 'to' }
 
 // What's drawn and listed: a whole route (connection legs included).
-type Route = RoutePath & { lower: string[] }
+type Route = RoutePath
 
 type RouteResponse = {
   from: Station
@@ -77,16 +86,6 @@ function combineRoutes(data: RouteResponse): Route[] {
   const legs = data.access || []
   const from = legs.find((leg) => leg.end === 'from')
   const to = legs.find((leg) => leg.end === 'to')
-  const lower = legs.map((leg) => {
-    const first = leg.stations[0]
-    const last = leg.stations[leg.stations.length - 1]
-    return t('route.lower', 'incl. {{km}} km at {{kv}} kV from {{from}} to {{to}}', {
-      km: leg.length_km.toLocaleString(),
-      kv: leg.voltages_kv.join('/'),
-      from: first ? stationLabel(first) : '?',
-      to: last ? stationLabel(last) : '?'
-    })
-  })
   // Both ends reach the ≥110 kV grid at the same station: the legs are the whole route.
   const paths: RoutePath[] = data.paths.length
     ? data.paths
@@ -96,6 +95,7 @@ function combineRoutes(data: RouteResponse): Route[] {
             length_km: 0,
             voltages_kv: [],
             stations: [],
+            segments: [],
             geometry: { type: 'MultiLineString', coordinates: [] }
           }
         ]
@@ -113,8 +113,8 @@ function combineRoutes(data: RouteResponse): Route[] {
       length_km: Math.round(parts.reduce((sum, p) => sum + p.length_km, 0) * 10) / 10,
       voltages_kv: [...new Set(parts.flatMap((p) => p.voltages_kv))].sort((a, b) => b - a),
       stations,
-      geometry: { type: 'MultiLineString', coordinates: parts.flatMap((p) => p.geometry.coordinates) },
-      lower
+      segments: parts.flatMap((p) => p.segments),
+      geometry: { type: 'MultiLineString', coordinates: parts.flatMap((p) => p.geometry.coordinates) }
     }
   })
 }
@@ -326,8 +326,32 @@ export default class GridRouteControl implements IControl {
 
     if (this._paths.length) {
       const list = el('ol', { class: 'oim-route-paths' })
+      const place = (s: Station | null) => (s ? stationLabel(s) : t('route.junction', 'line junction'))
+      const kv = (voltages: number[]) => voltages.map((v) => `${v} kV`).join(', ')
       this._paths.forEach((path, i) => {
-        const via = path.stations.slice(1, -1).map(stationLabel)
+        // What the route goes through: each stretch between stations, then the total.
+        const segments = el(
+          'table',
+          { class: 'oim-route-segments' },
+          el(
+            'tbody',
+            ...path.segments.map((s) =>
+              el(
+                'tr',
+                el('td', `${place(s.from)} → ${place(s.to)}`),
+                el('td', { class: 'oim-route-km' }, `${s.length_km.toLocaleString()} km`),
+                el('td', { class: 'oim-route-kv' }, kv(s.voltages_kv))
+              )
+            ),
+            el(
+              'tr',
+              { class: 'oim-route-total' },
+              el('td', t('route.total', 'Total')),
+              el('td', { class: 'oim-route-km' }, `${path.length_km.toLocaleString()} km`),
+              el('td')
+            )
+          )
+        )
         const item = el(
           'li',
           {
@@ -340,13 +364,11 @@ export default class GridRouteControl implements IControl {
           }),
           el(
             'div',
+            { class: 'oim-route-path-body' },
             el('strong', `${path.length_km.toLocaleString()} km`),
             ' · ',
-            path.voltages_kv.map((v) => `${v} kV`).join(', '),
-            ...(via.length
-              ? [el('div', { class: 'oim-route-via' }, t('route.via', 'via') + ' ' + via.join(', '))]
-              : []),
-            ...path.lower.map((note) => el('div', { class: 'oim-route-via' }, note))
+            kv(path.voltages_kv),
+            segments
           )
         )
         item.onclick = () => this.select(i)

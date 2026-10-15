@@ -115,3 +115,41 @@
   margin-top: 6px;
 }
 
+
+/* Long routes: keep the panel on screen */
+.oim-route-body {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.oim-route-path-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.oim-route-segments {
+  width: 100%;
+  margin-top: 4px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.oim-route-segments td {
+  padding: 1px 0;
+  vertical-align: top;
+  color: var(--oim-text-color-light);
+}
+
+.oim-route-segments .oim-route-km,
+.oim-route-segments .oim-route-kv {
+  padding-left: 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.oim-route-total td {
+  padding-top: 3px;
+  border-top: 1px solid var(--oim-grey);
+  color: var(--oim-text-color);
+  font-weight: bold;
+}

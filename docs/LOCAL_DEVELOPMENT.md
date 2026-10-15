@@ -300,11 +300,12 @@ or try it for the current tab in the **Map sources** panel ("Address search
 
 Click a substation or power plant and choose **Route from here**, then another and
 choose **Route to here**. A panel lists up to three distinct paths over lines of
-110 kV and more (length, voltages, stations on the way), and the map draws them in
+110 kV and more, each broken down into the stretches between the substations and
+plants it passes through (distance and voltage each), with the total at the end, and the map draws them in
 different colours; click a path to show only that one, × to clear. A station that
 is only on a lower voltage (e.g. a wind farm on a 65 kV line) is connected over
-those lines to the nearest station on the 110 kV+ grid; the panel says how much
-of the route runs at the lower voltage. The route is kept
+those lines to the nearest station on the 110 kV+ grid; those stretches show
+their lower voltage in the breakdown. The route is kept
 in the map link, so you can share it. Needs a database built with this feature
 (`build-region.sh` builds the network automatically).
 

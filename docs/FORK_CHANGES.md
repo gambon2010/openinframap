@@ -380,8 +380,10 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   two stations are drawn together. A station without a ≥110 kV line uses the nearest
   station on that grid within a few km, with a notice.
 - **Map** (`web/src/grid-route/`): "Route from here" / "Route to here" buttons in
-  substation and plant popups; a panel listing each path (length, voltages, stations
-  passed through); paths drawn in different colours, side by side where they share
+  substation and plant popups; a panel listing each path with a breakdown of what
+  it goes through: every stretch between two stations (distance, voltage), then the
+  total (the backend returns these `segments`; junctions between lines are passed
+  through, and a route ending at a line tap says "line junction"); paths drawn in different colours, side by side where they share
   lines; clicking a path shows only that one. The selection is kept in the map link
   (`route=s123_p-456`), so it can be shared.
 - **Measured:** the network builds in about a second for Luxembourg or Saarland.
@@ -401,8 +403,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   part of the drawn route). If an end isn't on the ≥110 kV grid, the backend
   follows the lower-voltage lines (up to 50 km) to the nearest station that is;
   the distinct paths still run over 110 kV+ only. Each route is drawn as one line
-  in its colour, connection legs included, and the panel notes the lower-voltage
-  part. (A first version drew those legs dashed in grey; that read as two
+  in its colour, connection legs included, and the panel's breakdown shows the
+  lower-voltage stretches with their voltage. (A first version drew those legs dashed in grey; that read as two
   separate things meeting at a substation.) Example: Wandpark Housen-Pëtschent →
   Schifflange = 62.6 km, incl. 10.6 km at 65 kV to Flebour.
 - **Not bridged on purpose:** Centrale de Vianden connects to the Vianden

@@ -216,12 +216,35 @@ def describe(path: list[int], edge_info: dict[int, dict], names: dict[int, dict]
     for e in edge_info.values():
         by_pair.setdefault(frozenset((e["source"], e["target"])), []).append(e)
     edges = [e for u, v in hops for e in by_pair.get(frozenset((u, v)), [])]
+
+    # Stretches between consecutive stations; junctions between lines are passed
+    # through. "to" is None when the path ends at a junction (e.g. a line tap).
+    segments: list[dict[str, Any]] = []
+    start = names.get(path[0]) if path else None
+    length = 0.0
+    voltages: set[int] = set()
+    for u, v in hops:
+        parallel = by_pair[frozenset((u, v))]
+        length += min(e["length_m"] for e in parallel)
+        voltages.update(e["voltage"] // 1000 for e in parallel)
+        if v in names or v == path[-1]:
+            segments.append(
+                {
+                    "from": station_summary(start) if start else None,
+                    "to": station_summary(names[v]) if v in names else None,
+                    "length_km": round(length / 1000, 1),
+                    "voltages_kv": sorted(voltages, reverse=True),
+                }
+            )
+            start, length, voltages = names.get(v), 0.0, set()
+
     return {
         "length_km": round(
             sum(min(e["length_m"] for e in by_pair[frozenset((u, v))]) for u, v in hops) / 1000, 1
         ),
         "voltages_kv": sorted({e["voltage"] // 1000 for e in edges}, reverse=True),
         "stations": [station_summary(names[n]) for n in path if n in names],
+        "segments": segments,
         "geometry": {
             "type": "MultiLineString",
             "coordinates": [json.loads(e["geometry"])["coordinates"] for e in edges],
