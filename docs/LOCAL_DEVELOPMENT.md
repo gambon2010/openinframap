@@ -315,6 +315,34 @@ by Wikidata ID, so it's shared across regions.
 
 ---
 
+## Extra data (not from OpenStreetMap)
+
+Open data published by network operators. For now that's the French distribution
+networks: every low- and medium-voltage line and street-level substation, from
+[Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
+Europe and the border strips of France's neighbours. Switch it on in the layer
+switcher under **Not from OpenStreetMap**. It's drawn like OSM lines of the same
+voltage (medium voltage as 20 kV, low voltage as < 10 kV); click a line to see its
+source.
+
+`build-region.sh` offers it when it covers the region you picked (or pass `--extra`).
+To do it on an existing database:
+
+```bash
+uv run scripts/extra_data.py list      # sources that cover your region, and their size
+uv run scripts/extra_data.py import    # import them (re-running replaces, never duplicates)
+uv run scripts/extra_data.py remove fr-agence-ore
+docker compose up -d --force-recreate tegola   # drop tiles cached before the import
+```
+
+All of France is 16.3 million features, about 5 GB in the database, and took about
+2 h 20 min to download (their server is slow). A French region is a few minutes per
+département. Each finished dataset shows on the map straight away; a failed refresh
+keeps the previous copy of the datasets it didn't get to. Exports include the extra
+data. Overlaps with OpenStreetMap aren't filtered out yet.
+
+---
+
 ## Updating the data
 
 Re-run `bash scripts/build-region.sh` and pick the region. It reuses your download

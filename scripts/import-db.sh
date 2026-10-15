@@ -41,6 +41,8 @@ echo "${BOLD} Open Infrastructure Map — import a ready-made database${RESET}"
 echo "${BOLD}======================================================${RESET}"
 section "Importing $REGION_NAME"
 info "OSM data as of $OSM_TIMESTAMP, exported $(manifest_get "$MANIFEST" exported_at)"
+EXTRA_DESC=$(manifest_get "$MANIFEST" extra_data)
+[[ -n "$EXTRA_DESC" ]] && info "With extra data (not from OSM): $EXTRA_DESC"
 info "$(human_size "$(stat -c%s "$DUMP")") — $DUMP"
 
 docker info >/dev/null 2>&1 || die "Docker isn't running. Start Docker, then re-run this script."
@@ -125,6 +127,8 @@ restore() {
 run_with_timer "Restoring the database" restore
 # Exports made before search indexes were part of the build don't have them.
 run_with_timer "Checking search indexes" create_search_indexes
+# Exports made before extra data existed don't have its tables (Tegola needs them).
+run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
 
 # Recreate Tegola so it doesn't serve tiles cached from the old data.
 docker compose --progress quiet up -d --force-recreate tegola </dev/null

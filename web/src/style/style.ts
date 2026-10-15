@@ -9,6 +9,7 @@ import style_oim_petroleum from './style_oim_petroleum.js'
 import style_oim_water from './style_oim_water.js'
 import style_oim_other_pipelines from './style_oim_other_pipelines.js'
 import style_osmose from './style_osmose.js'
+import style_extra from './style_extra.js'
 import { StyleSpecification } from 'maplibre-gl'
 import { interpolate, zoom } from './stylehelpers.js'
 import { LayerSpecificationWithZIndex } from './types.js'
@@ -108,6 +109,16 @@ const style: StyleSpecification = {
       maxzoom: 17,
       attribution: oim_attribution
     },
+    // Fork: data from outside OpenStreetMap (scripts/extra_data.py). Its licence
+    // (Licence Ouverte for the French networks) requires naming the source.
+    extra: {
+      type: 'vector',
+      tiles: [`${OIM_TILES}/extra/{z}/{x}/{y}.pbf`],
+      minzoom: 10,
+      maxzoom: 17,
+      attribution:
+        'Distribution networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators (Licence Ouverte)'
+    },
     osmose_errors_power: {
       type: 'vector',
       tiles: ['https://osmose.openstreetmap.fr/api/0.3/issues/{z}/{x}/{y}.mvt?tags=power'],
@@ -134,7 +145,8 @@ export function getPrimaryLayers() {
     ...style_oim_telecoms(),
     ...style_oim_water(),
     ...style_oim_other_pipelines(),
-    ...style_osmose()
+    ...style_osmose(),
+    ...style_extra()
   ]
 }
 

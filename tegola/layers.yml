@@ -695,3 +695,47 @@ layers:
     field_sets: [geom_centroid, name, wiki, start_date]
     from: osm_street_cabinet
     where: first_semi(utility) IN ('water', 'sewerage') AND geometry && !BBOX!
+
+  # Fork: data from outside OpenStreetMap (schema/extra.sql, filled by
+  # scripts/extra_data.py), served as its own map so it stays apart from OSM.
+  - name: extra_power_line
+    map:
+      - extra
+    geometry_type: LineString
+    min_zoom: 10
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: operator
+      - name: voltage_class
+      # Nominal voltage in kV, so the map draws these like OSM lines of that
+      # voltage: French HTA is 20 kV almost everywhere, BT is 230/400 V.
+      - name: voltage
+        sql: CASE voltage_class WHEN 'HTA' THEN 20 WHEN 'BT' THEN 0.4 END
+      - name: location
+      - name: updated
+        sql: updated::text
+    id_field: id
+    from: extra.power_line
+    where: >
+      geometry && !BBOX! AND (!ZOOM! >= 13 OR voltage_class <> 'BT')
+
+  - name: extra_power_substation
+    map:
+      - extra
+    geometry_type: Point
+    min_zoom: 13
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: operator
+      - name: name
+      - name: kind
+      # HTA/BT substations: drawn as 20 kV, their higher voltage (like OSM substations).
+      - name: voltage
+        sql: CASE WHEN kind LIKE 'HTA%' THEN 20 END
+      - name: updated
+        sql: updated::text
+    id_field: id
+    from: extra.power_substation
+    where: geometry && !BBOX!

@@ -77,6 +77,10 @@ export default class OpenInfraMap {
           new Layer('I', t('layers.other-pipelines'), 'pipeline_', false),
           new Layer('W', t('layers.water'), 'water_', false)
         ]),
+        // Fork: open data from network operators, not from OpenStreetMap.
+        new LayerGroup(t('layers.extra-data', 'Not from OpenStreetMap'), [
+          new Layer('X', t('layers.extra-distribution', 'Distribution networks (open data)'), 'extra_', false)
+        ]),
         new LayerGroup(t('layers.validation'), [
           new Layer('E', t('layers.osmose-power'), 'osmose_errors_power', false)
         ])

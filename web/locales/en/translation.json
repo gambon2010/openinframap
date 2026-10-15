@@ -168,7 +168,10 @@
     "gas": "Gas",
     "petroleum": "Petroleum",
     "water": "Water",
-    "traction": "Traction (< 50 Hz)"
+    "traction": "Traction (< 50 Hz)",
+    "show-all": "Show all",
+    "show-all-title": "Show everything hidden from the key",
+    "toggle": "Show on the map"
   },
   "location": {
     "underground": "Underground",
@@ -222,7 +225,9 @@
     "labels": "Labels",
     "title": "Layers",
     "other-pipelines": "Other Pipelines",
-    "osmose-power": "Osmose (Power)"
+    "osmose-power": "Osmose (Power)",
+    "extra-data": "Not from OpenStreetMap",
+    "extra-distribution": "Distribution networks (open data)"
   },
   "construction": "under construction",
   "disused": "disused",
@@ -282,5 +287,17 @@
     "photon-origin-none": "Not used. Places in your region are found without it.",
     "photon-help-1": "Photon is a search server for addresses and places from OpenStreetMap. Cities, towns and villages in the region you built are found without it; Photon adds street addresses and places elsewhere. The setup scripts don't install it: see",
     "photon-help-2": "To use one by default, set"
+  },
+  "extra": {
+    "substation": "Distribution substation",
+    "line-bt": "Low-voltage line",
+    "line-hta": "Medium-voltage line",
+    "line": "Distribution line",
+    "voltage-class": "Voltage class",
+    "kind": "Kind",
+    "updated": "Source updated",
+    "notice": "Not from OpenStreetMap: open data from",
+    "hta": "HTA (medium voltage, usually 20 kV)",
+    "bt": "BT (low voltage, 230/400 V)"
   }
 }

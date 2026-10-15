@@ -75,11 +75,16 @@ fi
 # Export
 # ---------------------------------------------------------------------------
 section "Exporting..."
+# Extra data (not from OSM) goes with it; the manifest says which.
+EXTRA_DESC=$(db_query "SELECT CASE WHEN to_regclass('extra.source') IS NOT NULL THEN
+    (SELECT string_agg(name || ' (' || coalesce(to_char(features, 'FM999,999,999') || ' features', 'incomplete')
+                       || ')', '; ' ORDER BY source) FROM extra.source) END")
+[[ -n "$EXTRA_DESC" ]] && info "With extra data: $EXTRA_DESC"
 # Only the map data, country boundaries, stats and build info. Postgres and
 # PostGIS themselves are recreated on import by schema/dev-init.sql.
 dump_db() {
     docker compose exec -T db pg_dump -U "$DB_USER" -Fc -Z zstd:3 \
-        -n public -n countries -n stats "$DB_NAME" > "$DUMP.part"
+        -n public -n countries -n stats -n extra "$DB_NAME" > "$DUMP.part"
     mv "$DUMP.part" "$DUMP"
 }
 run_with_timer "Exporting the database" dump_db
@@ -100,6 +105,7 @@ json.dump({
     "git_commit": "$(build_info git_commit)",
     "schema_hash": "$(build_info schema_hash)",
     "eez": "$(build_info eez)",
+    "extra_data": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$EXTRA_DESC"),
     "size": $(stat -c%s "$DUMP"),
     "sha256": "$(cat "$DUMP.sha256.tmp")",
 }, open(sys.argv[1], "w"), indent=2)

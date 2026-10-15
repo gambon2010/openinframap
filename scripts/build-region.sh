@@ -46,6 +46,10 @@ Usage: bash scripts/build-region.sh [options]
   --pbf FILE      Use an .osm.pbf file you already have instead of downloading
   --images        Also cache Wikidata images (slow: can take hours)
   --no-images     Don't cache Wikidata images and don't ask about it
+  --extra         Also import open data from outside OpenStreetMap that covers
+                  the region (e.g. French distribution networks; see
+                  scripts/extra_data.py)
+  --no-extra      Don't import it and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
   --basemap MODE  Offline background map: full, reduced (zoom 13) or none.
                   Default: ask (with --yes: keep the one you have, else none)
@@ -60,6 +64,7 @@ EOF
 REGION_ID=""
 PBF_SOURCE=""
 FETCH_IMAGES=""
+EXTRA_DATA=""
 USE_FILTER=1
 REFRESH=""
 REBUILD=0
@@ -70,6 +75,8 @@ while [[ $# -gt 0 ]]; do
         --pbf)       PBF_SOURCE="${2:?--pbf needs a value}"; shift 2 ;;
         --images)    FETCH_IMAGES=1; shift ;;
         --no-images) FETCH_IMAGES=0; shift ;;
+        --extra)     EXTRA_DATA=1; shift ;;
+        --no-extra)  EXTRA_DATA=0; shift ;;
         --no-filter) USE_FILTER=0; shift ;;
         --refresh)   REFRESH=1; shift ;;
         --rebuild)   REBUILD=1; shift ;;
@@ -184,8 +191,9 @@ show_local_files() {
     section "Already on this machine"
     for f in $(list_exports); do
         found=1
-        ok "$(printf '%-22s %7s  ready-made export, OSM data as of %s' "$(basename "$f" .json)" \
-            "$(human_size "$(manifest_get "$f" size)")" "$(manifest_get "$f" osm_timestamp | cut -c1-10)")"
+        ok "$(printf '%-22s %7s  ready-made export, OSM data as of %s%s' "$(basename "$f" .json)" \
+            "$(human_size "$(manifest_get "$f" size)")" "$(manifest_get "$f" osm_timestamp | cut -c1-10)" \
+            "$([[ -n "$(manifest_get "$f" extra_data)" ]] && echo ', with extra data')")"
     done
     for id in $(downloaded_regions); do
         f="$OSM_DIR/$id-latest.osm.pbf"
@@ -237,7 +245,7 @@ pick_region() {
         if [[ -f "$manifest" && -f "$EXPORTS_DIR/$id.oimdb" ]]; then
             [[ -n "$name" ]] || name=$(manifest_get "$manifest" region_name)
             size=$(manifest_get "$manifest" size)
-            note="${GREEN}✓ ready-made export (OSM data as of $(manifest_get "$manifest" osm_timestamp | cut -c1-10)) — imports in minutes${RESET}${DIM}"
+            note="${GREEN}✓ ready-made export (OSM data as of $(manifest_get "$manifest" osm_timestamp | cut -c1-10)$([[ -n "$(manifest_get "$manifest" extra_data)" ]] && echo ', with extra data')) — imports in minutes${RESET}${DIM}"
         else
             if [[ -n "$url" ]]; then
                 size=$(remote_size "$url")
@@ -342,6 +350,8 @@ if [[ -n "$REGION_ID" && -z "$PBF_SOURCE" && "$REBUILD" == 0 \
       && -f "$EXPORTS_DIR/$REGION_ID.json" && -f "$EXPORTS_DIR/$REGION_ID.oimdb" ]]; then
     EXPORT_DATE=$(manifest_get "$EXPORTS_DIR/$REGION_ID.json" osm_timestamp | cut -c1-10)
     info "There's a ready-made export of this region (OSM data as of $EXPORT_DATE)."
+    EXPORT_EXTRA=$(manifest_get "$EXPORTS_DIR/$REGION_ID.json" extra_data)
+    [[ -n "$EXPORT_EXTRA" ]] && info "It includes extra data: $EXPORT_EXTRA"
     if ask_yes_no "Import it? (No = download and rebuild from scratch)" y; then
         IMPORT_ARGS=("$EXPORTS_DIR/$REGION_ID.oimdb")
         [[ "$ASSUME_YES" == 1 ]] && IMPORT_ARGS+=(--yes)
@@ -470,6 +480,39 @@ elif [[ -z "$FETCH_IMAGES" ]]; then
         ask_yes_no "Cache Wikidata images at the end of the build?" n && FETCH_IMAGES=1
     else
         warn "uv isn't installed, so this step will be skipped."
+    fi
+fi
+
+# Extra data: offered only when a source covers the region (checked against the
+# region's outline in the Geofabrik index; for a local file, we can't tell).
+EXTRA_OFFER=""
+EXTRA_STATUS=2
+if [[ "$EXTRA_DATA" != 0 ]] && command -v uv &>/dev/null; then
+    EXTRA_OFFER=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
+        && EXTRA_STATUS=0 || EXTRA_STATUS=$?
+fi
+if [[ "$EXTRA_DATA" == 1 && "$EXTRA_STATUS" == 1 ]]; then
+    info "No extra data covers $REGION_NAME, so --extra does nothing."
+    EXTRA_DATA=0
+elif [[ -z "$EXTRA_DATA" && ( "$ASSUME_YES" == 1 || "$EXTRA_STATUS" == 1 ) ]]; then
+    EXTRA_DATA=0
+elif [[ -z "$EXTRA_DATA" ]]; then
+    section "Extra data (not from OpenStreetMap)"
+    if ! command -v uv &>/dev/null; then
+        warn "uv isn't installed, so extra data can't be imported."
+        EXTRA_DATA=0
+    else
+        info "Some network operators publish their networks as open data, in more detail"
+        info "than OpenStreetMap has. It's drawn like the OSM data, and its popups say"
+        info "where it comes from. For this region:"
+        if [[ "$EXTRA_STATUS" == 0 ]]; then
+            while IFS= read -r line; do info "  - $line"; done <<< "$EXTRA_OFFER"
+        else
+            info "  - couldn't check (a local file, or no internet): any source covering it will be used"
+        fi
+        info "You can also do it later with: uv run scripts/extra_data.py import"
+        EXTRA_DATA=0
+        ask_yes_no "Download and import it at the end of the build?" n && EXTRA_DATA=1
     fi
 fi
 
@@ -644,6 +687,8 @@ run_with_timer "Creating map views" run_sql_file schema/views.sql
 run_with_timer "Creating stats tables" run_sql_file schema/stats.sql
 run_with_timer "Preparing place search" run_sql_file schema/places.sql
 run_with_timer "Creating search indexes" create_search_indexes
+# The extra data tables always exist (Tegola serves them), even when empty.
+run_with_timer "Creating extra data tables" run_sql_file schema/extra.sql
 
 # ---------------------------------------------------------------------------
 # 6. EEZ country boundaries
@@ -671,6 +716,13 @@ INSERT INTO oim_build_info VALUES
     ('schema_hash',   '$(schema_hash)'),
     ('built_at',      '$(date -u +%Y-%m-%dT%H:%M:%SZ)');
 SQL
+
+# Extra data: after the build info, which says which region to cover.
+if [[ "$EXTRA_DATA" == 1 ]]; then
+    section "Importing extra data (outside OpenStreetMap)..."
+    uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" import \
+        || warn "Importing extra data failed; the map works without it. Retry with: uv run scripts/extra_data.py import"
+fi
 
 # ---------------------------------------------------------------------------
 # 8. Tile server — recreate it so it doesn't serve tiles cached from old data

@@ -326,8 +326,66 @@ class InfoPopup {
     return el('span.voltages', text)
   }
 
+  // Fork: the sources scripts/extra_data.py can import, for the popup's attribution.
+  static extraSources: { [id: string]: { name: string; url: string; licence: string } } = {
+    'fr-agence-ore': {
+      name: 'Agence ORE',
+      url: 'https://opendata.agenceore.fr',
+      licence: 'Licence Ouverte 2.0'
+    }
+  }
+
+  /** Fork: a feature from outside OpenStreetMap (the extra_* layers). */
+  extraPopupHtml(feature: MapGeoJSONFeature) {
+    const p = feature.properties
+    let title
+    if (feature.layer.id.startsWith('extra_power_substation')) {
+      title = t('extra.substation', 'Distribution substation')
+    } else if (p.voltage_class === 'BT') {
+      title = t('extra.line-bt', 'Low-voltage line')
+    } else if (p.voltage_class === 'HTA') {
+      title = t('extra.line-hta', 'Medium-voltage line')
+    } else {
+      title = t('extra.line', 'Distribution line')
+    }
+    const rows: [string, any][] = [
+      [t('info.name'), p.name],
+      [
+        t('extra.voltage-class', 'Voltage class'),
+        p.voltage_class === 'HTA'
+          ? t('extra.hta', 'HTA (medium voltage, usually 20 kV)')
+          : p.voltage_class === 'BT'
+            ? t('extra.bt', 'BT (low voltage, 230/400 V)')
+            : p.voltage_class
+      ],
+      [t('extra.kind', 'Kind'), p.kind],
+      [t('info.operator'), p.operator],
+      [t('info.location'), p.location && t('location.' + p.location, p.location)],
+      [t('extra.updated', 'Source updated'), p.updated]
+    ]
+    const source = InfoPopup.extraSources[p.source]
+    return el(
+      'div.oim-popup-content',
+      el('div.oim-popup-header', el('h3', title)),
+      el(
+        'table.item_info',
+        rows.filter(([, value]) => value).map(([key, value]) => el('tr', el('th', key), el('td', value)))
+      ),
+      el(
+        'p.oim-extra-notice',
+        t('extra.notice', 'Not from OpenStreetMap: open data from'),
+        ' ',
+        source ? el('a', source.name, { href: source.url, target: '_blank' }) : p.source,
+        source ? ` (${source.licence})` : ''
+      )
+    )
+  }
+
   async popupHtml(feature: MapGeoJSONFeature) {
     const layer_id = feature.layer.id
+    if (layer_id.startsWith('extra_')) {
+      return this.extraPopupHtml(feature)
+    }
 
     const attrs_table = el('table', { class: 'item_info' })
     const renderedProperties = Object.keys(feature.properties)

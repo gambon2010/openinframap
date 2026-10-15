@@ -20,6 +20,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Search](#search)
 - [Background map](#background-map)
 - [Wikidata popups and image cache](#wikidata-popups-and-image-cache)
+- [Extra data (not from OpenStreetMap)](#extra-data-not-from-openstreetmap)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
 - [Merging from upstream](#merging-from-upstream)
@@ -359,6 +360,61 @@ by `launch.sh`.
 
 ---
 
+## Extra data (not from OpenStreetMap)
+
+Some network operators publish their networks as open data, in far more detail than
+OpenStreetMap has. The French distribution networks are the first source: every low-
+(BT) and medium-voltage (HTA) line and every street-level substation, from Enedis,
+Strasbourg Électricité Réseaux, Vialis and the other operators. OSM doesn't have them
+because underground cables can't be verified on the ground, and imports go against
+the French community's preference for mapping by hand (the licence isn't the reason).
+
+- **Stored apart, drawn alike.** The data goes into its own schema, `extra`
+  (`schema/extra.sql`), and is served as its own Tegola map (`/maps/extra`: lines from
+  zoom 10, BT lines and substations from zoom 13), switched on in the layer switcher
+  under "Not from OpenStreetMap" (code `X`, off by default). Tegola gives each feature
+  a nominal voltage (HTA 20 kV, BT 0.4 kV: French HTA is legally 1-50 kV but 20 kV
+  almost everywhere) so `style_extra.ts` draws it with the OSM power expressions:
+  same colours, widths and underground dashes as OSM lines of that voltage, and the
+  key's voltage and Underground rows apply to it too. Popups say "Not from
+  OpenStreetMap" with the source and licence, and have no OSM links. An invisible,
+  wider copy of each line layer makes thin lines easy to click. The tables always
+  exist, even when empty, because Tegola checks every layer's SQL when it starts.
+- **`scripts/extra_data.py`**: `list` shows the sources covering the built region,
+  `import` imports them, `remove` removes one, and `offer` (no database needed) tells
+  `build-region.sh` whether any source covers a Geofabrik region. Each source is a
+  class, so sources for other countries can be added later. Germany and Luxembourg
+  have no equivalent nationwide open data yet.
+- **Refreshing replaces, dataset by dataset.** Each dataset's old rows are deleted and
+  its new ones inserted in one transaction, once the new copy has downloaded. So
+  re-running never duplicates rows, finished datasets show on the map while the rest
+  download, and a failed refresh keeps the old copy of what it didn't finish.
+  Overlaps *with OSM* are kept for now: filtering them is the next step.
+- **Agence ORE, not each operator's portal.** [Agence ORE](https://opendata.agenceore.fr)
+  consolidates all French operators, so it's the one source (also importing SER's own
+  portal would duplicate Bas-Rhin). It publishes five datasets (overhead/underground ×
+  BT/HTA lines, and HTA/BT substations). Its exports can't be filtered by area, only by
+  département: for 20 or more départements each dataset is downloaded whole (all of
+  France: 16.3 million features, ~5 GB, about 2 h 20 min, almost all of it waiting on
+  their server), otherwise filtered to the départements touching the region. Either
+  way only features inside the region outline are kept (Geofabrik's, or the extent of
+  the power lines for a local file): a Luxembourg build gets the border strip of
+  Moselle, a France build leaves out the overseas départements. Heights in 3D
+  geometries are dropped.
+- **Licence:** Licence Ouverte 2.0, which requires attribution: the source's
+  attribution shows on the map whenever the layer is on.
+- **Build and exports:** `build-region.sh` offers extra data only when a source covers
+  the chosen region (France, a French region, Europe, a neighbour's border strip),
+  with what it would cost (`--extra` / `--no-extra`; `--yes` means no). Exports include
+  the `extra` schema, and their manifest's `extra_data` says what's in it, shown in the
+  build menu and by `import-db.sh`.
+- **The old download route.** The importer uses Agence ORE's legacy v2.1 export API,
+  which still works through a compatibility layer. Their new Data Fair API serves the
+  same data (`/data-fair/api/v1/datasets/<id>/lines?code_departement_eq=…`); moving
+  to it, keeping the old one as a fallback, is planned.
+
+---
+
 ## Smaller fixes
 
 - **Upstream merge.** The upstream changes since June were merged (backend moved to
@@ -371,6 +427,12 @@ by `launch.sh`.
 - **Backend after rebuilds:** `build-region.sh` and `import-db.sh` remove all
   containers to start a fresh database, which stopped the backend and left the
   frontend without it. They now restart it if it was running.
+- **Hiding things from the key.** Every key row has a checkbox: unticking it hides
+  those features (with their labels, outlines and click areas) by adding a filter to
+  the layers that draw them, worked out from the row's colour or icon
+  (`web/src/key/feature-hider.ts`). Filters rather than visibility, so it works
+  alongside the layer switcher. The choice is remembered per browser; "Show all"
+  undoes it.
 - **`npm start`**, not `npm run dev`: upstream renamed the command and every doc was
   out of date.
 - **Docs** generally: README, `CLAUDE.md`, this file and `LOCAL_DEVELOPMENT.md`.

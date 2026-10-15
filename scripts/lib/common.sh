@@ -244,7 +244,7 @@ project_images() {
 # Fingerprint of everything that decides what the database looks like. An
 # export built with a different fingerprint may not match this checkout.
 schema_hash() {
-    cat "$REPO_ROOT"/imposm/*.py "$REPO_ROOT"/schema/{functions,views,stats,eez}.sql | md5sum | cut -c1-12
+    cat "$REPO_ROOT"/imposm/*.py "$REPO_ROOT"/schema/{functions,views,stats,eez,extra}.sql | md5sum | cut -c1-12
 }
 
 # manifest_get FILE.json KEY — read one field of an export manifest.
@@ -464,8 +464,9 @@ select_basemap() {
         mkdir -p "$BASEMAP_DIR"
         docker compose --progress quiet up -d basemap </dev/null
         ok "Offline background map: $region (http://localhost:$BASEMAP_PORT)"
-    elif [[ "$current" == "http://localhost:$BASEMAP_PORT/"* \
-            && ! -f "$BASEMAP_DIR/$(echo "${current#http://localhost:$BASEMAP_PORT/}" | cut -d/ -f1).pmtiles" ]]; then
+    elif [[ "$current" == "http://localhost:$BASEMAP_PORT/"* ]]; then
+        # A local background map of another region (or a deleted one) would leave
+        # this region blank: switch to the online one.
         set_env_line "$WEB_ENV" VITE_BASEMAP_URL ""
         BASEMAP_CHANGED=1
         info "Background map: online (openinframap.org)."
