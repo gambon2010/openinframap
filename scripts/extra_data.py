@@ -117,6 +117,12 @@ def inside(point: list[float], rings: list[list[list[float]]]) -> bool:
     return False
 
 
+# SQL: all the features of the extra.source row being updated.
+FEATURE_COUNT = """((SELECT count(*) FROM extra.power_line l WHERE l.source = extra.source.source)
+    + (SELECT count(*) FROM extra.power_substation s WHERE s.source = extra.source.source)
+    + (SELECT count(*) FROM extra.pipeline p WHERE p.source = extra.source.source))"""
+
+
 def remove_osm_duplicates(
     cur, source_id: str, table: str, location=None, voltage_class=None
 ) -> int:
@@ -129,6 +135,10 @@ def remove_osm_duplicates(
         cur.execute(
             "SELECT extra.remove_osm_duplicate_lines(%s, %s, %s)",
             (source_id, location, voltage_class),
+        )
+    elif table == "pipeline":
+        cur.execute(
+            "SELECT extra.remove_osm_duplicate_pipelines(%s, 'gas')", (source_id,)
         )
     else:
         cur.execute("SELECT extra.remove_osm_duplicate_substations(%s)", (source_id,))
@@ -159,20 +169,21 @@ class Source:
     # Features left out of the last run() because OpenStreetMap already has them.
     duplicates = 0
 
-    def run(self, conn, cur, areas: list[str]) -> int:
-        """Import into the extra tables, committing as it goes, leaving out what
+    def run(self, conn, cur, areas: list[str], only: list[str] | None = None) -> int:
+        """Import into the extra tables (only the datasets whose name contains one of
+        `only`, if given), committing as it goes, leaving out what
         OpenStreetMap already has; returns the feature count.
         Only features inside the temp table extra_region (the region outline, EPSG:3857) are kept."""
         raise NotImplementedError
 
 
 class FranceAgenceORE(Source):
-    """French electricity distribution networks (all operators: Enedis, Strasbourg
-    Électricité Réseaux, Vialis, …), as consolidated by Agence ORE. Downloaded per
-    département."""
+    """French electricity and gas distribution networks (all operators: Enedis,
+    Strasbourg Électricité Réseaux, Vialis, GRDF, Régaz, …), as consolidated by
+    Agence ORE. Downloaded whole or per département."""
 
     id = "fr-agence-ore"
-    name = "Agence ORE: French distribution networks"
+    name = "Agence ORE: French electricity and gas distribution networks"
     country = "FR"
     licence = "Licence Ouverte 2.0 (Etalab)"
     attribution = "Agence ORE and French distribution network operators"
@@ -200,7 +211,7 @@ class FranceAgenceORE(Source):
         if not involved:
             return None
         if involved >= self.NATIONAL_FROM:
-            return f"{involved} départements: ~16 million features for all of France, ~5 GB, 2-3 hours to download"
+            return f"{involved} départements: ~21 million features for all of France (16M electricity, 4M gas), ~6 GB, 3-4 hours to download"
         return (
             f"{involved} département(s) touch the region, and only what lies inside it is kept:"
             " from a few hundred features (a border strip) to ~200,000 per département,"
@@ -216,6 +227,17 @@ class FranceAgenceORE(Source):
         "reseau-aerien-moyenne-tension-hta": ("line", "overhead", None),
         "reseau-souterrain-moyenne-tension-hta": ("line", "underground", None),
         "postes-de-distribution-publique-postes-htabt": ("substation", None, "HTA/BT"),
+        # Gas distribution pipes (GRDF, Régaz, GreenAlp, …). Pressure is mostly
+        # "Inconnu" (all of GRDF's), stored as NULL.
+        "infrastructures-reseau-gaz": ("pipeline", None, None),
+    }
+    # Datasets whose national export their server tends to cut off midway (gas broke
+    # after 0.6 and 3.2 of 4.2 million rows): always fetched département by département.
+    BY_DEPARTMENT: ClassVar[set[str]] = {"infrastructures-reseau-gaz"}
+    ATTRIBUTE: ClassVar[dict[str, str]] = {
+        "line": "tension",
+        "substation": "nom_poste",
+        "pipeline": "niveau_de_pression",
     }
 
     def __init__(self) -> None:
@@ -264,11 +286,41 @@ class FranceAgenceORE(Source):
             total += response.json()["total_count"]
         return total
 
+    def download(
+        self, cur, dataset: str, select: str, where: str | None, attempts: int = 3
+    ) -> bool:
+        """Append a dataset's CSV export (filtered by `where`) to extra_staging. A failed
+        attempt is undone (savepoint) and retried; False if every attempt failed."""
+        params = {"select": select}
+        if where:
+            params["where"] = where
+        for attempt in range(1, attempts + 1):
+            cur.execute("SAVEPOINT download")
+            try:
+                with self.http.stream(
+                    "GET", f"{self.API}/{dataset}/exports/csv", params=params
+                ) as response:
+                    response.raise_for_status()
+                    cur.copy_expert(
+                        "COPY extra_staging FROM STDIN WITH (FORMAT csv, DELIMITER ';', HEADER true)",
+                        StreamReader(response.iter_bytes()),
+                    )
+                cur.execute("RELEASE SAVEPOINT download")
+                return True
+            except (httpx.HTTPError, psycopg2.Error) as error:
+                cur.execute("ROLLBACK TO SAVEPOINT download")
+                print(
+                    f"      attempt {attempt} failed ({str(error).splitlines()[0][:120]})",
+                    flush=True,
+                )
+                time.sleep(10 * attempt)
+        return False
+
     # From this many départements on, each dataset is downloaded whole (one national
     # file) rather than filtered: simpler and faster than a long list of départements.
     NATIONAL_FROM = 20
 
-    def run(self, conn, cur, areas: list[str]) -> int:
+    def run(self, conn, cur, areas: list[str], only: list[str] | None = None) -> int:
         cur.execute(
             """CREATE TEMP TABLE IF NOT EXISTS extra_staging
                  (operator text, attribute text, updated text, geojson text)"""
@@ -277,25 +329,40 @@ class FranceAgenceORE(Source):
         national = len(areas) >= self.NATIONAL_FROM
         count = 0
         for dataset, (table, location, kind) in self.DATASETS.items():
-            attribute = "tension" if table == "line" else "nom_poste"
-            params = {"select": f"nom_grd,{attribute},date_maj,geometry"}
-            if not national:
-                params["where"] = self.where(areas)
+            if only and not any(word in dataset for word in only):
+                continue
+            attribute = self.ATTRIBUTE[table]
+            select = f"nom_grd,{attribute},date_maj,geometry"
             cur.execute("TRUNCATE extra_staging")
             print(
                 f"    {dataset} ({'all of France' if national else 'départements ' + ', '.join(areas)})"
             )
             started = time.monotonic()
-            with self.http.stream(
-                "GET", f"{self.API}/{dataset}/exports/csv", params=params
-            ) as response:
-                response.raise_for_status()
-                cur.copy_expert(
-                    "COPY extra_staging FROM STDIN WITH (FORMAT csv, DELIMITER ';', HEADER true)",
-                    StreamReader(response.iter_bytes()),
-                )
+            # Their server sometimes drops a long download midway: retry, and if a
+            # national download keeps failing, fetch it département by département.
+            if national and (
+                dataset in self.BY_DEPARTMENT
+                or not self.download(cur, dataset, select, None, attempts=2)
+            ):
+                if dataset not in self.BY_DEPARTMENT:
+                    print(
+                        "      the national download keeps failing: by département instead",
+                        flush=True,
+                    )
+                for department in areas:
+                    if not self.download(
+                        cur, dataset, select, self.where([department])
+                    ):
+                        raise RuntimeError(
+                            f"{dataset}: downloading département {department} failed"
+                        )
+            elif not national and not self.download(
+                cur, dataset, select, self.where(areas)
+            ):
+                raise RuntimeError(f"{dataset}: download failed")
+            cur.execute("SELECT count(*) FROM extra_staging")
             print(
-                f"      downloaded {cur.rowcount} in {time.monotonic() - started:.0f} s",
+                f"      downloaded {cur.fetchone()[0]} in {time.monotonic() - started:.0f} s",
                 flush=True,
             )
             started = time.monotonic()
@@ -304,6 +371,11 @@ class FranceAgenceORE(Source):
                 cur.execute(
                     "DELETE FROM extra.power_line WHERE source = %s AND location = %s AND voltage_class = %s",
                     (self.id, location, "BT" if "basse-tension" in dataset else "HTA"),
+                )
+            elif table == "pipeline":
+                cur.execute(
+                    "DELETE FROM extra.pipeline WHERE source = %s AND substance = 'gas'",
+                    (self.id,),
                 )
             else:
                 cur.execute(
@@ -318,6 +390,16 @@ class FranceAgenceORE(Source):
                          WHERE GeometryType(g) = 'LINESTRING'
                            AND EXISTS (SELECT 1 FROM extra_region r WHERE ST_Intersects(r.geom, g))""",
                     (self.id, location),
+                )
+            elif table == "pipeline":
+                cur.execute(
+                    f"""INSERT INTO extra.pipeline (source, operator, substance, pressure, updated, geometry)
+                        SELECT %s, operator, 'gas', NULLIF(NULLIF(attribute, ''), 'Inconnu'),
+                               NULLIF(updated, '')::date, g
+                          FROM (SELECT *, {geometry} AS g FROM extra_staging WHERE geojson <> '') AS s
+                         WHERE GeometryType(g) = 'LINESTRING'
+                           AND EXISTS (SELECT 1 FROM extra_region r WHERE ST_Intersects(r.geom, g))""",
+                    (self.id,),
                 )
             else:
                 cur.execute(
@@ -387,6 +469,12 @@ def main() -> None:
         "import", help="import sources (all applicable ones by default)"
     )
     imp.add_argument("sources", nargs="*")
+    imp.add_argument(
+        "--only",
+        nargs="+",
+        metavar="WORD",
+        help="only the datasets whose name contains one of these words, e.g. --only gaz",
+    )
     sub.add_parser(
         "dedupe",
         help="delete imported features OpenStreetMap already has (import does it as it goes)",
@@ -427,24 +515,24 @@ def main() -> None:
                 (source_id,),
             )
             parts = [("line", location, cls) for location, cls in cur.fetchall()] + [
-                ("substation", None, None)
+                ("substation", None, None),
+                ("pipeline", None, None),
             ]
             for table, location, cls in parts:
                 started = time.monotonic()
                 removed = remove_osm_duplicates(cur, source_id, table, location, cls)
                 conn.commit()
                 total += removed
-                what = f"{location} {cls} lines" if table == "line" else "substations"
+                what = f"{location} {cls} lines" if table == "line" else table + "s"
                 print(
                     f"{source_id}: {what}: removed {removed} already in OpenStreetMap ({time.monotonic() - started:.0f} s)",
                     flush=True,
                 )
             cur.execute(
-                """UPDATE extra.source SET osm_duplicates = coalesce(osm_duplicates, 0) + %s,
-                       features = (SELECT count(*) FROM extra.power_line WHERE source = %s)
-                                + (SELECT count(*) FROM extra.power_substation WHERE source = %s)
+                f"""UPDATE extra.source SET osm_duplicates = coalesce(osm_duplicates, 0) + %s,
+                       features = {FEATURE_COUNT}
                     WHERE source = %s""",
-                (total, source_id, source_id, source_id),
+                (total, source_id),
             )
             conn.commit()
             print(f"{source_id}: {total} removed in all.")
@@ -497,10 +585,14 @@ def main() -> None:
                 ", ".join(areas),
             ),
         )
-        count = source.run(conn, cur, areas)
+        count = source.run(conn, cur, areas, args.only)
+        # All of the source's features, also those of datasets not re-imported (--only).
         cur.execute(
-            "UPDATE extra.source SET features = %s, osm_duplicates = %s, imported_at = now() WHERE source = %s",
-            (count, source.duplicates, source.id),
+            f"""UPDATE extra.source SET features = {FEATURE_COUNT},
+                   osm_duplicates = CASE WHEN %s THEN coalesce(osm_duplicates, 0) ELSE 0 END + %s,
+                   imported_at = now()
+                WHERE source = %s""",
+            (bool(args.only), source.duplicates, source.id),
         )
         conn.commit()
         print(f"  {count} features imported.")

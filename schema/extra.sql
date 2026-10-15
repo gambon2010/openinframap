@@ -41,6 +41,19 @@ CREATE TABLE IF NOT EXISTS extra.power_substation (
     geometry geometry(Point, 3857) NOT NULL
 );
 
+-- Pipelines (so far French gas distribution networks).
+CREATE TABLE IF NOT EXISTS extra.pipeline (
+    id bigserial PRIMARY KEY,
+    source text NOT NULL REFERENCES extra.source ON DELETE CASCADE,
+    operator text,
+    substance text NOT NULL,        -- as in OSM: gas, ...
+    pressure text,                  -- as published, e.g. "Moyenne pression"; NULL if unknown
+    updated date,
+    geometry geometry(LineString, 3857) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS extra_pipeline_geometry ON extra.pipeline USING gist (geometry);
+CREATE INDEX IF NOT EXISTS extra_pipeline_source ON extra.pipeline (source);
+
 CREATE INDEX IF NOT EXISTS extra_power_line_geometry ON extra.power_line USING gist (geometry);
 CREATE INDEX IF NOT EXISTS extra_power_line_source ON extra.power_line (source);
 CREATE INDEX IF NOT EXISTS extra_power_substation_geometry ON extra.power_substation USING gist (geometry);
@@ -106,6 +119,32 @@ BEGIN
             OR EXISTS (SELECT 1 FROM osm_power_tower p
                         WHERE ST_DWithin(p.geometry, e.geometry, 25)
                           AND p.tags ? 'transformer' AND p.tags -> 'transformer' <> 'no'));
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    RETURN removed;
+END $$;
+
+-- Pipelines: deleted when at least 80% of their length is within 15 m of OSM
+-- pipelines of the same substance (or none).
+CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_pipelines(src text, subst text)
+RETURNS bigint LANGUAGE plpgsql AS $$
+DECLARE removed bigint;
+BEGIN
+    CREATE TEMP TABLE IF NOT EXISTS extra_osm_pipeline (geometry geometry(LineString, 3857));
+    TRUNCATE extra_osm_pipeline;
+    INSERT INTO extra_osm_pipeline
+        SELECT o.geometry FROM osm_pipeline o
+         WHERE coalesce(o.substance, '') IN ('', subst)
+            OR (subst = 'gas' AND o.substance IN ('natural_gas', 'cng', 'lpg', 'lng'));
+    CREATE INDEX IF NOT EXISTS extra_osm_pipeline_geometry ON extra_osm_pipeline USING gist (geometry);
+    ANALYZE extra_osm_pipeline;
+
+    DELETE FROM extra.pipeline e
+     WHERE e.source = src AND e.substance = subst
+       AND ST_Length(e.geometry) > 0
+       AND EXISTS (SELECT 1 FROM extra_osm_pipeline o WHERE ST_DWithin(o.geometry, e.geometry, 15))
+       AND (SELECT ST_Length(ST_Intersection(e.geometry, ST_Union(ST_Buffer(o.geometry, 15))))
+              FROM extra_osm_pipeline o WHERE ST_DWithin(o.geometry, e.geometry, 15))
+           >= 0.8 * ST_Length(e.geometry);
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
 END $$;

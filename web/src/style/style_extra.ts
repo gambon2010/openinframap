@@ -1,13 +1,49 @@
 // Fork: infrastructure data from outside OpenStreetMap (the "extra" Tegola map,
 // filled by scripts/extra_data.py). Drawn exactly like OSM power lines and
-// substations of the same voltage (the tiles carry a nominal voltage), below
-// the OSM layers; popups say where the data comes from.
+// substations of the same voltage (the tiles carry a nominal voltage) and like
+// OSM gas pipes, below the OSM layers; popups say where the data comes from.
 import { interpolate, zoom } from './stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from './types.ts'
 import { voltage_color, voltage_line_thickness, substation_radius, power_opacity } from './style_oim_power.ts'
+import { pipeline_colour } from './style_oim_petroleum.ts'
 
 export default function layers(): LayerSpecificationWithZIndex[] {
   return [
+    // Gas distribution pipes, like OSM's (style_oim_petroleum.ts), just below them.
+    {
+      id: 'extra_pipeline_hit',
+      zorder: 0.4,
+      source: 'extra',
+      'source-layer': 'extra_pipeline',
+      type: 'line',
+      paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 12 }
+    },
+    {
+      id: 'extra_pipeline_case',
+      zorder: 0.5,
+      source: 'extra',
+      'source-layer': 'extra_pipeline',
+      type: 'line',
+      paint: {
+        'line-color': '#666666',
+        'line-width': interpolate(zoom, [
+          [8, 1.5],
+          [16, 1.5]
+        ])
+      },
+      layout: { 'line-cap': 'round', 'line-join': 'round' }
+    },
+    {
+      id: 'extra_pipeline',
+      zorder: 0.6,
+      source: 'extra',
+      'source-layer': 'extra_pipeline',
+      type: 'line',
+      paint: {
+        'line-color': pipeline_colour,
+        'line-width': 1
+      }
+    },
     // Invisible and wider than the lines, so thin low-voltage lines are easy to
     // click. Lowest z-order: anything drawn under the pointer is picked first.
     // One per line layer (named after it), so hiding a layer hides its click area.

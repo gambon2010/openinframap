@@ -318,11 +318,13 @@ by Wikidata ID, so it's shared across regions.
 ## Extra data (not from OpenStreetMap)
 
 Open data published by network operators. For now that's the French distribution
-networks: every low- and medium-voltage line and street-level substation, from
+networks: every low- and medium-voltage line and street-level substation, and the
+gas distribution pipes (`--only gaz` imports just those), from
 [Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
 Europe and the border strips of France's neighbours. Switch it on in the layer
-switcher under **Not from OpenStreetMap**. It's drawn like OSM lines of the same
-voltage (medium voltage as 20 kV, low voltage as < 10 kV); click a line to see its
+switcher under **Not from OpenStreetMap** (power and gas are separate entries). It's
+drawn like OSM lines of the same voltage (medium voltage as 20 kV, low voltage as
+< 10 kV) and like OSM gas pipes; click a line to see its
 source.
 
 `build-region.sh` offers it when it covers the region you picked (or pass `--extra`).

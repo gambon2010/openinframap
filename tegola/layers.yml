@@ -739,3 +739,27 @@ layers:
     id_field: id
     from: extra.power_substation
     where: geometry && !BBOX!
+
+  - name: extra_pipeline
+    map:
+      - extra
+    geometry_type: LineString
+    min_zoom: 12
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: operator
+      - name: substance
+      # As OSM's pressure tag, so the map draws it like OSM gas pipes: published
+      # medium pressure as intermediate, unknown (most of it) as plain distribution.
+      - name: pressure
+        sql: CASE pressure WHEN 'Moyenne pression' THEN 'intermediate' END
+      - name: pressure_published
+        sql: pressure
+      - name: usage
+        sql: "'distribution'::text"
+      - name: updated
+        sql: updated::text
+    id_field: id
+    from: extra.pipeline
+    where: geometry && !BBOX!

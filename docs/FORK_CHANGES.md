@@ -415,6 +415,21 @@ the French community's preference for mapping by hand (the licence isn't the rea
   the power lines for a local file): a Luxembourg build gets the border strip of
   Moselle, a France build leaves out the overseas départements. Heights in 3D
   geometries are dropped.
+- **Gas distribution** comes from the same source (`infrastructures-reseau-gaz`: GRDF,
+  Régaz, GreenAlp, Vialis and the other distributors, 4.2 million pipe sections;
+  OSM has about 28,000 km of gas pipe in France, roughly the transmission network).
+  It goes into `extra.pipeline` and is drawn like OSM gas pipes (`pipeline_colour`
+  from `style_oim_petroleum.ts`), from zoom 12, under its own layer-switcher entry
+  "Gas distribution (open data)" (code `Y`; power is `X`). 97% of the sections,
+  all of GRDF's, have no published pressure: they're drawn like OSM gas pipes
+  without a pressure tag (the key's low-pressure distribution colour) but their
+  popup says "Not published", since GRDF's network is largely medium pressure.
+  Sections published as medium pressure are drawn as intermediate pressure.
+  Their server cut the national gas export off twice (after 0.6 and 3.2 million
+  rows), so gas is fetched département by département; every download is retried,
+  and a national one that keeps failing falls back to départements.
+  `extra_data.py import --only gaz` imports just this dataset; pipes OSM already has
+  (same 80%-within-10-m rule) are left out.
 - **Licence:** Licence Ouverte 2.0, which requires attribution: the source's
   attribution shows on the map whenever the layer is on.
 - **Build and exports:** `build-region.sh` offers extra data only when a source covers

@@ -49,7 +49,7 @@ const usage_diameter_pressure_colour: ExpressionSpecification = case_(
   colour_gas_other
 )
 
-const pipeline_colour: ExpressionSpecification = match(
+export const pipeline_colour: ExpressionSpecification = match(
   substance,
   [
     [['gas', 'natural_gas', 'cng', 'lpg', 'lng'], usage_diameter_pressure_colour],

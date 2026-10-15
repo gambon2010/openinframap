@@ -339,7 +339,9 @@ class InfoPopup {
   extraPopupHtml(feature: MapGeoJSONFeature) {
     const p = feature.properties
     let title
-    if (feature.layer.id.startsWith('extra_power_substation')) {
+    if (feature.layer.id.startsWith('extra_pipeline')) {
+      title = t('extra.gas-pipe', 'Gas distribution pipe')
+    } else if (feature.layer.id.startsWith('extra_power_substation')) {
       title = t('extra.substation', 'Distribution substation')
     } else if (p.voltage_class === 'BT') {
       title = t('extra.line-bt', 'Low-voltage line')
@@ -359,6 +361,14 @@ class InfoPopup {
             : p.voltage_class
       ],
       [t('extra.kind', 'Kind'), p.kind],
+      ...(feature.layer.id.startsWith('extra_pipeline')
+        ? ([
+            [
+              t('extra.pressure', 'Pressure'),
+              p.pressure_published || t('extra.pressure-unknown', 'Not published')
+            ]
+          ] as [string, any][])
+        : []),
       [t('info.operator'), p.operator],
       [t('info.location'), p.location && t('location.' + p.location, p.location)],
       [t('extra.updated', 'Source updated'), p.updated]

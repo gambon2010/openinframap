@@ -227,7 +227,8 @@
     "other-pipelines": "Other Pipelines",
     "osmose-power": "Osmose (Power)",
     "extra-data": "Not from OpenStreetMap",
-    "extra-distribution": "Distribution networks (open data)"
+    "extra-distribution": "Power distribution (open data)",
+    "extra-gas": "Gas distribution (open data)"
   },
   "construction": "under construction",
   "disused": "disused",
@@ -298,6 +299,9 @@
     "updated": "Source updated",
     "notice": "Not from OpenStreetMap: open data from",
     "hta": "HTA (medium voltage, usually 20 kV)",
-    "bt": "BT (low voltage, 230/400 V)"
+    "bt": "BT (low voltage, 230/400 V)",
+    "gas-pipe": "Gas distribution pipe",
+    "pressure": "Pressure",
+    "pressure-unknown": "Not published"
   }
 }
