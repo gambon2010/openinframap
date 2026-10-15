@@ -59,21 +59,37 @@ SELECT 'plant', osm_id, name, NULL, geometry,
   FROM power_plant;
 CREATE INDEX ON grid_station USING gist (geom);
 
--- 4. Junctions: line ends, vertices shared by more than one line, and vertices
---    inside a station's outline (a line running through a substation or a
---    wind farm connects to it).
+-- 4. Junctions: line ends, vertices shared by more than one line, and the
+--    first vertex where a line enters a station's outline (a line running
+--    through a substation or a wind farm connects to it). Only the entry point
+--    is split: the stretch leaving the station keeps the part inside it, so
+--    the drawn route has no gap.
+CREATE TEMP TABLE grid_vertex_in_station AS
+SELECT v.line_id, v.idx,
+       (SELECT s.kind || ':' || s.osm_id
+          FROM grid_station AS s
+         WHERE GeometryType(s.geom) <> 'POINT' AND ST_Intersects(s.geom, v.geom)
+         ORDER BY s.priority
+         LIMIT 1) AS station
+  FROM grid_vertex AS v;
+
 CREATE TEMP TABLE grid_junction AS
 WITH shared AS (
     SELECT key FROM grid_vertex GROUP BY key HAVING count(DISTINCT line_id) > 1
 ), last AS (
     SELECT line_id, max(idx) AS last_idx FROM grid_vertex GROUP BY line_id
+), entering AS (
+    SELECT line_id, idx
+      FROM (SELECT line_id, idx, station,
+                   lag(station) OVER (PARTITION BY line_id ORDER BY idx) AS previous
+              FROM grid_vertex_in_station) AS w
+     WHERE station IS NOT NULL AND station IS DISTINCT FROM previous
 )
 SELECT v.line_id, v.idx, v.key, v.geom
   FROM grid_vertex AS v
   JOIN last USING (line_id)
  WHERE v.idx = 1 OR v.idx = last.last_idx OR v.key IN (SELECT key FROM shared)
-    OR EXISTS (SELECT 1 FROM grid_station AS s
-                WHERE GeometryType(s.geom) <> 'POINT' AND ST_Intersects(s.geom, v.geom));
+    OR (v.line_id, v.idx) IN (SELECT line_id, idx FROM entering);
 
 -- Each distinct junction position -> the best station within reach, if any.
 CREATE TEMP TABLE grid_key_station AS

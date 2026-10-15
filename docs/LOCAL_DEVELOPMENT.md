@@ -302,8 +302,9 @@ Click a substation or power plant and choose **Route from here**, then another a
 choose **Route to here**. A panel lists up to three distinct paths over lines of
 110 kV and more (length, voltages, stations on the way), and the map draws them in
 different colours; click a path to show only that one, × to clear. A station that
-is only on a lower voltage (e.g. a wind farm on a 65 kV line) first gets a dashed
-connection to the nearest station on the 110 kV+ grid. The route is kept
+is only on a lower voltage (e.g. a wind farm on a 65 kV line) is connected over
+those lines to the nearest station on the 110 kV+ grid; the panel says how much
+of the route runs at the lower voltage. The route is kept
 in the map link, so you can share it. Needs a database built with this feature
 (`build-region.sh` builds the network automatically).
 

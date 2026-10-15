@@ -298,6 +298,6 @@
     "note": "Physical connections in OpenStreetMap, not how power actually flows.",
     "unnamed-substation": "Unnamed substation",
     "unnamed-plant": "Unnamed power plant",
-    "access": "Connection to the 110 kV+ grid"
+    "lower": "incl. {{km}} km at {{kv}} kV from {{from}} to {{to}}"
   }
 }

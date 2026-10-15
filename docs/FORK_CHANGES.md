@@ -397,11 +397,14 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - **Stations on lower voltages** (e.g. Wandpark Housen-Pëtschent and Biogas Our
   Särl, both on a 65 kV line): the network also includes lines of 10 kV and more
   with a known voltage, and lines running *through* a station's outline connect to
-  it. If an end isn't on the ≥110 kV grid, the backend follows the lower-voltage
-  lines (up to 50 km) to the nearest station that is, and shows that as a dashed
-  "connection to the 110 kV+ grid" leg; the distinct paths still run over 110 kV+
-  only. Example: Wandpark Housen-Pëtschent → Schifflange = 7.8 km of 65 kV to
-  Flebour, then 52 km of 220 kV.
+  it (the line is split where it enters the outline, so the stretch inside stays
+  part of the drawn route). If an end isn't on the ≥110 kV grid, the backend
+  follows the lower-voltage lines (up to 50 km) to the nearest station that is;
+  the distinct paths still run over 110 kV+ only. Each route is drawn as one line
+  in its colour, connection legs included, and the panel notes the lower-voltage
+  part. (A first version drew those legs dashed in grey; that read as two
+  separate things meeting at a substation.) Example: Wandpark Housen-Pëtschent →
+  Schifflange = 62.6 km, incl. 10.6 km at 65 kV to Flebour.
 - **Not bridged on purpose:** Centrale de Vianden connects to the Vianden
   substation, but that cluster's 220 kV lines lead to a substation in Germany that a
   Luxembourg-only extract doesn't contain, so it has no path to the rest of

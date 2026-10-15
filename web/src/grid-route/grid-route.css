@@ -115,27 +115,3 @@
   margin-top: 6px;
 }
 
-.oim-route-access-list {
-  margin-top: 8px;
-}
-
-.oim-route-access-title {
-  margin-bottom: 2px;
-  color: var(--oim-text-color-light);
-  font-size: 0.8rem;
-}
-
-.oim-route-access {
-  display: flex;
-  gap: 8px;
-  padding: 3px 4px;
-  font-size: 0.85rem;
-}
-
-/* Dashed, like the access legs on the map */
-.oim-route-swatch-access {
-  height: 0;
-  margin-top: 8px;
-  border-top: 4px dashed #444444;
-  border-radius: 0;
-}
