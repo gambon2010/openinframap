@@ -45,3 +45,67 @@ CREATE INDEX IF NOT EXISTS extra_power_line_geometry ON extra.power_line USING g
 CREATE INDEX IF NOT EXISTS extra_power_line_source ON extra.power_line (source);
 CREATE INDEX IF NOT EXISTS extra_power_substation_geometry ON extra.power_substation USING gist (geometry);
 CREATE INDEX IF NOT EXISTS extra_power_substation_source ON extra.power_substation (source);
+
+-- How many of a source's features were removed because OpenStreetMap already has them.
+ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS osm_duplicates integer;
+
+-- Duplicates of OpenStreetMap: the OSM data is kept as it is, and extra features it
+-- already has are deleted. Distances are in EPSG:3857 metres (15 ≈ 10 m on the
+-- ground in France). Measured on a sample around Pontivy: matches are clear-cut
+-- (overhead HTA lines are mostly 0% or 100% covered, substations are within a few
+-- metres or more than 50 m away).
+
+-- Lines: deleted when at least 80% of their length is within 15 m of OSM lines of
+-- the same voltage class (or no voltage) and the same placement: an underground
+-- cable next to an OSM overhead line is usually a different line (the overhead
+-- one was buried, or both run along the same road).
+CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_lines(src text, loc text, cls text)
+RETURNS bigint LANGUAGE plpgsql AS $$
+DECLARE removed bigint;
+BEGIN
+    CREATE TEMP TABLE IF NOT EXISTS extra_osm_line (geometry geometry(LineString, 3857));
+    TRUNCATE extra_osm_line;
+    INSERT INTO extra_osm_line
+        SELECT o.geometry FROM osm_power_line o
+         WHERE (o.voltage IS NULL OR o.voltage = '' OR CASE cls
+                    WHEN 'BT' THEN convert_voltage(o.voltage) <= 1000
+                    WHEN 'HTA' THEN convert_voltage(o.voltage) > 1000 AND convert_voltage(o.voltage) <= 50000
+                    ELSE false END)
+           AND (coalesce(o.location, '') IN ('underground', 'underwater')
+                OR (o.type IN ('cable', 'minor_cable') AND coalesce(o.location, '') = ''))
+               = (loc = 'underground');
+    CREATE INDEX IF NOT EXISTS extra_osm_line_geometry ON extra_osm_line USING gist (geometry);
+    ANALYZE extra_osm_line;
+
+    DELETE FROM extra.power_line e
+     WHERE e.source = src AND e.location = loc AND e.voltage_class = cls
+       AND ST_Length(e.geometry) > 0
+       AND EXISTS (SELECT 1 FROM extra_osm_line o WHERE ST_DWithin(o.geometry, e.geometry, 15))
+       AND (SELECT ST_Length(ST_Intersection(e.geometry, ST_Union(ST_Buffer(o.geometry, 15))))
+              FROM extra_osm_line o WHERE ST_DWithin(o.geometry, e.geometry, 15))
+           >= 0.8 * ST_Length(e.geometry);
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    RETURN removed;
+END $$;
+
+-- Substations (street-level HTA/BT): deleted when within 25 m of an OSM small
+-- substation (not a big one, which can contain a street transformer without
+-- being it), a transformer, or a pole carrying a transformer.
+CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_substations(src text)
+RETURNS bigint LANGUAGE plpgsql AS $$
+DECLARE removed bigint;
+BEGIN
+    DELETE FROM extra.power_substation e
+     WHERE e.source = src
+       AND (EXISTS (SELECT 1 FROM osm_power_substation s
+                     WHERE ST_DWithin(s.geometry, e.geometry, 25)
+                       AND coalesce(s.substation, '') IN ('minor_distribution', '', 'yes', 'transformer')
+                       AND ST_Area(s.geometry) < 2000)
+            OR EXISTS (SELECT 1 FROM osm_power_switchgear t
+                        WHERE t.type = 'transformer' AND ST_DWithin(t.geometry, e.geometry, 25))
+            OR EXISTS (SELECT 1 FROM osm_power_tower p
+                        WHERE ST_DWithin(p.geometry, e.geometry, 25)
+                          AND p.tags ? 'transformer' AND p.tags -> 'transformer' <> 'no'));
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    RETURN removed;
+END $$;

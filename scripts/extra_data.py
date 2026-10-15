@@ -117,6 +117,24 @@ def inside(point: list[float], rings: list[list[list[float]]]) -> bool:
     return False
 
 
+def remove_osm_duplicates(
+    cur, source_id: str, table: str, location=None, voltage_class=None
+) -> int:
+    """Delete a source's features OpenStreetMap already has (schema/extra.sql has the
+    rules); the OSM data is left as it is. Returns how many were deleted."""
+    cur.execute("SELECT to_regclass('public.osm_power_line') IS NOT NULL")
+    if not cur.fetchone()[0]:
+        return 0
+    if table == "line":
+        cur.execute(
+            "SELECT extra.remove_osm_duplicate_lines(%s, %s, %s)",
+            (source_id, location, voltage_class),
+        )
+    else:
+        cur.execute("SELECT extra.remove_osm_duplicate_substations(%s)", (source_id,))
+    return cur.fetchone()[0]
+
+
 class Source:
     id = ""
     name = ""
@@ -138,8 +156,12 @@ class Source:
         """Roughly how many features the areas hold (before clipping to the region)."""
         return None
 
+    # Features left out of the last run() because OpenStreetMap already has them.
+    duplicates = 0
+
     def run(self, conn, cur, areas: list[str]) -> int:
-        """Import into the extra tables, committing as it goes; returns the feature count.
+        """Import into the extra tables, committing as it goes, leaving out what
+        OpenStreetMap already has; returns the feature count.
         Only features inside the temp table extra_region (the region outline, EPSG:3857) are kept."""
         raise NotImplementedError
 
@@ -306,12 +328,18 @@ class FranceAgenceORE(Source):
                            AND EXISTS (SELECT 1 FROM extra_region r WHERE ST_Intersects(r.geom, g))""",
                     (self.id, kind),
                 )
-            count += cur.rowcount
+            inserted = cur.rowcount
+            voltage_class = "BT" if "basse-tension" in dataset else "HTA"
+            duplicates = remove_osm_duplicates(
+                cur, self.id, table, location, voltage_class
+            )
+            count += inserted - duplicates
+            self.duplicates += duplicates
             # Saved dataset by dataset: what's done shows on the map and survives a later failure.
             conn.commit()
             print(
-                f"      kept {cur.rowcount} inside the region (replacing {replaced})"
-                f" in {time.monotonic() - started:.0f} s",
+                f"      kept {inserted - duplicates} inside the region (replacing {replaced});"
+                f" left out {duplicates} already in OpenStreetMap; {time.monotonic() - started:.0f} s",
                 flush=True,
             )
         return count
@@ -359,6 +387,10 @@ def main() -> None:
         "import", help="import sources (all applicable ones by default)"
     )
     imp.add_argument("sources", nargs="*")
+    sub.add_parser(
+        "dedupe",
+        help="delete imported features OpenStreetMap already has (import does it as it goes)",
+    )
     rem = sub.add_parser("remove", help="remove an imported source")
     rem.add_argument("source")
     off = sub.add_parser(
@@ -385,6 +417,39 @@ def main() -> None:
     cur = conn.cursor()
     ensure_schema(cur)
     conn.commit()
+
+    if args.command == "dedupe":
+        cur.execute("SELECT source FROM extra.source ORDER BY source")
+        for (source_id,) in cur.fetchall():
+            total = 0
+            cur.execute(
+                "SELECT DISTINCT location, voltage_class FROM extra.power_line WHERE source = %s ORDER BY 1, 2",
+                (source_id,),
+            )
+            parts = [("line", location, cls) for location, cls in cur.fetchall()] + [
+                ("substation", None, None)
+            ]
+            for table, location, cls in parts:
+                started = time.monotonic()
+                removed = remove_osm_duplicates(cur, source_id, table, location, cls)
+                conn.commit()
+                total += removed
+                what = f"{location} {cls} lines" if table == "line" else "substations"
+                print(
+                    f"{source_id}: {what}: removed {removed} already in OpenStreetMap ({time.monotonic() - started:.0f} s)",
+                    flush=True,
+                )
+            cur.execute(
+                """UPDATE extra.source SET osm_duplicates = coalesce(osm_duplicates, 0) + %s,
+                       features = (SELECT count(*) FROM extra.power_line WHERE source = %s)
+                                + (SELECT count(*) FROM extra.power_substation WHERE source = %s)
+                    WHERE source = %s""",
+                (total, source_id, source_id, source_id),
+            )
+            conn.commit()
+            print(f"{source_id}: {total} removed in all.")
+        print("Refresh the tile server: docker compose up -d --force-recreate tegola")
+        return
 
     if args.command == "remove":
         cur.execute("DELETE FROM extra.source WHERE source = %s", (args.source,))
@@ -434,8 +499,8 @@ def main() -> None:
         )
         count = source.run(conn, cur, areas)
         cur.execute(
-            "UPDATE extra.source SET features = %s, imported_at = now() WHERE source = %s",
-            (count, source.id),
+            "UPDATE extra.source SET features = %s, osm_duplicates = %s, imported_at = now() WHERE source = %s",
+            (count, source.duplicates, source.id),
         )
         conn.commit()
         print(f"  {count} features imported.")

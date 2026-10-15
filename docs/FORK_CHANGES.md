@@ -389,7 +389,21 @@ the French community's preference for mapping by hand (the licence isn't the rea
   its new ones inserted in one transaction, once the new copy has downloaded. So
   re-running never duplicates rows, finished datasets show on the map while the rest
   download, and a failed refresh keeps the old copy of what it didn't finish.
-  Overlaps *with OSM* are kept for now: filtering them is the next step.
+- **No duplicates of OSM.** OSM is kept as it is; extra features it already has are
+  deleted, after each dataset is imported (and by `extra_data.py dedupe` for data
+  imported before). Rules, in `schema/extra.sql`, from measurements around Pontivy
+  where the answer was clear-cut:
+  - a line goes if at least 80% of it is within ~10 m of OSM lines of the same
+    voltage class (or no voltage) *and* the same placement. An underground cable
+    beside an OSM overhead line is kept: it's usually the buried replacement, or a
+    different line along the same road (145 of the 155 underground "matches" there
+    were overhead OSM lines);
+  - a substation goes if within ~15 m of an OSM small substation, a transformer or a
+    pole with a `transformer` tag (big substations are left out: they can contain a
+    street transformer without being it).
+  In that sample, 66% of overhead HTA lines and a third of the substations were
+  already in OSM, but almost no low-voltage lines or underground cables.
+  `extra.source.osm_duplicates` counts what was removed.
 - **Agence ORE, not each operator's portal.** [Agence ORE](https://opendata.agenceore.fr)
   consolidates all French operators, so it's the one source (also importing SER's own
   portal would duplicate Bas-Rhin). It publishes five datasets (overhead/underground ×

@@ -339,7 +339,8 @@ All of France is 16.3 million features, about 5 GB in the database, and took abo
 2 h 20 min to download (their server is slow). A French region is a few minutes per
 département. Each finished dataset shows on the map straight away; a failed refresh
 keeps the previous copy of the datasets it didn't get to. Exports include the extra
-data. Overlaps with OpenStreetMap aren't filtered out yet.
+data. Lines and substations OpenStreetMap already has are left out (the OSM ones are
+shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`.
 
 ---
 
