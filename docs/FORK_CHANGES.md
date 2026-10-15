@@ -397,10 +397,18 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   Both panels have minimise (keeps the highlight / routes on the map, shrinks to the
   title) and close (removes them). Clicking another feature replaces the details;
   Escape closes them. (The Osmose validation popups are unchanged.)
-- **Highlight of the selected feature** (`web/src/grid-route/highlight.ts`): points
-  get a glowing circle, areas (substations, plants, wind farms) an outline and light
-  fill, lines a glow; the pieces of a feature in all loaded tiles are collected, so
-  big areas are highlighted whole. Drawn below labels and icons so they stay readable.
+- **Highlight of the selected feature** (`web/src/grid-route/highlight.ts`): areas
+  (substations, plants, wind farms) get an outline and light fill, lines a glow,
+  points a ring. Plants and substations are drawn both as an area and an icon: the
+  area is highlighted when it's at least 16 px on screen (largest single part, so a
+  plant made of small far-apart parts counts as small), otherwise the icon. The
+  pieces of a feature in all loaded tiles are collected, so big areas are
+  highlighted whole. Drawn above the background map but below infrastructure labels
+  and icons (the background map's own labels come early in the stack, so "below
+  the first label" put the highlight under its water).
+- **Photos in the panel** are limited to the panel's width and 160 px high, and the
+  panel can use most of the screen height (45% when the Grid connection panel is
+  open below it), so a photo doesn't make it scroll; it never scrolls sideways.
 - **Where a line goes** (`web/src/grid-route/highlight.ts`,
   `GET /grid/line/<osm_id>`): clicking a power line highlights the whole connection
   it belongs to while its details are shown, not just the clicked piece (OpenStreetMap

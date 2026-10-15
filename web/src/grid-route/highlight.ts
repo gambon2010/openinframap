@@ -25,6 +25,8 @@ type LineResponse = {
 const SOURCE = 'feature_highlight'
 const YELLOW = '#ffd400'
 const DARK_YELLOW = '#b88a00'
+// An area smaller than this on screen is easier to see as its icon.
+const MIN_AREA_PIXELS = 16
 
 export default class FeatureHighlight {
   _map: Map
@@ -35,8 +37,14 @@ export default class FeatureHighlight {
     const addLayers = () => {
       if (map.getSource(SOURCE)) return
       map.addSource(SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      // Below the first label/icon layer, so names and icons stay readable on top.
-      const before = map.getStyle().layers.find((layer) => layer.type === 'symbol')?.id
+      // Above the whole background map (its labels come early in the stack, below
+      // its water and roads), but below the first infrastructure label/icon, so
+      // names and icons stay readable on top.
+      const before = map
+        .getStyle()
+        .layers.find(
+          (layer) => layer.type === 'symbol' && 'source' in layer && layer.source !== 'basemap'
+        )?.id
       const polygon: FilterSpecification = ['==', ['geometry-type'], 'Polygon']
       map.addLayer(
         {
@@ -76,13 +84,13 @@ export default class FeatureHighlight {
           type: 'circle',
           source: SOURCE,
           filter: ['==', ['geometry-type'], 'Point'],
+          // Bigger than the plant/substation icons (~26 px), so the ring shows around them.
           paint: {
-            'circle-radius': 16,
+            'circle-radius': 22,
             'circle-color': YELLOW,
-            'circle-opacity': 0.5,
-            'circle-blur': 0.3,
+            'circle-opacity': 0.45,
             'circle-stroke-color': DARK_YELLOW,
-            'circle-stroke-width': 2
+            'circle-stroke-width': 3
           }
         },
         before
@@ -96,18 +104,85 @@ export default class FeatureHighlight {
   showFeature(feature: MapGeoJSONFeature) {
     this._request++
     const osmId = feature.properties['osm_id']
-    let parts: Feature[] = [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
+    // Plants, substations and wind farms are drawn as an area and an icon.
+    // Highlight the area when it's big enough to see, otherwise the icon.
+    const drawn =
+      osmId === undefined
+        ? []
+        : this._map
+            .queryRenderedFeatures({ filter: ['==', ['get', 'osm_id'], osmId] })
+            .filter((f) => f.source === feature.source)
+    const area = feature.geometry.type.endsWith('Polygon')
+      ? feature
+      : drawn.find((f) => f.geometry.type.endsWith('Polygon'))
+    if (area && this.screenSize(area) >= MIN_AREA_PIXELS) {
+      this.setData(this.allPieces(area))
+      return
+    }
+    const icon = feature.geometry.type === 'Point' ? feature : drawn.find((f) => f.geometry.type === 'Point')
+    if (icon) {
+      this.setData([{ type: 'Feature', geometry: icon.geometry, properties: {} }])
+    } else if (area) {
+      // A tiny area without an icon: a circle at its centre is easier to spot.
+      const centre = this.bounds(area).getCenter()
+      this.setData([
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [centre.lng, centre.lat] },
+          properties: {}
+        }
+      ])
+    } else {
+      this.setData(this.allPieces(feature))
+    }
+  }
+
+  /** A big area or long line is split over several tiles: collect all pieces. */
+  allPieces(feature: MapGeoJSONFeature): Feature[] {
+    const osmId = feature.properties['osm_id']
     if (osmId !== undefined && feature.source) {
-      // A big area or long line is split over several tiles: collect all pieces.
       const pieces = this._map.querySourceFeatures(feature.source, {
         sourceLayer: feature.sourceLayer,
         filter: ['==', ['get', 'osm_id'], osmId]
       })
       if (pieces.length) {
-        parts = pieces.map((piece) => ({ type: 'Feature', geometry: piece.geometry, properties: {} }))
+        return pieces.map((piece) => ({ type: 'Feature', geometry: piece.geometry, properties: {} }))
       }
     }
-    this.setData(parts)
+    return [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
+  }
+
+  bounds(feature: MapGeoJSONFeature): LngLatBounds {
+    const bounds = new LngLatBounds()
+    const add = (coords: unknown): void => {
+      if (typeof (coords as number[])[0] === 'number') bounds.extend(coords as [number, number])
+      else (coords as unknown[]).forEach(add)
+    }
+    if ('coordinates' in feature.geometry) add(feature.geometry.coordinates)
+    return bounds
+  }
+
+  /**
+   * Size on screen in pixels (larger of width and height) of the biggest single
+   * part: a plant made of several small, far-apart parts is still small to see.
+   */
+  screenSize(feature: MapGeoJSONFeature): number {
+    const geometry = feature.geometry
+    const parts =
+      geometry.type === 'MultiPolygon'
+        ? geometry.coordinates
+        : geometry.type === 'Polygon'
+          ? [geometry.coordinates]
+          : []
+    let largest = 0
+    for (const polygon of parts) {
+      const bounds = new LngLatBounds()
+      for (const coord of polygon[0]) bounds.extend(coord as [number, number])
+      const a = this._map.project(bounds.getSouthWest())
+      const b = this._map.project(bounds.getNorthEast())
+      largest = Math.max(largest, Math.abs(a.x - b.x), Math.abs(a.y - b.y))
+    }
+    return largest
   }
 
   /**
