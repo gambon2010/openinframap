@@ -444,8 +444,10 @@ class InfoPopup {
 
     const content = await this.popupHtml(feature)
     const highlight = this.highlight
-    highlight?.showFeature(feature)
+    // Show the panel first: replacing the previous details runs their close
+    // callback, which clears the previous highlight.
     this.panel.show(content, () => highlight?.clear())
+    highlight?.showFeature(feature)
 
     // Power lines: highlight the whole line up to its stations, and say which.
     if (
