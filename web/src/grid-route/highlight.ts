@@ -230,6 +230,14 @@ export default class FeatureHighlight {
     )
   }
 
+  /** Highlight a location (a search result that isn't a map feature). */
+  showPoint(longitude: number, latitude: number) {
+    this._request++
+    this.setData([
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [longitude, latitude] }, properties: {} }
+    ])
+  }
+
   clear() {
     this._request++
     this.setData([])

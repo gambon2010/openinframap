@@ -12,6 +12,9 @@ export type SearchResult = {
   name: string
   score: number
   description?: string
+  // Fork: the map feature this result is, if any (substations and power plants
+  // from the local database), so selecting it can open its details.
+  feature?: { kind: 'substation' | 'plant'; osm_id: number }
 }
 
 export interface ISearchProvider {
@@ -31,7 +34,11 @@ export default class OIMSearch implements IControl {
   searchProviders: ISearchProvider[]
   currentQuery: string = ''
 
-  constructor() {
+  // Fork: called after the map flies to a selected result (opens its details).
+  onSelect?: (result: SearchResult) => void
+
+  constructor(onSelect?: (result: SearchResult) => void) {
+    this.onSelect = onSelect
     this.searchProviders = [
       new CoordinatesSearch(),
       // Fork: places (cities, towns, villages…) come from the local database via
@@ -179,6 +186,7 @@ export default class OIMSearch implements IControl {
       this.map!.flyTo({ center: [result.longitude, result.latitude], zoom: 14 })
       this.input.value = result.name
       this.clearDropdown()
+      this.onSelect?.(result)
     }
   }
 

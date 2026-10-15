@@ -15,6 +15,7 @@ import ExternalLinks from '../elements/external-links.ts'
 import GridRouteControl, { StationKind } from '../grid-route/grid-route.ts'
 import FeatureHighlight from '../grid-route/highlight.ts'
 import InfoPanel from '../info-panel/info-panel.ts'
+import { SearchResult } from '../search/search.ts'
 
 const hidden_keys = [
   'osm_id',
@@ -445,13 +446,22 @@ class InfoPopup {
     }
 
     // A second click on the same thing (its icon or its area) deselects it.
-    const key =
-      feature.properties['osm_id'] !== undefined ? `${feature.source}:${feature.properties['osm_id']}` : null
-    if (key && key === this.selected && this.panel.isOpen()) {
+    if (this.keyOf(feature) && this.keyOf(feature) === this.selected && this.panel.isOpen()) {
       this.panel.close()
       return
     }
+    await this.show(feature)
+  }
 
+  keyOf(feature: MapGeoJSONFeature): string | null {
+    return feature.properties['osm_id'] !== undefined
+      ? `${feature.source}:${feature.properties['osm_id']}`
+      : null
+  }
+
+  /** Show a feature's details in the side panel and highlight it. */
+  async show(feature: MapGeoJSONFeature) {
+    const key = this.keyOf(feature)
     const content = await this.popupHtml(feature)
     const highlight = this.highlight
     // Show the panel first: replacing the previous details runs their close
@@ -474,6 +484,55 @@ class InfoPopup {
         content.insertBefore(info, content.querySelector('.oim-info-footer'))
       }
     }
+  }
+
+  /**
+   * Fork: a search result was selected and the map is flying to it. Open its
+   * details like a click would: substations and plants are looked up on the map
+   * once it's there; other results (places, coordinates, addresses) get a short
+   * panel and a ring at the location.
+   */
+  selectSearchResult(result: SearchResult) {
+    const found = () => {
+      const target = result.feature
+      if (!target) return null
+      const prefix = target.kind === 'substation' ? 'power_substation' : 'power_plant'
+      const candidates = this._map
+        .queryRenderedFeatures({
+          layers: this.layers.filter((id) => id.startsWith(prefix) && this._map.getLayer(id)),
+          filter: ['==', ['get', 'osm_id'], target.osm_id]
+        })
+        // Prefer the area: its details are the same, and it's what gets highlighted when visible.
+        .sort(
+          (a, b) => Number(b.geometry.type.endsWith('Polygon')) - Number(a.geometry.type.endsWith('Polygon'))
+        )
+      return candidates[0] || null
+    }
+    let done = false
+    const open = () => {
+      if (done) return
+      done = true
+      const feature = found()
+      if (feature) {
+        this.show(feature)
+        return
+      }
+      const content = el(
+        'div.oim-popup-content',
+        el('div.oim-popup-header', el('h3', result.name)),
+        ...(result.description ? [el('p', result.description)] : [])
+      )
+      const highlight = this.highlight
+      this.panel.show(content, () => {
+        highlight?.clear()
+        this.selected = null
+      })
+      this.selected = null
+      highlight?.showPoint(result.longitude, result.latitude)
+    }
+    // After the flight, once the tiles there have loaded (or after a few seconds).
+    this._map.once('moveend', () => this._map.once('idle', open))
+    setTimeout(open, 6000)
   }
 
   circuits_table(circuits: Array<object>) {

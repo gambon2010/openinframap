@@ -130,12 +130,14 @@ export default class OpenInfraMap {
     map.addControl(new MapSourcesControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
     map.addControl(new EditButton(), 'bottom-right')
-    map.addControl(new OIMSearch(), 'top-left')
+    // Selecting a search result opens its details, like clicking it. (info_popup
+    // is created below; the callback only runs later, when a result is picked.)
+    map.addControl(new OIMSearch((result) => info_popup.selectSearchResult(result)), 'top-left')
     // Left side, top to bottom: search, feature details, grid connection.
     const info_panel = new InfoPanel()
     map.addControl(info_panel, 'top-left')
     map.addControl(grid_route, 'top-left')
-    new InfoPopup({
+    const info_popup = new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
       min_zoom: 6,
       api,
@@ -143,7 +145,8 @@ export default class OpenInfraMap {
       grid_route,
       panel: info_panel,
       highlight: new FeatureHighlight(map)
-    }).add(map, clickRouter)
+    })
+    info_popup.add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
 
     clickRouter.register()

@@ -7,6 +7,7 @@ import { t } from 'i18next'
 import { BACKEND_BASE_URL } from '../config.js'
 
 type OIMResult = {
+  id: number
   name: string
   type: string
   place_type?: string
@@ -61,7 +62,10 @@ export default class OIMSearchProvider implements ISearchProvider {
       longitude: result.geometry.coordinates[0],
       name: result.name,
       description: this.description(result),
-      score: this.baseScore - index * 0.1
+      score: this.baseScore - index * 0.1,
+      ...(result.type === 'substation' || result.type === 'plant'
+        ? { feature: { kind: result.type, osm_id: result.id } }
+        : {})
     }))
   }
 

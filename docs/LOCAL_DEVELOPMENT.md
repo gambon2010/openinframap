@@ -313,7 +313,8 @@ popup over the map) and highlights it: icons get a glowing circle, areas an
 outline, lines a glow. A **power line** is highlighted up to the stations at its
 ends; the panel names them and the length, and **Show whole line** zooms to it.
 **–** minimises a panel (the highlight stays), **×** closes it (the highlight goes);
-clicking the same thing again also deselects it. Needs a database built with this feature
+clicking the same thing again also deselects it. Picking a search result opens its
+details the same way. Needs a database built with this feature
 (`build-region.sh` builds the network automatically).
 
 ## Wikidata image cache
