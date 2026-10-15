@@ -192,6 +192,8 @@ class InfoPopup {
   circuit_inspector: CircuitInspector
   grid_route?: GridRouteControl
   highlight?: FeatureHighlight
+  // The feature whose details are shown (source + osm_id), to deselect it on a second click.
+  selected: string | null = null
 
   constructor(options: InfoPopupOptions) {
     this.api = options.api
@@ -442,11 +444,23 @@ class InfoPopup {
       console.info('Clicked feature on layer', feature.layer.id, '\n', feature.properties)
     }
 
+    // A second click on the same thing (its icon or its area) deselects it.
+    const key =
+      feature.properties['osm_id'] !== undefined ? `${feature.source}:${feature.properties['osm_id']}` : null
+    if (key && key === this.selected && this.panel.isOpen()) {
+      this.panel.close()
+      return
+    }
+
     const content = await this.popupHtml(feature)
     const highlight = this.highlight
     // Show the panel first: replacing the previous details runs their close
     // callback, which clears the previous highlight.
-    this.panel.show(content, () => highlight?.clear())
+    this.panel.show(content, () => {
+      highlight?.clear()
+      this.selected = null
+    })
+    this.selected = key
     highlight?.showFeature(feature)
 
     // Power lines: highlight the whole line up to its stations, and say which.

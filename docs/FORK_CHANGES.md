@@ -396,7 +396,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   connection panel, instead of a popup over the map (which hid what you clicked).
   Both panels have minimise (keeps the highlight / routes on the map, shrinks to the
   title) and close (removes them). Clicking another feature replaces the details;
-  Escape closes them. (The Osmose validation popups are unchanged.)
+  clicking the same one again (its icon or its area) deselects it; Escape closes
+  them. (The Osmose validation popups are unchanged.)
 - **Highlight of the selected feature** (`web/src/grid-route/highlight.ts`): areas
   (substations, plants, wind farms) get an outline and light fill, lines a glow,
   points a ring. Plants and substations are drawn both as an area and an icon: the
