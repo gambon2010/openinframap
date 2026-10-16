@@ -228,7 +228,8 @@
     "osmose-power": "Osmose (Power)",
     "extra-data": "Not from OpenStreetMap",
     "extra-distribution": "Power distribution (open data)",
-    "extra-gas": "Gas distribution (open data)"
+    "extra-gas": "Gas distribution (open data)",
+    "extra-icpe": "Classified installations (ICPE)"
   },
   "construction": "under construction",
   "disused": "disused",
@@ -308,6 +309,22 @@
     "feedstock": "Feedstock",
     "process": "Process",
     "network": "Gas network",
-    "opened": "In service since"
+    "opened": "In service since",
+    "icpe": {
+      "seveso-high": "Seveso site, upper tier",
+      "seveso-low": "Seveso site, lower tier",
+      "industry": "Industrial site",
+      "quarry": "Quarry",
+      "wind": "Wind farm",
+      "livestock": "Livestock farm",
+      "seveso": "Seveso",
+      "regime": "Regime",
+      "status": "Status",
+      "activities": "Activities",
+      "inspections": "Inspections",
+      "last": "last",
+      "commune": "Commune",
+      "details": "Details"
+    }
   }
 }

@@ -118,7 +118,7 @@ const style: StyleSpecification = {
       minzoom: 5,
       maxzoom: 17,
       attribution:
-        'Electricity and gas networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators (Licence Ouverte)'
+        'Electricity and gas networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators; classified installations: <a href="https://www.georisques.gouv.fr">Géorisques</a> (Licence Ouverte)'
     },
     osmose_errors_power: {
       type: 'vector',

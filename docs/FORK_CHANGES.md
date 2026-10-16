@@ -440,6 +440,22 @@ the French community's preference for mapping by hand (the licence isn't the rea
   almost none of them (21 biogas plants in France, and those are power plants), so
   they aren't checked against OSM. Closed sites are left out. New icons are picked up
   when the frontend dev server starts, so restart it after adding one.
+- **ICPE sites** (installations classées: industry, quarries, wind farms, large
+  livestock farms regulated for their risks or pollution, Seveso sites among them)
+  come from Géorisques' API (`GeorisquesICPE` in `extra_data.py`, source
+  `fr-georisques-icpe`; 140 pages of 1,000 for France, 3 minutes, kept in
+  `data/extra/georisques-icpe/`). Of 138,812 records only the 43,174 operating sites
+  under authorisation or registration are imported: the rest are "other regimes" /
+  "not ICPE" records without details, or closing sites. Into `extra.facility` (kind
+  `icpe`), drawn as dots coloured by category (Seveso upper/lower tier, industry,
+  quarry, wind farm, livestock), Seveso sites larger and from zoom 5, the rest from
+  zoom 9; own key section and layer-switcher entry ("Classified installations",
+  code `Z`); popups with Seveso status, regime, activities, inspections and a link to
+  the site's Géorisques page. OSM duplicates: 75% of ICPE wind farms sit on OSM wind
+  turbines, so wind farms within ~500 m of one (or of an OSM wind plant) and
+  non-Seveso sites within ~100 m of an OSM power plant are left out (1,979); Seveso
+  sites are always kept, as OSM doesn't record that. 40,154 sites for France.
+  Licence: Géorisques data is Licence Ouverte; no page says so for the API itself.
 - **Downloads are kept**, like the OSM extracts in `data/osm/`: each dataset is saved
   gzipped in `data/extra/agence-ore/<dataset>/` (`all.csv.gz`, or one file per
   département for those fetched that way), with each row's département, and the

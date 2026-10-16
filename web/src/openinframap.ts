@@ -85,7 +85,8 @@ export default class OpenInfraMap {
             'extra_power',
             false
           ),
-          new Layer('Y', t('layers.extra-gas', 'Gas distribution (open data)'), 'extra_gas', false)
+          new Layer('Y', t('layers.extra-gas', 'Gas distribution (open data)'), 'extra_gas', false),
+          new Layer('Z', t('layers.extra-icpe', 'Classified installations (ICPE)'), 'extra_icpe', false)
         ]),
         new LayerGroup(t('layers.validation'), [
           new Layer('E', t('layers.osmose-power'), 'osmose_errors_power', false)

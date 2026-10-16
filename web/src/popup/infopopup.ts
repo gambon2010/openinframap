@@ -12,6 +12,7 @@ import { ClickRouter } from '../click-router.ts'
 import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
+import { icpe_category_label } from '../style/style_extra.ts'
 
 const hidden_keys = [
   'osm_id',
@@ -332,6 +333,11 @@ class InfoPopup {
       name: 'Agence ORE',
       url: 'https://opendata.agenceore.fr',
       licence: 'Licence Ouverte 2.0'
+    },
+    'fr-georisques-icpe': {
+      name: 'Géorisques',
+      url: 'https://www.georisques.gouv.fr',
+      licence: 'Licence Ouverte 2.0'
     }
   }
 
@@ -339,7 +345,10 @@ class InfoPopup {
   extraPopupHtml(feature: MapGeoJSONFeature) {
     const p = feature.properties
     let title
-    if (feature.layer.id.startsWith('extra_gas_biomethane')) {
+    const icpe = feature.layer.id.startsWith('extra_icpe')
+    if (icpe) {
+      title = p.name || icpe_category_label(p.category)
+    } else if (feature.layer.id.startsWith('extra_gas_biomethane')) {
       title = p.name || t('extra.biomethane', 'Biomethane injection point')
     } else if (feature.layer.id.startsWith('extra_gas_pipeline')) {
       title = t('extra.gas-pipe', 'Gas distribution pipe')
@@ -352,7 +361,7 @@ class InfoPopup {
     } else {
       title = t('extra.line', 'Distribution line')
     }
-    const facility = feature.layer.id.startsWith('extra_gas_biomethane')
+    const facility = icpe || feature.layer.id.startsWith('extra_gas_biomethane')
     const rows: [string, any][] = [
       // Sites have their name as the title; their kind is shown as Type below.
       [t('info.name'), facility ? null : p.name],
@@ -381,6 +390,38 @@ class InfoPopup {
             [t('extra.process', 'Process'), p.process],
             [t('extra.network', 'Gas network'), [p.network, p.network_operator].filter((x) => x).join(', ')],
             [t('extra.opened', 'In service since'), p.opened]
+          ] as [string, any][])
+        : []),
+      ...(icpe
+        ? ([
+            [t('info.type'), icpe_category_label(p.category)],
+            [t('extra.icpe.seveso', 'Seveso'), p.seveso !== 'Non Seveso' ? p.seveso : null],
+            [t('extra.icpe.regime', 'Regime'), p.regime],
+            [t('extra.icpe.status', 'Status'), p.status],
+            [
+              t('extra.icpe.activities', 'Activities'),
+              p.activities &&
+                el(
+                  'div',
+                  ...String(p.activities)
+                    .split('; ')
+                    .map((a: string) => el('div', a))
+                )
+            ],
+            [
+              t('extra.icpe.inspections', 'Inspections'),
+              p.inspections &&
+                `${p.inspections}${p.last_inspection ? ', ' + t('extra.icpe.last', 'last') + ' ' + p.last_inspection : ''}`
+            ],
+            [t('extra.icpe.commune', 'Commune'), p.commune],
+            [
+              t('extra.icpe.details', 'Details'),
+              p.aiot &&
+                el('a', 'Géorisques', {
+                  href: `https://www.georisques.gouv.fr/risques/installations/donnees/details/${p.aiot}`,
+                  target: '_blank'
+                })
+            ]
           ] as [string, any][])
         : []),
       [t('info.operator'), p.operator],

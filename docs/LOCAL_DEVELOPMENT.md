@@ -320,7 +320,8 @@ by Wikidata ID, so it's shared across regions.
 Open data published by network operators. For now that's the French distribution
 networks: every low- and medium-voltage line and street-level substation, and the
 gas distribution pipes (`--only gaz` imports just those) and biomethane injection
-points (`--only biomethane`), from
+points (`--only biomethane`), plus the classified installations (ICPE, Seveso
+sites among them) from Géorisques (`import fr-georisques-icpe`); from
 [Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
 Europe and the border strips of France's neighbours. Switch it on in the layer
 switcher under **Not from OpenStreetMap** (power and gas are separate entries). It's

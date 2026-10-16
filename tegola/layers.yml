@@ -786,6 +786,28 @@ layers:
         sql: details ->> 'network'
       - name: network_operator
         sql: details ->> 'network_operator'
+      # ICPE sites (Géorisques)
+      - name: category
+        sql: details ->> 'category'
+      - name: seveso
+        sql: details ->> 'seveso'
+      - name: regime
+        sql: details ->> 'regime'
+      - name: status
+        sql: details ->> 'status'
+      - name: activities
+        sql: (SELECT string_agg(a, '; ') FROM jsonb_array_elements_text(details -> 'activities') a)
+      - name: inspections
+        sql: details ->> 'inspections'
+      - name: last_inspection
+        sql: details ->> 'last_inspection'
+      - name: commune
+        sql: details ->> 'commune'
+      - name: aiot
+        sql: details ->> 'aiot'
     id_field: id
     from: extra.facility
-    where: geometry && !BBOX!
+    # 40,000 ICPE sites: Seveso ones from zoom 5, the rest from zoom 9.
+    where: >
+      geometry && !BBOX! AND (kind <> 'icpe' OR !ZOOM! >= 9
+        OR details ->> 'category' IN ('seveso_high', 'seveso_low'))

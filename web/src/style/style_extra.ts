@@ -2,14 +2,91 @@
 // filled by scripts/extra_data.py). Drawn exactly like OSM power lines and
 // substations of the same voltage (the tiles carry a nominal voltage) and like
 // OSM gas pipes, below the OSM layers; popups say where the data comes from.
+import { t } from 'i18next'
 import { interpolate, zoom } from './stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from './types.ts'
+import { ExpressionSpecification } from 'maplibre-gl'
 import { voltage_color, voltage_line_thickness, substation_radius, power_opacity } from './style_oim_power.ts'
 import { pipeline_colour } from './style_oim_petroleum.ts'
 import { text_paint, font } from './common.ts'
 
+// ICPE (classified installations, Géorisques) by category; the key uses these.
+export const icpe_colours: { [category: string]: string } = {
+  seveso_high: '#C62828',
+  seveso_low: '#EF6C00',
+  industry: '#7E57C2',
+  quarry: '#8D6E63',
+  wind: '#00897B',
+  livestock: '#7CB342'
+}
+export function icpe_category_label(category: string): string {
+  return (
+    {
+      seveso_high: t('extra.icpe.seveso-high', 'Seveso site, upper tier'),
+      seveso_low: t('extra.icpe.seveso-low', 'Seveso site, lower tier'),
+      industry: t('extra.icpe.industry', 'Industrial site'),
+      quarry: t('extra.icpe.quarry', 'Quarry'),
+      wind: t('extra.icpe.wind', 'Wind farm'),
+      livestock: t('extra.icpe.livestock', 'Livestock farm')
+    }[category] || category
+  )
+}
+const icpe_colour: ExpressionSpecification = [
+  'match',
+  ['get', 'category'],
+  ...Object.entries(icpe_colours).flat(),
+  '#9E9E9E'
+] as unknown as ExpressionSpecification
+const icpe_seveso: ExpressionSpecification = [
+  'in',
+  ['get', 'category'],
+  ['literal', ['seveso_high', 'seveso_low']]
+]
+
 export default function layers(): LayerSpecificationWithZIndex[] {
   return [
+    // ICPE sites: Seveso ones larger, outlined dark, and above the others.
+    {
+      id: 'extra_icpe',
+      zorder: 165,
+      minzoom: 5,
+      source: 'extra',
+      'source-layer': 'extra_facility',
+      filter: ['==', ['get', 'kind'], 'icpe'],
+      type: 'circle',
+      layout: { 'circle-sort-key': ['case', icpe_seveso, 1, 0] },
+      paint: {
+        'circle-color': icpe_colour,
+        'circle-radius': interpolate(zoom, [
+          [5, ['case', icpe_seveso, 2.5, 1]],
+          [10, ['case', icpe_seveso, 5, 2.5]],
+          [16, ['case', icpe_seveso, 9, 6]]
+        ]),
+        'circle-stroke-color': ['case', icpe_seveso, '#3E2723', '#FFFFFF'],
+        'circle-stroke-width': interpolate(zoom, [
+          [5, 0.5],
+          [14, ['case', icpe_seveso, 2, 1]]
+        ])
+      }
+    },
+    {
+      id: 'extra_icpe_label',
+      zorder: 166,
+      minzoom: 13,
+      source: 'extra',
+      'source-layer': 'extra_facility',
+      filter: ['==', ['get', 'kind'], 'icpe'],
+      type: 'symbol',
+      paint: text_paint,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': font,
+        'text-size': 11,
+        'text-offset': [0, 1.1],
+        'text-anchor': 'top',
+        'text-optional': true
+      }
+    },
     // Gas distribution pipes, like OSM's (style_oim_petroleum.ts), just below them.
     {
       id: 'extra_gas_pipeline_hit',

@@ -165,3 +165,26 @@ BEGIN
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
 END $$;
+
+-- ICPE sites (Géorisques): OSM maps wind farms (turbines and plants) and power
+-- plants; it doesn't record Seveso status. Measured on France: 75% of ICPE wind
+-- farms are within 500 m of an OSM wind turbine (often on one). Deleted: wind farms
+-- within ~500 m of an OSM wind turbine or wind plant, and non-Seveso sites within
+-- ~100 m of an OSM power plant. Seveso sites are always kept. (EPSG:3857 metres:
+-- 725 ≈ 500 m and 145 ≈ 100 m on the ground in France.)
+CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_icpe(src text)
+RETURNS bigint LANGUAGE plpgsql AS $$
+DECLARE removed bigint;
+BEGIN
+    DELETE FROM extra.facility f
+     WHERE f.source = src AND f.kind = 'icpe'
+       AND ((f.details->>'category' = 'wind'
+             AND (EXISTS (SELECT 1 FROM osm_power_generator g
+                           WHERE g.tags->'generator:source' = 'wind' AND ST_DWithin(g.geometry, f.geometry, 725))
+                  OR EXISTS (SELECT 1 FROM osm_power_plant p
+                              WHERE p.tags->'plant:source' = 'wind' AND ST_DWithin(p.geometry, f.geometry, 725))))
+            OR (f.details->>'category' NOT IN ('seveso_high', 'seveso_low')
+                AND EXISTS (SELECT 1 FROM osm_power_plant p WHERE ST_DWithin(p.geometry, f.geometry, 145))));
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    RETURN removed;
+END $$;

@@ -32,6 +32,7 @@ import {
 import { svgLine, svgLineFromLayer, svgRectFromLayer } from './svg.js'
 import './key.css'
 import { FeatureHider, HideSpec } from './feature-hider.ts'
+import { icpe_colours, icpe_category_label } from '../style/style_extra.ts'
 import { manifest } from 'virtual:render-svg'
 
 const line_thickness = 6
@@ -165,6 +166,9 @@ class KeyControl implements IControl {
     mount(pane, await this.waterTable())
     pane.appendChild(el('h3', t('layers.other-pipelines', 'Other Pipelines')))
     mount(pane, this.otherPipelineTable())
+    // Fork: open data from Géorisques (layer switcher: Not from OpenStreetMap).
+    pane.appendChild(el('h3', t('layers.extra-icpe', 'Classified installations (ICPE)')))
+    mount(pane, this.icpeTable())
     this._pane = pane
 
     mount(this._container, pane)
@@ -458,6 +462,17 @@ class KeyControl implements IControl {
         { colour: colour_other_pipeline_unknown }
       ]
     ]
+    return this.table(rows)
+  }
+
+  icpeTable() {
+    const rows: Row[] = Object.entries(icpe_colours).map(([category, colour]) => [
+      icpe_category_label(category),
+      el('span.oim-key-dot', {
+        style: `background: ${colour}; border: 1px solid ${category.startsWith('seveso') ? '#3E2723' : '#fff'}`
+      }) as RedomElement,
+      { colour, types: ['circle'] }
+    ])
     return this.table(rows)
   }
 
