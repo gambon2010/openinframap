@@ -136,6 +136,25 @@ export function site_layer_key(category: string): string {
   return category === 'military_disused' ? 'disused' : category
 }
 
+// Groups are drawn larger the more sites they stand for: their icon and text size
+// for counts from 2, 10, 100 and 1000.
+const group_steps: [number, number, number][] = [
+  [2, 0.6, 10],
+  [10, 0.75, 11],
+  [100, 0.9, 12],
+  [1000, 1.05, 13]
+]
+
+// By count: ['step', count, a(2), 10, a(10), 100, a(100)...]
+function by_group_size(value: (icon_size: number, text_size: number) => unknown): ExpressionSpecification {
+  return [
+    'step',
+    ['get', 'count'],
+    value(group_steps[0][1], group_steps[0][2]),
+    ...group_steps.slice(1).flatMap(([count, icon_size, text_size]) => [count, value(icon_size, text_size)])
+  ] as unknown as ExpressionSpecification
+}
+
 export default function layers(): LayerSpecificationWithZIndex[] {
   return Object.entries(site_colours).flatMap(([category, colour]): LayerSpecificationWithZIndex[] => [
     {
@@ -154,42 +173,71 @@ export default function layers(): LayerSpecificationWithZIndex[] {
         'fill-outline-color': colour
       }
     },
-    // Icons: important sites (always shown, larger, labelled) and the rest, which
-    // give way when crowded and are labelled from zoom 15. Two layers, as
-    // icon-allow-overlap can't depend on the feature (MapLibre then rejects the
-    // whole style). Both start with sites_<key>, for the layer switcher.
-    ...([true, false] as const).map((important): LayerSpecificationWithZIndex => ({
-      id: `sites_${site_layer_key(category)}${important ? '' : '_minor'}`,
-      zorder: important ? 591 : 590,
+    // Icons, all shown (overlapping if need be): below zoom 14, nearby sites of the
+    // same category come as one group (site_points in schema/sites.sql), drawn by
+    // the _group layer. Important sites are larger and labelled; the rest are
+    // labelled from zoom 15.
+    {
+      id: `sites_${site_layer_key(category)}`,
+      zorder: 590,
       source: 'sites',
       'source-layer': 'sites_point',
-      filter: [
-        'all',
-        ['==', ['get', 'category'], category],
-        important ? ['==', ['get', 'importance'], 0] : ['>', ['get', 'importance'], 0]
-      ],
+      filter: ['all', ['==', ['get', 'category'], category], ['!', ['has', 'count_label']]],
       type: 'symbol',
-      paint: {
-        ...text_paint,
-        'text-opacity': important ? 1 : ['step', zoom, 0, 15, 1]
-      },
+      paint: text_paint,
       layout: {
         'icon-image': site_icon,
-        'icon-size': interpolate(zoom, [
-          [8, important ? 0.55 : 0.4],
-          [14, important ? 0.85 : 0.65],
-          [18, 0.9]
-        ]),
-        'icon-allow-overlap': important,
-        'symbol-sort-key': ['get', 'importance'],
-        'text-field': ['get', 'name'],
+        'icon-size': [
+          'interpolate',
+          ['linear'],
+          zoom,
+          4,
+          ['case', ['==', ['get', 'importance'], 0], 0.45, 0.35],
+          14,
+          ['case', ['==', ['get', 'importance'], 0], 0.85, 0.65],
+          18,
+          0.9
+        ],
+        'icon-allow-overlap': true,
+        'symbol-sort-key': ['-', 2, ['get', 'importance']],
+        'text-field': [
+          'step',
+          zoom,
+          ['case', ['==', ['get', 'importance'], 0], ['get', 'name'], ''],
+          15,
+          ['get', 'name']
+        ],
         'text-font': font,
-        'text-size': important ? 12 : 11,
+        'text-size': 11,
         'text-offset': [0, 1.3],
         'text-anchor': 'top',
         'text-optional': true,
         'text-max-width': 9
       }
-    }))
+    },
+    // A group: a disc in the category's colour with how many sites it stands for,
+    // larger for more (groups of different categories in one place are spread out
+    // by site_points). Clicking one zooms in (openinframap.ts).
+    {
+      id: `sites_${site_layer_key(category)}_group`,
+      zorder: 591,
+      source: 'sites',
+      'source-layer': 'sites_point',
+      filter: ['all', ['==', ['get', 'category'], category], ['has', 'count_label']],
+      type: 'symbol',
+      paint: {
+        'text-color': '#fff'
+      },
+      layout: {
+        'icon-image': `site_group_${category}`,
+        'icon-size': by_group_size((icon_size) => icon_size),
+        'icon-allow-overlap': true,
+        'text-allow-overlap': true,
+        'text-ignore-placement': true,
+        'text-field': ['get', 'count_label'],
+        'text-font': font,
+        'text-size': by_group_size((_, text_size) => text_size)
+      }
+    }
   ])
 }

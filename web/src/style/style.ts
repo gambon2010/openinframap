@@ -125,7 +125,7 @@ const style: StyleSpecification = {
     sites: {
       type: 'vector',
       tiles: [`${OIM_TILES}/sites/{z}/{x}/{y}.pbf`],
-      minzoom: 8,
+      minzoom: 4,
       maxzoom: 17,
       attribution: oim_attribution
     },

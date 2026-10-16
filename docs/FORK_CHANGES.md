@@ -369,7 +369,7 @@ default). Counts are France's OSM data in October 2026.
 
 | Category (switcher code) | Kinds |
 |---|---|
-| Health and emergency (`H`) | hospitals (2,500), clinics and health centres, pharmacies (19,000, from zoom 14), fire stations (6,100), police and gendarmerie (6,000), ambulance stations, warning sirens |
+| Health and emergency (`H`) | hospitals (2,500), clinics and health centres, pharmacies (19,000), fire stations (6,100), police and gendarmerie (6,000), ambulance stations, warning sirens |
 | Government and public services (`G`) | parliament and ministries, prefectures, town halls (37,000), tax offices / trésoreries, social security and CAF, France Travail, customs, other offices, courthouses, prisons, embassies, universities |
 | Places of worship (`R`) | Christian, Muslim, Jewish, Buddhist and other (60,000; Hindu and Sikh use the generic icon: Maki has none) |
 | Fuel and weapons (`F`) | fuel stations, fuel depots and fuel/gas storage tanks, gun shops and gunsmiths |
@@ -385,18 +385,36 @@ default). Counts are France's OSM data in October 2026.
   follows automatically.
 - **Classification:** `schema/sites.sql` (run by `build-region.sh`) sorts rows into
   a category and a kind (`site_kind`, `site_category`) and an importance
-  (`site_importance`): 0 shows from zoom 8 (parliament, ministries, prefectures,
-  hospitals, prisons, airports with an IATA/ICAO code, cathedrals and basilicas,
-  military areas, border controls, dams, big ports/landfills/depots), 1 from zoom 12,
-  2 from zoom 14 (pharmacies, churches, town halls, fuel stations, gun shops, silos,
-  bunkers, supermarkets except hypermarkets; anything with a Wikidata entry is promoted to 1). A storage tank only
-  counts if it holds fuel or gas; a WWII bomb crater not at all. All in the
-  materialized view `site_feature`, served by Tegola's `sites` map (`sites_area`,
-  `sites_point`).
+  (`site_importance`): 0 for parliament, ministries, prefectures, hospitals,
+  prisons, airports with an IATA/ICAO code, cathedrals and basilicas, large military
+  areas, border controls, dams, big ports/landfills/depots; 2 for the many small ones
+  (pharmacies, churches, town halls, fuel stations, gun shops, silos, bunkers,
+  supermarkets except hypermarkets) unless they have a Wikidata entry; 1 for the
+  rest. Importance sets the icon size, which sites are labelled before zoom 15, and
+  from which zoom areas are filled (8, 11, 13). A storage tank only counts if it
+  holds fuel or gas; a WWII bomb crater not at all. All in the materialized view
+  `site_feature`, served by Tegola's `sites` map (`sites_area`, and `sites_point`
+  through `site_points`).
+- **Groups instead of a zoom cut-off:** every site has an icon from zoom 4 (the map
+  used to look empty until zoom 12–14). Below zoom 14, `site_points(bbox, zoom)`
+  groups sites of the same category in a grid of 12 × 12 cells per tile (~40 px):
+  a cell holding several becomes one point with their `count` and `count_label`
+  (exact up to 999, then "1.2k", "12k") at their average position. The grid is
+  aligned with the tiles, so a group never straddles two and counts don't change
+  from one tile to the next. Important sites stay single from zoom 8 (below it,
+  hospitals and dams alone would cover the country); from zoom 14 nothing is
+  grouped and every icon is drawn, overlapping if need be. Groups of different
+  categories in one cell would sit on top of each other, so each category's is
+  moved ~10 px its own way, in SQL (with `icon-offset`, MapLibre puts the click
+  target elsewhere than the icon). A group is a disc in the category's colour
+  (`site_group_<category>.svg`) with the count on it, larger for more; clicking it
+  zooms in two levels (`openinframap.ts`). Hiding a kind in the key doesn't change
+  the groups' counts. France at zoom 5 is a ~0.5 MB tile taking ~1 s, once (Tegola
+  caches tiles up to zoom 13).
 - **Map:** `web/src/style/style_sites.ts`: an icon per kind (a Maki glyph, CC0, in a
   white circle ringed in the category's colour: `web/src/icons/site_*.svg`, made by
-  `scripts/make_site_icons.py`), important sites larger, always shown and labelled,
-  and a light fill for sites mapped as areas. One layer per category so the layer
+  `scripts/make_site_icons.py`), important sites larger and labelled, and a light
+  fill for sites mapped as areas. One layer per category so the layer
   switcher and the key (a section per category, a row per kind) can hide each.
   Disused military uses the prefix `sites_disused`, as the switcher matches
   prefixes and `sites_military` would cover it too. Popups: the name (or the kind),

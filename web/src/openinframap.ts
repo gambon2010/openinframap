@@ -184,8 +184,20 @@ export default class OpenInfraMap {
       circuit_inspector
     }).add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
+    // Fork: clicking a group of critical sites zooms in on it (style_sites.ts).
+    clickRouter.registerHandler(
+      getPrimaryLayers()
+        .map((layer) => layer.id)
+        .filter((id) => id.startsWith('sites_') && id.endsWith('_group')),
+      (feature) => {
+        const [lng, lat] = (feature.geometry as GeoJSON.Point).coordinates
+        map.easeTo({ center: [lng, lat], zoom: Math.min(map.getZoom() + 2, 14) })
+      }
+    )
 
     clickRouter.register()
     this.map = map
+    // Fork: for browser tests (development server only).
+    if (import.meta.env.DEV) (window as unknown as { oimMap: maplibregl.Map }).oimMap = map
   }
 }

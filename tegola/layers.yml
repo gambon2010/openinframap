@@ -813,9 +813,10 @@ layers:
         OR details ->> 'category' IN ('seveso_high', 'seveso_low'))
 
   # Fork: critical sites (imposm/sites.py, schema/sites.sql), as their own map.
-  # Areas (military zones, ports, airports, landfills, hospitals...) and one point
-  # per site (an area's centroid), which shows from zoom 8, 12 or 14 depending on
-  # how important it is.
+  # Areas (military zones, ports, airports, landfills, hospitals...) from zoom 8,
+  # 12 or 14 depending on how important they are, and one point per site (an
+  # area's centroid) from zoom 4, nearby ones grouped below zoom 14
+  # (site_points).
   - name: sites_area
     map:
       - sites
@@ -837,13 +838,16 @@ layers:
     map:
       - sites
     geometry_type: Point
-    min_zoom: 8
+    min_zoom: 4
     field_sets: [geom_centroid, name, wiki, url]
     fields:
       - name: osm_id
       - name: kind
       - name: category
       - name: importance
+      # A group of sites (count > 1): how many, and as shown ("1.2k").
+      - name: count
+      - name: count_label
       - name: operator
         sql: tags -> 'operator'
       - name: religion
@@ -857,7 +861,4 @@ layers:
       - name: icao
         sql: tags -> 'icao'
     id_field: id
-    from: site_feature
-    where: >
-      geometry && !BBOX!
-      AND (importance = 0 OR (importance = 1 AND !ZOOM! >= 12) OR !ZOOM! >= 14)
+    from: site_points(!BBOX!, !ZOOM!) AS s

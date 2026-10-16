@@ -121,3 +121,48 @@ SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(k
  WHERE kind IS NOT NULL;
 CREATE INDEX site_feature_geometry ON site_feature USING gist (geometry);
 CREATE INDEX site_feature_importance ON site_feature (importance);
+
+-- One point per site for a tile (Tegola's sites_point), grouped below zoom 14: in
+-- a grid of 12 x 12 cells per tile (~40 px), sites of the same category sharing a
+-- cell become one point with their count (count > 1, kind NULL) at their average
+-- position. The grid is aligned with the tiles, so a group never straddles two.
+-- Lone sites stay as they are, and important ones (importance 0) from zoom 8; from
+-- zoom 14 nothing is grouped.
+CREATE OR REPLACE FUNCTION site_points(bbox geometry, zoom integer)
+RETURNS TABLE (id bigint, osm_id bigint, geometry geometry, name text, kind text, category text,
+               importance integer, tags hstore, count integer, count_label text)
+LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
+    WITH p AS (
+        SELECT f.id, f.osm_id, c.pt AS geometry, f.name, f.kind, f.category, f.importance, f.tags,
+               CASE WHEN zoom < 14 AND (f.importance > 0 OR zoom < 8)
+                    THEN floor((ST_X(c.pt) + 20037508.342789244) / g.cell)::bigint END AS cx,
+               floor((ST_Y(c.pt) + 20037508.342789244) / g.cell)::bigint AS cy
+          FROM site_feature f
+               CROSS JOIN LATERAL (SELECT ST_Centroid(f.geometry) AS pt) c
+               CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 12 AS cell) g
+         WHERE f.geometry && bbox
+    ), counted AS (
+        SELECT p.*, count(*) OVER (PARTITION BY p.category, p.cx, p.cy)::integer AS n FROM p
+    )
+    SELECT counted.id, counted.osm_id, counted.geometry, counted.name, counted.kind, counted.category,
+           counted.importance, counted.tags, 1, NULL
+      FROM counted
+     WHERE cx IS NULL OR n = 1
+    UNION ALL
+    SELECT -min(counted.id), NULL,
+           ST_SetSRID(ST_MakePoint(avg(ST_X(counted.geometry)) + 10 * px * sin(angle),
+                                   avg(ST_Y(counted.geometry)) + 10 * px * cos(angle)), 3857),
+           NULL, NULL, counted.category, NULL, NULL, n,
+           CASE WHEN n < 1000 THEN n::text
+                WHEN n < 10000 THEN trim_scale(round(n / 1000.0, 1)) || 'k'
+                ELSE round(n / 1000.0) || 'k' END
+      FROM counted
+           -- Groups of different categories in one place would sit on top of each
+           -- other: each category's is moved ~10 px (on a 512 px tile) its own way.
+           CROSS JOIN LATERAL (SELECT 2 * pi() * (array_position(
+               ARRAY['health', 'government', 'religion', 'fuel', 'transport', 'military',
+                     'military_disused', 'food', 'water_waste'], counted.category) - 1) / 9 AS angle) a
+           CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 512 AS px) s
+     WHERE cx IS NOT NULL AND n > 1
+     GROUP BY counted.category, cx, cy, n, angle, px
+$$;

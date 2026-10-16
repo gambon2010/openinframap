@@ -13,6 +13,7 @@ On top of upstream's power, telecoms, oil and gas, and water layers, it adds:
   religion); fuel stations, depots and gun shops; airports, ports and border controls;
   military sites (and disused bunkers and trenches, separately); supermarkets,
   wholesalers, silos and food distribution; dams, landfills and weather stations.
+  Shown at every zoom: zoomed out, nearby sites are grouped into a numbered bubble.
 - **Open data from outside OpenStreetMap**, drawn like the OSM data and labelled with its
   source, kept apart and never duplicating it. So far for France: every low- and
   medium-voltage power line and street substation (~15 million features), the gas

@@ -21,6 +21,8 @@ const hidden_keys = [
   'id',
   'category',
   'importance',
+  'count',
+  'count_label',
   'name',
   'wikidata',
   'operator_wikidata',
