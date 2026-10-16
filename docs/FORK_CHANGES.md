@@ -376,7 +376,7 @@ default). Counts are France's OSM data in October 2026.
 | Transport hubs (`V`) | airports and airfields, ports and harbours, border controls, rail yards |
 | Military (`M`) | military areas, barracks, ranges, military airfields |
 | Disused military (`D`) | bunkers, trenches, casemates and other fortifications (8,000 bunkers, nearly all WWII) |
-| Food supply (`U`) | silos, slaughterhouses, distribution centres, wholesale markets |
+| Food supply (`U`) | supermarkets, wholesalers and cash & carries, distribution centres, silos, slaughterhouses |
 | Dams, landfills, weather stations (`Q`) | dams, landfills, weather stations and radars |
 
 - **Import:** `imposm/sites.py`, one `osm_site` table (points and areas) with the
@@ -389,7 +389,7 @@ default). Counts are France's OSM data in October 2026.
   hospitals, prisons, airports with an IATA/ICAO code, cathedrals and basilicas,
   military areas, border controls, dams, big ports/landfills/depots), 1 from zoom 12,
   2 from zoom 14 (pharmacies, churches, town halls, fuel stations, gun shops, silos,
-  bunkers; anything with a Wikidata entry is promoted to 1). A storage tank only
+  bunkers, supermarkets except hypermarkets; anything with a Wikidata entry is promoted to 1). A storage tank only
   counts if it holds fuel or gas; a WWII bomb crater not at all. All in the
   materialized view `site_feature`, served by Tegola's `sites` map (`sites_area`,
   `sites_point`).

@@ -162,6 +162,19 @@ export default class OpenInfraMap {
     map.addControl(new KeyControl(), 'top-right')
     map.addControl(new MapSourcesControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
+    // Fork: the list opens level with its button and has more groups than fit
+    // below it on a laptop screen; cap its height to the map so it scrolls.
+    map
+      .getContainer()
+      .querySelector('.layer-switcher-button')
+      ?.addEventListener('mouseover', () => {
+        const list = map.getContainer().querySelector<HTMLElement>('.layer-switcher-list')
+        if (!list) return
+        const top = list.getBoundingClientRect().top - map.getContainer().getBoundingClientRect().top
+        list.style.maxHeight = `${map.getContainer().clientHeight - top - 10}px`
+        // The wheel scrolls the list, not the map's zoom.
+        list.onwheel = (e) => e.stopPropagation()
+      })
     map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
     new InfoPopup({

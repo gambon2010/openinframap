@@ -40,7 +40,7 @@ SITES = {
     # fuel and weapons
     "industrial": ["fuel_depot", "oil_storage", "port", "slaughterhouse", "distributor"],
     "man_made": ["storage_tank", "silo", "monitoring_station"],
-    "shop": ["weapons", "wholesale"],
+    "shop": ["weapons", "wholesale", "supermarket"],
     "craft": ["gunsmith"],
     # transport
     "aeroway": ["aerodrome"],

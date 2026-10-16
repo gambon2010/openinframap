@@ -11,8 +11,8 @@ On top of upstream's power, telecoms, oil and gas, and water layers, it adds:
 - **Critical sites** from OpenStreetMap: hospitals, fire stations and police; town halls,
   prefectures, tax offices and other public services; places of worship (an icon per
   religion); fuel stations, depots and gun shops; airports, ports and border controls;
-  military sites (and disused bunkers and trenches, separately); silos and food
-  distribution; dams, landfills and weather stations.
+  military sites (and disused bunkers and trenches, separately); supermarkets,
+  wholesalers, silos and food distribution; dams, landfills and weather stations.
 - **Open data from outside OpenStreetMap**, drawn like the OSM data and labelled with its
   source, kept apart and never duplicating it. So far for France: every low- and
   medium-voltage power line and street substation (~15 million features), the gas
