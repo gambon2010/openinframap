@@ -6,13 +6,29 @@ tile server and backend, built from OpenStreetMap data for the region you choose
 one country up to the whole world. A built database can be exported and copied (e.g. on
 a USB drive) to a computer without internet access.
 
+On top of upstream's power, telecoms, oil and gas, and water layers, it adds:
+
+- **Critical sites** from OpenStreetMap: hospitals, fire stations and police; town halls,
+  prefectures, tax offices and other public services; places of worship (an icon per
+  religion); fuel stations, depots and gun shops; airports, ports and border controls;
+  military sites (and disused bunkers and trenches, separately); silos and food
+  distribution; dams, landfills and weather stations.
+- **Open data from outside OpenStreetMap**, drawn like the OSM data and labelled with its
+  source, kept apart and never duplicating it. So far for France: every low- and
+  medium-voltage power line and street substation (~15 million features), the gas
+  distribution network (4.3 million pipes), biomethane injection points (Agence ORE), and
+  the regulated industrial sites including Seveso sites (Géorisques ICPE, 40,000).
+- **A key that hides things**: untick any line, icon or area type to take it off the map.
+
 The background map can be downloaded per region (full or reduced detail) and served
 locally too; otherwise it comes from openinframap.org. The search box finds places
 (cities down to hamlets) offline; street addresses need an optional Photon server.
 
 ## Getting started
 
-Needs Docker, Node.js/npm, curl, python3 and unzip.
+Needs Docker (with Compose v2), Node.js/npm, curl, python3 and unzip; plus
+[uv](https://docs.astral.sh/uv/) for the open data from outside OpenStreetMap (and the
+offline Wikidata photo cache).
 
 ```bash
 # First time: pick a region, build (or import) the database, create .env files,
@@ -37,6 +53,9 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
 | **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; power plants and substations also match words inside names ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
+| **Critical sites** | `imposm/sites.py` + `schema/sites.sql`: ~195,000 sites in France in 40 kinds, shown from zoom 8, 12 or 14 by importance, a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
+| **Extra data** | `scripts/extra_data.py`: imports open data that covers the built region (French electricity and gas networks, biomethane, ICPE) into an `extra` schema; the build offers each dataset with its size; what OSM already has is left out; raw downloads and imported data are kept across rebuilds |
+| **Key** | Every row has a checkbox to hide those features; remembered per browser |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
 | **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |
 | **UI** | Map sources panel; background switch (OpenStreetMap / online-only night lights) hidden |
