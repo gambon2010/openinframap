@@ -10,6 +10,7 @@ import style_oim_water from './style_oim_water.js'
 import style_oim_other_pipelines from './style_oim_other_pipelines.js'
 import style_osmose from './style_osmose.js'
 import style_extra from './style_extra.js'
+import style_sites from './style_sites.js'
 import { StyleSpecification } from 'maplibre-gl'
 import { interpolate, zoom } from './stylehelpers.js'
 import { LayerSpecificationWithZIndex } from './types.js'
@@ -120,6 +121,14 @@ const style: StyleSpecification = {
       attribution:
         'Electricity and gas networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators; classified installations: <a href="https://www.georisques.gouv.fr">Géorisques</a> (Licence Ouverte)'
     },
+    // Fork: critical sites from OSM (imposm/sites.py).
+    sites: {
+      type: 'vector',
+      tiles: [`${OIM_TILES}/sites/{z}/{x}/{y}.pbf`],
+      minzoom: 8,
+      maxzoom: 17,
+      attribution: oim_attribution
+    },
     osmose_errors_power: {
       type: 'vector',
       tiles: ['https://osmose.openstreetmap.fr/api/0.3/issues/{z}/{x}/{y}.mvt?tags=power'],
@@ -147,7 +156,8 @@ export function getPrimaryLayers() {
     ...style_oim_water(),
     ...style_oim_other_pipelines(),
     ...style_osmose(),
-    ...style_extra()
+    ...style_extra(),
+    ...style_sites()
   ]
 }
 

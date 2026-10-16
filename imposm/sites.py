@@ -10,9 +10,9 @@ and decides how important each is. See docs/FORK_CHANGES.md.
 
 from funcs import table, str_col, type_col
 
-# Several of these keys (amenity, office, shop, landuse, barrier, railway) are
-# excluded from the stored tags (main.py), so the matched key and value are kept
-# as columns.
+# The matched key and value are kept as columns (handy, and upstream used to exclude
+# amenity, office, shop... from the stored tags: imposm then can't match on them
+# either, so main.py no longer excludes them).
 key_col = {"name": "key", "type": "mapping_key"}
 
 SITES = {

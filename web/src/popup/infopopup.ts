@@ -13,9 +13,14 @@ import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
 import { icpe_category_label } from '../style/style_extra.ts'
+import { site_kind_label } from '../style/style_sites.ts'
 
 const hidden_keys = [
   'osm_id',
+  // Fork: critical sites (shown as the title and Type instead; id is the tile id)
+  'id',
+  'category',
+  'importance',
   'name',
   'wikidata',
   'operator_wikidata',
@@ -266,6 +271,11 @@ class InfoPopup {
       prettyValue = t('units.DC')
     }
 
+    // Fork: critical sites' kind, e.g. "Type: Hospital".
+    if (key == 'kind') {
+      return el('tr', el('th', t('info.type')), el('td', site_kind_label(value)))
+    }
+
     let prettyKey
     if (key == 'url') {
       prettyKey = t('info.website')
@@ -291,7 +301,9 @@ class InfoPopup {
     }
 
     if (!title_text) {
-      title_text = this.friendlyRender(feature.layer['id'])
+      title_text = feature.layer['id'].startsWith('sites_')
+        ? site_kind_label(feature.properties.kind)
+        : this.friendlyRender(feature.layer['id'])
     }
 
     let feature_title = el('h3', title_text)

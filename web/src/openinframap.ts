@@ -88,6 +88,33 @@ export default class OpenInfraMap {
           new Layer('Y', t('layers.extra-gas', 'Gas distribution (open data)'), 'extra_gas', false),
           new Layer('Z', t('layers.extra-icpe', 'Classified installations (ICPE)'), 'extra_icpe', false)
         ]),
+        // Fork: critical sites from OSM (style/style_sites.ts).
+        new LayerGroup(t('layers.sites', 'Critical sites'), [
+          new Layer('H', t('sites.category.health', 'Health and emergency'), 'sites_health', false),
+          new Layer(
+            'G',
+            t('sites.category.government', 'Government and public services'),
+            'sites_government',
+            false
+          ),
+          new Layer('R', t('sites.category.religion', 'Places of worship'), 'sites_religion', false),
+          new Layer('F', t('sites.category.fuel', 'Fuel and weapons'), 'sites_fuel', false),
+          new Layer('V', t('sites.category.transport', 'Transport hubs'), 'sites_transport', false),
+          new Layer('M', t('sites.category.military', 'Military'), 'sites_military', false),
+          new Layer(
+            'D',
+            t('sites.category.military-disused', 'Disused military (bunkers, trenches...)'),
+            'sites_disused',
+            false
+          ),
+          new Layer('U', t('sites.category.food', 'Food supply'), 'sites_food', false),
+          new Layer(
+            'Q',
+            t('sites.category.water-waste', 'Dams, landfills, weather stations'),
+            'sites_water_waste',
+            false
+          )
+        ]),
         new LayerGroup(t('layers.validation'), [
           new Layer('E', t('layers.osmose-power'), 'osmose_errors_power', false)
         ])

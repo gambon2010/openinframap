@@ -229,7 +229,8 @@
     "extra-data": "Not from OpenStreetMap",
     "extra-distribution": "Power distribution (open data)",
     "extra-gas": "Gas distribution (open data)",
-    "extra-icpe": "Classified installations (ICPE)"
+    "extra-icpe": "Classified installations (ICPE)",
+    "sites": "Critical sites"
   },
   "construction": "under construction",
   "disused": "disused",
@@ -325,6 +326,63 @@
       "last": "last",
       "commune": "Commune",
       "details": "Details"
+    }
+  },
+  "sites": {
+    "category": {
+      "health": "Health and emergency",
+      "government": "Government and public services",
+      "religion": "Places of worship",
+      "fuel": "Fuel and weapons",
+      "transport": "Transport hubs",
+      "military": "Military",
+      "military-disused": "Disused military (bunkers, trenches...)",
+      "food": "Food supply",
+      "water-waste": "Dams, landfills, weather stations"
+    },
+    "kind": {
+      "hospital": "Hospital",
+      "clinic": "Clinic, health centre",
+      "pharmacy": "Pharmacy",
+      "fire-station": "Fire station",
+      "police": "Police, gendarmerie",
+      "ambulance": "Ambulance station",
+      "siren": "Warning siren",
+      "national": "National institution (parliament, ministry)",
+      "prefecture": "Prefecture",
+      "townhall": "Town hall",
+      "tax": "Tax office, public treasury",
+      "social": "Social security, family allowances (CAF)",
+      "employment": "Employment agency",
+      "customs": "Customs",
+      "government": "Other government office",
+      "courthouse": "Courthouse",
+      "prison": "Prison",
+      "embassy": "Embassy, consulate",
+      "university": "University",
+      "christian": "Church (Christian)",
+      "muslim": "Mosque",
+      "jewish": "Synagogue",
+      "buddhist": "Buddhist temple",
+      "worship": "Other place of worship (Hindu, Sikh...)",
+      "fuel": "Fuel station",
+      "fuel-depot": "Fuel depot, storage tank",
+      "weapons": "Gun shop, gunsmith",
+      "airport": "Airport, airfield",
+      "port": "Port, harbour",
+      "border": "Border control",
+      "rail-yard": "Rail yard",
+      "military": "Military site",
+      "military-disused": "Bunker, trench, fortification",
+      "silo": "Silo",
+      "slaughterhouse": "Slaughterhouse",
+      "distribution": "Distribution centre",
+      "wholesale": "Wholesale market",
+      "dam": "Dam",
+      "landfill": "Landfill",
+      "weather": "Weather station, radar",
+      "hindu": "Hindu temple",
+      "sikh": "Sikh gurdwara"
     }
   }
 }

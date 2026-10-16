@@ -20,6 +20,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Search](#search)
 - [Background map](#background-map)
 - [Wikidata popups and image cache](#wikidata-popups-and-image-cache)
+- [Critical sites (from OpenStreetMap)](#critical-sites-from-openstreetmap)
 - [Extra data (not from OpenStreetMap)](#extra-data-not-from-openstreetmap)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
@@ -359,6 +360,49 @@ keyed by Wikidata ID, so it works across regions. Added this session: `--count`,
 by `launch.sh`.
 
 ---
+
+## Critical sites (from OpenStreetMap)
+
+Infrastructure people tend to miss, from the same OSM data, as its own map
+("Critical sites" in the layer switcher, one entry per category, all off by
+default). Counts are France's OSM data in October 2026.
+
+| Category (switcher code) | Kinds |
+|---|---|
+| Health and emergency (`H`) | hospitals (2,500), clinics and health centres, pharmacies (19,000, from zoom 14), fire stations (6,100), police and gendarmerie (6,000), ambulance stations, warning sirens |
+| Government and public services (`G`) | parliament and ministries, prefectures, town halls (37,000), tax offices / trésoreries, social security and CAF, France Travail, customs, other offices, courthouses, prisons, embassies, universities |
+| Places of worship (`R`) | Christian, Muslim, Jewish, Buddhist and other (60,000; Hindu and Sikh use the generic icon: Maki has none) |
+| Fuel and weapons (`F`) | fuel stations, fuel depots and fuel/gas storage tanks, gun shops and gunsmiths |
+| Transport hubs (`V`) | airports and airfields, ports and harbours, border controls, rail yards |
+| Military (`M`) | military areas, barracks, ranges, military airfields |
+| Disused military (`D`) | bunkers, trenches, casemates and other fortifications (8,000 bunkers, nearly all WWII) |
+| Food supply (`U`) | silos, slaughterhouses, distribution centres, wholesale markets |
+| Dams, landfills, weather stations (`Q`) | dams, landfills, weather stations and radars |
+
+- **Import:** `imposm/sites.py`, one `osm_site` table (points and areas) with the
+  matched key and value as columns, since `amenity`, `office`, `shop`, `landuse`,
+  `barrier` and `railway` are left out of the stored tags. The osmium pre-filter
+  follows automatically.
+- **Classification:** `schema/sites.sql` (run by `build-region.sh`) sorts rows into
+  a category and a kind (`site_kind`, `site_category`) and an importance
+  (`site_importance`): 0 shows from zoom 8 (parliament, ministries, prefectures,
+  hospitals, prisons, airports with an IATA/ICAO code, cathedrals and basilicas,
+  military areas, border controls, dams, big ports/landfills/depots), 1 from zoom 12,
+  2 from zoom 14 (pharmacies, churches, town halls, fuel stations, gun shops, silos,
+  bunkers; anything with a Wikidata entry is promoted to 1). A storage tank only
+  counts if it holds fuel or gas; a WWII bomb crater not at all. All in the
+  materialized view `site_feature`, served by Tegola's `sites` map (`sites_area`,
+  `sites_point`).
+- **Map:** `web/src/style/style_sites.ts`: an icon per kind (a Maki glyph, CC0, in a
+  white circle ringed in the category's colour: `web/src/icons/site_*.svg`, made by
+  `scripts/make_site_icons.py`), important sites larger, always shown and labelled,
+  and a light fill for sites mapped as areas. One layer per category so the layer
+  switcher and the key (a section per category, a row per kind) can hide each.
+  Disused military uses the prefix `sites_disused`, as the switcher matches
+  prefixes and `sites_military` would cover it too. Popups: the name (or the kind),
+  "Type" and the usual OSM details and links.
+- **Left out on purpose:** defibrillators (28,000), post offices, doctors' and
+  dentists' surgeries.
 
 ## Extra data (not from OpenStreetMap)
 

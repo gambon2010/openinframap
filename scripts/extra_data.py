@@ -181,6 +181,7 @@ class Source:
 
     # Features left out of the last run() because OpenStreetMap already has them.
     duplicates = 0
+    duplicates_by: dict[str, int]  # ... per dataset (set in run())
 
     def run(self, conn, cur, areas: list[str], only: list[str] | None = None) -> int:
         """Import into the extra tables (only the datasets whose name contains one of
@@ -584,6 +585,7 @@ class FranceAgenceORE(FrenchSource):
             )
             count += inserted - duplicates
             self.duplicates += duplicates
+            self.duplicates_by[dataset] = duplicates
             # Saved dataset by dataset: what's done shows on the map and survives a later failure.
             conn.commit()
             print(
@@ -793,6 +795,7 @@ class GeorisquesICPE(FrenchSource):
         kept = cur.rowcount
         duplicates = remove_osm_duplicates(cur, self.id, "icpe")
         self.duplicates += duplicates
+        self.duplicates_by["icpe"] = duplicates
         conn.commit()
         print(
             f"      kept {kept - duplicates} operating sites inside the region (of {len(rows)} records;"
@@ -917,10 +920,17 @@ def main() -> None:
                     flush=True,
                 )
             cur.execute(
-                f"""UPDATE extra.source SET osm_duplicates = coalesce(osm_duplicates, 0) + %s,
-                       features = {FEATURE_COUNT}
-                    WHERE source = %s""",
+                f"""UPDATE extra.source
+                       SET duplicates = coalesce(duplicates, '{{}}') || jsonb_build_object('dedupe ' || to_char(now(), 'YYYY-MM-DD HH24:MI'), %s),
+                           features = {FEATURE_COUNT}
+                     WHERE source = %s""",
                 (total, source_id),
+            )
+            cur.execute(
+                """UPDATE extra.source
+                      SET osm_duplicates = (SELECT coalesce(sum(value::int), 0) FROM jsonb_each_text(duplicates))
+                    WHERE source = %s""",
+                (source_id,),
             )
             conn.commit()
             print(f"{source_id}: {total} removed in all.")
@@ -991,14 +1001,21 @@ def main() -> None:
             ),
         )
         source.refresh = args.refresh
+        source.duplicates, source.duplicates_by = 0, {}
         count = source.run(conn, cur, areas, args.only)
         # All of the source's features, also those of datasets not re-imported (--only).
         cur.execute(
             f"""UPDATE extra.source SET features = {FEATURE_COUNT},
-                   osm_duplicates = CASE WHEN %s THEN coalesce(osm_duplicates, 0) ELSE 0 END + %s,
+                   duplicates = CASE WHEN %s THEN coalesce(duplicates, '{{}}') ELSE '{{}}' END || %s::jsonb,
                    imported_at = now()
                 WHERE source = %s""",
-            (bool(args.only), source.duplicates, source.id),
+            (bool(args.only), json.dumps(source.duplicates_by), source.id),
+        )
+        cur.execute(
+            """UPDATE extra.source
+                  SET osm_duplicates = (SELECT coalesce(sum(value::int), 0) FROM jsonb_each_text(duplicates))
+                WHERE source = %s""",
+            (source.id,),
         )
         conn.commit()
         print(f"  {count} features imported.")

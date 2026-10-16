@@ -78,6 +78,8 @@ CREATE INDEX IF NOT EXISTS extra_power_substation_source ON extra.power_substati
 
 -- How many of a source's features were removed because OpenStreetMap already has them.
 ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS osm_duplicates integer;
+-- ... per dataset (re-importing one replaces its count); osm_duplicates is their sum.
+ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS duplicates jsonb;
 
 -- Duplicates of OpenStreetMap: the OSM data is kept as it is, and extra features it
 -- already has are deleted. Distances are in EPSG:3857 metres (15 ≈ 10 m on the

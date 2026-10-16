@@ -33,6 +33,7 @@ import { svgLine, svgLineFromLayer, svgRectFromLayer } from './svg.js'
 import './key.css'
 import { FeatureHider, HideSpec } from './feature-hider.ts'
 import { icpe_colours, icpe_category_label } from '../style/style_extra.ts'
+import { site_kinds, site_kind_label, site_category_label } from '../style/style_sites.ts'
 import { manifest } from 'virtual:render-svg'
 
 const line_thickness = 6
@@ -167,6 +168,11 @@ class KeyControl implements IControl {
     pane.appendChild(el('h3', t('layers.other-pipelines', 'Other Pipelines')))
     mount(pane, this.otherPipelineTable())
     // Fork: open data from Géorisques (layer switcher: Not from OpenStreetMap).
+    // Fork: critical sites from OSM, one table per category.
+    for (const category of Object.keys(site_kinds)) {
+      pane.appendChild(el('h3', site_category_label(category)))
+      mount(pane, await this.sitesTable(category))
+    }
     pane.appendChild(el('h3', t('layers.extra-icpe', 'Classified installations (ICPE)')))
     mount(pane, this.icpeTable())
     this._pane = pane
@@ -462,6 +468,14 @@ class KeyControl implements IControl {
         { colour: colour_other_pipeline_unknown }
       ]
     ]
+    return this.table(rows)
+  }
+
+  async sitesTable(category: string) {
+    const rows: Row[] = []
+    for (const kind of site_kinds[category]) {
+      rows.push([site_kind_label(kind), await this.sprite(`site_${kind}`, 20), { icon: `site_${kind}` }])
+    }
     return this.table(rows)
   }
 

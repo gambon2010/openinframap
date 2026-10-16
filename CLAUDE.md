@@ -87,7 +87,7 @@ MapLibre GL JS map with i18next for internationalisation. The Background layer g
 Starlette ASGI app (code under `src/`, entry point `src.main:app`) using SQLAlchemy async + asyncpg (`pool_pre_ping` so it survives DB rebuilds). Bokeh + Pandas generate stats charts. Runs as the `backend` Compose service (port 8001, built from `web-backend/Dockerfile`, entrypoint `/app/.venv/bin/uvicorn` to avoid `uv run` syncing at startup), mounting `data/images` and `data/wikidata_json`. Requires `DATABASE_URL` with the `postgresql+asyncpg://` scheme. Search name indexes (btree + `pg_trgm`) are created by `create_indexes.py`; keep it in sync with `src/views/search.py`.
 
 ### Imposm (`/imposm/`)
-Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that defines which OSM tags are imported into which tables. `places.py` (fork) adds `osm_place` for the search box. Changing it changes the osmium filter (generated) and the schema fingerprint stored in builds and exports.
+Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that defines which OSM tags are imported into which tables. `places.py` (fork) adds `osm_place` for the search box; `sites.py` (fork) adds `osm_site` (critical sites), classified by `schema/sites.sql` into the `site_feature` materialized view. Changing it changes the osmium filter (generated) and the schema fingerprint stored in builds and exports.
 
 ## Environment Variables
 

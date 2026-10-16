@@ -315,6 +315,17 @@ by Wikidata ID, so it's shared across regions.
 
 ---
 
+## Critical sites
+
+The layer switcher's **Critical sites** group shows infrastructure from OSM that the
+other layers don't: health and emergency services, government offices (town halls,
+prefectures, tax offices, CAF...), places of worship, fuel stations and gun shops,
+airports and ports, military sites (and, separately, disused bunkers and trenches),
+food supply, dams and landfills. Important ones show from zoom 8, the rest from zoom
+12 or 14. The key lists every kind; untick one to hide it.
+
+---
+
 ## Extra data (not from OpenStreetMap)
 
 Open data published by network operators. For now that's the French distribution

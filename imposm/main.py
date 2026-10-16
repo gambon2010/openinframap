@@ -13,24 +13,21 @@ data = {
     "areas": {"area_tags": ["building"]},
     "tags": {
         "load_all": True,
-        # Exclusion list created by manually trawling the taginfo list of keys for a few pages
+        # Exclusion list created by manually trawling the taginfo list of keys for a few pages.
+        # Fork: imposm doesn't match on excluded keys either, so the keys sites.py
+        # maps (amenity, office, shop, landuse, barrier, railway) are no longer excluded.
         "exclude": [
             "created_by",
             "source",
             "source:*",
             "tiger:*",
-            "landuse",
             "highway",
-            "amenity",
-            "office",
-            "shop",
             "addr:*",
             "natural",
             "surface",
             "oneway",
             "service",
             "wall",
-            "barrier",
             "maxspeed",
             "lanes",
             "access",
@@ -39,11 +36,9 @@ data = {
             "tracktype",
             # "place" is kept: the fork's places table (places.py) is matched on it.
             "leisure",
-            "railway",
             "bicycle",
             "foot",
             "bridge",
-            "shop",
             "lit",
             "import",
             "leaf_type",

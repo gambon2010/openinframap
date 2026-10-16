@@ -2,10 +2,11 @@
 -- each into a category and a kind, and how important it is, which decides from
 -- which zoom it shows (0: zoom 8, 1: zoom 12, 2: zoom 14; see tegola/layers.yml).
 -- Rows that fit no kind (e.g. a water tank, a WWII bomb crater) are left out.
--- Safe to run more than once.
+-- Safe to run more than once. The functions set their search_path: Postgres builds
+-- materialized views with a restricted one, where hstore's -> isn't visible.
 
 CREATE OR REPLACE FUNCTION site_kind(key text, type text, tags hstore) RETURNS text
-LANGUAGE sql IMMUTABLE AS $$
+LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
         -- health and emergency
         WHEN type = 'hospital' THEN 'hospital'
@@ -67,7 +68,7 @@ LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION site_category(kind text) RETURNS text
-LANGUAGE sql IMMUTABLE AS $$
+LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
         WHEN kind IN ('hospital', 'clinic', 'pharmacy', 'fire_station', 'police', 'ambulance', 'siren') THEN 'health'
         WHEN kind IN ('townhall', 'tax', 'prefecture', 'social', 'employment', 'customs', 'national', 'government',
@@ -83,17 +84,21 @@ LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 -- 0: from zoom 8 (national institutions, hospitals, airports with a code,
--- cathedrals, military areas...), 1: from zoom 12, 2: from zoom 14 (the many small
--- ones: pharmacies, churches, silos, bunkers...).
+-- cathedrals, large military areas...), 1: from zoom 12, 2: from zoom 14 (the many
+-- small ones: pharmacies, churches, town halls, silos, bunkers...).
 CREATE OR REPLACE FUNCTION site_importance(kind text, tags hstore, area float) RETURNS integer
-LANGUAGE sql IMMUTABLE AS $$
+LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
-        WHEN kind IN ('national', 'prefecture', 'hospital', 'prison', 'military_area', 'border', 'dam')
+        WHEN kind IN ('national', 'prefecture', 'hospital', 'prison', 'border', 'dam')
+          OR (kind = 'military_area' AND area > 500000)
           OR (kind = 'airport' AND (tags ? 'iata' OR tags ? 'icao'))
           OR (kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship')
               AND tags->'building' IN ('cathedral', 'basilica'))
           OR (kind IN ('port', 'landfill', 'fuel_depot') AND area > 200000) THEN 0
-        WHEN kind IN ('pharmacy', 'christian', 'worship', 'silo', 'military_disused', 'fuel', 'weapons', 'townhall')
+        -- Churches and town halls: most French ones have a Wikidata entry, so that
+        -- doesn't make them stand out (58,000 and 37,000).
+        WHEN kind IN ('christian', 'townhall') THEN 2
+        WHEN kind IN ('pharmacy', 'worship', 'silo', 'military_disused', 'fuel', 'weapons')
           AND NOT tags ? 'wikidata' THEN 2
         ELSE 1
     END
