@@ -453,8 +453,12 @@ the French community's preference for mapping by hand (the licence isn't the rea
   code `Z`); popups with Seveso status, regime, activities, inspections and a link to
   the site's Géorisques page. OSM duplicates: 75% of ICPE wind farms sit on OSM wind
   turbines, so wind farms within ~500 m of one (or of an OSM wind plant) and
-  non-Seveso sites within ~100 m of an OSM power plant are left out (1,979); Seveso
-  sites are always kept, as OSM doesn't record that. 40,154 sites for France.
+  non-Seveso sites within ~100 m of an OSM combustion or waste power plant (an
+  incinerator, a biomass or gas plant) are left out (1,797). Not solar, hydro,
+  nuclear or battery plants: a solar farm on a quarry, landfill or warehouse roof
+  isn't the site under it (the first version of the rule wrongly removed 165 such
+  sites). Seveso sites are always kept, as OSM doesn't record that. 40,336 sites
+  for France.
   Licence: Géorisques data is Licence Ouverte; no page says so for the API itself.
 - **Downloads are kept**, like the OSM extracts in `data/osm/`: each dataset is saved
   gzipped in `data/extra/agence-ore/<dataset>/` (`all.csv.gz`, or one file per

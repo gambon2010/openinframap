@@ -170,7 +170,10 @@ END $$;
 -- plants; it doesn't record Seveso status. Measured on France: 75% of ICPE wind
 -- farms are within 500 m of an OSM wind turbine (often on one). Deleted: wind farms
 -- within ~500 m of an OSM wind turbine or wind plant, and non-Seveso sites within
--- ~100 m of an OSM power plant. Seveso sites are always kept. (EPSG:3857 metres:
+-- ~100 m of an OSM combustion or waste power plant (an incinerator, a biomass or gas
+-- plant: the same installation). Not solar, hydro, nuclear or battery plants: a
+-- solar farm on a quarry, landfill or warehouse roof isn't the ICPE site under it
+-- (165 of the first ~625 matches were solar). Seveso sites are always kept. (EPSG:3857 metres:
 -- 725 ≈ 500 m and 145 ≈ 100 m on the ground in France.)
 CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_icpe(src text)
 RETURNS bigint LANGUAGE plpgsql AS $$
@@ -184,7 +187,9 @@ BEGIN
                   OR EXISTS (SELECT 1 FROM osm_power_plant p
                               WHERE p.tags->'plant:source' = 'wind' AND ST_DWithin(p.geometry, f.geometry, 725))))
             OR (f.details->>'category' NOT IN ('seveso_high', 'seveso_low')
-                AND EXISTS (SELECT 1 FROM osm_power_plant p WHERE ST_DWithin(p.geometry, f.geometry, 145))));
+                AND EXISTS (SELECT 1 FROM osm_power_plant p
+                             WHERE ST_DWithin(p.geometry, f.geometry, 145)
+                               AND p.tags->'plant:source' ~ '(^|;)(waste|biomass|biogas|gas|oil|coal|biofuel)(;|$)')));
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
 END $$;
