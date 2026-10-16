@@ -46,10 +46,11 @@ Usage: bash scripts/build-region.sh [options]
   --pbf FILE      Use an .osm.pbf file you already have instead of downloading
   --images        Also cache Wikidata images (slow: can take hours)
   --no-images     Don't cache Wikidata images and don't ask about it
-  --extra         Also import open data from outside OpenStreetMap that covers
+  --extra         Also download open data from outside OpenStreetMap that covers
                   the region (e.g. French distribution networks; see
-                  scripts/extra_data.py)
-  --no-extra      Don't import it and don't ask about it
+                  scripts/extra_data.py). Extra data already imported for the
+                  region is kept across rebuilds anyway (saved in data/extra/)
+  --no-extra      No extra data at all, and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
   --basemap MODE  Offline background map: full, reduced (zoom 13) or none.
                   Default: ask (with --yes: keep the one you have, else none)
@@ -65,6 +66,7 @@ REGION_ID=""
 PBF_SOURCE=""
 FETCH_IMAGES=""
 EXTRA_DATA=""
+SKIP_EXTRA=0
 USE_FILTER=1
 REFRESH=""
 REBUILD=0
@@ -76,7 +78,7 @@ while [[ $# -gt 0 ]]; do
         --images)    FETCH_IMAGES=1; shift ;;
         --no-images) FETCH_IMAGES=0; shift ;;
         --extra)     EXTRA_DATA=1; shift ;;
-        --no-extra)  EXTRA_DATA=0; shift ;;
+        --no-extra)  EXTRA_DATA=0; SKIP_EXTRA=1; shift ;;
         --no-filter) USE_FILTER=0; shift ;;
         --refresh)   REFRESH=1; shift ;;
         --rebuild)   REBUILD=1; shift ;;
@@ -462,6 +464,9 @@ if db_volume_exists; then
     fi
     info "Building a new region ${BOLD}deletes it${RESET} and starts from scratch."
     ask_yes_no "Delete the existing database and continue?" y || die "Aborted — nothing was changed."
+    # Its extra data (not from OSM) is saved first and kept for its region.
+    EXISTING_REGION_ID=$(build_info region_id)
+    EXISTING_EXTRA=$(extra_feature_count)
 fi
 
 section "Country boundaries"
@@ -483,6 +488,17 @@ elif [[ -z "$FETCH_IMAGES" ]]; then
     fi
 fi
 
+# Extra data kept from before: in the database being replaced (saved before it's
+# wiped) or saved by an earlier rebuild of this region.
+EXTRA_KEPT=""
+if [[ "$SKIP_EXTRA" == 1 ]]; then
+    :  # --no-extra: none at all (a saved copy stays in data/extra/)
+elif [[ "${EXISTING_REGION_ID:-}" == "$REGION_ID" && "${EXISTING_EXTRA:-0}" -gt 0 ]]; then
+    EXTRA_KEPT="$(printf "%'d" "$EXISTING_EXTRA") features in the current database"
+elif [[ -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
+    EXTRA_KEPT="$(manifest_get "$EXTRA_DIR/$REGION_ID.extra.json" description 2>/dev/null), saved $(manifest_get "$EXTRA_DIR/$REGION_ID.extra.json" saved_at 2>/dev/null | cut -c1-10)"
+fi
+
 # Extra data: offered only when a source covers the region (checked against the
 # region's outline in the Geofabrik index; for a local file, we can't tell).
 EXTRA_OFFER=""
@@ -494,6 +510,16 @@ fi
 if [[ "$EXTRA_DATA" == 1 && "$EXTRA_STATUS" == 1 ]]; then
     info "No extra data covers $REGION_NAME, so --extra does nothing."
     EXTRA_DATA=0
+elif [[ -n "$EXTRA_KEPT" ]]; then
+    section "Extra data (not from OpenStreetMap)"
+    ok "The extra data for this region is kept: $EXTRA_KEPT"
+    info "It's put back without downloading it again, minus anything the new OSM data has."
+    if [[ -z "$EXTRA_DATA" ]]; then
+        EXTRA_DATA=0
+        if [[ "$ASSUME_YES" != 1 ]] && ask_yes_no "Download a fresh copy as well (all of France: 3-4 hours)?" n; then
+            EXTRA_DATA=1
+        fi
+    fi
 elif [[ -z "$EXTRA_DATA" && ( "$ASSUME_YES" == 1 || "$EXTRA_STATUS" == 1 ) ]]; then
     EXTRA_DATA=0
 elif [[ -z "$EXTRA_DATA" ]]; then
@@ -665,6 +691,12 @@ fi
 section "Creating a fresh database..."
 # The backend container goes down with everything else; bring it back afterwards.
 BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
+# Keep the extra data (not from OSM): it's slow to download again.
+if [[ "${EXISTING_EXTRA:-0}" -gt 0 && -n "${EXISTING_REGION_ID:-}" ]]; then
+    run_with_timer "Saving the extra data ($(printf "%'d" "$EXISTING_EXTRA") features)" save_extra_data "$EXISTING_REGION_ID" \
+        || die "Saving the extra data failed, so the database was left as it was."
+    ok "Saved to data/extra/$EXISTING_REGION_ID.extra.dump"
+fi
 # -v removes this project's volumes only (database, imposm cache).
 docker compose --progress quiet down -v --remove-orphans
 start_db
@@ -687,7 +719,17 @@ run_with_timer "Creating map views" run_sql_file schema/views.sql
 run_with_timer "Creating stats tables" run_sql_file schema/stats.sql
 run_with_timer "Preparing place search" run_sql_file schema/places.sql
 run_with_timer "Creating search indexes" create_search_indexes
-# The extra data tables always exist (Tegola serves them), even when empty.
+# Extra data kept for this region goes back first; then the extra data tables
+# (which always exist, as Tegola serves them) get whatever is new.
+EXTRA_RESTORED=0
+if [[ -n "$EXTRA_KEPT" && -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
+    if run_with_timer "Putting back the extra data" restore_extra_data "$REGION_ID"; then
+        EXTRA_RESTORED=1
+    else
+        warn "Putting back the extra data failed; re-import it with: uv run scripts/extra_data.py import"
+        db_psql -c "DROP SCHEMA IF EXISTS extra CASCADE;"
+    fi
+fi
 run_with_timer "Creating extra data tables" run_sql_file schema/extra.sql
 
 # ---------------------------------------------------------------------------
@@ -717,7 +759,13 @@ INSERT INTO oim_build_info VALUES
     ('built_at',      '$(date -u +%Y-%m-%dT%H:%M:%SZ)');
 SQL
 
-# Extra data: after the build info, which says which region to cover.
+# Extra data: after the build info, which says which region to cover. Kept data
+# is checked against the new OSM data (which may now have some of it).
+if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_DATA" != 1 ]] && command -v uv &>/dev/null; then
+    section "Checking the kept extra data against the new OSM data..."
+    uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" dedupe \
+        || warn "Checking failed; the extra data is there but may overlap OSM. Retry with: uv run scripts/extra_data.py dedupe"
+fi
 if [[ "$EXTRA_DATA" == 1 ]]; then
     section "Importing extra data (outside OpenStreetMap)..."
     uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" import \

@@ -329,6 +329,8 @@ drawn like OSM lines of the same voltage (medium voltage as 20 kV, low voltage a
 source.
 
 `build-region.sh` offers it when it covers the region you picked (or pass `--extra`).
+Rebuilding a region keeps its extra data: it's saved to `data/extra/` before the
+database is wiped and put back afterwards, without downloading it again.
 To do it on an existing database:
 
 ```bash

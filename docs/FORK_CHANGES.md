@@ -440,6 +440,16 @@ the French community's preference for mapping by hand (the licence isn't the rea
   almost none of them (21 biogas plants in France, and those are power plants), so
   they aren't checked against OSM. Closed sites are left out. New icons are picked up
   when the frontend dev server starts, so restart it after adding one.
+- **Kept across rebuilds.** A rebuild wipes the database, and the French data takes
+  3-4 hours to download again, so `build-region.sh` saves the `extra` schema first
+  (`data/extra/<region>.extra.dump` + `.json`: 2 GB and under a minute for France)
+  and puts it back into a rebuild of the same region before `schema/extra.sql` runs
+  (which then only adds what's new, so changes to existing extra tables must be
+  `ADD COLUMN IF NOT EXISTS`-style). The kept data is then checked against the new
+  OSM data (`dedupe`). Restoring France takes about 2 minutes. A saved copy only goes
+  back into its own region; `--no-extra` skips it, and the question becomes "download
+  a fresh copy as well?". Not restoring an export instead: that would bring back the
+  old OSM tables.
 - **Licence:** Licence Ouverte 2.0, which requires attribution: the source's
   attribution shows on the map whenever the layer is on.
 - **Build and exports:** `build-region.sh` offers extra data only when a source covers

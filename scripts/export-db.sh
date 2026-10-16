@@ -76,9 +76,7 @@ fi
 # ---------------------------------------------------------------------------
 section "Exporting..."
 # Extra data (not from OSM) goes with it; the manifest says which.
-EXTRA_DESC=$(db_query "SELECT CASE WHEN to_regclass('extra.source') IS NOT NULL THEN
-    (SELECT string_agg(name || ' (' || coalesce(to_char(features, 'FM999,999,999') || ' features', 'incomplete')
-                       || ')', '; ' ORDER BY source) FROM extra.source) END")
+EXTRA_DESC=$(extra_description)
 [[ -n "$EXTRA_DESC" ]] && info "With extra data: $EXTRA_DESC"
 # Only the map data, country boundaries, stats and build info. Postgres and
 # PostGIS themselves are recreated on import by schema/dev-init.sql.
