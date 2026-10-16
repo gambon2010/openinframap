@@ -2,6 +2,7 @@ import asyncio
 import json
 import re
 import time
+import unicodedata
 from typing import Optional
 
 import pycountry
@@ -251,6 +252,66 @@ async def search_places(
     return places[:limit]
 
 
+def plain(text_: str) -> str:
+    """Lower case without accents, like lower(unaccent(...)) in schema/search.sql."""
+    text_ = text_.lower().replace("œ", "oe").replace("æ", "ae").replace("ß", "ss")
+    return "".join(c for c in unicodedata.normalize("NFKD", text_) if not unicodedata.combining(c))
+
+
+async def search_features(
+    database: AsyncConnection, query: str, language: str, limit: Optional[int] = 10
+) -> list[dict]:
+    """Everything else with a name (fork: schema/search.sql): critical sites, power
+    lines, telecoms, pipelines, water, and the extra data from outside OSM."""
+    if not await table_exists(database, "search_feature"):
+        return []  # database built before search_feature existed
+    # Matched without accents: "hopital" finds "Hôpital".
+    query = plain(query)
+    params = query_params(query, limit)
+    # Several words can also be the name and the town: "mairie duppigheim".
+    words = query.split()
+    town_match = "FALSE"
+    if len(words) > 1:
+        town_match = " AND ".join(f"name_town ~ :town_word{i}" for i in range(len(words)))
+        for i, word in enumerate(words):
+            params[f"town_word{i}"] = r"\m" + re.escape(word)
+    result = await database.execute(
+        text(
+            f"""
+        SELECT
+            source, kind, subtype, name, names->'name:{language}' AS loc_name, detail, town,
+            layer, ST_AsGeoJSON(geometry) AS geometry,
+            CASE
+                WHEN name_plain = :exact THEN 0
+                WHEN substr(name_plain, 1, 20) LIKE :query THEN 1
+                WHEN name_plain ~ :word THEN 2
+                ELSE 3 END AS match_rank
+        FROM search_feature
+        WHERE substr(name_plain, 1, 20) LIKE :query OR name_plain ~ :word OR ({town_match})
+        ORDER BY match_rank, importance, name
+        LIMIT :limit
+        """
+        ),
+        params,
+    )
+    return [
+        {
+            "type": "feature",
+            "source": row._mapping["source"],
+            "kind": row._mapping["kind"],
+            "subtype": row._mapping["subtype"],
+            "name": row._mapping["loc_name"] or row._mapping["name"],
+            "local_name": row._mapping["name"],
+            "operator": row._mapping["detail"],
+            "town": row._mapping["town"],
+            "layer": row._mapping["layer"],
+            "geometry": json.loads(row._mapping["geometry"]),
+            "match_rank": row._mapping["match_rank"],
+        }
+        for row in result
+    ]
+
+
 def result_tier(row: dict) -> int:
     """0 = big places, 1 = infrastructure, 2 = small places (for equally good matches)."""
     if row["type"] != "place":
@@ -293,11 +354,13 @@ async def search(request: Request) -> Response:
         substations = tg.create_task(search_substations(database, query, language, limit))
         plants = tg.create_task(search_plants(database, query, language, limit))
         places = tg.create_task(search_places(database, query, language, limit))
+        features = tg.create_task(search_features(database, query, language, limit))
 
-    # Best match first (exact, then name prefix, then word); for equally good
-    # matches big places, then infrastructure, then small places; then the biggest.
+    # Best match first (exact, then name prefix, then word, then name + town); for
+    # equally good matches big places, then infrastructure, then small places; then
+    # the biggest.
     results = sorted(
-        await substations + await plants + await places,
+        await substations + await plants + await places + await features,
         key=lambda row: (row["match_rank"], result_tier(row), -sort_key(row)),
     )
     for row in results:

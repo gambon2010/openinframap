@@ -99,6 +99,13 @@
 }
 
 /* Fork: rows can be unticked to hide those features from the map */
+/* A set width (like the swatch column's) so that only the label column takes a
+   table's spare width: the checkboxes then line up from one section to the next. */
+.oim-key-body table tr td:nth-child(3) {
+  width: 22px;
+  padding: 0;
+  text-align: center;
+}
 .oim-key-toggle {
   cursor: pointer;
   margin: 0 2px;

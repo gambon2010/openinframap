@@ -176,7 +176,15 @@ export default class OpenInfraMap {
         list.onwheel = (e) => e.stopPropagation()
       })
     map.addControl(new EditButton(), 'bottom-right')
-    map.addControl(new OIMSearch(), 'top-left')
+    // Fork: picking a search result switches on the layer that shows it.
+    map.addControl(
+      new OIMSearch((result) => {
+        if (!result.layer) return
+        layer_switcher.setVisibility(result.layer, true)
+        layer_switcher._updateList()
+      }),
+      'top-left'
+    )
     new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
       min_zoom: 6,

@@ -229,6 +229,33 @@ upstream too.
 where any word starts with the query (Postgres `\m` word-start regex; "ian" doesn't
 match). Exact names first, then name prefix (the old results), then word matches.
 
+### Everything else with a name
+
+Upstream searches substations and power plants; the fork adds places (below) and
+everything else with a name: critical sites, power lines (one result per name, as a
+line comes in many pieces), generators, switchgear, telecoms buildings, sites,
+masts, antennas and cables, oil and gas sites, wells and pipelines, water plants,
+reservoirs, towers and wells, street cabinets, and the extra data (ICPE sites,
+biomethane injection points, named distribution substations). About 250,000 for
+France. Power towers are left out: their "names" are mostly reference numbers.
+
+- **`schema/search.sql`**: the materialized view `search_feature`, one point per
+  feature with its kind, the layer switcher entry that shows it, and the nearest
+  city, town or village (or the commune the data gives, for ICPE), since tens of
+  thousands of features share a name ("Mairie", "Château d'eau"). Names are kept in
+  lower case without accents (`unaccent`), alone and with the town, with trigram
+  indexes. Built in ~15 s by `build-region.sh` after the extra data tables;
+  `extra_data.py` refreshes it after `import`, `dedupe` and `remove`; `import-db.sh`
+  enables `unaccent` before the restore and builds the view for older exports.
+- **`search_features`** in `search.py`: name prefix or word match without accents
+  ("hopital" finds "Hôpital"), and for several words, all of them in the name or the
+  town ("mairie duppigheim", "hopital strasbourg"). Important ones first (Seveso
+  sites, hospitals...). 10-50 ms.
+- **Results** say what and where ("Town hall, Duppigheim", "Classified installation
+  (ICPE), Montauban"; `web/src/search/openinframap.ts`), and picking one also
+  switches on its layer (`layer` on the result; `OIMSearch` takes a callback,
+  `openinframap.ts` calls the layer switcher).
+
 ### Places, offline (replaces OpenCage)
 
 Upstream finds towns and addresses with OpenCage, an online service whose key only
@@ -573,7 +600,8 @@ the French community's preference for mapping by hand (the licence isn't the rea
   the layers that draw them, worked out from the row's colour or icon
   (`web/src/key/feature-hider.ts`). Filters rather than visibility, so it works
   alongside the layer switcher. The choice is remembered per browser; "Show all"
-  undoes it.
+  undoes it. The checkbox column has a set width (`key.css`), so the boxes line up
+  from one section to the next (the spare width used to be shared with it).
 - **`npm start`**, not `npm run dev`: upstream renamed the command and every doc was
   out of date.
 - **Docs** generally: README, `CLAUDE.md`, this file and `LOCAL_DEVELOPMENT.md`.
@@ -608,11 +636,11 @@ Upstream files changed by the fork, and how much (so conflicts are expected here
 | `schema/functions.sql` | Function order fixed for fresh installs |
 | `web-backend/create_indexes.py` | `pg_trgm` extension, trigram indexes, `osm_place` |
 | `web-backend/src/main.py` | `pool_pre_ping`; `/local-images` mount |
-| `web-backend/src/views/search.py` | Word-start matching, ranking, local place search |
+| `web-backend/src/views/search.py` | Word-start matching, ranking, local place search, everything else with a name (`search_feature`) |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
-| `web/src/search/search.ts` | `Promise.allSettled`; OpenCage replaced by Photon; duplicate merging |
+| `web/src/search/search.ts` | `Promise.allSettled`; OpenCage replaced by Photon; duplicate merging; `onSelect` callback (switches on the result's layer) |
 | `web/src/search/opencage.ts` | Deleted |
-| `web/src/search/openinframap.ts` | Backend URL configurable; place descriptions |
+| `web/src/search/openinframap.ts` | Backend URL configurable; place and feature descriptions |
 | `web/src/api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
 | `web/src/style/style.ts`, `style_base.ts`, `config.ts` | Tile URLs configurable (`VITE_*`, session override) |
 | `web/src/openinframap.ts` | Map sources control; background switch hidden |

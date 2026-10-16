@@ -23,7 +23,8 @@ On top of upstream's power, telecoms, oil and gas, and water layers, it adds:
 
 The background map can be downloaded per region (full or reduced detail) and served
 locally too; otherwise it comes from openinframap.org. The search box finds places
-(cities down to hamlets) offline; street addresses need an optional Photon server.
+(cities down to hamlets) and every named feature on the map offline; street
+addresses need an optional Photon server.
 
 ## Getting started
 
@@ -52,9 +53,9 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Sharing** | `scripts/export-db.sh` / `scripts/import-db.sh`: save a built database (plus the Docker images) and restore it elsewhere in minutes, offline too |
 | **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Map sources panel to see and change the URL for the current tab |
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
-| **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; power plants and substations also match words inside names ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
+| **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; everything else with a name too (critical sites, lines, telecoms, pipelines, water, ICPE...: `schema/search.sql`), with its kind and town, accents optional, name + town ("mairie duppigheim"), and picking a result switches its layer on; words inside names match ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
-| **Critical sites** | `imposm/sites.py` + `schema/sites.sql`: ~195,000 sites in France in 40 kinds, shown from zoom 8, 12 or 14 by importance, a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
+| **Critical sites** | `imposm/sites.py` + `schema/sites.sql`: ~210,000 sites in France in 41 kinds, shown at every zoom from 4 (nearby ones grouped into a numbered bubble below zoom 14), a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
 | **Extra data** | `scripts/extra_data.py`: imports open data that covers the built region (French electricity and gas networks, biomethane, ICPE) into an `extra` schema; the build offers each dataset with its size; what OSM already has is left out; raw downloads and imported data are kept across rebuilds |
 | **Key** | Every row has a checkbox to hide those features; remembered per browser |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |

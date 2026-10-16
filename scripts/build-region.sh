@@ -768,6 +768,9 @@ if [[ -n "$EXTRA_KEPT" && -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
     fi
 fi
 run_with_timer "Creating extra data tables" run_sql_file schema/extra.sql
+# Everything with a name, for the search box (extra_data.py refreshes it when the
+# extra data changes below).
+run_with_timer "Preparing search" run_sql_file schema/search.sql
 
 # ---------------------------------------------------------------------------
 # 6. EEZ country boundaries

@@ -102,9 +102,9 @@ ok "Fresh database ready."
 
 restore() {
     # Extensions aren't part of the export (it only has the data schemas), but
-    # the search indexes need pg_trgm. It's a trusted extension, so the database
-    # owner can enable it.
-    db_psql -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+    # the search indexes need pg_trgm and the search view unaccent. Both are
+    # trusted extensions, so the database owner can enable them.
+    db_psql -c "CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS unaccent;"
     # A fresh database already has PostGIS, its spatial_ref_sys table and the
     # helper functions from schema/functions.sql, so leave out of the restore
     # every function that already exists. (Functions from views.sql, which
@@ -129,6 +129,10 @@ run_with_timer "Restoring the database" restore
 run_with_timer "Checking search indexes" create_search_indexes
 # Exports made before extra data existed don't have its tables (Tegola needs them).
 run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
+# Exports made before everything was searchable don't have the search view.
+if [[ "$(db_query "SELECT to_regclass('search_feature') IS NULL")" == "t" ]]; then
+    run_with_timer "Preparing search" run_sql_file schema/search.sql
+fi
 
 # Recreate Tegola so it doesn't serve tiles cached from the old data.
 docker compose --progress quiet up -d --force-recreate tegola </dev/null

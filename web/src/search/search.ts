@@ -12,6 +12,8 @@ export type SearchResult = {
   name: string
   score: number
   description?: string
+  // Fork: the layer switcher entry that shows it, switched on when it's picked.
+  layer?: string
 }
 
 export interface ISearchProvider {
@@ -30,8 +32,11 @@ export default class OIMSearch implements IControl {
   currentResults: SearchResult[] = []
   searchProviders: ISearchProvider[]
   currentQuery: string = ''
+  // Fork: called when a result is picked (openinframap.ts switches its layer on).
+  onSelect?: (result: SearchResult) => void
 
-  constructor() {
+  constructor(onSelect?: (result: SearchResult) => void) {
+    this.onSelect = onSelect
     this.searchProviders = [
       new CoordinatesSearch(),
       // Fork: places (cities, towns, villages…) come from the local database via
@@ -177,6 +182,7 @@ export default class OIMSearch implements IControl {
   selectItem(result: SearchResult): void {
     if (result) {
       this.map!.flyTo({ center: [result.longitude, result.latitude], zoom: 14 })
+      this.onSelect?.(result)
       this.input.value = result.name
       this.clearDropdown()
     }

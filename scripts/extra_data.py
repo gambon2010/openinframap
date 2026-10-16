@@ -896,6 +896,15 @@ def main() -> None:
     ensure_schema(cur)
     conn.commit()
 
+    def refresh_search() -> None:
+        """The search box searches the extra data too (schema/search.sql)."""
+        cur.execute("SELECT to_regclass('search_feature') IS NOT NULL")
+        if cur.fetchone()[0]:
+            started = time.monotonic()
+            cur.execute("REFRESH MATERIALIZED VIEW search_feature")
+            conn.commit()
+            print(f"Search updated ({time.monotonic() - started:.0f} s).", flush=True)
+
     if args.command == "dedupe":
         cur.execute("SELECT source FROM extra.source ORDER BY source")
         for (source_id,) in cur.fetchall():
@@ -934,6 +943,7 @@ def main() -> None:
             )
             conn.commit()
             print(f"{source_id}: {total} removed in all.")
+        refresh_search()
         print("Refresh the tile server: docker compose up -d --force-recreate tegola")
         return
 
@@ -941,6 +951,7 @@ def main() -> None:
         cur.execute("DELETE FROM extra.source WHERE source = %s", (args.source,))
         conn.commit()
         print(f"Removed {args.source} ({cur.rowcount} source).")
+        refresh_search()
         return
 
     _, region_name = region_geojson(cur)
@@ -1021,6 +1032,7 @@ def main() -> None:
         print(f"  {count} features imported.")
     for name in wanted - {s.id for s, _ in sources}:
         print(f"{name} doesn't cover {region_name}; nothing imported.")
+    refresh_search()
     # Tegola caches tiles up to zoom 13; recreating it drops the cache.
     print(
         "If the tile server is running, refresh it with: docker compose up -d --force-recreate tegola"
