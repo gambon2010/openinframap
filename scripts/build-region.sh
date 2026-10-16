@@ -768,7 +768,10 @@ if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_DATA" != 1 ]] && command -v uv &>/dev/nu
 fi
 if [[ "$EXTRA_DATA" == 1 ]]; then
     section "Importing extra data (outside OpenStreetMap)..."
-    uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" import \
+    # A fresh copy (asked for when there's kept data) means not reusing earlier downloads.
+    EXTRA_ARGS=()
+    [[ -n "$EXTRA_KEPT" ]] && EXTRA_ARGS+=(--refresh)
+    uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" import "${EXTRA_ARGS[@]}" \
         || warn "Importing extra data failed; the map works without it. Retry with: uv run scripts/extra_data.py import"
 fi
 

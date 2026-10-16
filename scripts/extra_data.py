@@ -184,21 +184,34 @@ class Source:
         raise NotImplementedError
 
 
-class FranceAgenceORE(Source):
-    """French electricity and gas distribution networks (all operators: Enedis,
-    Strasbourg Électricité Réseaux, Vialis, GRDF, Régaz, …), as consolidated by
-    Agence ORE. Downloaded whole or per département."""
+class FrenchSource(Source):
+    """A source published per French département: which départements a region
+    touches, and their outlines (Etalab)."""
 
-    id = "fr-agence-ore"
-    name = "Agence ORE: French electricity and gas distribution networks"
     country = "FR"
-    licence = "Licence Ouverte 2.0 (Etalab)"
-    attribution = "Agence ORE and French distribution network operators"
-    url = "https://opendata.agenceore.fr"
+    DEPARTMENTS_URL = "https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2025/geojson/departements-100m.geojson"
+    # From this many départements on, a dataset is downloaded whole (national)
+    # rather than filtered: simpler and faster than a long list of départements.
+    NATIONAL_FROM = 20
 
-    def offer(self, region: dict) -> str | None:
-        # A département is involved if its centre is in the region, or a point of
-        # the region's outline is in it (a region inside a single département).
+    def __init__(self) -> None:
+        self.http = httpx.Client(
+            headers={"User-Agent": USER_AGENT}, timeout=httpx.Timeout(60, read=600)
+        )
+
+    def departments_file(self) -> Path:
+        path = EXTRA_DIR / "fr-departements.geojson"
+        if not path.exists():
+            EXTRA_DIR.mkdir(parents=True, exist_ok=True)
+            response = self.http.get(self.DEPARTMENTS_URL, follow_redirects=True)
+            response.raise_for_status()
+            path.write_bytes(response.content)
+        return path
+
+    def involved(self, region: dict) -> int:
+        """Before a build, without a database: how many départements the region
+        touches. A département counts if its centre is in the region, or a point of
+        the region's outline is in it (a region inside a single département)."""
         region_rings = outer_rings(region)
         region_points = [
             p for ring in region_rings for p in ring[:: max(1, len(ring) // 500)]
@@ -215,8 +228,49 @@ class FranceAgenceORE(Source):
                 inside(p, rings) for p in region_points
             ):
                 involved += 1
+        return involved
+
+    def areas(self, cur, region: str) -> list[str]:
+        departments = json.loads(self.departments_file().read_text())["features"]
+        cur.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS fr_department (code text, geom geometry)"
+        )
+        cur.execute("TRUNCATE fr_department")
+        for feature in departments:
+            cur.execute(
+                "INSERT INTO fr_department VALUES (%s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))",
+                (feature["properties"]["code"], json.dumps(feature["geometry"])),
+            )
+        cur.execute(
+            """SELECT code FROM fr_department
+                WHERE ST_Intersects(geom, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)) ORDER BY code""",
+            (region,),
+        )
+        return [row[0] for row in cur.fetchall()]
+
+
+class FranceAgenceORE(FrenchSource):
+    """French electricity and gas distribution networks (all operators: Enedis,
+    Strasbourg Électricité Réseaux, Vialis, GRDF, Régaz, …), as consolidated by
+    Agence ORE. Downloaded whole or per département."""
+
+    id = "fr-agence-ore"
+    name = "Agence ORE: French electricity and gas distribution networks"
+    licence = "Licence Ouverte 2.0 (Etalab)"
+    attribution = "Agence ORE and French distribution network operators"
+    url = "https://opendata.agenceore.fr"
+
+    def offer(self, region: dict) -> str | None:
+        involved = self.involved(region)
         if not involved:
             return None
+        # Earlier downloads are reused (data/extra/agence-ore/): say so.
+        saved = sorted(self.CACHE.glob("*/all.csv.gz"))
+        if len(saved) >= len(self.DATASETS) - len(self.BY_DEPARTMENT):
+            return (
+                f"{involved} département(s): downloaded {min(downloaded_on(p) for p in saved)},"
+                " reused without downloading again"
+            )
         if involved >= self.NATIONAL_FROM:
             return f"{involved} départements: ~21 million features for all of France (16M electricity, 4M gas), ~6 GB, 3-4 hours to download"
         return (
@@ -226,7 +280,6 @@ class FranceAgenceORE(Source):
         )
 
     API = "https://opendata.agenceore.fr/api/explore/v2.1/catalog/datasets"
-    DEPARTMENTS_URL = "https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2025/geojson/departements-100m.geojson"
     # dataset id -> (table, location, kind)
     DATASETS: ClassVar[dict[str, tuple[str, str | None, str | None]]] = {
         "reseau-aerien-basse-tension-bt": ("line", "overhead", None),
@@ -255,47 +308,16 @@ class FranceAgenceORE(Source):
         "pipeline": "niveau_de_pression",
     }
 
-    def __init__(self) -> None:
-        self.http = httpx.Client(
-            headers={"User-Agent": USER_AGENT}, timeout=httpx.Timeout(60, read=600)
-        )
-
-    def departments_file(self) -> Path:
-        path = EXTRA_DIR / "fr-departements.geojson"
-        if not path.exists():
-            EXTRA_DIR.mkdir(parents=True, exist_ok=True)
-            response = self.http.get(self.DEPARTMENTS_URL, follow_redirects=True)
-            response.raise_for_status()
-            path.write_bytes(response.content)
-        return path
-
-    def areas(self, cur, region: str) -> list[str]:
-        departments = json.loads(self.departments_file().read_text())["features"]
-        cur.execute(
-            "CREATE TEMP TABLE IF NOT EXISTS fr_department (code text, geom geometry)"
-        )
-        cur.execute("TRUNCATE fr_department")
-        for feature in departments:
-            cur.execute(
-                "INSERT INTO fr_department VALUES (%s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))",
-                (feature["properties"]["code"], json.dumps(feature["geometry"])),
-            )
-        cur.execute(
-            """SELECT code FROM fr_department
-                WHERE ST_Intersects(geom, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)) ORDER BY code""",
-            (region,),
-        )
-        return [row[0] for row in cur.fetchall()]
-
     def where(self, departments: list[str]) -> str:
         return "code_departement IN (" + ", ".join(f'"{d}"' for d in departments) + ")"
 
     def estimate(self, areas: list[str]) -> int | None:
         total = 0
-        for dataset in self.DATASETS:
+        for dataset, (table, _, _) in self.DATASETS.items():
+            # Sites are a small national file (and use another département field).
+            where = {} if table == "facility" else {"where": self.where(areas)}
             response = self.http.get(
-                f"{self.API}/{dataset}/records",
-                params={"where": self.where(areas), "limit": 0},
+                f"{self.API}/{dataset}/records", params={**where, "limit": 0}
             )
             response.raise_for_status()
             total += response.json()["total_count"]
@@ -437,10 +459,6 @@ class FranceAgenceORE(Source):
             flush=True,
         )
         return kept
-
-    # From this many départements on, each dataset is downloaded whole (one national
-    # file) rather than filtered: simpler and faster than a long list of départements.
-    NATIONAL_FROM = 20
 
     def run(self, conn, cur, areas: list[str], only: list[str] | None = None) -> int:
         cur.execute(
