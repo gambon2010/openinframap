@@ -302,6 +302,12 @@
     "bt": "BT (low voltage, 230/400 V)",
     "gas-pipe": "Gas distribution pipe",
     "pressure": "Pressure",
-    "pressure-unknown": "Not published"
+    "pressure-unknown": "Not published",
+    "biomethane": "Biomethane injection point",
+    "capacity": "Capacity",
+    "feedstock": "Feedstock",
+    "process": "Process",
+    "network": "Gas network",
+    "opened": "In service since"
   }
 }

@@ -158,7 +158,7 @@ class KeyControl implements IControl {
     pane.appendChild(el('h3', t('key.telecoms', 'Telecoms')))
     mount(pane, await this.telecomTable())
     pane.appendChild(el('h3', t('key.gas', 'Gas')))
-    mount(pane, this.gasTable())
+    mount(pane, await this.gasTable())
     pane.appendChild(el('h3', t('key.petroleum', 'Petroleum')))
     mount(pane, this.petroleumTable())
     pane.appendChild(el('h3', t('key.water', 'Water')))
@@ -369,7 +369,7 @@ class KeyControl implements IControl {
     return this.table(rows)
   }
 
-  gasTable() {
+  async gasTable() {
     const rows: Row[] = [
       [
         `${t('names.gas.pipeline.transmission', 'Transmission')} >= DN 700`,
@@ -402,6 +402,12 @@ class KeyControl implements IControl {
         { colour: colour_gas_other }
       ]
     ]
+    // Fork: open data (Agence ORE), shown with the gas network.
+    rows.push([
+      t('extra.biomethane', 'Biomethane injection point'),
+      await this.sprite('biomethane_injection'),
+      { icon: 'biomethane_injection' }
+    ])
     return this.table(rows)
   }
 

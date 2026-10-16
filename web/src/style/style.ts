@@ -114,10 +114,11 @@ const style: StyleSpecification = {
     extra: {
       type: 'vector',
       tiles: [`${OIM_TILES}/extra/{z}/{x}/{y}.pbf`],
-      minzoom: 10,
+      // Sites (e.g. biomethane injection points) from zoom 5; lines start later (layers.yml).
+      minzoom: 5,
       maxzoom: 17,
       attribution:
-        'Distribution networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators (Licence Ouverte)'
+        'Electricity and gas networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators (Licence Ouverte)'
     },
     osmose_errors_power: {
       type: 'vector',

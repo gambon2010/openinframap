@@ -6,12 +6,13 @@ import { interpolate, zoom } from './stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from './types.ts'
 import { voltage_color, voltage_line_thickness, substation_radius, power_opacity } from './style_oim_power.ts'
 import { pipeline_colour } from './style_oim_petroleum.ts'
+import { text_paint, font } from './common.ts'
 
 export default function layers(): LayerSpecificationWithZIndex[] {
   return [
     // Gas distribution pipes, like OSM's (style_oim_petroleum.ts), just below them.
     {
-      id: 'extra_pipeline_hit',
+      id: 'extra_gas_pipeline_hit',
       zorder: 0.4,
       source: 'extra',
       'source-layer': 'extra_pipeline',
@@ -19,7 +20,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 12 }
     },
     {
-      id: 'extra_pipeline_case',
+      id: 'extra_gas_pipeline_case',
       zorder: 0.5,
       source: 'extra',
       'source-layer': 'extra_pipeline',
@@ -34,7 +35,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       layout: { 'line-cap': 'round', 'line-join': 'round' }
     },
     {
-      id: 'extra_pipeline',
+      id: 'extra_gas_pipeline',
       zorder: 0.6,
       source: 'extra',
       'source-layer': 'extra_pipeline',
@@ -42,6 +43,31 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       paint: {
         'line-color': pipeline_colour,
         'line-width': 1
+      }
+    },
+    // Biomethane injection points (where biogas enters the gas network).
+    {
+      id: 'extra_gas_biomethane',
+      zorder: 170,
+      minzoom: 5,
+      source: 'extra',
+      'source-layer': 'extra_facility',
+      filter: ['==', ['get', 'kind'], 'biomethane_injection'],
+      type: 'symbol',
+      paint: { ...text_paint, 'text-opacity': ['step', ['zoom'], 0, 11, 1] },
+      layout: {
+        'icon-image': 'biomethane_injection',
+        'icon-size': interpolate(zoom, [
+          [5, 0.3],
+          [14, 0.8]
+        ]),
+        'icon-allow-overlap': true,
+        'text-field': ['get', 'name'],
+        'text-font': font,
+        'text-size': 11,
+        'text-offset': [0, 1.2],
+        'text-anchor': 'top',
+        'text-optional': true
       }
     },
     // Invisible and wider than the lines, so thin low-voltage lines are easy to

@@ -763,3 +763,29 @@ layers:
     id_field: id
     from: extra.pipeline
     where: geometry && !BBOX!
+
+  - name: extra_facility
+    map:
+      - extra
+    geometry_type: Point
+    min_zoom: 5
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: kind
+      - name: name
+      - name: capacity
+      - name: capacity_unit
+      - name: opened
+        sql: opened::text
+      - name: feedstock
+        sql: details ->> 'feedstock'
+      - name: process
+        sql: details ->> 'process'
+      - name: network
+        sql: details ->> 'network'
+      - name: network_operator
+        sql: details ->> 'network_operator'
+    id_field: id
+    from: extra.facility
+    where: geometry && !BBOX!

@@ -21,6 +21,7 @@ add one per data provider.
 """
 
 import argparse
+import csv
 import io
 import json
 import sys
@@ -120,7 +121,8 @@ def inside(point: list[float], rings: list[list[list[float]]]) -> bool:
 # SQL: all the features of the extra.source row being updated.
 FEATURE_COUNT = """((SELECT count(*) FROM extra.power_line l WHERE l.source = extra.source.source)
     + (SELECT count(*) FROM extra.power_substation s WHERE s.source = extra.source.source)
-    + (SELECT count(*) FROM extra.pipeline p WHERE p.source = extra.source.source))"""
+    + (SELECT count(*) FROM extra.pipeline p WHERE p.source = extra.source.source)
+    + (SELECT count(*) FROM extra.facility f WHERE f.source = extra.source.source))"""
 
 
 def remove_osm_duplicates(
@@ -230,6 +232,14 @@ class FranceAgenceORE(Source):
         # Gas distribution pipes (GRDF, Régaz, GreenAlp, …). Pressure is mostly
         # "Inconnu" (all of GRDF's), stored as NULL.
         "infrastructures-reseau-gaz": ("pipeline", None, None),
+        # Where biomethane enters the gas network (~850 sites, exact coordinates).
+        # OSM has almost none of them (21 biogas plants in all of France, and those are
+        # power plants), so nothing is checked against OSM.
+        "points-dinjection-de-biomethane-en-france": (
+            "facility",
+            None,
+            "biomethane_injection",
+        ),
     }
     # Datasets whose national export their server tends to cut off midway (gas broke
     # after 0.6 and 3.2 of 4.2 million rows): always fetched département by département.
@@ -316,6 +326,64 @@ class FranceAgenceORE(Source):
                 time.sleep(10 * attempt)
         return False
 
+    def import_biomethane(self, conn, cur, dataset: str) -> int:
+        """Biomethane injection points: small, so read whole and kept if in the region."""
+        print(f"    {dataset}")
+        response = self.http.get(
+            f"{self.API}/{dataset}/exports/csv", params={"delimiter": ";"}
+        )
+        response.raise_for_status()
+        rows = list(
+            csv.DictReader(
+                io.StringIO(response.content.decode("utf-8-sig")), delimiter=";"
+            )
+        )
+        cur.execute(
+            "DELETE FROM extra.facility WHERE source = %s AND kind = 'biomethane_injection'",
+            (self.id,),
+        )
+        replaced = cur.rowcount
+        kept = closed = 0
+        for row in rows:
+            if row.get("site_ouvert", "").lower() not in ("1", "true", "oui"):
+                closed += 1  # closed sites aren't infrastructure any more
+                continue
+            try:
+                lat, lon = (float(v) for v in row["coordonnees"].split(","))
+            except (KeyError, ValueError):
+                continue
+            details = {
+                "feedstock": row.get("site") or None,
+                "process": row.get("procede") or None,
+                "network": row.get("type_de_reseau") or None,
+                "network_operator": row.get("grx_demandeur") or None,
+                "planned_increase": row.get("augmentation_prevue") or None,
+            }
+            cur.execute(
+                """INSERT INTO extra.facility (source, kind, name, operator, capacity, capacity_unit,
+                                              opened, details, geometry)
+                   SELECT %s, 'biomethane_injection', %s, NULL, NULLIF(%s, '')::numeric, 'GWh/year',
+                          NULLIF(%s, '')::date, %s, g
+                     FROM (SELECT ST_Transform(ST_SetSRID(ST_MakePoint(%s, %s), 4326), 3857) AS g) p
+                    WHERE EXISTS (SELECT 1 FROM extra_region r WHERE ST_Intersects(r.geom, p.g))""",
+                (
+                    self.id,
+                    row.get("nom_du_projet") or None,
+                    row.get("capacite_de_production_gwh_an", ""),
+                    (row.get("date_de_mes") or "")[:10],
+                    json.dumps({k: v for k, v in details.items() if v}),
+                    lon,
+                    lat,
+                ),
+            )
+            kept += cur.rowcount
+        conn.commit()
+        print(
+            f"      kept {kept} inside the region of {len(rows)} (replacing {replaced}; {closed} closed sites left out)",
+            flush=True,
+        )
+        return kept
+
     # From this many départements on, each dataset is downloaded whole (one national
     # file) rather than filtered: simpler and faster than a long list of départements.
     NATIONAL_FROM = 20
@@ -330,6 +398,9 @@ class FranceAgenceORE(Source):
         count = 0
         for dataset, (table, location, kind) in self.DATASETS.items():
             if only and not any(word in dataset for word in only):
+                continue
+            if table == "facility":
+                count += self.import_biomethane(conn, cur, dataset)
                 continue
             attribute = self.ATTRIBUTE[table]
             select = f"nom_grd,{attribute},date_maj,geometry"

@@ -54,6 +54,23 @@ CREATE TABLE IF NOT EXISTS extra.pipeline (
 CREATE INDEX IF NOT EXISTS extra_pipeline_geometry ON extra.pipeline USING gist (geometry);
 CREATE INDEX IF NOT EXISTS extra_pipeline_source ON extra.pipeline (source);
 
+-- Sites (so far French biomethane injection points; ICPE sites next).
+CREATE TABLE IF NOT EXISTS extra.facility (
+    id bigserial PRIMARY KEY,
+    source text NOT NULL REFERENCES extra.source ON DELETE CASCADE,
+    kind text NOT NULL,             -- e.g. biomethane_injection
+    name text,
+    operator text,
+    capacity numeric,
+    capacity_unit text,             -- e.g. GWh/year
+    opened date,
+    details jsonb,                  -- other published fields, shown in the popup
+    updated date,
+    geometry geometry(Point, 3857) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS extra_facility_geometry ON extra.facility USING gist (geometry);
+CREATE INDEX IF NOT EXISTS extra_facility_source ON extra.facility (source, kind);
+
 CREATE INDEX IF NOT EXISTS extra_power_line_geometry ON extra.power_line USING gist (geometry);
 CREATE INDEX IF NOT EXISTS extra_power_line_source ON extra.power_line (source);
 CREATE INDEX IF NOT EXISTS extra_power_substation_geometry ON extra.power_substation USING gist (geometry);

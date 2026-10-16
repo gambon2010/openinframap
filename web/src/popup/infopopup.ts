@@ -339,7 +339,9 @@ class InfoPopup {
   extraPopupHtml(feature: MapGeoJSONFeature) {
     const p = feature.properties
     let title
-    if (feature.layer.id.startsWith('extra_pipeline')) {
+    if (feature.layer.id.startsWith('extra_gas_biomethane')) {
+      title = p.name || t('extra.biomethane', 'Biomethane injection point')
+    } else if (feature.layer.id.startsWith('extra_gas_pipeline')) {
       title = t('extra.gas-pipe', 'Gas distribution pipe')
     } else if (feature.layer.id.startsWith('extra_power_substation')) {
       title = t('extra.substation', 'Distribution substation')
@@ -350,8 +352,10 @@ class InfoPopup {
     } else {
       title = t('extra.line', 'Distribution line')
     }
+    const facility = feature.layer.id.startsWith('extra_gas_biomethane')
     const rows: [string, any][] = [
-      [t('info.name'), p.name],
+      // Sites have their name as the title; their kind is shown as Type below.
+      [t('info.name'), facility ? null : p.name],
       [
         t('extra.voltage-class', 'Voltage class'),
         p.voltage_class === 'HTA'
@@ -360,13 +364,23 @@ class InfoPopup {
             ? t('extra.bt', 'BT (low voltage, 230/400 V)')
             : p.voltage_class
       ],
-      [t('extra.kind', 'Kind'), p.kind],
-      ...(feature.layer.id.startsWith('extra_pipeline')
+      [t('extra.kind', 'Kind'), facility ? null : p.kind],
+      ...(feature.layer.id.startsWith('extra_gas_pipeline')
         ? ([
             [
               t('extra.pressure', 'Pressure'),
               p.pressure_published || t('extra.pressure-unknown', 'Not published')
             ]
+          ] as [string, any][])
+        : []),
+      ...(feature.layer.id.startsWith('extra_gas_biomethane')
+        ? ([
+            [t('info.type'), t('extra.biomethane', 'Biomethane injection point')],
+            [t('extra.capacity', 'Capacity'), p.capacity && `${Math.round(p.capacity)} ${p.capacity_unit}`],
+            [t('extra.feedstock', 'Feedstock'), p.feedstock],
+            [t('extra.process', 'Process'), p.process],
+            [t('extra.network', 'Gas network'), [p.network, p.network_operator].filter((x) => x).join(', ')],
+            [t('extra.opened', 'In service since'), p.opened]
           ] as [string, any][])
         : []),
       [t('info.operator'), p.operator],

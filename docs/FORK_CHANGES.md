@@ -430,6 +430,16 @@ the French community's preference for mapping by hand (the licence isn't the rea
   and a national one that keeps failing falls back to départements.
   `extra_data.py import --only gaz` imports just this dataset; pipes OSM already has
   (same 80%-within-10-m rule) are left out.
+- **Biomethane injection points** (`points-dinjection-de-biomethane-en-france`, 851
+  open sites with exact coordinates: where biogas enters the gas network) go into
+  `extra.facility`, a table for point sites (ICPE sites are meant to follow). Shown
+  under the gas entry of the layer switcher (the gas layers share the `extra_gas`
+  prefix) from zoom 5 with a new icon (`web/src/icons/biomethane_injection.svg`, the
+  biomass leaf in a station circle), a key row under Gas, and a popup with capacity,
+  feedstock, process, the gas network and operator, and the date in service. OSM has
+  almost none of them (21 biogas plants in France, and those are power plants), so
+  they aren't checked against OSM. Closed sites are left out. New icons are picked up
+  when the frontend dev server starts, so restart it after adding one.
 - **Licence:** Licence Ouverte 2.0, which requires attribution: the source's
   attribution shows on the map whenever the layer is on.
 - **Build and exports:** `build-region.sh` offers extra data only when a source covers
