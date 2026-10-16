@@ -329,6 +329,7 @@ check_cmd docker  "https://docs.docker.com/get-docker/"       || MISSING=1
 check_cmd curl    "dnf install curl  /  apt install curl"     || MISSING=1
 check_cmd python3 "dnf install python3  /  apt install python3" || MISSING=1
 check_cmd unzip   "dnf install unzip  /  apt install unzip"   || MISSING=1
+check_cmd uv      "optional — https://docs.astral.sh/uv/ (for extra data like the French networks)" || true
 [[ "$MISSING" == 0 ]] || die "Install the missing tools above, then re-run this script."
 docker info >/dev/null 2>&1 || die "Docker is installed but not running (or your user can't access it)."
 docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required ('docker compose', not 'docker-compose')."

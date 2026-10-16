@@ -33,7 +33,7 @@ check_cmd python3 "dnf install python3  /  apt install python3" || MISSING=1
 check_cmd unzip   "dnf install unzip  /  apt install unzip"     || MISSING=1
 [[ "$MISSING" == 0 ]] || die "Install the missing tools above, then re-run this script."
 # Optional: only needed for the Wikidata cache and to run the backend outside Docker.
-check_cmd uv      "optional — https://docs.astral.sh/uv/ (for the offline Wikidata cache)" || true
+check_cmd uv      "optional — https://docs.astral.sh/uv/ (for extra data like the French networks, and the offline Wikidata cache)" || true
 
 # ---------------------------------------------------------------------------
 # 2. Frontend .env — before the database step, which may add the offline

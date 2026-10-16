@@ -17,7 +17,7 @@ For *what* the fork changed and *why*, see [FORK_CHANGES.md](./FORK_CHANGES.md).
 | Docker + Compose v2 | Docker 24+ | `docker compose` (not `docker-compose`). Runs the database, Tegola and the backend |
 | Node.js + npm | Node 20+ | Runs the frontend |
 | curl, python3, unzip | any | Used by the setup scripts |
-| [uv](https://docs.astral.sh/uv/) | any recent | **Optional:** for the Wikidata cache script, and to run the backend outside Docker |
+| [uv](https://docs.astral.sh/uv/) | any recent | **Optional, but needed for extra data** (French electricity/gas networks, biomethane, ICPE: `scripts/extra_data.py`), the Wikidata cache script, and running the backend outside Docker. Without it the build skips extra data |
 | Free disk space | depends on region | The raw extract (46 MB for Luxembourg, 33 GB for Europe, ~95 GB for the world) plus the database (roughly 1 GB for Russia). The script checks before starting |
 
 `launch.sh` checks these and tells you what's missing; it never installs anything.
