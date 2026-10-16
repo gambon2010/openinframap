@@ -330,7 +330,10 @@ source.
 
 `build-region.sh` offers it when it covers the region you picked (or pass `--extra`).
 Rebuilding a region keeps its extra data: it's saved to `data/extra/` before the
-database is wiped and put back afterwards, without downloading it again.
+database is wiped and put back afterwards, without downloading it again. The raw
+downloads are kept too (`data/extra/agence-ore/`), so importing again, or for
+another French region, reuses them; `uv run scripts/extra_data.py import --refresh`
+downloads them again.
 To do it on an existing database:
 
 ```bash

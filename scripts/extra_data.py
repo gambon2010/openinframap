@@ -22,6 +22,7 @@ add one per data provider.
 
 import argparse
 import csv
+import gzip
 import io
 import json
 import sys
@@ -145,6 +146,10 @@ def remove_osm_duplicates(
     else:
         cur.execute("SELECT extra.remove_osm_duplicate_substations(%s)", (source_id,))
     return cur.fetchone()[0]
+
+
+def downloaded_on(path: Path) -> str:
+    return time.strftime("%Y-%m-%d", time.localtime(path.stat().st_mtime))
 
 
 class Source:
@@ -296,48 +301,97 @@ class FranceAgenceORE(Source):
             total += response.json()["total_count"]
         return total
 
-    def download(
-        self, cur, dataset: str, select: str, where: str | None, attempts: int = 3
+    # Raw downloads are kept, like the OSM extracts in data/osm/, so re-importing
+    # (a rebuild, another region, new rules) doesn't download them again (all of
+    # France takes 3-4 hours). One national file per dataset, or one per
+    # département for datasets fetched that way; each row has its département, so
+    # any region can be cut from them. --refresh downloads them again.
+    CACHE = EXTRA_DIR / "agence-ore"
+    refresh = False
+    fetched = 0  # files downloaded (rather than reused)
+
+    def cache_file(self, dataset: str, scope: str) -> Path:
+        return self.CACHE / dataset / f"{scope}.csv.gz"
+
+    def fetch(
+        self,
+        dataset: str,
+        select: str,
+        where: str | None,
+        path: Path,
+        attempts: int = 3,
     ) -> bool:
-        """Append a dataset's CSV export (filtered by `where`) to extra_staging. A failed
-        attempt is undone (savepoint) and retried; False if every attempt failed."""
+        """Download a dataset's CSV export (filtered by `where`) to `path` (gzipped).
+        Their server sometimes drops a long download midway: retried; False if every
+        attempt failed."""
         params = {"select": select}
         if where:
             params["where"] = where
+        path.parent.mkdir(parents=True, exist_ok=True)
+        partial = path.with_suffix(".part")
         for attempt in range(1, attempts + 1):
-            cur.execute("SAVEPOINT download")
             try:
-                with self.http.stream(
-                    "GET", f"{self.API}/{dataset}/exports/csv", params=params
-                ) as response:
+                with (
+                    self.http.stream(
+                        "GET", f"{self.API}/{dataset}/exports/csv", params=params
+                    ) as response,
+                    gzip.open(partial, "wb", compresslevel=5) as out,
+                ):
                     response.raise_for_status()
-                    cur.copy_expert(
-                        "COPY extra_staging FROM STDIN WITH (FORMAT csv, DELIMITER ';', HEADER true)",
-                        StreamReader(response.iter_bytes()),
-                    )
-                cur.execute("RELEASE SAVEPOINT download")
+                    for chunk in response.iter_bytes():
+                        out.write(chunk)
+                partial.rename(path)
+                self.fetched += 1
                 return True
-            except (httpx.HTTPError, psycopg2.Error) as error:
-                cur.execute("ROLLBACK TO SAVEPOINT download")
+            except httpx.HTTPError as error:
                 print(
                     f"      attempt {attempt} failed ({str(error).splitlines()[0][:120]})",
                     flush=True,
                 )
                 time.sleep(10 * attempt)
+        partial.unlink(missing_ok=True)
         return False
+
+    def files(
+        self, dataset: str, select: str, areas: list[str], national: bool
+    ) -> list[Path]:
+        """The downloaded files covering `areas`, downloading what's missing."""
+        everything = self.cache_file(dataset, "all")
+        per_department = [self.cache_file(dataset, d) for d in areas]
+        if self.refresh:
+            everything.unlink(missing_ok=True)
+            for path in per_department:
+                path.unlink(missing_ok=True)
+        if everything.exists():
+            return [everything]
+        if national and dataset not in self.BY_DEPARTMENT:
+            if self.fetch(dataset, select, None, everything, attempts=2):
+                return [everything]
+            print(
+                "      the national download keeps failing: by département instead",
+                flush=True,
+            )
+        for department, path in zip(areas, per_department):
+            if not path.exists() and not self.fetch(
+                dataset, select, self.where([department]), path
+            ):
+                raise RuntimeError(
+                    f"{dataset}: downloading département {department} failed"
+                )
+        return per_department
 
     def import_biomethane(self, conn, cur, dataset: str) -> int:
         """Biomethane injection points: small, so read whole and kept if in the region."""
         print(f"    {dataset}")
-        response = self.http.get(
-            f"{self.API}/{dataset}/exports/csv", params={"delimiter": ";"}
-        )
-        response.raise_for_status()
-        rows = list(
-            csv.DictReader(
-                io.StringIO(response.content.decode("utf-8-sig")), delimiter=";"
-            )
-        )
+        path = self.cache_file(dataset, "all")
+        if self.refresh:
+            path.unlink(missing_ok=True)
+        if path.exists():
+            print(f"      using the download from {downloaded_on(path)}", flush=True)
+        elif not self.fetch(dataset, "*", None, path):
+            raise RuntimeError(f"{dataset}: download failed")
+        with gzip.open(path, "rt", encoding="utf-8-sig") as f:
+            rows = list(csv.DictReader(f, delimiter=";"))
         cur.execute(
             "DELETE FROM extra.facility WHERE source = %s AND kind = 'biomethane_injection'",
             (self.id,),
@@ -391,7 +445,7 @@ class FranceAgenceORE(Source):
     def run(self, conn, cur, areas: list[str], only: list[str] | None = None) -> int:
         cur.execute(
             """CREATE TEMP TABLE IF NOT EXISTS extra_staging
-                 (operator text, attribute text, updated text, geojson text)"""
+                 (department text, operator text, attribute text, updated text, geojson text)"""
         )
         geometry = "(ST_Dump(ST_Force2D(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(geojson), 4326), 3857)))).geom"
         national = len(areas) >= self.NATIONAL_FROM
@@ -403,39 +457,37 @@ class FranceAgenceORE(Source):
                 count += self.import_biomethane(conn, cur, dataset)
                 continue
             attribute = self.ATTRIBUTE[table]
-            select = f"nom_grd,{attribute},date_maj,geometry"
+            select = f"code_departement,nom_grd,{attribute},date_maj,geometry"
             cur.execute("TRUNCATE extra_staging")
             print(
                 f"    {dataset} ({'all of France' if national else 'départements ' + ', '.join(areas)})"
             )
             started = time.monotonic()
-            # Their server sometimes drops a long download midway: retry, and if a
-            # national download keeps failing, fetch it département by département.
-            if national and (
-                dataset in self.BY_DEPARTMENT
-                or not self.download(cur, dataset, select, None, attempts=2)
-            ):
-                if dataset not in self.BY_DEPARTMENT:
-                    print(
-                        "      the national download keeps failing: by département instead",
-                        flush=True,
+            self.fetched = 0
+            paths = self.files(dataset, select, areas, national)
+            fetched = time.monotonic() - started
+            started = time.monotonic()
+            for path in paths:
+                with gzip.open(path, "rb") as f:
+                    cur.copy_expert(
+                        "COPY extra_staging FROM STDIN WITH (FORMAT csv, DELIMITER ';', HEADER true)",
+                        f,
                     )
-                for department in areas:
-                    if not self.download(
-                        cur, dataset, select, self.where([department])
-                    ):
-                        raise RuntimeError(
-                            f"{dataset}: downloading département {department} failed"
-                        )
-            elif not national and not self.download(
-                cur, dataset, select, self.where(areas)
-            ):
-                raise RuntimeError(f"{dataset}: download failed")
+            if not national:
+                # A national file covers more than the region needs.
+                cur.execute(
+                    "DELETE FROM extra_staging WHERE department <> ALL(%s)", (areas,)
+                )
             cur.execute("SELECT count(*) FROM extra_staging")
-            print(
-                f"      downloaded {cur.fetchone()[0]} in {time.monotonic() - started:.0f} s",
-                flush=True,
-            )
+            rows = cur.fetchone()[0]
+            if self.fetched:
+                print(f"      downloaded {rows} in {fetched:.0f} s", flush=True)
+            else:
+                oldest = min(downloaded_on(p) for p in paths)
+                print(
+                    f"      {rows} from the download of {oldest} (--refresh to download again)",
+                    flush=True,
+                )
             started = time.monotonic()
             # Replace this dataset's previous import (same transaction as the insert).
             if table == "line":
@@ -540,6 +592,11 @@ def main() -> None:
         "import", help="import sources (all applicable ones by default)"
     )
     imp.add_argument("sources", nargs="*")
+    imp.add_argument(
+        "--refresh",
+        action="store_true",
+        help="download again rather than reuse earlier downloads (data/extra/)",
+    )
     imp.add_argument(
         "--only",
         nargs="+",
@@ -656,6 +713,7 @@ def main() -> None:
                 ", ".join(areas),
             ),
         )
+        source.refresh = args.refresh
         count = source.run(conn, cur, areas, args.only)
         # All of the source's features, also those of datasets not re-imported (--only).
         cur.execute(

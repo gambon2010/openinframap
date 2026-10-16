@@ -440,6 +440,13 @@ the French community's preference for mapping by hand (the licence isn't the rea
   almost none of them (21 biogas plants in France, and those are power plants), so
   they aren't checked against OSM. Closed sites are left out. New icons are picked up
   when the frontend dev server starts, so restart it after adding one.
+- **Downloads are kept**, like the OSM extracts in `data/osm/`: each dataset is saved
+  gzipped in `data/extra/agence-ore/<dataset>/` (`all.csv.gz`, or one file per
+  département for those fetched that way), with each row's département, and the
+  database is loaded from those files. Re-importing (another region, new rules, a
+  failed run) reuses them; `import --refresh` downloads again (the build's "fresh
+  copy" does). A region smaller than France is cut from a national file by
+  département. Downloading to a file also makes retries simple (no partial rows).
 - **Kept across rebuilds.** A rebuild wipes the database, and the French data takes
   3-4 hours to download again, so `build-region.sh` saves the `extra` schema first
   (`data/extra/<region>.extra.dump` + `.json`: 2 GB and under a minute for France)
