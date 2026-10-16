@@ -480,8 +480,11 @@ the French community's preference for mapping by hand (the licence isn't the rea
 - **Licence:** Licence Ouverte 2.0, which requires attribution: the source's
   attribution shows on the map whenever the layer is on.
 - **Build and exports:** `build-region.sh` offers extra data only when a source covers
-  the chosen region (France, a French region, Europe, a neighbour's border strip),
-  with what it would cost (`--extra` / `--no-extra`; `--yes` means no). Exports include
+  the chosen region (France, a French region, Europe, a neighbour's border strip), as
+  a menu with one line per dataset (electricity, gas, biomethane, ICPE) and what each
+  costs, or "no download needed" when it's already downloaded (`extra_data.py offer`
+  lists them; `import --choose KEY,...` imports just those). Flags: `--extra` (all),
+  `--extra-only gas,icpe`, `--no-extra`; `--yes` means none new. Exports include
   the `extra` schema, and their manifest's `extra_data` says what's in it, shown in the
   build menu and by `import-db.sh`.
 - **The old download route.** The importer uses Agence ORE's legacy v2.1 export API,

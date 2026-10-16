@@ -329,7 +329,10 @@ drawn like OSM lines of the same voltage (medium voltage as 20 kV, low voltage a
 < 10 kV) and like OSM gas pipes; click a line to see its
 source.
 
-`build-region.sh` offers it when it covers the region you picked (or pass `--extra`).
+`build-region.sh` offers it when it covers the region you picked, as a menu: pick any
+of electricity, gas, biomethane and ICPE (each with its size and download time), or
+pass `--extra` (all) or `--extra-only gas,icpe`. Later:
+`uv run scripts/extra_data.py import --choose gas,icpe`.
 Rebuilding a region keeps its extra data: it's saved to `data/extra/` before the
 database is wiped and put back afterwards, without downloading it again. The raw
 downloads are kept too (`data/extra/agence-ore/`), so importing again, or for

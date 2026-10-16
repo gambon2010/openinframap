@@ -163,10 +163,13 @@ class Source:
     attribution = ""
     url = ""
 
-    def offer(self, region: dict) -> str | None:
-        """Before a build, without a database: what importing it for this region
-        (a GeoJSON outline) would bring in, or None if it doesn't cover it."""
-        return None
+    # What can be chosen separately: key -> (label, words matching its datasets' names).
+    CHOICES: ClassVar[dict[str, tuple[str, list[str]]]] = {}
+
+    def offer(self, region: dict) -> list[tuple[str, str, str]]:
+        """Before a build, without a database: the choices that cover this region (a
+        GeoJSON outline), as (key, label, what importing it costs); empty if none."""
+        return []
 
     def areas(self, cur, region: str) -> list[str]:
         """The parts of the region this source covers (empty: not applicable)."""
@@ -263,24 +266,44 @@ class FranceAgenceORE(FrenchSource):
     attribution = "Agence ORE and French distribution network operators"
     url = "https://opendata.agenceore.fr"
 
-    def offer(self, region: dict) -> str | None:
+    CHOICES: ClassVar[dict[str, tuple[str, list[str]]]] = {
+        "electricity": (
+            "Electricity distribution lines and substations (Agence ORE)",
+            ["tension", "postes"],
+        ),
+        "gas": ("Gas distribution pipes (Agence ORE)", ["gaz"]),
+        "biomethane": ("Biomethane injection points (Agence ORE)", ["biomethane"]),
+    }
+    # (all of France, per département), from the France import
+    COST: ClassVar[dict[str, tuple[str, str]]] = {
+        "electricity": (
+            "~15 million features, ~5 GB, 2-3 hours to download",
+            "~150,000 features and a few minutes per département",
+        ),
+        "gas": (
+            "~4.3 million pipes, ~1 GB, ~35 minutes to download",
+            "~45,000 pipes and ~20 seconds per département",
+        ),
+        "biomethane": ("851 sites, seconds", "a few sites, seconds"),
+    }
+
+    def offer(self, region: dict) -> list[tuple[str, str, str]]:
         involved = self.involved(region)
         if not involved:
-            return None
-        # Earlier downloads are reused (data/extra/agence-ore/): say so.
-        saved = sorted(self.CACHE.glob("*/all.csv.gz"))
-        if len(saved) >= len(self.DATASETS) - len(self.BY_DEPARTMENT):
-            return (
-                f"{involved} département(s): downloaded {min(downloaded_on(p) for p in saved)},"
-                " reused without downloading again"
-            )
-        if involved >= self.NATIONAL_FROM:
-            return f"{involved} départements: ~21 million features for all of France (16M electricity, 4M gas), ~6 GB, 3-4 hours to download"
-        return (
-            f"{involved} département(s) touch the region, and only what lies inside it is kept:"
-            " from a few hundred features (a border strip) to ~200,000 per département,"
-            " a few minutes each"
-        )
+            return []
+        national = involved >= self.NATIONAL_FROM
+        result = []
+        for key, (label, words) in self.CHOICES.items():
+            datasets = [d for d in self.DATASETS if any(w in d for w in words)]
+            # Earlier downloads are reused (data/extra/agence-ore/): say so.
+            saved = [self.cache_file(d, "all") for d in datasets]
+            if all(p.exists() for p in saved):
+                cost = f"downloaded {min(downloaded_on(p) for p in saved)}, no download needed"
+            else:
+                cost = self.COST[key][0] if national else self.COST[key][1]
+            where = "all of France" if national else f"{involved} département(s)"
+            result.append((key, label, f"{where}: {cost}"))
+        return result
 
     API = "https://opendata.agenceore.fr/api/explore/v2.1/catalog/datasets"
     # dataset id -> (table, location, kind)
@@ -588,13 +611,30 @@ class GeorisquesICPE(FrenchSource):
     CACHE = EXTRA_DIR / "georisques-icpe"
     refresh = False
 
-    def offer(self, region: dict) -> str | None:
+    CHOICES: ClassVar[dict[str, tuple[str, list[str]]]] = {
+        "icpe": (
+            "Classified installations, Seveso sites among them (Géorisques ICPE)",
+            ["icpe"],
+        ),
+    }
+
+    def offer(self, region: dict) -> list[tuple[str, str, str]]:
         involved = self.involved(region)
         if not involved:
-            return None
-        if involved >= self.NATIONAL_FROM:
-            return f"{involved} départements: ~140,000 sites for all of France, a few minutes to download"
-        return f"{involved} département(s): up to a few thousand sites each, seconds to download"
+            return []
+        saved = self.CACHE / "all.json.gz"
+        where = (
+            "all of France"
+            if involved >= self.NATIONAL_FROM
+            else f"{involved} département(s)"
+        )
+        if saved.exists():
+            cost = f"downloaded {downloaded_on(saved)}, no download needed"
+        elif involved >= self.NATIONAL_FROM:
+            cost = "~40,000 sites, ~3 minutes to download"
+        else:
+            cost = "a few hundred sites each, seconds"
+        return [("icpe", self.CHOICES["icpe"][0], f"{where}: {cost}")]
 
     def fetch(self, department: str | None) -> list[dict]:
         """All the sites of a département (or of France), page by page."""
@@ -626,7 +666,12 @@ class GeorisquesICPE(FrenchSource):
     def sites(self, areas: list[str]) -> list[dict]:
         """The downloaded sites covering `areas` (kept in data/extra/georisques-icpe/)."""
         national = len(areas) >= self.NATIONAL_FROM
-        scopes = ["all"] if national else areas
+        # A national download covers any smaller region too (sites outside it are
+        # left out by the region outline).
+        everything = self.CACHE / "all.json.gz"
+        scopes = (
+            ["all"] if national or (everything.exists() and not self.refresh) else areas
+        )
         rows: list[dict] = []
         for scope in scopes:
             path = self.CACHE / f"{scope}.json.gz"
@@ -807,6 +852,11 @@ def main() -> None:
         help="download again rather than reuse earlier downloads (data/extra/)",
     )
     imp.add_argument(
+        "--choose",
+        metavar="KEY[,KEY...]",
+        help="only these choices (as `offer` lists them), e.g. --choose gas,icpe",
+    )
+    imp.add_argument(
         "--only",
         nargs="+",
         metavar="WORD",
@@ -830,11 +880,11 @@ def main() -> None:
         region = region_geometry(args.region_id)
         if region is None:
             sys.exit(2)
+        # One line per choice: key <tab> label <tab> cost (build-region.sh reads them).
         found = False
         for source in SOURCES.values():
-            note = source.offer(region)
-            if note:
-                print(f"{source.name}: {note}")
+            for key, label, cost in source.offer(region):
+                print(f"{key}\t{label}\t{cost}")
                 found = True
         sys.exit(0 if found else 1)
 
@@ -895,6 +945,23 @@ def main() -> None:
         return
 
     wanted = set(args.sources) or {s.id for s, _ in sources}
+    if args.choose:
+        # Choices name datasets of one or more sources: import those sources, only
+        # their chosen datasets.
+        chosen = {c.strip() for c in args.choose.split(",") if c.strip()}
+        known = {key for s in SOURCES.values() for key in s.CHOICES}
+        if chosen - known:
+            sys.exit(
+                f"Unknown choice(s): {', '.join(sorted(chosen - known))}. Known: {', '.join(sorted(known))}"
+            )
+        wanted &= {s.id for s in SOURCES.values() if chosen & set(s.CHOICES)}
+        args.only = [
+            w
+            for s in SOURCES.values()
+            for key, (_, words) in s.CHOICES.items()
+            if key in chosen
+            for w in words
+        ]
     unknown = wanted - set(SOURCES)
     if unknown:
         sys.exit(

@@ -50,6 +50,8 @@ Usage: bash scripts/build-region.sh [options]
                   the region (e.g. French distribution networks; see
                   scripts/extra_data.py). Extra data already imported for the
                   region is kept across rebuilds anyway (saved in data/extra/)
+  --extra-only LIST  Only these extra datasets, e.g. gas,icpe (choices: electricity,
+                  gas, biomethane, icpe; see: uv run scripts/extra_data.py offer)
   --no-extra      No extra data at all, and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
   --basemap MODE  Offline background map: full, reduced (zoom 13) or none.
@@ -67,6 +69,7 @@ PBF_SOURCE=""
 FETCH_IMAGES=""
 EXTRA_DATA=""
 SKIP_EXTRA=0
+EXTRA_CHOOSE=""
 USE_FILTER=1
 REFRESH=""
 REBUILD=0
@@ -79,6 +82,7 @@ while [[ $# -gt 0 ]]; do
         --no-images) FETCH_IMAGES=0; shift ;;
         --extra)     EXTRA_DATA=1; shift ;;
         --no-extra)  EXTRA_DATA=0; SKIP_EXTRA=1; shift ;;
+        --extra-only) EXTRA_CHOOSE="${2:?--extra-only needs a list, e.g. gas,icpe}"; EXTRA_DATA=1; shift 2 ;;
         --no-filter) USE_FILTER=0; shift ;;
         --refresh)   REFRESH=1; shift ;;
         --rebuild)   REBUILD=1; shift ;;
@@ -500,47 +504,78 @@ elif [[ -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
 fi
 
 # Extra data: offered only when a source covers the region (checked against the
-# region's outline in the Geofabrik index; for a local file, we can't tell).
+# region's outline in the Geofabrik index; for a local file, we can't tell), one
+# choice per dataset (`extra_data.py offer`: key <tab> label <tab> cost).
 EXTRA_OFFER=""
 EXTRA_STATUS=2
-if [[ "$EXTRA_DATA" != 0 ]] && command -v uv &>/dev/null; then
+if [[ "$SKIP_EXTRA" != 1 ]] && command -v uv &>/dev/null; then
     EXTRA_OFFER=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
         && EXTRA_STATUS=0 || EXTRA_STATUS=$?
 fi
-if [[ "$EXTRA_DATA" == 1 && "$EXTRA_STATUS" == 1 ]]; then
+EXTRA_KEYS=() EXTRA_LABELS=() EXTRA_COSTS=()
+if [[ "$EXTRA_STATUS" == 0 ]]; then
+    while IFS=$'\t' read -r key label cost; do
+        EXTRA_KEYS+=("$key") EXTRA_LABELS+=("$label") EXTRA_COSTS+=("$cost")
+    done <<< "$EXTRA_OFFER"
+fi
+if [[ "$SKIP_EXTRA" == 1 ]]; then
+    EXTRA_DATA=0
+elif [[ "$EXTRA_DATA" == 1 && "$EXTRA_STATUS" == 1 ]]; then
     info "No extra data covers $REGION_NAME, so --extra does nothing."
     EXTRA_DATA=0
-elif [[ -n "$EXTRA_KEPT" ]]; then
-    section "Extra data (not from OpenStreetMap)"
-    ok "The extra data for this region is kept: $EXTRA_KEPT"
-    info "It's put back without downloading it again, minus anything the new OSM data has."
-    if [[ -z "$EXTRA_DATA" ]]; then
-        EXTRA_DATA=0
-        if [[ "$ASSUME_YES" != 1 ]] && ask_yes_no "Download a fresh copy as well (all of France: 3-4 hours)?" n; then
-            EXTRA_DATA=1
-        fi
-    fi
-elif [[ -z "$EXTRA_DATA" && ( "$ASSUME_YES" == 1 || "$EXTRA_STATUS" == 1 ) ]]; then
-    EXTRA_DATA=0
+elif [[ "$EXTRA_DATA" == 1 && -z "$EXTRA_CHOOSE" && "$EXTRA_STATUS" == 0 ]]; then
+    EXTRA_CHOOSE=$(IFS=,; echo "${EXTRA_KEYS[*]}")  # --extra: all of it
 elif [[ -z "$EXTRA_DATA" ]]; then
-    section "Extra data (not from OpenStreetMap)"
-    if ! command -v uv &>/dev/null; then
+    EXTRA_DATA=0
+    if [[ -n "$EXTRA_KEPT" ]]; then
+        section "Extra data (not from OpenStreetMap)"
+        ok "The extra data for this region is kept: $EXTRA_KEPT"
+        info "It's put back without downloading it again, minus anything the new OSM data has."
+    fi
+    if [[ "$ASSUME_YES" == 1 || "$EXTRA_STATUS" == 1 ]]; then
+        :  # nothing more (kept data still goes back)
+    elif ! command -v uv &>/dev/null; then
         warn "uv isn't installed, so extra data can't be imported."
-        EXTRA_DATA=0
+    elif [[ "$EXTRA_STATUS" != 0 ]]; then
+        [[ -n "$EXTRA_KEPT" ]] || section "Extra data (not from OpenStreetMap)"
+        info "Couldn't check which extra data covers this region (a local file, or no internet)."
+        ask_yes_no "Import any that covers it at the end of the build?" n && EXTRA_DATA=1
     else
-        info "Some network operators publish their networks as open data, in more detail"
-        info "than OpenStreetMap has. It's drawn like the OSM data, and its popups say"
-        info "where it comes from. For this region:"
-        if [[ "$EXTRA_STATUS" == 0 ]]; then
-            while IFS= read -r line; do info "  - $line"; done <<< "$EXTRA_OFFER"
+        if [[ -n "$EXTRA_KEPT" ]]; then
+            info "Choose any to download again (a fresh copy replaces the kept one):"
         else
-            info "  - couldn't check (a local file, or no internet): any source covering it will be used"
+            section "Extra data (not from OpenStreetMap)"
+            info "Open data published outside OpenStreetMap covers this region. It's drawn like"
+            info "the OSM data, and its popups say where it comes from. Choose what to import"
+            info "at the end of the build:"
         fi
-        info "You can also do it later with: uv run scripts/extra_data.py import"
-        EXTRA_DATA=0
-        ask_yes_no "Download and import it at the end of the build?" n && EXTRA_DATA=1
+        for i in "${!EXTRA_KEYS[@]}"; do
+            printf '      %d) %s\n         %s\n' "$((i + 1))" "${EXTRA_LABELS[$i]}" "${EXTRA_COSTS[$i]}"
+        done
+        info "You can also do it later with: uv run scripts/extra_data.py import --choose KEY,..."
+        while true; do
+            read -r -p "    Choose (e.g. 1,3 or all; Enter = none): " answer || answer=""
+            answer="${answer//[[:space:]]/}"
+            [[ -z "$answer" ]] && break
+            if [[ "$answer" == all ]]; then
+                EXTRA_CHOOSE=$(IFS=,; echo "${EXTRA_KEYS[*]}")
+                break
+            fi
+            EXTRA_CHOOSE="" valid=1
+            for n in ${answer//,/ }; do
+                if [[ "$n" =~ ^[0-9]+$ && "$n" -ge 1 && "$n" -le "${#EXTRA_KEYS[@]}" ]]; then
+                    EXTRA_CHOOSE="${EXTRA_CHOOSE:+$EXTRA_CHOOSE,}${EXTRA_KEYS[$((n - 1))]}"
+                else
+                    valid=0
+                fi
+            done
+            [[ "$valid" == 1 ]] && break
+            warn "Type numbers from the list, separated by commas, or all."
+        done
+        [[ -n "$EXTRA_CHOOSE" ]] && EXTRA_DATA=1
     fi
 fi
+[[ -n "$EXTRA_CHOOSE" ]] && info "Extra data to import: $EXTRA_CHOOSE"
 
 # ---------------------------------------------------------------------------
 # Offline background map (streets, buildings, place names)
@@ -770,6 +805,7 @@ if [[ "$EXTRA_DATA" == 1 ]]; then
     section "Importing extra data (outside OpenStreetMap)..."
     # A fresh copy (asked for when there's kept data) means not reusing earlier downloads.
     EXTRA_ARGS=()
+    [[ -n "$EXTRA_CHOOSE" ]] && EXTRA_ARGS+=(--choose "$EXTRA_CHOOSE")
     [[ -n "$EXTRA_KEPT" ]] && EXTRA_ARGS+=(--refresh)
     uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" import "${EXTRA_ARGS[@]}" \
         || warn "Importing extra data failed; the map works without it. Retry with: uv run scripts/extra_data.py import"
