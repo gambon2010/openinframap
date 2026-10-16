@@ -287,7 +287,7 @@ restore_extra_data() {
 }
 
 schema_hash() {
-    cat "$REPO_ROOT"/imposm/*.py "$REPO_ROOT"/schema/{functions,views,stats,eez,extra}.sql | md5sum | cut -c1-12
+    cat "$REPO_ROOT"/imposm/*.py "$REPO_ROOT"/schema/{functions,views,stats,eez,extra,sites}.sql | md5sum | cut -c1-12
 }
 
 # manifest_get FILE.json KEY — read one field of an export manifest.

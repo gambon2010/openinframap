@@ -754,6 +754,7 @@ section "Creating views..."
 run_with_timer "Creating map views" run_sql_file schema/views.sql
 run_with_timer "Creating stats tables" run_sql_file schema/stats.sql
 run_with_timer "Preparing place search" run_sql_file schema/places.sql
+run_with_timer "Sorting critical sites" run_sql_file schema/sites.sql
 run_with_timer "Creating search indexes" create_search_indexes
 # Extra data kept for this region goes back first; then the extra data tables
 # (which always exist, as Tegola serves them) get whatever is new.

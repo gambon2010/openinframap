@@ -811,3 +811,53 @@ layers:
     where: >
       geometry && !BBOX! AND (kind <> 'icpe' OR !ZOOM! >= 9
         OR details ->> 'category' IN ('seveso_high', 'seveso_low'))
+
+  # Fork: critical sites (imposm/sites.py, schema/sites.sql), as their own map.
+  # Areas (military zones, ports, airports, landfills, hospitals...) and one point
+  # per site (an area's centroid), which shows from zoom 8, 12 or 14 depending on
+  # how important it is.
+  - name: sites_area
+    map:
+      - sites
+    geometry_type: Polygon
+    min_zoom: 8
+    field_sets: [geom, name]
+    fields:
+      - name: osm_id
+      - name: kind
+      - name: category
+    id_field: id
+    from: site_feature
+    where: >
+      geometry && !BBOX! AND area > 0
+      AND (importance = 0 OR (importance = 1 AND !ZOOM! >= 11) OR !ZOOM! >= 13)
+      AND area > !PIXEL_WIDTH! * !PIXEL_WIDTH! * 4
+
+  - name: sites_point
+    map:
+      - sites
+    geometry_type: Point
+    min_zoom: 8
+    field_sets: [geom_centroid, name, wiki, url]
+    fields:
+      - name: osm_id
+      - name: kind
+      - name: category
+      - name: importance
+      - name: operator
+        sql: tags -> 'operator'
+      - name: religion
+        sql: tags -> 'religion'
+      - name: denomination
+        sql: tags -> 'denomination'
+      - name: government
+        sql: tags -> 'government'
+      - name: iata
+        sql: tags -> 'iata'
+      - name: icao
+        sql: tags -> 'icao'
+    id_field: id
+    from: site_feature
+    where: >
+      geometry && !BBOX!
+      AND (importance = 0 OR (importance = 1 AND !ZOOM! >= 12) OR !ZOOM! >= 14)

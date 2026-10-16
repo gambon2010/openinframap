@@ -6,6 +6,7 @@ import telecoms  # noqa
 import petroleum  # noqa
 import water  # noqa
 import places  # noqa  (fork: local place search)
+import sites  # noqa  (fork: critical sites)
 
 
 data = {
