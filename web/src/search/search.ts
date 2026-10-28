@@ -2,7 +2,9 @@ import './search.css'
 import i18next, { t } from 'i18next'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
-import PhotonSearch from './photon'
+import PhotonSearch from '../fork/search/photon.ts'
+import { dropDuplicates } from '../fork/search/index.ts'
+import { forkSearchSelected } from '../fork/index.ts'
 import CoordinatesSearch from './coordinates'
 import OIMSearchProvider from './openinframap'
 
@@ -12,8 +14,7 @@ export type SearchResult = {
   name: string
   score: number
   description?: string
-  // Fork: the layer switcher entry that shows it, switched on when it's picked.
-  layer?: string
+  layer?: string // fork: the layer switcher entry that shows it
 }
 
 export interface ISearchProvider {
@@ -32,17 +33,12 @@ export default class OIMSearch implements IControl {
   currentResults: SearchResult[] = []
   searchProviders: ISearchProvider[]
   currentQuery: string = ''
-  // Fork: called when a result is picked (openinframap.ts switches its layer on).
-  onSelect?: (result: SearchResult) => void
 
-  constructor(onSelect?: (result: SearchResult) => void) {
-    this.onSelect = onSelect
+  constructor() {
     this.searchProviders = [
       new CoordinatesSearch(),
-      // Fork: places (cities, towns, villages…) come from the local database via
-      // OIMSearchProvider, so upstream's online OpenCage geocoder isn't used.
-      // Photon only searches when a server is configured (VITE_PHOTON_URL or the
-      // Map sources panel); if it's unreachable the other providers still work.
+      // Fork: places come from the local database (OIMSearchProvider) instead of
+      // the online OpenCage; Photon only searches when a server is configured.
       new OIMSearchProvider(i18next.language),
       new PhotonSearch(i18next.language)
     ]
@@ -182,7 +178,7 @@ export default class OIMSearch implements IControl {
   selectItem(result: SearchResult): void {
     if (result) {
       this.map!.flyTo({ center: [result.longitude, result.latitude], zoom: 14 })
-      this.onSelect?.(result)
+      forkSearchSelected(result)
       this.input.value = result.name
       this.clearDropdown()
     }
@@ -249,38 +245,12 @@ export default class OIMSearch implements IControl {
   }
 
   async search(query: string): Promise<SearchResult[]> {
-    // One provider failing (e.g. place search while offline) mustn't hide the
-    // results of the others.
+    // Fork: one provider failing (e.g. offline) mustn't hide the others' results.
     const settled = await Promise.allSettled(
       this.searchProviders.map((provider) => provider.search(query, 5))
     )
-    const results = settled.flatMap((result) => {
-      if (result.status === 'fulfilled') {
-        return result.value
-      }
-      console.warn('Search provider failed:', result.reason)
-      return []
-    })
+    const results = settled.map((result) => (result.status === 'fulfilled' ? result.value : []))
 
-    return dropDuplicates(results.sort((a, b) => b.score - a.score)).slice(0, 10)
+    return dropDuplicates(results.flat().sort((a, b) => b.score - a.score)).slice(0, 10)
   }
-}
-
-// The same place can come from more than one provider (local database and
-// Photon), or twice from one (mapped as a point and an area). Keep the
-// best-scored result for each name within about 5 km.
-const DUPLICATE_DISTANCE = 0.05
-
-function dropDuplicates(results: SearchResult[]): SearchResult[] {
-  const kept: SearchResult[] = []
-  for (const result of results) {
-    const duplicate = kept.some(
-      (k) =>
-        k.name.toLowerCase() === result.name.toLowerCase() &&
-        Math.abs(k.latitude - result.latitude) < DUPLICATE_DISTANCE &&
-        Math.abs(k.longitude - result.longitude) < DUPLICATE_DISTANCE
-    )
-    if (!duplicate) kept.push(result)
-  }
-  return kept
 }

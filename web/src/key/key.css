@@ -97,35 +97,3 @@
   margin-right: auto;
   vertical-align: middle;
 }
-
-/* Fork: rows can be unticked to hide those features from the map */
-/* A set width (like the swatch column's) so that only the label column takes a
-   table's spare width: the checkboxes then line up from one section to the next. */
-.oim-key-body table tr td:nth-child(3) {
-  width: 22px;
-  padding: 0;
-  text-align: center;
-}
-.oim-key-toggle {
-  cursor: pointer;
-  margin: 0 2px;
-}
-.oim-key-row-hidden td:not(:last-child) {
-  opacity: 0.35;
-}
-.oim-key-show-all {
-  position: absolute;
-  right: 34px;
-  top: 4px;
-  border: 0;
-  border-radius: 3px;
-  padding: 3px 8px;
-  background-color: var(--oim-grey);
-  cursor: pointer;
-}
-.oim-key-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}

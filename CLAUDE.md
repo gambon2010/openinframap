@@ -8,6 +8,8 @@ Open Infrastructure Map is a web geospatial application displaying world infrast
 
 **This is a fork** whose goal is running everything locally (and offline, from an exported database) for a chosen region. What changed and why is recorded in `docs/FORK_CHANGES.md`; keep it up to date when making fork-specific changes. The user-facing guide is `docs/LOCAL_DEVELOPMENT.md`.
 
+**Keep fork code out of upstream files.** Upstream won't take the fork's changes, so merges must stay easy: new frontend features go in a module under `web/src/fork/` (added to `MODULES` in `fork/index.ts`; upstream files only call its hooks), backend routes in `web-backend/src/fork/`, tile layers in `tegola/layers.fork.yml`, Compose changes in `docker-compose.override.yml`, English strings in `web/src/fork/locales/en.json`. Change an upstream file only with a one-line hook, and list it in `docs/FORK_CHANGES.md` ("Fork structure", "Merging from upstream").
+
 ## Development Setup
 
 Prerequisites: `docker`, `node`, `npm`, `curl`, `python3`, `unzip` (`uv` optional: Wikidata cache script, running the backend on the host).
@@ -17,7 +19,7 @@ bash scripts/launch.sh   # first time: build/import a region, .env files, start 
 bash scripts/start.sh    # every day: db + tegola + backend (Docker), frontend in a new terminal, browser
 ```
 
-Services: `db` (PostGIS, port 5432 via `docker-compose.override.yml`), `tegola` (port 7800), `backend` (port 8001), `basemap` (offline background map, `pmtiles serve` of `data/basemap/`, port 8090), frontend (`cd web && npm start`, port 5173). Stop: Ctrl+C in the frontend window, then `docker compose stop`.
+Services (the fork's ports and services are in `docker-compose.override.yml`): `db` (PostGIS, port 5432), `tegola` (port 7800), `backend` (port 8001), `basemap` (offline background map, `pmtiles serve` of `data/basemap/`, port 8090), frontend (`cd web && npm start`, port 5173). Stop: Ctrl+C in the frontend window, then `docker compose stop`.
 
 ## Commands
 
@@ -43,7 +45,7 @@ uv run pytest                      # Tests
 ### Tile server (`tegola/`)
 ```bash
 # Regenerate Tegola config from YAML sources:
-python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml > ./config.toml
+python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml
 ```
 
 ### Data (`scripts/`)
@@ -79,13 +81,13 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 - `sites.sql`, `extra.sql`, `search.sql` (fork-only): critical sites (`site_feature`, `site_points` for grouped tiles); the `extra` schema (data from outside OSM); `search_feature`, everything else with a name for the search box (rebuilt after extra data changes)
 
 ### Tile server (`/tegola/`)
-The `config.toml` Tegola reads is **generated**; never edit it directly. Edit `tegola.yml` (server config) and `layers.yml` (layer definitions), then regenerate with `generate_tegola_config.py`. A second Docker image (`Dockerfile.expiry`) handles cache invalidation via the imposm expiry list. Tegola caches tiles inside its container, so recreate it after replacing the data.
+The `config.toml` Tegola reads is **generated**; never edit it directly. Edit `tegola.yml` (server config) and `layers.yml` (upstream's layer definitions) or `layers.fork.yml` (the fork's), then regenerate with `generate_tegola_config.py`. A second Docker image (`Dockerfile.expiry`) handles cache invalidation via the imposm expiry list. Tegola caches tiles inside its container, so recreate it after replacing the data.
 
 ### Frontend (`/web/`)
-MapLibre GL JS map with i18next for internationalisation. The Background layer group (OpenStreetMap / night lights) is commented out in `src/openinframap.ts`; re-enabling it breaks saved links whose layer list has no `A`. URLs come from `web/src/config.ts` (`VITE_*` variables). Search (`src/search/`) combines coordinates, the backend (substations, plants, places and everything else with a name via `search_feature`; picking a result switches on its layer) and an optional Photon server (`VITE_PHOTON_URL` / Map sources panel), via `Promise.allSettled`, merging same-name results within ~5 km. OpenCage was removed. Tests use Vitest with Puppeteer for browser-level integration tests.
+MapLibre GL JS map with i18next for internationalisation. The Background layer group (OpenStreetMap / night lights) is commented out in `src/openinframap.ts`; re-enabling it breaks saved links whose layer list has no `A`. URLs come from `web/src/fork/config.ts` (`VITE_*` variables). Search (`src/search/`) combines coordinates, the backend (substations, plants, places and everything else with a name via `search_feature`; picking a result switches on its layer) and an optional Photon server (`VITE_PHOTON_URL` / Map sources panel), via `Promise.allSettled`, merging same-name results within ~5 km. OpenCage was removed. Tests use Vitest with Puppeteer for browser-level integration tests.
 
 ### Backend (`/web-backend/`)
-Starlette ASGI app (code under `src/`, entry point `src.main:app`) using SQLAlchemy async + asyncpg (`pool_pre_ping` so it survives DB rebuilds). Bokeh + Pandas generate stats charts. Runs as the `backend` Compose service (port 8001, built from `web-backend/Dockerfile`, entrypoint `/app/.venv/bin/uvicorn` to avoid `uv run` syncing at startup), mounting `data/images` and `data/wikidata_json`. Requires `DATABASE_URL` with the `postgresql+asyncpg://` scheme. Search name indexes (btree + `pg_trgm`) are created by `create_indexes.py`; keep it in sync with `src/views/search.py`.
+Starlette ASGI app (code under `src/`, entry point `src.main:app`) using SQLAlchemy async + asyncpg (`pool_pre_ping` so it survives DB rebuilds). Bokeh + Pandas generate stats charts. Runs as the `backend` Compose service (port 8001, built from `web-backend/Dockerfile`, entrypoint `/app/.venv/bin/uvicorn` to avoid `uv run` syncing at startup), mounting `data/images` and `data/wikidata_json`. Requires `DATABASE_URL` with the `postgresql+asyncpg://` scheme. The fork's routes (`src/fork/`) come before upstream's: its search (`src/fork/search.py`) replaces upstream's `src/views/search.py` at the same URL. Search name indexes (btree + `pg_trgm`) are created by `create_indexes.py` plus `src/fork/indexes.py`; keep them in sync with `src/fork/search.py`.
 
 ### Imposm (`/imposm/`)
 Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that defines which OSM tags are imported into which tables. `places.py` (fork) adds `osm_place` for the search box; `sites.py` (fork) adds `osm_site` (critical sites), classified by `schema/sites.sql` into the `site_feature` materialized view. Changing it changes the osmium filter (generated) and the schema fingerprint stored in builds and exports.
@@ -93,7 +95,7 @@ Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that 
 ## Environment Variables
 
 `launch.sh` creates both files if missing:
-- `web/.env`: `VITE_TILE_BASE_URL` (night lights, and background map default: openinframap.org), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts). The map style needs Protomaps-schema background tiles. The Map sources panel (`web/src/map-sources/`) overrides it per tab via `sessionStorage`.
+- `web/.env`: `VITE_TILE_BASE_URL` (night lights, and background map default: openinframap.org), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts). The map style needs Protomaps-schema background tiles. The Map sources panel (`web/src/fork/map-sources/`) overrides it per tab via `sessionStorage`.
 - `web-backend/.env`: `DATABASE_URL` for running the backend on the host (the Docker service sets its own)
 
 ## Gotchas

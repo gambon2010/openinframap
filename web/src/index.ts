@@ -3,6 +3,7 @@ import './popup/popup.css'
 import i18next from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import resources from 'virtual:i18next-loader'
+import { addForkTranslations } from './fork/index.ts'
 
 await i18next.use(LanguageDetector).init({
   fallbackLng: {
@@ -60,6 +61,8 @@ i18next.on('languageChanged', () => {
   document.documentElement.setAttribute('lang', i18next.language)
   document.documentElement.setAttribute('dir', i18next.dir())
 })
+
+addForkTranslations()
 
 // Translate HTML elements.
 document.querySelectorAll('[data-i18n]').forEach((element) => {

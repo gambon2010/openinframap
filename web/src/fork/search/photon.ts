@@ -3,8 +3,8 @@
  * addresses and places from OpenStreetMap. Optional: only used when a Photon URL
  * is configured (VITE_PHOTON_URL in web/.env, or the Map sources panel).
  */
-import { SearchResult, ISearchProvider } from './search'
-import { getPhotonUrl } from '../config.js'
+import { SearchResult, ISearchProvider } from '../../search/search'
+import { getPhotonUrl } from '../config.ts'
 
 type PhotonFeature = {
   geometry: { coordinates: [number, number] }

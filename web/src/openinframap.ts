@@ -9,7 +9,6 @@ import '@russss/maplibregl-layer-switcher/maplibregl-layer-switcher.css'
 import EditButton from './edit-control.js'
 import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
-import MapSourcesControl from './map-sources/map-sources.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
@@ -20,7 +19,8 @@ import { SymbolLoader } from './symbol-loader.ts'
 import { ClickRouter } from './click-router.js'
 import { CircuitInspector } from './circuit/circuitinspector.ts'
 import { OpenInfraMapAPI } from './api.ts'
-import { BACKEND_BASE_URL } from './config.js'
+import { BACKEND_BASE_URL } from './fork/config.ts'
+import { forkInit, forkSwitcherGroups } from './fork/index.ts'
 
 export default class OpenInfraMap {
   map?: maplibregl.Map
@@ -56,9 +56,8 @@ export default class OpenInfraMap {
   init() {
     const layer_switcher = new LayerSwitcher(
       [
-        // Background switch hidden: night lights are online-only, and showing the
-        // switch breaks saved map links without an "A" in their layer list (the
-        // background then turns off). See docs/FORK_CHANGES.md.
+        // Fork: background switch hidden: night lights are online-only, and showing
+        // the switch breaks saved map links without an "A" in their layer list.
         // new LayerGroup(t('layers.background'), [
         //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
         //   new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
@@ -77,44 +76,7 @@ export default class OpenInfraMap {
           new Layer('I', t('layers.other-pipelines'), 'pipeline_', false),
           new Layer('W', t('layers.water'), 'water_', false)
         ]),
-        // Fork: open data from network operators, not from OpenStreetMap.
-        new LayerGroup(t('layers.extra-data', 'Not from OpenStreetMap'), [
-          new Layer(
-            'X',
-            t('layers.extra-distribution', 'Power distribution (open data)'),
-            'extra_power',
-            false
-          ),
-          new Layer('Y', t('layers.extra-gas', 'Gas distribution (open data)'), 'extra_gas', false),
-          new Layer('Z', t('layers.extra-icpe', 'Classified installations (ICPE)'), 'extra_icpe', false)
-        ]),
-        // Fork: critical sites from OSM (style/style_sites.ts).
-        new LayerGroup(t('layers.sites', 'Critical sites'), [
-          new Layer('H', t('sites.category.health', 'Health and emergency'), 'sites_health', false),
-          new Layer(
-            'G',
-            t('sites.category.government', 'Government and public services'),
-            'sites_government',
-            false
-          ),
-          new Layer('R', t('sites.category.religion', 'Places of worship'), 'sites_religion', false),
-          new Layer('F', t('sites.category.fuel', 'Fuel and weapons'), 'sites_fuel', false),
-          new Layer('V', t('sites.category.transport', 'Transport hubs'), 'sites_transport', false),
-          new Layer('M', t('sites.category.military', 'Military'), 'sites_military', false),
-          new Layer(
-            'D',
-            t('sites.category.military-disused', 'Disused military (bunkers, trenches...)'),
-            'sites_disused',
-            false
-          ),
-          new Layer('U', t('sites.category.food', 'Food supply'), 'sites_food', false),
-          new Layer(
-            'Q',
-            t('sites.category.water-waste', 'Dams, landfills, weather stations'),
-            'sites_water_waste',
-            false
-          )
-        ]),
+        ...forkSwitcherGroups(),
         new LayerGroup(t('layers.validation'), [
           new Layer('E', t('layers.osmose-power'), 'osmose_errors_power', false)
         ])
@@ -160,31 +122,9 @@ export default class OpenInfraMap {
     map.addControl(new maplibregl.ScaleControl({}), 'bottom-left')
 
     map.addControl(new KeyControl(), 'top-right')
-    map.addControl(new MapSourcesControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
-    // Fork: the list opens level with its button and has more groups than fit
-    // below it on a laptop screen; cap its height to the map so it scrolls.
-    map
-      .getContainer()
-      .querySelector('.layer-switcher-button')
-      ?.addEventListener('mouseover', () => {
-        const list = map.getContainer().querySelector<HTMLElement>('.layer-switcher-list')
-        if (!list) return
-        const top = list.getBoundingClientRect().top - map.getContainer().getBoundingClientRect().top
-        list.style.maxHeight = `${map.getContainer().clientHeight - top - 10}px`
-        // The wheel scrolls the list, not the map's zoom.
-        list.onwheel = (e) => e.stopPropagation()
-      })
     map.addControl(new EditButton(), 'bottom-right')
-    // Fork: picking a search result switches on the layer that shows it.
-    map.addControl(
-      new OIMSearch((result) => {
-        if (!result.layer) return
-        layer_switcher.setVisibility(result.layer, true)
-        layer_switcher._updateList()
-      }),
-      'top-left'
-    )
+    map.addControl(new OIMSearch(), 'top-left')
     new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
       min_zoom: 6,
@@ -192,20 +132,9 @@ export default class OpenInfraMap {
       circuit_inspector
     }).add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
-    // Fork: clicking a group of critical sites zooms in on it (style_sites.ts).
-    clickRouter.registerHandler(
-      getPrimaryLayers()
-        .map((layer) => layer.id)
-        .filter((id) => id.startsWith('sites_') && id.endsWith('_group')),
-      (feature) => {
-        const [lng, lat] = (feature.geometry as GeoJSON.Point).coordinates
-        map.easeTo({ center: [lng, lat], zoom: Math.min(map.getZoom() + 2, 14) })
-      }
-    )
+    forkInit({ map, layerSwitcher: layer_switcher, clickRouter, primaryLayers: getPrimaryLayers })
 
     clickRouter.register()
     this.map = map
-    // Fork: for browser tests (development server only).
-    if (import.meta.env.DEV) (window as unknown as { oimMap: maplibregl.Map }).oimMap = map
   }
 }

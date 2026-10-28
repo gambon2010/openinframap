@@ -13,8 +13,8 @@ default_map = "openinframap"
 
 map_layers = defaultdict(list)
 
-if len(sys.argv) != 3:
-    print("Usage:", sys.argv[0], "<tegola.yml> <layers.yml>")
+if len(sys.argv) < 3:
+    print("Usage:", sys.argv[0], "<tegola.yml> <layers.yml> [<more layers.yml>...]")
     sys.exit(1)
 
 with open(sys.argv[1], "r") as f:
@@ -26,6 +26,13 @@ provider_name = conf["providers"][0]["name"]
 
 with open(sys.argv[2], "r") as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
+
+# Fork: more layer files (layers.fork.yml) add their layers and field sets.
+for path in sys.argv[3:]:
+    with open(path, "r") as f:
+        more = yaml.load(f, Loader=yaml.SafeLoader)
+    config["layers"] += more.get("layers", [])
+    config["field_sets"].update(more.get("field_sets", {}))
 
 
 def build_field(name, val):

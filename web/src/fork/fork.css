@@ -1,0 +1,7 @@
+/* Fork: styles for upstream's controls (fork/ui). */
+
+/* More layer groups than fit on a laptop screen: the list scrolls (its
+   max-height is set by fork/ui). */
+.layer-switcher-list {
+  overflow-y: auto;
+}

@@ -2,7 +2,6 @@ import './infopopup.css'
 
 import i18next, { t } from 'i18next'
 import { LngLat, MapGeoJSONFeature, Popup, Map } from 'maplibre-gl'
-import { BACKEND_BASE_URL } from '../config.js'
 import { titleCase } from 'title-case'
 import { local_name_tags, formatVoltage, formatFrequency, formatPower } from '../l10n.ts'
 import friendlyNames from '../friendlynames.ts'
@@ -12,17 +11,11 @@ import { ClickRouter } from '../click-router.ts'
 import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
-import { icpe_category_label } from '../style/style_extra.ts'
-import { site_kind_label } from '../style/style_sites.ts'
+import { BACKEND_BASE_URL } from '../fork/config.ts'
+import { forkPopup } from '../fork/index.ts'
 
 const hidden_keys = [
   'osm_id',
-  // Fork: critical sites (shown as the title and Type instead; id is the tile id)
-  'id',
-  'category',
-  'importance',
-  'count',
-  'count_label',
   'name',
   'wikidata',
   'operator_wikidata',
@@ -258,6 +251,9 @@ class InfoPopup {
     if (hidden_keys.includes(key) || key.startsWith('name_') || key.startsWith('voltage') || !value) {
       return null
     }
+    if (forkPopup.hiddenKeys().includes(key)) return null
+    const fork_row = forkPopup.renderKey(key, value)
+    if (fork_row !== undefined) return fork_row as HTMLTableRowElement | null
 
     let prettyValue = value
 
@@ -271,11 +267,6 @@ class InfoPopup {
 
     if (key == 'frequency' && value == '0') {
       prettyValue = t('units.DC')
-    }
-
-    // Fork: critical sites' kind, e.g. "Type: Hospital".
-    if (key == 'kind') {
-      return el('tr', el('th', t('info.type')), el('td', site_kind_label(value)))
     }
 
     let prettyKey
@@ -303,9 +294,7 @@ class InfoPopup {
     }
 
     if (!title_text) {
-      title_text = feature.layer['id'].startsWith('sites_')
-        ? site_kind_label(feature.properties.kind)
-        : this.friendlyRender(feature.layer['id'])
+      title_text = forkPopup.title(feature) ?? this.friendlyRender(feature.layer['id'])
     }
 
     let feature_title = el('h3', title_text)
@@ -341,130 +330,10 @@ class InfoPopup {
     return el('span.voltages', text)
   }
 
-  // Fork: the sources scripts/extra_data.py can import, for the popup's attribution.
-  static extraSources: { [id: string]: { name: string; url: string; licence: string } } = {
-    'fr-agence-ore': {
-      name: 'Agence ORE',
-      url: 'https://opendata.agenceore.fr',
-      licence: 'Licence Ouverte 2.0'
-    },
-    'fr-georisques-icpe': {
-      name: 'Géorisques',
-      url: 'https://www.georisques.gouv.fr',
-      licence: 'Licence Ouverte 2.0'
-    }
-  }
-
-  /** Fork: a feature from outside OpenStreetMap (the extra_* layers). */
-  extraPopupHtml(feature: MapGeoJSONFeature) {
-    const p = feature.properties
-    let title
-    const icpe = feature.layer.id.startsWith('extra_icpe')
-    if (icpe) {
-      title = p.name || icpe_category_label(p.category)
-    } else if (feature.layer.id.startsWith('extra_gas_biomethane')) {
-      title = p.name || t('extra.biomethane', 'Biomethane injection point')
-    } else if (feature.layer.id.startsWith('extra_gas_pipeline')) {
-      title = t('extra.gas-pipe', 'Gas distribution pipe')
-    } else if (feature.layer.id.startsWith('extra_power_substation')) {
-      title = t('extra.substation', 'Distribution substation')
-    } else if (p.voltage_class === 'BT') {
-      title = t('extra.line-bt', 'Low-voltage line')
-    } else if (p.voltage_class === 'HTA') {
-      title = t('extra.line-hta', 'Medium-voltage line')
-    } else {
-      title = t('extra.line', 'Distribution line')
-    }
-    const facility = icpe || feature.layer.id.startsWith('extra_gas_biomethane')
-    const rows: [string, any][] = [
-      // Sites have their name as the title; their kind is shown as Type below.
-      [t('info.name'), facility ? null : p.name],
-      [
-        t('extra.voltage-class', 'Voltage class'),
-        p.voltage_class === 'HTA'
-          ? t('extra.hta', 'HTA (medium voltage, usually 20 kV)')
-          : p.voltage_class === 'BT'
-            ? t('extra.bt', 'BT (low voltage, 230/400 V)')
-            : p.voltage_class
-      ],
-      [t('extra.kind', 'Kind'), facility ? null : p.kind],
-      ...(feature.layer.id.startsWith('extra_gas_pipeline')
-        ? ([
-            [
-              t('extra.pressure', 'Pressure'),
-              p.pressure_published || t('extra.pressure-unknown', 'Not published')
-            ]
-          ] as [string, any][])
-        : []),
-      ...(feature.layer.id.startsWith('extra_gas_biomethane')
-        ? ([
-            [t('info.type'), t('extra.biomethane', 'Biomethane injection point')],
-            [t('extra.capacity', 'Capacity'), p.capacity && `${Math.round(p.capacity)} ${p.capacity_unit}`],
-            [t('extra.feedstock', 'Feedstock'), p.feedstock],
-            [t('extra.process', 'Process'), p.process],
-            [t('extra.network', 'Gas network'), [p.network, p.network_operator].filter((x) => x).join(', ')],
-            [t('extra.opened', 'In service since'), p.opened]
-          ] as [string, any][])
-        : []),
-      ...(icpe
-        ? ([
-            [t('info.type'), icpe_category_label(p.category)],
-            [t('extra.icpe.seveso', 'Seveso'), p.seveso !== 'Non Seveso' ? p.seveso : null],
-            [t('extra.icpe.regime', 'Regime'), p.regime],
-            [t('extra.icpe.status', 'Status'), p.status],
-            [
-              t('extra.icpe.activities', 'Activities'),
-              p.activities &&
-                el(
-                  'div',
-                  ...String(p.activities)
-                    .split('; ')
-                    .map((a: string) => el('div', a))
-                )
-            ],
-            [
-              t('extra.icpe.inspections', 'Inspections'),
-              p.inspections &&
-                `${p.inspections}${p.last_inspection ? ', ' + t('extra.icpe.last', 'last') + ' ' + p.last_inspection : ''}`
-            ],
-            [t('extra.icpe.commune', 'Commune'), p.commune],
-            [
-              t('extra.icpe.details', 'Details'),
-              p.aiot &&
-                el('a', 'Géorisques', {
-                  href: `https://www.georisques.gouv.fr/risques/installations/donnees/details/${p.aiot}`,
-                  target: '_blank'
-                })
-            ]
-          ] as [string, any][])
-        : []),
-      [t('info.operator'), p.operator],
-      [t('info.location'), p.location && t('location.' + p.location, p.location)],
-      [t('extra.updated', 'Source updated'), p.updated]
-    ]
-    const source = InfoPopup.extraSources[p.source]
-    return el(
-      'div.oim-popup-content',
-      el('div.oim-popup-header', el('h3', title)),
-      el(
-        'table.item_info',
-        rows.filter(([, value]) => value).map(([key, value]) => el('tr', el('th', key), el('td', value)))
-      ),
-      el(
-        'p.oim-extra-notice',
-        t('extra.notice', 'Not from OpenStreetMap: open data from'),
-        ' ',
-        source ? el('a', source.name, { href: source.url, target: '_blank' }) : p.source,
-        source ? ` (${source.licence})` : ''
-      )
-    )
-  }
-
   async popupHtml(feature: MapGeoJSONFeature) {
+    const fork_html = forkPopup.html(feature)
+    if (fork_html) return fork_html
     const layer_id = feature.layer.id
-    if (layer_id.startsWith('extra_')) {
-      return this.extraPopupHtml(feature)
-    }
 
     const attrs_table = el('table', { class: 'item_info' })
     const renderedProperties = Object.keys(feature.properties)
@@ -572,7 +441,6 @@ class InfoPopup {
   }
 
   async circuits_section(response) {
-    // Fork: no response when the backend is unreachable; show the popup without circuits.
     if (!response?.circuits || response.circuits.length == 0) {
       return []
     }

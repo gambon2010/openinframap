@@ -9,7 +9,7 @@ function getLayer(layers: { [key: string]: any }[], id: string) {
   return null
 }
 
-export function svgLine(colour: string, thickness: number, dash = '') {
+export function svgLine(colour: string, thickness: number, dash = '', layer = '') {
   const height = 16
   const width = 30
 
@@ -26,18 +26,18 @@ export function svgLine(colour: string, thickness: number, dash = '') {
     'stroke-dasharray': dash
   })
 
-  return svg('svg', line, { height: height, width: width })
+  return svg('svg', line, { height, width, 'data-colour': colour, 'data-dash': dash, 'data-layer': layer })
 }
 
 export function svgLineFromLayer(layers: { [key: string]: any }[], name: string, thickness = 2) {
   const layer = getLayer(layers, name)
   if (layer) {
     const dasharray = layer ? layer['paint']['line-dasharray'].join(' ') : ''
-    return svgLine(layer['paint']['line-color'], thickness, dasharray)
+    return svgLine(layer['paint']['line-color'], thickness, dasharray, name)
   }
 }
 
-export function svgRect(colour: string, stroke = 'black', opacity = 1) {
+export function svgRect(colour: string, stroke = 'black', opacity = 1, layer = '') {
   const height = 15
   const width = 30
 
@@ -53,7 +53,7 @@ export function svgRect(colour: string, stroke = 'black', opacity = 1) {
     opacity: opacity
   })
 
-  return svg('svg', rect, { height: height, width: width })
+  return svg('svg', rect, { height: height, width: width, 'data-layer': layer })
 }
 
 export function svgRectFromLayer(layers: { [key: string]: any }[], name: string) {
@@ -69,5 +69,5 @@ export function svgRectFromLayer(layers: { [key: string]: any }[], name: string)
   if (layer['paint']['fill-outline-color']) {
     outline_color = layer['paint']['fill-outline-color']
   }
-  return svgRect(layer['paint']['fill-color'], outline_color, opacity)
+  return svgRect(layer['paint']['fill-color'], outline_color, opacity, name)
 }

@@ -1,5 +1,6 @@
 import i18next from 'i18next'
-import { TILE_BASE_URL, BASEMAP_URL, OIM_TILES } from '../config.js'
+import { TILE_BASE_URL, BASEMAP_URL, OIM_TILES } from '../fork/config.ts'
+import { forkSources, forkLayers } from '../fork/index.ts'
 import style_base from './style_base.js'
 import style_labels from './style_labels.js'
 import style_oim_power from './style_oim_power.js'
@@ -9,8 +10,6 @@ import style_oim_petroleum from './style_oim_petroleum.js'
 import style_oim_water from './style_oim_water.js'
 import style_oim_other_pipelines from './style_oim_other_pipelines.js'
 import style_osmose from './style_osmose.js'
-import style_extra from './style_extra.js'
-import style_sites from './style_sites.js'
 import { StyleSpecification } from 'maplibre-gl'
 import { interpolate, zoom } from './stylehelpers.js'
 import { LayerSpecificationWithZIndex } from './types.js'
@@ -110,25 +109,7 @@ const style: StyleSpecification = {
       maxzoom: 17,
       attribution: oim_attribution
     },
-    // Fork: data from outside OpenStreetMap (scripts/extra_data.py). Its licence
-    // (Licence Ouverte for the French networks) requires naming the source.
-    extra: {
-      type: 'vector',
-      tiles: [`${OIM_TILES}/extra/{z}/{x}/{y}.pbf`],
-      // Sites (e.g. biomethane injection points) from zoom 5; lines start later (layers.yml).
-      minzoom: 5,
-      maxzoom: 17,
-      attribution:
-        'Electricity and gas networks: <a href="https://opendata.agenceore.fr">Agence ORE</a> and network operators; classified installations: <a href="https://www.georisques.gouv.fr">Géorisques</a> (Licence Ouverte)'
-    },
-    // Fork: critical sites from OSM (imposm/sites.py).
-    sites: {
-      type: 'vector',
-      tiles: [`${OIM_TILES}/sites/{z}/{x}/{y}.pbf`],
-      minzoom: 4,
-      maxzoom: 17,
-      attribution: oim_attribution
-    },
+    ...forkSources(),
     osmose_errors_power: {
       type: 'vector',
       tiles: ['https://osmose.openstreetmap.fr/api/0.3/issues/{z}/{x}/{y}.mvt?tags=power'],
@@ -156,8 +137,7 @@ export function getPrimaryLayers() {
     ...style_oim_water(),
     ...style_oim_other_pipelines(),
     ...style_osmose(),
-    ...style_extra(),
-    ...style_sites()
+    ...forkLayers()
   ]
 }
 

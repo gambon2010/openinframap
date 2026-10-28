@@ -4,9 +4,9 @@
 // per category, so the layer switcher and the key can hide each.
 import { t } from 'i18next'
 import { ExpressionSpecification } from 'maplibre-gl'
-import { interpolate, zoom } from './stylehelpers.ts'
-import { LayerSpecificationWithZIndex } from './types.ts'
-import { text_paint, font } from './common.ts'
+import { interpolate, zoom } from '../../style/stylehelpers.ts'
+import { LayerSpecificationWithZIndex } from '../../style/types.ts'
+import { text_paint, font } from '../../style/common.ts'
 
 // Must match scripts/make_site_icons.py.
 export const site_colours: { [category: string]: string } = {

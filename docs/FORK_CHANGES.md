@@ -24,6 +24,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Extra data (not from OpenStreetMap)](#extra-data-not-from-openstreetmap)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
+- [Fork structure: keeping upstream's files close to upstream](#fork-structure-keeping-upstreams-files-close-to-upstream)
 - [Merging from upstream](#merging-from-upstream)
 
 ---
@@ -304,7 +305,7 @@ can use one:
 - A **Photon row in the Map sources panel** shows where the setting comes from, can
   set or clear it for the current tab, checks the server answers, and explains how to
   set the default.
-- `web/src/search/photon.ts` queries `<url>/api` on every search; tested against
+- `web/src/fork/search/photon.ts` queries `<url>/api` on every search; tested against
   photon.komoot.io ("Alexanderplatz" → Berlin; its "Bremen, Germany" merged with the
   local result).
 
@@ -367,7 +368,7 @@ list their layers without `A` (OpenStreetMap), e.g. `#6/50.4/8.7/B,L`, and the
 restored switch then turned the background off, leaving a dark, empty map. If it's
 re-enabled later, links without a background layer must default to OpenStreetMap.
 
-**Map sources panel** (`web/src/map-sources/`, a button under the key): shows the
+**Map sources panel** (`web/src/fork/map-sources/`, a button under the key): shows the
 background-map URL in use and its origin (built-in, `web/.env`, or this tab), lets
 you switch to another URL immediately (MapLibre `setTiles`, no reload), validates
 it ({z}/{x}/{y}, http(s) or `/`), reports when tiles fail to load, and explains how
@@ -438,7 +439,7 @@ default). Counts are France's OSM data in October 2026.
   zooms in two levels (`openinframap.ts`). Hiding a kind in the key doesn't change
   the groups' counts. France at zoom 5 is a ~0.5 MB tile taking ~1 s, once (Tegola
   caches tiles up to zoom 13).
-- **Map:** `web/src/style/style_sites.ts`: an icon per kind (a Maki glyph, CC0, in a
+- **Map:** `web/src/fork/sites/style.ts`: an icon per kind (a Maki glyph, CC0, in a
   white circle ringed in the category's colour: `web/src/icons/site_*.svg`, made by
   `scripts/make_site_icons.py`), important sites larger and labelled, and a light
   fill for sites mapped as areas. One layer per category so the layer
@@ -463,7 +464,7 @@ the French community's preference for mapping by hand (the licence isn't the rea
   zoom 10, BT lines and substations from zoom 13), switched on in the layer switcher
   under "Not from OpenStreetMap" (code `X`, off by default). Tegola gives each feature
   a nominal voltage (HTA 20 kV, BT 0.4 kV: French HTA is legally 1-50 kV but 20 kV
-  almost everywhere) so `style_extra.ts` draws it with the OSM power expressions:
+  almost everywhere) so `fork/extra/style.ts` draws it with the OSM power expressions:
   same colours, widths and underground dashes as OSM lines of that voltage, and the
   key's voltage and Underground rows apply to it too. Popups say "Not from
   OpenStreetMap" with the source and licence, and have no OSM links. An invisible,
@@ -598,7 +599,7 @@ the French community's preference for mapping by hand (the licence isn't the rea
 - **Hiding things from the key.** Every key row has a checkbox: unticking it hides
   those features (with their labels, outlines and click areas) by adding a filter to
   the layers that draw them, worked out from the row's colour or icon
-  (`web/src/key/feature-hider.ts`). Filters rather than visibility, so it works
+  (`web/src/fork/key/feature-hider.ts`). Filters rather than visibility, so it works
   alongside the layer switcher. The choice is remembered per browser; "Show all"
   undoes it. The checkbox column has a set width (`key.css`), so the boxes line up
   from one section to the next (the spare width used to be shared with it).
@@ -624,33 +625,83 @@ the French community's preference for mapping by hand (the licence isn't the rea
 
 ---
 
+## Fork structure: keeping upstream's files close to upstream
+
+Upstream won't take the fork's changes, so the fork keeps them out of upstream's
+files wherever it can, and where it can't, makes them one-line hooks. Upstream
+commits then merge with few or no conflicts.
+
+**Frontend: fork modules.** Everything the fork adds to the map lives in
+`web/src/fork/`. A module (`ForkModule` in `fork/types.ts`) can add map sources,
+layers, layer switcher groups, key sections, popup rules, search descriptions and
+code that runs once the map exists. `fork/index.ts` lists the modules and has the
+hooks upstream files call:
+
+| Upstream file | Hook |
+|---|---|
+| `style/style.ts` | `...forkSources()` in the sources, `...forkLayers()` in `getPrimaryLayers` |
+| `openinframap.ts` | `...forkSwitcherGroups()` before the Validation group; `forkInit(...)` before clicks are routed |
+| `key/key.ts` | `await forkKey(...)` once its sections are built; `data-icon` on sprites |
+| `key/svg.ts` | swatches carry `data-colour`, `data-dash` or `data-layer` |
+| `popup/infopopup.ts` | `forkPopup.hiddenKeys()`, `.renderKey()`, `.title()`, `.html()` |
+| `search/search.ts` | `forkSearchSelected(result)`; `dropDuplicates` from `fork/search` |
+| `search/openinframap.ts` | `forkSearchDescription(result)` |
+| `index.ts` | `addForkTranslations()` |
+
+Modules: `fork/extra` (data from outside OSM), `fork/sites` (critical sites),
+`fork/search` (place and feature descriptions, switching a result's layer on),
+`fork/ui` (Map sources button, scrolling layer list). The key's checkboxes
+(`fork/key/toggles.ts`) are added to upstream's rows after they're built, working
+out what each row hides from its swatch, so upstream's key code is unchanged.
+**Adding a layer** = a new module folder plus a line in `MODULES`.
+
+**Translations.** The fork's English strings are in `web/src/fork/locales/en.json`,
+added to upstream's at startup (`i18next.addResourceBundle`), which also lets the
+fork override an upstream string. Upstream's `web/locales/` is untouched.
+
+**Tile server.** The fork's layers are in `tegola/layers.fork.yml`;
+`generate_tegola_config.py` takes more than one layers file (the fork's use
+`layers.yml`'s field sets) and the Dockerfile passes it. `layers.yml` is
+upstream's.
+
+**Backend.** `web-backend/src/fork/`: its routes go ahead of upstream's
+(`main.py`: `routes = fork_routes + routes`), so the fork's search
+(`fork/search.py`: word matching, places, everything else with a name) replaces
+upstream's at the same URL while `views/search.py` stays upstream's. Its extra
+indexes (`fork/indexes.py`) are appended to `create_indexes.py`'s lists.
+
+**Docker Compose.** `docker-compose.yml` is upstream's; the fork's services
+(backend, basemap, osmium), ports and SELinux labels are in
+`docker-compose.override.yml`, which Compose merges automatically (`!override`
+replaces tegola's port list).
+
+**Docs.** `web/README.fork.md` and `web-backend/README.fork.md` hold the fork's
+notes; upstream's READMEs only get a pointer line at the end.
+
 ## Merging from upstream
 
-Upstream files changed by the fork, and how much (so conflicts are expected here):
+The fork's own files are under `web/src/fork/`, `web-backend/src/fork/`,
+`scripts/`, `tools/`, the fork's `schema/*.sql` and `imposm/*.py` files,
+`tegola/layers.fork.yml`, `docker-compose.override.yml`, `*.fork.md` and the docs.
+Upstream files the fork still changes, and how:
 
 | File | Change |
 |------|--------|
-| `imposm/main.py` | Imports `places.py`; keeps the `place` tag |
-| `docker-compose.yml` | Added `backend`, `basemap` and `osmium` services; `:z` SELinux labels on mounts |
+| `README.md` | The fork's description (the GitHub page) |
+| `imposm/main.py` | Imports `places.py` and `sites.py`; no longer excludes the keys they match on |
 | `schema/dev-init.sql` | Database from `template_postgis`, pre-installs `intarray` / `hstore` |
 | `schema/functions.sql` | Function order fixed for fresh installs |
-| `web-backend/create_indexes.py` | `pg_trgm` extension, trigram indexes, `osm_place` |
-| `web-backend/src/main.py` | `pool_pre_ping`; `/local-images` mount |
-| `web-backend/src/views/search.py` | Word-start matching, ranking, local place search, everything else with a name (`search_feature`) |
+| `tegola/generate_tegola_config.py`, `Dockerfile` | More than one layers file |
+| `web-backend/create_indexes.py` | Appends the fork's indexes |
+| `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
-| `web/src/search/search.ts` | `Promise.allSettled`; OpenCage replaced by Photon; duplicate merging; `onSelect` callback (switches on the result's layer) |
-| `web/src/search/opencage.ts` | Deleted |
-| `web/src/search/openinframap.ts` | Backend URL configurable; place and feature descriptions |
-| `web/src/api.ts`, `popup/infopopup.ts`, `openinframap.ts` | Backend URL configurable |
-| `web/src/style/style.ts`, `style_base.ts`, `config.ts` | Tile URLs configurable (`VITE_*`, session override) |
-| `web/src/openinframap.ts` | Map sources control; background switch hidden |
+| `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
+| `web/src/search/search.ts` | Photon instead of OpenCage (`opencage.ts` is kept, unused); `Promise.allSettled` |
+| `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
+| `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; a few constants exported for the fork's styles |
 | `web/src/elements/external-links.ts` | Popup crash fix |
-| `web/vite.config.ts` | Proxies backend routes, PWA exclusions |
+| `web/vite.config.ts` | Proxies backend routes to the configured backend; PWA exclusions |
 | `web/index.html` | "export (online)" label |
-
-Everything under `scripts/`, `tools/`, `web/src/map-sources/`, `web/src/search/photon.ts`,
-`imposm/places.py`, `schema/places.sql`, `schema/eez.sql`, `schema/local-stats.sql`,
-`docker-compose.override.yml` and the docs is fork-only.
 
 After merging, check: `bash scripts/build-region.sh --region luxembourg --rebuild
 --yes`, then `bash scripts/start.sh`, and try a search and a country stats page.

@@ -18,17 +18,16 @@ from starlette.staticfiles import StaticFiles
 from src.openapi import schema_endpoint
 
 from . import State
-from .config import DATABASE_URL, DEBUG, IMAGES_DIR
+from .config import DATABASE_URL, DEBUG
 from .sitemap import sitemap
 from .views import routes
-
-IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+from .fork import routes as fork_routes
 
 
 @contextlib.asynccontextmanager
 async def lifespan(app: Starlette) -> AsyncGenerator[State]:
-    # pool_pre_ping: survive the database being recreated underneath us
-    # (e.g. scripts/build-region.sh or import-db.sh while the backend runs).
+    # Fork: pool_pre_ping survives the database being recreated underneath us
+    # (scripts/build-region.sh or import-db.sh while the backend runs).
     db_engine = create_async_engine(DATABASE_URL, pool_pre_ping=True)
     async with (
         httpx.AsyncClient(
@@ -58,9 +57,9 @@ class DBSessionMiddleware:
 
 routes = [
     Mount("/static", app=StaticFiles(directory="src/static"), name="static"),
-    Mount("/local-images", app=StaticFiles(directory=str(IMAGES_DIR)), name="local-images"),
     Route("/sitemap.xml", sitemap),
 ] + routes
+routes = fork_routes + routes  # fork: first, so a fork route can replace upstream's
 
 routes.append(Route("/api/schema", schema_endpoint(routes)))
 

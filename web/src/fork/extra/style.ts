@@ -3,12 +3,17 @@
 // substations of the same voltage (the tiles carry a nominal voltage) and like
 // OSM gas pipes, below the OSM layers; popups say where the data comes from.
 import { t } from 'i18next'
-import { interpolate, zoom } from './stylehelpers.ts'
-import { LayerSpecificationWithZIndex } from './types.ts'
+import { interpolate, zoom } from '../../style/stylehelpers.ts'
+import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { ExpressionSpecification } from 'maplibre-gl'
-import { voltage_color, voltage_line_thickness, substation_radius, power_opacity } from './style_oim_power.ts'
-import { pipeline_colour } from './style_oim_petroleum.ts'
-import { text_paint, font } from './common.ts'
+import {
+  voltage_color,
+  voltage_line_thickness,
+  substation_radius,
+  power_opacity
+} from '../../style/style_oim_power.ts'
+import { pipeline_colour } from '../../style/style_oim_petroleum.ts'
+import { text_paint, font } from '../../style/common.ts'
 
 // ICPE (classified installations, Géorisques) by category; the key uses these.
 export const icpe_colours: { [category: string]: string } = {

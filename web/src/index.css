@@ -199,9 +199,6 @@ canvas:focus {
 .layer-switcher-list {
   min-width: 10vw !important;
   background-color: var(--oim-content-background) !important;
-  /* Fork: more layer groups than fit on a laptop screen; scroll within the list
-     (openinframap.ts sets its max-height). */
-  overflow-y: auto;
 }
 
 .layer-switcher-list ul {

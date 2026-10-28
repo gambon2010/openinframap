@@ -1,0 +1,8 @@
+/* Fork: features from outside OpenStreetMap */
+.oim-extra-notice {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-left: 3px solid #e8a33d;
+  background: rgba(232, 163, 61, 0.12);
+  font-size: 0.9em;
+}

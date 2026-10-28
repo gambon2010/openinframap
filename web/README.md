@@ -1,70 +1,32 @@
 # Web Frontend
 
-The web frontend for Open Infrastructure Map, written in TypeScript and built with Vite.
+The web frontend for Open Infrastructure Map, written in Typescript and built with Vite.
 
-## Local development
-
-`bash scripts/launch.sh` (repo root) creates `.env` for you and `bash scripts/start.sh`
-starts everything. To do it by hand, copy the example env file:
+Develop using:
 
 ```bash
-cp .env.example .env
+    npm install
+    npm start
 ```
 
-and set `VITE_BACKEND_BASE_URL=http://localhost:8001` (local backend) and
-`VITE_TEGOLA_URL=http://localhost:7800` (local Tegola). The background map comes from
-`VITE_TILE_BASE_URL` (openinframap.org) unless `VITE_BASEMAP_URL` points at your own
-Protomaps-schema tile server; see `.env.example`.
+This should load a development website instance at [http://localhost:5173](http://localhost:5173).
 
-Install dependencies and start the dev server:
-
-```bash
-npm install
-npm start   # → http://localhost:5173
-```
-
-The Vite dev server proxies `/stats`, `/about`, `/static`, and `/local-images` to the
-backend URL configured in `.env`, so backend-rendered pages load correctly.
-
-## Fork-specific behaviour
-
-**Search** (`src/search/`) combines coordinates, the local backend (`/search/typeahead`:
-infrastructure and places such as cities and villages) and, if configured, a Photon server
-for addresses (`VITE_PHOTON_URL` or the Map sources panel). Upstream's OpenCage geocoder is
-removed. Providers run with `Promise.allSettled`, so one failing doesn't hide the others'
-results, and same-name results within ~5 km are merged.
-
-The **background switcher** (OpenStreetMap / nighttime lights) is hidden: night lights
-only exist online. Re-enabling it needs care, because saved map links made without it
-have no background layer in their list and would show an empty background.
-
-The **Map sources** panel (`src/map-sources/`, server icon under the key) shows the
-background-map URL in use and can change it for the current tab. The background map
-comes from `VITE_BASEMAP_URL` (set by `scripts/build-region.sh` when you download an
-offline one) or openinframap.org.
+By default, this will use the production backend services from openinframap.org, so it's easier to
+get started.
 
 ## Testing
 
-Code style is checked with [Prettier](https://prettier.io/) and [ESLint](https://eslint.org/):
+Code style is checked using [Prettier](https://prettier.io/) and [ESLint](https://eslint.org/). To
+run the linting checks, use `npm run lint`.
 
-```bash
-npm run lint
-```
-
-There is a minimal test suite using [Vitest](https://vitest.dev/):
-
-```bash
-npm test   # requires the dev server to be running
-```
+There is currently a minimal test suite using [Vitest](https://vitest.dev/) which is run using
+`npm test`. This requires the development server to be running.
 
 ## Translation
 
-Translation is handled using [i18next](https://www.i18next.com/). If you add a translation
-string, add it to [locales/en/translation.json](./locales/en/translation.json) so it is
-picked up by Weblate in the upstream project.
+Translation is handled using [i18next](https://www.i18next.com/). If you add a translation string,
+you also need to add it to the [locales/en/translation.json](./locales/en/translation.json) file in
+order for it to be picked up by Weblate.
 
-To extract new strings:
-
-```bash
-npm run extract
-```
+<!-- Fork: -->
+This fork runs everything locally: see [README.fork.md](README.fork.md).
