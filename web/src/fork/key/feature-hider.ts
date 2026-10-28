@@ -140,7 +140,9 @@ export class FeatureHider {
   apply() {
     const style = this.map.getStyle()
     if (!style?.layers) return
-    const layers = style.layers as unknown as StyleLayer[]
+    // "My layers" (fork/userlayers, ids user_...) are never hidden from the key:
+    // copies of map features stay visible when their kind is hidden.
+    const layers = (style.layers as unknown as StyleLayer[]).filter((layer) => !layer.id.startsWith('user_'))
     for (const layer of layers) {
       if (!this.originals.has(layer.id))
         this.originals.set(layer.id, this.map.getFilter(layer.id) ?? undefined)

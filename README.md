@@ -58,6 +58,7 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Critical sites** | `imposm/sites.py` + `schema/sites.sql`: ~210,000 sites in France in 41 kinds, shown at every zoom from 4 (nearby ones grouped into a numbered bubble below zoom 14), a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
 | **Extra data** | `scripts/extra_data.py`: imports open data that covers the built region (French electricity and gas networks, biomethane, ICPE) into an `extra` schema; the build offers each dataset with its size; what OSM already has is left out; raw downloads and imported data are kept across rebuilds |
 | **Key** | Every row has a checkbox to hide those features; remembered per browser |
+| **My layers** | Your own layers on the map: military and emergency symbols (MIL-STD-2525C, as in ODIN), pictures, markers, lines, areas and copies of map features (which stay visible when the grid is hidden); saved in the database, with a history you can play back step by step |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
 | **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |
 | **UI** | Map sources panel; background switch (OpenStreetMap / online-only night lights) hidden |

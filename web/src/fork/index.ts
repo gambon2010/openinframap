@@ -12,10 +12,11 @@ import extra from './extra/index.ts'
 import sites from './sites/index.ts'
 import search from './search/index.ts'
 import ui from './ui/index.ts'
+import userlayers from './userlayers/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
-const MODULES: ForkModule[] = [extra, sites, search, ui]
+const MODULES: ForkModule[] = [extra, sites, search, ui, userlayers]
 
 let context: ForkContext | undefined
 

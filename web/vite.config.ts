@@ -33,7 +33,8 @@ export default defineConfig({
       '/stats': { target: backendUrl, changeOrigin: true },
       '/about': { target: backendUrl, changeOrigin: true },
       '/static': { target: backendUrl, changeOrigin: true },
-      '/local-images': { target: backendUrl, changeOrigin: true }
+      '/local-images': { target: backendUrl, changeOrigin: true },
+      '/userdata': { target: backendUrl, changeOrigin: true }
     }
   },
 
@@ -48,6 +49,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Fork: My layers' symbol library (3 MB) is cached too, for offline use.
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallbackDenylist: [
           /^\/stats/,
           /^\/map/,
@@ -58,7 +61,8 @@ export default defineConfig({
           /^\/local-images/,
           /^\/wikidata/,
           /^\/search/,
-          /^\/api/
+          /^\/api/,
+          /^\/userdata/
         ]
       },
       manifest: {

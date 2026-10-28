@@ -96,6 +96,15 @@ log_build "$REGION_ID  import started from $(basename "$DUMP")"
 trap 'status=$?; [[ "$status" == 0 ]] || log_build "$REGION_ID  import FAILED (exit $status)"' EXIT
 # The backend container goes down with everything else; bring it back afterwards.
 BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
+# Keep "My layers" (made on the map): they belong to this computer, so they replace
+# any the export has. The database must be running to read them.
+if db_volume_exists; then
+    start_db
+    if [[ "$(user_data_saves)" -gt 0 ]]; then
+        run_with_timer "Saving My layers" save_user_data \
+            || die "Saving My layers failed, so the database was left as it was."
+    fi
+fi
 docker compose --progress quiet down -v --remove-orphans
 start_db
 ok "Fresh database ready."
@@ -132,6 +141,10 @@ run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
 # Exports made before everything was searchable don't have the search view.
 if [[ "$(db_query "SELECT to_regclass('search_feature') IS NULL")" == "t" ]]; then
     run_with_timer "Preparing search" run_sql_file schema/search.sql
+fi
+if [[ -f "$USERDATA_DUMP" ]]; then
+    run_with_timer "Putting back My layers" restore_user_data \
+        || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
 fi
 
 # Recreate Tegola so it doesn't serve tiles cached from the old data.

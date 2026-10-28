@@ -22,6 +22,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Wikidata popups and image cache](#wikidata-popups-and-image-cache)
 - [Critical sites (from OpenStreetMap)](#critical-sites-from-openstreetmap)
 - [Extra data (not from OpenStreetMap)](#extra-data-not-from-openstreetmap)
+- [My layers (layers you make on the map)](#my-layers-layers-you-make-on-the-map)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
 - [Fork structure: keeping upstream's files close to upstream](#fork-structure-keeping-upstreams-files-close-to-upstream)
@@ -584,6 +585,68 @@ the French community's preference for mapping by hand (the licence isn't the rea
 
 ---
 
+## My layers (layers you make on the map)
+
+Layers people make themselves, on top of the map: military and emergency symbols,
+their own pictures and icons, markers, lines and areas, and copies of map features
+(power lines, substations, sites...). Saved in the database with a history that can
+be played back step by step. The "My layers" button (top right) opens the panel.
+
+- **Copies of map features** keep the original's properties, get its full geometry
+  from the database (`GET /userdata/source-feature`; tiles have it cut at tile edges
+  and simplified at low zoom) and are drawn by clones of upstream's own layers for
+  that data, pointed at the user layer's source: a copied 400 kV line looks exactly
+  like the original, label and towers included. Their map layers start with `user_`,
+  which the layer switcher's prefixes never match and the key's hider skips
+  (`fork/key/feature-hider.ts`), so hiding the grid (switcher or key) leaves the
+  copies on the map.
+- **Symbols** are the MIL-STD-2525C point symbols ODINv2 offers (1,258: emergency
+  management first, i.e. incidents, infrastructure and emergency services; then
+  installations, equipment, units, air, sea...), with affiliation (friend, hostile,
+  neutral, unknown) and status (present, planned). Drawn in the browser by
+  `@syncpoint/signs`, the library ODINv2 itself uses. **Licences:** ODINv2 is AGPL-3.0,
+  which would put this BSD project under the AGPL, so none of its code or catalogue
+  is used. `@syncpoint/signs` is MIT (Syncpoint GmbH; built on milsymbol, MIT, Måns
+  Beckman), with `ramda` (MIT), `svg-path-bbox` (BSD-3-Clause) and `svgpath` (MIT).
+  The names and codes come from the MIT tables of
+  [mil-std-2525](https://github.com/spatialillusions/mil-std-2525) (Måns Beckman),
+  turned into `web/src/fork/userlayers/symbols-2525c.json` by
+  `scripts/make_symbol_catalog.py`. Tactical graphics (lines and areas) aren't
+  there: signs only draws point symbols. ODIN's Austrian SKKM signs (41) aren't
+  either: their list is ODIN's (AGPL). The library is 3 MB, loaded only when the
+  palette opens or a layer has symbols (and precached for offline use).
+- **Pictures** are scaled to at most 256 px in the browser and stored in the
+  database (`userdata.image`); markers, lines and areas take the layer's colour or
+  their own.
+- **Changes and Save.** Every edit is a change (add, change, delete a feature; make,
+  rename, recolour, delete a layer), applied at once and kept as unsaved, also in the
+  browser's storage so a reload doesn't lose them. **Save** sends them all, in order;
+  the backend applies them in one transaction and logs each with the layer or
+  feature before and after (`userdata.change`, grouped by `userdata.save`, with the
+  name typed in the panel). **Discard** goes back to what's saved. Showing or hiding
+  a layer isn't a change (it's remembered per browser).
+- **History.** The log played back: a slider and step buttons over every saved
+  change, each described ("Added symbol "Fire" to "Grid"", when, who), the
+  feature highlighted and the map moved to it if needed; Play steps through it.
+- **Tools:** Symbol (palette), Picture, Marker, Line, Area, Copy from map; select a
+  feature to name it, resize it, recolour it, drag it (points) or delete it (also the
+  Delete key; Esc cancels a tool, Enter finishes a drawing). Clicks the panel's tools
+  take don't open upstream's popups: `fork/userlayers/index.ts` wraps the click
+  router's `handleClick` on the instance, so `click-router.ts` stays upstream's.
+- **Storage:** the `userdata` schema (`web-backend/src/fork/userdata.sql`), made by
+  the backend on first use. The layers belong to the computer, not to a region:
+  `build-region.sh` and `import-db.sh` save them (`data/userdata/userdata.dump`)
+  before wiping the database and put them back afterwards (so local ones replace
+  any in an imported export); `export-db.sh` includes them.
+- **Backend:** `web-backend/src/fork/userdata.py` (`GET /userdata`, `POST
+  /userdata/save`, `GET /userdata/history`, `POST`/`GET /userdata/images`, `GET
+  /userdata/source-feature`). The frontend calls it through the dev server's proxy
+  (`/userdata` in `vite.config.ts`): upstream's CORS settings only allow GET from
+  another origin.
+- **Not yet:** editing the shape of a line or area after drawing it, moving a feature
+  to another layer, several people editing at once (the last save wins), tactical
+  graphics.
+
 ## Smaller fixes
 
 - **Upstream merge.** The upstream changes since June were merged (backend moved to
@@ -649,6 +712,7 @@ hooks upstream files call:
 | `index.ts` | `addForkTranslations()` |
 
 Modules: `fork/extra` (data from outside OSM), `fork/sites` (critical sites),
+`fork/userlayers` (My layers: symbols, pictures, drawings, copies, saving, history),
 `fork/search` (place and feature descriptions, switching a result's layer on),
 `fork/ui` (Map sources button, scrolling layer list). The key's checkboxes
 (`fork/key/toggles.ts`) are added to upstream's rows after they're built, working
@@ -700,7 +764,8 @@ Upstream files the fork still changes, and how:
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
 | `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; a few constants exported for the fork's styles |
 | `web/src/elements/external-links.ts` | Popup crash fix |
-| `web/vite.config.ts` | Proxies backend routes to the configured backend; PWA exclusions |
+| `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol library) |
+| `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols) |
 | `web/index.html` | "export (online)" label |
 
 After merging, check: `bash scripts/build-region.sh --region luxembourg --rebuild

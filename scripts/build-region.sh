@@ -733,6 +733,13 @@ if [[ "${EXISTING_EXTRA:-0}" -gt 0 && -n "${EXISTING_REGION_ID:-}" ]]; then
         || die "Saving the extra data failed, so the database was left as it was."
     ok "Saved to data/extra/$EXISTING_REGION_ID.extra.dump"
 fi
+# Keep "My layers" (made on the map): they belong to this computer.
+USER_SAVES=$(user_data_saves)
+if [[ "${USER_SAVES:-0}" -gt 0 ]]; then
+    run_with_timer "Saving My layers" save_user_data \
+        || die "Saving My layers failed, so the database was left as it was."
+    ok "Saved to data/userdata/userdata.dump"
+fi
 # -v removes this project's volumes only (database, imposm cache).
 docker compose --progress quiet down -v --remove-orphans
 start_db
@@ -771,6 +778,11 @@ run_with_timer "Creating extra data tables" run_sql_file schema/extra.sql
 # Everything with a name, for the search box (extra_data.py refreshes it when the
 # extra data changes below).
 run_with_timer "Preparing search" run_sql_file schema/search.sql
+# My layers, saved before the database was wiped (or by an earlier run).
+if [[ -f "$USERDATA_DUMP" ]]; then
+    run_with_timer "Putting back My layers" restore_user_data \
+        || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
+fi
 
 # ---------------------------------------------------------------------------
 # 6. EEZ country boundaries

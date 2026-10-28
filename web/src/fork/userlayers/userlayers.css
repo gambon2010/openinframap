@@ -1,0 +1,208 @@
+/* Fork: "My layers" panel (panel.ts). */
+.oim-ul-control {
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/><circle cx="19" cy="5" r="3" fill="%23d32f2f" stroke="%23d32f2f"/></svg>')
+    center / 20px 20px no-repeat;
+}
+.oim-ul-control.active {
+  background-color: var(--oim-light-grey);
+}
+
+.oim-ul-panel {
+  display: none;
+  position: absolute;
+  top: 10px;
+  right: 52px;
+  z-index: 3;
+  width: 330px;
+  max-height: calc(100% - 60px);
+  overflow-y: auto;
+  background-color: var(--oim-content-background);
+  border-radius: var(--oim-radius-large);
+  box-shadow: var(--oim-drop-shadow);
+  font-size: 0.95rem;
+}
+.oim-ul-panel.visible {
+  display: block;
+}
+.oim-ul-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3em 8px;
+  background-color: var(--oim-light-grey);
+}
+.oim-ul-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.oim-ul-close {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+.oim-ul-body {
+  padding: 4px 10px 10px;
+}
+.oim-ul-section {
+  margin-top: 8px;
+}
+.oim-ul-section h3 {
+  margin: 4px 0;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--oim-light-grey);
+}
+.oim-ul-row,
+.oim-ul-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.oim-ul-button {
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  background: #fff;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.oim-ul-button:hover:not(:disabled) {
+  background: var(--oim-light-grey);
+}
+.oim-ul-button.primary {
+  background: #1565c0;
+  border-color: #1565c0;
+  color: #fff;
+}
+.oim-ul-button.active {
+  background: #e3f2fd;
+  border-color: #1565c0;
+}
+.oim-ul-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.oim-ul-status,
+.oim-ul-hint,
+.oim-ul-credit,
+.oim-ul-step,
+.oim-ul-what {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+.oim-ul-credit {
+  font-size: 0.75rem;
+}
+.oim-ul-error {
+  margin: 4px 0;
+  padding: 4px 6px;
+  border-left: 3px solid #d32f2f;
+  background: rgba(211, 47, 47, 0.08);
+  font-size: 0.85rem;
+}
+.oim-ul-author,
+.oim-ul-palette-search,
+.oim-ul-selected input[type='text'] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 3px 5px;
+}
+.oim-ul-layers {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+}
+.oim-ul-layers li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 4px;
+}
+.oim-ul-layers li.active {
+  background: #e3f2fd;
+}
+.oim-ul-layer-name {
+  flex: 1;
+  text-align: left;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.oim-ul-color {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.oim-ul-palette-options {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+.oim-ul-palette-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.oim-ul-palette-results summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 0;
+}
+.oim-ul-symbol-grid {
+  display: flex;
+  flex-direction: column;
+}
+.oim-ul-symbol-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.oim-ul-symbol {
+  flex: none;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.oim-ul-symbol:hover {
+  border-color: #1565c0;
+  background: #e3f2fd;
+}
+.oim-ul-symbol svg {
+  max-width: 38px;
+  max-height: 30px;
+}
+.oim-ul-selected label {
+  display: block;
+  margin: 4px 0;
+  font-size: 0.85rem;
+}
+.oim-ul-selected input[type='range'] {
+  width: 100%;
+}
+.oim-ul-slider {
+  width: 100%;
+}
+.oim-ul-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}

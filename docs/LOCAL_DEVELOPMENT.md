@@ -367,6 +367,26 @@ shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`
 
 ---
 
+## My layers
+
+The **My layers** button (top right, the stacked-layers icon) opens a panel for
+making your own layers on the map:
+
+- **Symbol:** military and emergency symbols (the ones ODIN uses: fire, flood,
+  hospital, power plant, police, units...). Search by name, pick friend, hostile,
+  neutral or unknown, then click the map.
+- **Picture:** put your own image or icon on the map.
+- **Marker, Line, Area:** click to place or to add points; double-click or Enter
+  finishes, Esc cancels.
+- **Copy from map:** click power lines, substations, sites... to copy them into your
+  layer. They're drawn like the originals and stay visible when you hide the grid
+  (layer switcher or key).
+
+Click one of your features to name, resize, recolour or delete it; drag points to
+move them. Changes are kept in your browser until you press **Save**, which stores
+them in the database; **History** plays the saved changes back step by step.
+Rebuilding or importing a region keeps your layers.
+
 ## Updating the data
 
 Re-run `bash scripts/build-region.sh` and pick the region. It reuses your download

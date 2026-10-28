@@ -82,7 +82,7 @@ EXTRA_DESC=$(extra_description)
 # PostGIS themselves are recreated on import by schema/dev-init.sql.
 dump_db() {
     docker compose exec -T db pg_dump -U "$DB_USER" -Fc -Z zstd:3 \
-        -n public -n countries -n stats -n extra "$DB_NAME" > "$DUMP.part"
+        -n public -n countries -n stats -n extra -n userdata "$DB_NAME" > "$DUMP.part"
     mv "$DUMP.part" "$DUMP"
 }
 run_with_timer "Exporting the database" dump_db
