@@ -51,8 +51,9 @@ const search: ForkModule = {
   },
 
   searchSelected: (result, { layerSwitcher }) => {
-    if (!result.layer) return
-    layerSwitcher.setVisibility(result.layer, true)
+    const layer = result.backend?.layer
+    if (!layer) return
+    layerSwitcher.setVisibility(layer, true)
     layerSwitcher._updateList()
   }
 }

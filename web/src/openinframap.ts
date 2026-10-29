@@ -125,14 +125,23 @@ export default class OpenInfraMap {
     map.addControl(layer_switcher, 'top-right')
     map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
-    new InfoPopup({
+    const info_popup = new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
       min_zoom: 6,
       api,
       circuit_inspector
-    }).add(map, clickRouter)
+    })
+    info_popup.add(map, clickRouter)
     new ValidationErrorPopup(map, clickRouter)
-    forkInit({ map, layerSwitcher: layer_switcher, clickRouter, primaryLayers: getPrimaryLayers })
+    forkInit({
+      map,
+      layerSwitcher: layer_switcher,
+      clickRouter,
+      primaryLayers: getPrimaryLayers,
+      urlHash: url_hash,
+      infoPopup: info_popup,
+      circuitInspector: circuit_inspector
+    })
 
     clickRouter.register()
     this.map = map

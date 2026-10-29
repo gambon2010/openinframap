@@ -59,6 +59,20 @@ window and the browser. Anything already running is left alone.
 
 ---
 
+## Using the map
+
+- **Top left:** the search box. Below it, clicking anything on the map opens its
+  **details** (and highlights it); under those, the **Grid connection** panel when
+  you pick a route (see below). **–** shrinks a panel to its title, **×** closes it.
+- **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **My
+  layers**. Click a button to open its panel next to the buttons; click it again
+  (or ×) to close it. Only one is open at a time; the open one's button is outlined.
+  Long panels scroll inside.
+- **Header:** about, stats, export (online) and **settings** (background map and
+  address search servers; see below).
+
+---
+
 ## Building the map database
 
 ```bash
@@ -245,7 +259,7 @@ VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt
 
 ### Changing the background map without editing `.env`
 
-The **Map sources** button (the server icon under the key, top right) shows which
+**Settings** (in the header, after about / stats / export) shows which
 background-map URL is in use and where it comes from (built-in default, `web/.env`,
 or this tab). You can paste another `{z}/{x}/{y}` URL there and it switches
 immediately; **"How do I change the default?"** explains the `web/.env` setting.
@@ -293,8 +307,29 @@ one, set it in `web/.env` and restart the frontend:
 VITE_PHOTON_URL=http://localhost:2322
 ```
 
-or try it for the current tab in the **Map sources** panel ("Address search
+or try it for the current tab in **Settings** ("Address search
 (Photon, optional)"), which also checks that the server answers.
+
+## Grid connections between two stations (prototype)
+
+Click a substation or power plant and choose **Route from here**, then another and
+choose **Route to here**. A panel lists up to three distinct paths over lines of
+110 kV and more, each broken down into the stretches between the substations and
+plants it passes through (distance and voltage each), with the total at the end, and the map draws them in
+different colours; click a path to show only that one, × to clear. A station that
+is only on a lower voltage (e.g. a wind farm on a 65 kV line) is connected over
+those lines to the nearest station on the 110 kV+ grid; those stretches show
+their lower voltage in the breakdown. The route is kept
+in the map link, so you can share it.
+
+Clicking anything on the map shows its details in a **panel on the left** (not a
+popup over the map) and highlights it: icons get a glowing circle, areas an
+outline, lines a glow. A **power line** is highlighted up to the stations at its
+ends; the panel names them and the length, and **Show whole line** zooms to it.
+**–** minimises a panel (the highlight stays), **×** closes it (the highlight goes);
+clicking the same thing again also deselects it. Picking a search result opens its
+details the same way. Needs a database built with this feature
+(`build-region.sh` builds the network automatically).
 
 ## Wikidata image cache
 
@@ -369,8 +404,8 @@ shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`
 
 ## My layers
 
-The **My layers** button (top right, the stacked-layers icon) opens a panel for
-making your own layers on the map:
+The **My layers** button (top right, the stacked-layers icon with a red dot, under
+Layers) opens a panel for making your own layers on the map:
 
 - **Symbol:** military and emergency symbols (the ones ODIN uses: fire, flood,
   hospital, power plant, police, units...). Search by name, pick friend, hostile,
@@ -407,6 +442,12 @@ on port 8001 or 5173, e.g. a backend you started by hand. Stop it, or use it.
 
 **Search finds nothing / the country pages return 500.** The EEZ boundaries weren't
 imported. Re-run `build-region.sh` with the zip in `data/`.
+
+**Route from here / to here finds nothing, or the backend says there's no network.**
+The grid network is built by `build-region.sh` (`schema/grid.sql`); databases built
+or exported before that don't have it. Rebuild, or build just the network:
+`source scripts/lib/common.sh && run_sql_file schema/grid.sql` (seconds for a small
+country, several minutes for France).
 
 **Place search doesn't find towns.** Places come from the database built after this
 feature was added; rebuild the region (or import a newer export) once. Only places

@@ -13,10 +13,11 @@ import sites from './sites/index.ts'
 import search from './search/index.ts'
 import ui from './ui/index.ts'
 import userlayers from './userlayers/index.ts'
+import grid from './grid/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
-const MODULES: ForkModule[] = [extra, sites, search, ui, userlayers]
+const MODULES: ForkModule[] = [extra, sites, search, grid, ui, userlayers]
 
 let context: ForkContext | undefined
 
@@ -65,7 +66,8 @@ export const forkPopup = {
   hiddenKeys: (): string[] => MODULES.flatMap((m) => m.popup?.hiddenKeys ?? []),
   renderKey: (key: string, value: unknown) => first((m) => m.popup?.renderKey?.(key, value)),
   title: (feature: MapGeoJSONFeature) => first((m) => m.popup?.title?.(feature)),
-  html: (feature: MapGeoJSONFeature) => first((m) => m.popup?.html?.(feature))
+  html: (feature: MapGeoJSONFeature) => first((m) => m.popup?.html?.(feature)),
+  open: (feature: MapGeoJSONFeature): boolean => first((m) => m.popup?.open?.(feature) || undefined) ?? false
 }
 
 /** search/openinframap.ts: the description of a backend result. */

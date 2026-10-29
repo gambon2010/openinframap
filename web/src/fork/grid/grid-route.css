@@ -1,0 +1,177 @@
+.oim-route-panel {
+  display: none;
+  width: min(320px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.9rem;
+}
+
+.oim-route-panel.visible {
+  display: block;
+}
+
+.oim-route-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0 8px;
+  background-color: var(--oim-light-grey);
+}
+
+.oim-route-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.oim-route-body {
+  padding: 8px 10px 10px;
+}
+
+.oim-route-end {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.oim-route-end-label {
+  flex: 0 0 3em;
+  font-weight: bold;
+}
+
+.oim-route-hint {
+  color: var(--oim-text-color-light);
+  font-style: italic;
+}
+
+.oim-route-status,
+.oim-route-note {
+  margin: 6px 0 0;
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+
+.oim-route-error {
+  margin: 6px 0 0;
+  color: #b3261e;
+}
+
+.oim-route-notice {
+  margin: 6px 0 0;
+  padding: 4px 6px;
+  border-radius: var(--oim-radius-small);
+  background: #fff4e5;
+  font-size: 0.8rem;
+}
+
+.oim-route-paths {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.oim-route-path {
+  display: flex;
+  gap: 8px;
+  padding: 5px 4px;
+  border-radius: var(--oim-radius-small);
+  cursor: pointer;
+}
+
+.oim-route-path:hover,
+.oim-route-path.selected {
+  background: var(--oim-light-grey);
+}
+
+.oim-route-swatch {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 3px;
+}
+
+.oim-route-via {
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+
+.oim-route-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* Long routes: keep the panel on screen */
+.oim-route-body {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.oim-route-path-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.oim-route-segments {
+  width: 100%;
+  margin-top: 4px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.oim-route-segments td {
+  padding: 1px 0;
+  vertical-align: top;
+  color: var(--oim-text-color-light);
+}
+
+.oim-route-segments .oim-route-km,
+.oim-route-segments .oim-route-kv {
+  padding-left: 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.oim-route-total td {
+  padding-top: 3px;
+  border-top: 1px solid var(--oim-grey);
+  color: var(--oim-text-color);
+  font-weight: bold;
+}
+
+.oim-line-connects {
+  margin: 6px 0;
+  padding: 4px 6px;
+  border-left: 4px solid #ffd400;
+  background: #fffbe6;
+  font-size: 0.85rem;
+}
+
+.oim-line-show-all {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1a5fb4;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.oim-route-buttons-top {
+  display: flex;
+  align-self: flex-start;
+}
+
+/* Minimised: only the title bar stays; the routes stay on the map. */
+.oim-route-panel.minimised .oim-route-body {
+  display: none;
+}
+
+/* With feature details above it, keep both on screen. */
+.oim-info-panel.visible ~ .oim-route-panel .oim-route-body {
+  max-height: 35vh;
+}

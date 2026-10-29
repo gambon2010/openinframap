@@ -3,46 +3,9 @@
   background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/><circle cx="19" cy="5" r="3" fill="%23d32f2f" stroke="%23d32f2f"/></svg>')
     center / 20px 20px no-repeat;
 }
-.oim-ul-control.active {
-  background-color: var(--oim-light-grey);
-}
-
 .oim-ul-panel {
   display: none;
-  position: absolute;
-  top: 10px;
-  right: 52px;
-  z-index: 3;
-  width: 330px;
-  max-height: calc(100% - 60px);
-  overflow-y: auto;
-  background-color: var(--oim-content-background);
-  border-radius: var(--oim-radius-large);
-  box-shadow: var(--oim-drop-shadow);
   font-size: 0.95rem;
-}
-.oim-ul-panel.visible {
-  display: block;
-}
-.oim-ul-header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.3em 8px;
-  background-color: var(--oim-light-grey);
-}
-.oim-ul-header h2 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-.oim-ul-close {
-  border: 0;
-  background: none;
-  font-size: 1.4rem;
-  cursor: pointer;
 }
 .oim-ul-body {
   padding: 4px 10px 10px;

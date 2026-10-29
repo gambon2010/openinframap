@@ -1,13 +1,13 @@
 /*
- * "Map sources" panel: shows which servers the map uses (background map,
+ * "Map sources" (in the Settings window): shows which servers the map uses (background map,
  * optional Photon geocoder) and lets you switch them for the current tab.
  *
  * Defaults come from web/.env (VITE_BASEMAP_URL, VITE_PHOTON_URL). Overrides are
  * kept in sessionStorage, so they last until the tab is closed.
  */
-import { IControl, Map, MapSourceDataEvent, VectorTileSource } from 'maplibre-gl'
+import { Map, MapSourceDataEvent, VectorTileSource } from 'maplibre-gl'
 import { t } from 'i18next'
-import { el, mount } from 'redom'
+import { el } from 'redom'
 import {
   BASEMAP_URL,
   BASEMAP_SESSION_KEY,
@@ -319,81 +319,28 @@ class PhotonRow extends SourceRow {
   }
 }
 
-class MapSourcesControl implements IControl {
-  _container!: HTMLDivElement
-  _panel!: HTMLDivElement
-  _rows: SourceRow[] = []
+/** The map sources, as a section of the Settings window (fork/ui/settings.ts). */
+export class MapSourcesSection {
+  el: HTMLElement
+  rows: SourceRow[]
 
-  onAdd(map: Map) {
-    const button = el('button', {
-      class: 'maplibregl-ctrl-icon oim-map-sources-control',
-      type: 'button',
-      title: t('sources.name', 'Map sources'),
-      'aria-label': t('sources.name', 'Map sources')
-    })
-    button.onclick = () => this.toggle(button)
-
-    this._rows = [new BasemapRow(map), new PhotonRow()]
-    this._rows.forEach((row) => row.refresh())
-    this._panel = this.buildPanel()
-    mount(document.body, this._panel)
-
-    this._container = el('div', button, { class: 'maplibregl-ctrl maplibregl-ctrl-group' })
-    return this._container
-  }
-
-  onRemove() {
-    this._panel.remove()
-    this._container.remove()
-  }
-
-  buildPanel(): HTMLDivElement {
-    const closeButton = el('button', '×', {
-      class: 'oim-map-sources-close',
-      type: 'button',
-      title: t('sources.close', 'Close'),
-      'aria-label': t('sources.close', 'Close')
-    })
-    closeButton.onclick = () => this.hide()
-
-    const panel = el(
-      'div',
-      { class: 'oim-map-sources-panel', role: 'dialog', 'aria-label': t('sources.name', 'Map sources') },
-      el('div', { class: 'oim-map-sources-header' }, el('h2', t('sources.name', 'Map sources')), closeButton),
+  constructor(map: Map) {
+    this.rows = [new BasemapRow(map), new PhotonRow()]
+    this.el = el(
+      'section',
+      { class: 'oim-map-sources' },
+      el('h3', t('sources.name', 'Map sources')),
+      ...this.rows.map((row) => row.el),
       el(
-        'div',
-        { class: 'oim-map-sources-body' },
-        ...this._rows.map((row) => row.el),
-        el(
-          'p',
-          { class: 'oim-map-sources-note' },
-          t('sources.session-note', 'Changes here only last until you close this tab.')
-        )
+        'p',
+        { class: 'oim-map-sources-note' },
+        t('sources.session-note', 'Changes here only last until you close this tab.')
       )
-    ) as HTMLDivElement
-
-    panel.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (event.key === 'Escape') this.hide()
-    })
-    return panel
+    )
+    this.refresh()
   }
 
-  toggle(button: HTMLButtonElement) {
-    if (this._panel.classList.contains('visible')) {
-      this.hide()
-      return
-    }
-    const position = button.getBoundingClientRect()
-    this._panel.style.top = position.top + 'px'
-    this._panel.style.right = document.documentElement.clientWidth - position.left + 8 + 'px'
-    this._rows.forEach((row) => row.refresh())
-    this._panel.classList.add('visible')
-    this._rows[0].input.focus()
-  }
-
-  hide() {
-    this._panel.classList.remove('visible')
+  refresh() {
+    this.rows.forEach((row) => row.refresh())
   }
 }
-
-export { MapSourcesControl as default }

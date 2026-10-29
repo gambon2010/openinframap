@@ -5,6 +5,7 @@ import { IControl, Map } from 'maplibre-gl'
 import PhotonSearch from '../fork/search/photon.ts'
 import { dropDuplicates } from '../fork/search/index.ts'
 import { forkSearchSelected } from '../fork/index.ts'
+import type { BackendSearchResult } from '../fork/types.ts'
 import CoordinatesSearch from './coordinates'
 import OIMSearchProvider from './openinframap'
 
@@ -14,7 +15,7 @@ export type SearchResult = {
   name: string
   score: number
   description?: string
-  layer?: string // fork: the layer switcher entry that shows it
+  backend?: BackendSearchResult // fork: the backend's result, as it came
 }
 
 export interface ISearchProvider {

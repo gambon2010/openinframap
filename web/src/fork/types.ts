@@ -2,7 +2,9 @@
 // fork/index.ts, which gather these from every module, so adding a layer means
 // adding a module here rather than editing upstream files. See docs/FORK_CHANGES.md.
 import { Map, MapGeoJSONFeature, SourceSpecification } from 'maplibre-gl'
-import { LayerSwitcher, LayerGroup } from '@russss/maplibregl-layer-switcher'
+import { LayerSwitcher, LayerGroup, URLHash } from '@russss/maplibregl-layer-switcher'
+import type InfoPopup from '../popup/infopopup.ts'
+import type { CircuitInspector } from '../circuit/circuitinspector.ts'
 import { ClickRouter } from '../click-router.ts'
 import { LayerSpecificationWithZIndex } from '../style/types.ts'
 import type { SearchResult } from '../search/search.ts'
@@ -15,6 +17,11 @@ export interface ForkContext {
   clickRouter: ClickRouter
   /** All data layers of the style, upstream's and the fork's (style.ts getPrimaryLayers). */
   primaryLayers: () => LayerSpecificationWithZIndex[]
+  /** The map link (extra parameters such as route=). */
+  urlHash: URLHash
+  /** Upstream's feature details (popupHtml builds them). */
+  infoPopup: InfoPopup
+  circuitInspector: CircuitInspector
 }
 
 /** A key row: label, swatch and what unticking it hides (none: no checkbox). */
@@ -30,6 +37,7 @@ export interface KeySection {
 /** A search result from the backend, as search/openinframap.ts receives it. */
 export interface BackendSearchResult {
   type: string
+  id?: number
   place_type?: string
   kind?: string
   source?: string
@@ -58,6 +66,8 @@ export interface ForkModule {
     title?: (feature: MapGeoJSONFeature) => string | undefined
     /** The whole popup; undefined = upstream's. */
     html?: (feature: MapGeoJSONFeature) => HTMLElement | undefined
+    /** Show a clicked feature's details instead of upstream's popup; true = shown. */
+    open?: (feature: MapGeoJSONFeature) => boolean
   }
   /** The description under a search result's name; undefined = upstream's. */
   searchDescription?: (result: BackendSearchResult) => string | undefined

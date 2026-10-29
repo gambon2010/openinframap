@@ -23,6 +23,8 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Critical sites (from OpenStreetMap)](#critical-sites-from-openstreetmap)
 - [Extra data (not from OpenStreetMap)](#extra-data-not-from-openstreetmap)
 - [My layers (layers you make on the map)](#my-layers-layers-you-make-on-the-map)
+- [Grid connections between two stations (prototype)](#grid-connections-between-two-stations-prototype)
+- [One look for the panels; Settings](#one-look-for-the-panels-settings)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
 - [Fork structure: keeping upstream's files close to upstream](#fork-structure-keeping-upstreams-files-close-to-upstream)
@@ -647,6 +649,126 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   to another layer, several people editing at once (the last save wins), tactical
   graphics.
 
+## Grid connections between two stations (prototype)
+
+*From branch `grid-routing`.* Pick a substation or power plant as the start and another
+as the end; the map shows how they're connected over lines of **110 kV and more**
+(smaller lines aren't interesting at this scale), with up to three distinct paths.
+
+- **Network** (`schema/grid.sql`, a build step after `views.sql`): OpenStreetMap
+  stores lines as drawings, not connections, so the build turns in-service lines of
+  110 kV and more into nodes and edges. Lines connect only where they share a vertex
+  (the same pylon); lines that merely cross in the air don't. Line ends and shared
+  pylons inside or near a substation (within 100 map units of its outline, 250 of a
+  point; ~65 m / ~160 m in central Europe) become that station's node; power plants
+  count where no substation does. Tables `grid_node` and `grid_edge`.
+- **Paths** (`web-backend/src/fork/grid.py`, `GET /grid/route?from=substation/<id>&to=plant/<id>&paths=3`):
+  loads the network around both ends, then uses networkx's shortest simple paths
+  and keeps up to three that share at most 70% of their length (so a route that only
+  swaps one parallel circuit isn't listed twice). Parallel circuits between the same
+  two stations are drawn together. A station without a ≥110 kV line uses the nearest
+  station on that grid within a few km, with a notice.
+- **Map** (`web/src/fork/grid/`): "Route from here" / "Route to here" buttons in
+  substation and plant popups; a panel listing each path with a breakdown of what
+  it goes through: every stretch between two stations (distance, voltage), then the
+  total (the backend returns these `segments`; junctions between lines are passed
+  through, and a route ending at a line tap says "line junction"); paths drawn in different colours, side by side where they share
+  lines; clicking a path shows only that one. The selection is kept in the map link
+  (`route=s123_p-456`), so it can be shared.
+- **Measured:** the network builds in about a second for Luxembourg or Saarland.
+  Saarland: 57 substations, 274 line stretches, 925 km; 56 of the 57 substations form
+  one connected grid. UA Merzig → UA Rehlingen gives 12.6 km (direct 110 kV), 24.8 km
+  (via Saarwellingen) and 60.6 km (via Wadern and Lebach); across Saarland, two
+  routes of 93-95 km that split around Bexbach and Heinitz.
+- **Details in a side panel** (`web/src/fork/grid/info-panel.ts`): clicking a feature shows its
+  details in a panel on the left, under the search box and above the Grid
+  connection panel, instead of a popup over the map (which hid what you clicked).
+  Both panels have minimise (keeps the highlight / routes on the map, shrinks to the
+  title) and close (removes them). Clicking another feature replaces the details;
+  clicking the same one again (its icon or its area) deselects it; Escape closes
+  them. Picking a **search result** works like clicking it: after the map flies
+  there, a substation or power plant opens its full details and highlight; places,
+  coordinates and addresses get a short panel and a ring at the location. (The Osmose validation popups are unchanged.)
+- **Highlight of the selected feature** (`web/src/fork/grid/highlight.ts`): areas
+  (substations, plants, wind farms) get an outline and light fill, lines a glow,
+  points a ring. Plants and substations are drawn both as an area and an icon: the
+  area is highlighted when it's at least 16 px on screen (largest single part, so a
+  plant made of small far-apart parts counts as small), otherwise the icon. The
+  pieces of a feature in all loaded tiles are collected, so big areas are
+  highlighted whole. Drawn above the background map but below infrastructure labels
+  and icons (the background map's own labels come early in the stack, so "below
+  the first label" put the highlight under its water).
+- **Photos in the panel** are limited to the panel's width and 160 px high, and the
+  panel can use most of the screen height (45% when the Grid connection panel is
+  open below it), so a photo doesn't make it scroll; it never scrolls sideways.
+- **Where a line goes** (`web/src/fork/grid/highlight.ts`,
+  `GET /grid/line/<osm_id>`): clicking a power line highlights the whole connection
+  it belongs to while its details are shown, not just the clicked piece (OpenStreetMap
+  splits lines into many pieces). The backend follows stretches of the same voltage
+  through junctions and branch points, stopping at stations; the panel says
+  "Connects Heisdorf – Roost · 13.3 km" and has a "Show whole line" link that zooms
+  to it. Lines without a known voltage (not in the network) highlight just
+  themselves.
+- **Limits:** paths are physical connections in OpenStreetMap, not how power flows;
+  a missing line or substation in OpenStreetMap can hide a connection; both ends
+  must be in the built region (France–Germany needs Europe or a custom region);
+  exports made before this have no network (the panel says to rebuild). Not yet
+  tested on a continent; the search loads the grid around both ends.
+- **Stations on lower voltages** (e.g. Wandpark Housen-Pëtschent and Biogas Our
+  Särl, both on a 65 kV line): the network also includes lines of 10 kV and more
+  with a known voltage, and lines running *through* a station's outline connect to
+  it (the line is split where it enters the outline, so the stretch inside stays
+  part of the drawn route). If an end isn't on the ≥110 kV grid, the backend
+  follows the lower-voltage lines (up to 50 km) to the nearest station that is;
+  the distinct paths still run over 110 kV+ only. Each route is drawn as one line
+  in its colour, connection legs included, and the panel's breakdown shows the
+  lower-voltage stretches with their voltage. (A first version drew those legs dashed in grey; that read as two
+  separate things meeting at a substation.) Example: Wandpark Housen-Pëtschent →
+  Schifflange = 62.6 km, incl. 10.6 km at 65 kV to Flebour.
+- **Not bridged on purpose:** Centrale de Vianden connects to the Vianden
+  substation, but that cluster's 220 kV lines lead to a substation in Germany that a
+  Luxembourg-only extract doesn't contain, so it has no path to the rest of
+  Luxembourg's grid within that region.
+- A station mapped twice in OpenStreetMap (e.g. a substation's outline and its site
+  relation, different IDs) is matched silently if within 300 m.
+- **Scaling to France** (after merging into the fork's main line): the network build
+  ran for over 20 minutes without finishing on France, because of query plans that
+  are fine on Luxembourg: temp tables without statistics, `IN (subquery)` /
+  `NOT IN (subquery)` filters, junction nodes matched back by `ST_Equals` (every
+  junction against every node), and `ST_DWithin` with a per-station distance, which
+  can't use the spatial index. Now: `ANALYZE` after each temp table, joins instead
+  of `IN`, junction nodes keep their position key while building, and a constant
+  reach (250) narrows the station search before the per-station one.
+- New dependency: `networkx` (backend), `types-networkx` (dev).
+- **Fixes found while testing with real clicks:** substation and line popups failed
+  to open at all when the backend was unreachable (the circuits lookup read from an
+  empty response); they now open without circuit details. And `build-region.sh` /
+  `import-db.sh` stopped the backend (rebuilding removes all containers) without
+  starting it again; they now restart it if it was running.
+
+---
+
+## One look for the panels; Settings
+
+Upstream's controls each had their own look and placement: the layer list opened
+while the pointer was over its button, level with it and over the other buttons;
+the key opened over the buttons too; the Map sources panel was another button.
+
+- **Right-hand dock** (`web/src/fork/ui/dock.ts`): Layers, Key and My layers open
+  **on click** (again to close), next to the buttons rather than over them, one at
+  a time, as tall as the map allows and scrolling inside. The open panel's button
+  is outlined. Upstream's key and layer list are moved into the dock as they are
+  (the layer list's hover handlers are removed), so their code is unchanged.
+- **Shared look** (`web/src/fork/ui/panel.css`, `panel.ts`): every panel, left or
+  right, has the same light grey title bar with square buttons (×, –), the same
+  section titles and a body that scrolls, after the feature details panel.
+- **Settings** (`web/src/fork/ui/settings.ts`): a "settings" link in the header,
+  after about / stats / export, opens a window with the map sources (background
+  map tiles, Photon), which used to have their own map button. Escape, × or a click
+  outside closes it.
+
+---
+
 ## Smaller fixes
 
 - **Upstream merge.** The upstream changes since June were merged (backend moved to
@@ -703,18 +825,20 @@ hooks upstream files call:
 | Upstream file | Hook |
 |---|---|
 | `style/style.ts` | `...forkSources()` in the sources, `...forkLayers()` in `getPrimaryLayers` |
-| `openinframap.ts` | `...forkSwitcherGroups()` before the Validation group; `forkInit(...)` before clicks are routed |
+| `openinframap.ts` | `...forkSwitcherGroups()` before the Validation group; `forkInit(...)` before clicks are routed (with the URL hash, the info popup kept in a variable, and the circuit inspector) |
 | `key/key.ts` | `await forkKey(...)` once its sections are built; `data-icon` on sprites |
 | `key/svg.ts` | swatches carry `data-colour`, `data-dash` or `data-layer` |
-| `popup/infopopup.ts` | `forkPopup.hiddenKeys()`, `.renderKey()`, `.title()`, `.html()` |
-| `search/search.ts` | `forkSearchSelected(result)`; `dropDuplicates` from `fork/search` |
-| `search/openinframap.ts` | `forkSearchDescription(result)` |
+| `popup/infopopup.ts` | `forkPopup.hiddenKeys()`, `.renderKey()`, `.title()`, `.html()`; `forkPopup.open()` first in `popup()` (details in the side panel) |
+| `search/search.ts` | `forkSearchSelected(result)`; `dropDuplicates` from `fork/search`; results carry the backend's result (`backend`) |
+| `search/openinframap.ts` | `forkSearchDescription(result)`; `backend: result` |
 | `index.ts` | `addForkTranslations()` |
 
 Modules: `fork/extra` (data from outside OSM), `fork/sites` (critical sites),
 `fork/userlayers` (My layers: symbols, pictures, drawings, copies, saving, history),
 `fork/search` (place and feature descriptions, switching a result's layer on),
-`fork/ui` (Map sources button, scrolling layer list). The key's checkboxes
+`fork/grid` (feature details in a side panel, highlight, where a line goes, routes
+between stations), `fork/ui` (the right-hand dock, the shared panel look, the
+Settings window). The key's checkboxes
 (`fork/key/toggles.ts`) are added to upstream's rows after they're built, working
 out what each row hides from its swatch, so upstream's key code is unchanged.
 **Adding a layer** = a new module folder plus a line in `MODULES`.
@@ -758,6 +882,7 @@ Upstream files the fork still changes, and how:
 | `tegola/generate_tegola_config.py`, `Dockerfile` | More than one layers file |
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
 | `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first |
+| `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
 | `web/src/search/search.ts` | Photon instead of OpenCage (`opencage.ts` is kept, unused); `Promise.allSettled` |

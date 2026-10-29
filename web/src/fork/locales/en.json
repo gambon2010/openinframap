@@ -1,6 +1,7 @@
 {
   "nav": {
-    "exports": "export (online)"
+    "exports": "export (online)",
+    "settings": "settings"
   },
   "key": {
     "show-all": "Show all",
@@ -12,7 +13,8 @@
     "extra-distribution": "Power distribution (open data)",
     "extra-gas": "Gas distribution (open data)",
     "extra-icpe": "Classified installations (ICPE)",
-    "sites": "Critical sites"
+    "sites": "Critical sites",
+    "title": "Layers"
   },
   "search": {
     "place": {
@@ -161,5 +163,36 @@
       "hindu": "Hindu temple",
       "sikh": "Sikh gurdwara"
     }
+  },
+  "route": {
+    "title": "Grid connection",
+    "from": "From",
+    "to": "To",
+    "from-here": "Route from here",
+    "to-here": "Route to here",
+    "clear": "Clear",
+    "pick": "Click a substation or power plant and choose \"{{end}}\"",
+    "searching": "Looking for connections over lines of 110 kV or more…",
+    "error": "Couldn't reach the backend to find connections.",
+    "select": "Show only this path",
+    "note": "Physical connections in OpenStreetMap, not how power actually flows.",
+    "unnamed-substation": "Unnamed substation",
+    "unnamed-plant": "Unnamed power plant",
+    "junction": "line junction",
+    "total": "Total"
+  },
+  "line": {
+    "connects": "Connects {{stations}} · {{length}}",
+    "length": "Highlighted: {{length}}",
+    "incomplete": "(very long, shown in part)",
+    "show-all": "Show whole line"
+  },
+  "panel": {
+    "minimise": "Minimise",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "settings": {
+    "title": "Settings"
   }
 }

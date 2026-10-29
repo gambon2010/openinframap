@@ -402,6 +402,7 @@ class InfoPopup {
   }
 
   async popup(feature: MapGeoJSONFeature, location: LngLat) {
+    if (forkPopup.open(feature)) return
     if (this.popup_obj && this.popup_obj.isOpen()) {
       this.popup_obj.remove()
     }

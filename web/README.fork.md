@@ -31,7 +31,7 @@ backend URL configured in `.env`, so backend-rendered pages load correctly.
 
 **Search** (`src/search/`) combines coordinates, the local backend (`/search/typeahead`:
 infrastructure and places such as cities and villages) and, if configured, a Photon server
-for addresses (`VITE_PHOTON_URL` or the Map sources panel). Upstream's OpenCage geocoder is
+for addresses (`VITE_PHOTON_URL` or Settings). Upstream's OpenCage geocoder is
 removed. Providers run with `Promise.allSettled`, so one failing doesn't hide the others'
 results, and same-name results within ~5 km are merged.
 
@@ -39,10 +39,17 @@ The **background switcher** (OpenStreetMap / nighttime lights) is hidden: night 
 only exist online. Re-enabling it needs care, because saved map links made without it
 have no background layer in their list and would show an empty background.
 
-The **Map sources** panel (`src/fork/map-sources/`, server icon under the key) shows the
-background-map URL in use and can change it for the current tab. The background map
+**Settings** (`src/fork/ui/settings.ts`, a link in the header after about / stats /
+export) holds the map sources (`src/fork/map-sources/`): the background-map URL in use,
+which can be changed for the current tab, and the optional Photon server. The background map
 comes from `VITE_BASEMAP_URL` (set by `scripts/build-region.sh` when you download an
 offline one) or openinframap.org.
+
+**Panels.** Layers, Key and My layers open on click in a dock next to the buttons on
+the right (`src/fork/ui/dock.ts`), one at a time. Upstream's key and layer list are moved
+into it unchanged. Feature details open in a side panel on the left (`src/fork/grid/`)
+instead of a popup, above the Grid connection panel. All panels share one look
+(`src/fork/ui/panel.css`; `makePanel()` in `panel.ts` for new ones).
 
 ## Testing
 

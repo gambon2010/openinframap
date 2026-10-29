@@ -1,6 +1,7 @@
 // Fork: the "My layers" panel: layers, tools, the symbol palette, the selected
 // feature, Save, and the history player.
 import { tt } from './i18n.ts'
+import { dock } from '../ui/dock.ts'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { Store } from './store.ts'
@@ -36,7 +37,6 @@ async function prepareImage(file: File): Promise<{ mime: string; data: string }>
 }
 
 export class Panel implements IControl {
-  private map: Map
   private store: Store
   private tools: Tools
   private renderer: Renderer
@@ -53,7 +53,6 @@ export class Panel implements IControl {
   private busy = ''
 
   constructor(map: Map, store: Store, tools: Tools, renderer: Renderer) {
-    this.map = map
     this.store = store
     this.tools = tools
     this.renderer = renderer
@@ -89,9 +88,9 @@ export class Panel implements IControl {
       title: tt('userlayers.title', 'My layers'),
       ariaLabel: tt('userlayers.title', 'My layers')
     }) as HTMLButtonElement
-    this.button.onclick = () => this.toggle()
-    this.map.getContainer().append(this.panel)
     this.container = el('div.maplibregl-ctrl.maplibregl-ctrl-group', this.button)
+    // Opens next to the buttons on the right, like the layers and the key.
+    dock.add(this.button, this.panel, () => this.update())
     this.update()
     return this.container
   }
@@ -103,8 +102,6 @@ export class Panel implements IControl {
 
   toggle(open = !this.panel.classList.contains('visible')) {
     this.panel.classList.toggle('visible', open)
-    this.button.classList.toggle('active', open)
-    if (open) this.update()
   }
 
   private action(

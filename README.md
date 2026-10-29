@@ -51,9 +51,10 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Setup** | `scripts/launch.sh` (first time) and `scripts/start.sh` (every day): start everything, open the frontend in a terminal window and the map in the browser |
 | **Data** | `scripts/build-region.sh`: pick any Geofabrik region or the whole world, download (kept and reused), filter to infrastructure with osmium, import, views, search indexes, EEZ boundaries and per-country stats, all unattended after a few questions |
 | **Sharing** | `scripts/export-db.sh` / `scripts/import-db.sh`: save a built database (plus the Docker images) and restore it elsewhere in minutes, offline too |
-| **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Map sources panel to see and change the URL for the current tab |
+| **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Settings window to see and change the URL for the current tab |
+| **Grid connections** (prototype) | Pick two substations or plants; the map shows up to three paths between them over lines of 110 kV and more, stretch by stretch. Clicking a power line highlights where it goes |
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
-| **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; everything else with a name too (critical sites, lines, telecoms, pipelines, water, ICPE...: `schema/search.sql`), with its kind and town, accents optional, name + town ("mairie duppigheim"), and picking a result switches its layer on; words inside names match ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or the Map sources panel) |
+| **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; everything else with a name too (critical sites, lines, telecoms, pipelines, water, ICPE...: `schema/search.sql`), with its kind and town, accents optional, name + town ("mairie duppigheim"), and picking a result switches its layer on; words inside names match ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or Settings) |
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
 | **Critical sites** | `imposm/sites.py` + `schema/sites.sql`: ~210,000 sites in France in 41 kinds, shown at every zoom from 4 (nearby ones grouped into a numbered bubble below zoom 14), a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
 | **Extra data** | `scripts/extra_data.py`: imports open data that covers the built region (French electricity and gas networks, biomethane, ICPE) into an `extra` schema; the build offers each dataset with its size; what OSM already has is left out; raw downloads and imported data are kept across rebuilds |
@@ -61,7 +62,7 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **My layers** | Your own layers on the map: military and emergency symbols (MIL-STD-2525C, as in ODIN), pictures, markers, lines, areas and copies of map features (which stay visible when the grid is hidden); saved in the database, with a history you can play back step by step |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
 | **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |
-| **UI** | Map sources panel; background switch (OpenStreetMap / online-only night lights) hidden |
+| **UI** | Layers, key and My layers open on click beside the buttons, one at a time, all panels with one look; Settings window (map sources) in the header; background switch (OpenStreetMap / online-only night lights) hidden |
 
 ## Upstream project
 

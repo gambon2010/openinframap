@@ -62,7 +62,7 @@ export default class OIMSearchProvider implements ISearchProvider {
       longitude: result.geometry.coordinates[0],
       name: result.name,
       description: this.description(result),
-      layer: result.layer,
+      backend: result,
       score: this.baseScore - index * 0.1
     }))
   }
