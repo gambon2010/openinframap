@@ -710,9 +710,11 @@ was hard to read. Version 3, built in steps:
   are rebuilt from the saved layers plus the pending changes; changes made by one
   action (moving an item between layers) share a `batch` and are undone together.
   Undo goes on past a Save (in this tab, up to 200 steps): `save()` keeps, for each
-  step sent, how what it touched was before it (`SavedStep`); undoing one records
-  new pending changes that restore that (`restoring`), so the server's log is never
-  rewritten. Redo drops those changes again; Discard puts the steps back.
+  step sent, what it touched before and after it (`applyStep`, `SavedStep`); undoing
+  one records new pending changes that put back only the fields that step changed
+  (`restoring`, `revertFields`: the position, a name, a modifier...), on top of the
+  item as it is now, so what others changed since stays and the server's log is
+  never rewritten. Redo drops those changes again; Discard puts the steps back.
 - **Step 2, the item card** (`editor.ts`, card helpers in `fields.ts`): header with
   the large symbol and the designation edited in place; identity as the item's own
   symbol in each identity, Present / Planned and condition as chips, the echelon as

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Change, UserLayer } from './model.ts'
-import { Store, applyChange } from './store.ts'
+import { Store, applyChange, revertFields } from './store.ts'
 
 const at = '2026-10-30T10:00:00Z'
 const point: GeoJSON.Point = { type: 'Point', coordinates: [7.75, 48.58] }
@@ -231,7 +231,7 @@ describe('undo after a save', () => {
     saved = []
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string, init?: RequestInit) => {
+      vi.fn(async (_url: string, init?: RequestInit) => {
         if (init?.method === 'POST') {
           saved.push(...(JSON.parse(String(init.body)).changes as Change[]))
           return new Response(JSON.stringify({ ok: true }))
@@ -324,5 +324,66 @@ describe('undo after a save', () => {
     expect(store.layers.get(layer)!.name).toBe('A')
     store.undo()
     expect(store.layers.has(layer)).toBe(false)
+  })
+})
+
+describe('undo after a save puts back only what that step changed', () => {
+  test('revertFields', () => {
+    const before = { name: 'A', sidc: 'x', modifiers: { T: '1', H: 'h' } }
+    const after = { name: 'A', sidc: 'y', modifiers: { T: '1', H: 'h2', W: 'w' } }
+    // Someone else renamed it and changed T since.
+    const now = { name: 'B', sidc: 'y', modifiers: { T: '2', H: 'h2', W: 'w' }, notes: 'n' }
+    expect(revertFields(before, after, now)).toEqual({
+      name: 'B',
+      sidc: 'x',
+      modifiers: { T: '2', H: 'h' },
+      notes: 'n'
+    })
+  })
+
+  test("a colleague's newer rename stays when a move is undone", async () => {
+    localStorage.clear()
+    let server: Change[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          server.push(...(JSON.parse(String(init.body)).changes as Change[]))
+          return new Response(JSON.stringify({ ok: true }))
+        }
+        const layers = new Map<string, UserLayer>()
+        for (const change of server) applyChange(layers, change)
+        return new Response(
+          JSON.stringify({
+            layers: [...layers.values()].map((l) => ({ ...l, features: [...l.features.values()] }))
+          })
+        )
+      })
+    )
+    const store = new Store()
+    await store.load()
+    const layer = store.createLayer('A')
+    const id = store.addFeature(layer, point, { kind: 'marker', name: 'one' })
+    await store.save()
+    const moved: GeoJSON.Point = { type: 'Point', coordinates: [8, 49] }
+    store.updateFeature(layer, { ...store.layers.get(layer)!.features.get(id)!, geometry: moved })
+    await store.save()
+    // A colleague renames it and saves; we load their change.
+    server = [
+      ...server,
+      {
+        op: 'feature_update',
+        layer_id: layer,
+        feature_id: id,
+        data: { geometry: moved, properties: { kind: 'marker', name: 'renamed' } },
+        made_at: at
+      }
+    ]
+    await store.load()
+    store.undo()
+    const feature = store.layers.get(layer)!.features.get(id)!
+    expect(feature.geometry).toEqual(point) // the move undone
+    expect(feature.properties.name).toBe('renamed') // their rename kept
+    vi.unstubAllGlobals()
   })
 })

@@ -68,10 +68,18 @@ export function applyChange(layers: Map<string, UserLayer>, change: Change) {
   }
 }
 
-/** What a saved step touched, as it was before: layers (name, style) and items. */
+type LayerState = { name: string; style: UserLayer['style'] } | null
+
+/**
+ * What a saved step touched, before and after it: layers (name, style) and items.
+ * Undo puts back only what the step changed, so what others changed since stays.
+ */
 interface SavedStep {
-  layers: Map<string, { name: string; style: UserLayer['style'] } | null>
-  features: Map<string, { layerId: string; featureId: string; feature: UserFeature | null }>
+  layers: Map<string, { before: LayerState; after: LayerState }>
+  features: Map<
+    string,
+    { layerId: string; featureId: string; before: UserFeature | null; after: UserFeature | null }
+  >
 }
 
 /** The changes of `pending`, in steps: one change, or all of one batch. */
@@ -89,8 +97,12 @@ function featureKey(layerId: string, featureId: string) {
   return `${layerId}/${featureId}`
 }
 
-/** Note how what `changes` touch is in `layers`, before they're applied. */
-function beforeOf(layers: Map<string, UserLayer>, changes: Change[]): SavedStep {
+function layerState(layer: UserLayer | undefined): LayerState {
+  return layer ? { name: layer.name, style: { ...layer.style } } : null
+}
+
+/** Apply a step's changes to `layers`, noting how what they touch was before and after. */
+export function applyStep(layers: Map<string, UserLayer>, changes: Change[]): SavedStep {
   const step: SavedStep = { layers: new Map(), features: new Map() }
   const noteFeature = (layerId: string, featureId: string) => {
     const key = featureKey(layerId, featureId)
@@ -98,55 +110,97 @@ function beforeOf(layers: Map<string, UserLayer>, changes: Change[]): SavedStep 
       step.features.set(key, {
         layerId,
         featureId,
-        feature: layers.get(layerId)?.features.get(featureId) ?? null
+        before: layers.get(layerId)?.features.get(featureId) ?? null,
+        after: null
       })
   }
   for (const change of changes) {
     const layer = layers.get(change.layer_id)
     if (change.op.startsWith('layer_')) {
       if (!step.layers.has(change.layer_id))
-        step.layers.set(change.layer_id, layer ? { name: layer.name, style: { ...layer.style } } : null)
+        step.layers.set(change.layer_id, { before: layerState(layer), after: null })
       if (change.op === 'layer_delete' && layer)
         for (const id of layer.features.keys()) noteFeature(layer.id, id)
     } else if (change.feature_id) noteFeature(change.layer_id, change.feature_id)
   }
+  for (const change of changes) applyChange(layers, change)
+  for (const [id, entry] of step.layers) entry.after = layerState(layers.get(id))
+  for (const entry of step.features.values())
+    entry.after = layers.get(entry.layerId)?.features.get(entry.featureId) ?? null
   return step
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
 
-/** The changes that bring what a step touched back to how it was before it. */
+/**
+ * `now`, with the keys that went from `before` to `after` put back as they were
+ * `before` (nested objects, such as the modifiers, key by key). Keys the change
+ * didn't touch keep their value in `now`.
+ */
+export function revertFields<T extends object>(beforeValue: T, afterValue: T, nowValue: T): T {
+  const before = beforeValue as Record<string, unknown>
+  const after = afterValue as Record<string, unknown>
+  const now = nowValue as Record<string, unknown>
+  const out: Record<string, unknown> = { ...now }
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const b = before[key]
+    const a = after[key]
+    if (same(b, a)) continue
+    if (isObject(b) && isObject(a) && isObject(now[key])) {
+      out[key] = revertFields(b, a, now[key] as object)
+    } else if (b === undefined) delete out[key]
+    else out[key] = b
+  }
+  return out as T
+}
+
+/** The changes that undo what a step changed, on top of the layers as they are now. */
 function restoring(layers: Map<string, UserLayer>, step: SavedStep, batch: string): Change[] {
   const made_at = new Date().toISOString()
   const created: Change[] = []
   const deleted: Change[] = []
   const gone = new Set<string>()
-  for (const [id, before] of step.layers) {
+  for (const [id, { before, after }] of step.layers) {
     const now = layers.get(id)
-    if (!before && now) {
-      deleted.push({ op: 'layer_delete', layer_id: id, made_at, batch })
-      gone.add(id)
-    } else if (before && !now) {
-      created.push({ op: 'layer_create', layer_id: id, data: { ...before }, made_at, batch })
-    } else if (before && now && (before.name !== now.name || !same(before.style, now.style))) {
-      created.push({ op: 'layer_update', layer_id: id, data: { ...before }, made_at, batch })
+    if (!before && after) {
+      if (now) {
+        deleted.push({ op: 'layer_delete', layer_id: id, made_at, batch })
+        gone.add(id)
+      }
+    } else if (before && !after) {
+      if (!now) created.push({ op: 'layer_create', layer_id: id, data: { ...before }, made_at, batch })
+    } else if (before && after && now) {
+      const name = before.name !== after.name ? before.name : now.name
+      const style = revertFields(before.style, after.style, now.style)
+      if (name !== now.name || !same(style, now.style))
+        created.push({ op: 'layer_update', layer_id: id, data: { name, style }, made_at, batch })
     }
   }
   const items: Change[] = []
-  for (const { layerId, featureId, feature } of step.features.values()) {
+  for (const { layerId, featureId, before, after } of step.features.values()) {
     if (gone.has(layerId)) continue
     const now = layers.get(layerId)?.features.get(featureId)
-    const data = feature ? { geometry: feature.geometry, properties: feature.properties } : undefined
-    if (!feature && now)
-      items.push({ op: 'feature_delete', layer_id: layerId, feature_id: featureId, made_at, batch })
-    else if (feature && !now)
-      items.push({ op: 'feature_create', layer_id: layerId, feature_id: featureId, data, made_at, batch })
-    else if (
-      feature &&
-      now &&
-      (!same(feature.geometry, now.geometry) || !same(feature.properties, now.properties))
-    )
-      items.push({ op: 'feature_update', layer_id: layerId, feature_id: featureId, data, made_at, batch })
+    const change = (op: Change['op'], data?: Change['data']): Change => ({
+      op,
+      layer_id: layerId,
+      feature_id: featureId,
+      data,
+      made_at,
+      batch
+    })
+    if (!before && after) {
+      if (now) items.push(change('feature_delete'))
+    } else if (before && !after) {
+      if (!now)
+        items.push(change('feature_create', { geometry: before.geometry, properties: before.properties }))
+    } else if (before && after && now) {
+      const geometry = same(before.geometry, after.geometry) ? now.geometry : before.geometry
+      const properties = revertFields(before.properties, after.properties, now.properties)
+      if (!same(geometry, now.geometry) || !same(properties, now.properties))
+        items.push(change('feature_update', { geometry, properties }))
+    }
   }
   return [...created, ...items, ...deleted]
 }
@@ -333,9 +387,11 @@ export class Store {
     this.rebuild()
   }
 
-  createLayer(name: string): string {
+  createLayer(name: string, folder?: string): string {
     const id = uuid()
-    this.record('layer_create', id, undefined, { name, style: { color: DEFAULT_COLOR } })
+    const style: UserLayer['style'] = { color: DEFAULT_COLOR }
+    if (folder) style.folder = folder
+    this.record('layer_create', id, undefined, { name, style })
     this.activeLayer = id
     this.notify()
     return id
@@ -473,8 +529,8 @@ export class Store {
     const layers = cloneLayers(this.saved)
     for (const step of steps(this.pending)) {
       const undid = step[0].batch && this.undoing.has(step[0].batch)
-      if (!undid) this.savedSteps.push(beforeOf(layers, step))
-      for (const change of step) applyChange(layers, change)
+      const saved = applyStep(layers, step)
+      if (!undid) this.savedSteps.push(saved)
     }
     this.undoing.clear()
     this.savedSteps.splice(0, this.savedSteps.length - MAX_SAVED_STEPS)

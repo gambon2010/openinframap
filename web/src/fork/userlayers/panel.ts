@@ -134,7 +134,7 @@ export class Panel implements IControl {
         if (!add) this.zoomTo(feature)
       },
       isSelected: (id) => this.tools.selection().includes(id),
-      newLayer: () => this.newLayer()
+      newLayer: (folder) => this.newLayer(folder)
     })
     this.sidebar = el('.maplibregl-ctrl.oim-ul-sidebar', this.fileInput)
     this.toolbar = el('.oim-ul-toolbar', {
@@ -426,12 +426,12 @@ export class Panel implements IControl {
     )
   }
 
-  private newLayer() {
+  private newLayer(folder?: string) {
     const value = window.prompt(
       tt('userlayers.layer-name', 'Layer name'),
       tt('userlayers.default-name', 'My layer')
     )
-    if (value && value.trim()) this.store.createLayer(value.trim())
+    if (value && value.trim()) this.store.createLayer(value.trim(), folder)
     else this.update()
   }
 

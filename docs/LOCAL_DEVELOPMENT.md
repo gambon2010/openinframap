@@ -430,11 +430,13 @@ on the My layers workspace; click it again to close it. It has two parts:
 
 - **The sidebar on the left**, under the search box: a search box and filters
   (hostile, friend, planned, units...) for everything in your layers, then your
-  layers, optionally in **folders** (⋯ → Move to folder; folders fold to one line,
-  their ◉ and 🔒 act on all their layers). Each layer: ◉ show/hide, 🔒 lock (its
+  layers, optionally in **folders**: **+ New folder** under the list, then drag
+  layers onto it (or onto a layer already in it), or ⋯ → Move to folder and pick
+  one. Folders fold to one line; their ◉ and 🔒 act on all their layers, + makes a
+  new layer in it, ✎ renames it. Each layer: ◉ show/hide, 🔒 lock (its
   items can't be changed or moved), colour, its items (click the name), ⋯ to draw
   into it, rename, move to a folder or delete. Items show their symbol and a status
-  line; drag one onto another layer to move it, and a layer onto a folder. Under
+  line; drag one onto another layer to move it. Under
   "Labels and name": how much of the labels the map shows, and the name your
   changes are saved under. Clicking an item selects it and moves the map to it. Below the
   layers is the **details** area: the selected item's card, or the details of any
@@ -456,8 +458,9 @@ on the My layers workspace; click it again to close it. It has two parts:
 
 Esc stops a tool. **Ctrl+Z** undoes the last change and **Ctrl+Shift+Z** redoes
 it. Undo goes on past a Save: a saved change isn't removed from the server, undoing
-it is a new change that puts things back, saved with the next **Save** like any
-other (the history keeps both).
+it is a new change that puts back only what that change did (a move, a name...),
+saved with the next **Save** like any other; what others changed since stays (the
+history keeps everything).
 
 **Arrows** (axis of advance, main or supporting attack...) are drawn like a line:
 click where the arrow starts, along its path, and double-click where it points to.

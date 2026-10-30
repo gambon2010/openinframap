@@ -516,6 +516,14 @@
       "L": "Line",
       "A": "Area",
       "M": "Shape from points"
-    }
+    },
+    "folder-name-new": "Folder name",
+    "move-to-folder-menu": "Move to folder",
+    "new-folder-dots": "New folder…",
+    "out-of-folder": "Out of the folder",
+    "folder-new-layer": "New layer in this folder",
+    "empty-folder": "Empty: drag layers here.",
+    "new-folder": "New folder",
+    "new-folder-title": "A folder to drag layers into"
   }
 }

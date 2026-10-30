@@ -1130,3 +1130,35 @@
   overflow-y: auto;
   font-size: 0.85rem;
 }
+/* "Move to folder" inside a layer's ⋯ menu: the folders, one click each. */
+.oim-ul-submenu > summary {
+  padding: 2px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.oim-ul-submenu[open] {
+  padding-bottom: 2px;
+  border-radius: 4px;
+  background: var(--oim-light-grey);
+}
+.oim-ul-submenu .oim-ul-menu-text {
+  display: block;
+  width: 100%;
+  padding-left: 14px;
+  text-align: left;
+}
+.oim-ul-folder .oim-ul-hint {
+  padding: 2px 6px;
+  font-size: 0.8rem;
+}
+.oim-ul-menu-items.oim-ul-floating {
+  position: fixed;
+  z-index: 10;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+/* MapLibre gives controls a transform, which would make the floating menus
+   relative to the sidebar (and cut off by it). */
+.maplibregl-ctrl.oim-ul-sidebar {
+  transform: none;
+}

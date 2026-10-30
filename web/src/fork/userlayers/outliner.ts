@@ -2,7 +2,8 @@
 // folders (optional, one level) holding layers, layers holding items. Items show
 // their symbol and what matters at a glance; a search box and filter chips narrow
 // the list; layers can be locked; items are dragged onto another layer to move them,
-// layers onto a folder.
+// layers onto a folder (or onto a layer: into its folder). A new folder is kept in
+// the browser until a layer is put in it (a folder is a name the layers share).
 import { tt } from './i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
@@ -44,9 +45,15 @@ export function matches(feature: UserFeature, query: string, filters: Set<Filter
   return words.every((w) => text.includes(w))
 }
 
-/** Layers by folder: folders (sorted) with their layers, then layers in no folder. */
-export function byFolder(layers: UserLayer[]): [folder: string | null, layers: UserLayer[]][] {
-  const folders = new Map<string, UserLayer[]>()
+/**
+ * Layers by folder: folders (sorted, with the empty ones given) with their
+ * layers, then layers in no folder.
+ */
+export function byFolder(
+  layers: UserLayer[],
+  empty: Iterable<string> = []
+): [folder: string | null, layers: UserLayer[]][] {
+  const folders = new Map<string, UserLayer[]>([...empty].map((f): [string, UserLayer[]] => [f, []]))
   const loose: UserLayer[] = []
   for (const layer of layers) {
     const folder = layer.style.folder?.trim()
@@ -61,12 +68,21 @@ export function byFolder(layers: UserLayer[]): [folder: string | null, layers: U
 }
 
 const FOLDED_KEY = 'oim-userlayers-folded'
+const EMPTY_FOLDERS_KEY = 'oim-userlayers-empty-folders'
 
-function readFolded(): Set<string> {
+function readSet(key: string): Set<string> {
   try {
-    return new Set(JSON.parse(localStorage.getItem(FOLDED_KEY) ?? '[]'))
+    return new Set(JSON.parse(localStorage.getItem(key) ?? '[]'))
   } catch {
     return new Set()
+  }
+}
+
+function writeSet(key: string, set: Set<string>) {
+  try {
+    localStorage.setItem(key, JSON.stringify([...set]))
+  } catch {
+    // Not remembered.
   }
 }
 
@@ -74,7 +90,7 @@ export interface OutlinerActions {
   update: () => void
   select: (feature: UserFeature, add: boolean) => void
   isSelected: (id: string) => boolean
-  newLayer: () => void
+  newLayer: (folder?: string) => void
 }
 
 export class Outliner {
@@ -84,7 +100,9 @@ export class Outliner {
   /** Layers showing their items. */
   expanded = new Set<string>()
   /** Folders folded to one line (remembered per browser). */
-  folded = readFolded()
+  folded = readSet(FOLDED_KEY)
+  /** Folders made with "New folder" that no layer is in yet. */
+  emptyFolders = readSet(EMPTY_FOLDERS_KEY)
   /** Layers shown instead of the store's, read-only (a situation being viewed). */
   view: Map<string, UserLayer> | null = null
   private store: Store
@@ -111,11 +129,37 @@ export class Outliner {
   }
 
   private saveFolded() {
-    try {
-      localStorage.setItem(FOLDED_KEY, JSON.stringify([...this.folded]))
-    } catch {
-      // Not remembered.
+    writeSet(FOLDED_KEY, this.folded)
+  }
+
+  /** The folders there are, sorted. */
+  private folderNames(): string[] {
+    const names = new Set(this.emptyFolders)
+    for (const l of this.store.layers.values()) if (l.style.folder?.trim()) names.add(l.style.folder.trim())
+    return [...names].sort((a, b) => a.localeCompare(b))
+  }
+
+  /** Put a layer in a folder (null: in none). */
+  private moveToFolder(layer: UserLayer, folder: string | null) {
+    if ((layer.style.folder?.trim() || null) === folder) return
+    this.store.updateLayer(layer.id, { style: { ...layer.style, folder: folder ?? undefined } })
+  }
+
+  private askFolderName(current = ''): string | null {
+    const value = window.prompt(tt('userlayers.folder-name-new', 'Folder name'), current)
+    return value?.trim() || null
+  }
+
+  /** "+ New folder": shown at once, empty, ready for layers to be dropped in. */
+  newFolder() {
+    const name = this.askFolderName()
+    if (!name) return
+    if (!this.folderNames().includes(name)) {
+      this.emptyFolders.add(name)
+      writeSet(EMPTY_FOLDERS_KEY, this.emptyFolders)
     }
+    this.folded.delete(name)
+    this.actions.update()
   }
 
   private button(label: string, onclick: () => void, title = '', className = '') {
@@ -229,9 +273,32 @@ export class Outliner {
     }) as HTMLInputElement
     color.onclick = (e) => e.stopPropagation()
     color.onchange = () => store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
-    const folderNames = [
-      ...new Set([...store.layers.values()].map((l) => l.style.folder).filter(Boolean))
-    ] as string[]
+    const current = layer.style.folder?.trim() || null
+    // Move to folder: the folders there are, a new one, or out of its folder.
+    const folders = el(
+      'details.oim-ul-submenu',
+      el('summary', tt('userlayers.move-to-folder-menu', 'Move to folder')),
+      ...this.folderNames()
+        .filter((f) => f !== current)
+        .map((f) => this.button(`📁 ${f}`, () => this.moveToFolder(layer, f), '', 'oim-ul-menu-text')),
+      this.button(
+        `+ ${tt('userlayers.new-folder-dots', 'New folder…')}`,
+        () => {
+          const name = this.askFolderName()
+          if (name) this.moveToFolder(layer, name)
+        },
+        '',
+        'oim-ul-menu-text'
+      ),
+      current
+        ? this.button(
+            tt('userlayers.out-of-folder', 'Out of the folder'),
+            () => this.moveToFolder(layer, null),
+            '',
+            'oim-ul-menu-text'
+          )
+        : ''
+    )
     const menu = el(
       'details.oim-ul-menu',
       el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
@@ -253,20 +320,7 @@ export class Outliner {
           '',
           'oim-ul-menu-text'
         ),
-        this.button(
-          tt('userlayers.move-to-folder', 'Move to folder…'),
-          () => {
-            const hint = folderNames.length ? ` (${folderNames.join(', ')})` : ''
-            const value = window.prompt(
-              tt('userlayers.folder-name', 'Folder name{{hint}}; empty: no folder', { hint }),
-              layer.style.folder ?? ''
-            )
-            if (value !== null)
-              store.updateLayer(layer.id, { style: { ...layer.style, folder: value.trim() || undefined } })
-          },
-          '',
-          'oim-ul-menu-text'
-        ),
+        folders,
         this.button(
           tt('userlayers.delete', 'Delete'),
           () => {
@@ -285,6 +339,18 @@ export class Outliner {
         )
       )
     )
+    // The list scrolls (and would cut the menu off): it floats beside its button,
+    // above it when there's no room below.
+    menu.ontoggle = () => {
+      const items = menu.querySelector<HTMLElement>('.oim-ul-menu-items')
+      if (!menu.open || !items) return
+      const box = menu.getBoundingClientRect()
+      items.classList.add('oim-ul-floating')
+      items.style.right = `${window.innerWidth - box.right}px`
+      const below = window.innerHeight - box.bottom > 220
+      items.style.top = below ? `${box.bottom}px` : ''
+      items.style.bottom = below ? '' : `${window.innerHeight - box.top}px`
+    }
     const header = el(
       `.oim-ul-layer-row${active ? '.active' : ''}`,
       { draggable: !this.view },
@@ -319,10 +385,18 @@ export class Outliner {
       if ((e.target as HTMLElement).closest('.oim-ul-item')) return
       e.dataTransfer?.setData('application/x-oim-layer', layer.id)
     }
-    this.dropTarget(header, (id) => {
-      const from = store.layerOf(id)
-      if (from && from.id !== layer.id && !from.style.locked && !locked) store.moveFeature(id, layer.id)
-    })
+    this.dropTarget(
+      header,
+      (id) => {
+        const from = store.layerOf(id)
+        if (from && from.id !== layer.id && !from.style.locked && !locked) store.moveFeature(id, layer.id)
+      },
+      // A layer dropped on a layer: into the same folder (or out, if it's in none).
+      (id) => {
+        const dropped = store.layers.get(id)
+        if (dropped && id !== layer.id) this.moveToFolder(dropped, current)
+      }
+    )
     const li = el(`li.oim-ul-layer${hidden ? '.hidden' : ''}`, header)
     if (open) {
       li.append(
@@ -345,8 +419,8 @@ export class Outliner {
   private folderRow(folder: string, layers: UserLayer[], body: HTMLElement[]): HTMLElement {
     const store = this.store
     const folded = this.folded.has(folder)
-    const allHidden = layers.every((l) => store.hidden.has(l.id))
-    const allLocked = layers.every((l) => l.style.locked)
+    const allHidden = layers.length > 0 && layers.every((l) => store.hidden.has(l.id))
+    const allLocked = layers.length > 0 && layers.every((l) => l.style.locked)
     const header = el(
       '.oim-ul-folder-row',
       this.button(
@@ -366,6 +440,11 @@ export class Outliner {
       el('span.oim-ul-folder-label', `${folded ? '▸' : '▾'} 📁 ${folder}`),
       el('span.oim-ul-count-badge', tt('userlayers.n-layers', '{{count}} layers', { count: layers.length })),
       this.button(
+        '+',
+        () => this.actions.newLayer(folder),
+        tt('userlayers.folder-new-layer', 'New layer in this folder')
+      ),
+      this.button(
         '✎',
         () => {
           const value = window.prompt(
@@ -373,6 +452,14 @@ export class Outliner {
             folder
           )
           if (value === null) return
+          if (!layers.length) {
+            // Still empty: only the browser knows it.
+            this.emptyFolders.delete(folder)
+            if (value.trim()) this.emptyFolders.add(value.trim())
+            writeSet(EMPTY_FOLDERS_KEY, this.emptyFolders)
+            this.actions.update()
+            return
+          }
           for (const l of layers)
             store.updateLayer(l.id, { style: { ...l.style, folder: value.trim() || undefined } })
         },
@@ -390,7 +477,10 @@ export class Outliner {
       const layer = store.layers.get(id)
       if (layer && layer.style.folder !== folder) store.updateLayer(id, { style: { ...layer.style, folder } })
     })
-    return el('li.oim-ul-folder', header, folded ? '' : el('ul.oim-ul-layers', body))
+    const inside = body.length
+      ? body
+      : [el('li.oim-ul-hint', tt('userlayers.empty-folder', 'Empty: drag layers here.'))]
+    return el('li.oim-ul-folder', header, folded ? '' : el('ul.oim-ul-layers', inside))
   }
 
   /** The whole list, drawn again from the store. */
@@ -414,14 +504,21 @@ export class Outliner {
       })
     )
     const tree = el(`ul.oim-ul-tree${this.view ? '.oim-ul-readonly' : ''}`)
-    for (const [folder, layers] of byFolder([...(this.view ?? store.layers).values()])) {
+    // A new folder a layer is now in is a real one.
+    const used = new Set([...store.layers.values()].map((l) => l.style.folder?.trim()))
+    if ([...this.emptyFolders].some((f) => used.has(f))) {
+      for (const f of used) if (f) this.emptyFolders.delete(f)
+      writeSet(EMPTY_FOLDERS_KEY, this.emptyFolders)
+    }
+    const empty = this.view || searching ? [] : this.emptyFolders
+    for (const [folder, layers] of byFolder([...(this.view ?? store.layers).values()], empty)) {
       const rows: HTMLElement[] = []
       for (const layer of layers) {
         const items = [...layer.features.values()].filter((f) => matches(f, this.query, this.filters))
         if (searching && !items.length) continue
         rows.push(this.layerRow(layer, items, searching))
       }
-      if (!rows.length) continue
+      if (!rows.length && (layers.length || searching)) continue
       if (folder) tree.append(this.folderRow(folder, layers, rows))
       else rows.forEach((r) => tree.append(r))
     }
@@ -439,6 +536,11 @@ export class Outliner {
       type: 'button'
     })
     create.onclick = () => this.actions.newLayer()
+    const createFolder = el('button.oim-ul-button', `+ ${tt('userlayers.new-folder', 'New folder')}`, {
+      type: 'button',
+      title: tt('userlayers.new-folder-title', 'A folder to drag layers into')
+    })
+    createFolder.onclick = () => this.newFolder()
     this.chipsBox.replaceChildren(chips)
     this.body.replaceChildren(
       store.layers.size
@@ -452,7 +554,7 @@ export class Outliner {
               'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
             )
           ),
-      el('.oim-ul-row', create)
+      el('.oim-ul-row', create, this.view ? '' : createFolder)
     )
     return this.el
   }
