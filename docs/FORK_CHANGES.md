@@ -686,12 +686,15 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   tool, Enter finishes a drawing). Clicks the panel's tools
   take don't open upstream's popups: `fork/modules/userlayers/index.ts` wraps the click
   router's `handleClick` on the instance, so `click-router.ts` stays upstream's.
-- **Storage:** the `userdata` schema (`web-backend/src/fork/userdata.sql`), made by
+- **Storage:** the `userdata` schema (`web-backend/src/fork/userdata/userdata.sql`), made by
   the backend on first use. The layers belong to the computer, not to a region:
   `build-region.sh` and `import-db.sh` save them (`data/userdata/userdata.dump`)
   before wiping the database and put them back afterwards (so local ones replace
   any in an imported export); `export-db.sh` includes them.
-- **Backend:** `web-backend/src/fork/userdata.py` (`GET /userdata`, `POST
+- **Backend:** `web-backend/src/fork/userdata/` (refactor step 13: `schema.py`,
+  `changes.py` applying and logging changes, `layers.py`, `situations.py`, `images.py`,
+  and `users.py`, whose `current_user()` is the one place login and access control
+  will go; copying a map feature's geometry is `src/fork/map_data.py`) (`GET /userdata`, `POST
   /userdata/save`, `GET /userdata/history`, `POST`/`GET /userdata/images`, `GET
   /userdata/source-feature`). The frontend calls it through the dev server's proxy
   (`/userdata` in `vite.config.ts`): upstream's CORS settings only allow GET from

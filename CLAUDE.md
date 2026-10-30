@@ -97,7 +97,7 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 - `stats.sql`: the `stats` schema; `jobs/update-stats.sql` is upstream's production job
 - `grid.sql` (fork-only): `grid_node` / `grid_edge`, the network of lines with a known voltage used by `/grid/route` and `/grid/line` (`web-backend/src/fork/grid.py`, networkx) and `web/src/fork/modules/grid/`
 - `eez.sql`, `local-stats.sql`, `places.sql` (fork-only): EEZ views; fast per-country stats snapshot; one point per place in `osm_place` for search
-- `web-backend/src/fork/userdata.sql` (fork-only, made by the backend on first use): the `userdata` schema of My layers (layers, features, a change log for playback, images); saved and restored around rebuilds/imports by `scripts/lib/common.sh`
+- `web-backend/src/fork/userdata/userdata.sql` (fork-only, made by the backend on first use; the package also has `users.py`, where login and access control go): the `userdata` schema of My layers (layers, features, a change log for playback, images); saved and restored around rebuilds/imports by `scripts/lib/common.sh`
 - `sites.sql`, `extra.sql`, `search.sql` (fork-only): critical sites (`site_feature`, `site_points` for grouped tiles); the `extra` schema (data from outside OSM); `search_feature`, everything else with a name for the search box (rebuilt after extra data changes)
 
 ### Tile server (`/tegola/`)

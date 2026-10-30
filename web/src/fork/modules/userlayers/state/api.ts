@@ -1,4 +1,4 @@
-// Fork: "My layers" backend calls (web-backend/src/fork/userdata.py). Relative
+// Fork: "My layers" backend calls (web-backend/src/fork/userdata/). Relative
 // URLs: the dev server proxies /userdata to the backend (vite.config.ts), which
 // keeps the requests same-origin (the backend only allows GET across origins).
 import { Change, SavedChange, UserFeature } from '../model/model.ts'

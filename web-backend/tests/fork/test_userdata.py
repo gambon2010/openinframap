@@ -1,4 +1,4 @@
-"""Fork: My layers' backend (src/fork/userdata.py): what can be checked without a database."""
+"""Fork: My layers' backend (src/fork/userdata/): what can be checked without a database."""
 
 import uuid
 from pathlib import Path
@@ -7,7 +7,8 @@ import pytest
 from starlette.exceptions import HTTPException
 
 from src.fork import userdata
-from src.fork.userdata import parse_uuid
+from src.fork.userdata import layers, schema
+from src.fork.userdata.changes import parse_uuid
 
 
 def test_parse_uuid():
@@ -34,13 +35,13 @@ def test_schema_has_situations_and_is_upgraded_by_its_newest_table():
     sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
     assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
     # ensure_schema checks for the newest table, so older databases get it too.
-    assert "to_regclass('userdata.situation')" in Path(userdata.__file__).read_text()
+    assert "to_regclass('userdata.situation')" in Path(schema.__file__).read_text()
 
 
 def test_parse_time():
     from datetime import datetime, timezone
 
-    from src.fork.userdata import parse_time
+    from src.fork.userdata.changes import parse_time
 
     assert parse_time("2026-10-30T10:00:00Z") == datetime(2026, 10, 30, 10, tzinfo=timezone.utc)
     assert parse_time("2026-10-30T10:00:00").tzinfo is not None  # no zone: UTC
@@ -63,11 +64,33 @@ def test_read_json_rejects_what_is_not_an_object(body):
     import asyncio
 
     with pytest.raises(HTTPException) as e:
-        asyncio.run(userdata.read_json(FakeRequest(body)))
+        asyncio.run(layers.read_json(FakeRequest(body)))
     assert e.value.status_code == 400
 
 
 def test_read_json():
     import asyncio
 
-    assert asyncio.run(userdata.read_json(FakeRequest({"name": "x"}))) == {"name": "x"}
+    assert asyncio.run(layers.read_json(FakeRequest({"name": "x"}))) == {"name": "x"}
+
+
+def test_routes_are_where_they_were():
+    from src.fork import map_data
+
+    paths = {route.path for route in userdata.routes} | {route.path for route in map_data.routes}
+    assert paths == {
+        "/userdata",
+        "/userdata/save",
+        "/userdata/history",
+        "/userdata/situations",
+        "/userdata/situations/{situation_id}",
+        "/userdata/images",
+        "/userdata/images/{image_id}",
+        "/userdata/source-feature",
+    }
+
+
+def test_anyone_until_there_is_a_login():
+    from src.fork.userdata.users import ANYONE, current_user
+
+    assert current_user(None) is ANYONE  # type: ignore[arg-type]

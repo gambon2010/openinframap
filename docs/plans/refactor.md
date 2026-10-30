@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1, 2 and 3 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done.
 
 ## Why
 
@@ -155,7 +155,8 @@ working sessions.
 
 ### Phase 4: backend
 
-13. **`userdata.py` → package `src/fork/userdata/`**:
+13. **`userdata.py` → package `src/fork/userdata/`** (done; `routes.py` is `layers.py`,
+    since the package's route list is called `routes`):
     - `schema.py`: `ensure_schema`;
     - `changes.py`: applying and logging changes, no HTTP;
     - `routes.py`, `situations.py`, `images.py`.
