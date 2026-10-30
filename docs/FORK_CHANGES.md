@@ -852,18 +852,31 @@ is checked in the browser instead.
 |---|---|---|
 | `web/src/fork/**/*.test.ts` (89) | `cd web && npm run test:fork` | My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
 | `web-backend/tests/fork/` (13) | `cd web-backend && uv run pytest` | Grid routes (station parsing, graph, distinct paths, route description), search helpers, My layers' id parsing and schema, search indexes |
-| `scripts/tests/` (26) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, and `scripts/lib/common.sh` helpers run in bash |
+| `scripts/tests/` (58, + 1 opt-in) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, `scripts/lib/common.sh` helpers run in bash, and the setup scripts themselves (below) |
 
 The frontend tests run in happy-dom (a simulated browser, new dev dependency) with
 their own config (`web/vitest.fork.config.ts`); upstream's `npm run test` (a real
 browser through Puppeteer) excludes `src/fork/`.
 
-**The setup scripts** (`build-region.sh`, `import-db.sh`...) are mostly a sequence
-of downloads, Docker and database steps, so unit tests only make sense for their
-helpers (done, above). The whole flow is better checked end to end: `bash
-scripts/build-region.sh --region luxembourg --yes` builds the smallest region in a
-few minutes, but it wipes the database, so it belongs in a throwaway environment
-(e.g. a CI job), not on a machine with a built region.
+**The setup scripts** (`scripts/tests/test_setup_scripts.py`) run for real, but
+from a copy in a temporary folder (so their `data/` and `web/.env` are the
+copy's), with fake `docker`, `curl`, terminals and browsers
+(`scripts/tests/fakes/`) that log what they're asked and answer from the test
+(e.g. "the database exists", "this query returns 3"). Nothing reaches Docker, the
+database or the network. They check options and `--help`, that bad values and
+missing files are refused before anything happens, and the safety rules: the
+database is never wiped before the user agrees and the export's checksum matches;
+My layers are saved before a wipe and the restore comes after it; an old export
+gets search and the grid network built; what `export-db.sh` writes passes
+`import-db.sh`'s checks; `start.sh` starts the services and opens the browser, or
+explains the manual start without a desktop. They found two bugs: on a fresh
+checkout `build-region.sh` stopped silently at the start (a `find` on the not yet
+existing `data/wikidata_json/`), and bad `--basemap` / `--satellite` values were only
+refused after the questions (now right after the options are read).
+
+A real end-to-end build of Luxembourg is the last test, skipped unless
+`OIM_TEST_REAL_BUILD=wipes-my-database` is set: it replaces the map database, so
+run it on a machine without a region you care about (or in CI).
 
 ## Smaller fixes
 

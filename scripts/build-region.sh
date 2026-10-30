@@ -102,6 +102,20 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Check option values now, before any question or download.
+case "$BASEMAP_MODE" in
+    ""|full|reduced|none) ;;
+    *) die "--basemap must be full, reduced or none." ;;
+esac
+case "$SATELLITE_MODE" in
+    ""|none|overview|regional|regional13) ;;
+    *) die "--satellite must be none, overview, regional or regional13." ;;
+esac
+case "$SATELLITE_DETAILED" in
+    ""|none|15|16|17) ;;
+    *) die "--satellite-detailed must be 15, 16, 17 or none." ;;
+esac
+
 BUILD_STARTED=0
 BUILD_DONE=0
 trap 'echo; warn "Interrupted. Re-run the script to continue — downloads resume where they stopped."; exit 130' INT
@@ -232,7 +246,8 @@ show_local_files() {
         info "EEZ country boundaries: not downloaded yet"
     fi
     local cached
-    cached=$(find "$DATA_DIR/wikidata_json" -name '*.json' 2>/dev/null | wc -l)
+    # No cache folder on a fresh checkout: find fails, which mustn't stop the script.
+    cached=$({ find "$DATA_DIR/wikidata_json" -name '*.json' 2>/dev/null || true; } | wc -l)
     [[ "$cached" -gt 0 ]] && ok "Wikidata cache: $cached entries, $(find "$DATA_DIR/images" -type f 2>/dev/null | wc -l) images"
     if [[ -s "$BUILD_LOG" ]]; then
         info ""
@@ -595,10 +610,6 @@ BASEMAP_MANIFEST="${BASEMAP_FILE%.pmtiles}.json"
 BASEMAP_AREA=()
 PROTOMAPS_BUILD=""
 BASEMAP_SIZE=0
-case "$BASEMAP_MODE" in
-    ""|full|reduced|none) ;;
-    *) die "--basemap must be full, reduced or none." ;;
-esac
 [[ -z "$BASEMAP_MODE" && "$ASSUME_YES" == 1 ]] && BASEMAP_MODE=none
 if [[ "$BASEMAP_MODE" != none ]]; then
     section "Background map"
@@ -671,14 +682,6 @@ fi
 # Offline satellite imagery (scripts/satellite.py; docs/plans/satellite-imagery.md)
 # ---------------------------------------------------------------------------
 SATELLITE_AREA="$BASEMAP_DIR/.area-$REGION_ID.geojson"
-case "$SATELLITE_MODE" in
-    ""|none|overview|regional|regional13) ;;
-    *) die "--satellite must be none, overview, regional or regional13." ;;
-esac
-case "$SATELLITE_DETAILED" in
-    ""|none|15|16|17) ;;
-    *) die "--satellite-detailed must be 15, 16, 17 or none." ;;
-esac
 if [[ -z "$SATELLITE_MODE" && "$ASSUME_YES" == 1 ]]; then
     SATELLITE_MODE=none
     has_satellite "$REGION_ID" && SATELLITE_MODE=keep

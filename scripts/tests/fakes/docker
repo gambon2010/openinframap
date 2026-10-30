@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Fake `docker` for the setup-script tests: logs every call, never runs anything.
+
+FAKE_LOG          file to append calls to (one JSON list of arguments per line)
+FAKE_DB_EXISTS    "1": the project's database volume exists
+FAKE_DB_ANSWERS   JSON {"text in the SQL": "output"} for `psql -tAc` queries
+"""
+
+import json
+import os
+import sys
+
+args = sys.argv[1:]
+with open(os.environ["FAKE_LOG"], "a") as log:
+    log.write(json.dumps(args) + "\n")
+
+
+def has(*words):
+    return all(w in args for w in words)
+
+
+if args[:1] == ["info"] or args[:2] == ["compose", "version"]:
+    sys.exit(0)
+if has("config", "--format"):
+    print(json.dumps({"name": "oimtest", "services": {"db": {"image": "postgis:test"}, "basemap": {"image": "pmtiles:test"}}}))
+    sys.exit(0)
+if args[:2] == ["volume", "inspect"]:
+    sys.exit(0 if os.environ.get("FAKE_DB_EXISTS") == "1" else 1)
+if "exec" in args and "psql" in args and "-tAc" in args:
+    query = args[args.index("-tAc") + 1]
+    if query.strip() == "SELECT 1":
+        print(1)
+        sys.exit(0)
+    for text, answer in json.loads(os.environ.get("FAKE_DB_ANSWERS", "{}")).items():
+        if text in query:
+            print(answer)
+            break
+    sys.exit(0)
+if "exec" in args and "pg_dump" in args:
+    sys.stdout.write("FAKE DUMP of " + " ".join(a for a in args if a.startswith("-n") or a in ("public", "userdata")))
+    sys.exit(0)
+if "exec" in args and "pg_restore" in args and "-l" in args:
+    print("1; 2615 2200 SCHEMA - public postgres")
+    print("2; 1259 16385 TABLE public osm_power_line osm")
+    sys.exit(0)
+if "exec" in args or args[:1] == ["load"]:
+    sys.stdin.read()  # psql < file.sql, pg_restore < dump, docker load < images
+sys.exit(0)

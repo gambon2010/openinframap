@@ -48,7 +48,9 @@ uv run pytest                      # Tests (the fork's: tests/fork/)
 ### Setup scripts (`scripts/`)
 ```bash
 uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests   # From the repo root
+OIM_TEST_REAL_BUILD=wipes-my-database uv run --with pytest ... pytest scripts/tests -k real_build   # Real Luxembourg build: REPLACES the database
 ```
+Script tests run the scripts from a temporary copy with fake `docker`/`curl`/terminals (`scripts/tests/fakes/`); keep scripts testable that way (paths from `REPO_ROOT`, external programs called by name).
 
 **Tests for fork code:** add unit tests next to new fork code where they make sense
 (pure logic, parsing, geometry, state; not glue or layout): frontend `src/fork/**/*.test.ts`,
