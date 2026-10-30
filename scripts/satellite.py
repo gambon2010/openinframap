@@ -191,12 +191,75 @@ def box_touches_rings(
     return any(west <= x <= east and south <= y <= north for r in rings for x, y in r)
 
 
+Segment = tuple[float, float, float, float]
+
+
+def segment_touches_box(seg: Segment, box: tuple[float, float, float, float]) -> bool:
+    """Whether a segment of the outline crosses or lies in a box (Liang-Barsky)."""
+    x1, y1, x2, y2 = seg
+    west, south, east, north = box
+    if (
+        max(x1, x2) < west
+        or min(x1, x2) > east
+        or max(y1, y2) < south
+        or min(y1, y2) > north
+    ):
+        return False
+    dx, dy = x2 - x1, y2 - y1
+    t0, t1 = 0.0, 1.0
+    for p, q in (
+        (-dx, x1 - west),
+        (dx, east - x1),
+        (-dy, y1 - south),
+        (dy, north - y1),
+    ):
+        if p == 0:
+            if q < 0:
+                return False
+        else:
+            t = q / p
+            if p < 0:
+                t0 = max(t0, t)
+            else:
+                t1 = min(t1, t)
+            if t0 > t1:
+                return False
+    return True
+
+
 def tiles_in_outline(rings: list[Ring], zoom: int) -> list[tuple[int, int]]:
-    return [
-        (x, y)
-        for x, y in tiles_in_bbox(rings_bbox(rings), zoom)
-        if box_touches_rings(tile_bounds(x, y, zoom), rings)
+    """The tiles of a zoom level that overlap the outline. A quadtree from zoom 0:
+    only tiles the outline crosses are split (each with the outline's segments
+    that cross it); a tile wholly inside gives all its tiles at `zoom` at once.
+    Listing France at zoom 17 takes seconds instead of most of an hour."""
+    segments: list[Segment] = [
+        (*a, *b) for ring in rings for a, b in zip(ring, ring[1:] + ring[:1])
     ]
+    out: list[tuple[int, int]] = []
+
+    def visit(x: int, y: int, z: int, segs: list[Segment]) -> None:
+        box = tile_bounds(x, y, z)
+        crossing = [seg for seg in segs if segment_touches_box(seg, box)]
+        if not crossing:
+            # Wholly inside or wholly outside: the centre says which.
+            west, south, east, north = box
+            if point_in_rings((west + east) / 2, (south + north) / 2, rings):
+                n = 2 ** (zoom - z)
+                out.extend(
+                    (cx, cy)
+                    for cx in range(x * n, (x + 1) * n)
+                    for cy in range(y * n, (y + 1) * n)
+                )
+            return
+        if z == zoom:
+            out.append((x, y))
+            return
+        for cx in (2 * x, 2 * x + 1):
+            for cy in (2 * y, 2 * y + 1):
+                visit(cx, cy, z + 1, crossing)
+
+    visit(0, 0, 0, segments)
+    return sorted(out)
 
 
 def area_km2(rings: list[Ring]) -> float:

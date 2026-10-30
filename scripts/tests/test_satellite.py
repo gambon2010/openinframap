@@ -194,3 +194,23 @@ def test_download_tiles(tmp_path, tile_server):
         .fetchall()
     )
     assert sorted(row[0] for row in stored) == [b"2/0/0", b"2/0/1", b"2/2/0", b"2/2/1"]
+
+
+def test_segment_touches_box():
+    box = (0.0, 0.0, 1.0, 1.0)
+    assert s.segment_touches_box((-1, 0.5, 2, 0.5), box)  # straight through
+    assert s.segment_touches_box((0.2, 0.2, 0.3, 0.3), box)  # inside
+    assert s.segment_touches_box((-0.5, 0.5, 0.5, 1.5), box)  # clips a corner
+    assert not s.segment_touches_box((-0.5, 1.2, 1.2, 2.0), box)  # passes by the corner
+    assert not s.segment_touches_box((2, 0, 3, 1), box)
+
+
+def test_tiles_in_outline_matches_checking_every_tile():
+    # The quadtree gives what testing each tile of the bounding box does.
+    for zoom in (9, 12):
+        brute = {
+            (x, y)
+            for x, y in s.tiles_in_bbox(s.rings_bbox(LUXEMBOURG), zoom)
+            if s.box_touches_rings(s.tile_bounds(x, y, zoom), LUXEMBOURG)
+        }
+        assert set(s.tiles_in_outline(LUXEMBOURG, zoom)) == brute
