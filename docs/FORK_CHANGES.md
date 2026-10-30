@@ -969,12 +969,13 @@ is checked in the browser instead.
 
 | Where | Run | What |
 |---|---|---|
-| `web/src/fork/**/*.test.ts` (89) | `cd web && npm run test:fork` | My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
-| `web-backend/tests/fork/` (13) | `cd web-backend && uv run pytest` | Grid routes (station parsing, graph, distinct paths, route description), search helpers, My layers' id parsing and schema, search indexes |
-| `scripts/tests/` (58, + 1 opt-in) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, `scripts/lib/common.sh` helpers run in bash, and the setup scripts themselves (below) |
+| `web/src/fork/**/*.test.ts` (136) | `cd web && npm run test:fork` | Consistency (`consistency.test.ts`: every Tegola layer the fork adds is drawn and every style's tile layer is served, every fork layer is in the layer switcher, every aerial photo source is credited; every string is in `en.json`); My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
+| `web-backend/tests/fork/` (19) | `cd web-backend && uv run pytest` | Grid routes (station parsing, graph, distinct paths, route description), search helpers, My layers' id parsing and schema, search indexes |
+| `scripts/tests/` (77, + 1 opt-in) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, `scripts/lib/common.sh` helpers run in bash (including: every `schema/*.sql` is in `SCHEMA_FILES`, in `build-region.sh`'s order), and the setup scripts themselves (below) |
 
 The frontend tests run in happy-dom (a simulated browser, new dev dependency) with
-their own config (`web/vitest.fork.config.ts`); upstream's `npm run test` (a real
+their own config (`web/vitest.fork.config.ts`, which stands in for the
+`virtual:render-svg` module a Vite plugin builds: `src/fork/test-render-svg.ts`); upstream's `npm run test` (a real
 browser through Puppeteer) excludes `src/fork/`.
 
 **The setup scripts** (`scripts/tests/test_setup_scripts.py`) run for real, but

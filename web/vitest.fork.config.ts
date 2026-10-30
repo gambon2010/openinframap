@@ -4,6 +4,10 @@
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  // Built by a Vite plugin the tests don't run: a stand-in.
+  resolve: {
+    alias: { 'virtual:render-svg': new URL('src/fork/test-render-svg.ts', import.meta.url).pathname }
+  },
   test: {
     environment: 'happy-dom',
     include: ['src/fork/**/*.test.ts'],

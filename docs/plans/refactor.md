@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **proposal, waiting for review** (2026-10-30). Nothing below is built yet.
+Status: **in progress** (agreed 2026-10-30). Phase 1 done.
 
 ## Why
 
@@ -50,7 +50,7 @@ Sizes in lines. "Coupling" = one part reaching into another's insides.
 Phases are ordered by what the backlog needs first. Effort is a rough guess in
 working sessions.
 
-### Phase 1: fixes and groundwork (small, safe)
+### Phase 1: fixes and groundwork (small, safe) — done
 
 1. **Fix the database fingerprint**: one list of the SQL build steps, in order,
    for example `schema/build-steps.txt` or an array in a new `scripts/lib/db.sh`.
