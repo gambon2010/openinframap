@@ -161,7 +161,14 @@ map data. Unattended: `--basemap full`, `--basemap reduced` or `--basemap none`.
 
 ## Satellite imagery (offline)
 
-`build-region.sh` offers satellite imagery after the background map. It's shown with
+`build-region.sh` offers satellite imagery after the background map. To add it to
+the region you already have, without rebuilding (your map data and layers stay):
+
+```bash
+bash scripts/satellite.sh      # the same questions; then restart the frontend
+```
+
+It's shown with
 **Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
 roads* (also roads, railways and borders); *Map* is the usual background.
 
@@ -178,7 +185,8 @@ detailed tier to a département or a city. Past the last zoom the imagery is
 stretched (blurry); outside the region the Blue Marble shows. Files are in
 `data/basemap/<region>.sat-*.pmtiles`; copy `data/basemap/` along with an export to
 take them with it. For unattended builds: `--satellite none|overview|regional|regional13`
-and `--satellite-detailed 15|16|17|none`.
+and `--satellite-detailed 15|16|17|none` (both scripts; `satellite.sh --yes` needs
+`--satellite`).
 
 ## Sharing a built database (export / import)
 

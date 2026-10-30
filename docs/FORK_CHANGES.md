@@ -879,7 +879,9 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (standard
 library; GDAL and pmtiles in Docker), chosen in `build-region.sh` after the
-background map, shown by `web/src/fork/satellite/`.
+background map, or later with `scripts/satellite.sh` for the region already built
+(no rebuild; both use `choose_satellite` / `download_satellite` in `lib/common.sh`),
+shown by `web/src/fork/satellite/`.
 
 - **Three tiers**, one PMTiles file each in `data/basemap/<region>.sat-<tier>.pmtiles`,
   served by the existing `basemap` service (no new service; Tegola only serves vector

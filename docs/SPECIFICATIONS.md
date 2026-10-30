@@ -59,6 +59,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 3.4 | Night lights layer: disabled (online only, broke the map). | ✅ hidden |
 | 3.5 | Future: one command that sets up local tile server + local geocoder; priority local from config, fall back to online defaults, UI override showing the URL in use. | ✅ partly (local basemap, Photon optional); single command for Photon not done |
 | 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/satellite.py`, `fork/satellite/`; Settings → Background |
+| 3.7 | Download satellite imagery for the region already built without losing the data (no rebuild). | ✅ `scripts/satellite.sh` |
 
 ## 4. Search
 

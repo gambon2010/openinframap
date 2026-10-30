@@ -112,6 +112,7 @@ SCRIPT_NAMES = [
     "export-db.sh",
     "start.sh",
     "launch.sh",
+    "satellite.sh",
 ]
 
 
@@ -120,7 +121,9 @@ def test_syntax(script):
     subprocess.run(["bash", "-n", str(SCRIPTS / script)], check=True)
 
 
-@pytest.mark.parametrize("script", ["build-region.sh", "import-db.sh", "export-db.sh"])
+@pytest.mark.parametrize(
+    "script", ["build-region.sh", "import-db.sh", "export-db.sh", "satellite.sh"]
+)
 def test_help(sandbox, script):
     result = sandbox.run(script, "--help")
     assert result.returncode == 0
@@ -128,7 +131,9 @@ def test_help(sandbox, script):
     assert sandbox.calls() == []  # --help does nothing else
 
 
-@pytest.mark.parametrize("script", ["build-region.sh", "import-db.sh", "export-db.sh"])
+@pytest.mark.parametrize(
+    "script", ["build-region.sh", "import-db.sh", "export-db.sh", "satellite.sh"]
+)
 def test_unknown_option(sandbox, script):
     result = sandbox.run(script, "--frobnicate")
     assert result.returncode != 0
@@ -566,3 +571,24 @@ def test_real_build_export_and_import(tmp_path):
             check=False,
             timeout=600,
         )
+
+
+# --- satellite.sh -------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "args, message",
+    [
+        (
+            ["--satellite", "everything"],
+            "--satellite must be overview, regional or regional13",
+        ),
+        (["--yes"], "With --yes, say which tiers"),
+    ],
+)
+def test_satellite_refuses_bad_options_before_doing_anything(sandbox, args, message):
+    result = sandbox.run("satellite.sh", *args)
+    assert result.returncode != 0
+    assert message in result.stderr + result.stdout
+    assert sandbox.calls() == []
+    assert not sandbox.wiped()
