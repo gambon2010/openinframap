@@ -54,6 +54,9 @@ export interface Change {
   data?: { name?: string; style?: UserLayer['style']; geometry?: GeoJSON.Geometry; properties?: FeatureProps }
   /** When it was done, in the browser (ISO 8601). */
   made_at: string
+  /** Changes made by one action share it (e.g. moving an item: out of one layer,
+   * into another), so undo takes them back together. Not used by the backend. */
+  batch?: string
 }
 
 /** A saved change, as GET /userdata/history returns it (after = state after it). */

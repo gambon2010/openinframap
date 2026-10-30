@@ -489,3 +489,164 @@
   justify-content: flex-end;
   margin-top: 8px;
 }
+
+/* --- Version 3: the left sidebar and the map toolbar (panel.ts) --- */
+
+/* The left column (search, My layers, details, grid connection) is one stack that
+   fits the map's height: each part scrolls inside rather than running off. */
+.maplibregl-ctrl-top-left:has(.oim-ul-sidebar.visible) {
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+.maplibregl-ctrl-top-left:has(.oim-ul-sidebar.visible) > * {
+  pointer-events: auto;
+  flex: 0 0 auto;
+}
+.maplibregl-ctrl-top-left:has(.oim-ul-sidebar.visible) .oim-info-panel.visible {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.maplibregl-ctrl-top-left:has(.oim-ul-sidebar.visible) .oim-info-panel .oim-side-panel-body {
+  max-height: none;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.oim-ul-sidebar {
+  display: none;
+  width: min(330px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.95rem;
+}
+.oim-ul-sidebar.visible {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto !important;
+  min-height: 120px;
+  max-height: 45vh;
+}
+.oim-ul-sidebar .oim-panel-header {
+  flex: 0 0 auto;
+}
+.oim-ul-outline {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 10px 8px;
+}
+.oim-ul-count-badge {
+  min-width: 1.6em;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--oim-light-grey);
+  color: var(--oim-text-color-light);
+  font-size: 0.75rem;
+  text-align: center;
+}
+.oim-ul-layer-name span {
+  white-space: nowrap;
+}
+.oim-ul-settings {
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--oim-grey);
+}
+.oim-ul-settings .oim-ul-field {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+.oim-ul-settings .oim-ul-field select,
+.oim-ul-settings .oim-ul-field input {
+  width: 55%;
+}
+
+/* The toolbar, at the top of the map. */
+.oim-ul-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 4;
+  display: none;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 4px;
+  border-radius: var(--oim-radius-large);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+.oim-ul-toolbar.visible {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+}
+.oim-ul-toolbar-group + .oim-ul-toolbar-group {
+  border-left: 1px solid var(--oim-grey);
+}
+.oim-ul-tool-icon {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-color: transparent;
+  background: none;
+  font-size: 1.05rem;
+}
+.oim-ul-tool-icon.active {
+  background: var(--oim-light-grey);
+  box-shadow: inset 0 0 0 2px var(--oim-dark-grey);
+}
+.oim-ul-toolbar-label {
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+.oim-ul-target {
+  max-width: 11em;
+  padding: 3px;
+}
+.oim-ul-toolbar .oim-ul-menu-items {
+  top: 100%;
+}
+
+/* The symbol picker, under the toolbar. */
+.oim-ul-picker {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  z-index: 4;
+  display: none;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100% - 110px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  border-radius: var(--oim-radius-large);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+.oim-ul-picker.visible {
+  display: block;
+}
+.oim-ul-picker .oim-ul-palette-results {
+  max-height: none;
+}
+.oim-ul-picker .oim-ul-symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 2px 8px;
+}

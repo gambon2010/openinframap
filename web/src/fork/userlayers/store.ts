@@ -66,9 +66,22 @@ export function applyChange(layers: Map<string, UserLayer>, change: Change) {
   }
 }
 
+function cloneLayers(layers: Map<string, UserLayer>): Map<string, UserLayer> {
+  return new Map(
+    [...layers].map(([id, layer]) => [
+      id,
+      { ...layer, style: { ...layer.style }, features: new Map(layer.features) }
+    ])
+  )
+}
+
 export class Store {
   layers = new Map<string, UserLayer>()
   pending: Change[] = readStorage<Change[]>(PENDING_KEY, [])
+  /** Changes undone, most recent last, until something new is done. */
+  redoable: Change[] = []
+  // The layers as saved (before the pending changes), to rebuild them after an undo.
+  private saved = new Map<string, UserLayer>()
   hidden = new Set<string>(readStorage<string[]>(HIDDEN_KEY, []))
   activeLayer: string | null = null
   loaded = false
@@ -95,7 +108,7 @@ export class Store {
   async load() {
     try {
       const data = await loadAll()
-      this.layers = new Map(
+      this.saved = new Map(
         data.layers.map((layer) => [
           layer.id,
           {
@@ -106,6 +119,7 @@ export class Store {
           }
         ])
       )
+      this.layers = cloneLayers(this.saved)
       for (const change of this.pending) applyChange(this.layers, change)
       this.error = null
     } catch (e) {
@@ -118,12 +132,62 @@ export class Store {
     this.notify()
   }
 
-  private record(op: ChangeOp, layer_id: string, feature_id?: string, data?: Change['data']) {
+  private record(op: ChangeOp, layer_id: string, feature_id?: string, data?: Change['data'], batch?: string) {
     const change: Change = { op, layer_id, feature_id, data, made_at: new Date().toISOString() }
+    if (batch) change.batch = batch
     applyChange(this.layers, change)
     this.pending.push(change)
+    this.redoable = []
     writeStorage(PENDING_KEY, this.pending)
     this.notify()
+  }
+
+  /** Rebuild the layers from what's saved and the pending changes. */
+  private rebuild() {
+    this.layers = cloneLayers(this.saved)
+    for (const change of this.pending) applyChange(this.layers, change)
+    if (this.activeLayer && !this.layers.has(this.activeLayer)) {
+      this.activeLayer = this.layers.keys().next().value ?? null
+    }
+    writeStorage(PENDING_KEY, this.pending)
+    this.notify()
+  }
+
+  get canUndo(): boolean {
+    return this.pending.length > 0
+  }
+
+  get canRedo(): boolean {
+    return this.redoable.length > 0
+  }
+
+  /** Take back the last unsaved change (all of it, if it was several at once). */
+  undo() {
+    const last = this.pending[this.pending.length - 1]
+    if (!last) return
+    const taken: Change[] = []
+    while (this.pending.length) {
+      const change = this.pending[this.pending.length - 1]
+      if (taken.length && (!last.batch || change.batch !== last.batch)) break
+      taken.unshift(this.pending.pop()!)
+      if (!last.batch) break
+    }
+    this.redoable.push(...taken.reverse())
+    this.rebuild()
+  }
+
+  /** Do again what undo took back. */
+  redo() {
+    const last = this.redoable[this.redoable.length - 1]
+    if (!last) return
+    do {
+      this.pending.push(this.redoable.pop()!)
+    } while (
+      last.batch &&
+      this.redoable.length &&
+      this.redoable[this.redoable.length - 1].batch === last.batch
+    )
+    this.rebuild()
   }
 
   createLayer(name: string): string {
@@ -166,11 +230,15 @@ export class Store {
     const from = this.layerOf(featureId)
     const feature = from?.features.get(featureId)
     if (!from || !feature || from.id === toLayerId || !this.layers.has(toLayerId)) return
-    this.record('feature_delete', from.id, featureId)
-    this.record('feature_create', toLayerId, featureId, {
-      geometry: feature.geometry,
-      properties: feature.properties
-    })
+    const batch = uuid()
+    this.record('feature_delete', from.id, featureId, undefined, batch)
+    this.record(
+      'feature_create',
+      toLayerId,
+      featureId,
+      { geometry: feature.geometry, properties: feature.properties },
+      batch
+    )
   }
 
   /** Which layer a feature is in. */
@@ -196,6 +264,7 @@ export class Store {
     if (!this.pending.length) return
     await saveChanges(this.pending, this.author)
     this.pending = []
+    this.redoable = []
     writeStorage(PENDING_KEY, [])
     await this.load()
   }
@@ -203,6 +272,7 @@ export class Store {
   /** Forget the unsaved changes and go back to what's saved. */
   async discard() {
     this.pending = []
+    this.redoable = []
     writeStorage(PENDING_KEY, [])
     await this.load()
   }

@@ -106,6 +106,7 @@ class Details {
       highlight.clear()
       this.selected = null
     })
+    this.route.fold()
     this.selected = key
     highlight.showFeature(feature)
 
@@ -176,6 +177,11 @@ let details: Details | undefined
 /** The left side panel, for other modules' details (My layers' editor). */
 export function sidePanel(): InfoPanel | undefined {
   return details?.panel
+}
+
+/** Fold the grid connection to one line (something else is shown above it). */
+export function foldRoute() {
+  details?.route.fold()
 }
 
 const grid: ForkModule = {

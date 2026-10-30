@@ -175,3 +175,13 @@
 .oim-info-panel.visible ~ .oim-route-panel .oim-route-body {
   max-height: 35vh;
 }
+
+/* Folded: the title is the route in one line, and unfolds the panel when clicked. */
+.oim-route-panel.minimised .oim-route-header h2 {
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}

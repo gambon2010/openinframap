@@ -126,6 +126,7 @@ export default class GridRouteControl implements IControl {
   _container!: HTMLDivElement
   _body!: HTMLDivElement
   _minimise!: HTMLButtonElement
+  _title!: HTMLElement
   _from?: Station
   _to?: Station
   _paths: Route[] = []
@@ -143,13 +144,18 @@ export default class GridRouteControl implements IControl {
     // Minimise keeps the routes on the map; close clears them.
     this._minimise = minimiseButton(() => this.setMinimised(!this._container.classList.contains('minimised')))
     const close = closeButton(() => this.clear())
+    this._title = el('h2', t('route.title', 'Grid connection'))
+    // Folded, the title is the route in one line; clicking it unfolds the panel.
+    this._title.onclick = () => {
+      if (this._container.classList.contains('minimised')) this.setMinimised(false)
+    }
     this._container = el(
       'div',
       { class: 'maplibregl-ctrl oim-route-panel' },
       el(
         'div',
         { class: 'oim-route-header' },
-        el('h2', t('route.title', 'Grid connection')),
+        this._title,
         el('div', { class: 'oim-route-buttons-top' }, this._minimise, close)
       ),
       this._body
@@ -200,6 +206,25 @@ export default class GridRouteControl implements IControl {
     if (!this._container) return // a route from the link is read before the panel exists
     this._container.classList.toggle('minimised', minimised)
     updateMinimiseButton(this._minimise, minimised)
+    this._title.textContent = minimised ? this.summary() : t('route.title', 'Grid connection')
+    this._title.title = minimised ? t('panel.restore', 'Restore') : ''
+  }
+
+  /** The route in one line, for the folded panel: "Route: A → B · 18 km". */
+  summary(): string {
+    if (!this._from || !this._to) return t('route.title', 'Grid connection')
+    const length = this._paths[0] ? ` · ${this._paths[0].length_km.toLocaleString()} km` : ''
+    return t('route.summary', 'Route: {{from}} → {{to}}{{length}}', {
+      from: stationLabel(this._from),
+      to: stationLabel(this._to),
+      length,
+      interpolation: { escapeValue: false }
+    })
+  }
+
+  /** Fold to one line (when something else is shown above it). */
+  fold() {
+    if (this._container?.classList.contains('visible')) this.setMinimised(true)
   }
 
   /** Called from the info popup's buttons. */

@@ -1,10 +1,13 @@
-// Fork: the "My layers" panel, docked on the right (fork/ui/dock.ts): tabs Layers /
-// Add / History, and a save bar while there are unsaved changes. Around the map: a
-// hint at the bottom while a tool is in use, the history timeline at the bottom
-// while playing back, and the selected item's details in the left side panel
-// (editor.ts).
+// Fork: the "My layers" workspace (docs/plans/my-layers-v3.md), opened by its button
+// on the right:
+// - a sidebar on the left, between the search box and the details panel: the
+//   layers and their items (the outliner); the details panel below it is the
+//   inspector (editor.ts), for my items and map features alike;
+// - a toolbar at the top of the map: the tools, the layer new things go into, undo /
+//   redo, history and Save; the symbol picker opens under it;
+// - a hint at the bottom of the map while a tool is in use, and the history
+//   timeline at the bottom while playing back.
 import { tt } from './i18n.ts'
-import { dock } from '../ui/dock.ts'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { Store } from './store.ts'
@@ -18,7 +21,7 @@ import { buildEditor } from './editor.ts'
 import { graphicsLibrary, isAxis, pointCount } from './graphics.ts'
 import { getLabelLevel, setLabelLevel } from './symbols.ts'
 import { LabelLevel } from './fields.ts'
-import { sidePanel } from '../grid/index.ts'
+import { foldRoute, sidePanel } from '../grid/index.ts'
 import './userlayers.css'
 
 // Pictures are kept this big (longest side): enough to stay sharp at the largest
@@ -55,10 +58,10 @@ async function prepareImage(file: File): Promise<{ mime: string; data: string }>
   }
 }
 
-type Tab = 'layers' | 'add' | 'history'
+const OPEN_KEY = 'oim-userlayers-open'
 
-/** What a feature is, in a few words (the layer's item list). */
-function featureLabel(feature: UserFeature): string {
+/** What a feature is, in a few words (the outliner). */
+export function featureLabel(feature: UserFeature): string {
   const p = feature.properties
   const name = p.modifiers?.['T'] || p.name
   const what =
@@ -70,6 +73,18 @@ function featureLabel(feature: UserFeature): string {
   return name ? `${name} · ${what}` : what
 }
 
+/** The map toolbar's tools: [id, glyph, label, key]. */
+const TOOLS: [string, string, string, string][] = [
+  ['select', '↖', 'Select and move', 'V'],
+  ['symbol', '⬚', 'Symbol', 'S'],
+  ['graphic', '➚', 'Arrow or graphic', 'A'],
+  ['line', '╱', 'Line', 'L'],
+  ['area', '▱', 'Area', 'R'],
+  ['marker', '📍', 'Marker', 'M'],
+  ['image', '🖼', 'Picture', 'P'],
+  ['copy', '⧉', 'Copy from the map', 'C']
+]
+
 export class Panel implements IControl {
   private map: Map
   private store: Store
@@ -78,20 +93,20 @@ export class Panel implements IControl {
   private playback: Playback
   private container!: HTMLElement
   private button!: HTMLButtonElement
-  private panel: HTMLElement
-  private tabs: HTMLElement
-  private body: HTMLElement
-  private footer: HTMLElement
+  private sidebar: HTMLElement
+  private outline: HTMLElement
+  private toolbar: HTMLElement
+  private picker: HTMLElement
   private toast: HTMLElement
   private timeline: HTMLElement
   private palette: Palette
   private fileInput: HTMLInputElement
-  private tab: Tab = 'layers'
   private paletteMode: PaletteMode | null = null
   private expanded = new Set<string>()
   private inPlayback = false
   private follow = true
   private busy = ''
+  private isOpen = false
   // The editor in the side panel: which feature (and version) it shows.
   private editorKey: string | null = null
 
@@ -108,51 +123,62 @@ export class Panel implements IControl {
     }) as HTMLInputElement
     this.fileInput.style.display = 'none'
     this.fileInput.onchange = () => void this.pickedImage()
-    this.tabs = el('.oim-ul-tabs', { role: 'tablist' })
-    this.body = el('.oim-ul-body')
-    this.footer = el('.oim-ul-footer')
-    const close = el('button.oim-ul-close', '×', {
-      type: 'button',
-      title: tt('userlayers.close', 'Close'),
-      'aria-label': tt('userlayers.close', 'Close')
+    this.outline = el('.oim-ul-outline')
+    this.sidebar = el('.maplibregl-ctrl.oim-ul-sidebar', this.fileInput)
+    this.toolbar = el('.oim-ul-toolbar', {
+      role: 'toolbar',
+      'aria-label': tt('userlayers.title', 'My layers')
     })
-    close.onclick = () => this.toggle(false)
-    this.panel = el(
-      '.oim-ul-panel',
-      el('.oim-ul-header', el('h2', tt('userlayers.title', 'My layers')), close),
-      this.tabs,
-      this.body,
-      this.footer,
-      this.fileInput
-    )
+    this.picker = el('.oim-ul-picker', this.palette.el)
     this.toast = el('.oim-ul-toast', { role: 'status' })
     this.timeline = el('.oim-ul-timeline')
     store.onChange(() => this.update())
     tools.onChange(() => this.update())
+    document.addEventListener('keydown', (e) => this.keydown(e))
   }
 
   onAdd(): HTMLElement {
     this.button = el('button.maplibregl-ctrl-icon.oim-ul-control', {
+      type: 'button',
       title: tt('userlayers.title', 'My layers'),
-      ariaLabel: tt('userlayers.title', 'My layers')
+      'aria-label': tt('userlayers.title', 'My layers')
     }) as HTMLButtonElement
+    this.button.onclick = () => this.toggle()
     this.container = el('div.maplibregl-ctrl.maplibregl-ctrl-group', this.button)
-    this.map.getContainer().append(this.toast, this.timeline)
-    // Opens next to the buttons on the right, like the layers and the key.
-    dock.add(this.button, this.panel, () => this.update())
-    this.update()
+    this.map.getContainer().append(this.toolbar, this.picker, this.toast, this.timeline)
+    // In the left column, between the search box and the details panel.
+    const details = sidePanel()?._container
+    if (details?.parentElement) details.parentElement.insertBefore(this.sidebar, details)
+    else this.map.getContainer().querySelector('.maplibregl-ctrl-top-left')?.append(this.sidebar)
+    let open = false
+    try {
+      open = localStorage.getItem(OPEN_KEY) === '1'
+    } catch {
+      // Closed by default.
+    }
+    this.toggle(open)
     return this.container
   }
 
   onRemove() {
-    this.container.remove()
-    this.panel.remove()
-    this.toast.remove()
-    this.timeline.remove()
+    for (const e of [this.container, this.sidebar, this.toolbar, this.picker, this.toast, this.timeline])
+      e.remove()
   }
 
-  toggle(open = !this.panel.classList.contains('visible')) {
-    this.panel.classList.toggle('visible', open)
+  toggle(open = !this.isOpen) {
+    this.isOpen = open
+    try {
+      localStorage.setItem(OPEN_KEY, open ? '1' : '0')
+    } catch {
+      // Not remembered.
+    }
+    this.button.classList.toggle('oim-dock-active', open)
+    this.button.setAttribute('aria-pressed', String(open))
+    if (!open) {
+      this.paletteMode = null
+      if (this.tools.tool.mode !== 'select') this.tools.setTool({ mode: 'select' })
+    }
+    this.update()
   }
 
   private action(
@@ -192,316 +218,204 @@ export class Panel implements IControl {
     this.updateToast()
     this.updateTimeline()
     void this.syncEditor()
-    if (!this.panel.classList.contains('visible')) return
-    this.updateTabs()
-    this.updateFooter()
-    const body = this.body
-    body.textContent = ''
-    if (!this.store.loaded) {
-      body.append(el('p.oim-ul-hint', tt('userlayers.loading', 'Loading...')))
+    for (const e of [this.sidebar, this.toolbar]) e.classList.toggle('visible', this.isOpen)
+    this.picker.classList.toggle('visible', this.isOpen && this.paletteMode !== null && !this.inPlayback)
+    if (!this.isOpen) return
+    this.updateToolbar()
+    this.updateSidebar()
+  }
+
+  // --- Keyboard -------------------------------------------------------------------
+
+  private keydown(e: KeyboardEvent) {
+    if (!this.isOpen || this.inPlayback) return
+    const target = e.target as HTMLElement
+    if (target.closest('input, textarea, select, [contenteditable]')) return
+    const mod = e.ctrlKey || e.metaKey
+    if (mod && e.key.toLowerCase() === 'z') {
+      e.preventDefault()
+      if (e.shiftKey) this.store.redo()
+      else this.store.undo()
       return
     }
-    if (this.store.error) {
-      body.append(
-        el(
-          'p.oim-ul-error',
-          tt(
-            'userlayers.error',
-            "The backend can't be reached, so layers can't be loaded or saved: {{error}}",
-            {
-              error: this.store.error
-            }
-          )
-        )
-      )
-    }
-    if (this.tab === 'layers') body.append(this.layersTab())
-    else if (this.tab === 'add') body.append(this.addTab())
-    else body.append(this.historyTab())
-  }
-
-  // --- Tabs -------------------------------------------------------------------
-
-  private updateTabs() {
-    this.tabs.textContent = ''
-    const labels: [Tab, string][] = [
-      ['layers', tt('userlayers.tab.layers', 'Layers')],
-      ['add', tt('userlayers.tab.add', 'Add')],
-      ['history', tt('userlayers.tab.history', 'History')]
-    ]
-    for (const [tab, label] of labels) {
-      const button = el(`button.oim-ul-tab${tab === this.tab ? '.active' : ''}`, label, {
-        type: 'button',
-        role: 'tab',
-        'aria-selected': String(tab === this.tab),
-        disabled: this.inPlayback && tab !== 'history'
-      }) as HTMLButtonElement
-      button.onclick = () => {
-        this.tab = tab
-        if (tab !== 'add') this.paletteMode = null
-        this.update()
-      }
-      this.tabs.append(button)
-    }
-  }
-
-  // --- Layers tab -------------------------------------------------------------
-
-  private layersTab(): HTMLElement {
-    const list = el('ul.oim-ul-layers')
-    for (const layer of this.store.layers.values()) {
-      const hidden = this.store.hidden.has(layer.id)
-      const eye = this.action(hidden ? '◌' : '◉', () => this.store.setHidden(layer.id, !hidden), {
-        title: hidden ? tt('userlayers.show', 'Show on the map') : tt('userlayers.hide', 'Hide from the map'),
-        className: 'oim-ul-icon'
-      })
-      const color = el('input.oim-ul-color', {
-        type: 'color',
-        value: layer.style.color ?? DEFAULT_COLOR,
-        title: tt('userlayers.layer-color', 'Colour of its drawings and markers')
-      }) as HTMLInputElement
-      color.onchange = () =>
-        this.store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
-      const active = layer.id === this.store.activeLayer
-      const name = el(
-        'button.oim-ul-layer-name',
-        el('span', layer.name),
-        active ? el('small.oim-ul-active-tag', tt('userlayers.active', 'adding here')) : '',
-        {
-          type: 'button',
-          title: tt('userlayers.make-active', 'Add new items to this layer')
-        }
-      )
-      name.onclick = () => this.store.setActive(layer.id)
-      const open = this.expanded.has(layer.id)
-      const expand = this.action(
-        `${open ? '▾' : '▸'} ${layer.features.size}`,
-        () => {
-          if (open) this.expanded.delete(layer.id)
-          else this.expanded.add(layer.id)
-          this.update()
-        },
-        { title: tt('userlayers.items', 'Show its items'), className: 'oim-ul-count' }
-      )
-      const menu = el(
-        'details.oim-ul-menu',
-        el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
-        el(
-          '.oim-ul-menu-items',
-          this.action(tt('userlayers.rename', 'Rename'), () => {
-            const value = window.prompt(tt('userlayers.rename', 'Rename'), layer.name)
-            if (value && value.trim() && value.trim() !== layer.name)
-              this.store.updateLayer(layer.id, { name: value.trim() })
-          }),
-          this.action(tt('userlayers.delete', 'Delete'), () => {
-            const message = tt(
-              'userlayers.delete-layer',
-              'Delete the layer "{{name}}" and its {{count}} item(s)?',
-              {
-                name: layer.name,
-                count: layer.features.size
-              }
-            )
-            if (window.confirm(message)) {
-              this.tools.select(null)
-              this.store.deleteLayer(layer.id)
-            }
-          })
-        )
-      )
-      const items = open
-        ? el(
-            'ul.oim-ul-items',
-            [...layer.features.values()].map((f) => {
-              const item = el(
-                `li${f.id === this.tools.selected ? '.selected' : ''}`,
-                el('button', featureLabel(f), { type: 'button' })
-              )
-              item.onclick = () => {
-                this.tools.select(f.id)
-                this.zoomTo(f)
-              }
-              return item
-            })
-          )
-        : ''
-      list.append(
-        el(`li${active ? '.active' : ''}`, el('.oim-ul-layer-row', eye, color, name, expand, menu), items)
-      )
-    }
-    const create = this.action(`+ ${tt('userlayers.new-layer', 'New layer')}`, () => {
-      const value = window.prompt(
-        tt('userlayers.layer-name', 'Layer name'),
-        tt('userlayers.default-name', 'My layer')
-      )
-      if (value && value.trim()) this.store.createLayer(value.trim())
-    })
-    const level = el(
-      'select',
-      (
-        [
-          ['none', tt('userlayers.labels.none', 'None')],
-          ['name', tt('userlayers.labels.name', 'Designation only')],
-          ['all', tt('userlayers.labels.all', 'All fields')]
-        ] as [LabelLevel, string][]
-      ).map(([value, label]) => el('option', label, { value, selected: value === getLabelLevel() }))
-    ) as HTMLSelectElement
-    level.onchange = () => {
-      setLabelLevel(level.value as LabelLevel)
-      void this.renderer.render(this.store.layers, this.store.hidden)
-    }
-    return el(
-      'div',
-      this.store.layers.size
-        ? list
-        : el(
-            'p.oim-ul-hint',
-            tt('userlayers.no-layers', 'No layer yet: make one, or just start adding things.')
-          ),
-      el('.oim-ul-row', create),
-      el('label.oim-ul-field.oim-ul-labels', el('span', tt('userlayers.labels', 'Labels on the map')), level)
-    )
-  }
-
-  private zoomTo(feature: UserFeature) {
-    const coords: [number, number][] = []
-    const add = (c: unknown): void => {
-      if (Array.isArray(c) && typeof c[0] === 'number') coords.push(c as [number, number])
-      else if (Array.isArray(c)) c.forEach(add)
-    }
-    add((feature.geometry as GeoJSON.Point).coordinates)
-    if (!coords.length) return
-    if (coords.length === 1) {
-      this.map.easeTo({ center: coords[0], zoom: Math.max(this.map.getZoom(), 13) })
+    if (mod && e.key.toLowerCase() === 'y') {
+      e.preventDefault()
+      this.store.redo()
       return
     }
-    const lons = coords.map((c) => c[0])
-    const lats = coords.map((c) => c[1])
-    this.map.fitBounds(
-      [
-        [Math.min(...lons), Math.min(...lats)],
-        [Math.max(...lons), Math.max(...lats)]
-      ],
-      { padding: 80, maxZoom: 15 }
-    )
+    if (mod || e.altKey) return
+    const tool = TOOLS.find(([, , , key]) => key === e.key.toUpperCase())
+    if (tool) {
+      e.preventDefault()
+      this.chooseTool(tool[0])
+    }
   }
 
-  // --- Add tab ----------------------------------------------------------------
+  // --- Toolbar --------------------------------------------------------------------
 
-  private addTab(): HTMLElement {
-    const mode = this.tools.tool.mode
-    const kind = this.tools.tool.mode === 'place' ? this.tools.tool.properties.kind : null
-    const tool = (glyph: string, label: string, active: boolean, onclick: () => void, title = '') =>
-      this.action(`${glyph} ${label}`, onclick, { active, title, className: 'oim-ul-tool' })
-    const stop = () => {
-      this.paletteMode = null
-      this.tools.setTool({ mode: 'select' })
-    }
-    const openPalette = (paletteMode: PaletteMode) => {
-      const closing = this.paletteMode === paletteMode
-      stop()
-      if (!closing) {
-        this.paletteMode = paletteMode
-        void this.palette.open(paletteMode)
-      }
+  private activeToolId(): string {
+    const tool = this.tools.tool
+    if (this.paletteMode === 'symbols') return 'symbol'
+    if (this.paletteMode === 'graphics') return 'graphic'
+    if (tool.mode === 'place') return tool.properties.kind === 'symbol' ? 'symbol' : tool.properties.kind
+    if (tool.mode === 'graphic') return 'graphic'
+    return tool.mode
+  }
+
+  private chooseTool(id: string) {
+    const again = this.activeToolId() === id && id !== 'select'
+    this.paletteMode = null
+    this.tools.setTool({ mode: 'select' })
+    if (again) {
       this.update()
+      return
     }
-    const tools = el(
-      '.oim-ul-toolgrid',
-      tool(
-        '⬚',
-        tt('userlayers.tool.symbol', 'Symbol'),
-        this.paletteMode === 'symbols' || kind === 'symbol',
-        () => openPalette('symbols'),
-        tt('userlayers.tool.symbol-title', 'Military and emergency symbols (as in ODIN)')
-      ),
-      tool(
-        '➚',
-        tt('userlayers.tool.graphic', 'Graphic'),
-        this.paletteMode === 'graphics' || mode === 'graphic',
-        () => openPalette('graphics'),
-        tt('userlayers.tool.graphic-title', 'Tactical graphics: axes, phase lines, areas, tasks...')
-      ),
-      tool(
-        '🖼',
-        tt('userlayers.tool.image', 'Picture'),
-        kind === 'image',
-        () => this.fileInput.click(),
-        tt('userlayers.tool.image-title', 'Put your own picture or icon on the map')
-      ),
-      tool('📍', tt('userlayers.tool.marker', 'Marker'), kind === 'marker', () => {
-        stop()
+    switch (id) {
+      case 'symbol':
+      case 'graphic':
+        this.paletteMode = id === 'symbol' ? 'symbols' : 'graphics'
+        void this.palette.open(this.paletteMode)
+        break
+      case 'line':
+      case 'area':
+        this.tools.setTool(
+          { mode: id, points: [] },
+          tt('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
+        )
+        break
+      case 'marker':
         this.tools.setTool(
           { mode: 'place', properties: { kind: 'marker' } },
           tt('userlayers.marker-hint', 'Click the map to put a marker there.')
         )
-      }),
-      tool('╱', tt('userlayers.tool.line', 'Line'), mode === 'line', () => {
-        stop()
+        break
+      case 'image':
+        this.fileInput.click()
+        break
+      case 'copy':
         this.tools.setTool(
-          { mode: 'line', points: [] },
-          tt('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
-        )
-      }),
-      tool('▱', tt('userlayers.tool.area', 'Area'), mode === 'area', () => {
-        stop()
-        this.tools.setTool(
-          { mode: 'area', points: [] },
-          tt('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
-        )
-      }),
-      tool(
-        '⧉',
-        tt('userlayers.tool.copy', 'Copy from map'),
-        mode === 'copy',
-        () => {
-          stop()
-          this.tools.setTool(
-            { mode: 'copy' },
-            tt(
-              'userlayers.copy-hint',
-              'Click lines, substations, sites... to copy them into the layer. They stay visible when their kind is hidden.'
-            )
+          { mode: 'copy' },
+          tt(
+            'userlayers.copy-hint',
+            'Click lines, substations, sites... to copy them into the layer. They stay visible when their kind is hidden.'
           )
-        },
-        tt(
-          'userlayers.tool.copy-title',
-          'Copy map features (power lines, substations, sites...) into the layer'
         )
-      )
+        break
+    }
+    this.update()
+  }
+
+  private updateToolbar() {
+    const bar = this.toolbar
+    bar.textContent = ''
+    const active = this.activeToolId()
+    const tools = el(
+      '.oim-ul-toolbar-group',
+      TOOLS.map(([id, glyph, label, key]) => {
+        const b = this.action(glyph, () => this.chooseTool(id), {
+          title: `${tt(`userlayers.tool.${id}`, label)} (${key})`,
+          active: active === id,
+          className: 'oim-ul-tool-icon'
+        })
+        b.setAttribute('aria-pressed', String(active === id))
+        b.setAttribute('aria-label', tt(`userlayers.tool.${id}`, label))
+        b.disabled = this.inPlayback
+        return b
+      })
     )
     // Where new items go.
     const target = el(
-      'select',
+      'select.oim-ul-target',
+      { title: tt('userlayers.add-to', 'New items go into this layer'), disabled: this.inPlayback },
       [...this.store.layers.values()].map((l) =>
         el('option', l.name, { value: l.id, selected: l.id === this.store.activeLayer })
       ),
-      el('option', `+ ${tt('userlayers.new-layer', 'New layer')}`, { value: '' })
+      el('option', `+ ${tt('userlayers.new-layer', 'New layer')}`, {
+        value: '',
+        selected: !this.store.layers.size
+      })
     ) as HTMLSelectElement
     target.onchange = () => {
       if (target.value) {
         this.store.setActive(target.value)
         return
       }
-      const value = window.prompt(
-        tt('userlayers.layer-name', 'Layer name'),
-        tt('userlayers.default-name', 'My layer')
-      )
-      if (value && value.trim()) this.store.createLayer(value.trim())
-      else this.update()
+      this.newLayer()
     }
-    return el(
-      'div',
-      this.store.layers.size
-        ? el('label.oim-ul-field', el('span', tt('userlayers.add-to', 'Add to')), target)
-        : el('p.oim-ul-hint', tt('userlayers.first-layer', 'A layer is made for the first thing you add.')),
-      tools,
-      this.paletteMode ? this.palette.el : ''
+    const undo = this.action('↶', () => this.store.undo(), {
+      title: tt('userlayers.undo', 'Undo (Ctrl+Z)'),
+      disabled: !this.store.canUndo || this.inPlayback,
+      className: 'oim-ul-tool-icon'
+    })
+    const redo = this.action('↷', () => this.store.redo(), {
+      title: tt('userlayers.redo', 'Redo (Ctrl+Shift+Z)'),
+      disabled: !this.store.canRedo || this.inPlayback,
+      className: 'oim-ul-tool-icon'
+    })
+    const history = this.action(
+      '🕘',
+      () => (this.inPlayback ? this.closePlayback() : void this.openPlayback()),
+      {
+        title: this.inPlayback
+          ? tt('userlayers.history-exit', 'Back to now')
+          : tt('userlayers.history-open', 'Play back the history'),
+        active: this.inPlayback,
+        className: 'oim-ul-tool-icon'
+      }
     )
+    const pending = this.store.pending.length
+    const save = this.action(
+      this.busy ||
+        (pending
+          ? tt('userlayers.save-n', 'Save ({{count}})', { count: pending })
+          : tt('userlayers.saved', 'Saved')),
+      () => void this.run(tt('userlayers.saving', 'Saving'), () => this.store.save()),
+      {
+        primary: pending > 0,
+        disabled: !pending || !!this.busy || this.inPlayback,
+        title: tt('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
+      }
+    )
+    const more = el(
+      'details.oim-ul-menu',
+      el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
+      el(
+        '.oim-ul-menu-items',
+        this.action(
+          tt('userlayers.discard', 'Discard unsaved changes'),
+          () => {
+            const message = tt('userlayers.discard-confirm', 'Forget the {{count}} unsaved change(s)?', {
+              count: pending
+            })
+            if (window.confirm(message)) {
+              this.tools.select(null)
+              void this.run(tt('userlayers.discarding', 'Discarding'), () => this.store.discard())
+            }
+          },
+          { disabled: !pending || !!this.busy }
+        )
+      )
+    )
+    bar.append(
+      tools,
+      el('.oim-ul-toolbar-group', el('span.oim-ul-toolbar-label', tt('userlayers.into', 'Into')), target),
+      el('.oim-ul-toolbar-group', undo, redo, history),
+      el('.oim-ul-toolbar-group', save, more)
+    )
+  }
+
+  private newLayer() {
+    const value = window.prompt(
+      tt('userlayers.layer-name', 'Layer name'),
+      tt('userlayers.default-name', 'My layer')
+    )
+    if (value && value.trim()) this.store.createLayer(value.trim())
+    else this.update()
   }
 
   private async picked(pick: Pick) {
     this.paletteMode = null
+    this.update()
     if (!pick.geometry) {
       this.tools.setTool(
         { mode: 'place', properties: { kind: 'symbol', sidc: pick.sidc } },
@@ -519,7 +433,7 @@ export class Panel implements IControl {
       return
     }
     if (isAxis(lib, pick.sidc)) {
-      // Arrows: the path from tail to tip; the width follows (and has a handle).
+      // Arrows: the path from tail to tip; the width has its own handle.
       this.tools.setTool(
         {
           mode: 'graphic',
@@ -573,7 +487,201 @@ export class Panel implements IControl {
     })
   }
 
-  // --- Hint on the map --------------------------------------------------------
+  // --- Sidebar (outliner) ------------------------------------------------------------
+
+  private updateSidebar() {
+    const sidebar = this.sidebar
+    sidebar.textContent = ''
+    const close = el('button.oim-panel-button', '×', {
+      type: 'button',
+      title: tt('userlayers.close', 'Close My layers'),
+      'aria-label': tt('userlayers.close', 'Close My layers')
+    })
+    close.onclick = () => this.toggle(false)
+    sidebar.append(
+      el('.oim-panel-header', el('h2', tt('userlayers.title', 'My layers')), close),
+      this.outline,
+      this.fileInput
+    )
+    const body = this.outline
+    body.textContent = ''
+    if (!this.store.loaded) {
+      body.append(el('p.oim-ul-hint', tt('userlayers.loading', 'Loading...')))
+      return
+    }
+    if (this.store.error) {
+      body.append(
+        el(
+          'p.oim-ul-error',
+          tt(
+            'userlayers.error',
+            "The backend can't be reached, so layers can't be loaded or saved: {{error}}",
+            {
+              error: this.store.error
+            }
+          )
+        )
+      )
+    }
+    body.append(this.layersList())
+  }
+
+  private layersList(): HTMLElement {
+    const list = el('ul.oim-ul-layers')
+    for (const layer of this.store.layers.values()) {
+      const hidden = this.store.hidden.has(layer.id)
+      const eye = this.action(hidden ? '◌' : '◉', () => this.store.setHidden(layer.id, !hidden), {
+        title: hidden ? tt('userlayers.show', 'Show on the map') : tt('userlayers.hide', 'Hide from the map'),
+        className: 'oim-ul-icon'
+      })
+      const color = el('input.oim-ul-color', {
+        type: 'color',
+        value: layer.style.color ?? DEFAULT_COLOR,
+        title: tt('userlayers.layer-color', 'Colour of its drawings and markers')
+      }) as HTMLInputElement
+      color.onchange = () =>
+        this.store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
+      const active = layer.id === this.store.activeLayer
+      const open = this.expanded.has(layer.id)
+      const name = el('button.oim-ul-layer-name', el('span', `${open ? '▾' : '▸'} ${layer.name}`), {
+        type: 'button',
+        title: tt('userlayers.items', 'Show its items')
+      })
+      name.onclick = () => {
+        if (open) this.expanded.delete(layer.id)
+        else this.expanded.add(layer.id)
+        this.update()
+      }
+      const count = el('span.oim-ul-count-badge', String(layer.features.size))
+      const into = active
+        ? el('span.oim-ul-active-tag', tt('userlayers.active', 'drawing here'), {
+            title: tt('userlayers.active-title', 'New items go into this layer (toolbar: Into)')
+          })
+        : ''
+      const menu = el(
+        'details.oim-ul-menu',
+        el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
+        el(
+          '.oim-ul-menu-items',
+          this.action(
+            tt('userlayers.draw-here', 'Draw into this layer'),
+            () => this.store.setActive(layer.id),
+            {
+              disabled: active
+            }
+          ),
+          this.action(tt('userlayers.rename', 'Rename'), () => {
+            const value = window.prompt(tt('userlayers.rename', 'Rename'), layer.name)
+            if (value && value.trim() && value.trim() !== layer.name)
+              this.store.updateLayer(layer.id, { name: value.trim() })
+          }),
+          this.action(tt('userlayers.delete', 'Delete'), () => {
+            const message = tt(
+              'userlayers.delete-layer',
+              'Delete the layer "{{name}}" and its {{count}} item(s)?',
+              {
+                name: layer.name,
+                count: layer.features.size
+              }
+            )
+            if (window.confirm(message)) {
+              this.tools.select(null)
+              this.store.deleteLayer(layer.id)
+            }
+          })
+        )
+      )
+      const items = open
+        ? el(
+            'ul.oim-ul-items',
+            layer.features.size
+              ? [...layer.features.values()].map((f) => {
+                  const item = el(
+                    `li${f.id === this.tools.selected ? '.selected' : ''}`,
+                    el('button', featureLabel(f), { type: 'button' })
+                  )
+                  item.onclick = () => {
+                    this.tools.select(f.id)
+                    this.zoomTo(f)
+                  }
+                  return item
+                })
+              : el('li.oim-ul-hint', tt('userlayers.empty-layer', 'Nothing in it yet.'))
+          )
+        : ''
+      list.append(
+        el(
+          `li${active ? '.active' : ''}`,
+          el('.oim-ul-layer-row', eye, color, name, into, count, menu),
+          items
+        )
+      )
+    }
+    const create = this.action(`+ ${tt('userlayers.new-layer', 'New layer')}`, () => this.newLayer())
+    const level = el(
+      'select',
+      (
+        [
+          ['none', tt('userlayers.labels.none', 'None')],
+          ['name', tt('userlayers.labels.name', 'Designation only')],
+          ['all', tt('userlayers.labels.all', 'All fields')]
+        ] as [LabelLevel, string][]
+      ).map(([value, label]) => el('option', label, { value, selected: value === getLabelLevel() }))
+    ) as HTMLSelectElement
+    level.onchange = () => {
+      setLabelLevel(level.value as LabelLevel)
+      void this.renderer.render(this.store.layers, this.store.hidden)
+    }
+    const author = el('input.oim-ul-author', {
+      type: 'text',
+      value: this.store.author,
+      placeholder: tt('userlayers.author', 'Your name')
+    }) as HTMLInputElement
+    author.onchange = () => (this.store.author = author.value.trim())
+    return el(
+      'div',
+      this.store.layers.size
+        ? list
+        : el(
+            'p.oim-ul-hint',
+            tt(
+              'userlayers.no-layers',
+              'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
+            )
+          ),
+      el('.oim-ul-row', create),
+      el(
+        '.oim-ul-settings',
+        el('label.oim-ul-field', el('span', tt('userlayers.labels', 'Labels on the map')), level),
+        el('label.oim-ul-field', el('span', tt('userlayers.author-label', 'Saved as')), author)
+      )
+    )
+  }
+
+  private zoomTo(feature: UserFeature) {
+    const coords: [number, number][] = []
+    const add = (c: unknown): void => {
+      if (Array.isArray(c) && typeof c[0] === 'number') coords.push(c as [number, number])
+      else if (Array.isArray(c)) c.forEach(add)
+    }
+    add((feature.geometry as GeoJSON.Point).coordinates)
+    if (!coords.length) return
+    if (coords.length === 1) {
+      this.map.easeTo({ center: coords[0], zoom: Math.max(this.map.getZoom(), 13) })
+      return
+    }
+    const lons = coords.map((c) => c[0])
+    const lats = coords.map((c) => c[1])
+    this.map.fitBounds(
+      [
+        [Math.min(...lons), Math.min(...lats)],
+        [Math.max(...lons), Math.max(...lats)]
+      ],
+      { padding: 80, maxZoom: 15 }
+    )
+  }
+
+  // --- Hint on the map --------------------------------------------------------------
 
   private updateToast() {
     const tool = this.tools.tool
@@ -591,46 +699,7 @@ export class Panel implements IControl {
     this.toast.classList.toggle('visible', active)
   }
 
-  // --- Save bar ---------------------------------------------------------------
-
-  private updateFooter() {
-    const pending = this.store.pending.length
-    this.footer.textContent = ''
-    this.footer.classList.toggle('visible', Boolean(pending || this.busy) && !this.inPlayback)
-    if (!pending && !this.busy) return
-    const save = this.action(
-      tt('userlayers.save', 'Save'),
-      () => void this.run(tt('userlayers.saving', 'Saving'), () => this.store.save()),
-      {
-        primary: true,
-        disabled: !pending || !!this.busy,
-        title: tt('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
-      }
-    )
-    const discard = this.action(
-      tt('userlayers.discard', 'Discard'),
-      () => {
-        const message = tt('userlayers.discard-confirm', 'Forget the {{count}} unsaved change(s)?', {
-          count: pending
-        })
-        if (window.confirm(message)) {
-          this.tools.select(null)
-          void this.run(tt('userlayers.discarding', 'Discarding'), () => this.store.discard())
-        }
-      },
-      { disabled: !pending || !!this.busy }
-    )
-    this.footer.append(
-      el(
-        'span.oim-ul-status',
-        this.busy || tt('userlayers.unsaved', '{{count}} unsaved change(s)', { count: pending })
-      ),
-      discard,
-      save
-    )
-  }
-
-  // --- Details of the selected item (left side panel) ---------------------------
+  // --- Inspector: details of the selected item (the left details panel) ----------------
 
   private async syncEditor() {
     const panel = sidePanel()
@@ -664,46 +733,11 @@ export class Panel implements IControl {
         this.tools.select(null)
       }
     })
+    foldRoute()
     if (focused) editor.querySelector<HTMLElement>(`[data-field="${CSS.escape(focused)}"]`)?.focus()
   }
 
-  // --- History ----------------------------------------------------------------
-
-  private historyTab(): HTMLElement {
-    const author = el('input.oim-ul-author', {
-      type: 'text',
-      value: this.store.author,
-      placeholder: tt('userlayers.author', 'Your name')
-    }) as HTMLInputElement
-    author.onchange = () => (this.store.author = author.value.trim())
-    const authorRow = el('label.oim-ul-field', el('span', tt('userlayers.author-label', 'Saved as')), author)
-    if (this.inPlayback) {
-      return el(
-        'div',
-        el(
-          'p.oim-ul-hint',
-          tt('userlayers.playing', 'Playing back the history: use the bar at the bottom of the map.')
-        ),
-        this.action(tt('userlayers.history-exit', 'Back to now'), () => this.closePlayback(), {
-          primary: true
-        })
-      )
-    }
-    return el(
-      'div',
-      el(
-        'p',
-        tt(
-          'userlayers.history-intro',
-          'Every saved change is kept. Play them back step by step to see how the layers came to be.'
-        )
-      ),
-      this.action(tt('userlayers.history-open', 'Play back the history'), () => void this.openPlayback(), {
-        primary: true
-      }),
-      authorRow
-    )
-  }
+  // --- History ----------------------------------------------------------------------
 
   private async openPlayback() {
     if (this.store.pending.length) {
