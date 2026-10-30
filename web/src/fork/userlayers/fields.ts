@@ -171,3 +171,150 @@ export function modifiersToDraw(modifiers: Record<string, string> | undefined, l
   if (level === 'name') return clean['T'] ? { T: clean['T'] } : {}
   return clean
 }
+
+// --- The item card (editor.ts): fields grouped by the question they answer -------
+
+export type Group = 'who' | 'what' | 'when' | 'where' | 'sure'
+
+export const GROUPS: [Group, string][] = [
+  ['who', 'Who'],
+  ['what', 'What'],
+  ['when', 'When'],
+  ['where', 'Where and movement'],
+  ['sure', 'How sure']
+]
+
+/** Which question each field answers. */
+export const FIELD_GROUP: Record<string, Group> = {
+  T: 'who',
+  T1: 'who',
+  M: 'who',
+  V: 'what',
+  C: 'what',
+  H: 'what',
+  W: 'when',
+  W1: 'when',
+  Q: 'where',
+  Z: 'where',
+  X: 'where',
+  AM: 'where',
+  AN: 'where',
+  F: 'sure',
+  J: 'sure',
+  K: 'sure',
+  G: 'sure'
+}
+
+/** Shown on the card even when empty, ready to fill in (anything filled in is shown too). */
+export const DEFAULT_FIELDS: Record<SymbolKind, string[]> = {
+  unit: ['T', 'M', 'W'],
+  equipment: ['T', 'V', 'C', 'W'],
+  installation: ['T', 'W'],
+  activity: ['T', 'W'],
+  graphic: ['T', 'W', 'W1'],
+  other: ['T', 'V', 'W']
+}
+
+/** The fields of a kind on the card: the defaults, then the ones it has (even blank:
+ * just added with "+ Add detail"), in field order. */
+export function cardFields(kind: SymbolKind, modifiers: Record<string, string> | undefined): Field[] {
+  const shown = new Set([...DEFAULT_FIELDS[kind], ...Object.keys(modifiers ?? {})])
+  return fieldsFor(kind).filter((f) => shown.has(f.key))
+}
+
+/** The fields that can still be added ("+ Add detail"), by group. */
+export function addableFields(
+  kind: SymbolKind,
+  modifiers: Record<string, string> | undefined
+): [Group, Field[]][] {
+  const shown = new Set(cardFields(kind, modifiers).map((f) => f.key))
+  const out: [Group, Field[]][] = []
+  for (const [group] of GROUPS) {
+    const fields = fieldsFor(kind).filter((f) => FIELD_GROUP[f.key] === group && !shown.has(f.key))
+    if (fields.length) out.push([group, fields])
+  }
+  return out
+}
+
+const RELIABILITY: Record<string, string> = {
+  A: 'completely reliable',
+  B: 'usually reliable',
+  C: 'fairly reliable',
+  D: 'not usually reliable',
+  E: 'unreliable',
+  F: 'reliability unknown'
+}
+const CREDIBILITY: Record<string, string> = {
+  '1': 'confirmed',
+  '2': 'probably true',
+  '3': 'possibly true',
+  '4': 'doubtful',
+  '5': 'improbable',
+  '6': 'truth unknown'
+}
+
+/** A source rating in words: "B2" -> "B2: usually reliable, probably true". */
+export function ratingText(rating: string): string {
+  const r = RELIABILITY[rating[0]?.toUpperCase()]
+  const c = CREDIBILITY[rating[1]]
+  if (!r && !c) return rating
+  return `${rating.toUpperCase()}: ${[r, c].filter(Boolean).join(', ')}`
+}
+
+/** Degrees as a compass point: 45 -> "NE (45°)". */
+export function compassText(degrees: string): string {
+  const d = Number(degrees)
+  if (!Number.isFinite(d)) return degrees
+  const points = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+  const point = points[Math.round((((d % 360) + 360) % 360) / 45) % 8]
+  return `${point} (${Math.round(d)}°)`
+}
+
+/** How long ago (or ahead) a date is, roughly: "2 h ago", "in 3 days", "just now". */
+export function relativeTime(date: Date, now = new Date()): string {
+  const seconds = (now.getTime() - date.getTime()) / 1000
+  const ahead = seconds < 0
+  const s = Math.abs(seconds)
+  const [value, unit] =
+    s < 60
+      ? [0, '']
+      : s < 3600
+        ? [Math.round(s / 60), 'min']
+        : s < 86400
+          ? [Math.round(s / 3600), 'h']
+          : [Math.round(s / 86400), Math.round(s / 86400) === 1 ? 'day' : 'days']
+  if (!unit) return 'just now'
+  return ahead ? `in ${value} ${unit}` : `${value} ${unit} ago`
+}
+
+/** A date-time group for reading: "30 Oct 2026 12:00 · 2 h ago" (local time). */
+export function dtgText(dtg: string, now = new Date()): string {
+  const date = fromDtg(dtg)
+  if (!date) return dtg
+  const when = date.toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+  return `${when} · ${relativeTime(date, now)}`
+}
+
+/** A field's value as shown on the card. */
+export function displayValue(key: string, value: string, now = new Date()): string {
+  if (!value) return ''
+  if (key === 'W' || key === 'W1') return dtgText(value, now)
+  if (key === 'J') return ratingText(value)
+  if (key === 'Q') return compassText(value)
+  if (key === 'Z') return `${value} km/h`
+  if (key === 'F')
+    return value === '+'
+      ? 'Reinforced (+)'
+      : value === '-' || value === '−'
+        ? 'Reduced (−)'
+        : value === '±'
+          ? 'Reinforced and reduced (±)'
+          : value
+  return value
+}

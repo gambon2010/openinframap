@@ -693,6 +693,34 @@ be played back step by step. The "My layers" button (top right) opens the panel.
 - **Not yet:** several people editing at once (the last save wins); adding or
   removing points of an existing line (they can be moved); ODIN's SKKM signs.
 
+### Version 3: one workspace (docs/plans/my-layers-v3.md)
+
+The v2 panel followed ODIN closely (tabs, a long form of the standard's fields) and
+was hard to read. Version 3, built in steps:
+
+- **Step 1, layout** (`panel.ts`): My layers is a workspace turned on by its button.
+  Its sidebar sits in the left column between the search box and the details panel
+  (which becomes the shared inspector: my items and map features alike); the left
+  column is one flex stack that fits the map's height. The grid connection folds to
+  a one-line summary when details open (`GridRouteControl.fold`). A toolbar at the
+  top of the map holds the tools (keys V S A L R M P C), the "Into" layer, undo /
+  redo, history and Save; the symbol picker opens under it as a wide grid.
+  **Undo / redo** (`Store.undo` / `redo`, Ctrl+Z / Ctrl+Shift+Z): unsaved changes
+  are rebuilt from the saved layers plus the pending changes; changes made by one
+  action (moving an item between layers) share a `batch` and are undone together.
+- **Step 2, the item card** (`editor.ts`, card helpers in `fields.ts`): header with
+  the large symbol and the designation edited in place; identity as the item's own
+  symbol in each identity, Present / Planned and condition as chips, the echelon as
+  its marks, HQ / task force / dummy toggles; the details for its kind shown even
+  empty (`DEFAULT_FIELDS`: units T M W, equipment T V C W, graphics T W W1...) plus
+  any it has, with values in words (`displayValue`: dates with "2 h ago", ratings
+  spelled out, compass points); "+ Add detail" lists the rest by question (who,
+  what, when, where, how sure); notes always shown; Duplicate.
+- **Still to do:** the outliner (symbols in the list, search and filters, lock,
+  drag between layers, multi-select, folders), the picker's favourites and plain
+  categories, map interactions (hover, right-click, rename on the map, copy /
+  paste), situations.
+
 ## Grid connections between two stations (prototype)
 
 *From branch `grid-routing`.* Pick a substation or power plant as the start and another

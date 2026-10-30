@@ -650,3 +650,199 @@
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 2px 8px;
 }
+
+/* --- Version 3: the item card (editor.ts) --- */
+.oim-ul-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4.2em 8px 8px !important;
+}
+.oim-ul-card-symbol {
+  flex: 0 0 auto;
+  min-width: 36px;
+  font-size: 1.6rem;
+  text-align: center;
+}
+.oim-ul-card-symbol svg {
+  max-width: 64px;
+  max-height: 44px;
+}
+.oim-ul-card-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.oim-ul-card-title {
+  width: 100%;
+  padding: 1px 3px;
+  border: 1px solid transparent;
+  border-radius: var(--oim-radius-small);
+  background: transparent;
+  color: var(--oim-text-color);
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: bold;
+}
+.oim-ul-card-title:hover,
+.oim-ul-card-title:focus {
+  border-color: var(--oim-grey);
+  background: #fff;
+}
+.oim-ul-card-header .oim-ul-what {
+  padding-left: 4px;
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+.oim-ul-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--oim-grey);
+}
+.oim-ul-identity .oim-ul-frames,
+.oim-ul-identity .oim-ul-chips {
+  margin: 0;
+  align-items: center;
+}
+.oim-ul-identity .oim-ul-frames select {
+  max-width: 7em;
+  font-size: 0.8rem;
+}
+.oim-ul-echelons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.oim-ul-echelons .oim-ul-chip {
+  min-width: 2.2em;
+  padding: 1px 5px;
+  font-weight: bold;
+  letter-spacing: -1px;
+}
+.oim-ul-identity-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 3px;
+  border-radius: 50%;
+}
+.oim-ul-identity-F {
+  background: #000;
+}
+.oim-ul-identity-H {
+  background: #e00;
+}
+.oim-ul-identity-N {
+  background: #0a0;
+}
+.oim-ul-identity-U {
+  background: #ee0;
+}
+.oim-ul-identity .oim-ul-frame {
+  width: auto;
+  min-width: 34px;
+  padding: 0 4px;
+  font-size: 0.75rem;
+}
+.oim-ul-details {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+.oim-ul-detail {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  font-size: 0.88rem;
+}
+.oim-ul-detail-name {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-inline-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--oim-radius-small);
+  background: transparent;
+  color: var(--oim-text-color);
+  font: inherit;
+}
+.oim-ul-inline-input:hover,
+.oim-ul-inline-input:focus {
+  border-color: var(--oim-grey);
+  background: #fff;
+}
+.oim-ul-detail-value {
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  color: var(--oim-text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-detail-value:hover {
+  border-color: var(--oim-grey);
+}
+.oim-ul-add-detail {
+  margin: 2px 0 6px;
+}
+.oim-ul-add-detail > summary {
+  color: #1565c0;
+  font-size: 0.88rem;
+  font-weight: normal;
+}
+.oim-ul-add-detail .oim-ul-menu-items {
+  left: 0;
+  right: auto;
+  width: 280px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.oim-ul-add-detail h4 {
+  margin: 6px 4px 2px;
+  color: var(--oim-text-color-light);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.oim-ul-add-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-add-field:hover {
+  background: var(--oim-light-grey);
+}
+.oim-ul-add-field small {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-notes {
+  margin: 4px 0;
+  border-color: var(--oim-grey);
+}
+.oim-ul-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--oim-grey);
+}
+.oim-ul-card-footer select {
+  flex: 1;
+  min-width: 6em;
+}

@@ -722,6 +722,7 @@ export class Panel implements IControl {
     const editor = await buildEditor(feature, layer, [...this.store.layers.values()], {
       update: (properties) => this.store.updateFeature(layer.id, { ...feature, properties }),
       moveTo: (layerId) => this.store.moveFeature(id, layerId),
+      duplicate: () => this.duplicate(layer.id, feature),
       remove: () => this.tools.deleteSelected(),
       done: () => this.tools.select(null)
     })
@@ -735,6 +736,24 @@ export class Panel implements IControl {
     })
     foldRoute()
     if (focused) editor.querySelector<HTMLElement>(`[data-field="${CSS.escape(focused)}"]`)?.focus()
+  }
+
+  /** A copy of an item, a little to the side, selected. */
+  private duplicate(layerId: string, feature: UserFeature) {
+    // 24 px to the right and down, whatever the zoom.
+    const shift = (c: [number, number]): [number, number] => {
+      const p = this.map.project(c)
+      const moved = this.map.unproject([p.x + 24, p.y + 24])
+      return [moved.lng, moved.lat]
+    }
+    const move = (c: unknown): unknown =>
+      Array.isArray(c) && typeof c[0] === 'number' ? shift(c as [number, number]) : (c as unknown[]).map(move)
+    const geometry = {
+      ...feature.geometry,
+      coordinates: move((feature.geometry as GeoJSON.Point).coordinates)
+    } as GeoJSON.Geometry
+    const id = this.store.addFeature(layerId, geometry, structuredClone(feature.properties))
+    this.tools.select(id)
   }
 
   // --- History ----------------------------------------------------------------------

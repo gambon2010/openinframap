@@ -425,46 +425,60 @@ shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`
 
 ## My layers
 
-The **My layers** button (top right, the stacked-layers icon with a red dot, under
-Layers) opens a panel for making your own layers on the map. It has three tabs:
-**Layers** (show/hide, colour, which layer new things go into, the list of what's
-in each), **Add** and **History**. On the Add tab:
+The **My layers** button (top right, the stacked-layers icon with a red dot) turns
+on the My layers workspace; click it again to close it. It has two parts:
 
-- **Symbol:** military and emergency symbols (the ones ODIN uses: fire, flood,
-  hospital, power plant, police, units, checkpoints...). Search by name or pick a
-  category, choose friend, hostile, neutral or unknown (shown as the frame shapes)
-  and planned if it is, then click the map.
-- **Graphic:** tactical graphics drawn from several points: axes of advance, attack
-  directions, phase lines, boundaries, assembly areas, obstacles, tasks such as
-  block or breach... Pick one, then click its points on the map (the hint at the
-  bottom says how many); double-click or Enter finishes the ones that take any
-  number of points. **Arrows** (axis of advance, main or supporting attack...) are
-  drawn like a line: click where the arrow starts, along its path, and double-click
-  where it points to. It starts a fifth as wide as it is long; drag the **blue
-  handle** at the arrowhead's corner to make it wider or narrower (only the width
-  changes, so it stays a proper arrow), and the points of its path to move or bend
-  it. Arrows drawn the old way (four free points) are turned into paths the next
-  time the map is opened, keeping their width (an unsaved change each: Save).
-- **Picture:** put your own image or icon on the map.
-- **Marker, Line, Area:** click to place or to add points; double-click or Enter
-  finishes, Esc cancels.
-- **Copy from map:** click power lines, substations, sites... to copy them into your
-  layer. They're drawn like the originals and stay visible when you hide the grid
-  (layer switcher or key).
+- **The sidebar on the left**, under the search box: your layers (show/hide with
+  ◉, colour, click a name to see its items, ⋯ to draw into it, rename or delete),
+  "+ New layer", how much of the labels the map shows, and the name your changes
+  are saved under. Clicking an item selects it and moves the map to it. Below the
+  layers is the **details** area: the selected item's card, or the details of any
+  map feature you click (the last thing clicked). A grid connection, if you have
+  one, folds to one line at the bottom ("Route: A → B · 18 km"); click it to unfold.
+- **The toolbar at the top of the map**: the tools, the layer new things go
+  **Into**, undo ↶ / redo ↷, history 🕘 and **Save (n)** (⋯ to discard unsaved
+  changes). Each tool has a key:
 
-Click one of your items to open its **details** on the left: identity, status,
-echelon, designation, higher formation, date-time group, comments and the other
-fields of the standard, as in ODIN (only the ones that apply to that symbol), plus
-colour, size, layer and notes. To resize a picture, symbol or marker, drag the
-round handle at its corner (or use Size in its details, 20 % to 800 %). Drag a symbol to move it, or the points of a line,
-area or graphic to change its shape. **Labels on the map** (Layers tab) shows none,
-the designation only, or every field.
+| Key | Tool |
+|---|---|
+| V | Select and move |
+| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search, categories, recently used; pick friend / hostile / neutral / unknown as frame shapes, and Planned |
+| A | Arrow or graphic: axes, attacks, phase lines, areas, obstacles, tasks such as block or breach |
+| L / R | Line / area: click points, double-click or Enter to finish |
+| M | Marker |
+| P | Picture: your own image or icon |
+| C | Copy from the map: power lines, substations, sites... drawn like the originals, and still shown when you hide the grid |
 
-Changes are kept in your browser until you press **Save** (the bar at the bottom of
-the panel), which stores them in the database. **History → Play back** opens a
-timeline at the bottom of the map that steps through every saved change and says
-what changed.
-Rebuilding or importing a region keeps your layers.
+Esc stops a tool. **Ctrl+Z** undoes the last unsaved change and **Ctrl+Shift+Z**
+redoes it.
+
+**Arrows** (axis of advance, main or supporting attack...) are drawn like a line:
+click where the arrow starts, along its path, and double-click where it points to.
+Drag the **blue handle** at the arrowhead's corner to make it wider or narrower
+(only the width changes, so it stays a proper arrow), and the points of its path to
+move or bend it. Arrows drawn the old way (four free points) are turned into paths
+the next time the map is opened, keeping their width (an unsaved change each: Save).
+
+**The item card** (click one of your items):
+
+- at the top, the symbol and its name: click the name to change it;
+- its identity as the actual frames (more in "More…"), Present / Planned, damaged or
+  destroyed, and for units the echelon as its marks (• || X XX...) with HQ, task
+  force and dummy: one click each, the symbol follows;
+- the details that matter for that kind of item (for a unit: higher formation and
+  when it was seen), in plain words ("30 Oct 12:00 · 2 h ago", "B2: usually
+  reliable, probably true"). Click a value to change it. **+ Add detail** adds
+  others (type, quantity, direction, speed, rating, comments...), grouped by
+  question: who, what, when, where, how sure;
+- notes, appearance (size, colour), and at the bottom its layer, Duplicate, Delete.
+
+Drag a symbol to move it; drag the round handle at a picture's, symbol's or
+marker's corner to resize it.
+
+Changes are kept in your browser until you press **Save**, which stores them in the
+database. **🕘** opens a timeline at the bottom of the map that steps through every
+saved change and says what changed. Rebuilding or importing a region keeps your
+layers.
 
 ## Updating the data
 
