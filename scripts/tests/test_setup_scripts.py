@@ -10,9 +10,9 @@ saved before a wipe). A real build is the opt-in test at the end.
 """
 
 import hashlib
-import re
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
