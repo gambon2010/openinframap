@@ -139,6 +139,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.9 | History steps say what changed. | ✅ |
 | 9.10 | Edit the shape of lines, areas and graphics after drawing them; move items between layers. | ✅ |
 | 9.12 | Arrows (e.g. main attack) easy to draw and good-looking: drawn as a path; the size has its own handle (the 4th point), not part of the highlighted path, that only changes the width. Old arrows converted. | ✅ |
+| 9.13 | Rework the whole My layers panel for easier access and better display (not ODIN's style). | 📋 proposal: `docs/plans/my-layers-v3.md` |
 | 9.11 | Resize pictures (and symbols, markers) shown on the map: a handle on the map, and a Size setting (20–800 %). | ✅ |
 
 ## 10. Backlog (parked)
@@ -150,7 +151,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.3 | Terrain: hillshading and line of sight (Copernicus 30 m elevation, offline). | 🗂 |
 | 10.4 | Grid what-if: what loses its connection if a substation is hit. | 🗂 |
 | 10.5 | Time on items: valid from/to and a timeline slider. | 🗂 |
-| 10.6 | Live sharing between users, logins and roles. | 🗂 |
+| 10.6 | Users: a login page, user accounts, access control per user (view the map; read or write each layer). | 🗂 asked 2026-10-30 |
+| 10.6b | Auto sync of My layers between users (instead of / alongside Save); how it should work is to be discussed (conflicts, offline edits, history). | 🗂 asked 2026-10-30, to discuss |
 | 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | 🗂 |
 
 ## 11. Quality
