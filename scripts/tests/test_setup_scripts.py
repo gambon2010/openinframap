@@ -116,7 +116,10 @@ SCRIPT_NAMES = [
 ]
 
 
-@pytest.mark.parametrize("script", [*SCRIPT_NAMES, "lib/common.sh"])
+@pytest.mark.parametrize(
+    "script",
+    [*SCRIPT_NAMES, *(f"lib/{p.name}" for p in sorted((SCRIPTS / "lib").glob("*.sh")))],
+)
 def test_syntax(script):
     subprocess.run(["bash", "-n", str(SCRIPTS / script)], check=True)
 

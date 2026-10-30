@@ -197,7 +197,7 @@ upstream's own `web-backend/Dockerfile`.
   date, git commit, schema fingerprint, size, SHA-256). It can also save all five
   project Docker images to `data/exports/docker-images.tar.gz` (461 MB) for offline
   computers.
-- **Exports kept up to date:** `export_outdated` (`lib/common.sh`) compares the
+- **Exports kept up to date:** `export_outdated` (`lib/exports.sh`) compares the
   region's manifest with the database (`built_at`, `schema_hash`, extra data);
   `reexport_if_outdated` runs `export-db.sh --yes --no-docker-images` at the end of
   `build-region.sh` (unless `--no-export`) and of `start.sh`. Only regions that
@@ -897,7 +897,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (standard
 library; GDAL and pmtiles in Docker), chosen in `build-region.sh` after the
 background map, or later with `scripts/satellite.sh` for the region already built
-(no rebuild; both use `choose_satellite` / `download_satellite` in `lib/common.sh`),
+(no rebuild; both use `choose_satellite` / `download_satellite` in `lib/satellite.sh`),
 shown by `web/src/fork/modules/satellite/`.
 
 - **Areas and sources (October 2026):** Sentinel-2 can be for the region built,
@@ -924,7 +924,7 @@ shown by `web/src/fork/modules/satellite/`.
     (`GoogleMapsCompatible_Level8`, checked in GIBS' capabilities): the whole world
     to zoom 8 (`overview --world`, 87,381 tiles, ~330 MB measured, about an hour) in
     one `data/basemap/world.sat-overview.pmtiles` shared by every region and
-    downloaded once (`world_overview`, `overview_file` in `lib/common.sh`). Older
+    downloaded once (`world_overview`, `overview_file` in `lib/satellite.sh`). Older
     builds made a per-region file (the world to zoom 5 and the region's bounding box
     to zoom 8); it's still used when there's no world file. Luxembourg (old per-region file): 1,369 tiles, 8 MB, 50 s.
   - *regional*, zoom 9–12 (or 13): the ESA WorldCover Sentinel-2 RGBNIR 2021
@@ -939,7 +939,7 @@ shown by `web/src/fork/modules/satellite/`.
     touch the region's outline, 4 at a time, at most 20 a second.
 - **Not used:** Esri / Google / Bing (no offline storage allowed), EOX Sentinel-2
   cloudless 2018+ (non-commercial).
-- **Frontend:** `select_satellite` (`scripts/lib/common.sh`) writes
+- **Frontend:** `select_satellite` (`scripts/lib/satellite.sh`) writes
   `VITE_SATELLITE_TIERS` ("URL MIN MAX;..."); the module adds a raster source per
   tier (no layer maxzoom, so a coarser tier is stretched under a finer one where
   that has nothing) as the lowest data layers. **Settings → Background**: Map,
@@ -989,7 +989,7 @@ is checked in the browser instead.
 |---|---|---|
 | `web/src/fork/**/*.test.ts` (136) | `cd web && npm run test:fork` | Consistency (`consistency.test.ts`: every Tegola layer the fork adds is drawn and every style's tile layer is served, every fork layer is in the layer switcher, every aerial photo source is credited; every string is in `en.json`); My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
 | `web-backend/tests/fork/` (19) | `cd web-backend && uv run pytest` | Grid routes (station parsing, graph, distinct paths, route description), search helpers, My layers' id parsing and schema, search indexes |
-| `scripts/tests/` (77, + 1 opt-in) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, `scripts/lib/common.sh` helpers run in bash (including: every `schema/*.sql` is in `SCHEMA_FILES`, in `build-region.sh`'s order), and the setup scripts themselves (below) |
+| `scripts/tests/` (88, + 1 opt-in) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, `scripts/lib/*.sh` helpers run in bash (including: every `schema/*.sql` is in `SCHEMA_FILES`, in `build-region.sh`'s order), and the setup scripts themselves (below) |
 
 The frontend tests run in happy-dom (a simulated browser, new dev dependency) with
 their own config (`web/vitest.fork.config.ts`, which stands in for the

@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done; phase 5 step 14 done.
 
 ## Why
 
@@ -167,7 +167,8 @@ working sessions.
 
 ### Phase 5: scripts
 
-14. **`common.sh` split into `scripts/lib/*.sh`**: `ui.sh` (prompts, timers),
+14. **`common.sh` split into `scripts/lib/*.sh`** (done; the 63 functions are
+    identical to before, checked with `declare -f`): `ui.sh` (prompts, timers),
     `db.sh`, `exports.sh`, `userdata.sh`, `app.sh` (terminals, `.env`, start),
     `basemap.sh`, `geofabrik.sh`, `satellite.sh`. `common.sh` keeps the paths and
     sources them all, so no script changes how it starts. *Effort: 1.*
