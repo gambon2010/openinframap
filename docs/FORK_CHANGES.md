@@ -307,7 +307,7 @@ for Europe, 63 GB for the world, and the per-country ones are outdated), but the
 can use one:
 
 - `VITE_PHOTON_URL` in `web/.env` (e.g. `http://localhost:2322`); empty = not used.
-- A **Photon row in the Map sources panel** shows where the setting comes from, can
+- A **Photon row in the map sources** (Settings) shows where the setting comes from, can
   set or clear it for the current tab, checks the server answers, and explains how to
   set the default.
 - `web/src/fork/search/photon.ts` queries `<url>/api` on every search; tested against
@@ -373,7 +373,8 @@ list their layers without `A` (OpenStreetMap), e.g. `#6/50.4/8.7/B,L`, and the
 restored switch then turned the background off, leaving a dark, empty map. If it's
 re-enabled later, links without a background layer must default to OpenStreetMap.
 
-**Map sources panel** (`web/src/fork/map-sources/`, a button under the key): shows the
+**Map sources** (`web/src/fork/map-sources/`; first a button under the key, now in
+**Settings** in the header): shows the
 background-map URL in use and its origin (built-in, `web/.env`, or this tab), lets
 you switch to another URL immediately (MapLibre `setTiles`, no reload), validates
 it ({z}/{x}/{y}, http(s) or `/`), reports when tiles fail to load, and explains how
@@ -824,8 +825,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - **Limits:** paths are physical connections in OpenStreetMap, not how power flows;
   a missing line or substation in OpenStreetMap can hide a connection; both ends
   must be in the built region (France–Germany needs Europe or a custom region);
-  exports made before this have no network (the panel says to rebuild). Not yet
-  tested on a continent; the search loads the grid around both ends.
+  importing an export made before this builds the network (`import-db.sh`). Tested on
+  France (network built in under 2 minutes); not yet on a continent.
 - **Stations on lower voltages** (e.g. Wandpark Housen-Pëtschent and Biogas Our
   Särl, both on a 65 kV line): the network also includes lines of 10 kV and more
   with a known voltage, and lines running *through* a station's outline connect to
@@ -990,7 +991,7 @@ export, then removes the test project (`docker compose down -v --rmi local`).
 ## Known limitations
 
 - **Background map needs internet** unless you downloaded one for the region (or point
-  `VITE_BASEMAP_URL` / the Map sources panel at your own server). Planned: a local
+  `VITE_BASEMAP_URL` / Settings → Map sources at your own server). Planned: a local
   geocoder, preferring local services and falling back to the online ones, with the
   panel showing and overriding each URL.
 - **Node.js and npm must be installed** on the computer running the frontend.
