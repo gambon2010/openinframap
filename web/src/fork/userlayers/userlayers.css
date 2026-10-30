@@ -986,3 +986,26 @@
   background: #fff8e1;
   font-size: 0.82rem;
 }
+
+/* Picker: favourites (palette.ts) */
+.oim-ul-symbol-entry span {
+  flex: 1;
+  min-width: 0;
+}
+.oim-ul-star {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--oim-text-color-light);
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+}
+.oim-ul-symbol-entry:hover .oim-ul-star,
+.oim-ul-star.on {
+  opacity: 1;
+}
+.oim-ul-star.on {
+  color: #f9a825;
+}

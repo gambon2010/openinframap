@@ -3,7 +3,10 @@ import {
   catalogueCode,
   concreteSidc,
   entryOf,
-  groupsFor,
+  CATEGORIES,
+  categoriesFor,
+  readFavourites,
+  toggleFavourite,
   rememberRecent,
   searchCatalogue,
   symbolName
@@ -56,10 +59,38 @@ describe('search', () => {
     expect(tasks.every((e) => e[0].startsWith('G*T*'))).toBe(true)
   })
 
-  test('groups per mode', () => {
-    expect(groupsFor('graphics')).toContain('Tasks')
-    expect(groupsFor('graphics')).not.toContain('Ground units')
-    expect(groupsFor('symbols')).toContain('Ground units')
+  test('categories per mode, in plain words', () => {
+    expect(categoriesFor('graphics')).toEqual(
+      expect.arrayContaining(['Arrows', 'Tasks', 'Lines', 'Areas', 'Obstacles'])
+    )
+    expect(categoriesFor('symbols')).toEqual(expect.arrayContaining(['Units', 'Incidents and emergencies']))
+    expect(searchCatalogue('', 'graphics', 'Arrows').map((e) => e[1])).toContain('Main attack')
+    expect(searchCatalogue('', 'graphics', 'Lines').map((e) => e[1])).toContain('Phase line')
+    expect(searchCatalogue('', 'graphics', 'Lines').map((e) => e[1])).not.toContain('Main attack')
+  })
+
+  test('every symbol and graphic is in at least one category', () => {
+    for (const mode of ['symbols', 'graphics'] as const) {
+      const inSome = new Set(
+        CATEGORIES.filter((c) => c.mode === mode).flatMap((c) =>
+          searchCatalogue('', mode, c.label).map((e) => e[0])
+        )
+      )
+      const missing = searchCatalogue('', mode).filter((e) => !inSome.has(e[0]))
+      expect(missing.map((e) => e[1])).toEqual([])
+    }
+  })
+})
+
+describe('favourites', () => {
+  beforeEach(() => localStorage.clear())
+
+  test('star and unstar, remembered', () => {
+    toggleFavourite('S*G*UCI---------')
+    toggleFavourite('G*G*OLAGM------')
+    expect(readFavourites()).toEqual(['S*G*UCI---------', 'G*G*OLAGM------'])
+    toggleFavourite('S*G*UCI---------')
+    expect(readFavourites()).toEqual(['G*G*OLAGM------'])
   })
 })
 

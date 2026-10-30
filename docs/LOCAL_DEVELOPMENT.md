@@ -447,7 +447,7 @@ on the My layers workspace; click it again to close it. It has two parts:
 | Key | Tool |
 |---|---|
 | V | Select and move |
-| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search, categories, recently used; pick friend / hostile / neutral / unknown as frame shapes, and Planned |
+| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search, categories (units, equipment, incidents...), your favourites (☆ next to any symbol) and recently used; pick friend / hostile / neutral / unknown as frame shapes, and Planned |
 | A | Arrow or graphic: axes, attacks, phase lines, areas, obstacles, tasks such as block or breach |
 | L / R | Line / area: click points, double-click or Enter to finish |
 | M | Marker |

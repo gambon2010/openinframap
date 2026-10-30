@@ -725,9 +725,15 @@ was hard to read. Version 3, built in steps:
   names, types, details, notes) and filter chips (hostile, friend, planned, units,
   graphics, pictures). Drag an item onto a layer to move it, a layer onto a folder
   to put it in.
-- **Still to do:** multi-select and bulk edits, the picker's favourites and plain
-  categories, map interactions (hover, right-click, rename on the map, copy /
-  paste), situations.
+- **Step 4, the picker** (`palette.ts`): categories in plain words instead of the
+  standard's sections (`CATEGORIES`): symbols in Units, Equipment and vehicles,
+  Installations, Incidents and emergencies, Points on the map, Air, Sea, Space,
+  Intelligence, Civil and stability; graphics in Arrows, Tasks, Lines, Areas,
+  Shapes, Obstacles, Fire support, Logistics (a test checks every entry is in at
+  least one). Any symbol can be starred: Favourites come first when the picker
+  opens, then Recently used.
+- **Still to do:** multi-select and bulk edits, map interactions (hover,
+  right-click, rename on the map, copy / paste), situations.
 
 ## Grid connections between two stations (prototype)
 

@@ -57,14 +57,73 @@ export function symbolName(sidc: string): string | undefined {
   return entryOf(sidc)?.[1]
 }
 
-/** Entries of the mode, matching every word of the query, at most `limit`. */
-export function searchCatalogue(query: string, mode: PaletteMode, group?: string): Entry[] {
+/**
+ * Categories in plain words, rather than the standard's sections: which catalogue
+ * groups they take entries from, and which of those entries.
+ */
+export interface Category {
+  mode: PaletteMode
+  label: string
+  groups: string[]
+  test?: (entry: Entry) => boolean
+}
+
+const GRAPHIC_GROUPS = [
+  'Tasks',
+  'Command, control and manoeuvre',
+  'Mobility and survivability',
+  'Fire support',
+  'Combat service support',
+  'Other graphics'
+]
+const ARROW = /attack|axis|direction|advance|counterattack/i
+
+export const CATEGORIES: Category[] = [
+  { mode: 'symbols', label: 'Units', groups: ['Ground units', 'Special operations forces'] },
+  { mode: 'symbols', label: 'Equipment and vehicles', groups: ['Ground equipment'] },
+  { mode: 'symbols', label: 'Installations', groups: ['Installations'] },
+  { mode: 'symbols', label: 'Incidents and emergencies', groups: ['Emergency management'] },
+  { mode: 'symbols', label: 'Points on the map', groups: GRAPHIC_GROUPS },
+  { mode: 'symbols', label: 'Air', groups: ['Air'] },
+  { mode: 'symbols', label: 'Sea', groups: ['Sea surface', 'Subsurface'] },
+  { mode: 'symbols', label: 'Space', groups: ['Space'] },
+  { mode: 'symbols', label: 'Intelligence', groups: ['Signals intelligence'] },
+  { mode: 'symbols', label: 'Civil and stability', groups: ['Stability operations'] },
+  { mode: 'graphics', label: 'Arrows', groups: GRAPHIC_GROUPS, test: (e) => ARROW.test(e[1]) },
+  { mode: 'graphics', label: 'Tasks', groups: ['Tasks'] },
+  {
+    mode: 'graphics',
+    label: 'Lines',
+    groups: ['Command, control and manoeuvre', 'Other graphics'],
+    test: (e) => e[3] === 'L' && !ARROW.test(e[1])
+  },
+  {
+    mode: 'graphics',
+    label: 'Areas',
+    groups: ['Command, control and manoeuvre', 'Other graphics'],
+    test: (e) => e[3] === 'A'
+  },
+  {
+    mode: 'graphics',
+    label: 'Shapes',
+    groups: ['Command, control and manoeuvre', 'Other graphics'],
+    test: (e) => e[3] === 'M' && !ARROW.test(e[1])
+  },
+  { mode: 'graphics', label: 'Obstacles', groups: ['Mobility and survivability'] },
+  { mode: 'graphics', label: 'Fire support', groups: ['Fire support'] },
+  { mode: 'graphics', label: 'Logistics', groups: ['Combat service support'] }
+]
+
+/** Entries of the mode (in a category, if given), matching every word of the query. */
+export function searchCatalogue(query: string, mode: PaletteMode, category?: string): Entry[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  const cat = category ? CATEGORIES.find((c) => c.mode === mode && c.label === category) : undefined
   const out: Entry[] = []
   for (const g of catalogue.groups) {
-    if (group && g.name !== group) continue
+    if (cat && !cat.groups.includes(g.name)) continue
     for (const entry of g.symbols as Entry[]) {
       if ((mode === 'graphics') !== Boolean(entry[3])) continue
+      if (cat?.test && !cat.test(entry)) continue
       const name = entry[1].toLowerCase()
       if (words.every((w) => name.includes(w))) out.push(entry)
     }
@@ -72,11 +131,32 @@ export function searchCatalogue(query: string, mode: PaletteMode, group?: string
   return out
 }
 
-/** Groups that have entries for a mode. */
-export function groupsFor(mode: PaletteMode): string[] {
-  return catalogue.groups
-    .filter((g) => (g.symbols as Entry[]).some((e) => (mode === 'graphics') === Boolean(e[3])))
-    .map((g) => g.name)
+/** The categories of a mode that have entries. */
+export function categoriesFor(mode: PaletteMode): string[] {
+  return CATEGORIES.filter((c) => c.mode === mode && searchCatalogue('', mode, c.label).length).map(
+    (c) => c.label
+  )
+}
+
+const FAVOURITES_KEY = 'oim-userlayers-favourites'
+
+export function readFavourites(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(FAVOURITES_KEY) ?? '[]')
+  } catch {
+    return []
+  }
+}
+
+/** Star or unstar a catalogue code; returns the favourites. */
+export function toggleFavourite(code: string, favourites = readFavourites()): string[] {
+  const next = favourites.includes(code) ? favourites.filter((c) => c !== code) : [...favourites, code]
+  try {
+    localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next))
+  } catch {
+    // Not remembered.
+  }
+  return next
 }
 
 function readRecent(): string[] {
@@ -212,7 +292,8 @@ export class Palette {
       return button
     }
     this.chips.append(chip(tt('userlayers.palette.all', 'All'), undefined))
-    for (const name of groupsFor(this.mode)) this.chips.append(chip(name, name))
+    for (const name of categoriesFor(this.mode))
+      this.chips.append(chip(tt(`userlayers.category.${name}`, name), name))
   }
 
   private button(entry: Entry): HTMLElement {
@@ -238,7 +319,18 @@ export class Palette {
   }
 
   private labelled(entry: Entry): HTMLElement {
-    return el('.oim-ul-symbol-entry', this.button(entry), el('span', entry[1]))
+    const starred = readFavourites().includes(entry[0])
+    const star = el(`button.oim-ul-star${starred ? '.on' : ''}`, starred ? '★' : '☆', {
+      type: 'button',
+      title: starred
+        ? tt('userlayers.unfavourite', 'Remove from favourites')
+        : tt('userlayers.favourite', 'Add to favourites')
+    })
+    star.onclick = () => {
+      toggleFavourite(entry[0])
+      this.update()
+    }
+    return el('.oim-ul-symbol-entry', this.button(entry), el('span', entry[1]), star)
   }
 
   private update() {
@@ -248,6 +340,17 @@ export class Palette {
     this.results.textContent = ''
     const query = this.search.value.trim()
     if (!query && !this.group) {
+      const ofMode = (e: Entry | undefined): e is Entry =>
+        Boolean(e) && (this.mode === 'graphics') === Boolean(e![3])
+      const favourites = readFavourites()
+        .map((code) => BY_CODE.get(catalogueCode(code)))
+        .filter(ofMode)
+      if (favourites.length) {
+        this.results.append(
+          el('h4', tt('userlayers.palette.favourites', 'Favourites')),
+          el('.oim-ul-symbol-grid', ...favourites.map((e) => this.labelled(e)))
+        )
+      }
       const recent = readRecent()
         .map((code) => BY_CODE.get(catalogueCode(code)))
         .filter((e): e is Entry => Boolean(e) && (this.mode === 'graphics') === Boolean(e![3]))
