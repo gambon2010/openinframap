@@ -327,7 +327,7 @@ async def search(request: Request) -> Response:
 
     limit_str = request.query_params.get("limit", "10")
     try:
-        limit = min(int(limit_str), 100)
+        limit = max(1, min(int(limit_str), 100))
     except ValueError:
         raise HTTPException(400, "Invalid limit")
 
