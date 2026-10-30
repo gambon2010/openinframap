@@ -159,18 +159,6 @@ for feature in json.load(open(index))["features"]:
 sys.exit(1)' "$GEOFABRIK_INDEX" "$1" "$2"
 }
 
-# Whether Geofabrik region $1 is $2 or inside it (follows the index's parents).
-region_in() {
-    python3 -c 'import json, sys
-index, region, wanted = sys.argv[1:]
-parents = {f["properties"]["id"]: f["properties"].get("parent") for f in json.load(open(index))["features"]}
-while region:
-    if region == wanted:
-        sys.exit(0)
-    region = parents.get(region)
-sys.exit(1)' "$GEOFABRIK_INDEX" "$1" "$2" 2>/dev/null
-}
-
 # pmtiles CLI from the basemap service's image, with data/basemap/ at /out.
 pmtiles() {
     docker run --rm --user "$(id -u):$(id -g)" -v "$BASEMAP_DIR:/out:z" "$(basemap_image)" "$@"

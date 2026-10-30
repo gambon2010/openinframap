@@ -25,7 +25,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 1.5 | Remove stale branches. | ✅ |
 | 1.6 | Docs explain what was done and why; the GitHub page (README) describes the fork. | ✅ FORK_CHANGES, LOCAL_DEVELOPMENT, README |
 | 1.7 | One place with all the specifications (this file). | ✅ |
-| 1.8 | Unit tests for the fork's code where they make sense; not for upstream's code unless needed. | 🚧 |
+| 1.8 | Unit tests for the fork's code where they make sense; not for upstream's code unless needed. | ✅ |
 | 1.9 | Licences: don't copy code whose licence would change the project's (e.g. ODIN is AGPL). | ✅ (rule followed) |
 
 ## 2. Setup, building and sharing data
@@ -155,5 +155,5 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 
 | # | Requirement | Status |
 |---|---|---|
-| 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | 🚧 |
-| 11.2 | Tests for the setup scripts? Answer and approach in FORK_CHANGES / below once decided. | 🚧 |
+| 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | ✅ 89 frontend (`npm run test:fork`), 13 backend (`tests/fork/`), 26 scripts (`scripts/tests/`) |
+| 11.2 | Tests for the setup scripts? | ✅ unit tests for the Python scripts and the shell helpers; the full build is checked by a Luxembourg build (see FORK_CHANGES "Tests") |

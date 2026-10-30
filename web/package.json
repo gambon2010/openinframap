@@ -8,6 +8,7 @@
     "build": "pwa-assets-generator --preset minimal-2023 ./public/favicon.svg && vite build",
     "lint": "eslint ./src",
     "test": "vitest run",
+    "test:fork": "vitest run --config vitest.fork.config.ts",
     "extract": "i18next-parser 'src/**/*.{ts,tsx}' --output 'src/locales/{{locale}}/{{ns}}.json' --keep"
   },
   "repository": {
@@ -27,6 +28,7 @@
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
+    "happy-dom": "^20.14.6",
     "prettier": "^3.5.3",
     "puppeteer": "^25",
     "typescript": "^6.0.2",

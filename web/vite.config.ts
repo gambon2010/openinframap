@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from 'vite'
+import { configDefaults } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 import { renderSVG } from 'vite-plugin-render-svg'
 import i18nextLoader from 'vite-plugin-i18next-loader'
@@ -99,6 +100,8 @@ export default defineConfig({
   ],
 
   test: {
+    // Fork: the fork's unit tests run with vitest.fork.config.ts (npm run test:fork).
+    exclude: [...configDefaults.exclude, 'src/fork/**'],
     environment: 'puppeteer',
     globalSetup: 'vitest-environment-puppeteer/global-init',
     globals: true

@@ -25,14 +25,14 @@ export type Station = {
 }
 
 // A stretch between two consecutive stations; null = a junction between lines.
-type Segment = {
+export type Segment = {
   from: Station | null
   to: Station | null
   length_km: number
   voltages_kv: number[]
 }
 
-type RoutePath = {
+export type RoutePath = {
   length_km: number
   voltages_kv: number[]
   stations: Station[]
@@ -42,12 +42,12 @@ type RoutePath = {
 
 // A station not on the ≥110 kV grid is first connected to it over lower
 // voltages (e.g. a wind farm's 65 kV line to the nearest 220 kV substation).
-type AccessLeg = RoutePath & { end: 'from' | 'to' }
+export type AccessLeg = RoutePath & { end: 'from' | 'to' }
 
 // What's drawn and listed: a whole route (connection legs included).
 type Route = RoutePath
 
-type RouteResponse = {
+export type RouteResponse = {
   from: Station
   to: Station
   notices: string[]
@@ -59,11 +59,11 @@ const SOURCE = 'grid_route'
 export const PATH_COLOURS = ['#e6007e', '#0072ce', '#ff8c00', '#2e9e44', '#8e44ad']
 
 // Hash format: s<osm_id> for substations, p<osm_id> for plants, joined by "_".
-function encodeStation(s: Station): string {
+export function encodeStation(s: Station): string {
   return (s.kind === 'substation' ? 's' : 'p') + s.osm_id
 }
 
-function decodeStation(value: string): Station | null {
+export function decodeStation(value: string): Station | null {
   const match = /^([sp])(-?\d+)$/.exec(value)
   if (!match) return null
   return { kind: match[1] === 's' ? 'substation' : 'plant', osm_id: parseInt(match[2]) }
@@ -83,7 +83,7 @@ function stationLabel(s: Station): string {
  * voltages, e.g. a wind farm on a 65 kV line) joined on, so each route is one
  * continuous line. A note says how much of it runs below 110 kV.
  */
-function combineRoutes(data: RouteResponse): Route[] {
+export function combineRoutes(data: RouteResponse): Route[] {
   const legs = data.access || []
   const from = legs.find((leg) => leg.end === 'from')
   const to = legs.find((leg) => leg.end === 'to')

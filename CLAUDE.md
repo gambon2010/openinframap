@@ -30,7 +30,8 @@ Services (the fork's ports and services are in `docker-compose.override.yml`): `
 npm start         # Dev server on port 5173 (upstream renamed it from `npm run dev`)
 npm run build     # Production build
 npm run lint      # ESLint + Prettier
-npm run test      # Vitest (+ Puppeteer integration tests)
+npm run test      # Vitest (+ Puppeteer integration tests): upstream's
+npm run test:fork # The fork's unit tests (src/fork/**/*.test.ts, happy-dom; vitest.fork.config.ts)
 npm run extract   # Extract i18n translation strings
 ```
 
@@ -41,8 +42,18 @@ uv run uvicorn src.main:app --reload --port 8001   # Developing it: `docker comp
 uv run ruff check                  # Lint
 uv run ruff format                 # Format
 uv run mypy .                      # Type check
-uv run pytest                      # Tests
+uv run pytest                      # Tests (the fork's: tests/fork/)
 ```
+
+### Setup scripts (`scripts/`)
+```bash
+uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests   # From the repo root
+```
+
+**Tests for fork code:** add unit tests next to new fork code where they make sense
+(pure logic, parsing, geometry, state; not glue or layout): frontend `src/fork/**/*.test.ts`,
+backend `web-backend/tests/fork/`, scripts `scripts/tests/` (shell helpers are tested by
+running them in bash). Upstream's code isn't covered by the fork's tests.
 
 ### Tile server (`tegola/`)
 ```bash

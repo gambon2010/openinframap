@@ -26,6 +26,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Grid connections between two stations (prototype)](#grid-connections-between-two-stations-prototype)
 - [Satellite imagery (offline)](#satellite-imagery-offline)
 - [One look for the panels; Settings](#one-look-for-the-panels-settings)
+- [Tests](#tests)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
 - [Fork structure: keeping upstream's files close to upstream](#fork-structure-keeping-upstreams-files-close-to-upstream)
@@ -838,6 +839,29 @@ the key opened over the buttons too; the Map sources panel was another button.
 
 ---
 
+## Tests
+
+Unit tests cover the fork's own code where there's logic to get wrong; upstream's
+code keeps upstream's tests. Glue code (adding layers to the map, building panels)
+is checked in the browser instead.
+
+| Where | Run | What |
+|---|---|---|
+| `web/src/fork/**/*.test.ts` (89) | `cd web && npm run test:fork` | My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
+| `web-backend/tests/fork/` (13) | `cd web-backend && uv run pytest` | Grid routes (station parsing, graph, distinct paths, route description), search helpers, My layers' id parsing and schema, search indexes |
+| `scripts/tests/` (26) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, and `scripts/lib/common.sh` helpers run in bash |
+
+The frontend tests run in happy-dom (a simulated browser, new dev dependency) with
+their own config (`web/vitest.fork.config.ts`); upstream's `npm run test` (a real
+browser through Puppeteer) excludes `src/fork/`.
+
+**The setup scripts** (`build-region.sh`, `import-db.sh`...) are mostly a sequence
+of downloads, Docker and database steps, so unit tests only make sense for their
+helpers (done, above). The whole flow is better checked end to end: `bash
+scripts/build-region.sh --region luxembourg --yes` builds the smallest region in a
+few minutes, but it wipes the database, so it belongs in a throwaway environment
+(e.g. a CI job), not on a machine with a built region.
+
 ## Smaller fixes
 
 - **Upstream merge.** The upstream changes since June were merged (backend moved to
@@ -958,8 +982,8 @@ Upstream files the fork still changes, and how:
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
 | `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; a few constants exported for the fork's styles |
 | `web/src/elements/external-links.ts` | Popup crash fix |
-| `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol and graphics libraries) |
-| `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols), `@armyc2.c5isr.renderer/mil-sym-ts-web` (tactical graphics) |
+| `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol and graphics libraries); tests exclude `src/fork/` |
+| `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols), `@armyc2.c5isr.renderer/mil-sym-ts-web` (tactical graphics); dev: `happy-dom`; script `test:fork` |
 | `web/index.html` | "export (online)" label |
 
 After merging, check: `bash scripts/build-region.sh --region luxembourg --rebuild
