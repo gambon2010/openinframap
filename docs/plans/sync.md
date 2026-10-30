@@ -1,7 +1,6 @@
 # Plan: users, shared layers and live sync for My layers
 
-Status: **agreed in discussion (2026-10-30)**, except the situations design (marked
-*to confirm*). Nothing is built yet; it builds on the refactor
+Status: **agreed in discussion (2026-10-30)**. Nothing is built yet; it builds on the refactor
 (`docs/plans/refactor.md`, phases 3 and 4). Backlog items 10.6 and 10.6b in
 `docs/SPECIFICATIONS.md`.
 
@@ -91,7 +90,7 @@ today.
 
 The folder, which is on the layer today, moves to a per-user setting.
 
-## Situations *(to confirm)*
+## Situations
 
 Today a situation is a named point in the change history ("everything after
 change #N") and shows every layer. With access control:
@@ -112,7 +111,7 @@ change #N") and shows every layer. With access control:
 
 ## Changes to the database (userdata schema)
 
-- `user`: id, name, password hash; later maybe an outside login.
+- `user`: id, name, password hash (local accounts only).
 - `layer`: + `owner`, + `version`.
 - `feature`: + `version`.
 - `layer_access`: layer, user, `view` or `modify`.
@@ -140,7 +139,7 @@ and other users get modify access to them, so nothing is lost or hidden.
 
 ## Still open (later, not needed to start)
 
-- Login: local accounts only, or also an outside provider?
+- Login: **local accounts only** (decided 2026-10-30).
 - Who can create users: an admin, or anyone?
 - Offline for a long time: the push connection catches up fine, but a very long
   offline session may end with many conflicts. Good enough for now.

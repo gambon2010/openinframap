@@ -159,8 +159,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.3 | Terrain: hillshading and line of sight (Copernicus 30 m elevation, offline). | 🗂 |
 | 10.4 | Grid what-if: what loses its connection if a substation is hit. | 🗂 |
 | 10.5 | Time on items: valid from/to and a timeline slider. | 🗂 |
-| 10.6 | Users: a login page, user accounts, access control per user (view the map; read or write each layer). | 🗂 asked 2026-10-30 |
-| 10.6b | Auto sync of My layers between users: layers update by themselves; edits sent with Save; field-by-field merge; conflicts one by one in a window that can be minimised (your version shown meanwhile), Save blocked until resolved; owners share layers to view or modify; a situation is only seen by those who can view all its layers. | 🗂 designed: `docs/plans/sync.md` (situations to confirm) |
+| 10.6 | Users: a login page, user accounts (local only), access control per user (view the map; read or write each layer). | 🗂 designed: `docs/plans/sync.md` |
+| 10.6b | Auto sync of My layers between users: layers update by themselves; edits sent with Save; field-by-field merge; conflicts one by one in a window that can be minimised (your version shown meanwhile), Save blocked until resolved; owners share layers to view or modify; a situation is only seen by those who can view all its layers. | 🗂 designed: `docs/plans/sync.md` |
 | 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | 🗂 |
 
 ## 11. Quality
