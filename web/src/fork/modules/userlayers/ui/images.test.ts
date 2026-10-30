@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { MAX_IMAGE_SIZE, imageScale } from './panel.ts'
+import { MAX_IMAGE_SIZE, imageScale } from './images.ts'
 
 describe('stored picture size', () => {
   test('big pictures are scaled down to 1024 px on their longest side', () => {

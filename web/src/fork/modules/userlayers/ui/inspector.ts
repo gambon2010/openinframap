@@ -1,0 +1,131 @@
+// Fork: what the left details panel shows for My layers: the selected item's card
+// (editor.ts), one card for several selected items, nothing while a past version
+// is shown. A locked layer's card can be looked at, not changed.
+import { el } from 'redom'
+import { t } from '../../../core/i18n.ts'
+import { leftColumn } from '../../../ui/left-column.ts'
+import { UserFeature, UserLayer } from '../model.ts'
+import { buildBulkCard, buildEditor } from '../editor.ts'
+import { geometryCentre, translateGeometry } from '../render.ts'
+import type { Workspace } from './workspace.ts'
+
+export class Inspector {
+  // Which item (and version) the card shows, so it's only rebuilt when it changes.
+  private editorKey: string | null = null
+  private ws: Workspace
+
+  constructor(ws: Workspace) {
+    this.ws = ws
+  }
+
+  async sync() {
+    const { store, tools } = this.ws
+    const view = store.view
+    const panel = leftColumn.details
+    // Several items: one card for all of them.
+    const ids = view.live ? tools.selection() : []
+    if (ids.length > 1) {
+      const items = ids
+        .map((i) => {
+          const layer = store.layerOf(i)
+          const feature = layer?.features.get(i)
+          return layer && feature ? { layer, feature } : null
+        })
+        .filter((x): x is { layer: UserLayer; feature: UserFeature } => x !== null)
+      const key = `bulk:${JSON.stringify(items.map((i) => [i.layer.id, i.feature]))}`
+      if (key === this.editorKey) return
+      this.editorKey = key
+      const card = buildBulkCard(items, [...store.layers.values()], {
+        updateEach: (change) =>
+          store.updateFeatures(
+            items
+              .filter((i) => view.canEdit(i.layer))
+              .map((i) => ({
+                layerId: i.layer.id,
+                feature: { ...i.feature, properties: change(i.feature.properties) }
+              }))
+              .filter((c): c is { layerId: string; feature: UserFeature } => c.feature.properties !== null)
+          ),
+        moveTo: (layerId) =>
+          store.moveFeatures(
+            items.filter((i) => view.canEdit(i.layer) && i.layer.id !== layerId).map((i) => i.feature.id),
+            layerId
+          ),
+        remove: () => {
+          if (
+            window.confirm(t('userlayers.delete-n', 'Delete these {{count}} items?', { count: items.length }))
+          )
+            tools.deleteSelected()
+        },
+        clear: () => tools.select(null),
+        canEdit: (l) => view.canEdit(l)
+      })
+      panel.show(card, () => {
+        if (this.editorKey === key) {
+          this.editorKey = null
+          tools.select(null)
+        }
+      })
+      return
+    }
+    const id = view.live ? tools.selected : null
+    const layer = id ? store.layerOf(id) : undefined
+    const feature = id ? layer?.features.get(id) : undefined
+    if (!id || !layer || !feature) {
+      if (this.editorKey) {
+        this.editorKey = null
+        panel.close()
+      }
+      return
+    }
+    const key = `${id}:${layer.id}:${JSON.stringify(feature)}`
+    if (key === this.editorKey) return
+    this.editorKey = key
+    // Keep the focus where it was (each change rebuilds the editor).
+    const focused = (document.activeElement as HTMLElement | null)?.getAttribute?.('data-field')
+    const editor = await buildEditor(feature, layer, [...store.layers.values()], {
+      update: (properties) => store.updateFeature(layer.id, { ...feature, properties }),
+      moveTo: (layerId) => store.moveFeature(id, layerId),
+      duplicate: () => this.duplicate(layer.id, feature),
+      remove: () => tools.deleteSelected(),
+      done: () => tools.select(null),
+      canEdit: (l) => view.canEdit(l)
+    })
+    if (this.editorKey !== key) return // something newer
+    if (!view.canEdit(layer)) {
+      // A locked layer's items can be looked at, not changed.
+      editor
+        .querySelectorAll<HTMLButtonElement | HTMLInputElement>('input, select, textarea, button')
+        .forEach((c) => {
+          if (!c.classList.contains('primary')) c.disabled = true
+        })
+      editor.insertBefore(
+        el(
+          'p.oim-ul-locked-note',
+          t('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
+        ),
+        editor.children[1] ?? null
+      )
+    }
+    panel.show(editor, () => {
+      // Closed (×, Esc) or replaced by another feature's details: deselect.
+      if (this.editorKey === key) {
+        this.editorKey = null
+        tools.select(null)
+      }
+    })
+    if (focused) editor.querySelector<HTMLElement>(`[data-field="${CSS.escape(focused)}"]`)?.focus()
+  }
+
+  /** A copy of an item, a little to the side, selected. */
+  private duplicate(layerId: string, feature: UserFeature) {
+    const { map, store, tools } = this.ws
+    // 24 px to the right and down, whatever the zoom.
+    const centre = geometryCentre(feature.geometry)
+    const p = map.project(centre)
+    const moved = map.unproject([p.x + 24, p.y + 24])
+    const geometry = translateGeometry(feature.geometry, moved.lng - centre[0], moved.lat - centre[1])
+    const id = store.addFeature(layerId, geometry, structuredClone(feature.properties))
+    tools.select(id)
+  }
+}

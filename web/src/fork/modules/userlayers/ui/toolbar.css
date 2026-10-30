@@ -1,0 +1,88 @@
+/* Fork: My layers. The toolbar at the top of the map and the symbol picker under it (toolbar.ts). */
+
+/* The toolbar, at the top of the map. */
+.oim-ul-toolbar {
+  /* Centred on the map; moved right only as much as it takes to clear the search
+     box (--oim-top-bar-left, fork/ui/search-bar.ts). Its half width is measured
+     (panel.ts: --oim-ul-toolbar-half). */
+  position: absolute;
+  top: 10px;
+  left: max(50%, calc(var(--oim-top-bar-left, 16px) + var(--oim-ul-toolbar-half, 0px)));
+  z-index: 4;
+  display: none;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - var(--oim-top-bar-left, 16px) - 56px);
+  padding: 4px;
+  border-radius: var(--oim-radius-large);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+.oim-ul-toolbar.visible {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+}
+.oim-ul-toolbar-group + .oim-ul-toolbar-group {
+  border-left: 1px solid var(--oim-grey);
+}
+.oim-ul-tool-icon {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-color: transparent;
+  background: none;
+  font-size: 1.05rem;
+}
+.oim-ul-tool-icon.active {
+  background: var(--oim-light-grey);
+  box-shadow: inset 0 0 0 2px var(--oim-dark-grey);
+}
+.oim-ul-toolbar-label {
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+.oim-ul-target {
+  max-width: 11em;
+  padding: 3px;
+}
+.oim-ul-toolbar .oim-ul-menu-items {
+  top: 100%;
+}
+
+/* The symbol picker, under the toolbar. */
+.oim-ul-picker {
+  position: absolute;
+  top: 60px;
+  /* Centred like the toolbar above it. */
+  --oim-picker-width: min(560px, calc(100% - var(--oim-top-bar-left, 16px) - 56px));
+  left: max(50%, calc(var(--oim-top-bar-left, 16px) + var(--oim-picker-width) / 2));
+  z-index: 4;
+  display: none;
+  transform: translateX(-50%);
+  width: var(--oim-picker-width);
+  max-height: calc(100% - 110px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  border-radius: var(--oim-radius-large);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+.oim-ul-picker.visible {
+  display: block;
+}
+.oim-ul-picker .oim-ul-palette-results {
+  max-height: none;
+}
+.oim-ul-picker .oim-ul-symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 2px 8px;
+}

@@ -1,0 +1,23 @@
+/* Fork: My layers. The item card in the left details panel: its frame (inspector.ts, editor.ts). */
+
+/* Details editor (left side panel) */
+.oim-ul-editor .oim-popup-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oim-ul-what {
+  margin: 0 0 6px;
+  color: var(--oim-text-color-light);
+  font-size: 0.85rem;
+}
+.oim-ul-editor-section {
+  margin: 4px 0;
+  border-top: 1px solid var(--oim-grey);
+}
+.oim-ul-editor-section summary {
+  padding: 4px 0;
+  font-weight: bold;
+  cursor: pointer;
+}

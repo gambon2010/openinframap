@@ -704,7 +704,9 @@ be played back step by step. The "My layers" button (top right) opens the panel.
 The v2 panel followed ODIN closely (tabs, a long form of the standard's fields) and
 was hard to read. Version 3, built in steps:
 
-- **Step 1, layout** (`panel.ts`): My layers is a workspace turned on by its button.
+- **Step 1, layout** (`panel.ts`, since split into `userlayers/ui/`: `workspace.ts`,
+  `toolbar.ts`, `sidebar.ts`, `inspector.ts`, `situations.ts`, `timeline.ts`,
+  `toast.ts`): My layers is a workspace turned on by its button.
   Its sidebar sits in the left column between the search box and the details panel
   (which becomes the shared inspector: my items and map features alike); the left
   column is one flex stack that fits the map's height. The grid connection folds to
@@ -811,7 +813,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   one connected grid. UA Merzig → UA Rehlingen gives 12.6 km (direct 110 kV), 24.8 km
   (via Saarwellingen) and 60.6 km (via Wadern and Lebach); across Saarland, two
   routes of 93-95 km that split around Bexbach and Heinitz.
-- **Details in a side panel** (`web/src/fork/modules/grid/info-panel.ts`): clicking a feature shows its
+- **Details in a side panel** (`web/src/fork/ui/details.ts`, `modules/details/`): clicking a feature shows its
   details in a panel on the left, under the search box and above the Grid
   connection panel, instead of a popup over the map (which hid what you clicked).
   Both panels have minimise (keeps the highlight / routes on the map, shrinks to the

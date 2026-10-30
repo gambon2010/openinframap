@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done; phase 3 steps 9–10 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done; phase 3 steps 9–11 done.
 
 ## Why
 
@@ -132,8 +132,10 @@ working sessions.
    a history step (read-only). The toolbar, outliner, card and keyboard ask it
    "can I edit?" instead of checking two flags. *Effort: ½. Time on items and
    per-user read-only access hook in here.*
-11. **Split `panel.ts`** into components, each with its own CSS file (and
-   `userlayers.css` split along the same lines):
+11. **Split `panel.ts`** (done: `userlayers/ui/`, the class is now `Workspace`; the
+   CSS lost 21 rules for UI that no longer exists and is split at its sections, in
+   the same order, listed in `ui/userlayers.css`) into components, each with its own
+   CSS file (and `userlayers.css` split along the same lines):
    - `workspace.ts`: open and close, keyboard, wiring;
    - `toolbar.ts`;
    - `sidebar.ts`: outliner, situations line, settings;
