@@ -109,6 +109,15 @@
   min-height: 28px;
   font-size: 0.88rem;
 }
+/* A grid cell doesn't shrink below its content by default: the date input would
+   push its "Now" button out of the card. */
+.oim-ul-detail > * {
+  min-width: 0;
+}
+.oim-ul-detail .oim-ul-unit input {
+  flex: 1;
+  min-width: 0;
+}
 .oim-ul-detail-name {
   color: var(--oim-text-color-light);
 }
