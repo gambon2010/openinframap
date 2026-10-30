@@ -10,7 +10,9 @@ export interface FeatureProps {
   sidc?: string
   /** symbol, graphic: descriptive fields, keyed by modifier letter (fields.ts). */
   modifiers?: Record<string, string>
-  /** graphic, arrows only: the path is drawn tail to tip and this is the width (m). */
+  /** graphic: an arrow, drawn as a path from tail to tip (graphics.ts axisControlPoints). */
+  axis?: boolean
+  /** An earlier version's arrow width (m): now ignored, the width follows the path. */
   axisWidth?: number
   /** Free notes (not drawn). */
   notes?: string

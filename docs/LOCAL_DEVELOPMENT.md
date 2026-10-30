@@ -440,8 +440,8 @@ in each), **Add** and **History**. On the Add tab:
   bottom says how many); double-click or Enter finishes the ones that take any
   number of points. **Arrows** (axis of advance, main or supporting attack...) are
   drawn like a line: click where the arrow starts, along its path, and double-click
-  where it points to. The width follows the length; drag the blue handle on the
-  arrowhead to change it, and the other points to bend it.
+  where it points to. Its width follows its length, so arrows always have the same
+  proportions; drag its points to bend, lengthen or turn it.
 - **Picture:** put your own image or icon on the map.
 - **Marker, Line, Area:** click to place or to add points; double-click or Enter
   finishes, Esc cancels.

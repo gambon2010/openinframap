@@ -2,10 +2,9 @@
 import { beforeAll, describe, expect, test } from 'vitest'
 import {
   axisControlPoints,
-  axisWidthFrom,
   axisWidthPoint,
   colour,
-  defaultAxisWidth,
+  axisWidth,
   graphicsLibrary,
   haloFor,
   isAxis,
@@ -107,19 +106,16 @@ describe('arrows (axis of advance, attacks)', () => {
     expect(isAxis(lib, 'GFGPGLP--------')).toBe(false) // phase line
   })
 
-  test('length and default width', () => {
+  test('the width follows the length', () => {
     expect(pathLength(path)).toBeCloseTo(3687, -1)
-    expect(defaultAxisWidth(path)).toBe(Math.round(pathLength(path) / 5))
-    expect(defaultAxisWidth([path[0], path[0]])).toBe(10)
+    expect(axisWidth(path)).toBe(Math.round(pathLength(path) / 5))
+    expect(axisWidth([path[0], path[0]])).toBe(10)
   })
 
-  test('the width handle and the width it gives agree', () => {
-    const handle = axisWidthPoint(path, 800)
-    // Behind the tip and to the left of an eastward arrow (north).
-    expect(handle[0]).toBeLessThan(path[1][0])
-    expect(handle[1]).toBeGreaterThan(path[1][1])
-    expect(axisWidthFrom(path, handle)).toBeCloseTo(800, -1)
-    expect(axisWidthFrom(path, path[1])).toBe(10) // on the centre line: the minimum
+  test('the arrowhead corner is behind the tip, to its left', () => {
+    const corner = axisWidthPoint(path, axisWidth(path))
+    expect(corner[0]).toBeLessThan(path[1][0])
+    expect(corner[1]).toBeGreaterThan(path[1][1])
   })
 
   test("the renderer's points: tip first, back to the tail, then the width point", () => {
@@ -128,15 +124,21 @@ describe('arrows (axis of advance, attacks)', () => {
       [7.62, 48.51],
       [7.65, 48.5]
     ]
-    const points = axisControlPoints(bent, 500)
+    const points = axisControlPoints(bent)
     expect(points.slice(0, 3)).toEqual([...bent].reverse())
-    expect(points[3]).toEqual(axisWidthPoint(bent, 500))
+    expect(points[3]).toEqual(axisWidthPoint(bent, axisWidth(bent)))
+  })
+
+  test('the same path always gives the same arrow; a longer one a proportionally wider one', () => {
+    expect(axisControlPoints(path)).toEqual(axisControlPoints(path))
+    const longer: [number, number][] = [path[0], [7.7, 48.5]]
+    expect(axisWidth(longer) / axisWidth(path)).toBeCloseTo(2, 1)
   })
 
   test('drawn from those points', () => {
     const features = renderGraphic(lib, {
       sidc: 'GHGPOLAGM------',
-      points: axisControlPoints(path, 800),
+      points: axisControlPoints(path),
       scale: mapScale(13, 48.5)
     })
     expect(features.some((f) => f.geometry.type.endsWith('LineString'))).toBe(true)

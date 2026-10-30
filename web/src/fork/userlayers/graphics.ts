@@ -41,7 +41,8 @@ export function pointCount(lib: C5Ren, sidc: string): PointCount | null {
  * Arrows (axis of advance, main and supporting attack...): the standard wants the
  * tip first, then the centre line back to the tail, then a point setting the width.
  * Clicking those in order is awkward, so they're drawn as a path from tail to tip
- * (like any line) and a width in metres; these turn that into the renderer's points.
+ * (like any line); the width follows from the path, so every arrow has the same
+ * proportions. These turn the path into the renderer's points.
  */
 export function isAxis(lib: C5Ren, sidc: string): boolean {
   const code = toDCode(lib, sidc)
@@ -72,12 +73,12 @@ export function pathLength(path: LonLat[]): number {
   return total
 }
 
-/** A width that looks right for a new arrow: a fifth of its length. */
-export function defaultAxisWidth(path: LonLat[]): number {
+/** An arrow's width: a fifth of its length (at least 10 m). */
+export function axisWidth(path: LonLat[]): number {
   return Math.max(10, Math.round(pathLength(path) / 5))
 }
 
-/** Where the width handle (the corner of the arrowhead) is, for a path from tail to tip. */
+/** The corner of the arrowhead, for a path from tail to tip: the standard's width point. */
 export function axisWidthPoint(path: LonLat[], width: number): LonLat {
   const tip = path[path.length - 1]
   const [dx, dy] = toMetres(path[path.length - 2], tip) // towards the previous point
@@ -88,19 +89,9 @@ export function axisWidthPoint(path: LonLat[], width: number): LonLat {
   return fromMetres([back[0] + uy * (width / 2), back[1] - ux * (width / 2)], tip)
 }
 
-/** The width an arrow gets when its handle is dragged to a point. */
-export function axisWidthFrom(path: LonLat[], handle: LonLat): number {
-  const tip = path[path.length - 1]
-  const [dx, dy] = toMetres(path[path.length - 2], tip)
-  const length = Math.hypot(dx, dy) || 1
-  const [hx, hy] = toMetres(handle, tip)
-  // Twice the distance from the last stretch of the centre line, at least 10 m.
-  return Math.max(10, Math.round((2 * Math.abs(hx * dy - hy * dx)) / length))
-}
-
 /** The renderer's points for an arrow: tip, centre line back to the tail, width point. */
-export function axisControlPoints(path: LonLat[], width: number): LonLat[] {
-  return [...path].reverse().concat([axisWidthPoint(path, width)])
+export function axisControlPoints(path: LonLat[]): LonLat[] {
+  return [...path].reverse().concat([axisWidthPoint(path, axisWidth(path))])
 }
 
 /** Map scale (1:n) at a zoom and latitude, as the renderer wants it. */

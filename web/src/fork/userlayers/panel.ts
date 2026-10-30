@@ -531,7 +531,7 @@ export class Panel implements IControl {
         },
         tt(
           'userlayers.axis-hint',
-          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Drag the blue handle to change its width.',
+          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Its width follows its length.',
           { name: pick.name }
         )
       )
