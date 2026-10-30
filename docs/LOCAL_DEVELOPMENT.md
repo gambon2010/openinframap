@@ -174,7 +174,7 @@ roads* (also roads, railways and borders); *Map* is the usual background.
 
 | Choice | What | Luxembourg | France (estimate) |
 |---|---|---|---|
-| Overview | NASA Blue Marble, 500 m, the world to zoom 5 and the region to zoom 8 | 8 MB, 1 min | ~15 MB |
+| The world | NASA Blue Marble, 500 m, the whole world to zoom 8; one file (`world.sat-overview.pmtiles`) for every region, downloaded once | ~330 MB, about an hour | (same file) |
 | + Regional | Sentinel-2 10 m cloud-free composite (2021), to zoom 12 | +1 MB, 30 s | ~200 MB |
 | + Regional, sharper | the same to zoom 13 (full 10 m) | +4 MB | ~1 GB, downloads ~40 GB |
 | Detailed (France only) | IGN aerial photos, 20 cm, zoom 14 to 15/16/17 | — | a département to 16: ~3 GB, hours |

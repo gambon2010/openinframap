@@ -5,7 +5,8 @@ each, in data/basemap/, served by the `basemap` Compose service like the offline
 background map). Run by scripts/build-region.sh; see docs/plans/satellite-imagery.md.
 
   overview   zoom 0-8   NASA Blue Marble Next Generation (NASA GIBS, 500 m):
-                        the world to zoom 5, the region's bounding box to zoom 8.
+                        the whole world to zoom 8 (--world, one file for every
+                        region), or the world to zoom 5 and a region's box to 8.
   regional   zoom 9-12  Sentinel-2 10 m yearly composite (ESA WorldCover 2021,
              (or 13)    CC BY 4.0), read straight from the public COGs with GDAL
                         (only the needed parts are downloaded), cut to the region.
@@ -14,6 +15,7 @@ background map). Run by scripts/build-region.sh; see docs/plans/satellite-imager
 
     python3 scripts/satellite.py estimate --outline AREA.geojson
     python3 scripts/satellite.py overview --outline AREA.geojson --out FILE.pmtiles
+    python3 scripts/satellite.py overview --world --out FILE.pmtiles  (to zoom 8, ~330 MB)
     python3 scripts/satellite.py regional --outline AREA.geojson --out FILE.pmtiles [--maxzoom 13]
     python3 scripts/satellite.py detailed --outline AREA.geojson --out FILE.pmtiles [--maxzoom 16]
 
@@ -71,6 +73,10 @@ TIERS = {
     "detailed": (14, 16, "jpg", "IGN orthophotos (Licence Ouverte)"),
 }
 WORLD_OVERVIEW_ZOOM = 5
+# The whole world to zoom 8 (overview --world, shared by every region): 87,381
+# tiles, measured at about 3.8 KB each (mostly ocean).
+WORLD_OVERVIEW_BYTES = 330_000_000
+WORLD_BBOX = (-180.0, -85.0511, 180.0, 85.0511)
 
 # Average tile sizes measured on Luxembourg and Alsace (bytes), for estimates.
 AVERAGE_TILE_BYTES = {"overview": 6_500, "regional": 9_000, "detailed": 22_000}
@@ -278,6 +284,16 @@ def area_km2(rings: list[Ring]) -> float:
 # --- What each tier needs -----------------------------------------------------
 
 
+def world_overview_tiles() -> list[tuple[int, int, int]]:
+    """Every tile of the world to zoom 8."""
+    return [
+        (z, x, y)
+        for z in range(TIERS["overview"][1] + 1)
+        for x in range(2**z)
+        for y in range(2**z)
+    ]
+
+
 def overview_tiles(rings: list[Ring]) -> list[tuple[int, int, int]]:
     """The world to zoom 5, then the region's bounding box to zoom 8."""
     out = [
@@ -333,6 +349,10 @@ def estimate(
         "overview": {
             "tiles": overview,
             "bytes": overview * AVERAGE_TILE_BYTES["overview"],
+        },
+        "world_overview": {
+            "tiles": len(world_overview_tiles()),
+            "bytes": WORLD_OVERVIEW_BYTES,
         },
         "regional": {
             "tiles": regional,
@@ -551,14 +571,17 @@ def command_estimate(args) -> None:
 
 
 def command_overview(args) -> None:
-    rings = load_rings(args.outline)
+    if args.world:
+        tiles, bbox = world_overview_tiles(), WORLD_BBOX
+    elif args.outline:
+        rings = load_rings(args.outline)
+        tiles, bbox = overview_tiles(rings), rings_bbox(rings)
+    else:
+        sys.exit("overview needs --outline or --world")
     out = Path(args.out).resolve()
-    tiles = overview_tiles(rings)
     minzoom, maxzoom, _fmt, attribution = TIERS["overview"]
     mbtiles = out.with_suffix(".mbtiles")
-    writer = MBTiles(
-        mbtiles, "Blue Marble", "jpg", minzoom, maxzoom, attribution, rings_bbox(rings)
-    )
+    writer = MBTiles(mbtiles, "Blue Marble", "jpg", minzoom, maxzoom, attribution, bbox)
     found = download_tiles(tiles, GIBS_URL, writer, threads=8, progress=print_progress)
     writer.close()
     to_pmtiles(mbtiles, out, args.pmtiles_image)
@@ -635,8 +658,14 @@ def main(argv: Iterable[str] | None = None) -> None:
     for name in ("estimate", "overview", "regional", "detailed"):
         p = sub.add_parser(name)
         p.add_argument(
-            "--outline", required=True, help="the region's outline (GeoJSON)"
+            "--outline",
+            required=name != "overview",
+            help="the region's outline (GeoJSON)",
         )
+        if name == "overview":
+            p.add_argument(
+                "--world", action="store_true", help="the whole world to zoom 8"
+            )
         if name != "estimate":
             p.add_argument("--out", required=True, help="the PMTiles file to write")
             p.add_argument("--pmtiles-image", default="protomaps/go-pmtiles:v1.28.0")

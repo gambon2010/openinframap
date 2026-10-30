@@ -214,3 +214,10 @@ def test_tiles_in_outline_matches_checking_every_tile():
             if s.box_touches_rings(s.tile_bounds(x, y, zoom), LUXEMBOURG)
         }
         assert set(s.tiles_in_outline(LUXEMBOURG, zoom)) == brute
+
+
+def test_world_overview_tiles():
+    tiles = s.world_overview_tiles()
+    assert len(tiles) == sum(4**z for z in range(9))  # zoom 0 to 8
+    assert len(set(tiles)) == len(tiles)
+    assert s.estimate(LUXEMBOURG)["world_overview"]["tiles"] == len(tiles)

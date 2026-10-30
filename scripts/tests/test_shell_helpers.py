@@ -101,3 +101,21 @@ export_outdated && echo outdated || echo current
     # No export of the region: nothing to bring up to date.
     (tmp_path / "lux.oimdb").unlink()
     assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B2", EXTRA="") == "current"
+
+
+def test_world_overview_is_shared_by_every_region(tmp_path):
+    (tmp_path / "world.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
+    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(12))
+    value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
+    assert value == (
+        "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
+        "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 12"
+    )
+    # Another region with nothing of its own still has the world.
+    assert bash("satellite_tiers_value fr", BASEMAP_DIR=str(tmp_path)).startswith(
+        "http://localhost:8090/world.sat-overview/"
+    )
+    assert bash(
+        "has_satellite fr && echo yes; region_satellite fr || echo none",
+        BASEMAP_DIR=str(tmp_path),
+    ).split() == ["yes", "none"]

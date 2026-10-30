@@ -51,7 +51,8 @@ db_volume_exists || die "There's no map database yet. Build a region first: bash
 start_db
 REGION_ID=$(build_info region_id)
 [[ -n "$REGION_ID" ]] || die "The map database was never finished. Build it with: bash scripts/build-region.sh"
-ok "Region: $(build_info region_name)"
+REGION_NAME=$(build_info region_name)
+ok "Region: $REGION_NAME"
 # A Geofabrik region: its outline is in Geofabrik's index.
 PBF_URL=$(build_info source)
 [[ "$PBF_URL" == *geofabrik.de* ]] || PBF_URL=""

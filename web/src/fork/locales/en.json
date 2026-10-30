@@ -231,7 +231,7 @@
     "hybrid": "Satellite with roads",
     "hybrid-help": "Imagery with roads, railways and borders",
     "title": "Background",
-    "none": "No satellite imagery yet. Run \"bash scripts/build-region.sh\" and choose it when asked: NASA Blue Marble for the overview, Sentinel-2 10 m for your region, and in France IGN aerial photos.",
+    "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.",
     "zooms": "Imagery up to zoom {{zoom}}."
   },
   "userlayers": {

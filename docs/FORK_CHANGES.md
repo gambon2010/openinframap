@@ -887,8 +887,12 @@ shown by `web/src/fork/satellite/`.
   served by the existing `basemap` service (no new service; Tegola only serves vector
   tiles):
   - *overview*, zoom 0–8: NASA Blue Marble Next Generation from NASA GIBS
-    (`GoogleMapsCompatible_Level8`, checked in GIBS' capabilities), the world to
-    zoom 5 and the region's bounding box to zoom 8. Luxembourg: 1,369 tiles, 8 MB, 50 s.
+    (`GoogleMapsCompatible_Level8`, checked in GIBS' capabilities): the whole world
+    to zoom 8 (`overview --world`, 87,381 tiles, ~330 MB measured, about an hour) in
+    one `data/basemap/world.sat-overview.pmtiles` shared by every region and
+    downloaded once (`world_overview`, `overview_file` in `lib/common.sh`). Older
+    builds made a per-region file (the world to zoom 5 and the region's bounding box
+    to zoom 8); it's still used when there's no world file. Luxembourg (old per-region file): 1,369 tiles, 8 MB, 50 s.
   - *regional*, zoom 9–12 (or 13): the ESA WorldCover Sentinel-2 RGBNIR 2021
     composite (10 m, **CC BY 4.0**, stated in the files), 1°×1° cloud-optimised
     GeoTIFFs in a public S3 bucket. GDAL reads only the parts it needs over HTTP

@@ -173,7 +173,7 @@ const satellite: ForkModule = {
             'p.oim-map-sources-note',
             t(
               'satellite.none',
-              'No satellite imagery yet. Run "bash scripts/build-region.sh" and choose it when asked: NASA Blue Marble for the overview, Sentinel-2 10 m for your region, and in France IGN aerial photos.'
+              'No satellite imagery yet. Run "bash scripts/satellite.sh" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.'
             )
           ),
       TIERS.length
