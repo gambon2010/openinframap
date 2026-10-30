@@ -61,3 +61,13 @@ CREATE TABLE IF NOT EXISTS userdata.image (
     data bytea NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Situations: named moments ("Morning brief 30 Oct 08:00"). The layers as they were
+-- after change change_id, rebuilt from the history when viewed (nothing copied).
+CREATE TABLE IF NOT EXISTS userdata.situation (
+    id bigserial PRIMARY KEY,
+    name text NOT NULL,
+    change_id bigint NOT NULL,
+    author text,
+    created_at timestamptz NOT NULL DEFAULT now()
+);

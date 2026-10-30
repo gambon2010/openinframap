@@ -82,7 +82,9 @@ async def ensure_schema(db: AsyncConnection) -> None:
     global _schema_ready
     if _schema_ready:
         return
-    exists = (await db.execute(text("SELECT to_regclass('userdata.image') IS NOT NULL"))).scalar()
+    # The newest table: an older database gets what it lacks (every statement in
+    # userdata.sql is "if not exists", so running it again is safe).
+    exists = (await db.execute(text("SELECT to_regclass('userdata.situation') IS NOT NULL"))).scalar()
     if not exists:
         # One statement at a time (asyncpg doesn't run several in one call).
         for statement in SCHEMA_SQL.split(";\n"):
@@ -332,6 +334,64 @@ async def history(request: Request) -> Response:
     )
 
 
+def situation_json(r: Any) -> dict:
+    return {
+        "id": r.id,
+        "name": r.name,
+        "change_id": r.change_id,
+        "author": r.author,
+        "created_at": r.created_at.isoformat(),
+        "at": r.at.isoformat() if r.at else None,
+    }
+
+
+SITUATION_COLUMNS = """s.id, s.name, s.change_id, s.author, s.created_at,
+    (SELECT made_at FROM userdata.change WHERE id = s.change_id) AS at"""
+
+
+async def situations(request: Request) -> Response:
+    """GET: the saved situations, oldest first. POST {"name", "author"}: save the
+    layers as they are now (up to the last saved change) as a situation."""
+    db = get_db(request)
+    await ensure_schema(db)
+    if request.method == "POST":
+        body = await request.json()
+        name = str(body.get("name") or "").strip()
+        if not name:
+            raise HTTPException(400, "A situation needs a name")
+        last = (await db.execute(text("SELECT max(id) FROM userdata.change"))).scalar()
+        if last is None:
+            raise HTTPException(400, "Nothing is saved yet: save your layers first")
+        row = (
+            await db.execute(
+                text(
+                    f"""WITH s AS (INSERT INTO userdata.situation (name, change_id, author)
+                                   VALUES (:name, :change_id, :author) RETURNING *)
+                        SELECT {SITUATION_COLUMNS} FROM s"""
+                ),
+                {"name": name[:200], "change_id": last, "author": body.get("author") or None},
+            )
+        ).one()
+        await db.commit()
+        return JSONResponse(situation_json(row))
+    rows = (
+        await db.execute(text(f"SELECT {SITUATION_COLUMNS} FROM userdata.situation s ORDER BY s.id"))
+    ).all()
+    return JSONResponse({"situations": [situation_json(r) for r in rows]})
+
+
+async def delete_situation(request: Request) -> Response:
+    db = get_db(request)
+    await ensure_schema(db)
+    try:
+        situation_id = int(request.path_params["situation_id"])
+    except ValueError:
+        raise HTTPException(400, "Invalid situation id")
+    await db.execute(text("DELETE FROM userdata.situation WHERE id = :id"), {"id": situation_id})
+    await db.commit()
+    return JSONResponse({"deleted": situation_id})
+
+
 async def add_image(request: Request) -> Response:
     """An image for the map: {"name", "mime", "data": base64}. Returns its id."""
     db = get_db(request)
@@ -397,6 +457,8 @@ routes = [
     Route("/userdata", endpoint=everything),
     Route("/userdata/save", endpoint=save, methods=["POST"]),
     Route("/userdata/history", endpoint=history),
+    Route("/userdata/situations", endpoint=situations, methods=["GET", "POST"]),
+    Route("/userdata/situations/{situation_id}", endpoint=delete_situation, methods=["DELETE"]),
     Route("/userdata/images", endpoint=add_image, methods=["POST"]),
     Route("/userdata/images/{image_id}", endpoint=get_image),
     Route("/userdata/source-feature", endpoint=source_feature),

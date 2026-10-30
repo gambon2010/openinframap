@@ -15,7 +15,8 @@ import { Tools } from './tools.ts'
 import { Renderer, geometryCentre, translateGeometry } from './render.ts'
 import { Palette, Pick, PaletteMode } from './palette.ts'
 import { Playback } from './history.ts'
-import { uploadImage } from './api.ts'
+import { Situation, createSituation, deleteSituation, listSituations, uploadImage } from './api.ts'
+import { situationLabel, situationPosition } from './situations.ts'
 import { UserFeature } from './model.ts'
 import { buildEditor } from './editor.ts'
 import { Outliner } from './outliner.ts'
@@ -95,6 +96,12 @@ export class Panel implements IControl {
   private follow = true
   private busy = ''
   isOpen = false
+  // Situations: the saved ones, and the one being viewed (null: live).
+  private situations: Situation[] = []
+  private situationsLoaded = false
+  private viewing: Situation | null = null
+  private situationLine = el('.oim-ul-situation')
+  private banner = el('.oim-ul-banner', { role: 'status' })
   // The editor in the side panel: which feature (and version) it shows.
   private editorKey: string | null = null
 
@@ -115,7 +122,7 @@ export class Panel implements IControl {
     this.outliner = new Outliner(store, {
       update: () => this.update(),
       select: (feature) => {
-        this.tools.select(feature.id)
+        if (!this.viewing) this.tools.select(feature.id)
         this.zoomTo(feature)
       },
       selected: () => this.tools.selected,
@@ -142,7 +149,7 @@ export class Panel implements IControl {
     }) as HTMLButtonElement
     this.button.onclick = () => this.toggle()
     this.container = el('div.maplibregl-ctrl.maplibregl-ctrl-group', this.button)
-    this.map.getContainer().append(this.toolbar, this.picker, this.toast, this.timeline)
+    this.map.getContainer().append(this.toolbar, this.picker, this.toast, this.timeline, this.banner)
     // In the left column, between the search box and the details panel.
     const details = sidePanel()?._container
     if (details?.parentElement) details.parentElement.insertBefore(this.sidebar, details)
@@ -172,6 +179,7 @@ export class Panel implements IControl {
     this.button.classList.toggle('oim-dock-active', open)
     this.button.setAttribute('aria-pressed', String(open))
     if (!open) {
+      if (this.viewing) this.backToLive()
       this.paletteMode = null
       if (this.tools.tool.mode !== 'select') this.tools.setTool({ mode: 'select' })
     }
@@ -214,6 +222,7 @@ export class Panel implements IControl {
   update() {
     this.updateToast()
     this.updateTimeline()
+    this.updateBanner()
     void this.syncEditor()
     for (const e of [this.sidebar, this.toolbar]) e.classList.toggle('visible', this.isOpen)
     this.picker.classList.toggle('visible', this.isOpen && this.paletteMode !== null && !this.inPlayback)
@@ -316,7 +325,7 @@ export class Panel implements IControl {
         })
         b.setAttribute('aria-pressed', String(active === id))
         b.setAttribute('aria-label', tt(`userlayers.tool.${id}`, label))
-        b.disabled = this.inPlayback
+        b.disabled = this.inPlayback || Boolean(this.viewing)
         return b
       })
     )
@@ -519,6 +528,7 @@ export class Panel implements IControl {
     }) as HTMLInputElement
     author.onchange = () => (this.store.author = author.value.trim())
     this.outline.append(
+      this.situationLine,
       this.message,
       this.outliner.el,
       el(
@@ -557,7 +567,150 @@ export class Panel implements IControl {
         )
       )
     }
+    this.updateSituationLine()
     this.outliner.draw()
+  }
+
+  // --- Situations -----------------------------------------------------------------------
+
+  private async loadSituations() {
+    try {
+      this.situations = await listSituations()
+    } catch {
+      this.situations = []
+    }
+    this.situationsLoaded = true
+    this.update()
+  }
+
+  private updateSituationLine() {
+    if (!this.situationsLoaded) {
+      this.situationsLoaded = true // once
+      void this.loadSituations()
+    }
+    const options: HTMLElement[] = [
+      el('option', tt('userlayers.live', 'Live (now)'), { value: 'live', selected: !this.viewing })
+    ]
+    for (const s of this.situations) {
+      options.push(
+        el('option', situationLabel(s), { value: String(s.id), selected: this.viewing?.id === s.id })
+      )
+    }
+    options.push(
+      el('option', `+ ${tt('userlayers.save-situation', 'Save now as a situation…')}`, { value: 'save' })
+    )
+    if (this.viewing)
+      options.push(
+        el('option', `🗑 ${tt('userlayers.delete-situation', 'Delete this situation')}`, { value: 'delete' })
+      )
+    const choice = el('select', options, {
+      title: tt('userlayers.situation-title', 'A situation is a named moment: your layers as they were then')
+    }) as HTMLSelectElement
+    choice.onchange = () => void this.chooseSituation(choice.value)
+    this.situationLine.replaceChildren(
+      el('label', el('span', tt('userlayers.situation', 'Situation')), choice)
+    )
+  }
+
+  private async chooseSituation(value: string) {
+    if (value === 'live') {
+      this.backToLive()
+      return
+    }
+    if (value === 'save') {
+      const name = window.prompt(
+        tt('userlayers.situation-name', 'Name of the situation'),
+        tt('userlayers.situation-default', 'Situation {{date}}', { date: new Date().toLocaleString() })
+      )
+      if (name && name.trim()) {
+        // A situation is made of saved changes: offer to save the unsaved ones first.
+        const pending = this.store.pending.length
+        const includePending =
+          pending > 0 &&
+          window.confirm(
+            tt(
+              'userlayers.situation-include-pending',
+              'Save your {{count}} unsaved change(s) first, so they are in the situation? (Cancel: leave them out.)',
+              { count: pending }
+            )
+          )
+        await this.run(tt('userlayers.saving', 'Saving'), async () => {
+          if (includePending) await this.store.save()
+          await createSituation(name.trim(), this.store.author)
+          await this.loadSituations()
+        })
+      } else this.update()
+      return
+    }
+    if (value === 'delete' && this.viewing) {
+      const viewing = this.viewing
+      if (
+        window.confirm(
+          tt(
+            'userlayers.delete-situation-confirm',
+            'Delete the situation "{{name}}"? (Your layers stay as they are.)',
+            { name: viewing.name }
+          )
+        )
+      ) {
+        this.backToLive()
+        await this.run(tt('userlayers.deleting', 'Deleting'), async () => {
+          await deleteSituation(viewing.id)
+          await this.loadSituations()
+        })
+      } else this.update()
+      return
+    }
+    const situation = this.situations.find((s) => String(s.id) === value)
+    if (situation) await this.view(situation)
+  }
+
+  /** Show the layers as they were at a situation, read-only. */
+  private async view(situation: Situation) {
+    // Unsaved changes stay as they are: they come back with "Back to live".
+    if (this.inPlayback) this.closePlayback()
+    await this.run(tt('userlayers.loading', 'Loading...'), async () => {
+      await this.playback.load()
+      this.playback.position = situationPosition(this.playback.changes, situation)
+      const snapshot = this.playback.snapshot()
+      this.viewing = situation
+      this.tools.setTool({ mode: 'select' })
+      this.tools.select(null)
+      this.tools.enabled = false
+      this.paletteMode = null
+      this.outliner.view = snapshot
+      await this.renderer.render(snapshot, new Set())
+    })
+  }
+
+  private backToLive() {
+    if (!this.viewing) return
+    this.viewing = null
+    this.outliner.view = null
+    this.tools.enabled = true
+    void this.renderer.render(this.store.layers, this.store.hidden)
+    this.update()
+  }
+
+  private updateBanner() {
+    this.banner.classList.toggle('visible', Boolean(this.viewing))
+    if (!this.viewing) return
+    const back = el('button.oim-ul-button.primary', tt('userlayers.back-to-live', 'Back to live'), {
+      type: 'button'
+    })
+    back.onclick = () => this.backToLive()
+    this.banner.replaceChildren(
+      el(
+        'span',
+        '👁 ',
+        tt('userlayers.viewing', 'Viewing'),
+        ' ',
+        el('strong', this.viewing.name),
+        ` (${situationLabel(this.viewing).split(' · ').slice(1).join(' · ')}) · `,
+        tt('userlayers.read-only', 'read-only')
+      ),
+      back
+    )
   }
 
   private zoomTo(feature: UserFeature) {

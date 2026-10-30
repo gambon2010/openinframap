@@ -85,6 +85,8 @@ export class Outliner {
   expanded = new Set<string>()
   /** Folders folded to one line (remembered per browser). */
   folded = readFolded()
+  /** Layers shown instead of the store's, read-only (a situation being viewed). */
+  view: Map<string, UserLayer> | null = null
   private store: Store
   private actions: OutlinerActions
   private render?: (sidc: string, size?: number) => string
@@ -169,7 +171,7 @@ export class Outliner {
     const row = el(
       `li.oim-ul-item${selected ? '.selected' : ''}`,
       {
-        draggable: !layer.style.locked,
+        draggable: !layer.style.locked && !this.view,
         title: tt('userlayers.item-title', 'Click: select · drag onto a layer: move')
       },
       this.thumbnail(feature),
@@ -281,7 +283,7 @@ export class Outliner {
     )
     const header = el(
       `.oim-ul-layer-row${active ? '.active' : ''}`,
-      { draggable: true },
+      { draggable: !this.view },
       this.button(
         hidden ? '◌' : '◉',
         () => store.setHidden(layer.id, !hidden),
@@ -407,8 +409,8 @@ export class Outliner {
         return b
       })
     )
-    const tree = el('ul.oim-ul-tree')
-    for (const [folder, layers] of byFolder([...store.layers.values()])) {
+    const tree = el(`ul.oim-ul-tree${this.view ? '.oim-ul-readonly' : ''}`)
+    for (const [folder, layers] of byFolder([...(this.view ?? store.layers).values()])) {
       const rows: HTMLElement[] = []
       for (const layer of layers) {
         const items = [...layer.features.values()].filter((f) => matches(f, this.query, this.filters))

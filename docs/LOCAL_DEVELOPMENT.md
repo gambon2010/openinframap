@@ -483,6 +483,11 @@ On the map: hover an item to see what it is; **right-click** it for a quick menu
 the pointer is. Drag a symbol to move it; drag the round handle at a picture's,
 symbol's or marker's corner to resize it.
 
+**Situations:** at the top of the sidebar, `Situation: Live ▾`. "Save now as a
+situation…" names the current state ("Morning brief"); choosing one later shows the
+map as it was then, read-only, with a banner to go **Back to live**. They take no
+space: they're rebuilt from the history.
+
 Changes are kept in your browser until you press **Save**, which stores them in the
 database. **🕘** opens a timeline at the bottom of the map that steps through every
 saved change and says what changed. Rebuilding or importing a region keeps your

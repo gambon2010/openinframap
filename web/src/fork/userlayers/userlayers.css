@@ -1080,3 +1080,46 @@
   font-size: 0.75rem;
   text-align: center;
 }
+
+/* --- Situations (panel.ts) --- */
+.oim-ul-situation label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 4px;
+  font-size: 0.85rem;
+}
+.oim-ul-situation span {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-situation select {
+  flex: 1;
+  min-width: 0;
+  padding: 3px;
+}
+.oim-ul-banner {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  z-index: 4;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 6px 10px;
+  border-left: 4px solid #1565c0;
+  border-radius: var(--oim-radius-large);
+  background: #e3f2fd;
+  box-shadow: var(--oim-drop-shadow);
+  font-size: 0.9rem;
+}
+.oim-ul-banner.visible {
+  display: flex;
+}
+.oim-ul-readonly button,
+.oim-ul-readonly input,
+.oim-ul-readonly details {
+  pointer-events: none;
+  opacity: 0.5;
+}

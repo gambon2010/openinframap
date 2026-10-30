@@ -738,8 +738,16 @@ was hard to read. Version 3, built in steps:
   double-click puts the cursor in its name on the card (no zoom); Ctrl+C copies
   the selected item and Ctrl+V pastes it where the pointer is, into the "Into"
   layer.
-- **Still to do:** selecting several items at once and changing them together,
-  situations.
+- **Situations** (`situations.ts`, `userdata.situation`, `GET/POST
+  /userdata/situations`, `DELETE /userdata/situations/{id}`): a named moment is just
+  a name and the last saved change it includes; viewing it replays the history up
+  to there (read-only: tools off, the list greyed out, a banner on the map with
+  "Back to live"). Nothing is copied, so situations cost nothing to keep. In the
+  sidebar it's one line: `Situation: Live ▾` with the saved ones, "Save now as a
+  situation…" (offers to save unsaved changes first) and delete. The backend now
+  adds missing userdata tables to older databases (it checks for the newest one).
+- **Still to do:** selecting several items at once and changing them together;
+  situations as marks on the history bar.
 
 ## Grid connections between two stations (prototype)
 

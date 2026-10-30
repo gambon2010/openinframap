@@ -28,3 +28,10 @@ def test_schema_statements_split_cleanly():
     for statement in statements:
         # A statement split in the middle would leave unbalanced brackets.
         assert statement.count("(") == statement.count(")"), statement[:80]
+
+
+def test_schema_has_situations_and_is_upgraded_by_its_newest_table():
+    sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
+    assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
+    # ensure_schema checks for the newest table, so older databases get it too.
+    assert "to_regclass('userdata.situation')" in Path(userdata.__file__).read_text()

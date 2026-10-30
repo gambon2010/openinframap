@@ -60,3 +60,32 @@ export async function sourceGeometry(layer: string, id: number): Promise<GeoJSON
   if (!response.ok) return null
   return (await response.json()).geometry
 }
+
+/** A named moment: the layers as they were after a saved change (userdata.situation). */
+export interface Situation {
+  id: number
+  name: string
+  change_id: number
+  author: string | null
+  created_at: string
+  /** When that change was made. */
+  at: string | null
+}
+
+export async function listSituations(): Promise<Situation[]> {
+  return (await json<{ situations: Situation[] }>(await fetch(`${BASE}/situations`))).situations
+}
+
+export async function createSituation(name: string, author?: string): Promise<Situation> {
+  return json(
+    await fetch(`${BASE}/situations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, author: author || null })
+    })
+  )
+}
+
+export async function deleteSituation(id: number): Promise<void> {
+  await json(await fetch(`${BASE}/situations/${id}`, { method: 'DELETE' }))
+}
