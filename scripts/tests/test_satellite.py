@@ -401,3 +401,15 @@ def test_choose_presets_and_steps(tmp_path):
     assert steps[-1][1] == "detailed" and steps[-1][-1].endswith(
         "europe.sat-detailed-lu_geoportail.pmtiles"
     )
+
+
+def test_every_imagery_file_has_its_credit():
+    assert "NASA" in s.attribution_for("world.sat-overview.pmtiles")
+    assert "Copernicus" in s.attribution_for("data/basemap/bayern.sat-regional.pmtiles")
+    assert "IGN" in s.attribution_for("alsace.sat-detailed.pmtiles")  # the old name
+    for source_id, source in s.DETAILED_SOURCES.items():
+        credit = s.attribution_for(f"area.sat-detailed-{source_id}.pmtiles")
+        assert credit == source["attribution"]
+        # Credits travel in VITE_SATELLITE_TIERS, between ";" and after "|".
+        assert ";" not in credit and "|" not in credit
+    assert s.attribution_for("other.pmtiles") == ""

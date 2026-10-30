@@ -897,8 +897,9 @@ shown by `web/src/fork/modules/satellite/`.
   runs) and `satellite.py steps` (one timed step each in `download_satellite`).
   Files: `<area>.sat-regional.pmtiles`, `<area>.sat-detailed-<source>.pmtiles`;
   `satellite_tiers_value` lists everything in `data/basemap/` (tile type from the
-  PMTiles header), and the frontend credits each source by file name
-  (`fork/modules/satellite/index.ts`, kept in step with `DETAILED_SOURCES`).
+  PMTiles header), each with its credit line from `satellite.py`'s
+  `attribution_for` (`URL MIN MAX|CREDIT;...` in `VITE_SATELLITE_TIERS`), the only
+  list of credits; `start.sh` refreshes it every day (`select_satellite`).
 - **Three tiers**, one PMTiles file each in `data/basemap/<region>.sat-<tier>.pmtiles`,
   served by the existing `basemap` service (no new service; Tegola only serves vector
   tiles):

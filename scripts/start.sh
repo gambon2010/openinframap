@@ -34,10 +34,9 @@ if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]] || has_satellite "$REGION_ID"; the
     if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]]; then
         ok "Offline background map running on http://localhost:$BASEMAP_PORT"
     fi
-    if has_satellite "$REGION_ID"; then
-        ok "Satellite imagery: $(satellite_summary "$REGION_ID") (Settings → Background)"
-    fi
 fi
+# The imagery list (and its credits) for the frontend, kept up to date.
+select_satellite "$REGION_ID"
 
 section "Starting the app..."
 if ! start_app; then

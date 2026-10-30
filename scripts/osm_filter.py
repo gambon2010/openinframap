@@ -58,7 +58,9 @@ def main() -> None:
             kinds = set(OBJECT_TYPES.get(geometry_type, "nwr"))
             for key, values in m.items():
                 for value in values:
-                    needed.setdefault((key, None if value == "__any__" else value), set()).update(kinds)
+                    needed.setdefault(
+                        (key, None if value == "__any__" else value), set()
+                    ).update(kinds)
 
     # Group into one expression per (key, object types), e.g. "n/place=hamlet,village".
     groups: dict[tuple[str, str], list[str]] = {}

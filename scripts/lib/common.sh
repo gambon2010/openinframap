@@ -645,7 +645,8 @@ except OSError:
 }
 
 # The satellite tiers as the frontend reads them (VITE_SATELLITE_TIERS,
-# fork/satellite): "URL MINZOOM MAXZOOM;..." (empty: none). Everything downloaded
+# fork/modules/satellite): "URL MINZOOM MAXZOOM|CREDIT;..." (empty: none); the
+# credit lines come from satellite.py (attribution_for). Everything downloaded
 # is shown, whatever area it's of: the overview (the world's, else region $1's),
 # then Sentinel-2 (the world's first, then each area's), then the aerial photos.
 satellite_tiers_value() {
@@ -657,6 +658,9 @@ satellite_tiers_value() {
     for file in "$BASEMAP_DIR"/*.sat-regional.pmtiles "$BASEMAP_DIR"/*.sat-detailed*.pmtiles; do
         [[ -f "$file" && "$file" != "$BASEMAP_DIR/world.sat-regional.pmtiles" ]] && files+=("$file")
     done
+    [[ ${#files[@]} -gt 0 ]] || return 0
+    local credits=() i=0
+    mapfile -t credits < <(python3 -I "$REPO_ROOT/scripts/satellite.py" attribution "${files[@]}")
     for file in "${files[@]}"; do
         case "$file" in
             *.sat-overview.pmtiles) range="0 8"; ext=jpg ;;
@@ -664,7 +668,8 @@ satellite_tiers_value() {
             *) range="14 $(pmtiles_maxzoom "$file" 16)"; ext=jpg ;;
         esac
         ext=$(pmtiles_ext "$file" "$ext")
-        value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range"
+        value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range|${credits[i]:-}"
+        i=$((i + 1))
     done
     echo "$value"
 }

@@ -53,10 +53,52 @@ GEOMETRY = {"POINT": None, "LINE": "L", "POLYGON": "A", "MULTIPOINT": "M"}
 
 # Kept in capitals when sentence-casing the names.
 ACRONYMS = {
-    "AEW", "APC", "ASW", "ATGM", "ATM", "C2", "CBRN", "CSAR", "EOD", "ECM", "ESM", "EW", "HQ", "IED",
-    "IFV", "LORAN", "MEDEVAC", "MLRS", "MP", "NATO", "NBC", "POL", "RPG", "SAM", "SIGINT", "SOF",
-    "TACAN", "UAV", "UGV", "UN", "US", "VIP", "VHF", "UHF", "HF", "EHF", "SHF", "VLF", "LF", "MF",
-    "GPS", "IFF", "SATCOM", "TV", "CIVIL", "RADAR",
+    "AEW",
+    "APC",
+    "ASW",
+    "ATGM",
+    "ATM",
+    "C2",
+    "CBRN",
+    "CSAR",
+    "EOD",
+    "ECM",
+    "ESM",
+    "EW",
+    "HQ",
+    "IED",
+    "IFV",
+    "LORAN",
+    "MEDEVAC",
+    "MLRS",
+    "MP",
+    "NATO",
+    "NBC",
+    "POL",
+    "RPG",
+    "SAM",
+    "SIGINT",
+    "SOF",
+    "TACAN",
+    "UAV",
+    "UGV",
+    "UN",
+    "US",
+    "VIP",
+    "VHF",
+    "UHF",
+    "HF",
+    "EHF",
+    "SHF",
+    "VLF",
+    "LF",
+    "MF",
+    "GPS",
+    "IFF",
+    "SATCOM",
+    "TV",
+    "CIVIL",
+    "RADAR",
 }
 
 
@@ -65,7 +107,9 @@ def title(name: str) -> str:
     out = []
     for i, word in enumerate(name.strip().split()):
         bare = word.strip("()/,.-")
-        if bare in ACRONYMS - {"CIVIL", "RADAR"} or (word.startswith("(") and word.endswith(")") and len(bare) <= 6):
+        if bare in ACRONYMS - {"CIVIL", "RADAR"} or (
+            word.startswith("(") and word.endswith(")") and len(bare) <= 6
+        ):
             out.append(word)
         else:
             out.append(word.capitalize() if i == 0 else word.lower())
@@ -91,7 +135,9 @@ def sidc(row: dict) -> str | None:
     affiliation = "*" if affiliation in ("*", "") else affiliation
     status = "*" if status in ("*", "") else status
     # Installations: the H modifier (a frame with a bar on top).
-    installation = (scheme == "E" and dimension == "F") or (scheme == "S" and dimension == "G" and function_id.startswith("I"))
+    installation = (scheme == "E" and dimension == "F") or (
+        scheme == "S" and dimension == "G" and function_id.startswith("I")
+    )
     return f"{scheme}{affiliation}{dimension}{status}{function_id}{'H----' if installation else '-----'}"
 
 
@@ -144,8 +190,12 @@ def main() -> None:
         "groups": groups,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(catalogue, ensure_ascii=False, separators=(",", ":")) + "\n")
-    print(f"{sum(len(g['symbols']) for g in groups)} symbols in {len(groups)} groups -> {OUT}")
+    OUT.write_text(
+        json.dumps(catalogue, ensure_ascii=False, separators=(",", ":")) + "\n"
+    )
+    print(
+        f"{sum(len(g['symbols']) for g in groups)} symbols in {len(groups)} groups -> {OUT}"
+    )
 
 
 if __name__ == "__main__":

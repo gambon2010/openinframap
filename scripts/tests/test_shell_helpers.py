@@ -1,6 +1,7 @@
 """scripts/lib/common.sh helpers, run by bash (no Docker, database or network)."""
 
 import json
+import re
 import subprocess
 
 from conftest import SCRIPTS
@@ -46,14 +47,16 @@ def test_satellite_tiers_value(tmp_path):
     (tmp_path / "lux.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
     (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(13))
     value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
+    assert "|NASA Blue Marble;" in value
+    value = re.sub(r"\|[^;]*", "", value)
     assert value == (
         "http://localhost:8090/lux.sat-overview/{z}/{x}/{y}.jpg 0 8;"
         "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
     )
     # Another region: everything downloaded shows, but not lux's own overview.
-    assert bash("satellite_tiers_value other", BASEMAP_DIR=str(tmp_path)) == (
-        "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
-    )
+    assert re.sub(
+        r"\|[^;]*", "", bash("satellite_tiers_value other", BASEMAP_DIR=str(tmp_path))
+    ) == ("http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13")
     assert (
         bash("has_satellite other && echo yes || echo no", BASEMAP_DIR=str(tmp_path))
         == "yes"
@@ -116,6 +119,8 @@ def test_world_overview_is_shared_by_every_region(tmp_path):
     (tmp_path / "world.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
     (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(12))
     value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
+    assert "|NASA Blue Marble;" in value
+    value = re.sub(r"\|[^;]*", "", value)
     assert value == (
         "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
         "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 12"
@@ -141,7 +146,10 @@ def test_tiers_list_every_area_and_source(tmp_path):
     pmtiles("world.sat-regional.pmtiles", 10, 4)
     pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 17, 2)  # PNG
     value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
-    assert value.split(";") == [
+    assert value.split(";")[-1].endswith(
+        "|© Digitaal Vlaanderen (Modellicentie Gratis Hergebruik)"
+    )
+    assert re.sub(r"\|[^;]*", "", value).split(";") == [
         "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
         "http://localhost:8090/world.sat-regional/{z}/{x}/{y}.webp 9 10",
         "http://localhost:8090/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",

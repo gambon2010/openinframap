@@ -197,6 +197,19 @@ def detailed_source(source_id: str) -> dict:
     return {**DETAILED_DEFAULTS, **DETAILED_SOURCES[source_id], "id": source_id}
 
 
+def attribution_for(name: str) -> str:
+    """The credit line for an imagery file, from its name (<area>.sat-<tier>[-<source>]).
+    The scripts pass it to the frontend with the file (VITE_SATELLITE_TIERS), so this
+    is the only list of credits."""
+    stem = Path(name).name.removesuffix(".pmtiles")
+    tier = stem.rsplit(".sat-", 1)[-1]
+    if tier.startswith("detailed-") and tier[len("detailed-") :] in DETAILED_SOURCES:
+        return DETAILED_SOURCES[tier[len("detailed-") :]]["attribution"]
+    if tier == "detailed":  # before there were several sources: IGN's
+        return DETAILED_SOURCES["fr_ign"]["attribution"]
+    return TIERS[tier][3] if tier in TIERS else ""
+
+
 def tile_url(source: dict, z: int, x: int, y: int) -> str:
     """A tile's URL from a source (a tile template, or a WMS GetMap for the tile)."""
     if "wms" in source:
@@ -216,7 +229,7 @@ TIERS = {
         9,
         12,
         "webp",
-        "Contains modified Copernicus Sentinel data (2021), ESA WorldCover",
+        "Contains modified Copernicus Sentinel data (2021), ESA WorldCover (CC BY 4.0)",
     ),
     "detailed": (14, 16, "jpg", "IGN orthophotos (Licence Ouverte)"),
 }
@@ -939,6 +952,12 @@ def detailed_estimate(outlines: list[list[Ring]], source: dict) -> dict:
     }
 
 
+def command_attribution(args) -> None:
+    """The credit line of each imagery file named, one per line."""
+    for name in args.names:
+        print(attribution_for(name))
+
+
 def command_sources(args) -> None:
     """The high-resolution sources (JSON), for the scripts' menus."""
     print(
@@ -1422,6 +1441,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     )
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("sources")
+    sub.add_parser("attribution").add_argument("names", nargs="*")
     for name in ("choose", "steps"):
         p = sub.add_parser(name)
         p.add_argument("--plan", required=True, help="the plan file (JSON)")
@@ -1490,6 +1510,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         "regional": command_regional,
         "detailed": command_detailed,
         "sources": command_sources,
+        "attribution": command_attribution,
         "estimate-detailed": command_estimate_detailed,
         "choose": command_choose,
         "steps": command_steps,

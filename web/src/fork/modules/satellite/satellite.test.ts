@@ -1,15 +1,27 @@
 import { describe, expect, test } from 'vitest'
-import { attributionFor, isHybridOverlay, parseTiers } from './index.ts'
+import { isHybridOverlay, parseTiers } from './index.ts'
 
 describe('VITE_SATELLITE_TIERS', () => {
   test('tiers, coarsest first', () => {
     const tiers = parseTiers(
-      'http://x/lux.sat-regional/{z}/{x}/{y}.webp 9 12;http://x/lux.sat-overview/{z}/{x}/{y}.jpg 0 8'
+      'http://x/lux.sat-regional/{z}/{x}/{y}.webp 9 12|Copernicus (CC BY 4.0);http://x/lux.sat-overview/{z}/{x}/{y}.jpg 0 8|NASA Blue Marble'
     )
     expect(tiers).toEqual([
-      { url: 'http://x/lux.sat-overview/{z}/{x}/{y}.jpg', minzoom: 0, maxzoom: 8 },
-      { url: 'http://x/lux.sat-regional/{z}/{x}/{y}.webp', minzoom: 9, maxzoom: 12 }
+      {
+        url: 'http://x/lux.sat-overview/{z}/{x}/{y}.jpg',
+        minzoom: 0,
+        maxzoom: 8,
+        attribution: 'NASA Blue Marble'
+      },
+      {
+        url: 'http://x/lux.sat-regional/{z}/{x}/{y}.webp',
+        minzoom: 9,
+        maxzoom: 12,
+        attribution: 'Copernicus (CC BY 4.0)'
+      }
     ])
+    // Written before credits came with the tiers: none.
+    expect(parseTiers('http://x/a/{z}/{x}/{y}.jpg 0 8')[0].attribution).toBe('')
   })
 
   test('nothing set, or broken entries left out', () => {
@@ -19,13 +31,6 @@ describe('VITE_SATELLITE_TIERS', () => {
       parseTiers('http://no-template 0 8;http://x/{z}/{x}/{y}.jpg 9;http://x/{z}/{x}/{y}.jpg 12 9')
     ).toEqual([])
   })
-})
-
-test('attribution by tier', () => {
-  expect(attributionFor('http://x/lux.sat-overview/{z}/{x}/{y}.jpg')).toContain('NASA')
-  expect(attributionFor('http://x/lux.sat-regional/{z}/{x}/{y}.webp')).toContain('Copernicus')
-  expect(attributionFor('http://x/lux.sat-detailed/{z}/{x}/{y}.jpg')).toContain('IGN')
-  expect(attributionFor('http://x/other/{z}/{x}/{y}.jpg')).toBe('')
 })
 
 test('in "satellite with roads", roads, railways and borders stay above the imagery', () => {
@@ -39,10 +44,4 @@ test('in "satellite with roads", roads, railways and borders stay above the imag
     expect(isHybridOverlay(id)).toBe(true)
   for (const id of ['osm_water', 'osm_landuse_wood', 'osm_buildings', 'power_line_1'])
     expect(isHybridOverlay(id)).toBe(false)
-})
-
-test('each aerial photo source is credited', () => {
-  expect(attributionFor('http://x/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png')).toContain('Vlaanderen')
-  expect(attributionFor('http://x/world.sat-regional/{z}/{x}/{y}.webp')).toContain('Sentinel')
-  expect(attributionFor('http://x/alsace.sat-detailed/{z}/{x}/{y}.jpg')).toContain('IGN')
 })

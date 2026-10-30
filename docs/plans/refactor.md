@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phase 1 done; phase 2 steps 4–7 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done.
 
 ## Why
 
@@ -104,7 +104,10 @@ working sessions.
    *Effort: ½.*
 7. **Map sources as a module** (done): it registers its own Settings section, like
    satellite does. *Effort: ¼.*
-8. **Satellite credits from the files themselves.** Each PMTiles file already
+8. **Satellite credits from one place** (done, differently: GDAL's files carry no
+   credit and the map needs it before fetching anything, so the scripts write each
+   file's credit, from `satellite.py`, next to it in `VITE_SATELLITE_TIERS`).
+   Originally: **from the files themselves.** Each PMTiles file already
    carries its attribution, and `pmtiles serve` shows it in `/<name>.json`. The
    frontend reads it from there, so the list in `index.ts` goes. *Effort: ½. A new
    country becomes one entry in `satellite.py`.*

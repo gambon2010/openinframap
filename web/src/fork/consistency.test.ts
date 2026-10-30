@@ -1,14 +1,11 @@
 // Checks that catch a feature added only half-way: a tile layer nothing draws, a
-// map layer the layer switcher can't turn off, a satellite source without its
-// credit line.
-import { execFileSync } from 'node:child_process'
+// map layer the layer switcher can't turn off.
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import extra from './modules/extra/index.ts'
 import sites from './modules/sites/index.ts'
 import satellite from './modules/satellite/index.ts'
-import { attributionFor } from './modules/satellite/index.ts'
 
 const MODULES = [extra, sites, satellite]
 
@@ -41,13 +38,4 @@ test('every fork map layer can be turned off in the layer switcher', () => {
     .filter((l) => !prefixes.some((prefix) => l.id.startsWith(prefix)))
     .map((l) => l.id)
   expect(unswitched).toEqual([])
-})
-
-test('every aerial photo source has its credit line', () => {
-  const sources = JSON.parse(
-    execFileSync('python3', ['-I', '../scripts/satellite.py', 'sources'], { encoding: 'utf8' })
-  )
-  for (const source of sources as { id: string; attribution: string }[]) {
-    expect(attributionFor(`http://x/area.sat-detailed-${source.id}/{z}/{x}/{y}.jpg`)).toBe(source.attribution)
-  }
 })

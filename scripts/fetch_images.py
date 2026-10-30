@@ -41,7 +41,7 @@ IMAGES_DIR = REPO_ROOT / "data" / "images"
 WIKIDATA_JSON_DIR = REPO_ROOT / "data" / "wikidata_json"
 
 THUMBNAIL_WIDTH = 300
-API_DELAY = 1.1    # seconds between MediaWiki API calls (Wikidata / Commons)
+API_DELAY = 1.1  # seconds between MediaWiki API calls (Wikidata / Commons)
 IMAGE_DELAY = 1.0  # seconds between image downloads from upload.wikimedia.org
 
 # Must identify the bot per Wikimedia policy. Update the URL if you fork.
@@ -70,6 +70,7 @@ WIKIDATA_RE = re.compile(r"^Q[0-9]+$", re.IGNORECASE)
 # Database
 # ---------------------------------------------------------------------------
 
+
 def get_wikidata_ids(conn) -> set[str]:
     """Return all distinct Wikidata IDs found across every tagged table."""
     ids: set[str] = set()
@@ -95,6 +96,7 @@ def get_wikidata_ids(conn) -> set[str]:
 # Local cache helpers
 # ---------------------------------------------------------------------------
 
+
 def local_path(wikidata_id: str) -> Optional[Path]:
     """Return the cached file path if it exists, otherwise None."""
     matches = list(IMAGES_DIR.glob(f"{wikidata_id}.*"))
@@ -109,6 +111,7 @@ def chunks(lst: list, n: int):
 # ---------------------------------------------------------------------------
 # Wikimedia API calls
 # ---------------------------------------------------------------------------
+
 
 def fetch_entity_data(client: httpx.Client, ids: list[str]) -> dict[str, dict]:
     """
@@ -178,6 +181,7 @@ def download_image(client: httpx.Client, url: str, wikidata_id: str) -> Path:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def collect_p361_ids(entities: dict[str, dict]) -> set[str]:
     """
     Return Wikidata IDs referenced by P361 ("part of") claims in the given
@@ -195,7 +199,10 @@ def collect_p361_ids(entities: dict[str, dict]) -> set[str]:
                 ref_id = claim["mainsnak"]["datavalue"]["value"]["id"].upper()
             except (KeyError, TypeError):
                 continue
-            if WIKIDATA_RE.match(ref_id) and not (WIKIDATA_JSON_DIR / f"{ref_id}.json").exists():
+            if (
+                WIKIDATA_RE.match(ref_id)
+                and not (WIKIDATA_JSON_DIR / f"{ref_id}.json").exists()
+            ):
                 ids.add(ref_id)
     return ids
 
@@ -239,7 +246,9 @@ def main() -> None:
     conn.close()
     print(f"  {len(all_ids)} distinct wikidata IDs found")
 
-    todo_json  = sorted(id_ for id_ in all_ids if not (WIKIDATA_JSON_DIR / f"{id_}.json").exists())
+    todo_json = sorted(
+        id_ for id_ in all_ids if not (WIKIDATA_JSON_DIR / f"{id_}.json").exists()
+    )
     todo_image = sorted(id_ for id_ in all_ids if not local_path(id_))
     if args.count:
         print(len(todo_json), len(todo_image))
@@ -247,22 +256,25 @@ def main() -> None:
     todo = sorted(set(todo_json) | set(todo_image if not args.json_only else []))
 
     already_cached = len(all_ids) - len(set(todo_json) | set(todo_image))
-    print(f"  {already_cached} fully cached  |  "
-          f"{len(todo_json)} missing entity JSON  |  "
-          f"{len(todo_image)} missing image"
-          + ("  [--json-only: skipping images]" if args.json_only else ""))
+    print(
+        f"  {already_cached} fully cached  |  "
+        f"{len(todo_json)} missing entity JSON  |  "
+        f"{len(todo_image)} missing image"
+        + ("  [--json-only: skipping images]" if args.json_only else "")
+    )
 
     if not todo:
         print("Nothing to do.")
         return
 
     if not args.json_only:
-        print(f"\nEstimated time: ~{len(todo_image) * IMAGE_DELAY / 60:.0f} min "
-              f"(use --json-only for metadata-only run in ~10 sec)")
+        print(
+            f"\nEstimated time: ~{len(todo_image) * IMAGE_DELAY / 60:.0f} min "
+            f"(use --json-only for metadata-only run in ~10 sec)"
+        )
 
     headers = {"User-Agent": USER_AGENT}
     with httpx.Client(headers=headers, timeout=30) as client:
-
         # ----------------------------------------------------------------
         # Step 1 — fetch entity data from Wikidata (50 IDs/request)
         #          saves labels+sitelinks+claims to data/wikidata_json/
@@ -294,12 +306,18 @@ def main() -> None:
         for uid, entity in all_fetched.items():
             _collect_p18(uid, entity)
 
-        print(f"\nStep 1{'/' + ('1' if args.json_only else '3')}  "
-              f"Wikidata entity data "
-              f"({len(todo_api)} API, {len(all_fetched)} from cache, 50/request, 1 req/sec)")
+        print(
+            f"\nStep 1{'/' + ('1' if args.json_only else '3')}  "
+            f"Wikidata entity data "
+            f"({len(todo_api)} API, {len(all_fetched)} from cache, 50/request, 1 req/sec)"
+        )
         batches = list(chunks(todo_api, 50))
         for i, batch in enumerate(batches, 1):
-            print(f"  batch {i}/{len(batches)} ({len(batch)} IDs) ...", end=" ", flush=True)
+            print(
+                f"  batch {i}/{len(batches)} ({len(batch)} IDs) ...",
+                end=" ",
+                flush=True,
+            )
             try:
                 entities = fetch_entity_data(client, batch)
                 all_fetched.update(entities)
@@ -326,7 +344,9 @@ def main() -> None:
                     print(f"FAILED ({e})", file=sys.stderr)
 
         if args.json_only:
-            print(f"\nDone (--json-only) — entity JSON cached for {len(all_fetched)} IDs.")
+            print(
+                f"\nDone (--json-only) — entity JSON cached for {len(all_fetched)} IDs."
+            )
             print(f"Run without --json-only to download {len(id_to_filename)} images.")
             return
 
@@ -338,14 +358,20 @@ def main() -> None:
         # ----------------------------------------------------------------
         # Step 2 — get thumbnail URLs from Commons (50 files/request)
         # ----------------------------------------------------------------
-        print(f"\nStep 2/3  Commons thumbnail URLs ({len(id_to_filename)} files, 50/request, 1 req/sec)")
+        print(
+            f"\nStep 2/3  Commons thumbnail URLs ({len(id_to_filename)} files, 50/request, 1 req/sec)"
+        )
         all_filenames = list(id_to_filename.values())
         filename_to_url: dict[str, str] = {}
         fn_batches = list(chunks(all_filenames, 50))
         for i, batch in enumerate(fn_batches, 1):
             if i > 1:
                 time.sleep(API_DELAY)
-            print(f"  batch {i}/{len(fn_batches)} ({len(batch)} files) ...", end=" ", flush=True)
+            print(
+                f"  batch {i}/{len(fn_batches)} ({len(batch)} files) ...",
+                end=" ",
+                flush=True,
+            )
             try:
                 got = fetch_thumbnail_urls(client, batch)
                 filename_to_url.update(got)
@@ -380,7 +406,9 @@ def main() -> None:
             if i < len(download_map):
                 time.sleep(IMAGE_DELAY)
 
-    print(f"\nDone — {ok} images downloaded, {fail} failed, {already_cached} fully cached.")
+    print(
+        f"\nDone — {ok} images downloaded, {fail} failed, {already_cached} fully cached."
+    )
     print(f"Images:      {IMAGES_DIR}")
     print(f"Entity JSON: {WIKIDATA_JSON_DIR}")
 
