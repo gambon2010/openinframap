@@ -762,6 +762,9 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   substation, but that cluster's 220 kV lines lead to a substation in Germany that a
   Luxembourg-only extract doesn't contain, so it has no path to the rest of
   Luxembourg's grid within that region.
+- **Exports and imports:** `grid_node` / `grid_edge` are in the `public` schema, so
+  exports include them; importing an export made before them builds the network
+  (`import-db.sh`, about 2 minutes for France).
 - A station mapped twice in OpenStreetMap (e.g. a substation's outline and its site
   relation, different IDs) is matched silently if within 300 m.
 - **Scaling to France** (after merging into the fork's main line): the network build

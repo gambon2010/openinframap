@@ -142,6 +142,10 @@ run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
 if [[ "$(db_query "SELECT to_regclass('search_feature') IS NULL")" == "t" ]]; then
     run_with_timer "Preparing search" run_sql_file schema/search.sql
 fi
+# Exports made before grid routing don't have the power grid network (Route from/to here).
+if [[ "$(db_query "SELECT to_regclass('grid_edge') IS NULL")" == "t" ]]; then
+    run_with_timer "Building the power grid network" run_sql_file schema/grid.sql
+fi
 if [[ -f "$USERDATA_DUMP" ]]; then
     run_with_timer "Putting back My layers" restore_user_data \
         || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
