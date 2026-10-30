@@ -572,15 +572,17 @@
 
 /* The toolbar, at the top of the map. */
 .oim-ul-toolbar {
-  /* Centred in the top bar, between the search box and the buttons on the right. */
+  /* Centred on the map; moved right only as much as it takes to clear the search
+     box (--oim-top-bar-left, fork/ui/search-bar.ts). Its half width is measured
+     (panel.ts: --oim-ul-toolbar-half). */
   position: absolute;
   top: 10px;
-  left: var(--oim-top-bar-left, 16px);
-  right: 56px;
+  left: max(50%, calc(var(--oim-top-bar-left, 16px) + var(--oim-ul-toolbar-half, 0px)));
   z-index: 4;
   display: none;
-  width: fit-content;
-  margin: 0 auto;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - var(--oim-top-bar-left, 16px) - 56px);
   padding: 4px;
   border-radius: var(--oim-radius-large);
   background: var(--oim-content-background);
@@ -629,12 +631,13 @@
 .oim-ul-picker {
   position: absolute;
   top: 60px;
-  left: var(--oim-top-bar-left, 16px);
-  right: 56px;
+  /* Centred like the toolbar above it. */
+  --oim-picker-width: min(560px, calc(100% - var(--oim-top-bar-left, 16px) - 56px));
+  left: max(50%, calc(var(--oim-top-bar-left, 16px) + var(--oim-picker-width) / 2));
   z-index: 4;
   display: none;
-  width: min(560px, 100%);
-  margin: 0 auto;
+  transform: translateX(-50%);
+  width: var(--oim-picker-width);
   max-height: calc(100% - 110px);
   overflow-y: auto;
   padding: 8px 10px;

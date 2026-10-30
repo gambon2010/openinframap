@@ -158,6 +158,12 @@ export class Panel implements IControl {
     this.button.onclick = () => this.toggle()
     this.container = el('div.maplibregl-ctrl.maplibregl-ctrl-group', this.button)
     this.map.getContainer().append(this.toolbar, this.picker, this.toast, this.timeline, this.banner)
+    // Its half width, so the CSS can keep it clear of the search box.
+    new ResizeObserver(() =>
+      this.map
+        .getContainer()
+        .style.setProperty('--oim-ul-toolbar-half', `${Math.ceil(this.toolbar.offsetWidth / 2)}px`)
+    ).observe(this.toolbar)
     // In the left column, between the search box and the details panel.
     const details = sidePanel()?._container
     if (details?.parentElement) details.parentElement.insertBefore(this.sidebar, details)

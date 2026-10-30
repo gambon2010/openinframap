@@ -930,7 +930,8 @@ the key opened over the buttons too; the Map sources panel was another button.
   search control is moved out of the left column to just right of the header
   (kept there on screens 720 px and wider; narrower, it stays on the left). It sets
   `--oim-top-bar-left` on the map container: My layers' toolbar and symbol picker
-  are centred between it and the buttons on the right. No upstream file changed.
+  stay centred on the map, moved right only as far as it takes to clear the search
+  box (the panel measures the toolbar: `--oim-ul-toolbar-half`). No upstream file changed.
 - **Settings** (`web/src/fork/ui/settings.ts`): a "settings" link in the header,
   after about / stats / export, opens a window with the map sources (background
   map tiles, Photon), which used to have their own map button. Escape, × or a click
