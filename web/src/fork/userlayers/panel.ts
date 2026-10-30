@@ -13,11 +13,12 @@ import { IControl, Map } from 'maplibre-gl'
 import { Store } from './store.ts'
 import { Tools } from './tools.ts'
 import { Renderer } from './render.ts'
-import { Palette, Pick, PaletteMode, symbolName } from './palette.ts'
+import { Palette, Pick, PaletteMode } from './palette.ts'
 import { Playback } from './history.ts'
 import { uploadImage } from './api.ts'
-import { DEFAULT_COLOR, UserFeature } from './model.ts'
+import { UserFeature } from './model.ts'
 import { buildEditor } from './editor.ts'
+import { Outliner } from './outliner.ts'
 import { graphicsLibrary, isAxis, pointCount } from './graphics.ts'
 import { getLabelLevel, setLabelLevel } from './symbols.ts'
 import { LabelLevel } from './fields.ts'
@@ -60,19 +61,6 @@ async function prepareImage(file: File): Promise<{ mime: string; data: string }>
 
 const OPEN_KEY = 'oim-userlayers-open'
 
-/** What a feature is, in a few words (the outliner). */
-export function featureLabel(feature: UserFeature): string {
-  const p = feature.properties
-  const name = p.modifiers?.['T'] || p.name
-  const what =
-    p.kind === 'symbol' || p.kind === 'graphic'
-      ? (symbolName(p.sidc ?? '') ?? p.sidc ?? '')
-      : p.kind === 'copy'
-        ? tt('userlayers.copy-of-short', 'Copy: {{layer}}', { layer: p.copy?.layer ?? '' })
-        : tt(`userlayers.kind.${p.kind}`, p.kind)
-  return name ? `${name} · ${what}` : what
-}
-
 /** The map toolbar's tools: [id, glyph, label, key]. */
 const TOOLS: [string, string, string, string][] = [
   ['select', '↖', 'Select and move', 'V'],
@@ -102,7 +90,7 @@ export class Panel implements IControl {
   private palette: Palette
   private fileInput: HTMLInputElement
   private paletteMode: PaletteMode | null = null
-  private expanded = new Set<string>()
+  private outliner: Outliner
   private inPlayback = false
   private follow = true
   private busy = ''
@@ -124,6 +112,15 @@ export class Panel implements IControl {
     this.fileInput.style.display = 'none'
     this.fileInput.onchange = () => void this.pickedImage()
     this.outline = el('.oim-ul-outline')
+    this.outliner = new Outliner(store, {
+      update: () => this.update(),
+      select: (feature) => {
+        this.tools.select(feature.id)
+        this.zoomTo(feature)
+      },
+      selected: () => this.tools.selected,
+      newLayer: () => this.newLayer()
+    })
     this.sidebar = el('.maplibregl-ctrl.oim-ul-sidebar', this.fileInput)
     this.toolbar = el('.oim-ul-toolbar', {
       role: 'toolbar',
@@ -489,135 +486,18 @@ export class Panel implements IControl {
 
   // --- Sidebar (outliner) ------------------------------------------------------------
 
-  private updateSidebar() {
-    const sidebar = this.sidebar
-    sidebar.textContent = ''
+  // The sidebar is built once (so the outliner's search box keeps its focus); each
+  // update refreshes the message and the outliner.
+  private sidebarBuilt = false
+  private message = el('div')
+
+  private buildSidebar() {
     const close = el('button.oim-panel-button', '×', {
       type: 'button',
       title: tt('userlayers.close', 'Close My layers'),
       'aria-label': tt('userlayers.close', 'Close My layers')
     })
     close.onclick = () => this.toggle(false)
-    sidebar.append(
-      el('.oim-panel-header', el('h2', tt('userlayers.title', 'My layers')), close),
-      this.outline,
-      this.fileInput
-    )
-    const body = this.outline
-    body.textContent = ''
-    if (!this.store.loaded) {
-      body.append(el('p.oim-ul-hint', tt('userlayers.loading', 'Loading...')))
-      return
-    }
-    if (this.store.error) {
-      body.append(
-        el(
-          'p.oim-ul-error',
-          tt(
-            'userlayers.error',
-            "The backend can't be reached, so layers can't be loaded or saved: {{error}}",
-            {
-              error: this.store.error
-            }
-          )
-        )
-      )
-    }
-    body.append(this.layersList())
-  }
-
-  private layersList(): HTMLElement {
-    const list = el('ul.oim-ul-layers')
-    for (const layer of this.store.layers.values()) {
-      const hidden = this.store.hidden.has(layer.id)
-      const eye = this.action(hidden ? '◌' : '◉', () => this.store.setHidden(layer.id, !hidden), {
-        title: hidden ? tt('userlayers.show', 'Show on the map') : tt('userlayers.hide', 'Hide from the map'),
-        className: 'oim-ul-icon'
-      })
-      const color = el('input.oim-ul-color', {
-        type: 'color',
-        value: layer.style.color ?? DEFAULT_COLOR,
-        title: tt('userlayers.layer-color', 'Colour of its drawings and markers')
-      }) as HTMLInputElement
-      color.onchange = () =>
-        this.store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
-      const active = layer.id === this.store.activeLayer
-      const open = this.expanded.has(layer.id)
-      const name = el('button.oim-ul-layer-name', el('span', `${open ? '▾' : '▸'} ${layer.name}`), {
-        type: 'button',
-        title: tt('userlayers.items', 'Show its items')
-      })
-      name.onclick = () => {
-        if (open) this.expanded.delete(layer.id)
-        else this.expanded.add(layer.id)
-        this.update()
-      }
-      const count = el('span.oim-ul-count-badge', String(layer.features.size))
-      const into = active
-        ? el('span.oim-ul-active-tag', tt('userlayers.active', 'drawing here'), {
-            title: tt('userlayers.active-title', 'New items go into this layer (toolbar: Into)')
-          })
-        : ''
-      const menu = el(
-        'details.oim-ul-menu',
-        el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
-        el(
-          '.oim-ul-menu-items',
-          this.action(
-            tt('userlayers.draw-here', 'Draw into this layer'),
-            () => this.store.setActive(layer.id),
-            {
-              disabled: active
-            }
-          ),
-          this.action(tt('userlayers.rename', 'Rename'), () => {
-            const value = window.prompt(tt('userlayers.rename', 'Rename'), layer.name)
-            if (value && value.trim() && value.trim() !== layer.name)
-              this.store.updateLayer(layer.id, { name: value.trim() })
-          }),
-          this.action(tt('userlayers.delete', 'Delete'), () => {
-            const message = tt(
-              'userlayers.delete-layer',
-              'Delete the layer "{{name}}" and its {{count}} item(s)?',
-              {
-                name: layer.name,
-                count: layer.features.size
-              }
-            )
-            if (window.confirm(message)) {
-              this.tools.select(null)
-              this.store.deleteLayer(layer.id)
-            }
-          })
-        )
-      )
-      const items = open
-        ? el(
-            'ul.oim-ul-items',
-            layer.features.size
-              ? [...layer.features.values()].map((f) => {
-                  const item = el(
-                    `li${f.id === this.tools.selected ? '.selected' : ''}`,
-                    el('button', featureLabel(f), { type: 'button' })
-                  )
-                  item.onclick = () => {
-                    this.tools.select(f.id)
-                    this.zoomTo(f)
-                  }
-                  return item
-                })
-              : el('li.oim-ul-hint', tt('userlayers.empty-layer', 'Nothing in it yet.'))
-          )
-        : ''
-      list.append(
-        el(
-          `li${active ? '.active' : ''}`,
-          el('.oim-ul-layer-row', eye, color, name, into, count, menu),
-          items
-        )
-      )
-    }
-    const create = this.action(`+ ${tt('userlayers.new-layer', 'New layer')}`, () => this.newLayer())
     const level = el(
       'select',
       (
@@ -638,24 +518,46 @@ export class Panel implements IControl {
       placeholder: tt('userlayers.author', 'Your name')
     }) as HTMLInputElement
     author.onchange = () => (this.store.author = author.value.trim())
-    return el(
-      'div',
-      this.store.layers.size
-        ? list
-        : el(
-            'p.oim-ul-hint',
-            tt(
-              'userlayers.no-layers',
-              'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
-            )
-          ),
-      el('.oim-ul-row', create),
+    this.outline.append(
+      this.message,
+      this.outliner.el,
       el(
-        '.oim-ul-settings',
+        'details.oim-ul-settings',
+        el('summary', tt('userlayers.settings', 'Labels and name')),
         el('label.oim-ul-field', el('span', tt('userlayers.labels', 'Labels on the map')), level),
         el('label.oim-ul-field', el('span', tt('userlayers.author-label', 'Saved as')), author)
       )
     )
+    this.sidebar.append(
+      el('.oim-panel-header', el('h2', tt('userlayers.title', 'My layers')), close),
+      this.outline,
+      this.fileInput
+    )
+    this.sidebarBuilt = true
+  }
+
+  private updateSidebar() {
+    if (!this.sidebarBuilt) this.buildSidebar()
+    this.message.textContent = ''
+    if (!this.store.loaded) {
+      this.message.append(el('p.oim-ul-hint', tt('userlayers.loading', 'Loading...')))
+      return
+    }
+    if (this.store.error) {
+      this.message.append(
+        el(
+          'p.oim-ul-error',
+          tt(
+            'userlayers.error',
+            "The backend can't be reached, so layers can't be loaded or saved: {{error}}",
+            {
+              error: this.store.error
+            }
+          )
+        )
+      )
+    }
+    this.outliner.draw()
   }
 
   private zoomTo(feature: UserFeature) {
@@ -727,6 +629,21 @@ export class Panel implements IControl {
       done: () => this.tools.select(null)
     })
     if (this.editorKey !== key) return // something newer
+    if (layer.style.locked) {
+      // A locked layer's items can be looked at, not changed.
+      editor
+        .querySelectorAll<HTMLButtonElement | HTMLInputElement>('input, select, textarea, button')
+        .forEach((c) => {
+          if (!c.classList.contains('primary')) c.disabled = true
+        })
+      editor.insertBefore(
+        el(
+          'p.oim-ul-locked-note',
+          tt('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
+        ),
+        editor.children[1] ?? null
+      )
+    }
     panel.show(editor, () => {
       // Closed (×, Esc) or replaced by another feature's details: deselect.
       if (this.editorKey === key) {

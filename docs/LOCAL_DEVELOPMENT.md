@@ -428,10 +428,15 @@ shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`
 The **My layers** button (top right, the stacked-layers icon with a red dot) turns
 on the My layers workspace; click it again to close it. It has two parts:
 
-- **The sidebar on the left**, under the search box: your layers (show/hide with
-  ◉, colour, click a name to see its items, ⋯ to draw into it, rename or delete),
-  "+ New layer", how much of the labels the map shows, and the name your changes
-  are saved under. Clicking an item selects it and moves the map to it. Below the
+- **The sidebar on the left**, under the search box: a search box and filters
+  (hostile, friend, planned, units...) for everything in your layers, then your
+  layers, optionally in **folders** (⋯ → Move to folder; folders fold to one line,
+  their ◉ and 🔒 act on all their layers). Each layer: ◉ show/hide, 🔒 lock (its
+  items can't be changed or moved), colour, its items (click the name), ⋯ to draw
+  into it, rename, move to a folder or delete. Items show their symbol and a status
+  line; drag one onto another layer to move it, and a layer onto a folder. Under
+  "Labels and name": how much of the labels the map shows, and the name your
+  changes are saved under. Clicking an item selects it and moves the map to it. Below the
   layers is the **details** area: the selected item's card, or the details of any
   map feature you click (the last thing clicked). A grid connection, if you have
   one, folds to one line at the bottom ("Route: A → B · 18 km"); click it to unfold.

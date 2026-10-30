@@ -716,8 +716,16 @@ was hard to read. Version 3, built in steps:
   any it has, with values in words (`displayValue`: dates with "2 h ago", ratings
   spelled out, compass points); "+ Add detail" lists the rest by question (who,
   what, when, where, how sure); notes always shown; Duplicate.
-- **Still to do:** the outliner (symbols in the list, search and filters, lock,
-  drag between layers, multi-select, folders), the picker's favourites and plain
+- **Step 3, the outliner** (`outliner.ts`, `labels.ts`): folders (one level,
+  `style.folder` on each layer, folded state per browser) with an eye and a lock
+  for all their layers; layers with eye, lock (`style.locked`: no drags, deletes or
+  edits, the card read-only, nothing new drawn into it), colour, item count, ⋯
+  (draw into, rename, move to folder, delete); items with their symbol and a status
+  line ("Infantry · Hostile · planned · 2 h ago"). A search box (every word, in
+  names, types, details, notes) and filter chips (hostile, friend, planned, units,
+  graphics, pictures). Drag an item onto a layer to move it, a layer onto a folder
+  to put it in.
+- **Still to do:** multi-select and bulk edits, the picker's favourites and plain
   categories, map interactions (hover, right-click, rename on the map, copy /
   paste), situations.
 

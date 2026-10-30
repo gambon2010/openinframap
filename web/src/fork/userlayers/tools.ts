@@ -116,7 +116,14 @@ export class Tools {
 
   /** The active layer, made if there's none yet. */
   private activeLayer(): string {
-    if (this.store.activeLayer && this.store.layers.has(this.store.activeLayer)) return this.store.activeLayer
+    const active = this.store.activeLayer ? this.store.layers.get(this.store.activeLayer) : undefined
+    if (active && !active.style.locked) return active.id
+    // A locked layer takes nothing new: draw into another one, or a new one.
+    const open = [...this.store.layers.values()].find((l) => !l.style.locked)
+    if (open) {
+      this.store.setActive(open.id)
+      return open.id
+    }
     return this.store.createLayer(tt('userlayers.default-name', 'My layer'))
   }
 
@@ -267,7 +274,7 @@ export class Tools {
     if (!this.enabled || this.tool.mode !== 'select' || !this.selected) return
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
-    if (!layer || !feature || feature.properties.kind === 'copy') return
+    if (!layer || !feature || feature.properties.kind === 'copy' || layer.style.locked) return
     // The resize handle of a picture, symbol or marker.
     if (this.handleAt(e.point, 'user_selection_resize')) {
       const half = this.renderer.iconHalfSize(feature)
@@ -380,7 +387,7 @@ export class Tools {
   deleteSelected() {
     if (!this.selected) return
     const layer = this.store.layerOf(this.selected)
-    if (layer) this.store.deleteFeature(layer.id, this.selected)
+    if (layer && !layer.style.locked) this.store.deleteFeature(layer.id, this.selected)
     this.select(null)
   }
 }
