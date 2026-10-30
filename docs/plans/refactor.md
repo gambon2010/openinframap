@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done; phase 5 step 14 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done; phase 5 steps 14–15 done.
 
 ## Why
 
@@ -172,7 +172,9 @@ working sessions.
     `db.sh`, `exports.sh`, `userdata.sh`, `app.sh` (terminals, `.env`, start),
     `basemap.sh`, `geofabrik.sh`, `satellite.sh`. `common.sh` keeps the paths and
     sources them all, so no script changes how it starts. *Effort: 1.*
-15. **`build-region.sh` steps as functions** with the main flow on one screen:
+15. **`build-region.sh` steps as functions** (done; the real Luxembourg build test
+    caught a step ending in a false `[[ … ]] &&` under `set -e`, now fixed and
+    guarded by a test) with the main flow on one screen:
     choose, download, import, SQL steps (from the list in step 1), extras, finish.
     *Effort: 1.*
 16. **`satellite.py` → package `scripts/satellite/`**:

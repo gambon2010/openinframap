@@ -50,6 +50,9 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 ## Building the data: `build-region.sh`
 
 `scripts/build-region.sh` replaces the earlier `setup-local-db.sh` and `update-db.sh`.
+Its steps are functions, run in order by the last lines of the script (the questions
+first, then `download_extract`, `filter_extract`, `import_osm`...); a step must not
+end with a test that can be false (`set -e`; checked by a test).
 `launch.sh` calls it when there's no database yet.
 
 **Region menu.** The 9 Geofabrik continents with live download sizes, the whole world,

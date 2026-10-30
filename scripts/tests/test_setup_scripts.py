@@ -10,6 +10,7 @@ saved before a wipe). A real build is the opt-in test at the end.
 """
 
 import hashlib
+import re
 import json
 import os
 import shutil
@@ -595,3 +596,17 @@ def test_satellite_refuses_bad_options_before_doing_anything(sandbox, args, mess
     assert message in result.stderr + result.stdout
     assert sandbox.calls() == []
     assert not sandbox.wiped()
+
+
+def test_build_steps_never_end_in_a_failing_test():
+    # Under `set -e`, a step whose last line is `[[ ... ]] && ...` (or a bare
+    # test) returns "failed" when the test is false, and the build stops there
+    # without a word. (It happened with --no-extra.) End steps with `if` instead.
+    script = (SCRIPTS / "build-region.sh").read_text()
+    flow = script[script.rindex("# The build: all the questions first") :]
+    steps = re.findall(r"^([a-z_]+)$", flow, re.M)
+    assert len(steps) > 10
+    for step in steps:
+        body = re.search(rf"\n{step}\(\) \{{\n(.*?)\n\}}\n", script, re.S).group(1)
+        last = [line.strip() for line in body.split("\n") if line.strip()][-1]
+        assert "&&" not in last and not last.startswith("["), f"{step}: {last}"
