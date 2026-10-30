@@ -107,8 +107,8 @@ working sessions.
 
 ### Phase 3: My layers (the biggest; prepares users and sync)
 
-9. **Split the store** into four parts, with `Store` as a thin front that keeps
-   today's API for the UI:
+9. **Split the store** into four parts (shaped for `docs/plans/sync.md`), with
+   `Store` as a thin front that keeps today's API for the UI:
    - `changes.ts`: pure. `Change`, `applyChange`, steps, `revertFields`, cloning.
      Already mostly pure and tested.
    - `history.ts` (rename the current playback file to `playback.ts`): the undo
@@ -211,8 +211,9 @@ Small, tested and not in the way, so no change:
 2. **Folder names.** `core/`, `ui/`, `modules/` under `web/src/fork/`, and
    `model/`, `state/`, `map/`, `ui/` inside `userlayers/`: fine, or do you prefer
    other names?
-3. **Auto-sync.** Phase 3 shapes the store so a sync transport can replace Save,
-   without deciding how sync works. Do you want to have the sync discussion first,
-   so the interface fits it?
+3. ~~Auto-sync.~~ Discussed: `docs/plans/sync.md`. Phase 3 shapes the store for it
+   (versions on each item, a `merge.ts` beside `changes.ts`, conflicts in the
+   store, the view object answering "can I edit?"), and phase 4 leaves room for
+   versions, access checks and a push connection.
 4. **Scope.** Is anything here more than you want (e.g. splitting `satellite.py`
    or `extra_data.py` now), or missing (an area you find hard to work with)?
