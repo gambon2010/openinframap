@@ -74,14 +74,11 @@ LAYER_OPS = {"layer_create", "layer_update", "layer_delete"}
 FEATURE_OPS = {"feature_create", "feature_update", "feature_delete"}
 MAX_IMAGE_BYTES = 2_000_000
 
-_schema_ready = False
-
 
 async def ensure_schema(db: AsyncConnection) -> None:
-    """Create the userdata schema on first use (databases built before it existed)."""
-    global _schema_ready
-    if _schema_ready:
-        return
+    """Create the userdata schema on first use (databases built before it existed).
+    Checked on each request (it's cheap): the database can be rebuilt while the
+    backend runs."""
     # The newest table: an older database gets what it lacks (every statement in
     # userdata.sql is "if not exists", so running it again is safe).
     exists = (await db.execute(text("SELECT to_regclass('userdata.situation') IS NOT NULL"))).scalar()
@@ -92,7 +89,6 @@ async def ensure_schema(db: AsyncConnection) -> None:
             if code.strip():
                 await db.execute(text(code))
         await db.commit()
-    _schema_ready = True
 
 
 def parse_time(value: Any) -> datetime:
@@ -102,6 +98,16 @@ def parse_time(value: Any) -> datetime:
     except ValueError:
         return datetime.now(timezone.utc)
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+async def read_json(request: Request) -> dict:
+    try:
+        body = await request.json()
+    except ValueError:
+        raise HTTPException(400, "Expected JSON")
+    if not isinstance(body, dict):
+        raise HTTPException(400, "Expected a JSON object")
+    return body
 
 
 def parse_uuid(value: Any, what: str) -> uuid.UUID:
@@ -285,10 +291,7 @@ async def save(request: Request) -> Response:
     """Apply the browser's unsaved changes, in order, all or nothing."""
     db = get_db(request)
     await ensure_schema(db)
-    try:
-        body = await request.json()
-    except ValueError:
-        raise HTTPException(400, "Expected JSON")
+    body = await read_json(request)
     changes = body.get("changes") or []
     if not isinstance(changes, list) or not changes:
         raise HTTPException(400, "No changes")
@@ -364,7 +367,7 @@ async def situations(request: Request) -> Response:
     db = get_db(request)
     await ensure_schema(db)
     if request.method == "POST":
-        body = await request.json()
+        body = await read_json(request)
         name = str(body.get("name") or "").strip()
         if not name:
             raise HTTPException(400, "A situation needs a name")
@@ -405,7 +408,7 @@ async def add_image(request: Request) -> Response:
     """An image for the map: {"name", "mime", "data": base64}. Returns its id."""
     db = get_db(request)
     await ensure_schema(db)
-    body = await request.json()
+    body = await read_json(request)
     mime = str(body.get("mime") or "")
     if mime not in ("image/png", "image/jpeg", "image/webp", "image/svg+xml"):
         raise HTTPException(400, "Only PNG, JPEG, WebP or SVG images")

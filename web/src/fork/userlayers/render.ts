@@ -220,13 +220,21 @@ export class Renderer {
   private async renderGraphics(changed?: UserFeature) {
     if (!this.last) return
     const { layers } = this.last
-    const withGraphics = [...layers.values()].filter((l) =>
+    const map = this.map
+    const hasGraphics = (l: UserLayer) =>
       [...l.features.values()].some((f) => f.properties.kind === 'graphic')
-    )
+    // A layer whose last graphic was deleted: nothing left to draw.
+    for (const layer of layers.values()) {
+      if (!hasGraphics(layer))
+        (map.getSource(graphicsSourceId(layer.id)) as GeoJSONSource | undefined)?.setData({
+          type: 'FeatureCollection',
+          features: []
+        })
+    }
+    const withGraphics = [...layers.values()].filter(hasGraphics)
     if (!withGraphics.length) return
     const lib = await graphicsLibrary()
     if (!this.last || this.last.layers !== layers) return
-    const map = this.map
     const zoom = map.getZoom()
     this.graphicsZoom = zoom
     const bounds = map.getBounds()
@@ -317,7 +325,9 @@ export class Renderer {
     this.last = { layers, hidden }
     const map = this.map
     if (!map.isStyleLoaded()) {
-      map.once('idle', () => void this.render(layers, hidden))
+      map.once('idle', () => {
+        if (this.last?.layers === layers) void this.render(layers, hidden)
+      })
       return
     }
     // The images the features need, added before the features are drawn. The layers

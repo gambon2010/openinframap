@@ -317,7 +317,8 @@
       "layer-delete": "Deleted a layer",
       "feature-create": "Added {{what}} to \"{{layer}}\"",
       "feature-update": "Changed {{what}}",
-      "feature-delete": "Deleted {{what}}"
+      "feature-delete": "Deleted {{what}}",
+      "layer-delete-named": "Deleted the layer \"{{name}}\""
     },
     "make-present": "Mark as present",
     "make-planned": "Mark as planned",

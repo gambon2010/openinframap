@@ -245,7 +245,7 @@ export class Panel implements IControl {
   // --- Keyboard -------------------------------------------------------------------
 
   private keydown(e: KeyboardEvent) {
-    if (!this.isOpen || this.inPlayback) return
+    if (!this.isOpen || this.showingPast) return
     const target = e.target as HTMLElement
     if (target.closest('input, textarea, select, [contenteditable]')) return
     const mod = e.ctrlKey || e.metaKey
@@ -366,12 +366,12 @@ export class Panel implements IControl {
     }
     const undo = this.action('↶', () => this.store.undo(), {
       title: tt('userlayers.undo', 'Undo (Ctrl+Z)'),
-      disabled: !this.store.canUndo || this.inPlayback,
+      disabled: !this.store.canUndo || this.showingPast,
       className: 'oim-ul-tool-icon'
     })
     const redo = this.action('↷', () => this.store.redo(), {
       title: tt('userlayers.redo', 'Redo (Ctrl+Shift+Z)'),
-      disabled: !this.store.canRedo || this.inPlayback,
+      disabled: !this.store.canRedo || this.showingPast,
       className: 'oim-ul-tool-icon'
     })
     const history = this.action(

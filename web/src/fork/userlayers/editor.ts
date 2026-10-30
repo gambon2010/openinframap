@@ -440,6 +440,14 @@ export async function buildEditor(
     'layer'
   )
   layerSelect.title = tt('userlayers.f.layer', 'Layer')
+  // Nothing goes into a locked layer.
+  for (const option of layerSelect.options) {
+    const l = layers.find((x) => x.id === option.value)
+    if (l?.style.locked && l.id !== layer.id) {
+      option.disabled = true
+      option.textContent = `🔒 ${l.name}`
+    }
+  }
   const button = (label: string, onclick: () => void, primary = false) => {
     const b = el(`button.oim-ul-button${primary ? '.primary' : ''}`, label, { type: 'button' })
     b.onclick = onclick

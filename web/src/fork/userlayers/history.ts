@@ -144,9 +144,17 @@ export class Playback {
       case 'layer_update':
         what = tt('userlayers.history.layer-update', 'Changed the layer "{{name}}"', { name: layerName })
         break
-      case 'layer_delete':
-        what = tt('userlayers.history.layer-delete', 'Deleted a layer')
+      case 'layer_delete': {
+        // The layer is gone from the snapshot: its name from before.
+        const name = this.changes
+          .slice(0, this.position - 1)
+          .reverse()
+          .find((c) => c.layer_id === change.layer_id && c.after?.name)?.after?.name
+        what = name
+          ? tt('userlayers.history.layer-delete-named', 'Deleted the layer "{{name}}"', { name })
+          : tt('userlayers.history.layer-delete', 'Deleted a layer')
         break
+      }
       case 'feature_create':
         what = tt('userlayers.history.feature-create', 'Added {{what}} to "{{layer}}"', {
           what: featureLabel(change.after),

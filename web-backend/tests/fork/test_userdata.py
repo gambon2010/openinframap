@@ -46,3 +46,28 @@ def test_parse_time():
     assert parse_time("2026-10-30T10:00:00").tzinfo is not None  # no zone: UTC
     assert parse_time("not a date").tzinfo is not None  # unreadable: now
     assert parse_time(None).tzinfo is not None
+
+
+class FakeRequest:
+    def __init__(self, body):
+        self.body = body
+
+    async def json(self):
+        if isinstance(self.body, Exception):
+            raise self.body
+        return self.body
+
+
+@pytest.mark.parametrize("body", [ValueError("bad"), [1, 2], "text"])
+def test_read_json_rejects_what_is_not_an_object(body):
+    import asyncio
+
+    with pytest.raises(HTTPException) as e:
+        asyncio.run(userdata.read_json(FakeRequest(body)))
+    assert e.value.status_code == 400
+
+
+def test_read_json():
+    import asyncio
+
+    assert asyncio.run(userdata.read_json(FakeRequest({"name": "x"}))) == {"name": "x"}
