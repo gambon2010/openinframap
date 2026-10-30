@@ -9,6 +9,7 @@
     "lint": "eslint ./src",
     "test": "vitest run",
     "test:fork": "vitest run --config vitest.fork.config.ts",
+    "fork-strings": "node scripts/fork-strings.mjs",
     "extract": "i18next-parser 'src/**/*.{ts,tsx}' --output 'src/locales/{{locale}}/{{ns}}.json' --keep"
   },
   "repository": {

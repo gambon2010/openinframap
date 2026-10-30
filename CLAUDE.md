@@ -32,6 +32,7 @@ npm run build     # Production build
 npm run lint      # ESLint + Prettier
 npm run test      # Vitest (+ Puppeteer integration tests): upstream's
 npm run test:fork # The fork's unit tests (src/fork/**/*.test.ts, happy-dom; vitest.fork.config.ts)
+npm run fork-strings # Add the fork's new English strings (t('key', 'text')) to src/fork/locales/en.json
 npm run extract   # Extract i18n translation strings
 ```
 

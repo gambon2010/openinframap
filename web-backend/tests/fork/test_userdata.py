@@ -35,3 +35,14 @@ def test_schema_has_situations_and_is_upgraded_by_its_newest_table():
     assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
     # ensure_schema checks for the newest table, so older databases get it too.
     assert "to_regclass('userdata.situation')" in Path(userdata.__file__).read_text()
+
+
+def test_parse_time():
+    from datetime import datetime, timezone
+
+    from src.fork.userdata import parse_time
+
+    assert parse_time("2026-10-30T10:00:00Z") == datetime(2026, 10, 30, 10, tzinfo=timezone.utc)
+    assert parse_time("2026-10-30T10:00:00").tzinfo is not None  # no zone: UTC
+    assert parse_time("not a date").tzinfo is not None  # unreadable: now
+    assert parse_time(None).tzinfo is not None

@@ -410,6 +410,21 @@ def test_start(sandbox):
     assert not sandbox.wiped()
 
 
+def test_start_serves_satellite_imagery_without_a_background_map(sandbox):
+    basemap = sandbox.root / "data" / "basemap"
+    basemap.mkdir(parents=True)
+    (basemap / "luxembourg.sat-overview.pmtiles").write_bytes(b"PMTiles")
+    db = answers(
+        **{"key = 'region_name'": "Luxembourg", "key = 'region_id'": "luxembourg"}
+    )
+    result = sandbox.run(
+        "start.sh", FAKE_DB_EXISTS="1", FAKE_DB_ANSWERS=db, FAKE_PORTS_UP="8001 5173"
+    )
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert sandbox.docker_calls("up", "basemap")
+    assert "Satellite imagery" in result.stdout
+
+
 def test_start_without_a_desktop(sandbox):
     """No display to open a terminal in: it says how to start the frontend by hand."""
     db = answers(**{"key = 'region_name'": "Luxembourg"})

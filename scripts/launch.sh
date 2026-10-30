@@ -60,6 +60,7 @@ if [[ -n "$REGION" ]]; then
     ok "Already built: $REGION (OSM data as of $(build_info osm_timestamp))"
     if ask_yes_no "Keep it?" y; then
         select_basemap "$(build_info region_id)"
+        select_satellite "$(build_info region_id)"
     else
         bash "$REPO_ROOT/scripts/build-region.sh" --no-images
     fi

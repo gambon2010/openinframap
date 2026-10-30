@@ -26,9 +26,16 @@ REGION=$(build_info region_name)
 ok "Map database: $REGION (OSM data as of $(build_info osm_timestamp))"
 up_services tegola
 ok "Tile server running on http://localhost:7800"
-if [[ -f "$BASEMAP_DIR/$(build_info region_id).pmtiles" ]]; then
+REGION_ID=$(build_info region_id)
+if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]] || has_satellite "$REGION_ID"; then
+    # The same server serves the offline background map and the satellite imagery.
     start_basemap_if_present
-    ok "Offline background map running on http://localhost:$BASEMAP_PORT"
+    if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]]; then
+        ok "Offline background map running on http://localhost:$BASEMAP_PORT"
+    fi
+    if has_satellite "$REGION_ID"; then
+        ok "Satellite imagery: $(satellite_summary "$REGION_ID") (Settings → Background)"
+    fi
 fi
 
 section "Starting the app..."

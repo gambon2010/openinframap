@@ -96,6 +96,11 @@ export class Panel implements IControl {
   private follow = true
   private busy = ''
   isOpen = false
+
+  /** Showing the past (history playback or a situation): the live layers aren't drawn. */
+  get showingPast(): boolean {
+    return this.inPlayback || this.viewing !== null
+  }
   // Situations: the saved ones, and the one being viewed (null: live).
   private situations: Situation[] = []
   private situationsLoaded = false
@@ -340,7 +345,12 @@ export class Panel implements IControl {
       'select.oim-ul-target',
       { title: tt('userlayers.add-to', 'New items go into this layer'), disabled: this.inPlayback },
       [...this.store.layers.values()].map((l) =>
-        el('option', l.name, { value: l.id, selected: l.id === this.store.activeLayer })
+        // A locked layer takes nothing new.
+        el('option', l.style.locked ? `🔒 ${l.name}` : l.name, {
+          value: l.id,
+          selected: l.id === this.store.activeLayer,
+          disabled: Boolean(l.style.locked)
+        })
       ),
       el('option', `+ ${tt('userlayers.new-layer', 'New layer')}`, {
         value: '',
@@ -540,7 +550,7 @@ export class Panel implements IControl {
       el(
         'details.oim-ul-settings',
         el('summary', tt('userlayers.settings', 'Labels and name')),
-        el('label.oim-ul-field', el('span', tt('userlayers.labels', 'Labels on the map')), level),
+        el('label.oim-ul-field', el('span', tt('userlayers.labels-on-map', 'Labels on the map')), level),
         el('label.oim-ul-field', el('span', tt('userlayers.author-label', 'Saved as')), author)
       )
     )

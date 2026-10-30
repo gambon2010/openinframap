@@ -95,6 +95,15 @@ async def ensure_schema(db: AsyncConnection) -> None:
     _schema_ready = True
 
 
+def parse_time(value: Any) -> datetime:
+    """When a change was made, as the browser says (ISO 8601); now if it can't be read."""
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.now(timezone.utc)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
 def parse_uuid(value: Any, what: str) -> uuid.UUID:
     try:
         return uuid.UUID(str(value))
@@ -187,7 +196,7 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict) -> None:
         raise HTTPException(400, f"Unknown change: {op}")
     layer_id = parse_uuid(change.get("layer_id"), "layer id")
     data = change.get("data") or {}
-    made_at = change.get("made_at") or datetime.now(timezone.utc).isoformat()
+    made_at = change.get("made_at")
 
     if op in LAYER_OPS:
         before = await layer_json(db, layer_id)
@@ -267,7 +276,7 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict) -> None:
             "feature_id": feature_id,
             "before": json.dumps(before) if before is not None else None,
             "after": json.dumps(after) if after is not None else None,
-            "made_at": datetime.fromisoformat(str(made_at).replace("Z", "+00:00")),
+            "made_at": parse_time(made_at),
         },
     )
 
