@@ -82,3 +82,22 @@ def test_region_in(tmp_path):
     index.write_text(json.dumps({"features": features}))
     check = "for r in alsace france luxembourg europe nowhere; do region_in $r france && echo $r; done; true"
     assert bash(check, GEOFABRIK_INDEX=str(index)).split() == ["alsace", "france"]
+
+
+def test_export_outdated(tmp_path):
+    (tmp_path / "lux.oimdb").write_bytes(b"")
+    manifest = {"built_at": "B1", "schema_hash": "S1", "extra_data": ""}
+    (tmp_path / "lux.json").write_text(json.dumps(manifest))
+    # The database as build_info and extra_description would read it.
+    fake = """
+build_info() { case "$1" in region_id) echo lux ;; built_at) echo "$BUILT" ;;
+               schema_hash) echo S1 ;; esac; }
+extra_description() { echo "$EXTRA"; }
+export_outdated && echo outdated || echo current
+"""
+    assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B1", EXTRA="") == "current"
+    assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B2", EXTRA="") == "outdated"
+    assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B1", EXTRA="ORE") == "outdated"
+    # No export of the region: nothing to bring up to date.
+    (tmp_path / "lux.oimdb").unlink()
+    assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B2", EXTRA="") == "current"

@@ -47,6 +47,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 2.13 | List the dependencies needed to run the project from nothing. | ✅ LOCAL_DEVELOPMENT "Prerequisites" |
 | 2.14 | Rebuilds and imports keep My layers (they belong to the computer). | ✅ |
 | 2.15 | Should the setup scripts have tests? (asked 2026-10-30) | 🚧 see section 11 |
+| 2.16 | Re-export a region's ready-made export by default when it's out of date (no question). | ✅ `reexport_if_outdated` in `build-region.sh` and `start.sh` |
 
 ## 3. Background map and map sources
 

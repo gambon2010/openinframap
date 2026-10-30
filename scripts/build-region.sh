@@ -62,6 +62,8 @@ Usage: bash scripts/build-region.sh [options]
   --satellite-detailed ZOOM  France only: IGN 20 cm aerial photos from zoom 14 to
                   ZOOM (15, 16 or 17), or none. Large: see the estimate when asked
   --rebuild       Build from scratch even if data/exports/ has a ready-made export
+  --no-export     Don't export the region again when its ready-made export in
+                  data/exports/ is out of date (by default it is, at the end)
   --refresh      Download a newer Geofabrik extract if there is one (by default
                   an extract you already downloaded is reused, and you're asked)
   --yes, -y       Don't ask questions; accept the defaults (wipes the database!)
@@ -70,6 +72,7 @@ EOF
 }
 
 REGION_ID=""
+NO_EXPORT=""
 PBF_SOURCE=""
 FETCH_IMAGES=""
 EXTRA_DATA=""
@@ -93,6 +96,7 @@ while [[ $# -gt 0 ]]; do
         --no-filter) USE_FILTER=0; shift ;;
         --refresh)   REFRESH=1; shift ;;
         --rebuild)   REBUILD=1; shift ;;
+        --no-export) NO_EXPORT=1; shift ;;
         --basemap)   BASEMAP_MODE="${2:?--basemap needs full, reduced or none}"; shift 2 ;;
         --satellite) SATELLITE_MODE="${2:?--satellite needs none, overview, regional or regional13}"; shift 2 ;;
         --satellite-detailed) SATELLITE_DETAILED="${2:?--satellite-detailed needs 15, 16, 17 or none}"; shift 2 ;;
@@ -1018,5 +1022,8 @@ info "OSM data as of: ${OSM_TIMESTAMP:-unknown}"
 info "Database size:  $DB_SIZE"
 info "Took:           $((ELAPSED / 3600))h $((ELAPSED % 3600 / 60))m $((ELAPSED % 60))s"
 [[ "$HAVE_EEZ" == 1 ]] || warn "No EEZ boundaries — search and area/stats pages won't work. Re-run to add them."
+echo ""
+# A ready-made export of the region made before this build is out of date now.
+[[ -n "$NO_EXPORT" ]] || reexport_if_outdated
 echo ""
 info "Start the app with: bash scripts/start.sh"

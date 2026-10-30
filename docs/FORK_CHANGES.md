@@ -197,6 +197,11 @@ upstream's own `web-backend/Dockerfile`.
   date, git commit, schema fingerprint, size, SHA-256). It can also save all five
   project Docker images to `data/exports/docker-images.tar.gz` (461 MB) for offline
   computers.
+- **Exports kept up to date:** `export_outdated` (`lib/common.sh`) compares the
+  region's manifest with the database (`built_at`, `schema_hash`, extra data);
+  `reexport_if_outdated` runs `export-db.sh --yes --no-docker-images` at the end of
+  `build-region.sh` (unless `--no-export`) and of `start.sh`. Only regions that
+  already have an export are re-exported.
 - **`import-db.sh`** restores one. `build-region.sh` lists exports in its menu
   ("✓ ready-made export — imports in minutes") and asks "Import it? (No = rebuild)".
 - **Offline:** without internet the menu shows only exports, earlier downloads and a

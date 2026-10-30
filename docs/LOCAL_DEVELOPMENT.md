@@ -194,6 +194,12 @@ This writes:
 - Optionally `data/exports/docker-images.tar.gz` (~460 MB, shared by all exports):
   the project's Docker images, so a computer **without internet** can run it.
 
+Once a region has an export, it's kept up to date: when the database no longer
+matches it (rebuilt, or other extra data), `build-region.sh` (at the end; skip with
+`--no-export`) and `start.sh` (once the map is up) export it again, without asking.
+Ctrl+C skips it; the old export stays until the new one is complete. Your own
+layers don't count (they're kept per computer).
+
 On another computer, copy the project folder (e.g. to a USB drive) and run
 `bash scripts/launch.sh`. The region menu offers the export; importing takes
 seconds to minutes instead of rebuilding. You can import directly too:

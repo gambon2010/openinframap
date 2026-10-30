@@ -9,7 +9,8 @@ set -euo pipefail
 # Starts the database and Tegola (Docker), opens the backend and frontend in
 # their own terminal windows, and opens http://localhost:5173 once it's up.
 # Anything already running is left alone. Needs a database built by
-# scripts/launch.sh (first-time setup) or scripts/build-region.sh.
+# scripts/launch.sh (first-time setup) or scripts/build-region.sh. If the
+# region's export in data/exports/ is out of date, it's exported again.
 # ---------------------------------------------------------------------------
 
 # shellcheck source=lib/common.sh
@@ -44,5 +45,7 @@ if ! start_app; then
     echo ""
     print_manual_start
 fi
+# The map is up: bring an out-of-date ready-made export up to date meanwhile.
+reexport_if_outdated
 echo ""
 info "Stop the database and tile server with: docker compose stop"
