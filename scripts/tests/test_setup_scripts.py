@@ -425,58 +425,129 @@ def test_start_without_a_desktop(sandbox):
     ]
 
 
-# --- A real build (opt-in) ---------------------------------------------------------
+# --- A real build, export and import, in a separate test database (opt-in) ----------
+
+# Big or local-only things left out of the copy the real build runs from.
+NOT_COPIED = shutil.ignore_patterns(
+    "data",
+    "node_modules",
+    "dist",
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".env",
+    ".env.bak",
+    "*.mbtiles",
+)
+# Published ports would clash with the running stack: the test project has none
+# (the scripts reach the database through `docker compose exec`).
+NO_PORTS = """services:
+  db:
+    ports: !reset []
+  tegola:
+    ports: !reset []
+  backend:
+    ports: !reset []
+  basemap:
+    ports: !reset []
+"""
 
 
 @pytest.mark.skipif(
-    os.environ.get("OIM_TEST_REAL_BUILD") != "wipes-my-database",
-    reason="builds Luxembourg for real and REPLACES the map database; set OIM_TEST_REAL_BUILD=wipes-my-database",
+    os.environ.get("OIM_TEST_REAL_BUILD") != "1",
+    reason="builds Luxembourg for real in a separate Docker project (several minutes); set OIM_TEST_REAL_BUILD=1",
 )
-def test_real_build_of_luxembourg():
-    """End to end: download, filter, import, views, search, grid, Tegola. A few minutes."""
-    result = subprocess.run(
-        [
+def test_real_build_export_and_import(tmp_path):
+    """End to end with real Docker, in its own Compose project ("oimtest": its own
+    containers and volumes, no published ports), so the real map database and the
+    running app are left alone. Uses the Luxembourg extract in data/osm/ (downloaded
+    if missing). Builds, exports, imports the export back, and removes everything."""
+    root = tmp_path / "repo"
+    shutil.copytree(REPO, root, ignore=NOT_COPIED)
+    data = root / "data"
+    (data / "osm").mkdir(parents=True)
+    for name in (
+        "luxembourg-latest.osm.pbf",
+        "luxembourg-latest.osm.pbf.md5",
+        "geofabrik-index-v1.json",
+    ):
+        if (REPO / "data" / "osm" / name).exists():
+            shutil.copy2(REPO / "data" / "osm" / name, data / "osm" / name)
+    for eez in (REPO / "data").glob("EEZ_*.zip"):
+        shutil.copy2(eez, data / eez.name)
+    (root / "compose.test.yml").write_text(NO_PORTS)
+    env = {
+        **os.environ,
+        "COMPOSE_PROJECT_NAME": "oimtest",
+        "COMPOSE_FILE": "docker-compose.yml:docker-compose.override.yml:compose.test.yml",
+    }
+
+    def run(*command: str, timeout: int = 3600) -> subprocess.CompletedProcess:
+        result = subprocess.run(
+            command,
+            cwd=root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout[-4000:] + result.stderr[-4000:]
+        return result
+
+    def query(sql: str) -> str:
+        return run(
+            "docker",
+            "compose",
+            "exec",
+            "-T",
+            "db",
+            "psql",
+            "-U",
+            "osm",
+            "osm",
+            "-tAc",
+            sql,
+        ).stdout.strip()
+
+    def check_database() -> None:
+        assert (
+            query("SELECT value FROM oim_build_info WHERE key = 'region_id'")
+            == "luxembourg"
+        )
+        assert int(query("SELECT count(*) FROM osm_power_line")) > 100
+        assert int(query("SELECT count(*) FROM grid_edge")) > 10
+        assert int(query("SELECT count(*) FROM search_feature")) > 100
+        assert int(query("SELECT count(*) FROM site_feature")) > 10
+
+    try:
+        run(
             "bash",
-            str(SCRIPTS / "build-region.sh"),
+            "scripts/build-region.sh",
             "--region",
             "luxembourg",
             "--yes",
             "--no-images",
             "--no-extra",
-        ],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        timeout=3600,
-        check=False,
-    )
-    assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-3000:]
-
-    def query(sql: str) -> str:
-        return subprocess.run(
-            [
-                "docker",
-                "compose",
-                "exec",
-                "-T",
-                "db",
-                "psql",
-                "-U",
-                "osm",
-                "osm",
-                "-tAc",
-                sql,
-            ],
-            cwd=REPO,
+            "--basemap",
+            "none",
+            "--satellite",
+            "none",
+        )
+        check_database()
+        run("bash", "scripts/export-db.sh", "--yes", "--no-docker-images")
+        manifest = json.loads((data / "exports" / "luxembourg.json").read_text())
+        dump = data / "exports" / "luxembourg.oimdb"
+        assert manifest["sha256"] == hashlib.sha256(dump.read_bytes()).hexdigest()
+        run("bash", "scripts/import-db.sh", str(dump), "--yes")
+        check_database()
+    finally:
+        subprocess.run(
+            ["docker", "compose", "down", "-v", "--rmi", "local", "--remove-orphans"],
+            cwd=root,
+            env=env,
             capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
-
-    assert (
-        query("SELECT value FROM oim_build_info WHERE key = 'region_id'")
-        == "luxembourg"
-    )
-    assert int(query("SELECT count(*) FROM osm_power_line")) > 100
-    assert int(query("SELECT count(*) FROM grid_edge")) > 10
-    assert int(query("SELECT count(*) FROM search_feature")) > 100
+            check=False,
+            timeout=600,
+        )

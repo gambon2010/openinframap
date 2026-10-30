@@ -650,7 +650,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   tool's hint at the bottom of the map with a Stop button; the history as a timeline
   bar at the bottom of the map (step, play at 0.5–4×, follow), each step saying what
   changed ("status: Planned → Present", "higher formation", "moved").
-- **Pictures** are scaled to at most 256 px in the browser and stored in the
+- **Pictures** are scaled to at most 1024 px in the browser (WebP; SVGs drawn at that size) and stored in the
   database (`userdata.image`); markers, lines and areas take the layer's colour or
   their own.
 - **Changes and Save.** Every edit is a change (add, change, delete a feature; make,
@@ -874,9 +874,14 @@ checkout `build-region.sh` stopped silently at the start (a `find` on the not ye
 existing `data/wikidata_json/`), and bad `--basemap` / `--satellite` values were only
 refused after the questions (now right after the options are read).
 
-A real end-to-end build of Luxembourg is the last test, skipped unless
-`OIM_TEST_REAL_BUILD=wipes-my-database` is set: it replaces the map database, so
-run it on a machine without a region you care about (or in CI).
+**A real build, export and import** of Luxembourg is the last test (opt-in:
+`OIM_TEST_REAL_BUILD=1`, several minutes). It runs from a copy of the project in a
+separate Docker Compose project (`COMPOSE_PROJECT_NAME=oimtest`: its own
+containers, volumes and images; `compose.test.yml` removes the published ports so
+nothing clashes with the running app), so **the real map database is never
+touched**. It reuses the Luxembourg extract, Geofabrik index and EEZ zip from
+`data/`, checks the database after the build and again after importing its own
+export, then removes the test project (`docker compose down -v --rmi local`).
 
 ## Smaller fixes
 
