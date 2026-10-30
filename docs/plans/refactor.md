@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 to 5 done.
+Status: **done** (agreed 2026-10-30, built 2026-10-30/31).
 
 ## Why
 
@@ -197,7 +197,8 @@ working sessions.
 
 ### Phase 6: docs
 
-18. **Split the docs:**
+18. **Split the docs** (done: `docs/ARCHITECTURE.md`; `FORK_CHANGES.md` keeps its
+    content as the history, with a pointer):
     - `docs/ARCHITECTURE.md` (new): how the fork is put together, the folder rules,
       and recipes such as "add an OSM layer", "add an outside data source", "add a
       satellite source", "add a left panel", "add a setting".

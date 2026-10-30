@@ -1,5 +1,8 @@
 # What this fork changes, and why
 
+How the fork is organised today, and recipes for adding to it, are in
+`ARCHITECTURE.md`; this page is the history: what changed, why, and the merge notes.
+
 This fork of [openinframap/openinframap](https://github.com/openinframap/openinframap)
 exists to run Open Infrastructure Map **entirely on your own computer**: your own
 database, tile server and backend, built from OpenStreetMap data for a region you
