@@ -168,11 +168,61 @@ As in the previous message, deepened:
 
 Each step is usable on its own; 1 and 2 change the most for daily use.
 
-## 10. Questions for the owner
+## 10. Decisions (2026-10-30) and how they fit
 
-- Left sidebar for My layers (with the feature details), or keep it on the right?
-- Should the toolbar be on the map (always visible while My layers is open) or in
-  the sidebar?
-- Which fields matter most in practice (to show them without "+ Add detail")?
-- Are layers enough to organise, or are folders / a "situation" (a named set of
-  layers at a date) needed?
+**Sidebar on the left, tools on the map.** The left side already has the search
+box, feature details and the Grid connection panel; they become parts of the same
+sidebar instead of separate floating panels, so nothing competes:
+
+```
+My layers closed (as today)      My layers open
+┌──────────────────────┐         ┌──────────────────────────┐
+│ 🔍 Search            │         │ 🔍 Search                │
+│ [details of a click] │         │ Situation: Live ▾        │
+│ [grid connection]    │         │ ▾ Grid (12)  ▸ Logistics │  outliner
+└──────────────────────┘         │ ─────────────────────────│
+                                 │ [inspector: whatever is  │
+                                 │  selected: my item OR a  │
+                                 │  map feature's details]  │
+                                 │ ─────────────────────────│
+                                 │ ▸ Grid connection (2 km) │  folded strip
+                                 └──────────────────────────┘
+```
+
+- One inspector: clicking a map feature or one of your items shows it in the same
+  place (the last thing clicked wins), so there is never a second details panel.
+- The Grid connection becomes a strip at the bottom of the sidebar, folded to one
+  line ("Route: A → B, 18 km") when not in use, unfolding on click.
+- Closing My layers gives back today's left side (search, details, route).
+- The toolbar stays on the map, top centre.
+
+**Details shown by default** (without "+ Add detail"), per kind of item; anything
+filled in is always shown too:
+
+| Kind | Shown by default |
+|---|---|
+| Units | designation, higher formation, time seen, notes |
+| Equipment | designation, type, quantity, time seen, notes |
+| Incidents, installations | name, time, notes |
+| Arrows, lines, areas | name, effective from / to, notes |
+| Pictures, markers | name, notes |
+
+To be adjusted with use (the owner to confirm what they fill in most).
+
+**Situations, without clutter.** A situation is a named moment ("Morning brief
+30 Oct 08:00"): the layers as they were then, built from the history that's
+already kept. In the UI it's one line, nothing more:
+
+- In the sidebar: `Situation: Live ▾`. The menu lists saved situations and "Save
+  current as a situation…"; rename / delete from the same menu.
+- Choosing one shows the map as it was then, read-only, and a single banner at the
+  top of the map: "Viewing *Morning brief* (30 Oct 08:00) · Back to live".
+- No new panel, no extra list: the history timeline can show situations as named
+  marks on the bar.
+- Later, a situation could also be a chosen set of layers (e.g. only Logistics),
+  and two situations could be compared.
+
+## 11. Still open
+
+- Which details the owner fills in most (to tune the table above).
+- Whether a situation should also choose which layers it shows, from the start.
