@@ -11,7 +11,7 @@ import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { font, text_paint } from '../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
 import { ensureImage, getLabelLevel, iconName } from './symbols.ts'
-import { graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
+import { axisControlPoints, axisWidthPoint, graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
 import { modifiersToDraw } from './fields.ts'
 
 const SELECTION = 'user_selection'
@@ -202,8 +202,9 @@ export class Renderer {
     ] as LayerSpecification[]
   }
 
-  /** Draw the graphics of the layers shown (after render(), and on zoom). */
-  private async renderGraphics() {
+  /** Draw the graphics of the layers shown (after render(), and on zoom); `changed`
+   * draws a feature being dragged as it is now. */
+  private async renderGraphics(changed?: UserFeature) {
     if (!this.last) return
     const { layers } = this.last
     const withGraphics = [...layers.values()].filter((l) =>
@@ -220,12 +221,15 @@ export class Renderer {
     const level = getLabelLevel()
     for (const layer of withGraphics) {
       const features: GeoJSON.Feature[] = []
-      for (const f of layer.features.values()) {
+      for (const stored of layer.features.values()) {
+        const f = changed && stored.id === changed.id ? changed : stored
         if (f.properties.kind !== 'graphic' || !f.properties.sidc) continue
         try {
           const pieces = renderGraphic(lib, {
             sidc: f.properties.sidc,
-            points: controlPoints(f.geometry),
+            points: f.properties.axisWidth
+              ? axisControlPoints(controlPoints(f.geometry), f.properties.axisWidth)
+              : controlPoints(f.geometry),
             modifiers: modifiersToDraw(f.properties.modifiers, level),
             color: f.properties.color,
             scale,
@@ -373,9 +377,10 @@ export class Renderer {
         filter: ['all', POINT, ['==', ['get', 'vertex'], true]] as FilterSpecification,
         paint: {
           'circle-radius': 6,
+          // The width handle of an arrow is blue, like the resize handle.
           'circle-color': '#fff',
-          'circle-stroke-color': '#b88a00',
-          'circle-stroke-width': 2
+          'circle-stroke-color': ['case', ['==', ['get', 'width'], true], '#1565c0', '#b88a00'],
+          'circle-stroke-width': ['case', ['==', ['get', 'width'], true], 3, 2]
         }
       },
       {
@@ -472,6 +477,10 @@ export class Renderer {
     const layer = this.last?.layers.get(layerId)
     const source = this.map.getSource(sourceId(layerId)) as GeoJSONSource | undefined
     if (!layer || !source) return
+    if (feature.properties.kind === 'graphic') {
+      void this.renderGraphics(feature)
+      return
+    }
     const color = layer.style.color ?? DEFAULT_COLOR
     source.setData({
       type: 'FeatureCollection',
@@ -509,6 +518,14 @@ export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
   const shape: GeoJSON.Geometry =
     graphic && points.length > 1 ? { type: 'LineString', coordinates: points } : feature.geometry
   const out: GeoJSON.Feature[] = [{ type: 'Feature', geometry: shape, properties: {} }]
+  // Arrows: a handle at the corner of the arrowhead sets the width.
+  if (graphic && feature.properties.axisWidth && points.length > 1) {
+    out.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: axisWidthPoint(points, feature.properties.axisWidth) },
+      properties: { vertex: true, index: -1, width: true }
+    })
+  }
   if (feature.geometry.type !== 'Point') {
     points.forEach((c, index) =>
       out.push({

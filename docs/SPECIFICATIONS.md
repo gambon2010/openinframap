@@ -138,6 +138,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.8 | ODIN's descriptive fields per symbol (designation, higher formation, status, date-time group, comments...), edited in the left panel, drawn on the map. | ✅ `editor.ts`, `fields.ts`, `sidc.ts` |
 | 9.9 | History steps say what changed. | ✅ |
 | 9.10 | Edit the shape of lines, areas and graphics after drawing them; move items between layers. | ✅ |
+| 9.12 | Arrows (e.g. main attack) easy to draw and good-looking: draw the path, adjust the width with one handle. | ✅ |
 | 9.11 | Resize pictures (and symbols, markers) shown on the map: a handle on the map, and a Size setting (20–800 %). | ✅ |
 
 ## 10. Backlog (parked)

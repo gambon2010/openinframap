@@ -7,6 +7,7 @@ import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { Store } from './store.ts'
 import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
+import { axisWidthFrom, defaultAxisWidth } from './graphics.ts'
 import { FeatureProps, UserFeature } from './model.ts'
 import { sourceGeometry } from './api.ts'
 
@@ -15,7 +16,15 @@ export type Tool =
   | { mode: 'place'; properties: FeatureProps }
   | { mode: 'line' | 'area'; points: [number, number][] }
   | { mode: 'copy' }
-  | { mode: 'graphic'; properties: FeatureProps; points: [number, number][]; min: number; max: number }
+  | {
+      mode: 'graphic'
+      properties: FeatureProps
+      points: [number, number][]
+      min: number
+      max: number
+      /** An arrow: drawn as a path from tail to tip, its width set afterwards. */
+      axis?: boolean
+    }
 
 /** Modes that add points one click at a time. */
 function drawing(tool: Tool): tool is Extract<Tool, { points: [number, number][] }> {
@@ -184,7 +193,10 @@ export class Tools {
         this.notify()
         return
       }
-      const id = this.store.addFeature(this.activeLayer(), graphicGeometry(points), this.tool.properties)
+      const properties = this.tool.axis
+        ? { ...this.tool.properties, axisWidth: defaultAxisWidth(points) }
+        : this.tool.properties
+      const id = this.store.addFeature(this.activeLayer(), graphicGeometry(points), properties)
       this.setTool({ mode: 'select' })
       this.select(id)
       return
@@ -327,9 +339,15 @@ export class Tools {
       this.renderer.preview(layerId, feature)
     } else if (index === undefined) {
       feature.geometry = { type: 'Point', coordinates: to }
+    } else if (feature.properties.kind === 'graphic' && index === -1) {
+      // An arrow's width handle.
+      const width = axisWidthFrom(controlPoints(feature.geometry), to)
+      feature.properties = { ...feature.properties, axisWidth: width }
+      this.renderer.preview(layerId, feature)
     } else if (feature.properties.kind === 'graphic') {
       const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))
       feature.geometry = graphicGeometry(points)
+      this.renderer.preview(layerId, feature)
     } else {
       feature.geometry = moveVertex(feature.geometry, index, to)
     }

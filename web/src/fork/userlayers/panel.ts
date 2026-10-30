@@ -15,7 +15,7 @@ import { Playback } from './history.ts'
 import { uploadImage } from './api.ts'
 import { DEFAULT_COLOR, UserFeature } from './model.ts'
 import { buildEditor } from './editor.ts'
-import { graphicsLibrary, pointCount } from './graphics.ts'
+import { graphicsLibrary, isAxis, pointCount } from './graphics.ts'
 import { getLabelLevel, setLabelLevel } from './symbols.ts'
 import { LabelLevel } from './fields.ts'
 import { sidePanel } from '../grid/index.ts'
@@ -516,6 +516,25 @@ export class Panel implements IControl {
         tt('userlayers.graphic-unsupported', '"{{name}}" can\'t be drawn yet.', { name: pick.name })
       )
       this.update()
+      return
+    }
+    if (isAxis(lib, pick.sidc)) {
+      // Arrows: the path from tail to tip; the width follows (and has a handle).
+      this.tools.setTool(
+        {
+          mode: 'graphic',
+          properties: { kind: 'graphic', sidc: pick.sidc },
+          points: [],
+          min: 2,
+          max: Infinity,
+          axis: true
+        },
+        tt(
+          'userlayers.axis-hint',
+          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Drag the blue handle to change its width.',
+          { name: pick.name }
+        )
+      )
       return
     }
     const max = Number.isFinite(count.max) && count.max < 1000 ? count.max : Infinity

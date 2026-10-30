@@ -1,6 +1,20 @@
 // Tactical graphics through the real C5ISR renderer (no map needed: it returns GeoJSON).
 import { beforeAll, describe, expect, test } from 'vitest'
-import { colour, graphicsLibrary, haloFor, mapScale, pointCount, renderGraphic, toDCode } from './graphics.ts'
+import {
+  axisControlPoints,
+  axisWidthFrom,
+  axisWidthPoint,
+  colour,
+  defaultAxisWidth,
+  graphicsLibrary,
+  haloFor,
+  isAxis,
+  mapScale,
+  pathLength,
+  pointCount,
+  renderGraphic,
+  toDCode
+} from './graphics.ts'
 
 type Lib = Awaited<ReturnType<typeof graphicsLibrary>>
 let lib: Lib
@@ -77,5 +91,54 @@ describe('the renderer', () => {
 
   test('a code without an equivalent is an error', () => {
     expect(() => renderGraphic(lib, { sidc: 'GFGPXXXXXX-----', points: [[0, 0]], scale: 50_000 })).toThrow()
+  })
+})
+
+describe('arrows (axis of advance, attacks)', () => {
+  // A path from tail to tip, eastwards along 48.5°N: about 3.7 km.
+  const path: [number, number][] = [
+    [7.6, 48.5],
+    [7.65, 48.5]
+  ]
+
+  test('which graphics are arrows', () => {
+    expect(isAxis(lib, 'GHGPOLAGM------')).toBe(true) // main attack
+    expect(isAxis(lib, 'GFGPOLAGS------')).toBe(true) // supporting attack
+    expect(isAxis(lib, 'GFGPGLP--------')).toBe(false) // phase line
+  })
+
+  test('length and default width', () => {
+    expect(pathLength(path)).toBeCloseTo(3687, -1)
+    expect(defaultAxisWidth(path)).toBe(Math.round(pathLength(path) / 5))
+    expect(defaultAxisWidth([path[0], path[0]])).toBe(10)
+  })
+
+  test('the width handle and the width it gives agree', () => {
+    const handle = axisWidthPoint(path, 800)
+    // Behind the tip and to the left of an eastward arrow (north).
+    expect(handle[0]).toBeLessThan(path[1][0])
+    expect(handle[1]).toBeGreaterThan(path[1][1])
+    expect(axisWidthFrom(path, handle)).toBeCloseTo(800, -1)
+    expect(axisWidthFrom(path, path[1])).toBe(10) // on the centre line: the minimum
+  })
+
+  test("the renderer's points: tip first, back to the tail, then the width point", () => {
+    const bent: [number, number][] = [
+      [7.6, 48.5],
+      [7.62, 48.51],
+      [7.65, 48.5]
+    ]
+    const points = axisControlPoints(bent, 500)
+    expect(points.slice(0, 3)).toEqual([...bent].reverse())
+    expect(points[3]).toEqual(axisWidthPoint(bent, 500))
+  })
+
+  test('drawn from those points', () => {
+    const features = renderGraphic(lib, {
+      sidc: 'GHGPOLAGM------',
+      points: axisControlPoints(path, 800),
+      scale: mapScale(13, 48.5)
+    })
+    expect(features.some((f) => f.geometry.type.endsWith('LineString'))).toBe(true)
   })
 })

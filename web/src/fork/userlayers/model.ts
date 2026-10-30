@@ -10,6 +10,8 @@ export interface FeatureProps {
   sidc?: string
   /** symbol, graphic: descriptive fields, keyed by modifier letter (fields.ts). */
   modifiers?: Record<string, string>
+  /** graphic, arrows only: the path is drawn tail to tip and this is the width (m). */
+  axisWidth?: number
   /** Free notes (not drawn). */
   notes?: string
   /** image: its id (GET /userdata/images/{id}). */
