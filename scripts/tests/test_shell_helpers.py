@@ -147,3 +147,23 @@ def test_tiers_list_every_area_and_source(tmp_path):
         "http://localhost:8090/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
         "http://localhost:8090/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
     ]
+
+
+def test_every_schema_file_is_built_and_fingerprinted():
+    built = bash('echo "${SCHEMA_FILES[@]}"').split()
+    skipped = bash('echo "${SCHEMA_NOT_BUILT[@]}"').split()
+    on_disk = {p.stem for p in (SCRIPTS.parent / "schema").glob("*.sql")}
+    assert on_disk == set(built) | set(skipped), "add new schema/*.sql to SCHEMA_FILES"
+    # build-region.sh runs them in the listed order (functions.sql and eez.sql run
+    # elsewhere: at database creation, and in import_eez).
+    script = (SCRIPTS / "build-region.sh").read_text()
+    positions = [
+        script.index(f"run_sql_file schema/{name}.sql")
+        for name in built
+        if name not in ("functions", "eez")
+    ]
+    assert positions == sorted(positions)
+    # Changing any of them changes the fingerprint.
+    before = bash("schema_hash")
+    assert len(before) == 12
+    assert "local-stats" in built and "grid" in built and "search" in built

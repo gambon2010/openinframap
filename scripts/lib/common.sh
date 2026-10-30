@@ -310,8 +310,20 @@ restore_user_data() {
         --exit-on-error -n userdata < "$USERDATA_DUMP"
 }
 
+# The SQL files that make a built database, in the order they run: functions.sql
+# when the database is created, eez.sql with the country boundaries, the rest in
+# build-region.sh. A test (scripts/tests) checks every schema/*.sql is either here
+# or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in this order.
+SCHEMA_FILES=(functions views stats places sites grid extra search eez local-stats)
+# Not part of a build: database creation (dev-init, prod-init) and production jobs.
+SCHEMA_NOT_BUILT=(dev-init prod-init refresh_matviews)
+
+# A fingerprint of what shapes the database: the imposm mapping and SCHEMA_FILES.
+# Stored in builds and exports; import-db.sh warns when an export's differs.
 schema_hash() {
-    cat "$REPO_ROOT"/imposm/*.py "$REPO_ROOT"/schema/{functions,views,stats,eez,extra,sites}.sql | md5sum | cut -c1-12
+    local files=("$REPO_ROOT"/imposm/*.py) name
+    for name in "${SCHEMA_FILES[@]}"; do files+=("$REPO_ROOT/schema/$name.sql"); done
+    cat "${files[@]}" | md5sum | cut -c1-12
 }
 
 # manifest_get FILE.json KEY — read one field of an export manifest.
