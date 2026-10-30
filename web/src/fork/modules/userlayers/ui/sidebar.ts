@@ -4,10 +4,10 @@
 // each update refreshes the message and the list.
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
-import { UserFeature } from '../model.ts'
-import { Outliner } from '../outliner.ts'
-import { getLabelLevel, setLabelLevel } from '../symbols.ts'
-import { LabelLevel } from '../fields.ts'
+import { UserFeature } from '../model/model.ts'
+import { Outliner } from './outliner.ts'
+import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
+import { LabelLevel } from '../model/fields.ts'
 import type { Workspace } from './workspace.ts'
 
 export class Sidebar {

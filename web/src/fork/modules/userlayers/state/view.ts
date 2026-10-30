@@ -4,8 +4,8 @@
 //   playback    a step of the history, read-only
 // Every "can I change this?" asks canEdit, so view-only access to a shared layer
 // (docs/plans/sync.md) will be one more rule there.
-import { UserLayer } from '../model.ts'
-import { Situation } from '../api.ts'
+import { UserLayer } from '../model/model.ts'
+import { Situation } from './api.ts'
 
 export type ViewMode = 'live' | 'situation' | 'playback'
 

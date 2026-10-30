@@ -14,7 +14,7 @@ import {
   vertices
 } from './render.ts'
 import { dropRepeats, graphicGeometry } from './tools.ts'
-import { UserFeature } from './model.ts'
+import { UserFeature } from '../model/model.ts'
 
 const line: GeoJSON.LineString = {
   type: 'LineString',

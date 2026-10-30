@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Make the symbol catalogue of "My layers" (web/src/fork/userlayers/symbols-2525c.json):
+Make the symbol catalogue of "My layers" (web/src/fork/modules/userlayers/model/symbols-2525c.json):
 the MIL-STD-2525C point symbols ODINv2 offers, with their names, for the symbol
 palette. The symbols themselves are drawn in the browser by @syncpoint/signs (MIT),
 the library ODINv2 uses; ODINv2's own code and catalogue are AGPL, so they aren't
@@ -13,7 +13,7 @@ https://github.com/spatialillusions/mil-std-2525 (Måns Beckman):
 Tactical graphics are included: point ones are drawn by signs like the other
 symbols; lines, areas and arrows (4th field "L", "A" or "M") are drawn by the C5ISR
 renderer (@armyc2.c5isr.renderer/mil-sym-ts-web, Apache-2.0) from the points the user
-clicks (web/src/fork/userlayers/graphics.ts).
+clicks (web/src/fork/modules/userlayers/map/graphics.ts).
 """
 
 import csv
@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT = REPO_ROOT / "web" / "src" / "fork" / "userlayers" / "symbols-2525c.json"
+OUT = REPO_ROOT / "web" / "src" / "fork" / "modules" / "userlayers" / "model" / "symbols-2525c.json"
 
 # Tables in palette order (infrastructure and emergencies first), with group names.
 TABLES = [

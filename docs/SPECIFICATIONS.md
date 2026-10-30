@@ -138,7 +138,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.3 | Saved in the database with a Save button that sends the local changes. | ✅ |
 | 9.4 | Change tracking that can be played back step by step. | ✅ |
 | 9.5 | Symbols from ODIN (syncpoint/ODINv2): military and emergency symbols. | ✅ point symbols via `@syncpoint/signs` (MIT); ODIN's code not used (AGPL) |
-| 9.6 | ODIN's "actions": tactical graphics (axes of advance, attack directions, boundaries, phase lines, task symbols...). Use mil-sym-ts if it covers them, else write our own inspired by ODIN. | ✅ mil-sym-ts (`fork/modules/userlayers/graphics.ts`); 197 point + 212 line/area graphics |
+| 9.6 | ODIN's "actions": tactical graphics (axes of advance, attack directions, boundaries, phase lines, task symbols...). Use mil-sym-ts if it covers them, else write our own inspired by ODIN. | ✅ mil-sym-ts (`fork/modules/userlayers/map/graphics.ts`); 197 point + 212 line/area graphics |
 | 9.7 | Rework the My layers UI (tabs Layers / Add / History, save bar, history as a timeline bar). | ✖ done, then replaced by 9.13–9.14 (sidebar and toolbar) |
 | 9.8 | ODIN's descriptive fields per symbol (designation, higher formation, status, date-time group, comments...), edited in the left panel, drawn on the map. | ✅ `editor.ts`, `fields.ts`, `sidc.ts` |
 | 9.9 | History steps say what changed. | ✅ |

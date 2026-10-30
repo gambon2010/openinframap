@@ -1,8 +1,8 @@
 // Fork: My layers on the server: loading the saved layers and sending the unsaved
 // changes (Save). Today Save sends them all at once; live sync (docs/plans/sync.md)
 // will add versions and changes pushed by the server here, behind the same calls.
-import { Change, UserLayer } from '../model.ts'
-import { loadAll, saveChanges } from '../api.ts'
+import { Change, UserLayer } from '../model/model.ts'
+import { loadAll, saveChanges } from './api.ts'
 
 /** The layers as saved on the server. */
 export async function loadSaved(): Promise<Map<string, UserLayer>> {

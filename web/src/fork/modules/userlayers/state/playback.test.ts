@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { UserFeature } from './model.ts'
-import { changedFields } from './history.ts'
+import { UserFeature } from '../model/model.ts'
+import { changedFields } from './playback.ts'
 
 const unit = (
   sidc: string,

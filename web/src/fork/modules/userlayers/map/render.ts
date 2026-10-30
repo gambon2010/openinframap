@@ -7,9 +7,9 @@
 // (graphics.ts) into a second source per layer (user_<id>_g), redrawn when the
 // zoom changes (arrow heads and teeth depend on the scale).
 import { FilterSpecification, GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl'
-import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
-import { font, text_paint } from '../../../style/common.ts'
-import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
+import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
+import { font, text_paint } from '../../../../style/common.ts'
+import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { ensureImage, getLabelLevel, iconName } from './symbols.ts'
 import {
   axisControlPoints,
@@ -22,7 +22,7 @@ import {
   pathFromAxisPoints,
   renderGraphic
 } from './graphics.ts'
-import { modifiersToDraw } from './fields.ts'
+import { modifiersToDraw } from '../model/fields.ts'
 
 const SELECTION = 'user_selection'
 const DRAFT = 'user_draft'

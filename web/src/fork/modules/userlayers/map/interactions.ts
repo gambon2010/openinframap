@@ -4,15 +4,15 @@
 //   delete);
 // - double-click: rename (opens the card with the name ready to type);
 // - Ctrl+C / Ctrl+V: copy the selected item, paste it where the pointer is.
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
-import { Store } from './state/store.ts'
+import { Store } from '../state/store.ts'
 import { Tools } from './tools.ts'
 import { Renderer, geometryCentre, translateGeometry } from './render.ts'
-import { UserFeature } from './model.ts'
-import { featureLabelParts } from './labels.ts'
-import { IDENTITIES, status, withIdentity, withStatus } from './sidc.ts'
+import { UserFeature } from '../model/model.ts'
+import { featureLabelParts } from '../model/labels.ts'
+import { IDENTITIES, status, withIdentity, withStatus } from '../model/sidc.ts'
 
 export class Interactions {
   private map: Map

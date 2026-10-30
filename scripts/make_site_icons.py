@@ -7,7 +7,7 @@ circle ringed in its category's colour, and a plain disc per category for groups
     python3 scripts/make_site_icons.py package/icons
 
 Kinds and categories are those of schema/sites.sql; the colours must match
-web/src/style/style_sites.ts.
+web/src/fork/modules/sites/style.ts.
 """
 
 import re
@@ -105,7 +105,7 @@ def main() -> None:
 </svg>
 """
         (OUT / f"site_{kind}.svg").write_text(svg)
-    # A group of nearby sites (style_sites.ts writes the count on it): a disc in
+    # A group of nearby sites (modules/sites/style.ts writes the count on it): a disc in
     # the category's colour.
     for category, colour in COLOURS.items():
         svg = f"""<?xml version="1.0" encoding="utf-8"?>

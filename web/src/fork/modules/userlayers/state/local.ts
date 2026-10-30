@@ -1,7 +1,7 @@
 // Fork: what My layers keeps in this browser (localStorage): the unsaved changes
 // (so a reload or crash doesn't lose them), the hidden layers, the author's name.
 // Storage can be blocked (private window): then it lasts until the page closes.
-import { Change } from '../model.ts'
+import { Change } from '../model/model.ts'
 
 const PENDING_KEY = 'oim-userlayers-pending'
 const HIDDEN_KEY = 'oim-userlayers-hidden'

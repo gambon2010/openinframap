@@ -3,7 +3,7 @@
 // the fields that step changed (changes.ts restoring), so the server's log is never
 // rewritten and what others changed since stays. The store owns the list of
 // unsaved changes; these methods take it and give back the new one.
-import { Change, UserLayer, uuid } from '../model.ts'
+import { Change, UserLayer, uuid } from '../model/model.ts'
 import { SavedStep, applyStep, cloneLayers, restoring, steps } from './changes.ts'
 
 // How many saved steps undo can still take back.

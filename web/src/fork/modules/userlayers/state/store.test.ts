@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { Change, UserLayer } from '../model.ts'
+import { Change, UserLayer } from '../model/model.ts'
 import { Store } from './store.ts'
 import { applyChange, revertFields } from './changes.ts'
 

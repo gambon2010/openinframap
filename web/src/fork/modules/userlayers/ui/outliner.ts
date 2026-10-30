@@ -4,15 +4,15 @@
 // the list; layers can be locked; items are dragged onto another layer to move them,
 // layers onto a folder (or onto a layer: into its folder). A new folder is kept in
 // the browser until a layer is put in it (a folder is a name the layers share).
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
-import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
-import { Store } from './state/store.ts'
-import { featureLabelParts } from './labels.ts'
-import { identity, status, symbolKind } from './sidc.ts'
+import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
+import { Store } from '../state/store.ts'
+import { featureLabelParts } from '../model/labels.ts'
+import { identity, status, symbolKind } from '../model/sidc.ts'
 import { GEOMETRY_LABELS, entryOf } from './palette.ts'
-import { symbolRenderer } from './symbols.ts'
-import { imageUrl } from './api.ts'
+import { symbolRenderer } from '../map/symbols.ts'
+import { imageUrl } from '../state/api.ts'
 
 export type Filter = 'hostile' | 'friend' | 'planned' | 'units' | 'graphics' | 'pictures'
 

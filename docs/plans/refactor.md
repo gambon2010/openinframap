@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done; phase 3 steps 9–11 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1, 2 and 3 done.
 
 ## Why
 
@@ -144,7 +144,8 @@ working sessions.
    - `picker.ts`, `toast.ts`.
 
    Shared buttons and chips move to `ui/`. *Effort: 2.*
-12. **Folders inside `userlayers/`**:
+12. **Folders inside `userlayers/`** (done; this also fixed `make_symbol_catalog.py`,
+   which still wrote to the folder from before step 4):
    - `model/`: changes, model, sidc, fields, labels;
    - `state/`: store, history, persistence, transport, view;
    - `map/`: render, graphics, symbols, tools, interactions;

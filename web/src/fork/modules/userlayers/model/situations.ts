@@ -1,7 +1,7 @@
 // Fork: situations of My layers (docs/plans/my-layers-v3.md): named moments, viewed
 // read-only by replaying the history up to the change they were saved after.
 import { SavedChange } from './model.ts'
-import { Situation } from './api.ts'
+import { Situation } from '../state/api.ts'
 
 /** How many history steps a situation includes (its change and every earlier one). */
 export function situationPosition(changes: SavedChange[], situation: Situation): number {

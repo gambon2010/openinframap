@@ -1,7 +1,7 @@
 // Fork: My layers' changes, pure (no browser, no server): applying them to layers,
 // grouping them in steps, and what undoing a saved step takes. Used by the store,
 // the undo history and the history playback.
-import { Change, UserFeature, UserLayer } from '../model.ts'
+import { Change, UserFeature, UserLayer } from '../model/model.ts'
 
 /** Apply a change to a set of layers (also used to replay the history). */
 export function applyChange(layers: Map<string, UserLayer>, change: Change) {

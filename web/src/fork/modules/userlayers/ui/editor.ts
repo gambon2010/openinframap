@@ -7,10 +7,10 @@
 //   (fields.ts); "+ Add detail" for the rest, by question (who, what, when...);
 // - notes, appearance, layer, duplicate / delete.
 // Each change is a change of the feature (undoable, saved with Save, in the history).
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
-import { FeatureProps, UserFeature, UserLayer, DEFAULT_COLOR } from './model.ts'
-import { Field, GROUPS, addableFields, cardFields, displayValue, fromDtg, toDtg } from './fields.ts'
+import { FeatureProps, UserFeature, UserLayer, DEFAULT_COLOR } from '../model/model.ts'
+import { Field, GROUPS, addableFields, cardFields, displayValue, fromDtg, toDtg } from '../model/fields.ts'
 import {
   IDENTITIES,
   MOBILITIES,
@@ -23,10 +23,10 @@ import {
   withMobility,
   withStatus,
   withUnitModifiers
-} from './sidc.ts'
+} from '../model/sidc.ts'
 import { GEOMETRY_LABELS, entryOf, symbolName } from './palette.ts'
-import { symbolSvg } from './symbols.ts'
-import { MAX_SIZE, MIN_SIZE } from './render.ts'
+import { symbolSvg } from '../map/symbols.ts'
+import { MAX_SIZE, MIN_SIZE } from '../map/render.ts'
 
 export interface EditorActions {
   update: (properties: FeatureProps) => void

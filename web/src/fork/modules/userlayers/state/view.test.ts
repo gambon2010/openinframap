@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { View } from './view.ts'
-import { UserLayer } from '../model.ts'
+import { UserLayer } from '../model/model.ts'
 
 const layer = (locked?: boolean): UserLayer => ({
   id: 'a',

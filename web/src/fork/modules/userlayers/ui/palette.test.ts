@@ -11,7 +11,7 @@ import {
   searchCatalogue,
   symbolName
 } from './palette.ts'
-import catalogue from './symbols-2525c.json'
+import catalogue from '../model/symbols-2525c.json'
 
 describe('codes', () => {
   test('identity and status filled in, and taken out again', () => {

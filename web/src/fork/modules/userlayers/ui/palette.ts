@@ -2,11 +2,11 @@
 // tactical graphics (catalogue: scripts/make_symbol_catalog.py). Point symbols are
 // previewed by @syncpoint/signs; lines, areas and arrows are drawn on the map by the
 // C5ISR renderer (graphics.ts), so the picker shows their kind instead.
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
-import catalogue from './symbols-2525c.json'
-import { symbolRenderer } from './symbols.ts'
-import { graphicsLibrary, pointCount } from './graphics.ts'
+import catalogue from '../model/symbols-2525c.json'
+import { symbolRenderer } from '../map/symbols.ts'
+import { graphicsLibrary, pointCount } from '../map/graphics.ts'
 
 /** [code with * for identity and status, name, depth, graphic geometry (L, A, M)] */
 export type Entry = [code: string, name: string, depth: number, geometry?: 'L' | 'A' | 'M']

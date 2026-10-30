@@ -6,10 +6,10 @@
 import { MapMouseEvent } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
-import { Renderer } from './render.ts'
-import { Tools } from './tools.ts'
+import { Renderer } from './map/render.ts'
+import { Tools } from './map/tools.ts'
 import { Workspace } from './ui/workspace.ts'
-import { Interactions } from './interactions.ts'
+import { Interactions } from './map/interactions.ts'
 
 const userlayers: ForkModule = {
   init: ({ map, clickRouter, primaryLayers }) => {

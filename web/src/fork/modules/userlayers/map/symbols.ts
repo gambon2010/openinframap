@@ -6,9 +6,9 @@
 // - userimg:<id>: a picture uploaded to the backend.
 // - user-marker:<colour>: a plain pin.
 import { Map } from 'maplibre-gl'
-import { imageUrl } from './api.ts'
-import { FeatureProps } from './model.ts'
-import { LabelLevel, modifiersToDraw } from './fields.ts'
+import { imageUrl } from '../state/api.ts'
+import { FeatureProps } from '../model/model.ts'
+import { LabelLevel, modifiersToDraw } from '../model/fields.ts'
 
 type Signs = typeof import('@syncpoint/signs')
 let signs: Promise<Signs> | undefined

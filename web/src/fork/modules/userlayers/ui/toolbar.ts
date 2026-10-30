@@ -3,9 +3,9 @@
 // opens under it, and pictures are picked from a file.
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
-import { Palette, Pick, PaletteMode } from '../palette.ts'
-import { graphicsLibrary, isAxis, pointCount } from '../graphics.ts'
-import { uploadImage } from '../api.ts'
+import { Palette, Pick, PaletteMode } from './palette.ts'
+import { graphicsLibrary, isAxis, pointCount } from '../map/graphics.ts'
+import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'

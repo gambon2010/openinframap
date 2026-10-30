@@ -2,14 +2,14 @@
 // the points of a line, area or graphic, to move them), place a symbol / picture /
 // marker, draw a line, an area or a tactical graphic (by its control points), or
 // copy a map feature into the active layer (with its full geometry from the backend).
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
-import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
-import { Store } from './state/store.ts'
+import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
+import { Store } from '../state/store.ts'
 import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
-import { FeatureProps, UserFeature } from './model.ts'
-import { sourceGeometry } from './api.ts'
+import { FeatureProps, UserFeature } from '../model/model.ts'
+import { sourceGeometry } from '../state/api.ts'
 
 export type Tool =
   | { mode: 'select' }

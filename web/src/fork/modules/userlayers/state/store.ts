@@ -3,7 +3,15 @@
 // (transport.ts). The backend logs each one, which is the history that can be
 // played back (history.ts). Undo and redo: undo.ts; the changes themselves:
 // changes.ts.
-import { Change, ChangeOp, FeatureProps, UserFeature, UserLayer, uuid, DEFAULT_COLOR } from '../model.ts'
+import {
+  Change,
+  ChangeOp,
+  FeatureProps,
+  UserFeature,
+  UserLayer,
+  uuid,
+  DEFAULT_COLOR
+} from '../model/model.ts'
 import { applyChange, cloneLayers, differences } from './changes.ts'
 import { local } from './local.ts'
 import { loadSaved, send } from './transport.ts'

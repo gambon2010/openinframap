@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { UserFeature, UserLayer } from './model.ts'
+import { UserFeature, UserLayer } from '../model/model.ts'
 import { byFolder, matches } from './outliner.ts'
-import { featureLabelParts } from './labels.ts'
+import { featureLabelParts } from '../model/labels.ts'
 
 const symbol = (sidc: string, modifiers: Record<string, string> = {}, notes?: string): UserFeature => ({
   type: 'Feature',

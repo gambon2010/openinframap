@@ -1,7 +1,7 @@
 // Fork: an item of My layers in a few words, for lists (outliner) and messages.
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { UserFeature } from './model.ts'
-import { symbolName } from './palette.ts'
+import { symbolName } from '../ui/palette.ts'
 import { IDENTITIES, status } from './sidc.ts'
 import { fromDtg, relativeTime } from './fields.ts'
 

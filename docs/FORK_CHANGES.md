@@ -620,7 +620,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   Beckman), with `ramda` (MIT), `svg-path-bbox` (BSD-3-Clause) and `svgpath` (MIT).
   The names and codes come from the MIT tables of
   [mil-std-2525](https://github.com/spatialillusions/mil-std-2525) (Måns Beckman),
-  turned into `web/src/fork/modules/userlayers/symbols-2525c.json` by
+  turned into `web/src/fork/modules/userlayers/model/symbols-2525c.json` by
   `scripts/make_symbol_catalog.py`. ODIN's Austrian SKKM signs (41) aren't there:
   their list is ODIN's (AGPL). The library is 3 MB, loaded only when the palette
   opens or a layer has symbols (and precached for offline use).
@@ -630,7 +630,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   obstacle lines... 212 drawable) are drawn by the US Army C5ISR renderer
   `@armyc2.c5isr.renderer/mil-sym-ts-web` (Apache-2.0, 7.4 MB / 1.4 MB gzipped,
   loaded on first use, precached) from the points the user clicks
-  (`fork/modules/userlayers/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
+  (`fork/modules/userlayers/map/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
   converted with its own `C2DLookup`; it says how many points each graphic takes
   (fixed-count ones finish by themselves). Its GeoJSON (lines, polygons, label
   points) goes into a second source per layer (`user_<id>_g`), redrawn when the zoom
@@ -649,7 +649,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   The arrow redraws live while dragged. Arrows drawn the old way are converted when
   drawn (`pathFromAxisPoints`, keeping their width), one unsaved change each.
 - **Details of an item** (version 2): selecting one opens its details in the left
-  side panel, like a map feature's (`fork/modules/userlayers/editor.ts`), with the fields
+  side panel, like a map feature's (`fork/modules/userlayers/ui/editor.ts`), with the fields
   ODIN has, from the standard (`fields.ts`): identity, status and operational
   condition, echelon, headquarters / task force / feint, mobility (all in the code
   itself: `sidc.ts`); designation, higher formation, type, quantity, additional
@@ -722,7 +722,12 @@ was hard to read. Version 3, built in steps:
   (`restoring`, `revertFields`: the position, a name, a modifier...), on top of the
   item as it is now, so what others changed since stays and the server's log is
   never rewritten. Redo drops those changes again; Discard puts the steps back.
-  The state is in `userlayers/state/` (refactor step 9): `store.ts` (the `Store`
+  Folders (refactor step 12): `model/` (what items are: `model.ts`, `sidc.ts`,
+  `fields.ts`, `labels.ts`, the symbol catalogue), `state/`, `map/` (drawing and
+  working on the map: `render.ts`, `graphics.ts`, `symbols.ts`, `tools.ts`,
+  `interactions.ts`), `ui/` (the workspace's components, `editor.ts`, `outliner.ts`,
+  `palette.ts`). The state is in `userlayers/state/` (refactor step 9; the history
+  playback is `state/playback.ts`): `store.ts` (the `Store`
   the UI uses), `changes.ts` (pure: applying changes, steps, `revertFields`,
   `restoring`, `differences`), `undo.ts` (`UndoHistory`), `local.ts` (what's kept in
   the browser), `transport.ts` (load and Save; where live sync will plug in),

@@ -1,14 +1,14 @@
 // Fork: playing back the history of "My layers": every saved change, in order,
 // from the backend's log (userdata.change). Step k shows the layers as they were
 // after the first k changes.
-import { t } from '../../core/i18n.ts'
+import { t } from '../../../core/i18n.ts'
 import { Map, LngLatBounds } from 'maplibre-gl'
-import { Change, SavedChange, UserFeature, UserLayer } from './model.ts'
-import { applyChange } from './state/changes.ts'
+import { Change, SavedChange, UserFeature, UserLayer } from '../model/model.ts'
+import { applyChange } from './changes.ts'
 import { loadHistory } from './api.ts'
-import { symbolName } from './palette.ts'
-import { FIELDS } from './fields.ts'
-import { ECHELONS, IDENTITIES, STATUSES } from './sidc.ts'
+import { symbolName } from '../ui/palette.ts'
+import { FIELDS } from '../model/fields.ts'
+import { ECHELONS, IDENTITIES, STATUSES } from '../model/sidc.ts'
 
 function asChange(saved: SavedChange): Change {
   const after = saved.after
