@@ -23,6 +23,7 @@ import {
 } from './sidc.ts'
 import { GEOMETRY_LABELS, entryOf, symbolName } from './palette.ts'
 import { symbolSvg } from './symbols.ts'
+import { MAX_SIZE, MIN_SIZE } from './render.ts'
 
 export interface EditorActions {
   update: (properties: FeatureProps) => void
@@ -226,16 +227,30 @@ export async function buildEditor(
   // Appearance
   const look: HTMLElement[] = []
   if (p.kind === 'symbol' || p.kind === 'image' || p.kind === 'marker') {
+    const value = p.size ?? 1
     const size = el('input', {
       type: 'range',
-      min: '0.4',
-      max: '3',
-      step: '0.1',
-      value: String(p.size ?? 1),
+      min: String(MIN_SIZE),
+      max: String(MAX_SIZE),
+      step: '0.05',
+      value: String(value),
       'data-field': 'size'
     }) as HTMLInputElement
+    const shown = el('small', `${Math.round(value * 100)} %`)
+    size.oninput = () => (shown.textContent = `${Math.round(Number(size.value) * 100)} %`)
     size.onchange = () => update({ size: Number(size.value) })
-    look.push(row(tt('userlayers.size', 'Size'), size))
+    const reset = el('button.oim-ul-button', '100 %', {
+      type: 'button',
+      title: tt('userlayers.size-reset', 'Normal size')
+    })
+    reset.onclick = () => update({ size: 1 })
+    look.push(
+      row(
+        tt('userlayers.size', 'Size'),
+        el('span.oim-ul-unit', size, shown, reset),
+        tt('userlayers.size-hint', 'Or drag the round handle at its corner on the map.')
+      )
+    )
   }
   if (p.kind === 'drawing' || p.kind === 'marker' || p.kind === 'graphic') {
     const color = el('input', {
@@ -258,7 +273,9 @@ export async function buildEditor(
     width.onchange = () => update({ width: Number(width.value) })
     look.push(row(tt('userlayers.width', 'Line width'), width))
   }
-  if (look.length) sections.push(section(tt('userlayers.s.appearance', 'Appearance'), false, ...look))
+  // Open for pictures: their size is what one changes most.
+  if (look.length)
+    sections.push(section(tt('userlayers.s.appearance', 'Appearance'), p.kind === 'image', ...look))
 
   // Layer, notes, position
   const layerSelect = select(

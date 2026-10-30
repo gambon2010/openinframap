@@ -6,7 +6,7 @@ import { tt } from './i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { Store } from './store.ts'
-import { Renderer, controlPoints, moveVertex } from './render.ts'
+import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { FeatureProps, UserFeature } from './model.ts'
 import { sourceGeometry } from './api.ts'
 
@@ -45,8 +45,15 @@ export class Tools {
   private renderer: Renderer
   private primaryLayers: () => LayerSpecificationWithZIndex[]
   private listeners: (() => void)[] = []
-  // index: the point of a line, area or graphic being moved (none: a whole symbol).
-  private dragging: { feature: UserFeature; layerId: string; index?: number } | null = null
+  // index: the point of a line, area or graphic being moved (none: a whole symbol);
+  // resize: the image is being resized (its centre on screen, and the handle's
+  // distance from it at size 1).
+  private dragging: {
+    feature: UserFeature
+    layerId: string
+    index?: number
+    resize?: { x: number; y: number; distanceAtSize1: number }
+  } | null = null
   // The last click My layers took (decided before it changes the tool).
   private captured: Event | null = null
 
@@ -249,6 +256,21 @@ export class Tools {
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
     if (!layer || !feature || feature.properties.kind === 'copy') return
+    // The resize handle of a picture, symbol or marker.
+    if (this.handleAt(e.point, 'user_selection_resize')) {
+      const half = this.renderer.iconHalfSize(feature)
+      if (half) {
+        e.preventDefault()
+        this.map.dragPan.disable()
+        const centre = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
+        this.dragging = {
+          feature: structuredClone(feature),
+          layerId: layer.id,
+          resize: { x: centre.x, y: centre.y, distanceAtSize1: Math.hypot(half[0], half[1]) }
+        }
+        return
+      }
+    }
     // A point handle of the selected line, area or graphic.
     const handle = this.map.getLayer('user_selection_vertex')
       ? this.map.queryRenderedFeatures(
@@ -277,12 +299,33 @@ export class Tools {
     this.dragging = { feature: structuredClone(feature), layerId: layer.id }
   }
 
+  /** A selection handle (resize or point) under the pointer, if any. */
+  private handleAt(point: { x: number; y: number }, layer: string) {
+    if (!this.map.getLayer(layer)) return undefined
+    return this.map.queryRenderedFeatures(
+      [
+        [point.x - 7, point.y - 7],
+        [point.x + 7, point.y + 7]
+      ],
+      { layers: [layer] }
+    )[0]
+  }
+
   private mousemove(e: MapMouseEvent) {
     if (this.tool.mode !== 'select') this.map.getCanvas().style.cursor = 'crosshair'
+    else if (!this.dragging && this.selected)
+      this.map.getCanvas().style.cursor = this.handleAt(e.point, 'user_selection_resize') ? 'nwse-resize' : ''
     if (!this.dragging) return
     const to: [number, number] = [e.lngLat.lng, e.lngLat.lat]
-    const { feature, index } = this.dragging
-    if (index === undefined) {
+    const { feature, index, resize, layerId } = this.dragging
+    if (resize) {
+      const size = sizeFromDrag(
+        Math.hypot(e.point.x - resize.x, e.point.y - resize.y),
+        resize.distanceAtSize1
+      )
+      feature.properties = { ...feature.properties, size }
+      this.renderer.preview(layerId, feature)
+    } else if (index === undefined) {
       feature.geometry = { type: 'Point', coordinates: to }
     } else if (feature.properties.kind === 'graphic') {
       const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))

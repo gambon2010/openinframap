@@ -60,12 +60,34 @@ export function controlPoints(geometry: GeoJSON.Geometry): [number, number][] {
   return []
 }
 
+// Sizes a picture, symbol or marker can have (1 = its normal size).
+export const MIN_SIZE = 0.2
+export const MAX_SIZE = 8
+
+/** Kinds drawn as an image that the resize handle (and the Size slider) apply to. */
+export function resizable(feature: UserFeature | null): boolean {
+  const kind = feature?.properties.kind
+  return feature?.geometry.type === 'Point' && (kind === 'image' || kind === 'symbol' || kind === 'marker')
+}
+
+/**
+ * The size when the resize handle is dragged: how far the pointer is from the
+ * centre, against where the handle sits at size 1. Clamped, in steps of 0.05.
+ */
+export function sizeFromDrag(distance: number, distanceAtSize1: number): number {
+  if (!(distanceAtSize1 > 0)) return 1
+  const size = Math.round((distance / distanceAtSize1) * 20) / 20
+  return Math.min(MAX_SIZE, Math.max(MIN_SIZE, size))
+}
+
 export class Renderer {
   private map: MapLibreMap
   private primaryLayers: () => LayerSpecificationWithZIndex[]
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
 
   private graphicsZoom = -1
+  // The selected feature, to keep the resize handle at its corner when the map moves.
+  private selected: UserFeature | null = null
 
   constructor(map: MapLibreMap, primaryLayers: () => LayerSpecificationWithZIndex[]) {
     this.map = map
@@ -73,6 +95,9 @@ export class Renderer {
     // Arrow heads, teeth and labels are sized for a scale: redraw on zoom.
     map.on('zoomend', () => {
       if (this.last && Math.abs(map.getZoom() - this.graphicsZoom) >= 0.5) void this.renderGraphics()
+    })
+    map.on('move', () => {
+      if (resizable(this.selected)) this.select(this.selected)
     })
     // A new style (e.g. another background map) drops everything added here.
     map.on('style.load', () => {
@@ -299,6 +324,8 @@ export class Renderer {
       }
     }
     this.ensureOverlays()
+    // The selection's resize handle needs the image, which may only be loaded now.
+    if (resizable(this.selected)) this.select(this.selected)
     await this.renderGraphics()
   }
 
@@ -336,10 +363,28 @@ export class Renderer {
         }
       },
       {
+        // Drag it to resize a picture, symbol or marker.
+        id: `${SELECTION}_resize`,
+        type: 'circle',
+        source: SELECTION,
+        filter: ['==', ['get', 'resize'], true],
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#fff',
+          'circle-stroke-color': '#1565c0',
+          'circle-stroke-width': 3
+        }
+      },
+      {
         id: `${SELECTION}_point`,
         type: 'circle',
         source: SELECTION,
-        filter: ['all', POINT, ['!=', ['get', 'vertex'], true]] as FilterSpecification,
+        filter: [
+          'all',
+          POINT,
+          ['!=', ['get', 'vertex'], true],
+          ['!=', ['get', 'resize'], true]
+        ] as FilterSpecification,
         paint: {
           'circle-radius': 22,
           'circle-color': 'rgba(255, 214, 0, 0.15)',
@@ -369,12 +414,52 @@ export class Renderer {
     for (const spec of overlays) if (!map.getLayer(spec.id)) map.addLayer(spec)
   }
 
-  /** Highlight a feature (null: none). */
+  /** Highlight a feature (null: none); pictures, symbols and markers get a resize handle. */
   select(feature: UserFeature | null) {
+    this.selected = feature
     this.ensureOverlays()
-    ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({
+    const features = feature ? selectionFeatures(feature) : []
+    const handle = feature ? this.resizeHandle(feature) : null
+    if (handle) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: handle },
+        properties: { resize: true }
+      })
+    }
+    ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
+  }
+
+  /** Half the width and height on screen (px) of a point feature's image at size 1. */
+  iconHalfSize(feature: UserFeature): [number, number] | null {
+    const layer = [...(this.last?.layers.values() ?? [])].find((l) => l.features.has(feature.id))
+    const name = iconName(feature.properties, layer?.style.color ?? DEFAULT_COLOR)
+    const image = name ? this.map.getImage(name) : null
+    if (!image) return null
+    const ratio = image.pixelRatio || 1
+    return [image.data.width / ratio / 2, image.data.height / ratio / 2]
+  }
+
+  /** Where the resize handle goes: the bottom-right corner of the image. */
+  private resizeHandle(feature: UserFeature): [number, number] | null {
+    if (!resizable(feature)) return null
+    const half = this.iconHalfSize(feature)
+    if (!half) return null
+    const size = feature.properties.size ?? 1
+    const centre = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
+    const corner = this.map.unproject([centre.x + half[0] * size, centre.y + half[1] * size])
+    return [corner.lng, corner.lat]
+  }
+
+  /** Draw a feature as it's being changed (e.g. resized), before it's saved. */
+  preview(layerId: string, feature: UserFeature) {
+    const layer = this.last?.layers.get(layerId)
+    const source = this.map.getSource(sourceId(layerId)) as GeoJSONSource | undefined
+    if (!layer || !source) return
+    const color = layer.style.color ?? DEFAULT_COLOR
+    source.setData({
       type: 'FeatureCollection',
-      features: feature ? selectionFeatures(feature) : []
+      features: [...layer.features.values()].map((f) => drawn(f.id === feature.id ? feature : f, color))
     })
   }
 

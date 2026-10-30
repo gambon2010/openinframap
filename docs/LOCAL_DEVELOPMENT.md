@@ -449,7 +449,8 @@ in each), **Add** and **History**. On the Add tab:
 Click one of your items to open its **details** on the left: identity, status,
 echelon, designation, higher formation, date-time group, comments and the other
 fields of the standard, as in ODIN (only the ones that apply to that symbol), plus
-colour, size, layer and notes. Drag a symbol to move it, or the points of a line,
+colour, size, layer and notes. To resize a picture, symbol or marker, drag the
+round handle at its corner (or use Size in its details, 20 % to 800 %). Drag a symbol to move it, or the points of a line,
 area or graphic to change its shape. **Labels on the map** (Layers tab) shows none,
 the designation only, or every field.
 

@@ -1,7 +1,16 @@
 // The geometry helpers of My layers: control points of graphics, moving the points
 // of lines and areas, and the selection's handles.
 import { describe, expect, test } from 'vitest'
-import { controlPoints, moveVertex, selectionFeatures, vertices } from './render.ts'
+import {
+  MAX_SIZE,
+  MIN_SIZE,
+  controlPoints,
+  moveVertex,
+  resizable,
+  selectionFeatures,
+  sizeFromDrag,
+  vertices
+} from './render.ts'
 import { dropRepeats, graphicGeometry } from './tools.ts'
 import { UserFeature } from './model.ts'
 
@@ -108,5 +117,32 @@ describe('selection', () => {
     const out = selectionFeatures(feature(line, 'graphic'))
     expect(out[0].geometry).toEqual(line)
     expect(out).toHaveLength(4)
+  })
+})
+
+describe('resizing pictures, symbols and markers', () => {
+  const point = (kind: UserFeature['properties']['kind']): UserFeature => ({
+    type: 'Feature',
+    id: 'f',
+    geometry: { type: 'Point', coordinates: [0, 0] },
+    properties: { kind }
+  })
+
+  test('which items get a resize handle', () => {
+    expect(resizable(point('image'))).toBe(true)
+    expect(resizable(point('symbol'))).toBe(true)
+    expect(resizable(point('marker'))).toBe(true)
+    expect(resizable(point('copy'))).toBe(false)
+    expect(resizable({ ...point('drawing'), geometry: line })).toBe(false)
+    expect(resizable(null)).toBe(false)
+  })
+
+  test('the size follows the distance from the centre', () => {
+    expect(sizeFromDrag(45, 45)).toBe(1)
+    expect(sizeFromDrag(90, 45)).toBe(2)
+    expect(sizeFromDrag(136, 45)).toBe(3) // rounded to steps of 0.05
+    expect(sizeFromDrag(1, 45)).toBe(MIN_SIZE)
+    expect(sizeFromDrag(10_000, 45)).toBe(MAX_SIZE)
+    expect(sizeFromDrag(50, 0)).toBe(1) // no image size known
   })
 })
