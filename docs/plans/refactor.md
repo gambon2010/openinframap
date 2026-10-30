@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done; phase 5 steps 14–16 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 to 5 done.
 
 ## Why
 
@@ -189,7 +189,9 @@ working sessions.
 
     Still standard library only; check how `python3 -I` runs a package directory,
     else keep a thin `satellite.py` entry. *Effort: 1.*
-17. **`extra_data.py` → package `scripts/extra_data/`**: the shared loader plus one
+17. **`extra_data.py` → package** (done: `scripts/extradata/`, with `extra_data.py`
+    the thin command line, as for satellite.py; the code is unchanged except
+    `REPO_ROOT`, one folder deeper): the shared loader plus one
     file per source, with a short "adding a source" docstring. *Effort: 1.
     Prepares the critical-infrastructure sources.*
 

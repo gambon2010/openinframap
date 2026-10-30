@@ -473,6 +473,12 @@ Strasbourg Électricité Réseaux, Vialis and the other operators. OSM doesn't h
 because underground cables can't be verified on the ground, and imports go against
 the French community's preference for mapping by hand (the licence isn't the reason).
 
+The code (refactor step 17): `scripts/extra_data.py` is the command line;
+`scripts/extradata/` has `base.py` (what every source shares and the `Source`
+class), `france.py` (`FrenchSource`), one file per source (`agence_ore.py`,
+`georisques_icpe.py`), `cli.py`, and `SOURCES` in `__init__.py`. Adding a source is
+a new file and a line in `SOURCES`.
+
 - **Stored apart, drawn alike.** The data goes into its own schema, `extra`
   (`schema/extra.sql`), and is served as its own Tegola map (`/maps/extra`: lines from
   zoom 10, BT lines and substations from zoom 13), switched on in the layer switcher
