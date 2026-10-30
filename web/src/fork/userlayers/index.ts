@@ -9,6 +9,7 @@ import { Store } from './store.ts'
 import { Renderer } from './render.ts'
 import { Tools } from './tools.ts'
 import { Panel } from './panel.ts'
+import { Interactions } from './interactions.ts'
 
 const userlayers: ForkModule = {
   init: ({ map, clickRouter, primaryLayers }) => {
@@ -25,6 +26,7 @@ const userlayers: ForkModule = {
     const tools = new Tools(map, store, renderer, primaryLayers)
     const panel = new Panel(map, store, tools, renderer)
     map.addControl(panel, 'top-right')
+    new Interactions(map, store, tools, renderer, () => panel.isOpen)
 
     // Clicks My layers handles (its features, or a tool in use) don't open
     // upstream's info popups. The click router calls handleClick for every click

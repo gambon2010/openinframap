@@ -599,3 +599,31 @@ export function moveVertex(
   }
   return geometry
 }
+
+/** Every position of a geometry moved by the same amount (degrees). */
+export function translateGeometry(geometry: GeoJSON.Geometry, dLng: number, dLat: number): GeoJSON.Geometry {
+  const move = (c: unknown): unknown =>
+    Array.isArray(c) && typeof c[0] === 'number'
+      ? [(c[0] as number) + dLng, (c[1] as number) + dLat, ...c.slice(2)]
+      : (c as unknown[]).map(move)
+  if (geometry.type === 'GeometryCollection') {
+    return { ...geometry, geometries: geometry.geometries.map((g) => translateGeometry(g, dLng, dLat)) }
+  }
+  return { ...geometry, coordinates: move(geometry.coordinates) } as GeoJSON.Geometry
+}
+
+/** The middle of a geometry's bounding box. */
+export function geometryCentre(geometry: GeoJSON.Geometry): [number, number] {
+  const xs: number[] = []
+  const ys: number[] = []
+  const add = (c: unknown): void => {
+    if (Array.isArray(c) && typeof c[0] === 'number') {
+      xs.push(c[0] as number)
+      ys.push(c[1] as number)
+    } else if (Array.isArray(c)) c.forEach(add)
+  }
+  if (geometry.type === 'GeometryCollection') geometry.geometries.forEach((g) => add(geometryCentre(g)))
+  else add(geometry.coordinates)
+  if (!xs.length) return [0, 0]
+  return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]
+}

@@ -477,8 +477,11 @@ the next time the map is opened, keeping their width (an unsaved change each: Sa
   question: who, what, when, where, how sure;
 - notes, appearance (size, colour), and at the bottom its layer, Duplicate, Delete.
 
-Drag a symbol to move it; drag the round handle at a picture's, symbol's or
-marker's corner to resize it.
+On the map: hover an item to see what it is; **right-click** it for a quick menu
+(identity, planned / present, rename, duplicate, move to another layer, delete);
+**double-click** it to rename it; **Ctrl+C / Ctrl+V** copy it and paste it where
+the pointer is. Drag a symbol to move it; drag the round handle at a picture's,
+symbol's or marker's corner to resize it.
 
 Changes are kept in your browser until you press **Save**, which stores them in the
 database. **🕘** opens a timeline at the bottom of the map that steps through every

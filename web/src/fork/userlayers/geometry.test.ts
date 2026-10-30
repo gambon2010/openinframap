@@ -5,10 +5,12 @@ import {
   MAX_SIZE,
   MIN_SIZE,
   controlPoints,
+  geometryCentre,
   moveVertex,
   resizable,
   selectionFeatures,
   sizeFromDrag,
+  translateGeometry,
   vertices
 } from './render.ts'
 import { dropRepeats, graphicGeometry } from './tools.ts'
@@ -144,5 +146,29 @@ describe('resizing pictures, symbols and markers', () => {
     expect(sizeFromDrag(1, 45)).toBe(MIN_SIZE)
     expect(sizeFromDrag(10_000, 45)).toBe(MAX_SIZE)
     expect(sizeFromDrag(50, 0)).toBe(1) // no image size known
+  })
+})
+
+describe('copy and paste', () => {
+  test('a geometry moved by an amount', () => {
+    expect(translateGeometry({ type: 'Point', coordinates: [1, 2] }, 0.5, -1)).toEqual({
+      type: 'Point',
+      coordinates: [1.5, 1]
+    })
+    const moved = translateGeometry(square, 10, 20) as GeoJSON.Polygon
+    expect(moved.coordinates[0][2]).toEqual([11, 21])
+    expect(square.coordinates[0][2]).toEqual([1, 1]) // the original is left alone
+  })
+
+  test('the centre of a geometry', () => {
+    expect(geometryCentre(square)).toEqual([0.5, 0.5])
+    expect(geometryCentre(line)).toEqual([1, 0.5])
+    expect(geometryCentre({ type: 'Point', coordinates: [3, 4] })).toEqual([3, 4])
+  })
+
+  test('pasting at a point: the centre lands there', () => {
+    const [cx, cy] = geometryCentre(line)
+    const pasted = translateGeometry(line, 5 - cx, 5 - cy)
+    expect(geometryCentre(pasted)).toEqual([5, 5])
   })
 })

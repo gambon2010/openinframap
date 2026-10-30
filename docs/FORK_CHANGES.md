@@ -732,8 +732,14 @@ was hard to read. Version 3, built in steps:
   Shapes, Obstacles, Fire support, Logistics (a test checks every entry is in at
   least one). Any symbol can be starred: Favourites come first when the picker
   opens, then Recently used.
-- **Still to do:** multi-select and bulk edits, map interactions (hover,
-  right-click, rename on the map, copy / paste), situations.
+- **Step 5, on the map** (`interactions.ts`): hovering an item shows its name, type
+  and status; right-click opens a menu (identity, present / planned, rename,
+  duplicate, copy, move to layer, delete; greyed out in a locked layer);
+  double-click puts the cursor in its name on the card (no zoom); Ctrl+C copies
+  the selected item and Ctrl+V pastes it where the pointer is, into the "Into"
+  layer.
+- **Still to do:** selecting several items at once and changing them together,
+  situations.
 
 ## Grid connections between two stations (prototype)
 

@@ -12,7 +12,7 @@ import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { Store } from './store.ts'
 import { Tools } from './tools.ts'
-import { Renderer } from './render.ts'
+import { Renderer, geometryCentre, translateGeometry } from './render.ts'
 import { Palette, Pick, PaletteMode } from './palette.ts'
 import { Playback } from './history.ts'
 import { uploadImage } from './api.ts'
@@ -94,7 +94,7 @@ export class Panel implements IControl {
   private inPlayback = false
   private follow = true
   private busy = ''
-  private isOpen = false
+  isOpen = false
   // The editor in the side panel: which feature (and version) it shows.
   private editorKey: string | null = null
 
@@ -658,17 +658,10 @@ export class Panel implements IControl {
   /** A copy of an item, a little to the side, selected. */
   private duplicate(layerId: string, feature: UserFeature) {
     // 24 px to the right and down, whatever the zoom.
-    const shift = (c: [number, number]): [number, number] => {
-      const p = this.map.project(c)
-      const moved = this.map.unproject([p.x + 24, p.y + 24])
-      return [moved.lng, moved.lat]
-    }
-    const move = (c: unknown): unknown =>
-      Array.isArray(c) && typeof c[0] === 'number' ? shift(c as [number, number]) : (c as unknown[]).map(move)
-    const geometry = {
-      ...feature.geometry,
-      coordinates: move((feature.geometry as GeoJSON.Point).coordinates)
-    } as GeoJSON.Geometry
+    const centre = geometryCentre(feature.geometry)
+    const p = this.map.project(centre)
+    const moved = this.map.unproject([p.x + 24, p.y + 24])
+    const geometry = translateGeometry(feature.geometry, moved.lng - centre[0], moved.lat - centre[1])
     const id = this.store.addFeature(layerId, geometry, structuredClone(feature.properties))
     this.tools.select(id)
   }

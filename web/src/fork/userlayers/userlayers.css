@@ -1009,3 +1009,74 @@
 .oim-ul-star.on {
   color: #f9a825;
 }
+
+/* --- Version 3: on the map (interactions.ts) --- */
+.oim-ul-tooltip,
+.oim-ul-context {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+}
+.oim-ul-tooltip {
+  flex-direction: column;
+  max-width: 240px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+.oim-ul-tooltip.visible,
+.oim-ul-context.visible {
+  display: flex;
+}
+.oim-ul-tooltip small {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-context {
+  flex-direction: column;
+  min-width: 190px;
+  padding: 4px;
+  font-size: 0.88rem;
+}
+.oim-ul-context h4 {
+  margin: 2px 6px 4px;
+  overflow: hidden;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.oim-ul-context button,
+.oim-ul-context summary {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-context button:hover:not(:disabled),
+.oim-ul-context summary:hover {
+  background: var(--oim-light-grey);
+}
+.oim-ul-context button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.oim-ul-context details button {
+  display: block;
+  width: 100%;
+  padding-left: 20px;
+}
+.oim-ul-context-row {
+  display: flex;
+  gap: 2px;
+}
+.oim-ul-context-row button {
+  flex: 1;
+  padding: 3px 2px;
+  font-size: 0.75rem;
+  text-align: center;
+}
