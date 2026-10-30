@@ -58,7 +58,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 3.3 | Fully offline needs a local background map: build-script option to download one (full or reduced detail) for the region. | ✅ Protomaps extract, `basemap` service |
 | 3.4 | Night lights layer: disabled (online only, broke the map). | ✅ hidden |
 | 3.5 | Future: one command that sets up local tile server + local geocoder; priority local from config, fall back to online defaults, UI override showing the URL in use. | ✅ partly (local basemap, Photon optional); single command for Photon not done |
-| 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/satellite.py`, `fork/satellite/`; Settings → Background |
+| 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/satellite.py`, `fork/modules/satellite/`; Settings → Background |
 | 3.7 | Download satellite imagery for the region already built without losing the data (no rebuild). | ✅ `scripts/satellite.sh` |
 | 3.8 | Blue Marble for the whole world by default; a menu that explains each choice. | ✅ one shared `world.sat-overview.pmtiles` (~330 MB) |
 | 3.9 | Sentinel-2 for other countries or the whole world; high-resolution photos for more countries than France. | ✅ `satellite.py choose`, `DETAILED_SOURCES` (14 sources, 10 countries); the world end to end not run (too big to test) |
@@ -78,24 +78,24 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 
 | # | Requirement | Status |
 |---|---|---|
-| 5.1 | In the key, untick any line, icon or other row to hide it from the map. | ✅ `fork/key/` |
+| 5.1 | In the key, untick any line, icon or other row to hide it from the map. | ✅ `fork/ui/key/` |
 | 5.2 | Key checkboxes aligned. | ✅ |
 | 5.3 | Underground filter works. | ✅ |
 | 5.4 | Low-voltage lines easier to click without drawing them bigger. | ✅ |
 | 5.5 | Layer list scrolls when taller than the map. | ✅ |
 | 5.6 | Layers and Key open on click (not hover), placed correctly (not over the buttons); one look for all panels. | ✅ `fork/ui/dock.ts`, `panel.css` |
 | 5.7 | Map sources moved to a Settings page opened next to about / stats / export. | ✅ `fork/ui/settings.ts` |
-| 5.8 | Feature details in a panel on the left (not a bubble over the map), above the Grid connection panel; each with minimise (keeps the highlight) and close (removes it). | ✅ `fork/grid/` |
+| 5.8 | Feature details in a panel on the left (not a bubble over the map), above the Grid connection panel; each with minimise (keeps the highlight) and close (removes it). | ✅ `fork/modules/grid/` |
 | 5.9 | Highlight what's clicked: icons, areas (the area if big enough on screen, else the icon), lines. | ✅ |
 | 5.10 | Clicking the same feature again deselects it. | ✅ |
 | 5.11 | Photos never make the details panel scroll (shrink them); vertical scroll only for long details. | ✅ |
-| 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/ui/search-bar.ts` (narrow screens: stays on the left) |
+| 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/modules/layout/search-bar.ts` (narrow screens: stays on the left) |
 
 ## 6. Grid connections (power routing)
 
 | # | Requirement | Status |
 |---|---|---|
-| 6.1 | Show which power lines connect two places (e.g. a plant in France and a substation in Germany), with multiple paths. | ✅ prototype, `fork/grid/`, `web-backend/src/fork/grid.py` |
+| 6.1 | Show which power lines connect two places (e.g. a plant in France and a substation in Germany), with multiple paths. | ✅ prototype, `fork/modules/grid/`, `web-backend/src/fork/grid.py` |
 | 6.2 | Only lines of 110 kV and more for routes. | ✅ |
 | 6.3 | Stations only on lower voltages (wind parks, biogas on a 65 kV line) connect over those lines to the 110 kV+ grid; a station that isn't connected because data is missing (e.g. Germany outside the region) is fine. | ✅ |
 | 6.4 | A route is drawn as one line (no different line styles at substations); lines through a station's outline are drawn. | ✅ |
@@ -122,7 +122,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 
 | # | Requirement | Status |
 |---|---|---|
-| 8.1 | Layers for infrastructure people tend to miss: airports, ports, military bases, data centres, food depots, health and emergency, government (mairie, trésorerie, CAF...), places of worship with an icon per religion, fuel and weapons, transport hubs, dams, landfills, weather stations... | ✅ `imposm/sites.py`, `schema/sites.sql`, `fork/sites/` |
+| 8.1 | Layers for infrastructure people tend to miss: airports, ports, military bases, data centres, food depots, health and emergency, government (mairie, trésorerie, CAF...), places of worship with an icon per religion, fuel and weapons, transport hubs, dams, landfills, weather stations... | ✅ `imposm/sites.py`, `schema/sites.sql`, `fork/modules/sites/` |
 | 8.2 | Disused military (bunkers, trenches) as its own category. | ✅ |
 | 8.3 | Pharmacies yes (not visible from far out); defibrillators and post offices no. | ✅ |
 | 8.4 | Supermarkets and wholesale (cash & carry) shown. | ✅ |
@@ -138,7 +138,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.3 | Saved in the database with a Save button that sends the local changes. | ✅ |
 | 9.4 | Change tracking that can be played back step by step. | ✅ |
 | 9.5 | Symbols from ODIN (syncpoint/ODINv2): military and emergency symbols. | ✅ point symbols via `@syncpoint/signs` (MIT); ODIN's code not used (AGPL) |
-| 9.6 | ODIN's "actions": tactical graphics (axes of advance, attack directions, boundaries, phase lines, task symbols...). Use mil-sym-ts if it covers them, else write our own inspired by ODIN. | ✅ mil-sym-ts (`fork/userlayers/graphics.ts`); 197 point + 212 line/area graphics |
+| 9.6 | ODIN's "actions": tactical graphics (axes of advance, attack directions, boundaries, phase lines, task symbols...). Use mil-sym-ts if it covers them, else write our own inspired by ODIN. | ✅ mil-sym-ts (`fork/modules/userlayers/graphics.ts`); 197 point + 212 line/area graphics |
 | 9.7 | Rework the My layers UI (tabs Layers / Add / History, save bar, history as a timeline bar). | ✖ done, then replaced by 9.13–9.14 (sidebar and toolbar) |
 | 9.8 | ODIN's descriptive fields per symbol (designation, higher formation, status, date-time group, comments...), edited in the left panel, drawn on the map. | ✅ `editor.ts`, `fields.ts`, `sidc.ts` |
 | 9.9 | History steps say what changed. | ✅ |

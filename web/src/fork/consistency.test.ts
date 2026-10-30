@@ -5,10 +5,10 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
-import extra from './extra/index.ts'
-import sites from './sites/index.ts'
-import satellite from './satellite/index.ts'
-import { attributionFor } from './satellite/index.ts'
+import extra from './modules/extra/index.ts'
+import sites from './modules/sites/index.ts'
+import satellite from './modules/satellite/index.ts'
+import { attributionFor } from './modules/satellite/index.ts'
 
 const MODULES = [extra, sites, satellite]
 

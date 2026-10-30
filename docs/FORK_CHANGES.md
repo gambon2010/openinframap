@@ -315,7 +315,7 @@ can use one:
 - A **Photon row in the map sources** (Settings) shows where the setting comes from, can
   set or clear it for the current tab, checks the server answers, and explains how to
   set the default.
-- `web/src/fork/search/photon.ts` queries `<url>/api` on every search; tested against
+- `web/src/fork/modules/search/photon.ts` queries `<url>/api` on every search; tested against
   photon.komoot.io ("Alexanderplatz" → Berlin; its "Bremen, Germany" merged with the
   local result).
 
@@ -378,7 +378,7 @@ list their layers without `A` (OpenStreetMap), e.g. `#6/50.4/8.7/B,L`, and the
 restored switch then turned the background off, leaving a dark, empty map. If it's
 re-enabled later, links without a background layer must default to OpenStreetMap.
 
-**Map sources** (`web/src/fork/map-sources/`; first a button under the key, now in
+**Map sources** (`web/src/fork/modules/map-sources/`; first a button under the key, now in
 **Settings** in the header): shows the
 background-map URL in use and its origin (built-in, `web/.env`, or this tab), lets
 you switch to another URL immediately (MapLibre `setTiles`, no reload), validates
@@ -450,7 +450,7 @@ default). Counts are France's OSM data in October 2026.
   zooms in two levels (`openinframap.ts`). Hiding a kind in the key doesn't change
   the groups' counts. France at zoom 5 is a ~0.5 MB tile taking ~1 s, once (Tegola
   caches tiles up to zoom 13).
-- **Map:** `web/src/fork/sites/style.ts`: an icon per kind (a Maki glyph, CC0, in a
+- **Map:** `web/src/fork/modules/sites/style.ts`: an icon per kind (a Maki glyph, CC0, in a
   white circle ringed in the category's colour: `web/src/icons/site_*.svg`, made by
   `scripts/make_site_icons.py`), important sites larger and labelled, and a light
   fill for sites mapped as areas. One layer per category so the layer
@@ -475,7 +475,7 @@ the French community's preference for mapping by hand (the licence isn't the rea
   zoom 10, BT lines and substations from zoom 13), switched on in the layer switcher
   under "Not from OpenStreetMap" (code `X`, off by default). Tegola gives each feature
   a nominal voltage (HTA 20 kV, BT 0.4 kV: French HTA is legally 1-50 kV but 20 kV
-  almost everywhere) so `fork/extra/style.ts` draws it with the OSM power expressions:
+  almost everywhere) so `fork/modules/extra/style.ts` draws it with the OSM power expressions:
   same colours, widths and underground dashes as OSM lines of that voltage, and the
   key's voltage and Underground rows apply to it too. Popups say "Not from
   OpenStreetMap" with the source and licence, and have no OSM links. An invisible,
@@ -608,7 +608,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   that data, pointed at the user layer's source: a copied 400 kV line looks exactly
   like the original, label and towers included. Their map layers start with `user_`,
   which the layer switcher's prefixes never match and the key's hider skips
-  (`fork/key/feature-hider.ts`), so hiding the grid (switcher or key) leaves the
+  (`fork/ui/key/feature-hider.ts`), so hiding the grid (switcher or key) leaves the
   copies on the map.
 - **Symbols** are the MIL-STD-2525C point symbols ODINv2 offers (1,258: emergency
   management first, i.e. incidents, infrastructure and emergency services; then
@@ -620,7 +620,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   Beckman), with `ramda` (MIT), `svg-path-bbox` (BSD-3-Clause) and `svgpath` (MIT).
   The names and codes come from the MIT tables of
   [mil-std-2525](https://github.com/spatialillusions/mil-std-2525) (Måns Beckman),
-  turned into `web/src/fork/userlayers/symbols-2525c.json` by
+  turned into `web/src/fork/modules/userlayers/symbols-2525c.json` by
   `scripts/make_symbol_catalog.py`. ODIN's Austrian SKKM signs (41) aren't there:
   their list is ODIN's (AGPL). The library is 3 MB, loaded only when the palette
   opens or a layer has symbols (and precached for offline use).
@@ -630,7 +630,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   obstacle lines... 212 drawable) are drawn by the US Army C5ISR renderer
   `@armyc2.c5isr.renderer/mil-sym-ts-web` (Apache-2.0, 7.4 MB / 1.4 MB gzipped,
   loaded on first use, precached) from the points the user clicks
-  (`fork/userlayers/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
+  (`fork/modules/userlayers/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
   converted with its own `C2DLookup`; it says how many points each graphic takes
   (fixed-count ones finish by themselves). Its GeoJSON (lines, polygons, label
   points) goes into a second source per layer (`user_<id>_g`), redrawn when the zoom
@@ -649,7 +649,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   The arrow redraws live while dragged. Arrows drawn the old way are converted when
   drawn (`pathFromAxisPoints`, keeping their width), one unsaved change each.
 - **Details of an item** (version 2): selecting one opens its details in the left
-  side panel, like a map feature's (`fork/userlayers/editor.ts`), with the fields
+  side panel, like a map feature's (`fork/modules/userlayers/editor.ts`), with the fields
   ODIN has, from the standard (`fields.ts`): identity, status and operational
   condition, echelon, headquarters / task force / feint, mobility (all in the code
   itself: `sidc.ts`); designation, higher formation, type, quantity, additional
@@ -684,7 +684,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   item to edit its details, drag it (points), drag the points of a line, area or
   graphic to change its shape, or delete it (also the Delete key; Esc cancels a
   tool, Enter finishes a drawing). Clicks the panel's tools
-  take don't open upstream's popups: `fork/userlayers/index.ts` wraps the click
+  take don't open upstream's popups: `fork/modules/userlayers/index.ts` wraps the click
   router's `handleClick` on the instance, so `click-router.ts` stays upstream's.
 - **Storage:** the `userdata` schema (`web-backend/src/fork/userdata.sql`), made by
   the backend on first use. The layers belong to the computer, not to a region:
@@ -792,7 +792,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   swaps one parallel circuit isn't listed twice). Parallel circuits between the same
   two stations are drawn together. A station without a ≥110 kV line uses the nearest
   station on that grid within a few km, with a notice.
-- **Map** (`web/src/fork/grid/`): "Route from here" / "Route to here" buttons in
+- **Map** (`web/src/fork/modules/grid/`): "Route from here" / "Route to here" buttons in
   substation and plant popups; a panel listing each path with a breakdown of what
   it goes through: every stretch between two stations (distance, voltage), then the
   total (the backend returns these `segments`; junctions between lines are passed
@@ -804,7 +804,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   one connected grid. UA Merzig → UA Rehlingen gives 12.6 km (direct 110 kV), 24.8 km
   (via Saarwellingen) and 60.6 km (via Wadern and Lebach); across Saarland, two
   routes of 93-95 km that split around Bexbach and Heinitz.
-- **Details in a side panel** (`web/src/fork/grid/info-panel.ts`): clicking a feature shows its
+- **Details in a side panel** (`web/src/fork/modules/grid/info-panel.ts`): clicking a feature shows its
   details in a panel on the left, under the search box and above the Grid
   connection panel, instead of a popup over the map (which hid what you clicked).
   Both panels have minimise (keeps the highlight / routes on the map, shrinks to the
@@ -813,7 +813,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   them. Picking a **search result** works like clicking it: after the map flies
   there, a substation or power plant opens its full details and highlight; places,
   coordinates and addresses get a short panel and a ring at the location. (The Osmose validation popups are unchanged.)
-- **Highlight of the selected feature** (`web/src/fork/grid/highlight.ts`): areas
+- **Highlight of the selected feature** (`web/src/fork/modules/grid/highlight.ts`): areas
   (substations, plants, wind farms) get an outline and light fill, lines a glow,
   points a ring. Plants and substations are drawn both as an area and an icon: the
   area is highlighted when it's at least 16 px on screen (largest single part, so a
@@ -825,7 +825,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - **Photos in the panel** are limited to the panel's width and 160 px high, and the
   panel can use most of the screen height (45% when the Grid connection panel is
   open below it), so a photo doesn't make it scroll; it never scrolls sideways.
-- **Where a line goes** (`web/src/fork/grid/highlight.ts`,
+- **Where a line goes** (`web/src/fork/modules/grid/highlight.ts`,
   `GET /grid/line/<osm_id>`): clicking a power line highlights the whole connection
   it belongs to while its details are shown, not just the clicked piece (OpenStreetMap
   splits lines into many pieces). The backend follows stretches of the same voltage
@@ -881,7 +881,7 @@ Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (standa
 library; GDAL and pmtiles in Docker), chosen in `build-region.sh` after the
 background map, or later with `scripts/satellite.sh` for the region already built
 (no rebuild; both use `choose_satellite` / `download_satellite` in `lib/common.sh`),
-shown by `web/src/fork/satellite/`.
+shown by `web/src/fork/modules/satellite/`.
 
 - **Areas and sources (October 2026):** Sentinel-2 can be for the region built,
   another Geofabrik region, or the whole world (`regional --world`: every land cell
@@ -898,7 +898,7 @@ shown by `web/src/fork/satellite/`.
   Files: `<area>.sat-regional.pmtiles`, `<area>.sat-detailed-<source>.pmtiles`;
   `satellite_tiers_value` lists everything in `data/basemap/` (tile type from the
   PMTiles header), and the frontend credits each source by file name
-  (`fork/satellite/index.ts`, kept in step with `DETAILED_SOURCES`).
+  (`fork/modules/satellite/index.ts`, kept in step with `DETAILED_SOURCES`).
 - **Three tiers**, one PMTiles file each in `data/basemap/<region>.sat-<tier>.pmtiles`,
   served by the existing `basemap` service (no new service; Tegola only serves vector
   tiles):
@@ -948,7 +948,7 @@ the key opened over the buttons too; the Map sources panel was another button.
 - **Shared look** (`web/src/fork/ui/panel.css`, `panel.ts`): every panel, left or
   right, has the same light grey title bar with square buttons (×, –), the same
   section titles and a body that scrolls, after the feature details panel.
-- **Search box in the top bar** (`web/src/fork/ui/search-bar.ts`): upstream's
+- **Search box in the top bar** (`web/src/fork/modules/layout/search-bar.ts`): upstream's
   search control is moved out of the left column to just right of the header
   (kept there on screens 720 px and wider; narrower, it stays on the left). It sets
   `--oim-top-bar-left` on the map container: My layers' toolbar and symbol picker
@@ -1018,7 +1018,7 @@ export, then removes the test project (`docker compose down -v --rmi local`).
 - **Hiding things from the key.** Every key row has a checkbox: unticking it hides
   those features (with their labels, outlines and click areas) by adding a filter to
   the layers that draw them, worked out from the row's colour or icon
-  (`web/src/fork/key/feature-hider.ts`). Filters rather than visibility, so it works
+  (`web/src/fork/ui/key/feature-hider.ts`). Filters rather than visibility, so it works
   alongside the layer switcher. The choice is remembered per browser; "Show all"
   undoes it. The checkbox column has a set width (`key.css`), so the boxes line up
   from one section to the next (the spare width used to be shared with it).
@@ -1063,19 +1063,46 @@ hooks upstream files call:
 | `key/key.ts` | `await forkKey(...)` once its sections are built; `data-icon` on sprites |
 | `key/svg.ts` | swatches carry `data-colour`, `data-dash` or `data-layer` |
 | `popup/infopopup.ts` | `forkPopup.hiddenKeys()`, `.renderKey()`, `.title()`, `.html()`; `forkPopup.open()` first in `popup()` (details in the side panel) |
-| `search/search.ts` | `forkSearchSelected(result)`; `dropDuplicates` from `fork/search`; results carry the backend's result (`backend`) |
+| `search/search.ts` | `forkSearchSelected(result)`, `PhotonSearch` and `dropDuplicates` (all from `fork/index.ts`); results carry the backend's result (`backend`) |
 | `search/openinframap.ts` | `forkSearchDescription(result)`; `backend: result` |
 | `index.ts` | `addForkTranslations()` |
 
-Modules: `fork/extra` (data from outside OSM), `fork/sites` (critical sites),
-`fork/userlayers` (My layers: symbols, pictures, drawings, copies, saving, history),
-`fork/search` (place and feature descriptions, switching a result's layer on),
-`fork/grid` (feature details in a side panel, highlight, where a line goes, routes
-between stations), `fork/ui` (the right-hand dock, the shared panel look, the
-Settings window). The key's checkboxes
-(`fork/key/toggles.ts`) are added to upstream's rows after they're built, working
-out what each row hides from its swatch, so upstream's key code is unchanged.
-**Adding a layer** = a new module folder plus a line in `MODULES`.
+**Folders by role** (`docs/plans/refactor.md`, step 4):
+
+```
+web/src/fork/
+  index.ts, types.ts, config.ts   the only files upstream imports
+  core/                           no UI: i18n.ts (the t() helper)
+  ui/                             shared building blocks: dock, panel, settings, key/
+  modules/<name>/                 one folder per feature, each a ForkModule
+```
+
+Rules, checked by `fork/structure.test.ts`:
+- a module imports `core/`, `ui/`, the root files and its own files, never another
+  module;
+- `ui/` imports only `core/` and the root files;
+- `core/` imports nothing else of the fork;
+- upstream files import only `fork/index.ts`, `fork/types.ts` and `fork/config.ts`.
+
+Modules:
+- `extra` (data from outside OSM);
+- `sites` (critical sites);
+- `userlayers` (My layers: symbols, pictures, drawings, copies, saving, history);
+- `search` (place and feature descriptions, switching a result's layer on, Photon);
+- `grid` (feature details in a side panel, highlight, where a line goes, routes
+  between stations);
+- `satellite` (imagery as the background);
+- `map-sources` (its Settings section);
+- `layout` (the dock for the layer list and key, the Settings link, the search box
+  in the top bar).
+
+Shared: `ui/dock.ts`, `ui/panel.ts` and `panel.css` (one look for panels),
+`ui/settings.ts` (modules add sections with `addSettingsSection`, placed by
+`order`). The key's checkboxes (`ui/key/toggles.ts`) are added to upstream's rows
+after they're built, working out what each row hides from its swatch, so upstream's
+key code is unchanged.
+
+**Adding a feature** = a new folder in `modules/` plus a line in `MODULES`.
 
 **Translations.** The fork's English strings are in `web/src/fork/locales/en.json`,
 added to upstream's at startup (`i18next.addResourceBundle`), which also lets the

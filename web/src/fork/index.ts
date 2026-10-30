@@ -1,24 +1,26 @@
 // Fork: the hooks upstream files call. Each gathers what the fork modules add, so
 // upstream files keep one-line changes and new layers only need a new module in
-// MODULES. See docs/FORK_CHANGES.md ("Fork modules").
+// MODULES. Upstream imports only this file, types.ts and config.ts. See
+// docs/FORK_CHANGES.md ("Fork modules").
 import i18next from 'i18next'
 import { Map, MapGeoJSONFeature, SourceSpecification } from 'maplibre-gl'
 import { LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { LayerSpecificationWithZIndex } from '../style/types.ts'
 import type { SearchResult } from '../search/search.ts'
 import { BackendSearchResult, ForkContext, ForkModule } from './types.ts'
-import { extendKey } from './key/toggles.ts'
-import extra from './extra/index.ts'
-import sites from './sites/index.ts'
-import search from './search/index.ts'
-import ui from './ui/index.ts'
-import userlayers from './userlayers/index.ts'
-import grid from './grid/index.ts'
-import satellite from './satellite/index.ts'
+import { extendKey } from './ui/key/toggles.ts'
+import extra from './modules/extra/index.ts'
+import sites from './modules/sites/index.ts'
+import search from './modules/search/index.ts'
+import layout from './modules/layout/index.ts'
+import mapSources from './modules/map-sources/index.ts'
+import userlayers from './modules/userlayers/index.ts'
+import grid from './modules/grid/index.ts'
+import satellite from './modules/satellite/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
-const MODULES: ForkModule[] = [satellite, extra, sites, search, grid, ui, userlayers]
+const MODULES: ForkModule[] = [satellite, mapSources, extra, sites, search, grid, layout, userlayers]
 
 let context: ForkContext | undefined
 
@@ -81,3 +83,7 @@ export function forkSearchSelected(result: SearchResult) {
   if (!context) return
   for (const m of MODULES) m.searchSelected?.(result, context)
 }
+
+/** search/search.ts: the Photon geocoder, and merging results found twice. */
+export { default as PhotonSearch } from './modules/search/photon.ts'
+export { dropDuplicates } from './modules/search/index.ts'

@@ -8,7 +8,7 @@ import type { CircuitInspector } from '../circuit/circuitinspector.ts'
 import { ClickRouter } from '../click-router.ts'
 import { LayerSpecificationWithZIndex } from '../style/types.ts'
 import type { SearchResult } from '../search/search.ts'
-import type { HideSpec } from './key/feature-hider.ts'
+import type { HideSpec } from './ui/key/feature-hider.ts'
 
 /** Handed to modules once the map and its controls exist (before clicks are routed). */
 export interface ForkContext {

@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phase 1 done.
+Status: **in progress** (agreed 2026-10-30). Phase 1 done; phase 2 steps 4 and 7 done.
 
 ## Why
 
@@ -70,7 +70,9 @@ working sessions.
 
 ### Phase 2: frontend structure
 
-4. **Folders by role** under `web/src/fork/`:
+4. **Folders by role** under `web/src/fork/` (done; `config.ts` stays at the root
+   with `index.ts` and `types.ts`, since upstream imports it; the old `ui/index.ts`
+   module became `modules/layout/`):
 
    ```
    fork/
@@ -98,7 +100,7 @@ working sessions.
    - `grid/`: where a line goes, routes, and later the what-if.
 
    *Effort: ½.*
-7. **Map sources as a module**: it registers its own Settings section, like
+7. **Map sources as a module** (done): it registers its own Settings section, like
    satellite does. *Effort: ¼.*
 8. **Satellite credits from the files themselves.** Each PMTiles file already
    carries its attribution, and `pmtiles serve` shows it in `/<name>.json`. The
