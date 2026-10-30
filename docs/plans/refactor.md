@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done; phase 3 step 9 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done; phase 3 steps 9–10 done.
 
 ## Why
 
@@ -128,7 +128,7 @@ working sessions.
      interface.
 
    *Effort: 1½.*
-10. **One "view" object** for what the map shows: live (editable), a situation, or
+10. **One "view" object** (done: `store.view`, `state/view.ts`) for what the map shows: live (editable), a situation, or
    a history step (read-only). The toolbar, outliner, card and keyboard ask it
    "can I edit?" instead of checking two flags. *Effort: ½. Time on items and
    per-user read-only access hook in here.*

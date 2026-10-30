@@ -100,7 +100,7 @@ export class Interactions {
     this.tooltip.classList.remove('visible')
     const { feature, layerId } = item
     this.tools.select(feature.id)
-    const locked = Boolean(this.store.layers.get(layerId)?.style.locked)
+    const locked = !this.store.view.canEdit(this.store.layers.get(layerId))
     const entry = (label: string, onclick: () => void, disabled = false) => {
       const b = el('button', label, { type: 'button', disabled }) as HTMLButtonElement
       b.onclick = () => {
@@ -147,7 +147,9 @@ export class Interactions {
       entry(t('userlayers.duplicate', 'Duplicate'), () => this.paste(feature, layerId, 'beside')),
       entry(t('userlayers.copy-item', 'Copy (Ctrl+C)'), () => (this.clipboard = structuredClone(feature)))
     )
-    const others = [...this.store.layers.values()].filter((l) => l.id !== layerId && !l.style.locked)
+    const others = [...this.store.layers.values()].filter(
+      (l) => l.id !== layerId && this.store.view.canEdit(l)
+    )
     if (others.length && !locked) {
       items.push(
         el(
@@ -205,12 +207,11 @@ export class Interactions {
     }
     const [dLng, dLat] = [to[0] - centre[0], to[1] - centre[1]]
     // Into the given layer, else the "Into" one, else any that isn't locked.
-    const open = (id: string | null) =>
-      id && this.store.layers.get(id) && !this.store.layers.get(id)!.style.locked ? id : null
+    const open = (id: string | null) => (id && this.store.view.canEdit(this.store.layers.get(id)) ? id : null)
     const target =
       open(layerId) ??
       open(this.store.activeLayer) ??
-      [...this.store.layers.values()].find((l) => !l.style.locked)?.id
+      [...this.store.layers.values()].find((l) => this.store.view.canEdit(l))?.id
     if (!target) return
     const id = this.store.addFeature(
       target,

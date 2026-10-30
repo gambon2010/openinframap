@@ -46,8 +46,10 @@ export function dropRepeats(points: [number, number][]): [number, number][] {
 export class Tools {
   tool: Tool = { mode: 'select' }
   selected: string | null = null
-  /** Disabled while the history is played back. */
-  enabled = true
+  /** Off while a past version is shown (a situation, the history). */
+  get enabled(): boolean {
+    return this.store.view.live
+  }
   message = ''
   private map: Map
   private store: Store
@@ -152,9 +154,9 @@ export class Tools {
   /** The active layer, made if there's none yet. */
   private activeLayer(): string {
     const active = this.store.activeLayer ? this.store.layers.get(this.store.activeLayer) : undefined
-    if (active && !active.style.locked) return active.id
+    if (active && this.store.view.canEdit(active)) return active.id
     // A locked layer takes nothing new: draw into another one, or a new one.
-    const open = [...this.store.layers.values()].find((l) => !l.style.locked)
+    const open = [...this.store.layers.values()].find((l) => this.store.view.canEdit(l))
     if (open) {
       this.store.setActive(open.id)
       return open.id
@@ -311,7 +313,7 @@ export class Tools {
     if (!this.enabled || this.tool.mode !== 'select' || !this.selected) return
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
-    if (!layer || !feature || feature.properties.kind === 'copy' || layer.style.locked) return
+    if (!layer || !feature || feature.properties.kind === 'copy' || !this.store.view.canEdit(layer)) return
     // The resize handle of a picture, symbol or marker.
     if (this.handleAt(e.point, 'user_selection_resize')) {
       const half = this.renderer.iconHalfSize(feature)
@@ -430,7 +432,7 @@ export class Tools {
 
   /** Delete everything selected (not what's in a locked layer), as one undo step. */
   deleteSelected() {
-    const ids = this.selection().filter((id) => !this.store.layerOf(id)?.style.locked)
+    const ids = this.selection().filter((id) => this.store.view.canEdit(this.store.layerOf(id)))
     if (ids.length) this.store.deleteFeatures(ids)
     this.select(null)
   }

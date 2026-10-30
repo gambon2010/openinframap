@@ -39,7 +39,7 @@ const userlayers: ForkModule = {
 
     store.onChange(() => {
       // While the past is shown (history, a situation), the live layers wait.
-      if (!panel.showingPast) void renderer.render(store.layers, store.hidden)
+      if (store.view.live) void renderer.render(store.layers, store.hidden)
       // The selection may have been deleted or changed.
       tools.refreshSelection()
     })

@@ -8,11 +8,14 @@ import { applyChange, cloneLayers, differences } from './changes.ts'
 import { local } from './local.ts'
 import { loadSaved, send } from './transport.ts'
 import { UndoHistory } from './undo.ts'
+import { View } from './view.ts'
 
 export class Store {
   layers = new Map<string, UserLayer>()
   pending: Change[] = local.pending()
   private history = new UndoHistory()
+  /** What the map shows (live or a past version) and what may be changed. */
+  readonly view = new View()
   // The layers as saved (before the pending changes), to rebuild them after an undo.
   private saved = new Map<string, UserLayer>()
   hidden = new Set<string>(local.hidden())

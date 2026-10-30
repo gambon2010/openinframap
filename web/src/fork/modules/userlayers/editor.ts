@@ -34,6 +34,8 @@ export interface EditorActions {
   duplicate: () => void
   remove: () => void
   done: () => void
+  /** Whether a layer's items may be changed now (state/view.ts). */
+  canEdit: (layer: UserLayer) => boolean
 }
 
 // Echelons as their marks above the frame.
@@ -440,10 +442,10 @@ export async function buildEditor(
     'layer'
   )
   layerSelect.title = t('userlayers.f.layer', 'Layer')
-  // Nothing goes into a locked layer.
+  // Nothing goes into a layer that can't be changed (locked).
   for (const option of layerSelect.options) {
     const l = layers.find((x) => x.id === option.value)
-    if (l?.style.locked && l.id !== layer.id) {
+    if (l && !actions.canEdit(l) && l.id !== layer.id) {
       option.disabled = true
       option.textContent = `🔒 ${l.name}`
     }
@@ -471,6 +473,8 @@ export interface BulkActions {
   moveTo: (layerId: string) => void
   remove: () => void
   clear: () => void
+  /** Whether a layer's items may be changed now (state/view.ts). */
+  canEdit: (layer: UserLayer) => boolean
 }
 
 /** The card for several selected items: what they are, and changes for all of them. */
@@ -479,7 +483,7 @@ export function buildBulkCard(
   layers: UserLayer[],
   actions: BulkActions
 ): HTMLElement {
-  const unlocked = items.filter((i) => !i.layer.style.locked)
+  const unlocked = items.filter((i) => actions.canEdit(i.layer))
   const military = unlocked.filter((i) => i.feature.properties.sidc)
   const parts: (HTMLElement | string)[] = []
   parts.push(
@@ -545,7 +549,7 @@ export function buildBulkCard(
   const move = select(
     [
       ['', t('userlayers.move-to', 'Move to layer…')],
-      ...layers.filter((l) => !l.style.locked).map((l): [string, string] => [l.id, l.name])
+      ...layers.filter((l) => actions.canEdit(l)).map((l): [string, string] => [l.id, l.name])
     ],
     '',
     (v) => v && actions.moveTo(v),

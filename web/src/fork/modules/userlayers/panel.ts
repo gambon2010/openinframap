@@ -92,19 +92,25 @@ export class Panel implements IControl {
   private fileInput: HTMLInputElement
   private paletteMode: PaletteMode | null = null
   private outliner: Outliner
-  private inPlayback = false
   private follow = true
   private busy = ''
   isOpen = false
 
   /** Showing the past (history playback or a situation): the live layers aren't drawn. */
-  get showingPast(): boolean {
-    return this.inPlayback || this.viewing !== null
+  private get showingPast(): boolean {
+    return !this.store.view.live
   }
-  // Situations: the saved ones, and the one being viewed (null: live).
+  /** Playing the history back (state/view.ts). */
+  private get inPlayback(): boolean {
+    return this.store.view.mode === 'playback'
+  }
+  /** The situation shown (null: live or the history). */
+  private get viewing(): Situation | null {
+    return this.store.view.situation
+  }
+  // Situations: the saved ones.
   private situations: Situation[] = []
   private situationsLoaded = false
-  private viewing: Situation | null = null
   private situationLine = el('.oim-ul-situation')
   private banner = el('.oim-ul-banner', { role: 'status' })
   // The editor in the side panel: which feature (and version) it shows.
@@ -353,7 +359,7 @@ export class Panel implements IControl {
         el('option', l.style.locked ? `🔒 ${l.name}` : l.name, {
           value: l.id,
           selected: l.id === this.store.activeLayer,
-          disabled: Boolean(l.style.locked)
+          disabled: !this.store.view.canEdit(l)
         })
       ),
       el('option', `+ ${t('userlayers.new-layer', 'New layer')}`, {
@@ -693,21 +699,17 @@ export class Panel implements IControl {
       await this.playback.load()
       this.playback.position = situationPosition(this.playback.changes, situation)
       const snapshot = this.playback.snapshot()
-      this.viewing = situation
       this.tools.setTool({ mode: 'select' })
       this.tools.select(null)
-      this.tools.enabled = false
+      this.store.view.showSituation(situation, snapshot)
       this.paletteMode = null
-      this.outliner.view = snapshot
       await this.renderer.render(snapshot, new Set())
     })
   }
 
   private backToLive() {
     if (!this.viewing) return
-    this.viewing = null
-    this.outliner.view = null
-    this.tools.enabled = true
+    this.store.view.goLive()
     void this.renderer.render(this.store.layers, this.store.hidden)
     this.update()
   }
@@ -795,7 +797,7 @@ export class Panel implements IControl {
         updateEach: (change) =>
           this.store.updateFeatures(
             items
-              .filter((i) => !i.layer.style.locked)
+              .filter((i) => this.store.view.canEdit(i.layer))
               .map((i) => ({
                 layerId: i.layer.id,
                 feature: { ...i.feature, properties: change(i.feature.properties) }
@@ -804,7 +806,9 @@ export class Panel implements IControl {
           ),
         moveTo: (layerId) =>
           this.store.moveFeatures(
-            items.filter((i) => !i.layer.style.locked && i.layer.id !== layerId).map((i) => i.feature.id),
+            items
+              .filter((i) => this.store.view.canEdit(i.layer) && i.layer.id !== layerId)
+              .map((i) => i.feature.id),
             layerId
           ),
         remove: () => {
@@ -813,7 +817,8 @@ export class Panel implements IControl {
           )
             this.tools.deleteSelected()
         },
-        clear: () => this.tools.select(null)
+        clear: () => this.tools.select(null),
+        canEdit: (l) => this.store.view.canEdit(l)
       })
       panel.show(card, () => {
         if (this.editorKey === key) {
@@ -843,10 +848,11 @@ export class Panel implements IControl {
       moveTo: (layerId) => this.store.moveFeature(id, layerId),
       duplicate: () => this.duplicate(layer.id, feature),
       remove: () => this.tools.deleteSelected(),
-      done: () => this.tools.select(null)
+      done: () => this.tools.select(null),
+      canEdit: (l) => this.store.view.canEdit(l)
     })
     if (this.editorKey !== key) return // something newer
-    if (layer.style.locked) {
+    if (!this.store.view.canEdit(layer)) {
       // A locked layer's items can be looked at, not changed.
       editor
         .querySelectorAll<HTMLButtonElement | HTMLInputElement>('input, select, textarea, button')
@@ -896,10 +902,9 @@ export class Panel implements IControl {
     }
     await this.run(t('userlayers.history-loading', 'Loading the history'), async () => {
       await this.playback.load()
-      this.inPlayback = true
       this.tools.setTool({ mode: 'select' })
       this.tools.select(null)
-      this.tools.enabled = false
+      this.store.view.showPlayback()
       this.paletteMode = null
       this.playback.position = 0
       await this.showStep()
@@ -916,8 +921,7 @@ export class Panel implements IControl {
 
   private closePlayback() {
     this.playback.stop()
-    this.inPlayback = false
-    this.tools.enabled = true
+    this.store.view.goLive()
     this.renderer.select(null)
     void this.renderer.render(this.store.layers, this.store.hidden)
     this.update()

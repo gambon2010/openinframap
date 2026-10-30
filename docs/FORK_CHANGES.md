@@ -723,7 +723,10 @@ was hard to read. Version 3, built in steps:
   The state is in `userlayers/state/` (refactor step 9): `store.ts` (the `Store`
   the UI uses), `changes.ts` (pure: applying changes, steps, `revertFields`,
   `restoring`, `differences`), `undo.ts` (`UndoHistory`), `local.ts` (what's kept in
-  the browser), `transport.ts` (load and Save; where live sync will plug in).
+  the browser), `transport.ts` (load and Save; where live sync will plug in),
+  `view.ts` (`store.view`: live, a situation or a history step; `canEdit(layer)` is
+  the one answer to "may this be changed now?", used by the tools, the list, the
+  card and the right-click menu).
 - **Step 2, the item card** (`editor.ts`, card helpers in `fields.ts`): header with
   the large symbol and the designation edited in place; identity as the item's own
   symbol in each identity, Present / Planned and condition as chips, the echelon as

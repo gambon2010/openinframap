@@ -103,8 +103,10 @@ export class Outliner {
   folded = readSet(FOLDED_KEY)
   /** Folders made with "New folder" that no layer is in yet. */
   emptyFolders = readSet(EMPTY_FOLDERS_KEY)
-  /** Layers shown instead of the store's, read-only (a situation being viewed). */
-  view: Map<string, UserLayer> | null = null
+  /** A situation's layers, shown read-only instead of the live ones (state/view.ts). */
+  private get past(): Map<string, UserLayer> | null {
+    return this.store.view.past
+  }
   private store: Store
   private actions: OutlinerActions
   private render?: (sidc: string, size?: number) => string
@@ -215,7 +217,7 @@ export class Outliner {
     const row = el(
       `li.oim-ul-item${selected ? '.selected' : ''}`,
       {
-        draggable: !layer.style.locked && !this.view,
+        draggable: this.store.view.canEdit(layer),
         title: t(
           'userlayers.item-title',
           'Click: select · Shift-click: select several · drag onto a layer: move'
@@ -353,7 +355,7 @@ export class Outliner {
     }
     const header = el(
       `.oim-ul-layer-row${active ? '.active' : ''}`,
-      { draggable: !this.view },
+      { draggable: this.store.view.live },
       this.button(
         hidden ? '◌' : '◉',
         () => store.setHidden(layer.id, !hidden),
@@ -389,7 +391,8 @@ export class Outliner {
       header,
       (id) => {
         const from = store.layerOf(id)
-        if (from && from.id !== layer.id && !from.style.locked && !locked) store.moveFeature(id, layer.id)
+        if (from && from.id !== layer.id && store.view.canEdit(from) && store.view.canEdit(layer))
+          store.moveFeature(id, layer.id)
       },
       // A layer dropped on a layer: into the same folder (or out, if it's in none).
       (id) => {
@@ -503,15 +506,15 @@ export class Outliner {
         return b
       })
     )
-    const tree = el(`ul.oim-ul-tree${this.view ? '.oim-ul-readonly' : ''}`)
+    const tree = el(`ul.oim-ul-tree${this.past ? '.oim-ul-readonly' : ''}`)
     // A new folder a layer is now in is a real one.
     const used = new Set([...store.layers.values()].map((l) => l.style.folder?.trim()))
     if ([...this.emptyFolders].some((f) => used.has(f))) {
       for (const f of used) if (f) this.emptyFolders.delete(f)
       writeSet(EMPTY_FOLDERS_KEY, this.emptyFolders)
     }
-    const empty = this.view || searching ? [] : this.emptyFolders
-    for (const [folder, layers] of byFolder([...(this.view ?? store.layers).values()], empty)) {
+    const empty = this.past || searching ? [] : this.emptyFolders
+    for (const [folder, layers] of byFolder([...(this.past ?? store.layers).values()], empty)) {
       const rows: HTMLElement[] = []
       for (const layer of layers) {
         const items = [...layer.features.values()].filter((f) => matches(f, this.query, this.filters))
@@ -554,7 +557,7 @@ export class Outliner {
               'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
             )
           ),
-      el('.oim-ul-row', create, this.view ? '' : createFolder)
+      el('.oim-ul-row', create, this.past ? '' : createFolder)
     )
     return this.el
   }
