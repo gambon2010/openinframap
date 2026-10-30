@@ -141,6 +141,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.12 | Arrows (e.g. main attack) easy to draw and good-looking: drawn as a path; the size has its own handle (the 4th point), not part of the highlighted path, that only changes the width. Old arrows converted. | ✅ |
 | 9.13 | Rework the whole My layers panel for easier access and better display (not ODIN's style). | ✅ `docs/plans/my-layers-v3.md` |
 | 9.14 | Left sidebar shared with search, feature details and the grid route; tools on the map; default details per kind; situations (named moments) shown with one line and a banner; layer folders that fold. | ✅ all built; not done: situations as marks on the history bar, box selection |
+| 9.15 | Undo (Ctrl+Z) goes on after a Save without rolling back the server: undoing a saved change is a new change, saved like any other; undoing a change that cancels another (lock, unlock) doesn't count as unsaved. | ✅ `Store.undo`, `unsavedCount` |
 | 9.11 | Resize pictures (and symbols, markers) shown on the map: a handle on the map, and a Size setting (20–800 %). | ✅ |
 
 ## 10. Backlog (parked)

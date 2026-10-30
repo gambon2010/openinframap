@@ -403,7 +403,14 @@ export class Tools {
     const { feature, layerId } = this.dragging
     this.dragging = null
     this.map.dragPan.enable()
-    this.store.updateFeature(layerId, feature)
+    // A click without a move isn't a change.
+    const stored = this.store.layers.get(layerId)?.features.get(feature.id)
+    const same =
+      stored &&
+      JSON.stringify(stored.geometry) === JSON.stringify(feature.geometry) &&
+      JSON.stringify(stored.properties) === JSON.stringify(feature.properties)
+    if (!same) this.store.updateFeature(layerId, feature)
+    else this.renderer.preview(layerId, stored)
     this.select(feature.id)
   }
 

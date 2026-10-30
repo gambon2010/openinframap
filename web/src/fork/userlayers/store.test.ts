@@ -210,3 +210,119 @@ describe('what Save would change', () => {
     vi.unstubAllGlobals()
   })
 })
+
+test('an update that changes nothing is not a change', () => {
+  localStorage.clear()
+  const store = new Store()
+  const layer = store.createLayer('A')
+  const id = store.addFeature(layer, point, { kind: 'marker', name: 'x' })
+  const count = store.pending.length
+  store.updateFeature(layer, structuredClone(store.layers.get(layer)!.features.get(id)!))
+  store.updateLayer(layer, { name: 'A' })
+  store.updateLayer(layer, { style: { ...store.layers.get(layer)!.style } })
+  expect(store.pending.length).toBe(count)
+})
+
+describe('undo after a save', () => {
+  // A backend that keeps what's saved, like the real one.
+  let saved: Change[]
+  beforeEach(() => {
+    localStorage.clear()
+    saved = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          saved.push(...(JSON.parse(String(init.body)).changes as Change[]))
+          return new Response(JSON.stringify({ ok: true }))
+        }
+        const layers = new Map<string, UserLayer>()
+        for (const change of saved) applyChange(layers, change)
+        return new Response(
+          JSON.stringify({
+            layers: [...layers.values()].map((l) => ({ ...l, features: [...l.features.values()] }))
+          })
+        )
+      })
+    )
+    return () => vi.unstubAllGlobals()
+  })
+
+  test('takes back saved steps with new changes, without touching the server', async () => {
+    const store = new Store()
+    await store.load()
+    const layer = store.createLayer('A')
+    const id = store.addFeature(layer, point, { kind: 'marker', name: 'one' })
+    await store.save()
+    store.updateFeature(layer, {
+      ...store.layers.get(layer)!.features.get(id)!,
+      properties: { kind: 'marker', name: 'two' }
+    })
+    await store.save()
+    const sent = saved.length
+
+    store.undo() // the rename, saved
+    expect(store.layers.get(layer)!.features.get(id)!.properties.name).toBe('one')
+    expect(store.pending.map((c) => c.op)).toEqual(['feature_update'])
+    expect(store.unsavedCount).toBe(1)
+    store.undo() // the new item, saved
+    expect(store.layers.get(layer)!.features.has(id)).toBe(false)
+    expect(store.pending.map((c) => c.op)).toEqual(['feature_update', 'feature_delete'])
+    expect(saved.length).toBe(sent) // nothing sent until Save
+
+    store.redo()
+    expect(store.layers.get(layer)!.features.get(id)!.properties.name).toBe('one')
+    expect(store.pending.length).toBe(1)
+    await store.save()
+    expect(saved.at(-1)!.op).toBe('feature_update')
+    // The undo is saved: the next one goes on from there, to the new layer.
+    store.undo()
+    expect(store.layers.get(layer)!.features.has(id)).toBe(false)
+    store.undo()
+    expect(store.layers.has(layer)).toBe(false)
+    expect(store.canUndo).toBe(false)
+  })
+
+  test('a deleted layer comes back with its items', async () => {
+    const store = new Store()
+    await store.load()
+    const layer = store.createLayer('A')
+    store.addFeature(layer, point, { kind: 'marker' })
+    store.addFeature(layer, point, { kind: 'marker' })
+    store.updateLayer(layer, { name: 'B' })
+    await store.save()
+    store.deleteLayer(layer)
+    await store.save()
+    store.undo()
+    expect(store.layers.get(layer)!.name).toBe('B')
+    expect(store.layers.get(layer)!.features.size).toBe(2)
+    expect(store.pending.map((c) => c.op)).toEqual(['layer_create', 'feature_create', 'feature_create'])
+  })
+
+  test('discarding puts the undone saved steps back', async () => {
+    const store = new Store()
+    await store.load()
+    const layer = store.createLayer('A')
+    await store.save()
+    store.undo()
+    expect(store.layers.has(layer)).toBe(false)
+    await store.discard()
+    expect(store.layers.has(layer)).toBe(true)
+    expect(store.canUndo).toBe(true)
+    store.undo()
+    expect(store.layers.has(layer)).toBe(false)
+  })
+
+  test('unsaved changes are undone first', async () => {
+    const store = new Store()
+    await store.load()
+    const layer = store.createLayer('A')
+    await store.save()
+    store.updateLayer(layer, { name: 'B' })
+    store.undo()
+    expect(store.pending.length).toBe(0)
+    expect(store.layers.get(layer)!.name).toBe('A')
+    store.undo()
+    expect(store.layers.has(layer)).toBe(false)
+  })
+})

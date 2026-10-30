@@ -454,8 +454,10 @@ on the My layers workspace; click it again to close it. It has two parts:
 | P | Picture: your own image or icon |
 | C | Copy from the map: power lines, substations, sites... drawn like the originals, and still shown when you hide the grid |
 
-Esc stops a tool. **Ctrl+Z** undoes the last unsaved change and **Ctrl+Shift+Z**
-redoes it.
+Esc stops a tool. **Ctrl+Z** undoes the last change and **Ctrl+Shift+Z** redoes
+it. Undo goes on past a Save: a saved change isn't removed from the server, undoing
+it is a new change that puts things back, saved with the next **Save** like any
+other (the history keeps both).
 
 **Arrows** (axis of advance, main or supporting attack...) are drawn like a line:
 click where the arrow starts, along its path, and double-click where it points to.
