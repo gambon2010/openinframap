@@ -477,6 +477,10 @@ the next time the map is opened, keeping their width (an unsaved change each: Sa
   question: who, what, when, where, how sure;
 - notes, appearance (size, colour), and at the bottom its layer, Duplicate, Delete.
 
+**Several at once:** Shift-click items on the map or in the list; the details then
+show one card for all of them (identity, planned / present, move, delete), and each
+change to them is one undo step.
+
 On the map: hover an item to see what it is; **right-click** it for a quick menu
 (identity, planned / present, rename, duplicate, move to another layer, delete);
 **double-click** it to rename it; **Ctrl+C / Ctrl+V** copy it and paste it where

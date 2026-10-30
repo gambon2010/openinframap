@@ -107,3 +107,62 @@ describe('Store', () => {
     expect(new Store().hidden.has(a)).toBe(true)
   })
 })
+
+describe('undo and redo', () => {
+  let store: Store
+  beforeEach(() => {
+    localStorage.clear()
+    store = new Store()
+  })
+
+  test('one change at a time, and back', () => {
+    const layer = store.createLayer('A')
+    const id = store.addFeature(layer, point, { kind: 'marker', name: 'one' })
+    store.updateFeature(layer, {
+      ...store.layers.get(layer)!.features.get(id)!,
+      properties: { kind: 'marker', name: 'two' }
+    })
+    store.undo()
+    expect(store.layers.get(layer)!.features.get(id)!.properties.name).toBe('one')
+    store.undo()
+    expect(store.layers.get(layer)!.features.has(id)).toBe(false)
+    expect(store.canRedo).toBe(true)
+    store.redo()
+    store.redo()
+    expect(store.layers.get(layer)!.features.get(id)!.properties.name).toBe('two')
+    expect(store.canRedo).toBe(false)
+  })
+
+  test('something new after an undo: nothing left to redo', () => {
+    const layer = store.createLayer('A')
+    store.addFeature(layer, point, { kind: 'marker' })
+    store.undo()
+    store.addFeature(layer, point, { kind: 'marker' })
+    expect(store.canRedo).toBe(false)
+  })
+
+  test('several items changed, moved or deleted at once: one undo each', () => {
+    const a = store.createLayer('A')
+    const b = store.createLayer('B')
+    const ids = [1, 2, 3].map((n) => store.addFeature(a, point, { kind: 'marker', name: String(n) }))
+    const count = store.pending.length
+    store.updateFeatures(
+      ids.map((id) => ({
+        layerId: a,
+        feature: { ...store.layers.get(a)!.features.get(id)!, properties: { kind: 'marker', name: 'x' } }
+      }))
+    )
+    store.moveFeatures(ids, b)
+    expect(store.layers.get(b)!.features.size).toBe(3)
+    store.undo() // the move
+    expect(store.layers.get(a)!.features.size).toBe(3)
+    expect([...store.layers.get(a)!.features.values()].every((f) => f.properties.name === 'x')).toBe(true)
+    store.undo() // the change
+    expect([...store.layers.get(a)!.features.values()].map((f) => f.properties.name)).toEqual(['1', '2', '3'])
+    expect(store.pending.length).toBe(count)
+    store.deleteFeatures(ids)
+    expect(store.layers.get(a)!.features.size).toBe(0)
+    store.undo()
+    expect(store.layers.get(a)!.features.size).toBe(3)
+  })
+})

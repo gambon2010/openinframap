@@ -1123,3 +1123,10 @@
   pointer-events: none;
   opacity: 0.5;
 }
+.oim-ul-bulk-list {
+  max-height: 140px;
+  margin: 4px 0;
+  padding-left: 18px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}

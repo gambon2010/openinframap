@@ -1,6 +1,7 @@
 # Plan: My layers, version 3 (a rework of the whole panel)
 
-Status: proposal (2026-10-30), nothing built. Version 2 followed ODIN's panels
+Status: built (2026-10-30), see FORK_CHANGES.md "Version 3". Not done: situations as
+marks on the history bar, box selection, templates. Version 2 followed ODIN's panels
 closely; the owner never liked that part of ODIN. This reworks the panel around
 what people do with it rather than around the data model.
 

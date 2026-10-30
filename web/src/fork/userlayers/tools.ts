@@ -107,11 +107,46 @@ export class Tools {
     this.notify()
   }
 
+  /** Items selected along with `selected` (Shift-click): changed together. */
+  others: string[] = []
+
   select(featureId: string | null) {
     this.selected = featureId
-    const layer = featureId ? this.store.layerOf(featureId) : undefined
-    this.renderer.select(layer?.features.get(featureId!) ?? null)
+    this.others = []
+    this.drawSelection()
     this.notify()
+  }
+
+  /** Add an item to the selection, or take it out (Shift-click). */
+  toggle(featureId: string) {
+    const all = this.selection()
+    const next = all.includes(featureId) ? all.filter((id) => id !== featureId) : [...all, featureId]
+    this.selected = next[0] ?? null
+    this.others = next.slice(1)
+    this.drawSelection()
+    this.notify()
+  }
+
+  /** After a change: drop what no longer exists, draw the rest again. */
+  refreshSelection() {
+    const ids = this.selection().filter((id) => this.store.layerOf(id))
+    if (!ids.length && !this.selected) return
+    this.selected = ids[0] ?? null
+    this.others = ids.slice(1)
+    this.drawSelection()
+    this.notify()
+  }
+
+  /** Everything selected, the main one first. */
+  selection(): string[] {
+    return this.selected ? [this.selected, ...this.others.filter((id) => id !== this.selected)] : []
+  }
+
+  private drawSelection() {
+    const features = this.selection()
+      .map((id) => this.store.layerOf(id)?.features.get(id))
+      .filter((f): f is UserFeature => Boolean(f))
+    this.renderer.selectAll(features)
   }
 
   /** The active layer, made if there's none yet. */
@@ -182,7 +217,9 @@ export class Tools {
         break
       case 'select': {
         const hit = this.hit(e.point)
-        this.select(hit ? String(hit.properties.fid) : null)
+        // Shift-click adds to (or takes out of) the selection.
+        if (hit && e.originalEvent.shiftKey) this.toggle(String(hit.properties.fid))
+        else this.select(hit ? String(hit.properties.fid) : null)
         break
       }
     }
@@ -384,10 +421,10 @@ export class Tools {
     }
   }
 
+  /** Delete everything selected (not what's in a locked layer), as one undo step. */
   deleteSelected() {
-    if (!this.selected) return
-    const layer = this.store.layerOf(this.selected)
-    if (layer && !layer.style.locked) this.store.deleteFeature(layer.id, this.selected)
+    const ids = this.selection().filter((id) => !this.store.layerOf(id)?.style.locked)
+    if (ids.length) this.store.deleteFeatures(ids)
     this.select(null)
   }
 }

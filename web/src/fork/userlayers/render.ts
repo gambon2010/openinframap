@@ -320,15 +320,24 @@ export class Renderer {
       map.once('idle', () => void this.render(layers, hidden))
       return
     }
-    const icons = new Set<string>()
-    for (const layer of layers.values()) {
-      for (const f of layer.features.values()) {
-        const icon = iconName(f.properties, layer.style.color ?? DEFAULT_COLOR)
-        if (icon) icons.add(icon)
+    // The images the features need, added before the features are drawn. The layers
+    // can change while they load (several changes saved at once share the same
+    // map of layers), so check again until nothing is missing.
+    const missing = () => {
+      const icons = new Set<string>()
+      for (const layer of layers.values()) {
+        for (const f of layer.features.values()) {
+          const icon = iconName(f.properties, layer.style.color ?? DEFAULT_COLOR)
+          if (icon && !map.hasImage(icon)) icons.add(icon)
+        }
       }
+      return [...icons]
     }
-    await Promise.all([...icons].map((icon) => ensureImage(map, icon)))
-    if (this.last.layers !== layers) return // something newer is being drawn
+    for (let round = 0, icons = missing(); icons.length && round < 5; round++, icons = missing()) {
+      await Promise.all(icons.map((icon) => ensureImage(map, icon)))
+      if (this.last?.layers !== layers) return // something newer is being drawn
+    }
+    if (this.last?.layers !== layers) return
 
     const wanted = new Set<string>()
     for (const layer of layers.values()) {
@@ -467,6 +476,20 @@ export class Renderer {
       }
     ]
     for (const spec of overlays) if (!map.getLayer(spec.id)) map.addLayer(spec)
+  }
+
+  /** Highlight several features (no handles: they're for one item at a time). */
+  selectAll(features: UserFeature[]) {
+    if (features.length <= 1) {
+      this.select(features[0] ?? null)
+      return
+    }
+    this.selected = null
+    this.ensureOverlays()
+    ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({
+      type: 'FeatureCollection',
+      features: features.map((f) => selectionFeatures(f)[0])
+    })
   }
 
   /** Highlight a feature (null: none); pictures, symbols and markers get a resize handle. */

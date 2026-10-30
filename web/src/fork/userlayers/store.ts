@@ -225,12 +225,40 @@ export class Store {
     this.record('feature_delete', layerId, featureId)
   }
 
+  /** Change several features at once: one undo step. */
+  updateFeatures(changes: { layerId: string; feature: UserFeature }[]) {
+    const batch = uuid()
+    for (const { layerId, feature } of changes) {
+      this.record(
+        'feature_update',
+        layerId,
+        feature.id,
+        { geometry: feature.geometry, properties: feature.properties },
+        batch
+      )
+    }
+  }
+
+  /** Delete several features at once: one undo step. */
+  deleteFeatures(ids: string[]) {
+    const batch = uuid()
+    for (const id of ids) {
+      const layer = this.layerOf(id)
+      if (layer) this.record('feature_delete', layer.id, id, undefined, batch)
+    }
+  }
+
+  /** Move several features to a layer at once: one undo step. */
+  moveFeatures(ids: string[], toLayerId: string) {
+    const batch = uuid()
+    for (const id of ids) this.moveFeature(id, toLayerId, batch)
+  }
+
   /** Move a feature to another layer (two changes: out of one, into the other). */
-  moveFeature(featureId: string, toLayerId: string) {
+  moveFeature(featureId: string, toLayerId: string, batch = uuid()) {
     const from = this.layerOf(featureId)
     const feature = from?.features.get(featureId)
     if (!from || !feature || from.id === toLayerId || !this.layers.has(toLayerId)) return
-    const batch = uuid()
     this.record('feature_delete', from.id, featureId, undefined, batch)
     this.record(
       'feature_create',

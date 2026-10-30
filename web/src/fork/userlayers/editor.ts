@@ -456,3 +456,109 @@ export async function buildEditor(
   )
   return el('div.oim-popup-content.oim-ul-editor', ...parts)
 }
+
+export interface BulkActions {
+  /** Apply a change to the properties of each selected item (one undo step). */
+  updateEach: (change: (properties: FeatureProps) => FeatureProps | null) => void
+  moveTo: (layerId: string) => void
+  remove: () => void
+  clear: () => void
+}
+
+/** The card for several selected items: what they are, and changes for all of them. */
+export function buildBulkCard(
+  items: { feature: UserFeature; layer: UserLayer }[],
+  layers: UserLayer[],
+  actions: BulkActions
+): HTMLElement {
+  const unlocked = items.filter((i) => !i.layer.style.locked)
+  const military = unlocked.filter((i) => i.feature.properties.sidc)
+  const parts: (HTMLElement | string)[] = []
+  parts.push(
+    el(
+      'div.oim-popup-header.oim-ul-card-header',
+      el('span.oim-ul-card-symbol', '▣'),
+      el(
+        'div.oim-ul-card-titles',
+        el('h3', tt('userlayers.n-selected', '{{count}} items selected', { count: items.length })),
+        el('span.oim-ul-what', tt('userlayers.bulk-hint', 'Changes below apply to all of them'))
+      )
+    )
+  )
+  const names = items.map(({ feature }) => {
+    const p = feature.properties
+    const name = (p.modifiers?.['T'] || p.name || '').trim()
+    const what = p.sidc ? (symbolName(p.sidc) ?? p.sidc) : tt(`userlayers.kind.${p.kind}`, p.kind)
+    return el('li', name ? `${name} · ${what}` : what)
+  })
+  parts.push(el('ul.oim-ul-bulk-list', names))
+  if (unlocked.length < items.length) {
+    parts.push(
+      el(
+        'p.oim-ul-locked-note',
+        tt('userlayers.bulk-locked', '🔒 {{count}} in locked layers are left as they are.', {
+          count: items.length - unlocked.length
+        })
+      )
+    )
+  }
+  if (military.length) {
+    const setSidc = (change: (sidc: string) => string) =>
+      actions.updateEach((p) => (p.sidc ? { ...p, sidc: change(p.sidc) } : null))
+    parts.push(
+      el(
+        '.oim-ul-identity',
+        el(
+          '.oim-ul-chips',
+          ...MAIN_IDENTITIES.map((id) =>
+            chip(
+              IDENTITIES.find(([c]) => c === id)?.[1] ?? id,
+              military.every((i) => identity(i.feature.properties.sidc!) === id),
+              () => setSidc((s) => withIdentity(s, id))
+            )
+          )
+        ),
+        el(
+          '.oim-ul-chips',
+          chip(
+            tt('userlayers.status.P', 'Present'),
+            military.every((i) => status(i.feature.properties.sidc!) !== 'A'),
+            () => setSidc((s) => withStatus(s, 'P'))
+          ),
+          chip(
+            tt('userlayers.status.A', 'Planned'),
+            military.every((i) => status(i.feature.properties.sidc!) === 'A'),
+            () => setSidc((s) => withStatus(s, 'A'))
+          )
+        )
+      )
+    )
+  }
+  const move = select(
+    [
+      ['', tt('userlayers.move-to', 'Move to layer…')],
+      ...layers.filter((l) => !l.style.locked).map((l): [string, string] => [l.id, l.name])
+    ],
+    '',
+    (v) => v && actions.moveTo(v),
+    'bulk-layer'
+  )
+  const button = (label: string, onclick: () => void, primary = false) => {
+    const b = el(`button.oim-ul-button${primary ? '.primary' : ''}`, label, { type: 'button' })
+    b.onclick = onclick
+    return b
+  }
+  parts.push(
+    el(
+      '.oim-ul-card-footer',
+      move,
+      button(tt('userlayers.delete-all', 'Delete all'), actions.remove),
+      button(tt('userlayers.clear-selection', 'Done'), actions.clear, true)
+    ),
+    el(
+      'p.oim-ul-hint',
+      tt('userlayers.bulk-help', 'Shift-click on the map or in the list to add or remove items.')
+    )
+  )
+  return el('div.oim-popup-content.oim-ul-editor', ...parts)
+}

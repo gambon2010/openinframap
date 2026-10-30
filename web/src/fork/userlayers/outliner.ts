@@ -72,8 +72,8 @@ function readFolded(): Set<string> {
 
 export interface OutlinerActions {
   update: () => void
-  select: (feature: UserFeature) => void
-  selected: () => string | null
+  select: (feature: UserFeature, add: boolean) => void
+  isSelected: (id: string) => boolean
   newLayer: () => void
 }
 
@@ -167,12 +167,15 @@ export class Outliner {
 
   private item(feature: UserFeature, layer: UserLayer): HTMLElement {
     const { name, what, detail } = featureLabelParts(feature)
-    const selected = feature.id === this.actions.selected()
+    const selected = this.actions.isSelected(feature.id)
     const row = el(
       `li.oim-ul-item${selected ? '.selected' : ''}`,
       {
         draggable: !layer.style.locked && !this.view,
-        title: tt('userlayers.item-title', 'Click: select · drag onto a layer: move')
+        title: tt(
+          'userlayers.item-title',
+          'Click: select · Shift-click: select several · drag onto a layer: move'
+        )
       },
       this.thumbnail(feature),
       el(
@@ -181,7 +184,8 @@ export class Outliner {
         el('small', name ? [what, detail].filter(Boolean).join(' · ') : detail)
       )
     )
-    row.onclick = () => this.actions.select(feature)
+    // Shift or Ctrl / Cmd-click: add to the selection.
+    row.onclick = (e) => this.actions.select(feature, e.shiftKey || e.ctrlKey || e.metaKey)
     row.ondragstart = (e) => {
       e.dataTransfer?.setData('application/x-oim-item', feature.id)
       if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'

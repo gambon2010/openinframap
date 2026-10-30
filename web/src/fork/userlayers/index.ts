@@ -40,7 +40,7 @@ const userlayers: ForkModule = {
     store.onChange(() => {
       void renderer.render(store.layers, store.hidden)
       // The selection may have been deleted or changed.
-      if (tools.selected) tools.select(store.layerOf(tools.selected) ? tools.selected : null)
+      tools.refreshSelection()
     })
     void store.load()
   }

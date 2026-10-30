@@ -17,8 +17,8 @@ import { Palette, Pick, PaletteMode } from './palette.ts'
 import { Playback } from './history.ts'
 import { Situation, createSituation, deleteSituation, listSituations, uploadImage } from './api.ts'
 import { situationLabel, situationPosition } from './situations.ts'
-import { UserFeature } from './model.ts'
-import { buildEditor } from './editor.ts'
+import { UserFeature, UserLayer } from './model.ts'
+import { buildBulkCard, buildEditor } from './editor.ts'
 import { Outliner } from './outliner.ts'
 import { graphicsLibrary, isAxis, pointCount } from './graphics.ts'
 import { getLabelLevel, setLabelLevel } from './symbols.ts'
@@ -121,11 +121,14 @@ export class Panel implements IControl {
     this.outline = el('.oim-ul-outline')
     this.outliner = new Outliner(store, {
       update: () => this.update(),
-      select: (feature) => {
-        if (!this.viewing) this.tools.select(feature.id)
-        this.zoomTo(feature)
+      select: (feature, add) => {
+        if (!this.viewing) {
+          if (add) this.tools.toggle(feature.id)
+          else this.tools.select(feature.id)
+        }
+        if (!add) this.zoomTo(feature)
       },
-      selected: () => this.tools.selected,
+      isSelected: (id) => this.tools.selection().includes(id),
       newLayer: () => this.newLayer()
     })
     this.sidebar = el('.maplibregl-ctrl.oim-ul-sidebar', this.fileInput)
@@ -176,6 +179,9 @@ export class Panel implements IControl {
     } catch {
       // Not remembered.
     }
+    // Shift-click selects several items: the map's Shift-drag zoom would swallow it.
+    if (open) this.map.boxZoom.disable()
+    else this.map.boxZoom.enable()
     this.button.classList.toggle('oim-dock-active', open)
     this.button.setAttribute('aria-pressed', String(open))
     if (!open) {
@@ -759,7 +765,55 @@ export class Panel implements IControl {
   private async syncEditor() {
     const panel = sidePanel()
     if (!panel) return
-    const id = this.inPlayback ? null : this.tools.selected
+    // Several items: one card for all of them.
+    const ids = this.inPlayback || this.viewing ? [] : this.tools.selection()
+    if (ids.length > 1) {
+      const items = ids
+        .map((i) => {
+          const layer = this.store.layerOf(i)
+          const feature = layer?.features.get(i)
+          return layer && feature ? { layer, feature } : null
+        })
+        .filter((x): x is { layer: UserLayer; feature: UserFeature } => x !== null)
+      const key = `bulk:${JSON.stringify(items.map((i) => [i.layer.id, i.feature]))}`
+      if (key === this.editorKey) return
+      this.editorKey = key
+      const card = buildBulkCard(items, [...this.store.layers.values()], {
+        updateEach: (change) =>
+          this.store.updateFeatures(
+            items
+              .filter((i) => !i.layer.style.locked)
+              .map((i) => ({
+                layerId: i.layer.id,
+                feature: { ...i.feature, properties: change(i.feature.properties) }
+              }))
+              .filter((c): c is { layerId: string; feature: UserFeature } => c.feature.properties !== null)
+          ),
+        moveTo: (layerId) =>
+          this.store.moveFeatures(
+            items.filter((i) => !i.layer.style.locked && i.layer.id !== layerId).map((i) => i.feature.id),
+            layerId
+          ),
+        remove: () => {
+          if (
+            window.confirm(
+              tt('userlayers.delete-n', 'Delete these {{count}} items?', { count: items.length })
+            )
+          )
+            this.tools.deleteSelected()
+        },
+        clear: () => this.tools.select(null)
+      })
+      panel.show(card, () => {
+        if (this.editorKey === key) {
+          this.editorKey = null
+          this.tools.select(null)
+        }
+      })
+      foldRoute()
+      return
+    }
+    const id = this.inPlayback || this.viewing ? null : this.tools.selected
     const layer = id ? this.store.layerOf(id) : undefined
     const feature = id ? layer?.features.get(id) : undefined
     if (!id || !layer || !feature) {

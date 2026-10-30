@@ -746,8 +746,16 @@ was hard to read. Version 3, built in steps:
   sidebar it's one line: `Situation: Live ▾` with the saved ones, "Save now as a
   situation…" (offers to save unsaved changes first) and delete. The backend now
   adds missing userdata tables to older databases (it checks for the newest one).
-- **Still to do:** selecting several items at once and changing them together;
-  situations as marks on the history bar.
+- **Several items at once:** Shift-click on the map or in the list adds an item to
+  the selection (`Tools.toggle` / `selection()`; the map's Shift-drag zoom is off
+  while My layers is open so the click gets through). The details panel then shows
+  one card for all of them: their names, identity and present / planned for all,
+  move to a layer, delete all. Each of those is one undo step (`Store.updateFeatures`
+  / `moveFeatures` / `deleteFeatures` share a `batch`).
+- **Fix found while testing:** saving several changes at once redrew the layers
+  before all their symbols' images were loaded (the first redraw resumed after the
+  others had changed the layers); the renderer now waits until no image is missing.
+- **Not done:** situations as marks on the history bar; selecting by dragging a box.
 
 ## Grid connections between two stations (prototype)
 
