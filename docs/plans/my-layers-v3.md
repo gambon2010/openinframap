@@ -222,6 +222,32 @@ already kept. In the UI it's one line, nothing more:
 - Later, a situation could also be a chosen set of layers (e.g. only Logistics),
   and two situations could be compared.
 
+**Folders for layers** (optional, one level):
+
+```
+▾ 👁 Exercise North              ← folder: eye and lock act on all its layers
+    ▸ 👁 ■ Blue forces      12
+    ▸ 👁 ■ Red forces        9
+▸ 👁 Logistics (3 layers)        ← folded: one line
+  ▸ 👁 ■ Notes               4   ← a layer outside any folder
+```
+
+- A folder holds layers (not other folders: one level keeps it simple). Layers
+  outside folders sit at the top level, so people who don't need folders never see
+  them.
+- Folded, a folder is one line with its layer count; its eye shows or hides all its
+  layers at once (each layer keeps its own eye inside), its lock locks them all.
+- Make one from a layer's ⋯ menu ("Move to folder ▸ New folder…") or by dragging a
+  layer onto another; drag layers in and out; a folder with no layers left
+  disappears.
+- Stored as a property of each layer (`folder`: its name), so moving a layer between
+  folders is an ordinary change, saved and in the history; renaming a folder
+  changes its layers. Whether a folder is folded is remembered per browser (not a
+  change).
+- The toolbar's "drawing into" menu lists layers by folder; search and filters
+  open the folders that have matches.
+- Situations can later pick folders as well as layers.
+
 ## 11. Still open
 
 - Which details the owner fills in most (to tune the table above).
