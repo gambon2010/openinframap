@@ -375,7 +375,7 @@ export class Panel implements IControl {
         className: 'oim-ul-tool-icon'
       }
     )
-    const pending = this.store.pending.length
+    const pending = this.store.unsavedCount
     const save = this.action(
       this.busy ||
         (pending
@@ -630,7 +630,7 @@ export class Panel implements IControl {
       )
       if (name && name.trim()) {
         // A situation is made of saved changes: offer to save the unsaved ones first.
-        const pending = this.store.pending.length
+        const pending = this.store.unsavedCount
         const includePending =
           pending > 0 &&
           window.confirm(
@@ -876,7 +876,7 @@ export class Panel implements IControl {
   // --- History ----------------------------------------------------------------------
 
   private async openPlayback() {
-    if (this.store.pending.length) {
+    if (this.store.unsavedCount) {
       window.alert(
         tt(
           'userlayers.history-save-first',

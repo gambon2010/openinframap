@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Change, UserLayer } from './model.ts'
 import { Store, applyChange } from './store.ts'
 
@@ -164,5 +164,49 @@ describe('undo and redo', () => {
     expect(store.layers.get(a)!.features.size).toBe(0)
     store.undo()
     expect(store.layers.get(a)!.features.size).toBe(3)
+  })
+})
+
+describe('what Save would change', () => {
+  test('changes that cancel out count for nothing', async () => {
+    localStorage.clear()
+    // The saved state, as the backend returns it.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              last_save: 1,
+              layers: [
+                {
+                  id: 'L',
+                  name: 'Grid',
+                  style: { color: '#d32f2f' },
+                  features: [
+                    { type: 'Feature', id: 'F', geometry: point, properties: { kind: 'marker', name: 'a' } }
+                  ]
+                }
+              ]
+            })
+          )
+      )
+    )
+    const store = new Store()
+    await store.load()
+    expect(store.unsavedCount).toBe(0)
+    const style = store.layers.get('L')!.style
+    store.updateLayer('L', { style: { ...style, locked: true } })
+    expect(store.unsavedCount).toBe(1)
+    store.updateLayer('L', { style: { ...style, locked: undefined } })
+    expect(store.unsavedCount).toBe(0) // locked then unlocked
+    expect(store.pending.length).toBe(2) // still there to undo
+    store.undo()
+    expect(store.unsavedCount).toBe(1)
+    const feature = store.layers.get('L')!.features.get('F')!
+    store.updateFeature('L', { ...feature, properties: { kind: 'marker', name: 'b' } })
+    store.updateFeature('L', { ...feature, properties: { kind: 'marker', name: 'a' } })
+    expect(store.unsavedCount).toBe(1) // only the lock
+    vi.unstubAllGlobals()
   })
 })

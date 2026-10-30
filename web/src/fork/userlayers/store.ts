@@ -153,6 +153,32 @@ export class Store {
     this.notify()
   }
 
+  /**
+   * How many layers and items differ from what's saved: what Save would really
+   * change. Changes that cancel out (lock then unlock) count for nothing.
+   */
+  get unsavedCount(): number {
+    const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+    let count = 0
+    const ids = new Set([...this.saved.keys(), ...this.layers.keys()])
+    for (const id of ids) {
+      const before = this.saved.get(id)
+      const after = this.layers.get(id)
+      if (!before || !after) {
+        count += 1 + (before?.features.size ?? after?.features.size ?? 0)
+        continue
+      }
+      if (before.name !== after.name || !same(before.style, after.style)) count++
+      const features = new Set([...before.features.keys(), ...after.features.keys()])
+      for (const f of features) {
+        const a = before.features.get(f)
+        const b = after.features.get(f)
+        if (!a || !b || !same(a.geometry, b.geometry) || !same(a.properties, b.properties)) count++
+      }
+    }
+    return count
+  }
+
   get canUndo(): boolean {
     return this.pending.length > 0
   }
@@ -290,6 +316,14 @@ export class Store {
   /** Send the unsaved changes; they're logged on the server for the history. */
   async save() {
     if (!this.pending.length) return
+    // Everything cancelled out: nothing to send.
+    if (!this.unsavedCount) {
+      this.pending = []
+      this.redoable = []
+      writeStorage(PENDING_KEY, this.pending)
+      this.notify()
+      return
+    }
     await saveChanges(this.pending, this.author)
     this.pending = []
     this.redoable = []

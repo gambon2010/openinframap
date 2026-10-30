@@ -755,6 +755,10 @@ was hard to read. Version 3, built in steps:
 - **Fix found while testing:** saving several changes at once redrew the layers
   before all their symbols' images were loaded (the first redraw resumed after the
   others had changed the layers); the renderer now waits until no image is missing.
+- **The unsaved count** ("Save (n)") is what Save would really change: layers and
+  items that differ from the saved state (`Store.unsavedCount`), so changes that
+  cancel out (lock then unlock) count for nothing; they stay in the list for undo,
+  and Save with nothing really changed just clears them.
 - **Not done:** situations as marks on the history bar; selecting by dragging a box.
 
 ## Grid connections between two stations (prototype)
