@@ -1,0 +1,33 @@
+/* Fork: the Background section of Settings (fork/satellite). */
+.oim-background h3,
+.oim-map-sources h3 {
+  margin: 4px 0 6px;
+}
+.oim-background-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.oim-background-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--oim-radius-small);
+  cursor: pointer;
+}
+.oim-background-choice:hover {
+  background: var(--oim-light-grey);
+}
+.oim-background-choice span {
+  display: flex;
+  flex-direction: column;
+}
+.oim-background-choice small {
+  color: var(--oim-text-color-light);
+}
+.oim-background + .oim-map-sources {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--oim-grey);
+}

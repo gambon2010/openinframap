@@ -24,6 +24,7 @@ to use* the result, see [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 - [Extra data (not from OpenStreetMap)](#extra-data-not-from-openstreetmap)
 - [My layers (layers you make on the map)](#my-layers-layers-you-make-on-the-map)
 - [Grid connections between two stations (prototype)](#grid-connections-between-two-stations-prototype)
+- [Satellite imagery (offline)](#satellite-imagery-offline)
 - [One look for the panels; Settings](#one-look-for-the-panels-settings)
 - [Smaller fixes](#smaller-fixes)
 - [Known limitations](#known-limitations)
@@ -778,6 +779,43 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   starting it again; they now restart it if it was running.
 
 ---
+
+## Satellite imagery (offline)
+
+Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (standard
+library; GDAL and pmtiles in Docker), chosen in `build-region.sh` after the
+background map, shown by `web/src/fork/satellite/`.
+
+- **Three tiers**, one PMTiles file each in `data/basemap/<region>.sat-<tier>.pmtiles`,
+  served by the existing `basemap` service (no new service; Tegola only serves vector
+  tiles):
+  - *overview*, zoom 0–8: NASA Blue Marble Next Generation from NASA GIBS
+    (`GoogleMapsCompatible_Level8`, checked in GIBS' capabilities), the world to
+    zoom 5 and the region's bounding box to zoom 8. Luxembourg: 1,369 tiles, 8 MB, 50 s.
+  - *regional*, zoom 9–12 (or 13): the ESA WorldCover Sentinel-2 RGBNIR 2021
+    composite (10 m, **CC BY 4.0**, stated in the files), 1°×1° cloud-optimised
+    GeoTIFFs in a public S3 bucket. GDAL reads only the parts it needs over HTTP
+    (for zoom 12 its built-in 20 m version), reprojects, cuts to the region's
+    outline, scales the 16-bit reflectance with one fixed curve (so cells match),
+    writes WebP tiles. Luxembourg: 0.85 MB, 23 s, a natural-looking result.
+    Much smaller than planned (France ~200 MB to zoom 12, not 2 GB).
+  - *detailed*, zoom 14–15/16/17, France only (Geofabrik region inside `france`):
+    IGN orthophotos (20 cm, Licence Ouverte) from the Géoplateforme WMTS, tiles that
+    touch the region's outline, 4 at a time, at most 20 a second.
+- **Not used:** Esri / Google / Bing (no offline storage allowed), EOX Sentinel-2
+  cloudless 2018+ (non-commercial).
+- **Frontend:** `select_satellite` (`scripts/lib/common.sh`) writes
+  `VITE_SATELLITE_TIERS` ("URL MIN MAX;..."); the module adds a raster source per
+  tier (no layer maxzoom, so a coarser tier is stretched under a finer one where
+  that has nothing) as the lowest data layers. **Settings → Background**: Map,
+  Satellite (above the whole background map; place names stay above), Satellite
+  with roads (moved under the background map's roads, railways and boundaries,
+  buildings hidden). Remembered per browser. Settings sections can now be added by
+  modules (`addSettingsSection`).
+- `import-db.sh` also runs `select_satellite`; `export-db.sh` mentions the imagery
+  to copy along with `data/basemap/`.
+- **Not run yet:** a full `build-region.sh` with the satellite questions (only the
+  steps on their own), and France at full size.
 
 ## One look for the panels; Settings
 

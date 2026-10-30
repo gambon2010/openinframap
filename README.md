@@ -51,6 +51,7 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Setup** | `scripts/launch.sh` (first time) and `scripts/start.sh` (every day): start everything, open the frontend in a terminal window and the map in the browser |
 | **Data** | `scripts/build-region.sh`: pick any Geofabrik region or the whole world, download (kept and reused), filter to infrastructure with osmium, import, views, search indexes, EEZ boundaries and per-country stats, all unattended after a few questions |
 | **Sharing** | `scripts/export-db.sh` / `scripts/import-db.sh`: save a built database (plus the Docker images) and restore it elsewhere in minutes, offline too |
+| **Satellite imagery** | Optional in `build-region.sh`, offline: NASA Blue Marble (zoom 0–8), Sentinel-2 10 m for the region (to 12/13), IGN 20 cm aerial photos in France; Settings → Background |
 | **Background map** | Optional offline copy per region (Protomaps extract, `basemap` service); Settings window to see and change the URL for the current tab |
 | **Grid connections** (prototype) | Pick two substations or plants; the map shows up to three paths between them over lines of 110 kV and more, stretch by stretch. Clicking a power line highlights where it goes |
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |

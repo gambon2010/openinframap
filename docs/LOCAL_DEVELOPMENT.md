@@ -159,6 +159,27 @@ port 8090) serves it, and `web/.env` gets
 frontend after that changes. Re-running the build offers to refresh it with newer
 map data. Unattended: `--basemap full`, `--basemap reduced` or `--basemap none`.
 
+## Satellite imagery (offline)
+
+`build-region.sh` offers satellite imagery after the background map. It's shown with
+**Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
+roads* (also roads, railways and borders); *Map* is the usual background.
+
+| Choice | What | Luxembourg | France (estimate) |
+|---|---|---|---|
+| Overview | NASA Blue Marble, 500 m, the world to zoom 5 and the region to zoom 8 | 8 MB, 1 min | ~15 MB |
+| + Regional | Sentinel-2 10 m cloud-free composite (2021), to zoom 12 | +1 MB, 30 s | ~200 MB |
+| + Regional, sharper | the same to zoom 13 (full 10 m) | +4 MB | ~1 GB, downloads ~40 GB |
+| Detailed (France only) | IGN aerial photos, 20 cm, zoom 14 to 15/16/17 | — | a département to 16: ~3 GB, hours |
+
+The Sentinel-2 imagery is read straight from ESA's public files (only the parts
+needed); the IGN photos are fetched tile by tile (about 20 a second), so keep the
+detailed tier to a département or a city. Past the last zoom the imagery is
+stretched (blurry); outside the region the Blue Marble shows. Files are in
+`data/basemap/<region>.sat-*.pmtiles`; copy `data/basemap/` along with an export to
+take them with it. For unattended builds: `--satellite none|overview|regional|regional13`
+and `--satellite-detailed 15|16|17|none`.
+
 ## Sharing a built database (export / import)
 
 Building a big region, and especially the world, takes time. Save it once:

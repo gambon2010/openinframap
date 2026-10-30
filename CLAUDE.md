@@ -70,6 +70,7 @@ OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm
 - `lib/common.sh`: shared helpers (paths, prompts, `run_with_timer`, `db_psql`/`db_query`, EEZ import, `start_app`, `create_search_indexes`, export manifest helpers). Source it; don't run it.
 - `build-region.sh`: region menu → download to `data/osm/` → osmium filter → `docker compose down -v` → imposm import → `views.sql`, `stats.sql`, `places.sql` → `sites.sql`, `grid.sql` (power grid network) → search indexes → EEZ (`schema/eez.sql`) → stats snapshot (`schema/local-stats.sql`) → `oim_build_info` table → Tegola → optional offline background map (`pmtiles extract` of the region's Geofabrik outline from Protomaps' daily build into `data/basemap/`, then `select_basemap` sets `VITE_BASEMAP_URL` in `web/.env`). All prompts happen before the first long step.
 - `export-db.sh` / `import-db.sh`: `pg_dump` of the `public`, `countries`, `stats`, `extra` and `userdata` schemas plus a JSON manifest. The restore skips objects a fresh DB already has (PostGIS, `spatial_ref_sys`, functions from `functions.sql`) but must keep functions from `views.sql` (Tegola needs them).
+- `satellite.py`: offline satellite imagery tiers (NASA Blue Marble, Sentinel-2 10 m, IGN 20 cm) into `data/basemap/<region>.sat-*.pmtiles`; `select_satellite` writes `VITE_SATELLITE_TIERS`.
 - `launch.sh`, `start.sh`: start everything; the frontend runs in a new terminal window via `open_in_terminal`.
 - `osm_filter.py`: generates the osmium `tags-filter` expressions from the imposm mapping.
 - `fetch_images.py`: Wikidata entity JSON + Commons thumbnails into `data/`.
@@ -99,7 +100,7 @@ Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that 
 ## Environment Variables
 
 `launch.sh` creates both files if missing:
-- `web/.env`: `VITE_TILE_BASE_URL` (night lights, and background map default: openinframap.org), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts). The map style needs Protomaps-schema background tiles. The map sources in Settings (`web/src/fork/map-sources/`, `fork/ui/settings.ts`) overrides it per tab via `sessionStorage`.
+- `web/.env`: `VITE_TILE_BASE_URL` (night lights, and background map default: openinframap.org), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts), `VITE_SATELLITE_TIERS` (satellite imagery tiers, set by `select_satellite`). The map style needs Protomaps-schema background tiles. The map sources in Settings (`web/src/fork/map-sources/`, `fork/ui/settings.ts`) overrides it per tab via `sessionStorage`.
 - `web-backend/.env`: `DATABASE_URL` for running the backend on the host (the Docker service sets its own)
 
 ## Gotchas

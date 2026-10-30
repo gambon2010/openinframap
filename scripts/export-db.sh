@@ -141,4 +141,7 @@ if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]]; then
     echo "Keep data/basemap/ in the copy too: it holds the offline background map"
     echo "for $REGION_NAME ($(human_size "$(stat -c%s "$BASEMAP_DIR/$REGION_ID.pmtiles")"))."
 fi
+if has_satellite "$REGION_ID"; then
+    echo "data/basemap/ also holds its satellite imagery: $(satellite_summary "$REGION_ID")."
+fi
 echo ""

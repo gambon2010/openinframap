@@ -1,6 +1,7 @@
 # Plan: satellite imagery, offline, chosen in the build script
 
-Status: plan only (2026-10-30). Nothing is implemented yet.
+Status: implemented 2026-10-30 (see FORK_CHANGES.md "Satellite imagery"). Measured
+sizes turned out much smaller than estimated below for the regional tier.
 
 ## Goal
 

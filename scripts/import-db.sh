@@ -156,6 +156,7 @@ if [[ -n "$BACKEND_WAS_RUNNING" ]]; then
 fi
 # Use this region's offline background map if it was copied along (data/basemap/).
 select_basemap "$REGION_ID"
+select_satellite "$REGION_ID"
 
 ELAPSED=$((SECONDS - START))
 log_build "$REGION_ID  imported in $((ELAPSED / 60))m $((ELAPSED % 60))s (OSM data as of $OSM_TIMESTAMP)"

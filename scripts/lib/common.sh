@@ -543,6 +543,70 @@ select_basemap() {
     fi
 }
 
+# Satellite imagery of region $1 (scripts/satellite.py): data/basemap/<region>.sat-<tier>.pmtiles.
+has_satellite() {
+    compgen -G "$BASEMAP_DIR/$1.sat-*.pmtiles" >/dev/null
+}
+
+# "overview, regional (12 MB)": the tiers region $1 has, and their total size.
+satellite_summary() {
+    local region="$1" tiers="" total=0 file tier
+    for tier in overview regional detailed; do
+        file="$BASEMAP_DIR/$region.sat-$tier.pmtiles"
+        [[ -f "$file" ]] || continue
+        tiers+="${tiers:+, }$tier"
+        total=$((total + $(stat -c%s "$file")))
+    done
+    echo "$tiers ($(human_size "$total"))"
+}
+
+# The max zoom in a PMTiles v3 header (byte 101), or $2 if it can't be read.
+pmtiles_maxzoom() {
+    python3 -c 'import sys
+try:
+    header = open(sys.argv[1], "rb").read(127)
+    print(header[101] if header[:7] == b"PMTiles" else sys.argv[2])
+except OSError:
+    print(sys.argv[2])' "$1" "$2"
+}
+
+# Region $1's satellite tiers as the frontend reads them (VITE_SATELLITE_TIERS,
+# fork/satellite): "URL MINZOOM MAXZOOM;URL MINZOOM MAXZOOM..." (empty: none).
+satellite_tiers_value() {
+    local region="$1" value="" tier file ext range
+    for tier in overview regional detailed; do
+        file="$BASEMAP_DIR/$region.sat-$tier.pmtiles"
+        [[ -f "$file" ]] || continue
+        case "$tier" in
+            overview) ext=jpg;  range="0 8" ;;
+            regional) ext=webp; range="9 $(pmtiles_maxzoom "$file" 12)" ;;
+            detailed) ext=jpg;  range="14 $(pmtiles_maxzoom "$file" 16)" ;;
+        esac
+        value+="${value:+;}http://localhost:$BASEMAP_PORT/$region.sat-$tier/{z}/{x}/{y}.$ext $range"
+    done
+    echo "$value"
+}
+
+# Point the frontend at region $1's satellite imagery (or drop the setting if it
+# has none), and start the server that serves it.
+select_satellite() {
+    local region="$1" current value
+    ensure_web_env
+    current=$(grep -E '^VITE_SATELLITE_TIERS=' "$WEB_ENV" | cut -d= -f2- || true)
+    value=$(satellite_tiers_value "$region")
+    if [[ "$current" != "$value" ]]; then
+        set_env_line "$WEB_ENV" VITE_SATELLITE_TIERS "$value"
+        BASEMAP_CHANGED=1
+    fi
+    if [[ -n "$value" ]]; then
+        docker compose --progress quiet up -d basemap </dev/null
+        ok "Satellite imagery: $(satellite_summary "$region"). Turn it on in Settings → Background."
+    fi
+    if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
+        warn "Restart the frontend to use the new imagery (Ctrl+C in its window, then bash scripts/start.sh)."
+    fi
+}
+
 # Start the background-map server if any background map has been downloaded.
 start_basemap_if_present() {
     if has_local_basemaps; then

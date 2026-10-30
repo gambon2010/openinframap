@@ -14,10 +14,11 @@ import search from './search/index.ts'
 import ui from './ui/index.ts'
 import userlayers from './userlayers/index.ts'
 import grid from './grid/index.ts'
+import satellite from './satellite/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
-const MODULES: ForkModule[] = [extra, sites, search, grid, ui, userlayers]
+const MODULES: ForkModule[] = [satellite, extra, sites, search, grid, ui, userlayers]
 
 let context: ForkContext | undefined
 
