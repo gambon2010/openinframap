@@ -1089,14 +1089,21 @@ Modules:
 - `sites` (critical sites);
 - `userlayers` (My layers: symbols, pictures, drawings, copies, saving, history);
 - `search` (place and feature descriptions, switching a result's layer on, Photon);
-- `grid` (feature details in a side panel, highlight, where a line goes, routes
-  between stations);
+- `details` (a clicked feature's details in the left panel, highlighted; a second
+  click closes them; search results open the same way);
+- `grid` (routes between stations, "Route from / to here" and where a power line
+  goes, both added to the details with `addDetailsExtra`);
 - `satellite` (imagery as the background);
 - `map-sources` (its Settings section);
 - `layout` (the dock for the layer list and key, the Settings link, the search box
   in the top bar).
 
-Shared: `ui/dock.ts`, `ui/panel.ts` and `panel.css` (one look for panels),
+Shared: `ui/left-column.ts` (the left-hand panels in a fixed order, whichever
+module adds them: My layers' sidebar 10, the details panel 20, the grid route 30;
+it also holds the one details panel and highlight), `ui/details.ts` (the details
+panel; `onShow` listeners, e.g. the route folds itself; `addDetailsExtra` for what
+modules add to a feature's details), `ui/highlight.ts`, `ui/dock.ts`, `ui/panel.ts`
+and `panel.css` (one look for panels),
 `ui/settings.ts` (modules add sections with `addSettingsSection`, placed by
 `order`). The key's checkboxes (`ui/key/toggles.ts`) are added to upstream's rows
 after they're built, working out what each row hides from its swatch, so upstream's

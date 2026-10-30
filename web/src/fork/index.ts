@@ -9,18 +9,20 @@ import { LayerSpecificationWithZIndex } from '../style/types.ts'
 import type { SearchResult } from '../search/search.ts'
 import { BackendSearchResult, ForkContext, ForkModule } from './types.ts'
 import { extendKey } from './ui/key/toggles.ts'
+import { leftColumn } from './ui/left-column.ts'
 import extra from './modules/extra/index.ts'
 import sites from './modules/sites/index.ts'
 import search from './modules/search/index.ts'
 import layout from './modules/layout/index.ts'
 import mapSources from './modules/map-sources/index.ts'
 import userlayers from './modules/userlayers/index.ts'
+import details from './modules/details/index.ts'
 import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
-const MODULES: ForkModule[] = [satellite, mapSources, extra, sites, search, grid, layout, userlayers]
+const MODULES: ForkModule[] = [satellite, mapSources, extra, sites, search, details, grid, layout, userlayers]
 
 let context: ForkContext | undefined
 
@@ -47,6 +49,8 @@ export function forkSwitcherGroups(): LayerGroup[] {
 /** openinframap.ts: once the map and its controls exist, before clicks are routed. */
 export function forkInit(ctx: ForkContext) {
   context = ctx
+  // The left column and its details panel, before the modules that use them.
+  leftColumn.attach(ctx.map)
   for (const m of MODULES) m.init?.(ctx)
 }
 

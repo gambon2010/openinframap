@@ -49,9 +49,7 @@ test('modules never import each other; ui and core stay below them', () => {
       if (!allowed) broken.push(`${relative(FORK, file)} -> ${target}`)
     }
   }
-  // Until the left column is shared (docs/plans/refactor.md, step 5).
-  const pending = ['modules/userlayers/panel.ts -> modules/grid']
-  expect(broken.filter((b) => !pending.includes(b))).toEqual([])
+  expect(broken).toEqual([])
 })
 
 test('upstream files import only index.ts, types.ts and config.ts of the fork', () => {

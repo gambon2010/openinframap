@@ -14,7 +14,7 @@ import { t } from '../../core/i18n.ts'
 import { el, mount, setChildren } from 'redom'
 import { BACKEND_BASE_URL } from '../../config.ts'
 import './grid-route.css'
-import { closeButton, minimiseButton, updateMinimiseButton } from './info-panel.ts'
+import { closeButton, minimiseButton, updateMinimiseButton } from '../../ui/details.ts'
 
 export type StationKind = 'substation' | 'plant'
 

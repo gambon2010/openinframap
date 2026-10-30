@@ -23,7 +23,7 @@ import { Outliner } from './outliner.ts'
 import { graphicsLibrary, isAxis, pointCount } from './graphics.ts'
 import { getLabelLevel, setLabelLevel } from './symbols.ts'
 import { LabelLevel } from './fields.ts'
-import { foldRoute, sidePanel } from '../grid/index.ts'
+import { LEFT_ORDER, leftColumn } from '../../ui/left-column.ts'
 import './userlayers.css'
 
 // Pictures are kept this big (longest side): enough to stay sharp at the largest
@@ -164,10 +164,8 @@ export class Panel implements IControl {
         .getContainer()
         .style.setProperty('--oim-ul-toolbar-half', `${Math.ceil(this.toolbar.offsetWidth / 2)}px`)
     ).observe(this.toolbar)
-    // In the left column, between the search box and the details panel.
-    const details = sidePanel()?._container
-    if (details?.parentElement) details.parentElement.insertBefore(this.sidebar, details)
-    else this.map.getContainer().querySelector('.maplibregl-ctrl-top-left')?.append(this.sidebar)
+    // In the left column, above the details panel.
+    leftColumn.add(this.sidebar, LEFT_ORDER.sidebar)
     let open = false
     try {
       open = localStorage.getItem(OPEN_KEY) === '1'
@@ -779,8 +777,7 @@ export class Panel implements IControl {
   // --- Inspector: details of the selected item (the left details panel) ----------------
 
   private async syncEditor() {
-    const panel = sidePanel()
-    if (!panel) return
+    const panel = leftColumn.details
     // Several items: one card for all of them.
     const ids = this.inPlayback || this.viewing ? [] : this.tools.selection()
     if (ids.length > 1) {
@@ -824,7 +821,6 @@ export class Panel implements IControl {
           this.tools.select(null)
         }
       })
-      foldRoute()
       return
     }
     const id = this.inPlayback || this.viewing ? null : this.tools.selected
@@ -872,7 +868,6 @@ export class Panel implements IControl {
         this.tools.select(null)
       }
     })
-    foldRoute()
     if (focused) editor.querySelector<HTMLElement>(`[data-field="${CSS.escape(focused)}"]`)?.focus()
   }
 

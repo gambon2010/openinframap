@@ -1,20 +1,44 @@
 /*
- * Fork: feature details in a panel on the left (instead of a popup over the
- * map), stacked above the Grid connection panel.
+ * Fork: the details panel on the left (instead of a popup over the map): a map
+ * feature's details (modules/details), a My layers item's card... One for the
+ * whole page, in the left column (left-column.ts). Also the side panels' look
+ * and buttons (details.css), which the grid route panel shares.
  *
  * Minimise keeps the panel's highlight on the map and shrinks it to its title;
- * close removes both. Showing another feature replaces the content.
+ * close removes both. Showing something else replaces the content.
  */
-import { IControl } from 'maplibre-gl'
-import { t } from '../../core/i18n.ts'
+import { IControl, MapGeoJSONFeature } from 'maplibre-gl'
+import { t } from '../core/i18n.ts'
 import { el, setChildren } from 'redom'
-import './info-panel.css'
+import './details.css'
 
-export default class InfoPanel implements IControl {
+/**
+ * What a module adds to a map feature's details (buttons, more information),
+ * given the feature and the details' content once shown. May finish later.
+ */
+export type DetailsExtra = (feature: MapGeoJSONFeature, content: HTMLElement) => void
+
+const extras: DetailsExtra[] = []
+
+export function addDetailsExtra(extra: DetailsExtra) {
+  extras.push(extra)
+}
+
+export function detailsExtras(): readonly DetailsExtra[] {
+  return extras
+}
+
+export class DetailsPanel implements IControl {
   _container!: HTMLDivElement
   _body!: HTMLDivElement
   _minimise!: HTMLButtonElement
   _onClose?: () => void
+  private shownListeners: (() => void)[] = []
+
+  /** Called each time something is shown (e.g. the grid route folds to make room). */
+  onShow(listener: () => void) {
+    this.shownListeners.push(listener)
+  }
 
   onAdd() {
     this._body = el('div', { class: 'oim-side-panel-body' })
@@ -42,6 +66,7 @@ export default class InfoPanel implements IControl {
     setChildren(this._body, [content])
     this._container.classList.add('visible')
     this.setMinimised(false)
+    for (const listener of this.shownListeners) listener()
   }
 
   isOpen(): boolean {

@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phase 1 done; phase 2 steps 4 and 7 done.
+Status: **in progress** (agreed 2026-10-30). Phase 1 done; phase 2 steps 4–7 done.
 
 ## Why
 
@@ -90,11 +90,13 @@ working sessions.
 
    *Effort: 1 (moves plus import paths; upstream's hooks import only
    `fork/index.ts`, so upstream files don't change).*
-5. **A left-column service** in `ui/left-column.ts`. Modules register a panel with a
+5. **A left-column service** in `ui/left-column.ts` (done; the route folds itself
+   through the details panel's `onShow`). Modules register a panel with a
    place in the order (details, the My layers sidebar, the grid route…) and a fold
    policy ("fold me when another panel needs room"). My layers stops importing
    from the grid module. *Effort: 1. Prepares MGRS, measuring and import panels.*
-6. **Split `grid/`**:
+6. **Split `grid/`** (done: `modules/details/`, `modules/grid/`; the details panel
+   and highlight are shared in `ui/`, the power-line tracing is `grid/line.ts`):
    - `details/`: the feature-details panel, highlight, click and deselect, used by
      every layer;
    - `grid/`: where a line goes, routes, and later the what-if.
