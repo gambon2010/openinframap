@@ -157,6 +157,18 @@ export class Renderer {
         paint: { 'fill-color': ['get', 'fill'], 'fill-opacity': ['get', 'fillOpacity'] }
       },
       {
+        id: `${source}_casing`,
+        type: 'line',
+        source,
+        filter: ['all', LINE_OR_POLYGON, ['!=', ['get', 'casing'], null]],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': ['get', 'casing'],
+          'line-width': ['+', ['get', 'width'], 2],
+          'line-opacity': 0.8
+        }
+      },
+      {
         id: `${source}_line`,
         type: 'line',
         source,
@@ -175,13 +187,17 @@ export class Renderer {
         layout: {
           'text-field': ['get', 'label'],
           'text-font': font,
-          'text-size': 13,
+          'text-size': 15,
           'text-rotate': ['get', 'angle'],
           'text-rotation-alignment': 'map',
           'text-allow-overlap': true,
           'text-ignore-placement': true
         },
-        paint: { 'text-color': ['get', 'color'], 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 }
+        paint: {
+          'text-color': ['get', 'color'],
+          'text-halo-color': ['coalesce', ['get', 'halo'], '#ffffff'],
+          'text-halo-width': 2
+        }
       }
     ] as LayerSpecification[]
   }

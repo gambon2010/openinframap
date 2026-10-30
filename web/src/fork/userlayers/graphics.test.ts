@@ -1,6 +1,6 @@
 // Tactical graphics through the real C5ISR renderer (no map needed: it returns GeoJSON).
 import { beforeAll, describe, expect, test } from 'vitest'
-import { colour, graphicsLibrary, mapScale, pointCount, renderGraphic, toDCode } from './graphics.ts'
+import { colour, graphicsLibrary, haloFor, mapScale, pointCount, renderGraphic, toDCode } from './graphics.ts'
 
 type Lib = Awaited<ReturnType<typeof graphicsLibrary>>
 let lib: Lib
@@ -15,6 +15,14 @@ describe('helpers', () => {
     expect(colour('#FFFF00')).toBe('#ffff00')
     expect(colour('red')).toBeNull()
     expect(colour(undefined)).toBeNull()
+  })
+
+  test('labels get a dark outline on light text, white on dark', () => {
+    expect(haloFor('#ffff00')).toBe('#1a1a1a') // yellow: unknown / pending
+    expect(haloFor('#00ffff')).toBe('#1a1a1a')
+    expect(haloFor('#000000')).toBe('#ffffff')
+    expect(haloFor('#ff0000')).toBe('#ffffff') // hostile red
+    expect(haloFor('#0000ff')).toBe('#ffffff')
   })
 
   test('map scale halves with each zoom level', () => {

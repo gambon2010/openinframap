@@ -21,23 +21,34 @@ import { LabelLevel } from './fields.ts'
 import { sidePanel } from '../grid/index.ts'
 import './userlayers.css'
 
-const MAX_IMAGE_SIZE = 256
+// Pictures are kept this big (longest side): enough to stay sharp at the largest
+// size on the map (8×64 px, on a high-density screen).
+export const MAX_IMAGE_SIZE = 1024
 
-/** A picture, scaled down to at most 256 px, as base64 (for the backend). */
+/** How much to scale a picture: down to MAX_IMAGE_SIZE; vector images (SVG) up to it too. */
+export function imageScale(width: number, height: number, vector: boolean): number {
+  const longest = Math.max(width, height, 1)
+  return vector ? MAX_IMAGE_SIZE / longest : Math.min(1, MAX_IMAGE_SIZE / longest)
+}
+
+/** A picture, at most 1024 px, as WebP (keeps transparency, small) in base64 for the backend. */
 async function prepareImage(file: File): Promise<{ mime: string; data: string }> {
   const url = URL.createObjectURL(file)
   try {
     const img = new Image()
     img.src = url
     await img.decode()
-    const scale = Math.min(1, MAX_IMAGE_SIZE / Math.max(img.naturalWidth, img.naturalHeight))
+    const scale = imageScale(img.naturalWidth, img.naturalHeight, file.type === 'image/svg+xml')
     const canvas = document.createElement('canvas')
     canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
     canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
-    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-    // Photos as JPEG; anything that may be transparent as PNG.
-    const mime = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png'
-    const dataUrl = canvas.toDataURL(mime, 0.85)
+    const ctx = canvas.getContext('2d')!
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    let dataUrl = canvas.toDataURL('image/webp', 0.9)
+    // Browsers without WebP encoding give PNG back.
+    if (!dataUrl.startsWith('data:image/webp')) dataUrl = canvas.toDataURL('image/png')
+    const mime = dataUrl.slice(5, dataUrl.indexOf(';'))
     return { mime, data: dataUrl.slice(dataUrl.indexOf(',') + 1) }
   } finally {
     URL.revokeObjectURL(url)

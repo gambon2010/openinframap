@@ -126,17 +126,32 @@ function normalise(feature: GeoJSON.Feature): GeoJSON.Feature | null {
       ? {
           label: String(p['label']),
           color: colour(p['fontColor']) ?? '#000000',
+          halo: haloFor(colour(p['fontColor']) ?? '#000000'),
           angle: Number(p['angle'] ?? p['rotation'] ?? 0) || 0,
           align: p['labelAlign'] === 'left' || p['labelAlign'] === 'right' ? p['labelAlign'] : 'center'
         }
       : {
           stroke: colour(p['strokeColor']),
+          // Light lines (yellow) get a dark edge, or they vanish on the light map.
+          casing: haloFor(colour(p['strokeColor']) ?? '#000000') === '#1a1a1a' ? '#1a1a1a' : null,
           fill: colour(p['fillColor']),
           fillOpacity: Number(p['fillOpacity'] ?? 0.3),
           width: Number(p['strokeWidth'] ?? 2) || 2,
           dashed: Array.isArray(p['strokeDasharray']) && p['strokeDasharray'].length > 0
         }
   }
+}
+
+/**
+ * The outline that keeps a label readable: dark around light text (yellow, the
+ * colour of unknown / pending graphics), white around dark text.
+ */
+export function haloFor(textColour: string): string {
+  const hex = textColour.replace('#', '')
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+  // Relative luminance (sRGB weights, without the gamma curve: enough to choose).
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return luminance > 0.6 ? '#1a1a1a' : '#ffffff'
 }
 
 /** '#FF00FF00' (AARRGGBB) or '#00FF00' -> '#00ff00' (alpha dropped: the layer sets it). */
