@@ -883,6 +883,22 @@ background map, or later with `scripts/satellite.sh` for the region already buil
 (no rebuild; both use `choose_satellite` / `download_satellite` in `lib/common.sh`),
 shown by `web/src/fork/satellite/`.
 
+- **Areas and sources (October 2026):** Sentinel-2 can be for the region built,
+  another Geofabrik region, or the whole world (`regional --world`: every land cell
+  of the composite, found once in parallel and cached in
+  `data/basemap/.worldcover-cells.json`, not cut; zoom 9–13, default 10). Aerial
+  photos come from `DETAILED_SOURCES` in `satellite.py` (14 sources in 10 countries,
+  each tested to answer tile requests; WMS sources get a GetMap per tile), cut to
+  the area and to the source's Geofabrik region (`tile_blocks` over several
+  outlines, in square blocks so 17 million tiles never sit in memory). Downloads
+  resume (`MBTiles(resume=True)`, committed every 500 tiles) and drop a server's
+  blank "no data" tiles (`drop_repeated`: a small tile met twice byte for byte).
+  The questions are `satellite.py choose` (a JSON plan; presets for unattended
+  runs) and `satellite.py steps` (one timed step each in `download_satellite`).
+  Files: `<area>.sat-regional.pmtiles`, `<area>.sat-detailed-<source>.pmtiles`;
+  `satellite_tiers_value` lists everything in `data/basemap/` (tile type from the
+  PMTiles header), and the frontend credits each source by file name
+  (`fork/satellite/index.ts`, kept in step with `DETAILED_SOURCES`).
 - **Three tiers**, one PMTiles file each in `data/basemap/<region>.sat-<tier>.pmtiles`,
   served by the existing `basemap` service (no new service; Tegola only serves vector
   tiles):

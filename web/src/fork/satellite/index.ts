@@ -1,7 +1,8 @@
 // Fork: offline satellite imagery as the background (scripts/satellite.py, chosen in
-// scripts/build-region.sh). Each tier (NASA Blue Marble to zoom 8, Sentinel-2 10 m,
-// IGN 20 cm in France) is a raster source served by the `basemap` service; the
-// build writes them to VITE_SATELLITE_TIERS. Settings → Background chooses:
+// scripts/build-region.sh or scripts/satellite.sh). Each file (NASA Blue Marble for
+// the world to zoom 8, Sentinel-2 10 m for an area or the world, aerial photos by
+// country) is a raster source served by the `basemap` service; the scripts write
+// them to VITE_SATELLITE_TIERS. Settings → Background chooses:
 //   map        the usual background map
 //   satellite  imagery instead of it (place names and infrastructure on top)
 //   hybrid     imagery with the background map's roads, railways and boundaries
@@ -23,9 +24,26 @@ export type BackgroundMode = 'map' | 'satellite' | 'hybrid'
 
 const MODE_KEY = 'oim-background-mode'
 
+// The aerial photo sources are scripts/satellite.py's DETAILED_SOURCES (files
+// <area>.sat-detailed-<source>.pmtiles); keep the two lists in step.
 const ATTRIBUTION: [RegExp, string][] = [
   [/sat-overview/, 'NASA Blue Marble'],
   [/sat-regional/, 'Contains modified Copernicus Sentinel data (2021), ESA WorldCover (CC BY 4.0)'],
+  [/sat-detailed-fr_ign/, '© IGN (Licence Ouverte)'],
+  [/sat-detailed-es_pnoa/, '© IGN España, PNOA (CC BY 4.0)'],
+  [/sat-detailed-nl_pdok/, '© Beeldmateriaal Nederland, PDOK (CC BY 4.0)'],
+  [/sat-detailed-lu_geoportail/, '© Geoportail Luxembourg (CC0)'],
+  [/sat-detailed-at_basemap/, '© basemap.at (CC BY 4.0)'],
+  [/sat-detailed-be_flanders/, '© Digitaal Vlaanderen (Modellicentie Gratis Hergebruik)'],
+  [/sat-detailed-be_wallonia/, '© SPW, Wallonie (CC BY 4.0)'],
+  [/sat-detailed-de_nrw/, '© Geobasis NRW (dl-de/zero-2-0)'],
+  [/sat-detailed-de_bayern/, '© Bayerische Vermessungsverwaltung (CC BY 4.0)'],
+  [/sat-detailed-de_berlin/, '© Geoportal Berlin (dl-de/zero-2-0)'],
+  [/sat-detailed-cz_cuzk/, '© ČÚZK (CC BY 4.0)'],
+  [/sat-detailed-pl_geoportal/, '© GUGiK, Geoportal.gov.pl'],
+  [/sat-detailed-ee_maaamet/, '© Maa- ja Ruumiamet'],
+  [/sat-detailed-us_usgs/, 'USDA NAIP, USGS The National Map (public domain)'],
+  // Before there were several sources: IGN's.
   [/sat-detailed/, '© IGN (Licence Ouverte)']
 ]
 
@@ -179,7 +197,9 @@ const satellite: ForkModule = {
       TIERS.length
         ? el(
             'p.oim-map-sources-note',
-            t('satellite.zooms', 'Imagery up to zoom {{zoom}}.', { zoom: TIERS[TIERS.length - 1].maxzoom })
+            t('satellite.zooms', 'Imagery up to zoom {{zoom}}.', {
+              zoom: Math.max(...TIERS.map((tier) => tier.maxzoom))
+            })
           )
         : ''
     )

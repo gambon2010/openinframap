@@ -60,6 +60,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 3.5 | Future: one command that sets up local tile server + local geocoder; priority local from config, fall back to online defaults, UI override showing the URL in use. | ✅ partly (local basemap, Photon optional); single command for Photon not done |
 | 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/satellite.py`, `fork/satellite/`; Settings → Background |
 | 3.7 | Download satellite imagery for the region already built without losing the data (no rebuild). | ✅ `scripts/satellite.sh` |
+| 3.8 | Blue Marble for the whole world by default; a menu that explains each choice. | ✅ one shared `world.sat-overview.pmtiles` (~330 MB) |
+| 3.9 | Sentinel-2 for other countries or the whole world; high-resolution photos for more countries than France. | ✅ `satellite.py choose`, `DETAILED_SOURCES` (14 sources, 10 countries); the world end to end not run (too big to test) |
 
 ## 4. Search
 

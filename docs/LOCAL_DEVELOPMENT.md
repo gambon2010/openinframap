@@ -172,21 +172,43 @@ It's shown with
 **Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
 roads* (also roads, railways and borders); *Map* is the usual background.
 
-| Choice | What | Luxembourg | France (estimate) |
-|---|---|---|---|
-| The world | NASA Blue Marble, 500 m, the whole world to zoom 8; one file (`world.sat-overview.pmtiles`) for every region, downloaded once | ~330 MB, about an hour | (same file) |
-| + Regional | Sentinel-2 10 m cloud-free composite (2021), to zoom 12 | +1 MB, 30 s | ~200 MB |
-| + Regional, sharper | the same to zoom 13 (full 10 m) | +4 MB | ~1 GB, downloads ~40 GB |
-| Detailed (France only) | IGN aerial photos, 20 cm, zoom 14 to 15/16/17 | — | a département to 16: ~3 GB, hours |
+Three kinds, each adding detail to the one below (sizes are what's kept on disk):
 
-The Sentinel-2 imagery is read straight from ESA's public files (only the parts
-needed); the IGN photos are fetched tile by tile (about 20 a second), so keep the
-detailed tier to a département or a city. Past the last zoom the imagery is
-stretched (blurry); outside the region the Blue Marble shows. Files are in
-`data/basemap/<region>.sat-*.pmtiles`; copy `data/basemap/` along with an export to
-take them with it. For unattended builds: `--satellite none|overview|regional|regional13`
-and `--satellite-detailed 15|16|17|none` (both scripts; `satellite.sh --yes` needs
-`--satellite`).
+| What | Covers | Size |
+|---|---|---|
+| NASA Blue Marble, 500 m, to zoom 8 | the whole world, one file for every region (`world.sat-overview.pmtiles`), downloaded once | ~330 MB, about an hour |
+| Sentinel-2 10 m, cloud-free composite (2021), zoom 9 to 12 or 13 | the region you built, **another country or region** (searched by name), or **the whole world** | France to 12: ~200 MB (reads ~13 GB from ESA); to 13: ~800 MB (reads ~51 GB) |
+| Aerial photos, 8 to 60 cm, zoom 14 to 15/16/17 | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
+
+The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
+
+| To zoom | Kept | Read from ESA |
+|---|---|---|
+| 9 | ~0.8 GB | ~40 GB |
+| 10 (default) | ~3 GB | ~150 GB |
+| 11 | ~12 GB | ~600 GB |
+| 12 | ~47 GB | ~2.4 TB |
+| 13 | ~190 GB | ~9.4 TB |
+
+Aerial photo sources (`python3 scripts/satellite.py sources`): France (IGN, 20 cm),
+Spain (PNOA, 25 cm), the Netherlands (PDOK, 8 cm), Luxembourg (20 cm), Austria
+(basemap.at, 30 cm), Belgium (Flanders and Wallonia, 25 cm), Germany (North
+Rhine-Westphalia 10 cm, Bavaria 40 cm, Berlin 20 cm), Czechia (ČÚZK, 20 cm), Poland
+(Geoportal, 25 cm), Estonia (25 cm) and the United States (USGS/NAIP, 60 cm–1 m, to
+zoom 16). All open data; each map shows its credit. Not offered: Switzerland (its
+terms want offline copies from its file downloads, not its tile server), Denmark
+(needs a key), Norway, and Google, Bing or Esri imagery (their terms forbid offline
+copies). The menu shows each one's size and time for the area: they're fetched tile
+by tile (about 10–20 a second), so a whole country to zoom 17 takes days. The
+estimates count the region's whole outline, coastal sea included, so they're upper
+bounds. A download that's stopped goes on where it stopped when run again.
+
+Everything in `data/basemap/` is shown, whatever area it's of; past a file's last
+zoom its imagery is stretched (blurry), and where a file has nothing the one below
+shows. Copy `data/basemap/` along with an export to take it with you. Unattended:
+`--satellite none|overview|regional|regional13` and `--satellite-detailed 15|16|17|none`
+(both scripts); `satellite.sh` also takes `--area ID|world`, `--zoom 9-13` and
+`--sources "ID ..."` (and `--yes` needs `--satellite`).
 
 ## Sharing a built database (export / import)
 

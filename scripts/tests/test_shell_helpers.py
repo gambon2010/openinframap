@@ -50,17 +50,26 @@ def test_satellite_tiers_value(tmp_path):
         "http://localhost:8090/lux.sat-overview/{z}/{x}/{y}.jpg 0 8;"
         "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
     )
-    assert bash("satellite_tiers_value other", BASEMAP_DIR=str(tmp_path)) == ""
-    assert (
-        bash("has_satellite lux && echo yes || echo no", BASEMAP_DIR=str(tmp_path))
-        == "yes"
+    # Another region: everything downloaded shows, but not lux's own overview.
+    assert bash("satellite_tiers_value other", BASEMAP_DIR=str(tmp_path)) == (
+        "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
     )
     assert (
         bash("has_satellite other && echo yes || echo no", BASEMAP_DIR=str(tmp_path))
+        == "yes"
+    )
+    assert (
+        bash("region_satellite other && echo yes || echo no", BASEMAP_DIR=str(tmp_path))
+        == "no"
+    )
+    assert (
+        bash(
+            "has_satellite x && echo yes || echo no", BASEMAP_DIR=str(tmp_path / "none")
+        )
         == "no"
     )
     assert bash("satellite_summary lux", BASEMAP_DIR=str(tmp_path)).startswith(
-        "overview, regional ("
+        "lux overview, lux regional ("
     )
 
 
@@ -119,3 +128,22 @@ def test_world_overview_is_shared_by_every_region(tmp_path):
         "has_satellite fr && echo yes; region_satellite fr || echo none",
         BASEMAP_DIR=str(tmp_path),
     ).split() == ["yes", "none"]
+
+
+def test_tiers_list_every_area_and_source(tmp_path):
+    def pmtiles(name, maxzoom, tile_type):
+        header = bytearray(pmtiles_header(maxzoom))
+        header[99] = tile_type
+        (tmp_path / name).write_bytes(bytes(header))
+
+    pmtiles("world.sat-overview.pmtiles", 8, 3)
+    pmtiles("bayern.sat-regional.pmtiles", 12, 4)
+    pmtiles("world.sat-regional.pmtiles", 10, 4)
+    pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 17, 2)  # PNG
+    value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
+    assert value.split(";") == [
+        "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
+        "http://localhost:8090/world.sat-regional/{z}/{x}/{y}.webp 9 10",
+        "http://localhost:8090/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
+        "http://localhost:8090/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
+    ]

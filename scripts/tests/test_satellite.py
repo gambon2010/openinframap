@@ -1,6 +1,9 @@
 """scripts/satellite.py: tile maths, outlines, estimates, MBTiles and downloads."""
 
+import contextlib
 import http.server
+import io
+import json
 import sqlite3
 import threading
 from typing import ClassVar
@@ -120,15 +123,19 @@ def test_estimate_grows_with_zoom():
 
 
 def test_regional_pipeline():
-    script = s.regional_pipeline(["N49E006"], 12)
-    assert "/vsicurl/https://esa-worldcover-s2" in script
+    script = s.regional_pipeline(12)
+    assert "-input_file_list cells.txt" in script
     assert "-cutline area.geojson" in script
     assert "ZOOM_LEVEL_STRATEGY=LOWER" in script
     assert script.endswith(
         "gdaladdo -q -r average regional.mbtiles 2 4 8"
     )  # zooms 11, 10, 9
     assert "38.218514" in script  # metres per pixel at zoom 12
-    assert s.regional_pipeline(["N49E006"], 13).endswith("2 4 8 16")
+    assert s.regional_pipeline(13).endswith("2 4 8 16")
+    # The whole world: not cut, and zoom 9 alone has no lower zooms to add.
+    world = s.regional_pipeline(9, cut=False)
+    assert "-cutline" not in world and "-te -20037508.34" in world
+    assert "gdaladdo" not in world
 
 
 def test_mbtiles_rows_are_tms(tmp_path):
@@ -221,3 +228,176 @@ def test_world_overview_tiles():
     assert len(tiles) == sum(4**z for z in range(9))  # zoom 0 to 8
     assert len(set(tiles)) == len(tiles)
     assert s.estimate(LUXEMBOURG)["world_overview"]["tiles"] == len(tiles)
+
+
+def test_repeated_small_tiles_are_dropped(tmp_path, tile_server):
+    # A server's "no data" tile is the same bytes everywhere; imagery never is.
+    out = s.MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 3, "", (0, 0, 1, 1))
+    found = s.download_tiles(
+        [(3, x, 0) for x in range(6)],
+        lambda z, x, y: (
+            tile_server.format(z=z, x=x, y=y)
+            if x < 3
+            else tile_server.format(z=0, x=0, y=0)
+        ),
+        out,
+        threads=2,
+        drop_repeated=True,
+    )
+    out.close()
+    stored = sorted(
+        r[0]
+        for r in sqlite3.connect(tmp_path / "t.mbtiles").execute(
+            "SELECT tile_data FROM tiles"
+        )
+    )
+    # x = 3, 4, 5 all got tile 0/0/0: blank, none kept; 3/1/0 is missing (odd x: 404).
+    assert stored == [b"3/0/0", b"3/2/0"]
+    assert found == 2
+
+
+def test_a_stopped_download_goes_on(tmp_path, tile_server):
+    path = tmp_path / "t.mbtiles"
+    first = s.MBTiles(path, "t", "jpg", 0, 2, "", (0, 0, 1, 1))
+    first.put(2, 0, 0, b"kept")
+    first.close()
+    again = s.MBTiles(path, "t", "jpg", 0, 2, "", (0, 0, 1, 1), resume=True)
+    assert again.has(2) == {(0, 0)}
+    fetched = []
+    s.download_tiles(
+        [(2, 0, 0), (2, 2, 0)],
+        lambda z, x, y: fetched.append((x, y)) or tile_server.format(z=z, x=x, y=y),
+        again,
+        threads=1,
+        skip=lambda z, x, y: (x, y) in {(0, 0)},
+    )
+    again.close()
+    assert fetched == [(2, 0)]
+    data = dict(
+        sqlite3.connect(path).execute("SELECT tile_column, tile_data FROM tiles")
+    )
+    assert data == {0: b"kept", 2: b"2/2/0"}
+
+
+def test_tile_blocks_inside_every_outline():
+    # Luxembourg and a box over its south: only tiles in both.
+    south = s.box_ring((5.7, 49.4, 6.6, 49.6))
+    both = set(s.block_tiles(s.tile_blocks([LUXEMBOURG, south], 12), 12))
+    lux = {(12, x, y) for x, y in s.tiles_in_outline(LUXEMBOURG, 12)}
+    box = {(12, x, y) for x, y in s.tiles_in_outline(south, 12)}
+    assert both == lux & box
+    assert 0 < len(both) < len(lux)
+
+
+def test_wms_tile_url():
+    source = {"wms": "http://x/wms?BBOX={bbox}"}
+    assert (
+        s.tile_url(source, 1, 0, 0)
+        == "http://x/wms?BBOX=-20037508.34,0.00,0.00,20037508.34"
+    )
+    assert s.tile_url({"url": "http://x/{z}/{x}/{ty}"}, 2, 1, 0) == "http://x/2/1/3"
+
+
+def test_every_source_is_complete():
+    for source_id in s.DETAILED_SOURCES:
+        src = s.detailed_source(source_id)
+        assert src["regions"] and src["attribution"] and src["resolution"]
+        assert ("url" in src) != ("wms" in src)
+        assert src["format"] in ("jpg", "png") and 15 <= src["maxzoom"] <= 17
+
+
+def test_choose_presets_and_steps(tmp_path):
+    index = tmp_path / "index.json"
+    square = {
+        "type": "Polygon",
+        "coordinates": [
+            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
+        ],
+    }
+    index.write_text(
+        json.dumps(
+            {
+                "features": [
+                    {
+                        "properties": {"id": "europe", "name": "Europe"},
+                        "geometry": square,
+                    },
+                    {
+                        "properties": {
+                            "id": "luxembourg",
+                            "name": "Luxembourg",
+                            "parent": "europe",
+                        },
+                        "geometry": square,
+                    },
+                ]
+            }
+        )
+    )
+    plan = tmp_path / "plan.json"
+    common = [
+        "--plan",
+        str(plan),
+        "--basemap-dir",
+        str(tmp_path),
+        "--index",
+        str(index),
+    ]
+    s.main(
+        [
+            "choose",
+            *common,
+            "--region",
+            "luxembourg",
+            "--mode",
+            "regional",
+            "--detailed",
+            "16",
+        ]
+    )
+    chosen = json.loads(plan.read_text())
+    assert chosen["world_overview"] is True
+    assert (
+        chosen["regional"]["area"] == "luxembourg"
+        and chosen["regional"]["maxzoom"] == 12
+    )
+    # Luxembourg's own photos: the region is the source's, nothing to cut.
+    assert [(d["source"], d["maxzoom"], d["clip"]) for d in chosen["detailed"]] == [
+        ("lu_geoportail", 16, None)
+    ]
+
+    s.main(["choose", *common, "--mode", "regional", "--area", "world"])
+    assert json.loads(plan.read_text())["regional"] == {
+        "area": "world",
+        "outline": None,
+        "maxzoom": 10,
+    }
+
+    # A region inside a source's country: cut to both.
+    s.main(
+        [
+            "choose",
+            *common,
+            "--region",
+            "europe",
+            "--mode",
+            "overview",
+            "--detailed",
+            "15",
+            "--sources",
+            "lu_geoportail",
+        ]
+    )
+    (job,) = json.loads(plan.read_text())["detailed"]
+    assert (
+        job["source"] == "lu_geoportail" and job["clip"] is None
+    )  # Luxembourg is inside Europe
+
+    lines = io.StringIO()
+    with contextlib.redirect_stdout(lines):
+        s.main(["steps", *common])
+    steps = [line.split("\t") for line in lines.getvalue().splitlines()]
+    assert steps[0][1:3] == ["overview", "--world"]
+    assert steps[-1][1] == "detailed" and steps[-1][-1].endswith(
+        "europe.sat-detailed-lu_geoportail.pmtiles"
+    )

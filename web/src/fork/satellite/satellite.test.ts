@@ -40,3 +40,9 @@ test('in "satellite with roads", roads, railways and borders stay above the imag
   for (const id of ['osm_water', 'osm_landuse_wood', 'osm_buildings', 'power_line_1'])
     expect(isHybridOverlay(id)).toBe(false)
 })
+
+test('each aerial photo source is credited', () => {
+  expect(attributionFor('http://x/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png')).toContain('Vlaanderen')
+  expect(attributionFor('http://x/world.sat-regional/{z}/{x}/{y}.webp')).toContain('Sentinel')
+  expect(attributionFor('http://x/alsace.sat-detailed/{z}/{x}/{y}.jpg')).toContain('IGN')
+})

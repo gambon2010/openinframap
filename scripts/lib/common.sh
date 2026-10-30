@@ -583,7 +583,7 @@ sys.exit(1)' "${GEOFABRIK_INDEX:-$OSM_DIR/geofabrik-index-v1.json}" "$1" "$2" 2>
 
 # Satellite imagery of region $1 (scripts/satellite.py): data/basemap/<region>.sat-<tier>.pmtiles.
 has_satellite() {
-    [[ -f "$(world_overview)" ]] || region_satellite "$1"
+    compgen -G "$BASEMAP_DIR/*.sat-*.pmtiles" >/dev/null
 }
 
 # region_satellite REGION — whether imagery of the region itself is downloaded.
@@ -602,19 +602,27 @@ overview_file() {
 
 # "overview, regional (12 MB)": the tiers region $1 has, and their total size.
 satellite_summary() {
-    local region="$1" tiers="" total=0 file tier
-    for tier in overview regional detailed; do
-        file="$BASEMAP_DIR/$region.sat-$tier.pmtiles"
-        [[ "$tier" == overview ]] && file=$(overview_file "$region")
-        [[ -f "$file" ]] || continue
-        tiers+="${tiers:+, }$tier"
-        [[ "$file" == "$(world_overview)" ]] && tiers+=" (world)"
-        total=$((total + $(stat -c%s "$file")))
+    local value file total=0 names=()
+    value=$(satellite_tiers_value "$1")
+    [[ -n "$value" ]] || { echo "none"; return; }
+    for file in $(tr ';' '\n' <<<"$value" | cut -d' ' -f1 | sed -E 's|.*/([^/]+)/\{z\}.*|\1|'); do
+        names+=("${file/.sat-/ }")
+        total=$((total + $(stat -c%s "$BASEMAP_DIR/$file.pmtiles")))
     done
-    echo "$tiers ($(human_size "$total"))"
+    echo "$(IFS=,; echo "${names[*]}" | sed 's/,/, /g') ($(human_size "$total"))"
 }
 
 # The max zoom in a PMTiles v3 header (byte 101), or $2 if it can't be read.
+# pmtiles_ext FILE DEFAULT — the extension its tiles are served with (png, jpg, webp).
+pmtiles_ext() {
+    python3 -c 'import sys
+try:
+    header = open(sys.argv[1], "rb").read(127)
+    print({2: "png", 3: "jpg", 4: "webp", 5: "avif"}.get(header[99], sys.argv[2]) if header[:7] == b"PMTiles" else sys.argv[2])
+except OSError:
+    print(sys.argv[2])' "$1" "$2"
+}
+
 pmtiles_maxzoom() {
     python3 -c 'import sys
 try:
@@ -624,19 +632,26 @@ except OSError:
     print(sys.argv[2])' "$1" "$2"
 }
 
-# Region $1's satellite tiers as the frontend reads them (VITE_SATELLITE_TIERS,
-# fork/satellite): "URL MINZOOM MAXZOOM;URL MINZOOM MAXZOOM..." (empty: none).
+# The satellite tiers as the frontend reads them (VITE_SATELLITE_TIERS,
+# fork/satellite): "URL MINZOOM MAXZOOM;..." (empty: none). Everything downloaded
+# is shown, whatever area it's of: the overview (the world's, else region $1's),
+# then Sentinel-2 (the world's first, then each area's), then the aerial photos.
 satellite_tiers_value() {
-    local region="$1" value="" tier file ext range
-    for tier in overview regional detailed; do
-        file="$BASEMAP_DIR/$region.sat-$tier.pmtiles"
-        [[ "$tier" == overview ]] && file=$(overview_file "$region")
-        [[ -f "$file" ]] || continue
-        case "$tier" in
-            overview) ext=jpg;  range="0 8" ;;
-            regional) ext=webp; range="9 $(pmtiles_maxzoom "$file" 12)" ;;
-            detailed) ext=jpg;  range="14 $(pmtiles_maxzoom "$file" 16)" ;;
+    local region="$1" value="" file range ext
+    local files=()
+    file=$(overview_file "$region")
+    [[ -f "$file" ]] && files+=("$file")
+    [[ -f "$BASEMAP_DIR/world.sat-regional.pmtiles" ]] && files+=("$BASEMAP_DIR/world.sat-regional.pmtiles")
+    for file in "$BASEMAP_DIR"/*.sat-regional.pmtiles "$BASEMAP_DIR"/*.sat-detailed*.pmtiles; do
+        [[ -f "$file" && "$file" != "$BASEMAP_DIR/world.sat-regional.pmtiles" ]] && files+=("$file")
+    done
+    for file in "${files[@]}"; do
+        case "$file" in
+            *.sat-overview.pmtiles) range="0 8"; ext=jpg ;;
+            *.sat-regional.pmtiles) range="9 $(pmtiles_maxzoom "$file" 12)"; ext=webp ;;
+            *) range="14 $(pmtiles_maxzoom "$file" 16)"; ext=jpg ;;
         esac
+        ext=$(pmtiles_ext "$file" "$ext")
         value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range"
     done
     echo "$value"
@@ -670,10 +685,9 @@ start_basemap_if_present() {
 }
 
 # --- Offline satellite imagery (scripts/satellite.py; docs/plans/satellite-imagery.md)
-# Used by build-region.sh and satellite.sh. They read and set SATELLITE_MODE
-# (none, keep, overview, regional, regional13), SATELLITE_DETAILED (none, 15-17),
-# SATELLITE_AREA, and use PBF_URL (set: a Geofabrik region, its outline is known)
-# and ASSUME_YES.
+# Used by build-region.sh and satellite.sh: choose_satellite asks (or takes the
+# presets) and writes a plan, download_satellite runs it. The questions, sizes and
+# outlines are satellite.py's (choose, steps), from Geofabrik's index.
 
 GEOFABRIK_INDEX="$OSM_DIR/geofabrik-index-v1.json"
 
@@ -688,135 +702,66 @@ for feature in json.load(open(index))["features"]:
 sys.exit(1)' "$GEOFABRIK_INDEX" "$1" "$2"
 }
 
-# choose_satellite REGION — the questions: which tiers, with their sizes.
+# choose_satellite REGION — the questions (scripts/satellite.py choose): what to
+# download, written to a plan. Presets, no questions: SATELLITE_MODE (none, keep,
+# overview, regional, regional13), SATELLITE_DETAILED (15-17, none),
+# SATELLITE_AREA_ID (an area other than REGION: a Geofabrik id, or world),
+# SATELLITE_ZOOM (Sentinel-2's last zoom), SATELLITE_SOURCES (aerial photo sources).
 choose_satellite() {
-    local region="$1"
-    SATELLITE_AREA="$BASEMAP_DIR/.area-$region.geojson"
+    local region="$1" args=()
+    SATELLITE_PLAN="$BASEMAP_DIR/.satellite-plan.json"
+    rm -f "$SATELLITE_PLAN"
     if [[ -z "$SATELLITE_MODE" && "$ASSUME_YES" == 1 ]]; then
         SATELLITE_MODE=none
         has_satellite "$region" && SATELLITE_MODE=keep
     fi
-    if [[ "$SATELLITE_MODE" != none && "$SATELLITE_MODE" != keep ]]; then
+    [[ "$SATELLITE_MODE" == keep ]] && return 0
+    mkdir -p "$BASEMAP_DIR"
+    args=(--plan "$SATELLITE_PLAN" --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX"
+          --region "$region" --region-name "${REGION_NAME:-$region}")
+    if [[ -n "$SATELLITE_MODE" ]]; then
+        args+=(--mode "$SATELLITE_MODE" --detailed "${SATELLITE_DETAILED:-none}")
+        [[ -n "${SATELLITE_AREA_ID:-}" ]] && args+=(--area "$SATELLITE_AREA_ID")
+        [[ -n "${SATELLITE_ZOOM:-}" ]] && args+=(--zoom "$SATELLITE_ZOOM")
+        [[ -n "${SATELLITE_SOURCES:-}" ]] && args+=(--sources "$SATELLITE_SOURCES")
+        [[ "$SATELLITE_MODE" == none ]] && return 0
+    else
         section "Satellite imagery"
-        mkdir -p "$BASEMAP_DIR"
-        SAT_ESTIMATE=""
-        if [[ "$region" == planet ]]; then
-            warn "Satellite imagery isn't offered for the whole world."
-        elif [[ ! -f "$SATELLITE_AREA" ]] && ! { [[ -n "$PBF_URL" ]] && geofabrik_outline "$region" "$SATELLITE_AREA"; }; then
-            warn "Can't tell which area this region covers, so there's no satellite imagery for it."
-        else
-            SAT_ESTIMATE=$(python3 -I "$REPO_ROOT/scripts/satellite.py" estimate --outline "$SATELLITE_AREA" --regional-maxzoom 13) \
-                || warn "Couldn't work out the satellite imagery's size; skipping it."
-        fi
-        if [[ -z "$SAT_ESTIMATE" ]]; then
-            SATELLITE_MODE=none
-        else
-            # sat_value KEY... : a value from the estimate (JSON).
-            sat_value() {
-                python3 -c 'import json, sys
-value = json.loads(sys.argv[1])
-for key in sys.argv[2:]:
-    value = value[key]
-print(int(value) if isinstance(value, (bool, int, float)) else value)' "$SAT_ESTIMATE" "$@"
-            }
-            SAT_WORLD=$(sat_value world_overview bytes)
-            SAT_REGIONAL13=$(sat_value regional bytes)
-            SAT_REGIONAL=$((SAT_REGIONAL13 / 4))
-            SAT_DOWNLOAD13=$(sat_value regional download)
-            local name="${REGION_NAME:-$region}" world_note
-            if region_satellite "$region"; then
-                ok "Already downloaded: $(satellite_summary "$region")."
-                if [[ -z "$SATELLITE_MODE" ]] && ! ask_yes_no "Download it again (or choose other tiers)?" n; then
-                    SATELLITE_MODE=keep
-                fi
-            fi
-            if [[ -z "$SATELLITE_MODE" ]]; then
-                world_note="downloaded once, for every region (about an hour)"
-                if [[ -f "$(world_overview)" ]]; then
-                    SAT_WORLD=0
-                    world_note="already downloaded"
-                fi
-                info "Satellite imagery: photos of the ground as the map's background (Settings →"
-                info "Background → Satellite), kept on this computer so they work offline. Each"
-                info "choice adds to the one above it. Zoom 8 shows a whole region on screen,"
-                info "zoom 12 a town, zoom 13 a neighbourhood."
-                echo ""
-                printf "      1) The world, 500 m         %8s  NASA Blue Marble, the whole world, sharp up to
-" "$(human_size "$SAT_WORLD")"
-                printf "                                            zoom 8; %s
-" "$world_note"
-                printf "      2) + %-22s %8s  Sentinel-2 photos (2021, cloud-free) of %s,
-" "$name, 10 m" \
-                    "+$(human_size "$SAT_REGIONAL")" "$name"
-                printf "                                            sharp up to zoom 12; made from ~%s read from ESA
-" \
-                    "$(human_size $((SAT_DOWNLOAD13 / 4)))"
-                printf "      3) + %-22s %8s  the same, sharp up to zoom 13; made from ~%s
-" "$name, 10 m, sharper" \
-                    "+$(human_size "$SAT_REGIONAL13")" "$(human_size "$SAT_DOWNLOAD13")"
-                printf "      4) Skip\n"
-                echo ""
-                info "Closer in than its last zoom, imagery is shown stretched (blurry)."
-                while true; do
-                    read -r -p "    Choose [1-4, default 2]: " CHOICE || die "Aborted."
-                    case "${CHOICE:-2}" in
-                        1) SATELLITE_MODE=overview; break ;;
-                        2) SATELLITE_MODE=regional; break ;;
-                        3) SATELLITE_MODE=regional13; break ;;
-                        4) SATELLITE_MODE=none; break ;;
-                    esac
-                done
-            fi
-            # IGN's 20 cm aerial photos: France and its regions only.
-            if [[ "$SATELLITE_MODE" != none && "$SATELLITE_MODE" != keep && -z "$SATELLITE_DETAILED" ]]; then
-                if region_in "$region" france && [[ "$ASSUME_YES" != 1 ]]; then
-                    echo ""
-                    info "France: IGN aerial photos at 20 cm can be added for close zooms (14 and up):"
-                    for z in 15 16 17; do
-                        printf "      to zoom %s  %8s\n" "$z" "$(human_size "$(sat_value detailed_by_zoom "$z")")"
-                    done
-                    info "They're fetched tile by tile from IGN's server (about 20 a second), so a large"
-                    info "region takes hours: best for a département or a city."
-                    read -r -p "    Up to which zoom? [15/16/17, Enter: none]: " CHOICE || die "Aborted."
-                    case "$CHOICE" in 15|16|17) SATELLITE_DETAILED=$CHOICE ;; esac
-                fi
+        if region_satellite "$region"; then
+            ok "Already downloaded: $(satellite_summary "$region")."
+            if ! ask_yes_no "Download more (or again)?" n; then
+                SATELLITE_MODE=keep
+                return 0
             fi
         fi
     fi
-    [[ -z "$SATELLITE_DETAILED" ]] && SATELLITE_DETAILED=none
+    python3 -I "$REPO_ROOT/scripts/satellite.py" choose "${args[@]}" \
+        || { warn "Couldn't work out the satellite imagery; skipping it."; rm -f "$SATELLITE_PLAN"; }
 }
 
-# download_satellite REGION — download what choose_satellite chose, then point
-# the frontend at it.
+# download_satellite REGION — download what choose_satellite planned, one timed
+# step each, then point the frontend at it.
 download_satellite() {
-    local region="$1"
-    world_overview_tier() {
-        python3 -I "$REPO_ROOT/scripts/satellite.py" overview --world --out "$(world_overview)" \
-            --pmtiles-image "$(basemap_image)" </dev/null
-    }
-    satellite_tier() {
-        local tier="$1"
-        shift
-        python3 -I "$REPO_ROOT/scripts/satellite.py" "$tier" --outline "$SATELLITE_AREA" \
-            --out "$BASEMAP_DIR/$region.sat-$tier.pmtiles" --pmtiles-image "$(basemap_image)" "$@" </dev/null
-    }
-    if [[ "$SATELLITE_MODE" == overview || "$SATELLITE_MODE" == regional || "$SATELLITE_MODE" == regional13 ]]; then
+    local region="$1" label line steps=()
+    if [[ -f "${SATELLITE_PLAN:-}" ]]; then
+        while IFS= read -r line; do steps+=("$line"); done < <(
+            python3 -I "$REPO_ROOT/scripts/satellite.py" steps --plan "$SATELLITE_PLAN" \
+                --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX")
+    fi
+    if [[ ${#steps[@]} -gt 0 ]]; then
         section "Downloading satellite imagery..."
         SAT_OK=1
-        if [[ -f "$(world_overview)" ]]; then
-            ok "The world overview (NASA Blue Marble) is already downloaded."
-        else
-            run_with_timer "The world (NASA Blue Marble, to zoom 8; about an hour)" world_overview_tier || SAT_OK=0
-        fi
-        if [[ "$SATELLITE_MODE" != overview ]]; then
-            SAT_ZOOM=12
-            [[ "$SATELLITE_MODE" == regional13 ]] && SAT_ZOOM=13
-            run_with_timer "Regional (Sentinel-2 10 m, to zoom $SAT_ZOOM)" satellite_tier regional --maxzoom "$SAT_ZOOM" || SAT_OK=0
-        fi
-        if [[ "$SATELLITE_DETAILED" != none ]]; then
-            run_with_timer "Detailed (IGN 20 cm, to zoom $SATELLITE_DETAILED)" satellite_tier detailed --maxzoom "$SATELLITE_DETAILED" || SAT_OK=0
-        fi
-        [[ "$SAT_OK" == 1 ]] || warn "Part of the satellite imagery failed. Run it again to try again: bash scripts/satellite.sh"
+        for line in "${steps[@]}"; do
+            IFS=$'\t' read -r -a SAT_STEP <<<"$line"
+            label="${SAT_STEP[0]}"
+            satellite_step() {
+                python3 -I "$REPO_ROOT/scripts/satellite.py" "${SAT_STEP[@]:1}" \
+                    --pmtiles-image "$(basemap_image)" </dev/null
+            }
+            run_with_timer "$label" satellite_step || SAT_OK=0
+        done
+        [[ "$SAT_OK" == 1 ]] || warn "Part of the satellite imagery failed. Run it again to go on: bash scripts/satellite.sh"
+        rm -f "$SATELLITE_PLAN"
     fi
     select_satellite "$region"
 }
