@@ -1,5 +1,5 @@
 // Fork: collect the English strings of the fork's code into src/fork/locales/en.json.
-// The code calls t('key', 'English text') / tt('key', 'English text'); the text is
+// The code calls t('key', 'English text') (fork/core/i18n.ts); the text is
 // the fallback, and en.json is what translators (and i18next's debug log) see.
 //   node scripts/fork-strings.mjs           add what's missing (keeps what's there)
 //   node scripts/fork-strings.mjs --check   only report (exit 1 if anything is missing)
@@ -18,8 +18,8 @@ function files(dir) {
   })
 }
 
-// t('key', 'text') / tt('key', "text"), the text possibly split over lines.
-const call = /\b(?:tt|t)\(\s*'([a-z0-9][\w.-]*)'\s*,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g
+// t('key', 'text') or t('key', "text"), the text possibly split over lines.
+const call = /\bt\(\s*'([a-z0-9][\w.-]*)'\s*,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g
 const found = new Map()
 for (const file of files(root)) {
   for (const m of readFileSync(file, 'utf8').matchAll(call)) {

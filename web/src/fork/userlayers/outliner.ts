@@ -4,7 +4,7 @@
 // the list; layers can be locked; items are dragged onto another layer to move them,
 // layers onto a folder (or onto a layer: into its folder). A new folder is kept in
 // the browser until a layer is put in it (a folder is a name the layers share).
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
 import { Store } from './store.ts'
@@ -118,8 +118,8 @@ export class Outliner {
     this.actions = actions
     this.search = el('input.oim-ul-outline-search', {
       type: 'search',
-      placeholder: tt('userlayers.outline-search', 'Search your layers…'),
-      'aria-label': tt('userlayers.outline-search', 'Search your layers…')
+      placeholder: t('userlayers.outline-search', 'Search your layers…'),
+      'aria-label': t('userlayers.outline-search', 'Search your layers…')
     }) as HTMLInputElement
     this.search.oninput = () => {
       this.query = this.search.value
@@ -146,7 +146,7 @@ export class Outliner {
   }
 
   private askFolderName(current = ''): string | null {
-    const value = window.prompt(tt('userlayers.folder-name-new', 'Folder name'), current)
+    const value = window.prompt(t('userlayers.folder-name-new', 'Folder name'), current)
     return value?.trim() || null
   }
 
@@ -216,7 +216,7 @@ export class Outliner {
       `li.oim-ul-item${selected ? '.selected' : ''}`,
       {
         draggable: !layer.style.locked && !this.view,
-        title: tt(
+        title: t(
           'userlayers.item-title',
           'Click: select · Shift-click: select several · drag onto a layer: move'
         )
@@ -269,7 +269,7 @@ export class Outliner {
     const color = el('input.oim-ul-color', {
       type: 'color',
       value: layer.style.color ?? DEFAULT_COLOR,
-      title: tt('userlayers.layer-color', 'Colour of its drawings and markers')
+      title: t('userlayers.layer-color', 'Colour of its drawings and markers')
     }) as HTMLInputElement
     color.onclick = (e) => e.stopPropagation()
     color.onchange = () => store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
@@ -277,12 +277,12 @@ export class Outliner {
     // Move to folder: the folders there are, a new one, or out of its folder.
     const folders = el(
       'details.oim-ul-submenu',
-      el('summary', tt('userlayers.move-to-folder-menu', 'Move to folder')),
+      el('summary', t('userlayers.move-to-folder-menu', 'Move to folder')),
       ...this.folderNames()
         .filter((f) => f !== current)
         .map((f) => this.button(`📁 ${f}`, () => this.moveToFolder(layer, f), '', 'oim-ul-menu-text')),
       this.button(
-        `+ ${tt('userlayers.new-folder-dots', 'New folder…')}`,
+        `+ ${t('userlayers.new-folder-dots', 'New folder…')}`,
         () => {
           const name = this.askFolderName()
           if (name) this.moveToFolder(layer, name)
@@ -292,7 +292,7 @@ export class Outliner {
       ),
       current
         ? this.button(
-            tt('userlayers.out-of-folder', 'Out of the folder'),
+            t('userlayers.out-of-folder', 'Out of the folder'),
             () => this.moveToFolder(layer, null),
             '',
             'oim-ul-menu-text'
@@ -301,19 +301,19 @@ export class Outliner {
     )
     const menu = el(
       'details.oim-ul-menu',
-      el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
+      el('summary', '⋯', { title: t('userlayers.more', 'More') }),
       el(
         '.oim-ul-menu-items',
         this.button(
-          tt('userlayers.draw-here', 'Draw into this layer'),
+          t('userlayers.draw-here', 'Draw into this layer'),
           () => store.setActive(layer.id),
           '',
           'oim-ul-menu-text'
         ),
         this.button(
-          tt('userlayers.rename', 'Rename'),
+          t('userlayers.rename', 'Rename'),
           () => {
-            const value = window.prompt(tt('userlayers.rename', 'Rename'), layer.name)
+            const value = window.prompt(t('userlayers.rename', 'Rename'), layer.name)
             if (value && value.trim() && value.trim() !== layer.name)
               store.updateLayer(layer.id, { name: value.trim() })
           },
@@ -322,9 +322,9 @@ export class Outliner {
         ),
         folders,
         this.button(
-          tt('userlayers.delete', 'Delete'),
+          t('userlayers.delete', 'Delete'),
           () => {
-            const message = tt(
+            const message = t(
               'userlayers.delete-layer',
               'Delete the layer "{{name}}" and its {{count}} item(s)?',
               {
@@ -338,7 +338,7 @@ export class Outliner {
           'oim-ul-menu-text'
         )
       )
-    )
+    ) as HTMLDetailsElement
     // The list scrolls (and would cut the menu off): it floats beside its button,
     // above it when there's no room below.
     menu.ontoggle = () => {
@@ -357,19 +357,19 @@ export class Outliner {
       this.button(
         hidden ? '◌' : '◉',
         () => store.setHidden(layer.id, !hidden),
-        hidden ? tt('userlayers.show', 'Show on the map') : tt('userlayers.hide', 'Hide from the map')
+        hidden ? t('userlayers.show', 'Show on the map') : t('userlayers.hide', 'Hide from the map')
       ),
       this.button(
         locked ? '🔒' : '🔓',
         () => store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } }),
         locked
-          ? tt('userlayers.unlock', 'Locked: click to allow changes')
-          : tt('userlayers.lock', 'Lock: no changes to its items'),
+          ? t('userlayers.unlock', 'Locked: click to allow changes')
+          : t('userlayers.lock', 'Lock: no changes to its items'),
         locked ? 'oim-ul-locked' : 'oim-ul-unlocked'
       ),
       color,
       el('span.oim-ul-layer-label', `${open ? '▾' : '▸'} ${layer.name}`),
-      active ? el('span.oim-ul-active-tag', tt('userlayers.active', 'drawing here')) : '',
+      active ? el('span.oim-ul-active-tag', t('userlayers.active', 'drawing here')) : '',
       el(
         'span.oim-ul-count-badge',
         searching ? `${items.length}/${layer.features.size}` : String(layer.features.size)
@@ -407,8 +407,8 @@ export class Outliner {
             : el(
                 'li.oim-ul-hint',
                 searching
-                  ? tt('userlayers.no-match', 'Nothing matches.')
-                  : tt('userlayers.empty-layer', 'Nothing in it yet.')
+                  ? t('userlayers.no-match', 'Nothing matches.')
+                  : t('userlayers.empty-layer', 'Nothing in it yet.')
               )
         )
       )
@@ -426,7 +426,7 @@ export class Outliner {
       this.button(
         allHidden ? '◌' : '◉',
         () => layers.forEach((l) => store.setHidden(l.id, !allHidden)),
-        tt('userlayers.folder-eye', 'Show or hide all its layers')
+        t('userlayers.folder-eye', 'Show or hide all its layers')
       ),
       this.button(
         allLocked ? '🔒' : '🔓',
@@ -434,21 +434,21 @@ export class Outliner {
           layers.forEach((l) =>
             store.updateLayer(l.id, { style: { ...l.style, locked: !allLocked || undefined } })
           ),
-        tt('userlayers.folder-lock', 'Lock or unlock all its layers'),
+        t('userlayers.folder-lock', 'Lock or unlock all its layers'),
         allLocked ? 'oim-ul-locked' : 'oim-ul-unlocked'
       ),
       el('span.oim-ul-folder-label', `${folded ? '▸' : '▾'} 📁 ${folder}`),
-      el('span.oim-ul-count-badge', tt('userlayers.n-layers', '{{count}} layers', { count: layers.length })),
+      el('span.oim-ul-count-badge', t('userlayers.n-layers', '{{count}} layers', { count: layers.length })),
       this.button(
         '+',
         () => this.actions.newLayer(folder),
-        tt('userlayers.folder-new-layer', 'New layer in this folder')
+        t('userlayers.folder-new-layer', 'New layer in this folder')
       ),
       this.button(
         '✎',
         () => {
           const value = window.prompt(
-            tt('userlayers.rename-folder', 'Rename the folder (empty: take its layers out)'),
+            t('userlayers.rename-folder', 'Rename the folder (empty: take its layers out)'),
             folder
           )
           if (value === null) return
@@ -463,7 +463,7 @@ export class Outliner {
           for (const l of layers)
             store.updateLayer(l.id, { style: { ...l.style, folder: value.trim() || undefined } })
         },
-        tt('userlayers.rename-folder-title', 'Rename the folder')
+        t('userlayers.rename-folder-title', 'Rename the folder')
       )
     )
     header.onclick = () => {
@@ -479,7 +479,7 @@ export class Outliner {
     })
     const inside = body.length
       ? body
-      : [el('li.oim-ul-hint', tt('userlayers.empty-folder', 'Empty: drag layers here.'))]
+      : [el('li.oim-ul-hint', t('userlayers.empty-folder', 'Empty: drag layers here.'))]
     return el('li.oim-ul-folder', header, folded ? '' : el('ul.oim-ul-layers', inside))
   }
 
@@ -491,7 +491,7 @@ export class Outliner {
       '.oim-ul-chips.oim-ul-filters',
       FILTERS.map(([filter, label]) => {
         const on = this.filters.has(filter)
-        const b = el(`button.oim-ul-chip${on ? '.active' : ''}`, tt(`userlayers.filter.${filter}`, label), {
+        const b = el(`button.oim-ul-chip${on ? '.active' : ''}`, t(`userlayers.filter.${filter}`, label), {
           type: 'button',
           'aria-pressed': String(on)
         })
@@ -525,31 +525,31 @@ export class Outliner {
     // Drop a layer on the empty space below the tree: out of its folder.
     const loose = el(
       'li.oim-ul-drop-out',
-      tt('userlayers.drop-out', 'Drop a layer here to take it out of its folder')
+      t('userlayers.drop-out', 'Drop a layer here to take it out of its folder')
     )
     this.dropTarget(loose, undefined, (id) => {
       const layer = store.layers.get(id)
       if (layer?.style.folder) store.updateLayer(id, { style: { ...layer.style, folder: undefined } })
     })
     if ([...store.layers.values()].some((l) => l.style.folder)) tree.append(loose)
-    const create = el('button.oim-ul-button', `+ ${tt('userlayers.new-layer', 'New layer')}`, {
+    const create = el('button.oim-ul-button', `+ ${t('userlayers.new-layer', 'New layer')}`, {
       type: 'button'
     })
     create.onclick = () => this.actions.newLayer()
-    const createFolder = el('button.oim-ul-button', `+ ${tt('userlayers.new-folder', 'New folder')}`, {
+    const createFolder = el('button.oim-ul-button', `+ ${t('userlayers.new-folder', 'New folder')}`, {
       type: 'button',
-      title: tt('userlayers.new-folder-title', 'A folder to drag layers into')
+      title: t('userlayers.new-folder-title', 'A folder to drag layers into')
     })
     createFolder.onclick = () => this.newFolder()
     this.chipsBox.replaceChildren(chips)
     this.body.replaceChildren(
       store.layers.size
         ? searching && !tree.childElementCount
-          ? el('p.oim-ul-hint', tt('userlayers.no-match', 'Nothing matches.'))
+          ? el('p.oim-ul-hint', t('userlayers.no-match', 'Nothing matches.'))
           : tree
         : el(
             'p.oim-ul-hint',
-            tt(
+            t(
               'userlayers.no-layers',
               'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
             )

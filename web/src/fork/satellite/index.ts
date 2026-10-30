@@ -6,7 +6,7 @@
 //   map        the usual background map
 //   satellite  imagery instead of it (place names and infrastructure on top)
 //   hybrid     imagery with the background map's roads, railways and boundaries
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { Map, SourceSpecification } from 'maplibre-gl'
 import { el } from 'redom'
 import { ForkModule } from '../types.ts'

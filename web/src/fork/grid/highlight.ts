@@ -9,7 +9,7 @@
  */
 import { Map, GeoJSONSource, LngLatBounds, MapGeoJSONFeature, FilterSpecification } from 'maplibre-gl'
 import type { Feature, MultiLineString } from 'geojson'
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { BACKEND_BASE_URL } from '../config.ts'
 import { Station } from './grid-route.ts'

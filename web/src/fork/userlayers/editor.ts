@@ -7,7 +7,7 @@
 //   (fields.ts); "+ Add detail" for the rest, by question (who, what, when...);
 // - notes, appearance, layer, duplicate / delete.
 // Each change is a change of the feature (undoable, saved with Save, in the history).
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { FeatureProps, UserFeature, UserLayer, DEFAULT_COLOR } from './model.ts'
 import { Field, GROUPS, addableFields, cardFields, displayValue, fromDtg, toDtg } from './fields.ts'
@@ -96,7 +96,7 @@ function dtgToInput(dtg: string | undefined): string {
  * in words and turns into its controls when clicked. */
 function detailRow(field: Field, value: string, set: (value: string) => void): HTMLElement {
   const name = `${field.key}:${field.label}`
-  const label = tt(`userlayers.f.${field.key}`, field.label)
+  const label = t(`userlayers.f.${field.key}`, field.label)
   const trimmed = value.trim()
   let editor: HTMLElement
   if (field.input === 'datetime') {
@@ -106,7 +106,7 @@ function detailRow(field: Field, value: string, set: (value: string) => void): H
       'data-field': name
     }) as HTMLInputElement
     input.onchange = () => set(input.value ? toDtg(new Date(input.value)) : '')
-    const now = el('button.oim-ul-button', tt('userlayers.now', 'Now'), { type: 'button' })
+    const now = el('button.oim-ul-button', t('userlayers.now', 'Now'), { type: 'button' })
     now.onclick = () => set(toDtg(new Date()))
     editor = el('span.oim-ul-unit', input, now)
   } else if (field.input === 'rating') {
@@ -121,13 +121,13 @@ function detailRow(field: Field, value: string, set: (value: string) => void): H
       select(digits, trimmed[1] ?? '', (v) => set((trimmed[0] ?? 'F') + v), name + ':c')
     )
   } else if (field.input === 'textarea') {
-    const t = el('textarea.oim-ul-inline-input', trimmed, {
+    const area = el('textarea.oim-ul-inline-input', trimmed, {
       rows: 2,
       'data-field': name,
       placeholder: '—'
     }) as HTMLTextAreaElement
-    t.onchange = () => set(t.value.trim())
-    editor = t
+    area.onchange = () => set(area.value.trim())
+    editor = area
   } else {
     const input = el('input.oim-ul-inline-input', {
       type: field.input === 'number' ? 'number' : 'text',
@@ -149,7 +149,7 @@ function detailRow(field: Field, value: string, set: (value: string) => void): H
   }
   const shown = el('button.oim-ul-detail-value', displayValue(field.key, trimmed), {
     type: 'button',
-    title: tt('userlayers.edit', 'Change')
+    title: t('userlayers.edit', 'Change')
   })
   shown.onclick = () => {
     shown.replaceWith(editor)
@@ -175,7 +175,7 @@ export async function buildEditor(
 
   // --- Header: the symbol, large, and the designation (rename in place) ---
   const preview = el('span.oim-ul-card-symbol')
-  let what = tt(`userlayers.kind.${p.kind}`, p.kind)
+  let what = t(`userlayers.kind.${p.kind}`, p.kind)
   if (military) {
     what = symbolName(sidc) ?? sidc
     const geometry = entryOf(sidc)?.[3]
@@ -189,7 +189,7 @@ export async function buildEditor(
       preview.textContent = GEOMETRY_LABELS[geometry][0]
     }
   } else if (p.kind === 'copy') {
-    what = tt('userlayers.copy-of', 'Copy of a map feature ({{layer}})', { layer: p.copy?.layer })
+    what = t('userlayers.copy-of', 'Copy of a map feature ({{layer}})', { layer: p.copy?.layer })
   }
   const modifiers = { ...(p.modifiers ?? {}) }
   // Items made before the fields existed had a name: it's the designation.
@@ -197,9 +197,9 @@ export async function buildEditor(
   const title = el('input.oim-ul-card-title', {
     type: 'text',
     value: ((military ? modifiers['T'] : p.name) ?? '').trim(),
-    placeholder: military ? tt('userlayers.f.T', 'Unique designation') : tt('userlayers.name', 'Name'),
+    placeholder: military ? t('userlayers.f.T', 'Unique designation') : t('userlayers.name', 'Name'),
     'data-field': 'title',
-    'aria-label': tt('userlayers.name', 'Name')
+    'aria-label': t('userlayers.name', 'Name')
   }) as HTMLInputElement
   const setModifier = (key: string, value: string) => {
     const next = { ...modifiers, [key]: value }
@@ -225,7 +225,7 @@ export async function buildEditor(
       const label = IDENTITIES.find(([c]) => c === id)?.[1] ?? id
       const b = el(`button.oim-ul-frame${identity(sidc) === id ? '.active' : ''}`, {
         type: 'button',
-        title: tt(`userlayers.affiliation.${id}`, label),
+        title: t(`userlayers.affiliation.${id}`, label),
         'aria-pressed': String(identity(sidc) === id)
       })
       if (p.kind === 'symbol') {
@@ -243,7 +243,7 @@ export async function buildEditor(
     const others = IDENTITIES.filter(([c]) => !MAIN_IDENTITIES.includes(c))
     ids.append(
       select(
-        [['', tt('userlayers.more-identities', 'More…')], ...others],
+        [['', t('userlayers.more-identities', 'More…')], ...others],
         MAIN_IDENTITIES.includes(identity(sidc)) ? '' : identity(sidc),
         (v) => v && setSidc(withIdentity(sidc, v)),
         'identity-more'
@@ -253,13 +253,13 @@ export async function buildEditor(
     const st = status(sidc)
     const statusRow = el(
       '.oim-ul-chips',
-      chip(tt('userlayers.status.P', 'Present'), st !== 'A', () => setSidc(withStatus(sidc, 'P'))),
-      chip(tt('userlayers.status.A', 'Planned'), st === 'A', () => setSidc(withStatus(sidc, 'A')))
+      chip(t('userlayers.status.P', 'Present'), st !== 'A', () => setSidc(withStatus(sidc, 'P'))),
+      chip(t('userlayers.status.A', 'Planned'), st === 'A', () => setSidc(withStatus(sidc, 'A')))
     )
     if (kind !== 'graphic') {
       for (const [code, label] of CONDITIONS) {
         statusRow.append(
-          chip(tt(`userlayers.condition.${code}`, label), st === code, () =>
+          chip(t(`userlayers.condition.${code}`, label), st === code, () =>
             setSidc(withStatus(sidc, st === code ? 'P' : code))
           )
         )
@@ -276,26 +276,26 @@ export async function buildEditor(
               mark,
               m.echelon === code,
               () => setSidc(withUnitModifiers(sidc, { ...m, echelon: code })),
-              tt(`userlayers.echelon.${code}`, label)
+              t(`userlayers.echelon.${code}`, label)
             )
           )
         ),
         el(
           '.oim-ul-chips',
           chip(
-            tt('userlayers.f.hq', 'HQ'),
+            t('userlayers.f.hq', 'HQ'),
             m.hq,
             () => setSidc(withUnitModifiers(sidc, { ...m, hq: !m.hq })),
-            tt('userlayers.f.hq-title', 'Headquarters')
+            t('userlayers.f.hq-title', 'Headquarters')
           ),
-          chip(tt('userlayers.f.task-force', 'Task force'), m.taskForce, () =>
+          chip(t('userlayers.f.task-force', 'Task force'), m.taskForce, () =>
             setSidc(withUnitModifiers(sidc, { ...m, taskForce: !m.taskForce }))
           ),
           chip(
-            tt('userlayers.f.feint', 'Dummy'),
+            t('userlayers.f.feint', 'Dummy'),
             m.feint,
             () => setSidc(withUnitModifiers(sidc, { ...m, feint: !m.feint })),
-            tt('userlayers.f.feint-title', 'Feint / dummy')
+            t('userlayers.f.feint-title', 'Feint / dummy')
           )
         )
       )
@@ -304,7 +304,7 @@ export async function buildEditor(
       strip.push(
         el(
           'label.oim-ul-detail',
-          el('span.oim-ul-detail-name', tt('userlayers.f.mobility', 'Mobility')),
+          el('span.oim-ul-detail-name', t('userlayers.f.mobility', 'Mobility')),
           select(MOBILITIES, mobility(sidc), (v) => setSidc(withMobility(sidc, v)), 'mobility')
         )
       )
@@ -325,15 +325,15 @@ export async function buildEditor(
       parts.push(
         el(
           'details.oim-ul-menu.oim-ul-add-detail',
-          el('summary', `+ ${tt('userlayers.add-detail', 'Add detail')}`),
+          el('summary', `+ ${t('userlayers.add-detail', 'Add detail')}`),
           el(
             '.oim-ul-menu-items',
             ...addable.flatMap(([group, fields]) => [
-              el('h4', tt(`userlayers.group.${group}`, GROUPS.find(([g]) => g === group)![1])),
+              el('h4', t(`userlayers.group.${group}`, GROUPS.find(([g]) => g === group)![1])),
               ...fields.map((field) => {
                 const b = el(
                   'button.oim-ul-add-field',
-                  el('strong', tt(`userlayers.f.${field.key}`, field.label)),
+                  el('strong', t(`userlayers.f.${field.key}`, field.label)),
                   field.help ? el('small', field.help) : '',
                   { type: 'button' }
                 )
@@ -359,7 +359,7 @@ export async function buildEditor(
   const notes = el('textarea.oim-ul-inline-input.oim-ul-notes', p.notes ?? '', {
     rows: 2,
     'data-field': 'notes',
-    placeholder: tt('userlayers.notes-placeholder', 'Notes…')
+    placeholder: t('userlayers.notes-placeholder', 'Notes…')
   }) as HTMLTextAreaElement
   notes.onchange = () => update({ notes: notes.value.trim() || undefined })
   parts.push(notes)
@@ -383,10 +383,10 @@ export async function buildEditor(
     size.onchange = () => update({ size: Number(size.value) })
     const reset = el('button.oim-ul-button', '100 %', {
       type: 'button',
-      title: tt('userlayers.size-reset', 'Normal size')
+      title: t('userlayers.size-reset', 'Normal size')
     })
     reset.onclick = () => update({ size: 1 })
-    look.push(lookRow(tt('userlayers.size', 'Size'), el('span.oim-ul-unit', size, shown, reset)))
+    look.push(lookRow(t('userlayers.size', 'Size'), el('span.oim-ul-unit', size, shown, reset)))
   }
   if (p.kind === 'drawing' || p.kind === 'marker' || p.kind === 'graphic') {
     const color = el('input', {
@@ -395,7 +395,7 @@ export async function buildEditor(
       'data-field': 'color'
     }) as HTMLInputElement
     color.onchange = () => update({ color: color.value })
-    look.push(lookRow(tt('userlayers.color', 'Colour'), color))
+    look.push(lookRow(t('userlayers.color', 'Colour'), color))
   }
   if (p.kind === 'drawing' && feature.geometry.type !== 'Point') {
     const width = el('input', {
@@ -407,14 +407,14 @@ export async function buildEditor(
       'data-field': 'width'
     }) as HTMLInputElement
     width.onchange = () => update({ width: Number(width.value) })
-    look.push(lookRow(tt('userlayers.width', 'Line width'), width))
+    look.push(lookRow(t('userlayers.width', 'Line width'), width))
   }
   if (look.length) {
     parts.push(
       el(
         'details.oim-ul-editor-section',
         { open: p.kind === 'image' },
-        el('summary', tt('userlayers.s.appearance', 'Appearance')),
+        el('summary', t('userlayers.s.appearance', 'Appearance')),
         ...look
       )
     )
@@ -423,15 +423,15 @@ export async function buildEditor(
   // --- Hint, then the footer: layer, duplicate, delete, done ---
   const hint =
     feature.geometry.type === 'Point'
-      ? tt('userlayers.drag-hint', 'Drag it on the map to move it.')
+      ? t('userlayers.drag-hint', 'Drag it on the map to move it.')
       : p.kind === 'copy'
         ? ''
         : p.axis || p.axisWidth !== undefined
-          ? tt(
+          ? t(
               'userlayers.drag-arrow-hint',
               'Drag the points of its path to move or bend it, and the blue handle to make it wider or narrower.'
             )
-          : tt('userlayers.drag-points-hint', 'Drag its points on the map to change its shape.')
+          : t('userlayers.drag-points-hint', 'Drag its points on the map to change its shape.')
   if (hint) parts.push(el('p.oim-ul-hint', hint))
   const layerSelect = select(
     layers.map((l): [string, string] => [l.id, l.name]),
@@ -439,7 +439,7 @@ export async function buildEditor(
     (v) => v !== layer.id && actions.moveTo(v),
     'layer'
   )
-  layerSelect.title = tt('userlayers.f.layer', 'Layer')
+  layerSelect.title = t('userlayers.f.layer', 'Layer')
   // Nothing goes into a locked layer.
   for (const option of layerSelect.options) {
     const l = layers.find((x) => x.id === option.value)
@@ -457,9 +457,9 @@ export async function buildEditor(
     el(
       '.oim-ul-card-footer',
       layerSelect,
-      button(tt('userlayers.duplicate', 'Duplicate'), actions.duplicate),
-      button(tt('userlayers.delete', 'Delete'), actions.remove),
-      button(tt('userlayers.deselect', 'Done'), actions.done, true)
+      button(t('userlayers.duplicate', 'Duplicate'), actions.duplicate),
+      button(t('userlayers.delete', 'Delete'), actions.remove),
+      button(t('userlayers.deselect', 'Done'), actions.done, true)
     )
   )
   return el('div.oim-popup-content.oim-ul-editor', ...parts)
@@ -488,15 +488,15 @@ export function buildBulkCard(
       el('span.oim-ul-card-symbol', '▣'),
       el(
         'div.oim-ul-card-titles',
-        el('h3', tt('userlayers.n-selected', '{{count}} items selected', { count: items.length })),
-        el('span.oim-ul-what', tt('userlayers.bulk-hint', 'Changes below apply to all of them'))
+        el('h3', t('userlayers.n-selected', '{{count}} items selected', { count: items.length })),
+        el('span.oim-ul-what', t('userlayers.bulk-hint', 'Changes below apply to all of them'))
       )
     )
   )
   const names = items.map(({ feature }) => {
     const p = feature.properties
     const name = (p.modifiers?.['T'] || p.name || '').trim()
-    const what = p.sidc ? (symbolName(p.sidc) ?? p.sidc) : tt(`userlayers.kind.${p.kind}`, p.kind)
+    const what = p.sidc ? (symbolName(p.sidc) ?? p.sidc) : t(`userlayers.kind.${p.kind}`, p.kind)
     return el('li', name ? `${name} · ${what}` : what)
   })
   parts.push(el('ul.oim-ul-bulk-list', names))
@@ -504,7 +504,7 @@ export function buildBulkCard(
     parts.push(
       el(
         'p.oim-ul-locked-note',
-        tt('userlayers.bulk-locked', '🔒 {{count}} in locked layers are left as they are.', {
+        t('userlayers.bulk-locked', '🔒 {{count}} in locked layers are left as they are.', {
           count: items.length - unlocked.length
         })
       )
@@ -529,12 +529,12 @@ export function buildBulkCard(
         el(
           '.oim-ul-chips',
           chip(
-            tt('userlayers.status.P', 'Present'),
+            t('userlayers.status.P', 'Present'),
             military.every((i) => status(i.feature.properties.sidc!) !== 'A'),
             () => setSidc((s) => withStatus(s, 'P'))
           ),
           chip(
-            tt('userlayers.status.A', 'Planned'),
+            t('userlayers.status.A', 'Planned'),
             military.every((i) => status(i.feature.properties.sidc!) === 'A'),
             () => setSidc((s) => withStatus(s, 'A'))
           )
@@ -544,7 +544,7 @@ export function buildBulkCard(
   }
   const move = select(
     [
-      ['', tt('userlayers.move-to', 'Move to layer…')],
+      ['', t('userlayers.move-to', 'Move to layer…')],
       ...layers.filter((l) => !l.style.locked).map((l): [string, string] => [l.id, l.name])
     ],
     '',
@@ -560,12 +560,12 @@ export function buildBulkCard(
     el(
       '.oim-ul-card-footer',
       move,
-      button(tt('userlayers.delete-all', 'Delete all'), actions.remove),
-      button(tt('userlayers.clear-selection', 'Done'), actions.clear, true)
+      button(t('userlayers.delete-all', 'Delete all'), actions.remove),
+      button(t('userlayers.clear-selection', 'Done'), actions.clear, true)
     ),
     el(
       'p.oim-ul-hint',
-      tt('userlayers.bulk-help', 'Shift-click on the map or in the list to add or remove items.')
+      t('userlayers.bulk-help', 'Shift-click on the map or in the list to add or remove items.')
     )
   )
   return el('div.oim-popup-content.oim-ul-editor', ...parts)

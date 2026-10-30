@@ -1,7 +1,7 @@
 // Fork: feature details in a side panel on the left (instead of upstream's popup),
 // a highlight of what's selected, where a power line goes, and routes between two
 // stations over the grid (backend: web-backend/src/fork/grid.py).
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el, mount } from 'redom'
 import { ForkContext, ForkModule } from '../types.ts'

@@ -6,7 +6,7 @@
 // marks lines with their colour (data-colour, data-dash) or layer (data-layer),
 // key.ts marks icons with their sprite (data-icon). The fork's own rows carry their
 // HideSpec in data-hide.
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { Map } from 'maplibre-gl'
 import { manifest } from 'virtual:render-svg'

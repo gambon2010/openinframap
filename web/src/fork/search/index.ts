@@ -1,7 +1,7 @@
 // Fork: search additions. The backend also finds places (imposm/places.py) and
 // everything else with a name (schema/search.sql); these say what each result is,
 // and picking one switches on the layer that shows it.
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { ForkModule } from '../types.ts'
 import type { SearchResult } from '../../search/search.ts'
 

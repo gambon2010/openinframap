@@ -1078,7 +1078,10 @@ out what each row hides from its swatch, so upstream's key code is unchanged.
 
 **Translations.** The fork's English strings are in `web/src/fork/locales/en.json`,
 added to upstream's at startup (`i18next.addResourceBundle`), which also lets the
-fork override an upstream string. Upstream's `web/locales/` is untouched.
+fork override an upstream string. Upstream's `web/locales/` is untouched. Fork
+code uses one helper, `t(key, English, values)` from `web/src/fork/core/i18n.ts`,
+never HTML-escaped (the fork puts text on the page as text), so names with `&` or
+quotes show as typed; `npm run fork-strings` adds new keys to `en.json`.
 
 **Tile server.** The fork's layers are in `tegola/layers.fork.yml`;
 `generate_tegola_config.py` takes more than one layers file (the fork's use

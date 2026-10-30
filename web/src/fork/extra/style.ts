@@ -2,7 +2,7 @@
 // filled by scripts/extra_data.py). Drawn exactly like OSM power lines and
 // substations of the same voltage (the tiles carry a nominal voltage) and like
 // OSM gas pipes, below the OSM layers; popups say where the data comes from.
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { interpolate, zoom } from '../../style/stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { ExpressionSpecification } from 'maplibre-gl'

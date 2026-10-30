@@ -2,7 +2,7 @@
 // Tegola map): an icon per kind (web/src/icons/site_*.svg, made by
 // scripts/make_site_icons.py) and a light area for sites mapped as areas. One layer
 // per category, so the layer switcher and the key can hide each.
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { ExpressionSpecification } from 'maplibre-gl'
 import { interpolate, zoom } from '../../style/stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'

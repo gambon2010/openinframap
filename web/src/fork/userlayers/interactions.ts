@@ -4,7 +4,7 @@
 //   delete);
 // - double-click: rename (opens the card with the name ready to type);
 // - Ctrl+C / Ctrl+V: copy the selected item, paste it where the pointer is.
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { Store } from './store.ts'
@@ -131,33 +131,33 @@ export class Interactions {
         ),
         status(sidc) === 'A'
           ? entry(
-              tt('userlayers.make-present', 'Mark as present'),
+              t('userlayers.make-present', 'Mark as present'),
               () => update({ sidc: withStatus(sidc, 'P') }),
               locked
             )
           : entry(
-              tt('userlayers.make-planned', 'Mark as planned'),
+              t('userlayers.make-planned', 'Mark as planned'),
               () => update({ sidc: withStatus(sidc, 'A') }),
               locked
             )
       )
     }
     items.push(
-      entry(tt('userlayers.rename', 'Rename'), () => this.focusName(feature.id), locked),
-      entry(tt('userlayers.duplicate', 'Duplicate'), () => this.paste(feature, layerId, 'beside')),
-      entry(tt('userlayers.copy-item', 'Copy (Ctrl+C)'), () => (this.clipboard = structuredClone(feature)))
+      entry(t('userlayers.rename', 'Rename'), () => this.focusName(feature.id), locked),
+      entry(t('userlayers.duplicate', 'Duplicate'), () => this.paste(feature, layerId, 'beside')),
+      entry(t('userlayers.copy-item', 'Copy (Ctrl+C)'), () => (this.clipboard = structuredClone(feature)))
     )
     const others = [...this.store.layers.values()].filter((l) => l.id !== layerId && !l.style.locked)
     if (others.length && !locked) {
       items.push(
         el(
           'details',
-          el('summary', tt('userlayers.move-to', 'Move to layer')),
+          el('summary', t('userlayers.move-to', 'Move to layer')),
           ...others.map((l) => entry(l.name, () => this.store.moveFeature(feature.id, l.id)))
         )
       )
     }
-    items.push(entry(tt('userlayers.delete', 'Delete'), () => this.tools.deleteSelected(), locked))
+    items.push(entry(t('userlayers.delete', 'Delete'), () => this.tools.deleteSelected(), locked))
     this.menu.replaceChildren(...items)
     // Keep it inside the map.
     const box = this.map.getContainer().getBoundingClientRect()

@@ -2,7 +2,7 @@
 // in the right-hand dock (fork/ui/dock.ts), with one look for all panels
 // (panel.css); the map sources are in a Settings window opened from the header;
 // the search box is in the top bar, right of the header (search-bar.ts).
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { Map } from 'maplibre-gl'
 import { mount } from 'redom'
 import { ForkModule } from '../types.ts'

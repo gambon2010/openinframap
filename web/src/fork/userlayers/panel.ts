@@ -7,7 +7,7 @@
 //   redo, history and Save; the symbol picker opens under it;
 // - a hint at the bottom of the map while a tool is in use, and the history
 //   timeline at the bottom while playing back.
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { Store } from './store.ts'
@@ -139,7 +139,7 @@ export class Panel implements IControl {
     this.sidebar = el('.maplibregl-ctrl.oim-ul-sidebar', this.fileInput)
     this.toolbar = el('.oim-ul-toolbar', {
       role: 'toolbar',
-      'aria-label': tt('userlayers.title', 'My layers')
+      'aria-label': t('userlayers.title', 'My layers')
     })
     this.picker = el('.oim-ul-picker', this.palette.el)
     this.toast = el('.oim-ul-toast', { role: 'status' })
@@ -152,8 +152,8 @@ export class Panel implements IControl {
   onAdd(): HTMLElement {
     this.button = el('button.maplibregl-ctrl-icon.oim-ul-control', {
       type: 'button',
-      title: tt('userlayers.title', 'My layers'),
-      'aria-label': tt('userlayers.title', 'My layers')
+      title: t('userlayers.title', 'My layers'),
+      'aria-label': t('userlayers.title', 'My layers')
     }) as HTMLButtonElement
     this.button.onclick = () => this.toggle()
     this.container = el('div.maplibregl-ctrl.maplibregl-ctrl-group', this.button)
@@ -303,13 +303,13 @@ export class Panel implements IControl {
       case 'area':
         this.tools.setTool(
           { mode: id, points: [] },
-          tt('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
+          t('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
         )
         break
       case 'marker':
         this.tools.setTool(
           { mode: 'place', properties: { kind: 'marker' } },
-          tt('userlayers.marker-hint', 'Click the map to put a marker there.')
+          t('userlayers.marker-hint', 'Click the map to put a marker there.')
         )
         break
       case 'image':
@@ -318,7 +318,7 @@ export class Panel implements IControl {
       case 'copy':
         this.tools.setTool(
           { mode: 'copy' },
-          tt(
+          t(
             'userlayers.copy-hint',
             'Click lines, substations, sites... to copy them into the layer. They stay visible when their kind is hidden.'
           )
@@ -336,12 +336,12 @@ export class Panel implements IControl {
       '.oim-ul-toolbar-group',
       TOOLS.map(([id, glyph, label, key]) => {
         const b = this.action(glyph, () => this.chooseTool(id), {
-          title: `${tt(`userlayers.tool.${id}`, label)} (${key})`,
+          title: `${t(`userlayers.tool.${id}`, label)} (${key})`,
           active: active === id,
           className: 'oim-ul-tool-icon'
         })
         b.setAttribute('aria-pressed', String(active === id))
-        b.setAttribute('aria-label', tt(`userlayers.tool.${id}`, label))
+        b.setAttribute('aria-label', t(`userlayers.tool.${id}`, label))
         b.disabled = this.inPlayback || Boolean(this.viewing)
         return b
       })
@@ -349,7 +349,7 @@ export class Panel implements IControl {
     // Where new items go.
     const target = el(
       'select.oim-ul-target',
-      { title: tt('userlayers.add-to', 'New items go into this layer'), disabled: this.inPlayback },
+      { title: t('userlayers.add-to', 'New items go into this layer'), disabled: this.inPlayback },
       [...this.store.layers.values()].map((l) =>
         // A locked layer takes nothing new.
         el('option', l.style.locked ? `🔒 ${l.name}` : l.name, {
@@ -358,7 +358,7 @@ export class Panel implements IControl {
           disabled: Boolean(l.style.locked)
         })
       ),
-      el('option', `+ ${tt('userlayers.new-layer', 'New layer')}`, {
+      el('option', `+ ${t('userlayers.new-layer', 'New layer')}`, {
         value: '',
         selected: !this.store.layers.size
       })
@@ -371,12 +371,12 @@ export class Panel implements IControl {
       this.newLayer()
     }
     const undo = this.action('↶', () => this.store.undo(), {
-      title: tt('userlayers.undo', 'Undo (Ctrl+Z)'),
+      title: t('userlayers.undo', 'Undo (Ctrl+Z)'),
       disabled: !this.store.canUndo || this.showingPast,
       className: 'oim-ul-tool-icon'
     })
     const redo = this.action('↷', () => this.store.redo(), {
-      title: tt('userlayers.redo', 'Redo (Ctrl+Shift+Z)'),
+      title: t('userlayers.redo', 'Redo (Ctrl+Shift+Z)'),
       disabled: !this.store.canRedo || this.showingPast,
       className: 'oim-ul-tool-icon'
     })
@@ -385,8 +385,8 @@ export class Panel implements IControl {
       () => (this.inPlayback ? this.closePlayback() : void this.openPlayback()),
       {
         title: this.inPlayback
-          ? tt('userlayers.history-exit', 'Back to now')
-          : tt('userlayers.history-open', 'Play back the history'),
+          ? t('userlayers.history-exit', 'Back to now')
+          : t('userlayers.history-open', 'Play back the history'),
         active: this.inPlayback,
         className: 'oim-ul-tool-icon'
       }
@@ -395,29 +395,29 @@ export class Panel implements IControl {
     const save = this.action(
       this.busy ||
         (pending
-          ? tt('userlayers.save-n', 'Save ({{count}})', { count: pending })
-          : tt('userlayers.saved', 'Saved')),
-      () => void this.run(tt('userlayers.saving', 'Saving'), () => this.store.save()),
+          ? t('userlayers.save-n', 'Save ({{count}})', { count: pending })
+          : t('userlayers.saved', 'Saved')),
+      () => void this.run(t('userlayers.saving', 'Saving'), () => this.store.save()),
       {
         primary: pending > 0,
         disabled: !pending || !!this.busy || this.inPlayback,
-        title: tt('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
+        title: t('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
       }
     )
     const more = el(
       'details.oim-ul-menu',
-      el('summary', '⋯', { title: tt('userlayers.more', 'More') }),
+      el('summary', '⋯', { title: t('userlayers.more', 'More') }),
       el(
         '.oim-ul-menu-items',
         this.action(
-          tt('userlayers.discard', 'Discard unsaved changes'),
+          t('userlayers.discard', 'Discard unsaved changes'),
           () => {
-            const message = tt('userlayers.discard-confirm', 'Forget the {{count}} unsaved change(s)?', {
+            const message = t('userlayers.discard-confirm', 'Forget the {{count}} unsaved change(s)?', {
               count: pending
             })
             if (window.confirm(message)) {
               this.tools.select(null)
-              void this.run(tt('userlayers.discarding', 'Discarding'), () => this.store.discard())
+              void this.run(t('userlayers.discarding', 'Discarding'), () => this.store.discard())
             }
           },
           { disabled: !pending || !!this.busy }
@@ -426,7 +426,7 @@ export class Panel implements IControl {
     )
     bar.append(
       tools,
-      el('.oim-ul-toolbar-group', el('span.oim-ul-toolbar-label', tt('userlayers.into', 'Into')), target),
+      el('.oim-ul-toolbar-group', el('span.oim-ul-toolbar-label', t('userlayers.into', 'Into')), target),
       el('.oim-ul-toolbar-group', undo, redo, history),
       el('.oim-ul-toolbar-group', save, more)
     )
@@ -434,8 +434,8 @@ export class Panel implements IControl {
 
   private newLayer(folder?: string) {
     const value = window.prompt(
-      tt('userlayers.layer-name', 'Layer name'),
-      tt('userlayers.default-name', 'My layer')
+      t('userlayers.layer-name', 'Layer name'),
+      t('userlayers.default-name', 'My layer')
     )
     if (value && value.trim()) this.store.createLayer(value.trim(), folder)
     else this.update()
@@ -447,7 +447,7 @@ export class Panel implements IControl {
     if (!pick.geometry) {
       this.tools.setTool(
         { mode: 'place', properties: { kind: 'symbol', sidc: pick.sidc } },
-        tt('userlayers.place-hint', 'Click the map to put "{{name}}" there.', { name: pick.name })
+        t('userlayers.place-hint', 'Click the map to put "{{name}}" there.', { name: pick.name })
       )
       return
     }
@@ -455,7 +455,7 @@ export class Panel implements IControl {
     const count = pointCount(lib, pick.sidc)
     if (!count) {
       window.alert(
-        tt('userlayers.graphic-unsupported', '"{{name}}" can\'t be drawn yet.', { name: pick.name })
+        t('userlayers.graphic-unsupported', '"{{name}}" can\'t be drawn yet.', { name: pick.name })
       )
       this.update()
       return
@@ -471,7 +471,7 @@ export class Panel implements IControl {
           max: Infinity,
           axis: true
         },
-        tt(
+        t(
           'userlayers.axis-hint',
           '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Drag the blue handle to change its width.',
           { name: pick.name }
@@ -482,11 +482,11 @@ export class Panel implements IControl {
     const max = Number.isFinite(count.max) && count.max < 1000 ? count.max : Infinity
     const hint =
       count.min === max
-        ? tt('userlayers.graphic-hint-fixed', '"{{name}}": click {{n}} points on the map.', {
+        ? t('userlayers.graphic-hint-fixed', '"{{name}}": click {{n}} points on the map.', {
             name: pick.name,
             n: count.min
           })
-        : tt(
+        : t(
             'userlayers.graphic-hint',
             '"{{name}}": click at least {{n}} points; double-click or Enter to finish.',
             {
@@ -504,13 +504,13 @@ export class Panel implements IControl {
     const file = this.fileInput.files?.[0]
     this.fileInput.value = ''
     if (!file) return
-    await this.run(tt('userlayers.uploading', 'Uploading the picture'), async () => {
+    await this.run(t('userlayers.uploading', 'Uploading the picture'), async () => {
       const { mime, data } = await prepareImage(file)
       const id = await uploadImage(file.name, mime, data)
       this.paletteMode = null
       this.tools.setTool(
         { mode: 'place', properties: { kind: 'image', image: id, name: '' } },
-        tt('userlayers.image-hint', 'Click the map to put the picture there.')
+        t('userlayers.image-hint', 'Click the map to put the picture there.')
       )
     })
   }
@@ -525,17 +525,17 @@ export class Panel implements IControl {
   private buildSidebar() {
     const close = el('button.oim-panel-button', '×', {
       type: 'button',
-      title: tt('userlayers.close', 'Close My layers'),
-      'aria-label': tt('userlayers.close', 'Close My layers')
+      title: t('userlayers.close', 'Close My layers'),
+      'aria-label': t('userlayers.close', 'Close My layers')
     })
     close.onclick = () => this.toggle(false)
     const level = el(
       'select',
       (
         [
-          ['none', tt('userlayers.labels.none', 'None')],
-          ['name', tt('userlayers.labels.name', 'Designation only')],
-          ['all', tt('userlayers.labels.all', 'All fields')]
+          ['none', t('userlayers.labels.none', 'None')],
+          ['name', t('userlayers.labels.name', 'Designation only')],
+          ['all', t('userlayers.labels.all', 'All fields')]
         ] as [LabelLevel, string][]
       ).map(([value, label]) => el('option', label, { value, selected: value === getLabelLevel() }))
     ) as HTMLSelectElement
@@ -546,7 +546,7 @@ export class Panel implements IControl {
     const author = el('input.oim-ul-author', {
       type: 'text',
       value: this.store.author,
-      placeholder: tt('userlayers.author', 'Your name')
+      placeholder: t('userlayers.author', 'Your name')
     }) as HTMLInputElement
     author.onchange = () => (this.store.author = author.value.trim())
     this.outline.append(
@@ -555,13 +555,13 @@ export class Panel implements IControl {
       this.outliner.el,
       el(
         'details.oim-ul-settings',
-        el('summary', tt('userlayers.settings', 'Labels and name')),
-        el('label.oim-ul-field', el('span', tt('userlayers.labels-on-map', 'Labels on the map')), level),
-        el('label.oim-ul-field', el('span', tt('userlayers.author-label', 'Saved as')), author)
+        el('summary', t('userlayers.settings', 'Labels and name')),
+        el('label.oim-ul-field', el('span', t('userlayers.labels-on-map', 'Labels on the map')), level),
+        el('label.oim-ul-field', el('span', t('userlayers.author-label', 'Saved as')), author)
       )
     )
     this.sidebar.append(
-      el('.oim-panel-header', el('h2', tt('userlayers.title', 'My layers')), close),
+      el('.oim-panel-header', el('h2', t('userlayers.title', 'My layers')), close),
       this.outline,
       this.fileInput
     )
@@ -572,14 +572,14 @@ export class Panel implements IControl {
     if (!this.sidebarBuilt) this.buildSidebar()
     this.message.textContent = ''
     if (!this.store.loaded) {
-      this.message.append(el('p.oim-ul-hint', tt('userlayers.loading', 'Loading...')))
+      this.message.append(el('p.oim-ul-hint', t('userlayers.loading', 'Loading...')))
       return
     }
     if (this.store.error) {
       this.message.append(
         el(
           'p.oim-ul-error',
-          tt(
+          t(
             'userlayers.error',
             "The backend can't be reached, so layers can't be loaded or saved: {{error}}",
             {
@@ -611,7 +611,7 @@ export class Panel implements IControl {
       void this.loadSituations()
     }
     const options: HTMLElement[] = [
-      el('option', tt('userlayers.live', 'Live (now)'), { value: 'live', selected: !this.viewing })
+      el('option', t('userlayers.live', 'Live (now)'), { value: 'live', selected: !this.viewing })
     ]
     for (const s of this.situations) {
       options.push(
@@ -619,18 +619,18 @@ export class Panel implements IControl {
       )
     }
     options.push(
-      el('option', `+ ${tt('userlayers.save-situation', 'Save now as a situation…')}`, { value: 'save' })
+      el('option', `+ ${t('userlayers.save-situation', 'Save now as a situation…')}`, { value: 'save' })
     )
     if (this.viewing)
       options.push(
-        el('option', `🗑 ${tt('userlayers.delete-situation', 'Delete this situation')}`, { value: 'delete' })
+        el('option', `🗑 ${t('userlayers.delete-situation', 'Delete this situation')}`, { value: 'delete' })
       )
     const choice = el('select', options, {
-      title: tt('userlayers.situation-title', 'A situation is a named moment: your layers as they were then')
+      title: t('userlayers.situation-title', 'A situation is a named moment: your layers as they were then')
     }) as HTMLSelectElement
     choice.onchange = () => void this.chooseSituation(choice.value)
     this.situationLine.replaceChildren(
-      el('label', el('span', tt('userlayers.situation', 'Situation')), choice)
+      el('label', el('span', t('userlayers.situation', 'Situation')), choice)
     )
   }
 
@@ -641,8 +641,8 @@ export class Panel implements IControl {
     }
     if (value === 'save') {
       const name = window.prompt(
-        tt('userlayers.situation-name', 'Name of the situation'),
-        tt('userlayers.situation-default', 'Situation {{date}}', { date: new Date().toLocaleString() })
+        t('userlayers.situation-name', 'Name of the situation'),
+        t('userlayers.situation-default', 'Situation {{date}}', { date: new Date().toLocaleString() })
       )
       if (name && name.trim()) {
         // A situation is made of saved changes: offer to save the unsaved ones first.
@@ -650,13 +650,13 @@ export class Panel implements IControl {
         const includePending =
           pending > 0 &&
           window.confirm(
-            tt(
+            t(
               'userlayers.situation-include-pending',
               'Save your {{count}} unsaved change(s) first, so they are in the situation? (Cancel: leave them out.)',
               { count: pending }
             )
           )
-        await this.run(tt('userlayers.saving', 'Saving'), async () => {
+        await this.run(t('userlayers.saving', 'Saving'), async () => {
           if (includePending) await this.store.save()
           await createSituation(name.trim(), this.store.author)
           await this.loadSituations()
@@ -668,7 +668,7 @@ export class Panel implements IControl {
       const viewing = this.viewing
       if (
         window.confirm(
-          tt(
+          t(
             'userlayers.delete-situation-confirm',
             'Delete the situation "{{name}}"? (Your layers stay as they are.)',
             { name: viewing.name }
@@ -676,7 +676,7 @@ export class Panel implements IControl {
         )
       ) {
         this.backToLive()
-        await this.run(tt('userlayers.deleting', 'Deleting'), async () => {
+        await this.run(t('userlayers.deleting', 'Deleting'), async () => {
           await deleteSituation(viewing.id)
           await this.loadSituations()
         })
@@ -691,7 +691,7 @@ export class Panel implements IControl {
   private async view(situation: Situation) {
     // Unsaved changes stay as they are: they come back with "Back to live".
     if (this.inPlayback) this.closePlayback()
-    await this.run(tt('userlayers.loading', 'Loading...'), async () => {
+    await this.run(t('userlayers.loading', 'Loading...'), async () => {
       await this.playback.load()
       this.playback.position = situationPosition(this.playback.changes, situation)
       const snapshot = this.playback.snapshot()
@@ -717,7 +717,7 @@ export class Panel implements IControl {
   private updateBanner() {
     this.banner.classList.toggle('visible', Boolean(this.viewing))
     if (!this.viewing) return
-    const back = el('button.oim-ul-button.primary', tt('userlayers.back-to-live', 'Back to live'), {
+    const back = el('button.oim-ul-button.primary', t('userlayers.back-to-live', 'Back to live'), {
       type: 'button'
     })
     back.onclick = () => this.backToLive()
@@ -725,11 +725,11 @@ export class Panel implements IControl {
       el(
         'span',
         '👁 ',
-        tt('userlayers.viewing', 'Viewing'),
+        t('userlayers.viewing', 'Viewing'),
         ' ',
         el('strong', this.viewing.name),
         ` (${situationLabel(this.viewing).split(' · ').slice(1).join(' · ')}) · `,
-        tt('userlayers.read-only', 'read-only')
+        t('userlayers.read-only', 'read-only')
       ),
       back
     )
@@ -764,12 +764,12 @@ export class Panel implements IControl {
     const tool = this.tools.tool
     let text = this.tools.message
     if (tool.mode === 'graphic' && tool.points.length) {
-      text += ' ' + tt('userlayers.points-so-far', '({{n}} so far)', { n: tool.points.length })
+      text += ' ' + t('userlayers.points-so-far', '({{n}} so far)', { n: tool.points.length })
     }
     const active = tool.mode !== 'select' && Boolean(text)
     this.toast.textContent = ''
     if (active) {
-      const stop = el('button', tt('userlayers.stop', 'Stop (Esc)'), { type: 'button' })
+      const stop = el('button', t('userlayers.stop', 'Stop (Esc)'), { type: 'button' })
       stop.onclick = () => this.tools.setTool({ mode: 'select' })
       this.toast.append(el('span', text), stop)
     }
@@ -812,9 +812,7 @@ export class Panel implements IControl {
           ),
         remove: () => {
           if (
-            window.confirm(
-              tt('userlayers.delete-n', 'Delete these {{count}} items?', { count: items.length })
-            )
+            window.confirm(t('userlayers.delete-n', 'Delete these {{count}} items?', { count: items.length }))
           )
             this.tools.deleteSelected()
         },
@@ -862,7 +860,7 @@ export class Panel implements IControl {
       editor.insertBefore(
         el(
           'p.oim-ul-locked-note',
-          tt('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
+          t('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
         ),
         editor.children[1] ?? null
       )
@@ -894,14 +892,14 @@ export class Panel implements IControl {
   private async openPlayback() {
     if (this.store.unsavedCount) {
       window.alert(
-        tt(
+        t(
           'userlayers.history-save-first',
           'Save or discard your changes first: the history only has saved ones.'
         )
       )
       return
     }
-    await this.run(tt('userlayers.history-loading', 'Loading the history'), async () => {
+    await this.run(t('userlayers.history-loading', 'Loading the history'), async () => {
       await this.playback.load()
       this.inPlayback = true
       this.tools.setTool({ mode: 'select' })
@@ -947,7 +945,7 @@ export class Panel implements IControl {
       max: String(total),
       step: '1',
       value: String(pb.position),
-      'aria-label': tt('userlayers.step', 'Step')
+      'aria-label': t('userlayers.step', 'Step')
     }) as HTMLInputElement
     slider.oninput = () => go(Number(slider.value))()
     const play = this.action(
@@ -957,11 +955,11 @@ export class Panel implements IControl {
         else pb.play(() => void this.showStep())
         this.update()
       },
-      { primary: true, title: pb.playing ? tt('userlayers.pause', 'Pause') : tt('userlayers.play', 'Play') }
+      { primary: true, title: pb.playing ? t('userlayers.pause', 'Pause') : t('userlayers.play', 'Play') }
     )
     const speed = el(
       'select',
-      { title: tt('userlayers.speed', 'Speed') },
+      { title: t('userlayers.speed', 'Speed') },
       [0.5, 1, 2, 4].map((s) => el('option', `${s}×`, { value: String(s), selected: s === pb.speed }))
     ) as HTMLSelectElement
     speed.onchange = () => {
@@ -971,17 +969,17 @@ export class Panel implements IControl {
     const follow = el('input', { type: 'checkbox', checked: this.follow }) as HTMLInputElement
     follow.onchange = () => (this.follow = follow.checked)
     const close = this.action('×', () => this.closePlayback(), {
-      title: tt('userlayers.history-exit', 'Back to now'),
+      title: t('userlayers.history-exit', 'Back to now'),
       className: 'oim-ul-icon'
     })
     this.timeline.append(
       el(
         '.oim-ul-timeline-controls',
-        this.action('⏮', go(0), { title: tt('userlayers.first', 'Start') }),
-        this.action('◀', go(pb.position - 1), { title: tt('userlayers.previous', 'Previous change') }),
+        this.action('⏮', go(0), { title: t('userlayers.first', 'Start') }),
+        this.action('◀', go(pb.position - 1), { title: t('userlayers.previous', 'Previous change') }),
         play,
-        this.action('▶|', go(pb.position + 1), { title: tt('userlayers.next', 'Next change') }),
-        this.action('⏭', go(total), { title: tt('userlayers.last', 'Now') }),
+        this.action('▶|', go(pb.position + 1), { title: t('userlayers.next', 'Next change') }),
+        this.action('⏭', go(total), { title: t('userlayers.last', 'Now') }),
         speed,
         slider,
         close
@@ -990,9 +988,9 @@ export class Panel implements IControl {
         '.oim-ul-timeline-text',
         el(
           'span.oim-ul-step',
-          total ? pb.describe(pb.snapshot()) : tt('userlayers.history-empty', 'Nothing saved yet.')
+          total ? pb.describe(pb.snapshot()) : t('userlayers.history-empty', 'Nothing saved yet.')
         ),
-        el('label.oim-ul-inline', follow, tt('userlayers.follow', 'Follow on the map'))
+        el('label.oim-ul-inline', follow, t('userlayers.follow', 'Follow on the map'))
       )
     )
   }

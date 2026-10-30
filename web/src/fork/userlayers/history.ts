@@ -1,7 +1,7 @@
 // Fork: playing back the history of "My layers": every saved change, in order,
 // from the backend's log (userdata.change). Step k shows the layers as they were
 // after the first k changes.
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { Map, LngLatBounds } from 'maplibre-gl'
 import { Change, SavedChange, UserFeature, UserLayer } from './model.ts'
 import { applyChange } from './store.ts'
@@ -26,22 +26,22 @@ function asChange(saved: SavedChange): Change {
 
 function featureLabel(feature: Partial<UserFeature> | undefined): string {
   const p = feature?.properties
-  if (!p) return tt('userlayers.feature', 'a feature')
+  if (!p) return t('userlayers.feature', 'a feature')
   const label = p.modifiers?.['T'] || p.name
   const name = label ? ` "${label}"` : ''
   switch (p.kind) {
     case 'symbol':
-      return `${tt('userlayers.kind.symbol', 'symbol')}${name || ` (${symbolName(p.sidc ?? '') ?? p.sidc})`}`
+      return `${t('userlayers.kind.symbol', 'symbol')}${name || ` (${symbolName(p.sidc ?? '') ?? p.sidc})`}`
     case 'graphic':
-      return `${tt('userlayers.kind.graphic', 'graphic')}${name || ` (${symbolName(p.sidc ?? '') ?? p.sidc})`}`
+      return `${t('userlayers.kind.graphic', 'graphic')}${name || ` (${symbolName(p.sidc ?? '') ?? p.sidc})`}`
     case 'image':
-      return `${tt('userlayers.kind.image', 'picture')}${name}`
+      return `${t('userlayers.kind.image', 'picture')}${name}`
     case 'marker':
-      return `${tt('userlayers.kind.marker', 'marker')}${name}`
+      return `${t('userlayers.kind.marker', 'marker')}${name}`
     case 'copy':
-      return `${tt('userlayers.kind.copy', 'copy of')} ${p.copy?.layer ?? ''}${name}`
+      return `${t('userlayers.kind.copy', 'copy of')} ${p.copy?.layer ?? ''}${name}`
     default:
-      return `${feature?.geometry?.type === 'Polygon' ? tt('userlayers.kind.area', 'area') : tt('userlayers.kind.line', 'line')}${name}`
+      return `${feature?.geometry?.type === 'Polygon' ? t('userlayers.kind.area', 'area') : t('userlayers.kind.line', 'line')}${name}`
   }
 }
 
@@ -61,23 +61,23 @@ export function changedFields(
   if (a.sidc && b.sidc && a.sidc !== b.sidc) {
     if (a.sidc[1] !== b.sidc[1])
       out.push(
-        `${tt('userlayers.f.identity', 'identity')}: ${label(IDENTITIES, a.sidc[1])} → ${label(IDENTITIES, b.sidc[1])}`
+        `${t('userlayers.f.identity', 'identity')}: ${label(IDENTITIES, a.sidc[1])} → ${label(IDENTITIES, b.sidc[1])}`
       )
     if (a.sidc[3] !== b.sidc[3])
       out.push(
-        `${tt('userlayers.f.status', 'status')}: ${label(STATUSES, a.sidc[3])} → ${label(STATUSES, b.sidc[3])}`
+        `${t('userlayers.f.status', 'status')}: ${label(STATUSES, a.sidc[3])} → ${label(STATUSES, b.sidc[3])}`
       )
     if (a.sidc[11] !== b.sidc[11] && b.sidc[0] === 'S')
       out.push(
-        `${tt('userlayers.f.echelon', 'echelon')}: ${label(ECHELONS, a.sidc[11])} → ${label(ECHELONS, b.sidc[11])}`
+        `${t('userlayers.f.echelon', 'echelon')}: ${label(ECHELONS, a.sidc[11])} → ${label(ECHELONS, b.sidc[11])}`
       )
-    if (a.sidc.slice(4, 10) !== b.sidc.slice(4, 10)) out.push(tt('userlayers.f.symbol', 'symbol'))
+    if (a.sidc.slice(4, 10) !== b.sidc.slice(4, 10)) out.push(t('userlayers.f.symbol', 'symbol'))
   }
   const keys = new Set([...Object.keys(a.modifiers ?? {}), ...Object.keys(b.modifiers ?? {})])
   for (const key of keys) {
     if ((a.modifiers?.[key] ?? '') !== (b.modifiers?.[key] ?? '')) {
       const field = FIELDS.find((f) => f.key === key)
-      out.push(tt(`userlayers.f.${key}`, field?.label ?? key).toLowerCase())
+      out.push(t(`userlayers.f.${key}`, field?.label ?? key).toLowerCase())
     }
   }
   for (const [key, text] of [
@@ -87,14 +87,14 @@ export function changedFields(
     ['size', 'size'],
     ['width', 'line width']
   ] as const) {
-    if (a[key] !== b[key]) out.push(tt(`userlayers.changed.${key}`, text))
+    if (a[key] !== b[key]) out.push(t(`userlayers.changed.${key}`, text))
   }
   if (
     before?.geometry &&
     after.geometry &&
     JSON.stringify(before.geometry) !== JSON.stringify(after.geometry)
   )
-    out.push(tt('userlayers.changed.moved', 'moved'))
+    out.push(t('userlayers.changed.moved', 'moved'))
   return [...new Set(out)]
 }
 
@@ -128,7 +128,7 @@ export class Playback {
   /** What the current step did, in words. */
   describe(layers: globalThis.Map<string, UserLayer>): string {
     const change = this.current()
-    if (!change) return tt('userlayers.history.start', 'Before the first change')
+    if (!change) return t('userlayers.history.start', 'Before the first change')
     const when = new Date(change.made_at).toLocaleString()
     const who = change.author ? ` · ${change.author}` : ''
     const layerName = change.after?.name ?? layers.get(change.layer_id)?.name ?? ''
@@ -139,10 +139,10 @@ export class Playback {
     let what
     switch (change.op) {
       case 'layer_create':
-        what = tt('userlayers.history.layer-create', 'Made the layer "{{name}}"', { name: layerName })
+        what = t('userlayers.history.layer-create', 'Made the layer "{{name}}"', { name: layerName })
         break
       case 'layer_update':
-        what = tt('userlayers.history.layer-update', 'Changed the layer "{{name}}"', { name: layerName })
+        what = t('userlayers.history.layer-update', 'Changed the layer "{{name}}"', { name: layerName })
         break
       case 'layer_delete': {
         // The layer is gone from the snapshot: its name from before.
@@ -151,18 +151,18 @@ export class Playback {
           .reverse()
           .find((c) => c.layer_id === change.layer_id && c.after?.name)?.after?.name
         what = name
-          ? tt('userlayers.history.layer-delete-named', 'Deleted the layer "{{name}}"', { name })
-          : tt('userlayers.history.layer-delete', 'Deleted a layer')
+          ? t('userlayers.history.layer-delete-named', 'Deleted the layer "{{name}}"', { name })
+          : t('userlayers.history.layer-delete', 'Deleted a layer')
         break
       }
       case 'feature_create':
-        what = tt('userlayers.history.feature-create', 'Added {{what}} to "{{layer}}"', {
+        what = t('userlayers.history.feature-create', 'Added {{what}} to "{{layer}}"', {
           what: featureLabel(change.after),
           layer: layers.get(change.layer_id)?.name ?? ''
         })
         break
       case 'feature_update': {
-        what = tt('userlayers.history.feature-update', 'Changed {{what}}', {
+        what = t('userlayers.history.feature-update', 'Changed {{what}}', {
           what: featureLabel(change.after)
         })
         const fields = changedFields(previous?.after, change.after ?? {})
@@ -170,7 +170,7 @@ export class Playback {
         break
       }
       default:
-        what = tt('userlayers.history.feature-delete', 'Deleted {{what}}', {
+        what = t('userlayers.history.feature-delete', 'Deleted {{what}}', {
           what: featureLabel(previous?.after)
         })
     }

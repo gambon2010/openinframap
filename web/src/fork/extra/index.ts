@@ -1,7 +1,7 @@
 // Fork: data from outside OpenStreetMap (scripts/extra_data.py, schema/extra.sql,
 // Tegola's "extra" map): French distribution networks, biomethane injection
 // points, classified installations (ICPE). One fork module.
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import { MapGeoJSONFeature } from 'maplibre-gl'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'

@@ -1,6 +1,6 @@
 // Fork: the shared panel chrome (fork/ui/panel.css): a title bar with a close
 // button, and a body that scrolls.
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import './panel.css'
 

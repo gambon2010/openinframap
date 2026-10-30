@@ -1,7 +1,7 @@
 // Fork: a Settings window, opened from the header next to about / stats / export.
 // It holds the map sources (fork/map-sources) and the sections other modules add
 // with addSettingsSection (e.g. the background: map or satellite, fork/satellite).
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { MapSourcesSection } from '../map-sources/map-sources.ts'

@@ -2,7 +2,7 @@
 // tactical graphics (catalogue: scripts/make_symbol_catalog.py). Point symbols are
 // previewed by @syncpoint/signs; lines, areas and arrows are drawn on the map by the
 // C5ISR renderer (graphics.ts), so the picker shows their kind instead.
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { el } from 'redom'
 import catalogue from './symbols-2525c.json'
 import { symbolRenderer } from './symbols.ts'
@@ -212,13 +212,13 @@ export class Palette {
       el(
         '.oim-ul-palette-options',
         this.frames,
-        el('label.oim-ul-inline', this.planned, tt('userlayers.planned', 'Planned'))
+        el('label.oim-ul-inline', this.planned, t('userlayers.planned', 'Planned'))
       ),
       this.chips,
       this.results,
       el(
         'p.oim-ul-credit',
-        tt(
+        t(
           'userlayers.palette.credit',
           'MIL-STD-2525C. Symbols drawn by @syncpoint/signs (as in ODIN), graphics by the C5ISR renderer.'
         )
@@ -235,10 +235,10 @@ export class Palette {
     this.search.value = ''
     this.search.placeholder =
       mode === 'symbols'
-        ? tt('userlayers.palette.search', 'Search symbols (fire, hospital, infantry...)')
-        : tt('userlayers.palette.search-graphics', 'Search graphics (axis, phase line, block...)')
+        ? t('userlayers.palette.search', 'Search symbols (fire, hospital, infantry...)')
+        : t('userlayers.palette.search-graphics', 'Search graphics (axis, phase line, block...)')
     if (!this.render) {
-      this.results.textContent = tt('userlayers.palette.loading', 'Loading symbols...')
+      this.results.textContent = t('userlayers.palette.loading', 'Loading symbols...')
       this.render = await symbolRenderer()
     }
     if (mode === 'graphics' && !this.drawable) {
@@ -262,7 +262,7 @@ export class Palette {
     for (const [value, label] of AFFILIATIONS) {
       const button = el(`button.oim-ul-frame${value === this.affiliation ? '.active' : ''}`, {
         type: 'button',
-        title: tt(`userlayers.affiliation.${value}`, label),
+        title: t(`userlayers.affiliation.${value}`, label),
         'aria-pressed': String(value === this.affiliation)
       })
       try {
@@ -291,9 +291,9 @@ export class Palette {
       }
       return button
     }
-    this.chips.append(chip(tt('userlayers.palette.all', 'All'), undefined))
+    this.chips.append(chip(t('userlayers.palette.all', 'All'), undefined))
     for (const name of categoriesFor(this.mode))
-      this.chips.append(chip(tt(`userlayers.category.${name}`, name), name))
+      this.chips.append(chip(t(`userlayers.category.${name}`, name), name))
   }
 
   private button(entry: Entry): HTMLElement {
@@ -303,7 +303,7 @@ export class Palette {
     if (geometry) {
       const [glyph, kind] = GEOMETRY_LABELS[geometry]
       button.textContent = glyph
-      button.title = `${name} (${tt(`userlayers.geometry.${geometry}`, kind)})`
+      button.title = `${name} (${t(`userlayers.geometry.${geometry}`, kind)})`
     } else {
       try {
         button.innerHTML = this.render!(sidc, 18)
@@ -323,8 +323,8 @@ export class Palette {
     const star = el(`button.oim-ul-star${starred ? '.on' : ''}`, starred ? '★' : '☆', {
       type: 'button',
       title: starred
-        ? tt('userlayers.unfavourite', 'Remove from favourites')
-        : tt('userlayers.favourite', 'Add to favourites')
+        ? t('userlayers.unfavourite', 'Remove from favourites')
+        : t('userlayers.favourite', 'Add to favourites')
     })
     star.onclick = () => {
       toggleFavourite(entry[0])
@@ -347,7 +347,7 @@ export class Palette {
         .filter(ofMode)
       if (favourites.length) {
         this.results.append(
-          el('h4', tt('userlayers.palette.favourites', 'Favourites')),
+          el('h4', t('userlayers.palette.favourites', 'Favourites')),
           el('.oim-ul-symbol-grid', ...favourites.map((e) => this.labelled(e)))
         )
       }
@@ -356,12 +356,12 @@ export class Palette {
         .filter((e): e is Entry => Boolean(e) && (this.mode === 'graphics') === Boolean(e![3]))
       if (recent.length) {
         this.results.append(
-          el('h4', tt('userlayers.palette.recent', 'Recently used')),
+          el('h4', t('userlayers.palette.recent', 'Recently used')),
           el('.oim-ul-symbol-grid', ...recent.map((e) => this.labelled(e)))
         )
       }
       this.results.append(
-        el('p.oim-ul-hint', tt('userlayers.palette.pick', 'Search by name, or pick a category above.'))
+        el('p.oim-ul-hint', t('userlayers.palette.pick', 'Search by name, or pick a category above.'))
       )
       return
     }
@@ -371,13 +371,13 @@ export class Palette {
     const grid = el('.oim-ul-symbol-grid')
     for (const entry of matches.slice(0, MAX_RESULTS)) grid.append(this.labelled(entry))
     this.results.append(
-      matches.length ? grid : el('p.oim-ul-hint', tt('userlayers.palette.none', 'Nothing with that name.'))
+      matches.length ? grid : el('p.oim-ul-hint', t('userlayers.palette.none', 'Nothing with that name.'))
     )
     if (matches.length > MAX_RESULTS) {
       this.results.append(
         el(
           'p.oim-ul-hint',
-          tt('userlayers.palette.more', 'Showing the first {{n}}: type more to narrow it down.', {
+          t('userlayers.palette.more', 'Showing the first {{n}}: type more to narrow it down.', {
             n: MAX_RESULTS
           })
         )

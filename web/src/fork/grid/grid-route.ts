@@ -10,7 +10,7 @@
 import { IControl, Map, GeoJSONSource, LngLatBounds } from 'maplibre-gl'
 import type { Feature, MultiLineString } from 'geojson'
 import { URLHash } from '@russss/maplibregl-layer-switcher'
-import { t } from 'i18next'
+import { t } from '../core/i18n.ts'
 import { el, mount, setChildren } from 'redom'
 import { BACKEND_BASE_URL } from '../config.ts'
 import './grid-route.css'

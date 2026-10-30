@@ -1,5 +1,5 @@
 // Fork: an item of My layers in a few words, for lists (outliner) and messages.
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { UserFeature } from './model.ts'
 import { symbolName } from './palette.ts'
 import { IDENTITIES, status } from './sidc.ts'
@@ -16,13 +16,13 @@ export function featureLabelParts(
     p.kind === 'symbol' || p.kind === 'graphic'
       ? (symbolName(p.sidc ?? '') ?? p.sidc ?? '')
       : p.kind === 'copy'
-        ? tt('userlayers.copy-of-short', 'Copy: {{layer}}', { layer: p.copy?.layer ?? '' })
-        : tt(`userlayers.kind.${p.kind}`, p.kind)
+        ? t('userlayers.copy-of-short', 'Copy: {{layer}}', { layer: p.copy?.layer ?? '' })
+        : t(`userlayers.kind.${p.kind}`, p.kind)
   const detail: string[] = []
   if (p.sidc) {
     const id = IDENTITIES.find(([c]) => c === p.sidc![1])?.[1]
-    if (id) detail.push(tt(`userlayers.affiliation.${p.sidc[1]}`, id))
-    if (status(p.sidc) === 'A') detail.push(tt('userlayers.status.A', 'Planned').toLowerCase())
+    if (id) detail.push(t(`userlayers.affiliation.${p.sidc[1]}`, id))
+    if (status(p.sidc) === 'A') detail.push(t('userlayers.status.A', 'Planned').toLowerCase())
   }
   const seen = p.modifiers?.['W'] ? fromDtg(p.modifiers['W']) : null
   if (seen) detail.push(relativeTime(seen, now))

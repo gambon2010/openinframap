@@ -2,7 +2,7 @@
 // the points of a line, area or graphic, to move them), place a symbol / picture /
 // marker, draw a line, an area or a tactical graphic (by its control points), or
 // copy a map feature into the active layer (with its full geometry from the backend).
-import { tt } from './i18n.ts'
+import { t } from '../core/i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { Store } from './store.ts'
@@ -159,7 +159,7 @@ export class Tools {
       this.store.setActive(open.id)
       return open.id
     }
-    return this.store.createLayer(tt('userlayers.default-name', 'My layer'))
+    return this.store.createLayer(t('userlayers.default-name', 'My layer'))
   }
 
   /** My layers' feature under a point, if any. */
@@ -231,7 +231,7 @@ export class Tools {
     const points = dropRepeats(this.tool.points)
     if (this.tool.mode === 'graphic') {
       if (points.length < this.tool.min) {
-        this.message = tt('userlayers.graphic-more', 'This graphic needs at least {{n}} points.', {
+        this.message = t('userlayers.graphic-more', 'This graphic needs at least {{n}} points.', {
           n: this.tool.min
         })
         this.notify()
@@ -270,7 +270,7 @@ export class Tools {
       .sort((a, b) => (order.get(b.layer.id) ?? 0) - (order.get(a.layer.id) ?? 0))
     const f = candidates[0]
     if (!f) {
-      this.message = tt(
+      this.message = t(
         'userlayers.copy.nothing',
         'Nothing to copy there: click a line, a substation, a site...'
       )
@@ -288,7 +288,7 @@ export class Tools {
         `${c.source}/${c.sourceLayer}` === key &&
         Number(existing.properties.osm_id ?? existing.properties.id) === id
       ) {
-        this.message = tt('userlayers.copy.already', 'Already in this layer.')
+        this.message = t('userlayers.copy.already', 'Already in this layer.')
         this.select(existing.id)
         return
       }
@@ -303,7 +303,7 @@ export class Tools {
       copy: { source: f.source, sourceLayer: f.sourceLayer!, layer: f.layer.id }
     }
     const featureId = this.store.addFeature(layerId, geometry, properties)
-    this.message = tt('userlayers.copy.done', 'Copied. Click more features to copy them, or Esc to stop.')
+    this.message = t('userlayers.copy.done', 'Copied. Click more features to copy them, or Esc to stop.')
     this.select(featureId)
   }
 
