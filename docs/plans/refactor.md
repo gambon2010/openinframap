@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done; phase 5 steps 14–15 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 to 4 done; phase 5 steps 14–16 done.
 
 ## Why
 
@@ -177,7 +177,9 @@ working sessions.
     guarded by a test) with the main flow on one screen:
     choose, download, import, SQL steps (from the list in step 1), extras, finish.
     *Effort: 1.*
-16. **`satellite.py` → package `scripts/satellite/`**:
+16. **`satellite.py` → package** (done: run as a folder, a package can't import
+    itself, so the code is `scripts/satimagery/` and `satellite.py` stays the thin
+    command line; the 53 functions are unchanged, compared as parsed code):
     - `tiles.py` (tile maths, outlines, blocks);
     - `sources.py` (Blue Marble, Sentinel-2, `DETAILED_SOURCES`);
     - `mbtiles.py` and `download.py`;

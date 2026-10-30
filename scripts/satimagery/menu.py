@@ -1,0 +1,419 @@
+"""Fork: satellite imagery. The scripts' questions (choose) and the downloads they lead to (steps)."""
+
+from __future__ import annotations
+
+import json
+import sys
+from collections.abc import Iterable
+from pathlib import Path
+
+from .estimate import detailed_estimate, estimate
+from .sources import (
+    DETAILED_SOURCES,
+    REGIONAL_BYTES_PER_KM2,
+    WORLD_LAND_KM2,
+    WORLD_OVERVIEW_BYTES,
+    WORLDCOVER_BYTES_PER_KM2,
+    detailed_source,
+)
+from .tiles import box_ring, load_rings
+
+# --- Choosing what to download (the scripts' questions) -----------------------
+
+
+class Index:
+    """Geofabrik's index of regions: names, parents and outlines."""
+
+    def __init__(self, path: str | None):
+        self.features: dict[str, dict] = {}
+        if path and Path(path).exists():
+            for f in json.loads(Path(path).read_text())["features"]:
+                self.features[f["properties"]["id"]] = f
+
+    def name(self, region: str) -> str:
+        if region == "world":
+            return "the whole world"
+        return self.features.get(region, {}).get("properties", {}).get("name", region)
+
+    def within(self, region: str, parent: str) -> bool:
+        while region:
+            if region == parent:
+                return True
+            region = self.features.get(region, {}).get("properties", {}).get("parent")
+        return False
+
+    def outline(self, region: str, folder: Path) -> Path | None:
+        """The region's outline as a file in `folder` (written from the index)."""
+        path = folder / f".area-{region}.geojson"
+        if not path.exists():
+            geometry = self.features.get(region, {}).get("geometry")
+            if not geometry:
+                return None
+            path.write_text(json.dumps(geometry))
+        return path
+
+    def search(self, text: str) -> list[tuple[str, str, str]]:
+        """(id, name, parent's name) of the regions matching a name, best first."""
+        text = text.lower().strip()
+        hits = [
+            f["properties"]
+            for f in self.features.values()
+            if f.get("geometry")
+            and (
+                text in f["properties"]["id"].lower()
+                or text in f["properties"]["name"].lower()
+            )
+        ]
+        hits.sort(key=lambda r: (r["name"].lower() != text, r["name"]))
+        return [
+            (
+                r["id"],
+                r["name"],
+                self.name(r.get("parent", "")) if r.get("parent") else "",
+            )
+            for r in hits[:15]
+        ]
+
+
+def human(n: float) -> str:
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if n < 1000 or unit == "TB":
+            return (
+                f"{n:.0f} {unit}"
+                if unit in ("B", "KB", "MB") or n >= 10
+                else f"{n:.1f} {unit}"
+            )
+        n /= 1000
+    return ""
+
+
+def duration(seconds: float) -> str:
+    hours = seconds / 3600
+    if hours < 1:
+        return f"{max(1, round(seconds / 60))} min"
+    if hours < 48:
+        return f"{hours:.0f} h"
+    return f"{hours / 24:.0f} days"
+
+
+def sources_for(area: str, index: Index) -> list[str]:
+    """The high-resolution sources that cover part of an area."""
+    return [
+        i
+        for i, src in DETAILED_SOURCES.items()
+        if area == "world"
+        or any(index.within(area, r) or index.within(r, area) for r in src["regions"])
+    ]
+
+
+def detailed_job(source_id: str, area: str, index: Index, folder: Path) -> dict | None:
+    """What one source downloads for an area: the area, cut to the source's region."""
+    region = DETAILED_SOURCES[source_id]["regions"][0]
+    clip = index.outline(region, folder)
+    if not clip:
+        return None
+    if area == "world" or index.within(region, area):
+        return {"source": source_id, "outline": str(clip), "clip": None}
+    outline = index.outline(area, folder)
+    return outline and {"source": source_id, "outline": str(outline), "clip": str(clip)}
+
+
+def job_estimate(job: dict) -> dict:
+    source = detailed_source(job["source"])
+    outlines = [load_rings(job["outline"])]
+    if job["clip"]:
+        outlines.append(load_rings(job["clip"]))
+    if "bbox" in source:
+        outlines.append(box_ring(source["bbox"]))
+    return detailed_estimate(outlines, source)
+
+
+def ask(prompt: str, choices: Iterable[str], default: str) -> str:
+    choices = list(choices)
+    while True:
+        print(f"    {prompt} ", end="", file=sys.stderr, flush=True)
+        line = sys.stdin.readline()
+        if not line:
+            sys.exit("Aborted.")
+        answer = line.strip() or default
+        if answer in choices:
+            return answer
+
+
+def say(text: str = "") -> None:
+    print(f"    {text}" if text else "", file=sys.stderr)
+
+
+def command_choose(args) -> None:
+    """Ask what to download (or take the presets) and write the plan (JSON)."""
+    folder = Path(args.basemap_dir)
+    folder.mkdir(parents=True, exist_ok=True)
+    index = Index(args.index)
+    region = args.region
+    plan: dict = {"world_overview": False, "regional": None, "detailed": []}
+
+    def regional_for(area: str, zoom: int) -> dict | None:
+        if area == "world":
+            return {"area": "world", "outline": None, "maxzoom": zoom}
+        outline = index.outline(area, folder)
+        return outline and {"area": area, "outline": str(outline), "maxzoom": zoom}
+
+    def finish() -> None:
+        plan["world_overview"] = (
+            bool(
+                plan["world_overview"]
+                or plan["regional"]
+                or plan["detailed"]
+                or args.mode == "overview"
+            )
+            and not (folder / "world.sat-overview.pmtiles").exists()
+        )
+        Path(args.plan).write_text(json.dumps(plan, indent=1))
+
+    # Presets (build-region.sh --satellite / --satellite-detailed, satellite.sh --yes).
+    if args.mode:
+        if args.mode in ("regional", "regional13"):
+            area = args.area or region
+            default = 10 if area == "world" else 12
+            zoom = args.zoom or (13 if args.mode == "regional13" else default)
+            plan["regional"] = regional_for(area, zoom)
+        if args.detailed and args.detailed != "none":
+            for source_id in (
+                args.sources.split()
+                if args.sources
+                else sources_for(args.area or region, index)
+            ):
+                job = detailed_job(source_id, args.area or region, index, folder)
+                if job:
+                    plan["detailed"].append(
+                        {
+                            **job,
+                            "area": args.area or region,
+                            "maxzoom": int(args.detailed),
+                        }
+                    )
+        finish()
+        return
+
+    world_done = (folder / "world.sat-overview.pmtiles").exists()
+    say("Satellite imagery: photos of the ground as the map's background (Settings →")
+    say("Background → Satellite), kept on this computer so they work offline.")
+    say(
+        "Zoom 8 shows a whole region on screen, 12 a town, 13 a neighbourhood, 16 a street."
+    )
+    say("Closer in than its last zoom, imagery is shown stretched (blurry).")
+    say()
+    if world_done:
+        say("The world (NASA Blue Marble, 500 m, to zoom 8): already downloaded.")
+    else:
+        say(
+            f"The world (NASA Blue Marble, 500 m, to zoom 8): {human(WORLD_OVERVIEW_BYTES)}, about an hour,"
+        )
+        say("downloaded once for every region. It comes with any choice below.")
+
+    # --- Sentinel-2 ---
+    say()
+    say("Sentinel-2 photos, 10 m (2021, cloud-free), for:")
+    region_name = args.region_name or index.name(region)
+    region_outline = index.outline(region, folder) if region else None
+    options = []
+    if region_outline:
+        e = estimate(load_rings(str(region_outline)), 13)
+        options.append(
+            (
+                "region",
+                f"{region_name} (the region you built)",
+                f"+{human(e['regional']['bytes'] / 4)} to zoom 12",
+            )
+        )
+    options += [
+        ("other", "Another country or region...", ""),
+        ("world", "The whole world", "sizes below"),
+        ("none", "None (the world overview only)" if not world_done else "None", ""),
+    ]
+    for n, (_, label, size) in enumerate(options, 1):
+        say(f"  {n}) {label:<42} {size}")
+    pick = options[
+        int(
+            ask(
+                f"Choose [1-{len(options)}, default 1]:",
+                [str(n) for n in range(1, len(options) + 1)],
+                "1",
+            )
+        )
+        - 1
+    ][0]
+    area = None
+    if pick == "region":
+        area = region
+    elif pick == "other":
+        while area is None:
+            print(
+                "    Country or region name (e.g. spain, bayern, japan): ",
+                end="",
+                file=sys.stderr,
+                flush=True,
+            )
+            text = sys.stdin.readline().strip()
+            if not text:
+                break
+            hits = index.search(text)
+            if not hits:
+                say("Nothing by that name; try another.")
+                continue
+            for n, (_, name, parent) in enumerate(hits, 1):
+                say(f"  {n:>2}) {name}" + (f" ({parent})" if parent else ""))
+            answer = ask(
+                "Which one? [number, Enter: search again]:",
+                [str(n) for n in range(len(hits) + 1)],
+                "0",
+            )
+            if answer != "0":
+                area = hits[int(answer) - 1][0]
+    elif pick == "world":
+        area = "world"
+    else:
+        # The world overview only.
+        plan["world_overview"] = True
+        finish()
+        return
+
+    if area == "world":
+        say()
+        say(
+            "The whole world (land only), up to which zoom? Made from imagery read from ESA;"
+        )
+        say("the higher zooms take days to read and process, and need the disk space:")
+        for z in range(9, 14):
+            kept = WORLD_LAND_KM2 * REGIONAL_BYTES_PER_KM2[z]
+            read = WORLD_LAND_KM2 * WORLDCOVER_BYTES_PER_KM2[z]
+            say(f"  {z:>2}) zoom {z:<3} {human(kept):>8} kept   (reads ~{human(read)})")
+        zoom = int(
+            ask(
+                "Up to which zoom? [9-13, default 10]:",
+                [str(z) for z in range(9, 14)],
+                "10",
+            )
+        )
+        plan["regional"] = regional_for("world", zoom)
+    elif area:
+        e = estimate(load_rings(str(index.outline(area, folder))), 13)
+        say()
+        say(f"{index.name(area)}, up to which zoom?")
+        say(
+            f"  12) a town      +{human(e['regional']['bytes'] / 4):>8} kept   (reads ~{human(e['regional']['download'] / 4)} from ESA)"
+        )
+        say(
+            f"  13) a district  +{human(e['regional']['bytes']):>8} kept   (reads ~{human(e['regional']['download'])})"
+        )
+        plan["regional"] = regional_for(
+            area, int(ask("Up to which zoom? [12/13, default 12]:", ["12", "13"], "12"))
+        )
+
+    # --- High resolution, by country ---
+    target = area or region
+    ids = sources_for(target, index) if target else []
+    jobs = [j for j in (detailed_job(i, target, index, folder) for i in ids) if j]
+    if jobs and not args.no_detailed:
+        say()
+        say(
+            f"Aerial photos at 8 to 60 cm, from national mapping agencies, for {index.name(target)}"
+        )
+        say(
+            "(zoom 14 and up). Fetched tile by tile from their servers, so large areas take long:"
+        )
+        say(
+            "best for a city or a département. Sizes and times are at most: the outlines"
+        )
+        say(
+            "include some sea, which comes back empty (and quick). Working out the sizes..."
+        )
+        rows = []
+        for job in jobs:
+            src = detailed_source(job["source"])
+            sizes = job_estimate(job)
+            rows.append((job, src, sizes))
+            cols = "  ".join(
+                f"to {z}: {human(v['bytes'])}, {duration(v['tiles'] / src['per_second'])}"
+                for z, v in sizes.items()
+            )
+            say(f"  {len(rows):>2}) {src['name']}, {src['resolution']}")
+            say(f"        {cols}")
+        print(
+            "    Which? [numbers separated by spaces, Enter: none]: ",
+            end="",
+            file=sys.stderr,
+            flush=True,
+        )
+        chosen = [
+            w
+            for w in sys.stdin.readline().split()
+            if w.isdigit() and 1 <= int(w) <= len(rows)
+        ]
+        if chosen:
+            zoom = int(
+                ask(
+                    "Up to which zoom? [15/16/17, default 16]:",
+                    ["15", "16", "17"],
+                    "16",
+                )
+            )
+            for w in dict.fromkeys(chosen):
+                job, src, _ = rows[int(w) - 1]
+                plan["detailed"].append(
+                    {**job, "area": target, "maxzoom": min(zoom, src["maxzoom"])}
+                )
+    finish()
+
+
+def command_steps(args) -> None:
+    """The plan as commands, one per line: a label, then satellite.py's arguments,
+    separated by tabs (for the scripts' timed steps)."""
+    plan = json.loads(Path(args.plan).read_text())
+    folder = Path(args.basemap_dir)
+    index = Index(args.index)
+    lines = []
+    if plan["world_overview"]:
+        lines.append(
+            [
+                "The world (NASA Blue Marble, to zoom 8; about an hour)",
+                "overview",
+                "--world",
+                "--out",
+                str(folder / "world.sat-overview.pmtiles"),
+            ]
+        )
+    r = plan.get("regional")
+    if r:
+        where = ["--world"] if r["area"] == "world" else ["--outline", r["outline"]]
+        lines.append(
+            [
+                f"Sentinel-2 10 m, {index.name(r['area'])}, to zoom {r['maxzoom']}",
+                "regional",
+                *where,
+                "--maxzoom",
+                str(r["maxzoom"]),
+                "--out",
+                str(folder / f"{r['area']}.sat-regional.pmtiles"),
+            ]
+        )
+    for d in plan["detailed"]:
+        src = detailed_source(d["source"])
+        clip = ["--clip", d["clip"]] if d["clip"] else []
+        lines.append(
+            [
+                f"{src['name']}, {src['resolution']}, {index.name(d['area'])}, to zoom {d['maxzoom']}",
+                "detailed",
+                "--source",
+                d["source"],
+                "--outline",
+                d["outline"],
+                *clip,
+                "--maxzoom",
+                str(d["maxzoom"]),
+                "--out",
+                str(folder / f"{d['area']}.sat-detailed-{d['source']}.pmtiles"),
+            ]
+        )
+    for line in lines:
+        print("\t".join(line))

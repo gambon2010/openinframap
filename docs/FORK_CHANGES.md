@@ -897,7 +897,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 
 ## Satellite imagery (offline)
 
-Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (standard
+Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command
+line; its code is the `scripts/satimagery/` package, refactor step 16; standard
 library; GDAL and pmtiles in Docker), chosen in `build-region.sh` after the
 background map, or later with `scripts/satellite.sh` for the region already built
 (no rebuild; both use `choose_satellite` / `download_satellite` in `lib/satellite.sh`),
@@ -911,7 +912,7 @@ shown by `web/src/fork/modules/satellite/`.
   each tested to answer tile requests; WMS sources get a GetMap per tile), cut to
   the area and to the source's Geofabrik region (`tile_blocks` over several
   outlines, in square blocks so 17 million tiles never sit in memory). Downloads
-  resume (`MBTiles(resume=True)`, committed every 500 tiles) and drop a server's
+  resume (`MBTiles(resume=True)`, committed every 500 tiles; the world overview too) and drop a server's
   blank "no data" tiles (`drop_repeated`: a small tile met twice byte for byte).
   The questions are `satellite.py choose` (a JSON plan; presets for unattended
   runs) and `satellite.py steps` (one timed step each in `download_satellite`).
