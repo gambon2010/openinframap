@@ -173,6 +173,11 @@ class Details {
 
 let details: Details | undefined
 
+/** The left side panel, for other modules' details (My layers' editor). */
+export function sidePanel(): InfoPanel | undefined {
+  return details?.panel
+}
+
 const grid: ForkModule = {
   init: (ctx) => {
     details = new Details(ctx)

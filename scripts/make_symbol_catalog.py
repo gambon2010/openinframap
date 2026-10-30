@@ -10,7 +10,10 @@ https://github.com/spatialillusions/mil-std-2525 (Måns Beckman):
     npm pack mil-std-2525@0.2.8 && tar xzf mil-std-2525-0.2.8.tgz
     python3 scripts/make_symbol_catalog.py package/tsv-tables/2525c
 
-Tactical graphics (lines and areas) are left out: signs only draws point symbols.
+Tactical graphics are included: point ones are drawn by signs like the other
+symbols; lines, areas and arrows (4th field "L", "A" or "M") are drawn by the C5ISR
+renderer (@armyc2.c5isr.renderer/mil-sym-ts-web, Apache-2.0) from the points the user
+clicks (web/src/fork/userlayers/graphics.ts).
 """
 
 import csv
@@ -35,6 +38,18 @@ TABLES = [
     ("space", "Space"),
     ("signals-intelligence", "Signals intelligence"),
 ]
+
+# Tactical graphics, by the second part of their hierarchy (TACGRP.<section>).
+GRAPHIC_SECTIONS = [
+    ("TSK", "Tasks"),
+    ("C2GM", "Command, control and manoeuvre"),
+    ("MOBSU", "Mobility and survivability"),
+    ("FSUPP", "Fire support"),
+    ("CSS", "Combat service support"),
+    ("OTH", "Other graphics"),
+]
+# Geometry column -> the 4th field of an entry (none: a point symbol).
+GEOMETRY = {"POINT": None, "LINE": "L", "POLYGON": "A", "MULTIPOINT": "M"}
 
 # Kept in capitals when sentence-casing the names.
 ACRONYMS = {
@@ -80,6 +95,30 @@ def sidc(row: dict) -> str | None:
     return f"{scheme}{affiliation}{dimension}{status}{function_id}{'H----' if installation else '-----'}"
 
 
+def graphic_groups(tables: Path, seen: set[str]) -> list[dict]:
+    """The tactical graphics, one group per section, points first in each."""
+    with open(tables / "tactical-graphics.tsv", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+    groups = []
+    for section, group in GRAPHIC_SECTIONS:
+        symbols = []
+        for row in rows:
+            geometry = row["geometry"].strip()
+            parts = row["hierarchy"].strip().split(".")
+            if geometry not in GEOMETRY or len(parts) < 2 or parts[1] != section:
+                continue
+            code = sidc(row)
+            if not code or code in seen:
+                continue
+            seen.add(code)
+            entry = [code, title(row["name"]), len(parts) - 2]
+            if GEOMETRY[geometry]:
+                entry.append(GEOMETRY[geometry])
+            symbols.append(entry)
+        groups.append({"name": group, "symbols": symbols})
+    return groups
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -98,9 +137,10 @@ def main() -> None:
             depth = row["hierarchy"].strip().count(".")
             symbols.append([code, title(row["name"]), depth])
         groups.append({"name": group, "symbols": symbols})
+    groups += graphic_groups(tables, seen)
     catalogue = {
-        "source": "MIL-STD-2525C point symbols, from https://github.com/spatialillusions/mil-std-2525 (MIT, Måns Beckman)",
-        "format": "symbols: [code with * for affiliation and status, name, depth in the hierarchy]",
+        "source": "MIL-STD-2525C symbols and tactical graphics, from https://github.com/spatialillusions/mil-std-2525 (MIT, Måns Beckman)",
+        "format": "symbols: [code with * for affiliation and status, name, depth in the hierarchy, and for graphics drawn from several points: L (line), A (area) or M (other shapes)]",
         "groups": groups,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)

@@ -613,10 +613,41 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   The names and codes come from the MIT tables of
   [mil-std-2525](https://github.com/spatialillusions/mil-std-2525) (Måns Beckman),
   turned into `web/src/fork/userlayers/symbols-2525c.json` by
-  `scripts/make_symbol_catalog.py`. Tactical graphics (lines and areas) aren't
-  there: signs only draws point symbols. ODIN's Austrian SKKM signs (41) aren't
-  either: their list is ODIN's (AGPL). The library is 3 MB, loaded only when the
-  palette opens or a layer has symbols (and precached for offline use).
+  `scripts/make_symbol_catalog.py`. ODIN's Austrian SKKM signs (41) aren't there:
+  their list is ODIN's (AGPL). The library is 3 MB, loaded only when the palette
+  opens or a layer has symbols (and precached for offline use).
+- **Tactical graphics** (version 2): the 413 of MIL-STD-2525C, as in ODIN. Point
+  ones (checkpoints, task points...) are drawn by signs like other symbols. Lines,
+  areas and arrows (axis of advance, phase line, assembly area, block, breach,
+  obstacle lines... 212 drawable) are drawn by the US Army C5ISR renderer
+  `@armyc2.c5isr.renderer/mil-sym-ts-web` (Apache-2.0, 7.4 MB / 1.4 MB gzipped,
+  loaded on first use, precached) from the points the user clicks
+  (`fork/userlayers/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
+  converted with its own `C2DLookup`; it says how many points each graphic takes
+  (fixed-count ones finish by themselves). Its GeoJSON (lines, polygons, label
+  points) goes into a second source per layer (`user_<id>_g`), redrawn when the zoom
+  changes, since arrow heads and teeth are sized for a scale. Checked before use: all
+  228 of ODIN's line/area graphics have a 2525D equivalent in it. Four catalogue
+  entries it can't draw (section headings) are hidden from the picker.
+- **Details of an item** (version 2): selecting one opens its details in the left
+  side panel, like a map feature's (`fork/userlayers/editor.ts`), with the fields
+  ODIN has, from the standard (`fields.ts`): identity, status and operational
+  condition, echelon, headquarters / task force / feint, mobility (all in the code
+  itself: `sidc.ts`); designation, higher formation, type, quantity, additional
+  information, staff comments, reinforced/reduced, evaluation rating, combat
+  effectiveness, date-time group (or effective from/to), direction, speed, altitude,
+  width/radius, attitude (`modifiers` in the properties); plus colour, size, layer
+  (moving an item is two changes: out of one layer, into the other), notes and
+  position. Only the fields that apply to that kind of symbol are shown. The labels
+  are drawn around the symbol (signs) or along the graphic (C5ISR renderer); a
+  setting in the Layers tab chooses none / designation only / all.
+- **Panel layout** (version 2): tabs Layers (show/hide, colour, the layer new items go
+  into, item list that selects and zooms, ⋯ menu) / Add (where to add, tool buttons,
+  the picker with category chips, identity as the actual frame shapes, planned,
+  recently used) / History; a save bar only while there are unsaved changes; the
+  tool's hint at the bottom of the map with a Stop button; the history as a timeline
+  bar at the bottom of the map (step, play at 0.5–4×, follow), each step saying what
+  changed ("status: Planned → Present", "higher formation", "moved").
 - **Pictures** are scaled to at most 256 px in the browser and stored in the
   database (`userdata.image`); markers, lines and areas take the layer's colour or
   their own.
@@ -630,9 +661,10 @@ be played back step by step. The "My layers" button (top right) opens the panel.
 - **History.** The log played back: a slider and step buttons over every saved
   change, each described ("Added symbol "Fire" to "Grid"", when, who), the
   feature highlighted and the map moved to it if needed; Play steps through it.
-- **Tools:** Symbol (palette), Picture, Marker, Line, Area, Copy from map; select a
-  feature to name it, resize it, recolour it, drag it (points) or delete it (also the
-  Delete key; Esc cancels a tool, Enter finishes a drawing). Clicks the panel's tools
+- **Tools:** Symbol, Graphic, Picture, Marker, Line, Area, Copy from map; select an
+  item to edit its details, drag it (points), drag the points of a line, area or
+  graphic to change its shape, or delete it (also the Delete key; Esc cancels a
+  tool, Enter finishes a drawing). Clicks the panel's tools
   take don't open upstream's popups: `fork/userlayers/index.ts` wraps the click
   router's `handleClick` on the instance, so `click-router.ts` stays upstream's.
 - **Storage:** the `userdata` schema (`web-backend/src/fork/userdata.sql`), made by
@@ -645,9 +677,8 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   /userdata/source-feature`). The frontend calls it through the dev server's proxy
   (`/userdata` in `vite.config.ts`): upstream's CORS settings only allow GET from
   another origin.
-- **Not yet:** editing the shape of a line or area after drawing it, moving a feature
-  to another layer, several people editing at once (the last save wins), tactical
-  graphics.
+- **Not yet:** several people editing at once (the last save wins); adding or
+  removing points of an existing line (they can be moved); ODIN's SKKM signs.
 
 ## Grid connections between two stations (prototype)
 
@@ -889,8 +920,8 @@ Upstream files the fork still changes, and how:
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
 | `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; a few constants exported for the fork's styles |
 | `web/src/elements/external-links.ts` | Popup crash fix |
-| `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol library) |
-| `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols) |
+| `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol and graphics libraries) |
+| `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols), `@armyc2.c5isr.renderer/mil-sym-ts-web` (tactical graphics) |
 | `web/index.html` | "export (online)" label |
 
 After merging, check: `bash scripts/build-region.sh --region luxembourg --rebuild

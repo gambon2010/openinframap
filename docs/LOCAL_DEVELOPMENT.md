@@ -405,11 +405,19 @@ shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`
 ## My layers
 
 The **My layers** button (top right, the stacked-layers icon with a red dot, under
-Layers) opens a panel for making your own layers on the map:
+Layers) opens a panel for making your own layers on the map. It has three tabs:
+**Layers** (show/hide, colour, which layer new things go into, the list of what's
+in each), **Add** and **History**. On the Add tab:
 
 - **Symbol:** military and emergency symbols (the ones ODIN uses: fire, flood,
-  hospital, power plant, police, units...). Search by name, pick friend, hostile,
-  neutral or unknown, then click the map.
+  hospital, power plant, police, units, checkpoints...). Search by name or pick a
+  category, choose friend, hostile, neutral or unknown (shown as the frame shapes)
+  and planned if it is, then click the map.
+- **Graphic:** tactical graphics drawn from several points: axes of advance, attack
+  directions, phase lines, boundaries, assembly areas, obstacles, tasks such as
+  block or breach... Pick one, then click its points on the map (the hint at the
+  bottom says how many); double-click or Enter finishes the ones that take any
+  number of points.
 - **Picture:** put your own image or icon on the map.
 - **Marker, Line, Area:** click to place or to add points; double-click or Enter
   finishes, Esc cancels.
@@ -417,9 +425,17 @@ Layers) opens a panel for making your own layers on the map:
   layer. They're drawn like the originals and stay visible when you hide the grid
   (layer switcher or key).
 
-Click one of your features to name, resize, recolour or delete it; drag points to
-move them. Changes are kept in your browser until you press **Save**, which stores
-them in the database; **History** plays the saved changes back step by step.
+Click one of your items to open its **details** on the left: identity, status,
+echelon, designation, higher formation, date-time group, comments and the other
+fields of the standard, as in ODIN (only the ones that apply to that symbol), plus
+colour, size, layer and notes. Drag a symbol to move it, or the points of a line,
+area or graphic to change its shape. **Labels on the map** (Layers tab) shows none,
+the designation only, or every field.
+
+Changes are kept in your browser until you press **Save** (the bar at the bottom of
+the panel), which stores them in the database. **History → Play back** opens a
+timeline at the bottom of the map that steps through every saved change and says
+what changed.
 Rebuilding or importing a region keeps your layers.
 
 ## Updating the data

@@ -3,11 +3,16 @@
 // clones of upstream's layers for that data (user_<id>__power_line...), so a
 // copied 225 kV line looks just like the original, at every zoom. Ids start with
 // user_, which the layer switcher and the key never hide (fork/key).
+// Tactical graphics (arrows, phase lines, areas...) are drawn by the C5ISR renderer
+// (graphics.ts) into a second source per layer (user_<id>_g), redrawn when the
+// zoom changes (arrow heads and teeth depend on the scale).
 import { FilterSpecification, GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { font, text_paint } from '../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
-import { ensureImage, iconName } from './symbols.ts'
+import { ensureImage, getLabelLevel, iconName } from './symbols.ts'
+import { graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
+import { modifiersToDraw } from './fields.ts'
 
 const SELECTION = 'user_selection'
 const DRAFT = 'user_draft'
@@ -39,16 +44,36 @@ const LINE_OR_POLYGON: FilterSpecification = [
   ['literal', ['LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']]
 ]
 const POINT: FilterSpecification = ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]]
-const OWN: FilterSpecification = ['!=', ['get', 'kind'], 'copy']
+// Copies are drawn by clones of upstream's layers, graphics from their own source.
+const OWN: FilterSpecification = ['!', ['in', ['get', 'kind'], ['literal', ['copy', 'graphic']]]]
+
+function graphicsSourceId(layerId: string) {
+  return `user_${layerId}_g`
+}
+
+/** The control points of a graphic (stored as a line through them). */
+export function controlPoints(geometry: GeoJSON.Geometry): [number, number][] {
+  if (geometry.type === 'LineString' || geometry.type === 'MultiPoint')
+    return geometry.coordinates as [number, number][]
+  if (geometry.type === 'Point') return [geometry.coordinates as [number, number]]
+  if (geometry.type === 'Polygon') return geometry.coordinates[0] as [number, number][]
+  return []
+}
 
 export class Renderer {
   private map: MapLibreMap
   private primaryLayers: () => LayerSpecificationWithZIndex[]
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
 
+  private graphicsZoom = -1
+
   constructor(map: MapLibreMap, primaryLayers: () => LayerSpecificationWithZIndex[]) {
     this.map = map
     this.primaryLayers = primaryLayers
+    // Arrow heads, teeth and labels are sized for a scale: redraw on zoom.
+    map.on('zoomend', () => {
+      if (this.last && Math.abs(map.getZoom() - this.graphicsZoom) >= 0.5) void this.renderGraphics()
+    })
     // A new style (e.g. another background map) drops everything added here.
     map.on('style.load', () => {
       if (this.last) void this.render(this.last.layers, this.last.hidden)
@@ -94,6 +119,86 @@ export class Renderer {
         paint: text_paint
       }
     ] as LayerSpecification[]
+  }
+
+  private graphicLayers(layer: UserLayer): LayerSpecification[] {
+    const source = graphicsSourceId(layer.id)
+    return [
+      {
+        id: `${source}_fill`,
+        type: 'fill',
+        source,
+        filter: ['all', POLYGON, ['!=', ['get', 'fill'], null]],
+        paint: { 'fill-color': ['get', 'fill'], 'fill-opacity': ['get', 'fillOpacity'] }
+      },
+      {
+        id: `${source}_line`,
+        type: 'line',
+        source,
+        filter: LINE_OR_POLYGON,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': ['coalesce', ['get', 'stroke'], layer.style.color ?? DEFAULT_COLOR],
+          'line-width': ['get', 'width']
+        }
+      },
+      {
+        id: `${source}_label`,
+        type: 'symbol',
+        source,
+        filter: POINT,
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-font': font,
+          'text-size': 13,
+          'text-rotate': ['get', 'angle'],
+          'text-rotation-alignment': 'map',
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: { 'text-color': ['get', 'color'], 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 }
+      }
+    ] as LayerSpecification[]
+  }
+
+  /** Draw the graphics of the layers shown (after render(), and on zoom). */
+  private async renderGraphics() {
+    if (!this.last) return
+    const { layers } = this.last
+    const withGraphics = [...layers.values()].filter((l) =>
+      [...l.features.values()].some((f) => f.properties.kind === 'graphic')
+    )
+    if (!withGraphics.length) return
+    const lib = await graphicsLibrary()
+    if (!this.last || this.last.layers !== layers) return
+    const map = this.map
+    const zoom = map.getZoom()
+    this.graphicsZoom = zoom
+    const bounds = map.getBounds()
+    const scale = mapScale(zoom, map.getCenter().lat)
+    const level = getLabelLevel()
+    for (const layer of withGraphics) {
+      const features: GeoJSON.Feature[] = []
+      for (const f of layer.features.values()) {
+        if (f.properties.kind !== 'graphic' || !f.properties.sidc) continue
+        try {
+          const pieces = renderGraphic(lib, {
+            sidc: f.properties.sidc,
+            points: controlPoints(f.geometry),
+            modifiers: modifiersToDraw(f.properties.modifiers, level),
+            color: f.properties.color,
+            scale,
+            bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+          })
+          for (const piece of pieces) piece.properties = { ...piece.properties, fid: f.id }
+          features.push(...pieces)
+        } catch (e) {
+          console.warn('My layers: could not draw graphic', f.properties.sidc, e)
+        }
+      }
+      const source = map.getSource(graphicsSourceId(layer.id)) as GeoJSONSource | undefined
+      source?.setData({ type: 'FeatureCollection', features })
+    }
   }
 
   /** Upstream's layers for the data copies came from, drawing the copies instead. */
@@ -157,7 +262,15 @@ export class Renderer {
       if (existing) existing.setData(data)
       else map.addSource(source, { type: 'geojson', data, promoteId: 'fid' })
 
-      for (const spec of [...this.copyLayers(layer), ...this.ownLayers(layer)]) {
+      const graphicsSource = graphicsSourceId(layer.id)
+      if (!map.getSource(graphicsSource)) {
+        map.addSource(graphicsSource, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      }
+      for (const spec of [
+        ...this.copyLayers(layer),
+        ...this.graphicLayers(layer),
+        ...this.ownLayers(layer)
+      ]) {
         wanted.add(spec.id)
         if (!map.getLayer(spec.id))
           map.addLayer(spec, this.map.getLayer(`${SELECTION}_line`) ? `${SELECTION}_line` : undefined)
@@ -180,12 +293,13 @@ export class Renderer {
         id.startsWith('user_') &&
         id !== SELECTION &&
         id !== DRAFT &&
-        ![...layers.keys()].some((l) => sourceId(l) === id)
+        ![...layers.keys()].some((l) => sourceId(l) === id || graphicsSourceId(l) === id)
       ) {
         map.removeSource(id)
       }
     }
     this.ensureOverlays()
+    await this.renderGraphics()
   }
 
   /** Map layer ids of My layers' features (for clicks). */
@@ -209,10 +323,23 @@ export class Renderer {
         paint: { 'line-color': '#ffd600', 'line-width': 8, 'line-opacity': 0.6 }
       },
       {
+        // The points of a selected line, area or graphic: drag one to move it.
+        id: `${SELECTION}_vertex`,
+        type: 'circle',
+        source: SELECTION,
+        filter: ['all', POINT, ['==', ['get', 'vertex'], true]] as FilterSpecification,
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#fff',
+          'circle-stroke-color': '#b88a00',
+          'circle-stroke-width': 2
+        }
+      },
+      {
         id: `${SELECTION}_point`,
         type: 'circle',
         source: SELECTION,
-        filter: POINT,
+        filter: ['all', POINT, ['!=', ['get', 'vertex'], true]] as FilterSpecification,
         paint: {
           'circle-radius': 22,
           'circle-color': 'rgba(255, 214, 0, 0.15)',
@@ -247,7 +374,7 @@ export class Renderer {
     this.ensureOverlays()
     ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({
       type: 'FeatureCollection',
-      features: feature ? [{ type: 'Feature', geometry: feature.geometry, properties: {} }] : []
+      features: feature ? selectionFeatures(feature) : []
     })
   }
 
@@ -271,4 +398,50 @@ export class Renderer {
     }
     ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
+}
+
+/** A selected feature as drawn: its shape (a graphic: the line through its control
+ * points), and its points as handles when it has more than one. */
+export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
+  const graphic = feature.properties.kind === 'graphic'
+  const points = graphic ? controlPoints(feature.geometry) : vertices(feature.geometry)
+  const shape: GeoJSON.Geometry =
+    graphic && points.length > 1 ? { type: 'LineString', coordinates: points } : feature.geometry
+  const out: GeoJSON.Feature[] = [{ type: 'Feature', geometry: shape, properties: {} }]
+  if (feature.geometry.type !== 'Point') {
+    points.forEach((c, index) =>
+      out.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: c },
+        properties: { vertex: true, index }
+      })
+    )
+  }
+  return out
+}
+
+/** The points of a drawing that can be moved (a polygon's closing point left out). */
+export function vertices(geometry: GeoJSON.Geometry): [number, number][] {
+  if (geometry.type === 'LineString') return geometry.coordinates as [number, number][]
+  if (geometry.type === 'Polygon') return (geometry.coordinates[0] as [number, number][]).slice(0, -1)
+  return []
+}
+
+/** A geometry with one of its movable points moved (vertices() order). */
+export function moveVertex(
+  geometry: GeoJSON.Geometry,
+  index: number,
+  to: [number, number]
+): GeoJSON.Geometry {
+  if (geometry.type === 'LineString') {
+    const coordinates = geometry.coordinates.map((c, i) => (i === index ? to : c))
+    return { type: 'LineString', coordinates }
+  }
+  if (geometry.type === 'Polygon') {
+    const ring = geometry.coordinates[0].map((c, i, all) =>
+      i === index || (index === 0 && i === all.length - 1) ? to : c
+    )
+    return { type: 'Polygon', coordinates: [ring, ...geometry.coordinates.slice(1)] }
+  }
+  return geometry
 }

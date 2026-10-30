@@ -1,12 +1,14 @@
 // Fork: the images "My layers" draws, added to the map before any feature uses
 // them (upstream's SymbolLoader would report unknown ones as missing icons):
-// - milsym:<code>: a MIL-STD-2525C symbol, drawn by @syncpoint/signs (MIT), the
-//   library ODINv2 uses. It's big (3.5 MB), so it's only loaded when needed.
+// - milsym:<code>[|<modifiers as JSON>]: a MIL-STD-2525C symbol with its labels,
+//   drawn by @syncpoint/signs (MIT), the library ODINv2 uses. It's big (3.5 MB), so
+//   it's only loaded when needed.
 // - userimg:<id>: a picture uploaded to the backend.
 // - user-marker:<colour>: a plain pin.
 import { Map } from 'maplibre-gl'
 import { imageUrl } from './api.ts'
 import { FeatureProps } from './model.ts'
+import { LabelLevel, modifiersToDraw } from './fields.ts'
 
 type Signs = typeof import('@syncpoint/signs')
 let signs: Promise<Signs> | undefined
@@ -43,9 +45,9 @@ function canvas(width: number, height: number) {
 }
 
 /** A symbol with its anchor (e.g. the frame's centre, not counting labels) in the middle. */
-async function symbolImage(sidc: string): Promise<ImageData> {
+async function symbolImage(sidc: string, modifiers: Record<string, string>): Promise<ImageData> {
   const { Symbol } = await (signs ??= import('@syncpoint/signs'))
-  const symbol = new Symbol(sidc, { size: 30 })
+  const symbol = new Symbol(sidc, { size: 30, modifiers })
   const { width, height } = symbol.getSize()
   const anchor = symbol.getAnchor()
   const w = 2 * Math.max(anchor.x, width - anchor.x)
@@ -81,9 +83,38 @@ function markerImage(color: string): ImageData {
   return ctx.getImageData(0, 0, c.width, c.height)
 }
 
+/** How much of the symbols' labels the map shows (a map setting, per browser). */
+let labelLevel: LabelLevel = (() => {
+  try {
+    return (localStorage.getItem('oim-userlayers-labels') as LabelLevel) || 'name'
+  } catch {
+    return 'name'
+  }
+})()
+
+export function getLabelLevel(): LabelLevel {
+  return labelLevel
+}
+
+export function setLabelLevel(level: LabelLevel) {
+  labelLevel = level
+  try {
+    localStorage.setItem('oim-userlayers-labels', level)
+  } catch {
+    // Kept for this page only.
+  }
+}
+
+/** The image name of a symbol: its code, and the labels drawn with it (sorted). */
+export function symbolImageName(sidc: string, modifiers: Record<string, string>): string {
+  const keys = Object.keys(modifiers).sort()
+  if (!keys.length) return `milsym:${sidc}`
+  return `milsym:${sidc}|${JSON.stringify(Object.fromEntries(keys.map((k) => [k, modifiers[k]])))}`
+}
+
 /** The image name a point feature is drawn with. */
 export function iconName(p: FeatureProps, layerColor: string): string | null {
-  if (p.kind === 'symbol' && p.sidc) return `milsym:${p.sidc}`
+  if (p.kind === 'symbol' && p.sidc) return symbolImageName(p.sidc, modifiersToDraw(p.modifiers, labelLevel))
   if (p.kind === 'image' && p.image) return `userimg:${p.image}`
   if (p.kind === 'marker') return `user-marker:${p.color ?? layerColor}`
   return null
@@ -105,7 +136,8 @@ async function ensureImageNow(map: Map, name: string) {
   const value = rest.join(':')
   try {
     if (type === 'milsym') {
-      const data = await symbolImage(value)
+      const [sidc, modifiers] = value.split(/\|(.*)/s)
+      const data = await symbolImage(sidc, modifiers ? JSON.parse(modifiers) : {})
       if (!map.hasImage(name)) map.addImage(name, data, { pixelRatio: ratio })
     } else if (type === 'userimg') {
       const { image, pixelRatio } = await pictureImage(value)

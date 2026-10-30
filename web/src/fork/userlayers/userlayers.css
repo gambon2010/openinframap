@@ -169,3 +169,323 @@
   gap: 4px;
   font-size: 0.85rem;
 }
+
+/* --- Version 2 layout: tabs, save bar, hint and timeline on the map --- */
+.oim-ul-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  border-bottom: 1px solid var(--oim-grey);
+}
+.oim-ul-tab {
+  flex: 1;
+  padding: 6px 4px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--oim-text-color-light);
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+.oim-ul-tab.active {
+  border-bottom-color: var(--oim-dark-grey);
+  color: var(--oim-text-color);
+}
+.oim-ul-tab:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.oim-ul-footer {
+  flex: 0 0 auto;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--oim-grey);
+  background: #fff8e1;
+}
+.oim-ul-footer.visible {
+  display: flex;
+}
+.oim-ul-footer .oim-ul-status {
+  flex: 1;
+  font-size: 0.85rem;
+}
+.oim-ul-button {
+  padding: 3px 8px;
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-light-grey);
+  color: var(--oim-text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.oim-ul-button:hover:not(:disabled) {
+  background: var(--oim-grey);
+}
+.oim-ul-button.primary {
+  border-color: #1565c0;
+  background: #1565c0;
+  color: #fff;
+}
+.oim-ul-button.active {
+  box-shadow: inset 0 0 0 2px var(--oim-dark-grey);
+}
+.oim-ul-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.oim-ul-icon,
+.oim-ul-count {
+  border-color: transparent;
+  background: none;
+}
+.oim-ul-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.oim-ul-layers > li {
+  display: block;
+}
+.oim-ul-layer-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.oim-ul-layer-name span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.oim-ul-active-tag {
+  color: #1565c0;
+  font-size: 0.7rem;
+}
+.oim-ul-menu {
+  position: relative;
+}
+.oim-ul-menu summary {
+  list-style: none;
+  padding: 0 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.oim-ul-menu summary::-webkit-details-marker {
+  display: none;
+}
+.oim-ul-menu-items {
+  position: absolute;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+.oim-ul-items {
+  list-style: none;
+  margin: 2px 0 6px 28px;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.oim-ul-items button {
+  width: 100%;
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-items li:hover,
+.oim-ul-items li.selected {
+  background: #fff3c4;
+}
+.oim-ul-toolgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  margin: 8px 0;
+}
+.oim-ul-tool {
+  text-align: left;
+}
+.oim-ul-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0;
+  font-size: 0.85rem;
+}
+.oim-ul-field > span {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-field small {
+  color: var(--oim-text-color-light);
+  font-size: 0.75rem;
+}
+.oim-ul-field input[type='text'],
+.oim-ul-field input[type='number'],
+.oim-ul-field input[type='datetime-local'],
+.oim-ul-field textarea,
+.oim-ul-field select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 3px 5px;
+  font: inherit;
+}
+.oim-ul-unit,
+.oim-ul-dtg,
+.oim-ul-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-chips,
+.oim-ul-frames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+.oim-ul-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--oim-grey);
+  border-radius: 12px;
+  background: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.oim-ul-chip.active {
+  border-color: var(--oim-dark-grey);
+  background: var(--oim-light-grey);
+  font-weight: bold;
+}
+.oim-ul-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  cursor: pointer;
+}
+.oim-ul-frame.active {
+  border-color: var(--oim-dark-grey);
+  background: var(--oim-light-grey);
+}
+.oim-ul-frame svg {
+  max-width: 30px;
+  max-height: 26px;
+}
+.oim-ul-palette-options {
+  align-items: center;
+  justify-content: space-between;
+}
+.oim-ul-palette h4 {
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+}
+.oim-ul-symbol {
+  font-size: 1.2rem;
+}
+
+/* Hint while a tool is in use, and the history timeline: bottom of the map. */
+.oim-ul-toast,
+.oim-ul-timeline {
+  position: absolute;
+  left: 50%;
+  z-index: 4;
+  display: none;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  border-radius: var(--oim-radius-large);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+}
+.oim-ul-toast {
+  bottom: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.oim-ul-toast.visible {
+  display: flex;
+}
+.oim-ul-toast button {
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-light-grey);
+  cursor: pointer;
+}
+.oim-ul-timeline {
+  bottom: 30px;
+  width: min(720px, calc(100% - 32px));
+  padding: 8px 10px;
+}
+.oim-ul-timeline.visible {
+  display: block;
+}
+.oim-ul-timeline.visible ~ .oim-ul-toast {
+  bottom: 120px;
+}
+.oim-ul-timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-timeline-controls .oim-ul-slider {
+  flex: 1;
+}
+.oim-ul-timeline-text {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 0.85rem;
+}
+
+/* Details editor (left side panel) */
+.oim-ul-editor .oim-popup-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.oim-ul-preview svg {
+  max-height: 28px;
+  vertical-align: middle;
+}
+.oim-ul-what {
+  margin: 0 0 6px;
+  color: var(--oim-text-color-light);
+  font-size: 0.85rem;
+}
+.oim-ul-editor-section {
+  margin: 4px 0;
+  border-top: 1px solid var(--oim-grey);
+}
+.oim-ul-editor-section summary {
+  padding: 4px 0;
+  font-weight: bold;
+  cursor: pointer;
+}
+.oim-ul-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.oim-ul-editor-buttons {
+  justify-content: flex-end;
+  margin-top: 8px;
+}

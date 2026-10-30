@@ -1,11 +1,12 @@
-// Fork: what clicking the map does in "My layers": select (and drag points to move
-// them), place a symbol/picture/marker, draw a line or an area, or copy a map
-// feature into the active layer (with its full geometry from the backend).
+// Fork: what clicking the map does in "My layers": select (and drag a symbol, or
+// the points of a line, area or graphic, to move them), place a symbol / picture /
+// marker, draw a line, an area or a tactical graphic (by its control points), or
+// copy a map feature into the active layer (with its full geometry from the backend).
 import { tt } from './i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { Store } from './store.ts'
-import { Renderer } from './render.ts'
+import { Renderer, controlPoints, moveVertex } from './render.ts'
 import { FeatureProps, UserFeature } from './model.ts'
 import { sourceGeometry } from './api.ts'
 
@@ -14,6 +15,24 @@ export type Tool =
   | { mode: 'place'; properties: FeatureProps }
   | { mode: 'line' | 'area'; points: [number, number][] }
   | { mode: 'copy' }
+  | { mode: 'graphic'; properties: FeatureProps; points: [number, number][]; min: number; max: number }
+
+/** Modes that add points one click at a time. */
+function drawing(tool: Tool): tool is Extract<Tool, { points: [number, number][] }> {
+  return tool.mode === 'line' || tool.mode === 'area' || tool.mode === 'graphic'
+}
+
+/** A graphic's control points as a geometry (a line through them, or one point). */
+export function graphicGeometry(points: [number, number][]): GeoJSON.Geometry {
+  return points.length > 1
+    ? { type: 'LineString', coordinates: points }
+    : { type: 'MultiPoint', coordinates: points }
+}
+
+/** Points of a drawing, without the repeats a double-click adds. */
+export function dropRepeats(points: [number, number][]): [number, number][] {
+  return points.filter((p, i, all) => i === 0 || p[0] !== all[i - 1][0] || p[1] !== all[i - 1][1])
+}
 
 export class Tools {
   tool: Tool = { mode: 'select' }
@@ -26,7 +45,8 @@ export class Tools {
   private renderer: Renderer
   private primaryLayers: () => LayerSpecificationWithZIndex[]
   private listeners: (() => void)[] = []
-  private dragging: { feature: UserFeature; layerId: string } | null = null
+  // index: the point of a line, area or graphic being moved (none: a whole symbol).
+  private dragging: { feature: UserFeature; layerId: string; index?: number } | null = null
   // The last click My layers took (decided before it changes the tool).
   private captured: Event | null = null
 
@@ -42,7 +62,7 @@ export class Tools {
     this.primaryLayers = primaryLayers
     map.on('click', (e) => void this.click(e))
     map.on('dblclick', (e) => {
-      if (this.tool.mode === 'line' || this.tool.mode === 'area') {
+      if (drawing(this.tool)) {
         e.preventDefault()
         this.finishDrawing()
       }
@@ -64,7 +84,7 @@ export class Tools {
   setTool(tool: Tool, message = '') {
     this.tool = tool
     this.message = message
-    if (tool.mode === 'line' || tool.mode === 'area') this.map.doubleClickZoom.disable()
+    if (drawing(tool)) this.map.doubleClickZoom.disable()
     else this.map.doubleClickZoom.enable()
     this.renderer.draft([], false)
     this.map.getCanvas().style.cursor = tool.mode === 'select' ? '' : 'crosshair'
@@ -127,6 +147,13 @@ export class Tools {
         this.tool.points.push(lngLat)
         this.renderer.draft(this.tool.points, this.tool.mode === 'area')
         break
+      case 'graphic':
+        this.tool.points.push(lngLat)
+        this.renderer.draft(this.tool.points, false)
+        // Graphics with a fixed number of points (block, breach...) finish by themselves.
+        if (this.tool.points.length >= this.tool.max) this.finishDrawing()
+        else this.notify()
+        break
       case 'copy':
         await this.copyAt(e)
         break
@@ -139,11 +166,22 @@ export class Tools {
   }
 
   finishDrawing() {
-    if (this.tool.mode !== 'line' && this.tool.mode !== 'area') return
+    if (!drawing(this.tool)) return
     // A double-click adds the same point twice.
-    const points = this.tool.points.filter(
-      (p, i, all) => i === 0 || p[0] !== all[i - 1][0] || p[1] !== all[i - 1][1]
-    )
+    const points = dropRepeats(this.tool.points)
+    if (this.tool.mode === 'graphic') {
+      if (points.length < this.tool.min) {
+        this.message = tt('userlayers.graphic-more', 'This graphic needs at least {{n}} points.', {
+          n: this.tool.min
+        })
+        this.notify()
+        return
+      }
+      const id = this.store.addFeature(this.activeLayer(), graphicGeometry(points), this.tool.properties)
+      this.setTool({ mode: 'select' })
+      this.select(id)
+      return
+    }
     const area = this.tool.mode === 'area'
     if (points.length >= (area ? 3 : 2)) {
       const geometry: GeoJSON.Geometry = area
@@ -208,11 +246,31 @@ export class Tools {
 
   private mousedown(e: MapMouseEvent) {
     if (!this.enabled || this.tool.mode !== 'select' || !this.selected) return
-    const hit = this.hit(e.point)
-    if (!hit || String(hit.properties.fid) !== this.selected) return
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
-    if (!layer || !feature || feature.geometry.type !== 'Point') return
+    if (!layer || !feature || feature.properties.kind === 'copy') return
+    // A point handle of the selected line, area or graphic.
+    const handle = this.map.getLayer('user_selection_vertex')
+      ? this.map.queryRenderedFeatures(
+          [
+            [e.point.x - 6, e.point.y - 6],
+            [e.point.x + 6, e.point.y + 6]
+          ],
+          { layers: ['user_selection_vertex'] }
+        )[0]
+      : undefined
+    if (handle) {
+      e.preventDefault()
+      this.map.dragPan.disable()
+      this.dragging = {
+        feature: structuredClone(feature),
+        layerId: layer.id,
+        index: Number(handle.properties.index)
+      }
+      return
+    }
+    const hit = this.hit(e.point)
+    if (!hit || String(hit.properties.fid) !== this.selected || feature.geometry.type !== 'Point') return
     e.preventDefault()
     this.map.dragPan.disable()
     // Moved on a copy, saved as one change on mouseup.
@@ -222,9 +280,17 @@ export class Tools {
   private mousemove(e: MapMouseEvent) {
     if (this.tool.mode !== 'select') this.map.getCanvas().style.cursor = 'crosshair'
     if (!this.dragging) return
-    const geometry = this.dragging.feature.geometry as GeoJSON.Point
-    geometry.coordinates = [e.lngLat.lng, e.lngLat.lat]
-    this.renderer.select(this.dragging.feature)
+    const to: [number, number] = [e.lngLat.lng, e.lngLat.lat]
+    const { feature, index } = this.dragging
+    if (index === undefined) {
+      feature.geometry = { type: 'Point', coordinates: to }
+    } else if (feature.properties.kind === 'graphic') {
+      const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))
+      feature.geometry = graphicGeometry(points)
+    } else {
+      feature.geometry = moveVertex(feature.geometry, index, to)
+    }
+    this.renderer.select(feature)
   }
 
   private mouseup() {

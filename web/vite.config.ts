@@ -49,8 +49,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        // Fork: My layers' symbol library (3 MB) is cached too, for offline use.
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        // Fork: My layers' symbol (3 MB) and graphics (7.4 MB) libraries are cached too, for offline use.
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallbackDenylist: [
           /^\/stats/,
           /^\/map/,

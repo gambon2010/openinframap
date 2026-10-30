@@ -1,0 +1,149 @@
+// Fork: tactical graphics (lines, areas, arrows: axis of advance, phase line, block,
+// breach...) for "My layers", drawn by the US Army C5ISR renderer
+// (@armyc2.c5isr.renderer/mil-sym-ts-web, Apache-2.0). It draws MIL-STD-2525D/E;
+// items are stored with their 2525C code (as in ODIN and our catalogue) and
+// converted with its C2DLookup. Loaded on first use (a 1.4 MB gzipped script).
+// What it returns is GeoJSON (lines, polygons, and label points) that MapLibre draws.
+
+type C5Ren = typeof import('@armyc2.c5isr.renderer/mil-sym-ts-web')
+
+let library: Promise<C5Ren> | undefined
+
+/** The renderer, loaded once. */
+export function graphicsLibrary(): Promise<C5Ren> {
+  library ??= import('@armyc2.c5isr.renderer/mil-sym-ts-web').then(async (lib) => {
+    await lib.initialize()
+    return lib
+  })
+  return library
+}
+
+/** How many control points a graphic takes. */
+export interface PointCount {
+  min: number
+  max: number
+}
+
+/** A 2525C code as the renderer's 2525D code, or null if it has none. */
+export function toDCode(lib: C5Ren, sidc: string): string | null {
+  return lib.C2DLookup.getInstance().getDCode(sidc) || null
+}
+
+export function pointCount(lib: C5Ren, sidc: string): PointCount | null {
+  const code = toDCode(lib, sidc)
+  if (!code) return null
+  const info = lib.MSLookup.getInstance().getMSLInfo(code)
+  if (!info) return null
+  return { min: info.getMinPointCount(), max: info.getMaxPointCount() }
+}
+
+/** Map scale (1:n) at a zoom and latitude, as the renderer wants it. */
+export function mapScale(zoom: number, latitude: number): number {
+  // Metres per pixel (512 px tiles) / metres per screen pixel (0.28 mm, the OGC standard).
+  const metresPerPixel = (40075016.686 * Math.cos((latitude * Math.PI) / 180)) / (512 * 2 ** zoom)
+  return metresPerPixel / 0.00028
+}
+
+export interface GraphicInput {
+  /** 2525C code, 15 characters. */
+  sidc: string
+  /** Control points, [lon, lat]. */
+  points: [number, number][]
+  /** Text modifiers, keyed by 2525 letter (T, T1, H, W, W1...). */
+  modifiers?: Record<string, string>
+  color?: string
+  /** 1:n */
+  scale: number
+  /** [west, south, east, north] of the view. */
+  bbox?: [number, number, number, number]
+}
+
+/**
+ * The graphic as GeoJSON features: lines and polygons with their stroke/fill colours,
+ * and points for the labels. Throws if the renderer reports an error.
+ */
+export function renderGraphic(lib: C5Ren, input: GraphicInput): GeoJSON.Feature[] {
+  const code = toDCode(lib, input.sidc)
+  if (!code) throw new Error(`No 2525D equivalent for ${input.sidc}`)
+  const points = input.points.map(([lon, lat]) => `${lon},${lat}`).join(' ')
+  const modifiers = new Map<string, string>()
+  const keys = modifierKeys(lib)
+  for (const [key, value] of Object.entries(input.modifiers ?? {})) {
+    const id = keys[key]
+    if (id && value) modifiers.set(id, value)
+  }
+  const attributes = new Map<string, string>()
+  if (input.color) attributes.set(lib.MilStdAttributes.LineColor, input.color.replace('#', ''))
+  const bbox = input.bbox ? input.bbox.join(',') : ''
+  const out = lib.WebRenderer.RenderSymbol(
+    'g',
+    '',
+    '',
+    code,
+    points,
+    'clampToGround',
+    input.scale,
+    bbox,
+    modifiers,
+    attributes,
+    lib.WebRenderer.OUTPUT_FORMAT_GEOJSON
+  )
+  const parsed = JSON.parse(out)
+  if (parsed.type !== 'FeatureCollection') {
+    throw new Error(parsed.error || parsed.message || 'Could not draw this graphic')
+  }
+  return (parsed.features as GeoJSON.Feature[]).map(normalise).filter((f): f is GeoJSON.Feature => f !== null)
+}
+
+// The renderer's modifier keys for the 2525C letters we store.
+export function modifierKeys(lib: C5Ren): Record<string, string> {
+  const m = lib.Modifiers
+  return {
+    T: m.T_UNIQUE_DESIGNATION_1,
+    T1: m.T1_UNIQUE_DESIGNATION_2,
+    H: m.H_ADDITIONAL_INFO_1,
+    H1: m.H1_ADDITIONAL_INFO_2,
+    W: m.W_DTG_1,
+    W1: m.W1_DTG_2,
+    X: m.X_ALTITUDE_DEPTH,
+    AM: m.AM_DISTANCE,
+    AN: m.AN_AZIMUTH
+  }
+}
+
+// The renderer's GeoJSON: lines and polygons with strokeColor / fillColor /
+// strokeWidth, points with a label (fontColor, angle), and one polygon carrying the
+// symbol's metadata (symbolID...), which isn't drawn.
+function normalise(feature: GeoJSON.Feature): GeoJSON.Feature | null {
+  const p = (feature.properties ?? {}) as Record<string, unknown>
+  if ('symbolID' in p) return null
+  const isLabel = feature.geometry.type === 'Point'
+  if (isLabel && !p['label']) return null
+  return {
+    type: 'Feature',
+    geometry: feature.geometry,
+    properties: isLabel
+      ? {
+          label: String(p['label']),
+          color: colour(p['fontColor']) ?? '#000000',
+          angle: Number(p['angle'] ?? p['rotation'] ?? 0) || 0,
+          align: p['labelAlign'] === 'left' || p['labelAlign'] === 'right' ? p['labelAlign'] : 'center'
+        }
+      : {
+          stroke: colour(p['strokeColor']),
+          fill: colour(p['fillColor']),
+          fillOpacity: Number(p['fillOpacity'] ?? 0.3),
+          width: Number(p['strokeWidth'] ?? 2) || 2,
+          dashed: Array.isArray(p['strokeDasharray']) && p['strokeDasharray'].length > 0
+        }
+  }
+}
+
+/** '#FF00FF00' (AARRGGBB) or '#00FF00' -> '#00ff00' (alpha dropped: the layer sets it). */
+export function colour(value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null
+  const hex = value.replace('#', '')
+  if (hex.length === 8) return `#${hex.slice(2).toLowerCase()}`
+  if (hex.length === 6) return `#${hex.toLowerCase()}`
+  return null
+}

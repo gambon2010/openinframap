@@ -161,6 +161,18 @@ export class Store {
     this.record('feature_delete', layerId, featureId)
   }
 
+  /** Move a feature to another layer (two changes: out of one, into the other). */
+  moveFeature(featureId: string, toLayerId: string) {
+    const from = this.layerOf(featureId)
+    const feature = from?.features.get(featureId)
+    if (!from || !feature || from.id === toLayerId || !this.layers.has(toLayerId)) return
+    this.record('feature_delete', from.id, featureId)
+    this.record('feature_create', toLayerId, featureId, {
+      geometry: feature.geometry,
+      properties: feature.properties
+    })
+  }
+
   /** Which layer a feature is in. */
   layerOf(featureId: string): UserLayer | undefined {
     for (const layer of this.layers.values()) if (layer.features.has(featureId)) return layer

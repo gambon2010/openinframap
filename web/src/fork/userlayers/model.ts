@@ -3,10 +3,15 @@
 /** What a feature in a user layer is. Copies of map features keep their original
  * properties too, so they're drawn like the original. */
 export interface FeatureProps {
-  kind: 'symbol' | 'image' | 'marker' | 'drawing' | 'copy'
+  kind: 'symbol' | 'graphic' | 'image' | 'marker' | 'drawing' | 'copy'
   name?: string
-  /** symbol: its MIL-STD-2525C code (drawn by @syncpoint/signs). */
+  /** symbol, graphic: its MIL-STD-2525C code (symbols drawn by @syncpoint/signs,
+   * graphics by the C5ISR renderer from the control points in the geometry). */
   sidc?: string
+  /** symbol, graphic: descriptive fields, keyed by modifier letter (fields.ts). */
+  modifiers?: Record<string, string>
+  /** Free notes (not drawn). */
+  notes?: string
   /** image: its id (GET /userdata/images/{id}). */
   image?: string
   /** symbol, image, marker: size factor (1 = normal). */
