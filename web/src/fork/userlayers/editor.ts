@@ -303,7 +303,12 @@ export async function buildEditor(
       ? tt('userlayers.drag-hint', 'Drag it on the map to move it.')
       : p.kind === 'copy'
         ? ''
-        : tt('userlayers.drag-points-hint', 'Drag its points on the map to change its shape.')
+        : p.axis || p.axisWidth !== undefined
+          ? tt(
+              'userlayers.drag-arrow-hint',
+              'Drag the points of its path to move or bend it, and the blue handle to make it wider or narrower.'
+            )
+          : tt('userlayers.drag-points-hint', 'Drag its points on the map to change its shape.')
   const remove = el('button.oim-ul-button', tt('userlayers.delete', 'Delete'), { type: 'button' })
   remove.onclick = actions.remove
   const done = el('button.oim-ul-button.primary', tt('userlayers.deselect', 'Done'), { type: 'button' })

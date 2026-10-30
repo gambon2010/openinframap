@@ -634,11 +634,14 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   **Arrows** (draw rules AXIS1/AXIS2: axis of advance, main and supporting attack,
   aviation, airborne...): the standard's points are tip, centre line back to the
   tail, then a point setting the width, which is awkward to click and gave ugly
-  results. They're drawn instead as a path from tail to tip (`axis: true`); the
-  width is always a fifth of the path's length, so every arrow has the same
-  proportions and only the path's points are edited. `axisControlPoints` turns the
-  path into the renderer's points; the arrow redraws live while its points are
-  dragged. Arrows drawn before this keep their four points.
+  results. They're drawn instead as a path from tail to tip (`axis: true`) plus a
+  width in metres (`axisWidth`, a fifth of the length to start with).
+  `axisControlPoints` turns that into the renderer's points. The width has its own
+  blue handle at the arrowhead's corner, separate from the path and from the
+  highlighted line: dragging it only changes the width (twice its distance from the
+  last stretch of the path), so the arrow keeps its shape wherever it's dragged.
+  The arrow redraws live while dragged. Arrows drawn the old way are converted when
+  drawn (`pathFromAxisPoints`, keeping their width), one unsaved change each.
 - **Details of an item** (version 2): selecting one opens its details in the left
   side panel, like a map feature's (`fork/userlayers/editor.ts`), with the fields
   ODIN has, from the standard (`fields.ts`): identity, status and operational

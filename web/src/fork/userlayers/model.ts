@@ -12,7 +12,7 @@ export interface FeatureProps {
   modifiers?: Record<string, string>
   /** graphic: an arrow, drawn as a path from tail to tip (graphics.ts axisControlPoints). */
   axis?: boolean
-  /** An earlier version's arrow width (m): now ignored, the width follows the path. */
+  /** graphic, arrows: the width in metres (set by the size handle). */
   axisWidth?: number
   /** Free notes (not drawn). */
   notes?: string

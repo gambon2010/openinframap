@@ -14,6 +14,14 @@ const userlayers: ForkModule = {
   init: ({ map, clickRouter, primaryLayers }) => {
     const store = new Store()
     const renderer = new Renderer(map, primaryLayers)
+    // Arrows drawn with four free points are turned into paths (an unsaved change each).
+    renderer.onOldArrow = (layerId, feature) => {
+      queueMicrotask(() => {
+        if (store.layers.get(layerId)?.features.get(feature.id)?.properties.axis) return
+        store.updateFeature(layerId, feature)
+        if (tools.selected === feature.id) tools.select(feature.id)
+      })
+    }
     const tools = new Tools(map, store, renderer, primaryLayers)
     const panel = new Panel(map, store, tools, renderer)
     map.addControl(panel, 'top-right')

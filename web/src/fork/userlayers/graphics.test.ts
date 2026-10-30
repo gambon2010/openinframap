@@ -5,9 +5,11 @@ import {
   axisWidthPoint,
   colour,
   axisWidth,
+  axisWidthFrom,
   graphicsLibrary,
   haloFor,
   isAxis,
+  pathFromAxisPoints,
   mapScale,
   pathLength,
   pointCount,
@@ -127,6 +129,20 @@ describe('arrows (axis of advance, attacks)', () => {
     const points = axisControlPoints(bent)
     expect(points.slice(0, 3)).toEqual([...bent].reverse())
     expect(points[3]).toEqual(axisWidthPoint(bent, axisWidth(bent)))
+  })
+
+  test('the size handle sets the width, wherever it is dragged', () => {
+    const corner = axisWidthPoint(path, 800)
+    expect(axisWidthFrom(path, corner)).toBeCloseTo(800, -1)
+    expect(axisWidthFrom(path, path[1])).toBe(10) // on the centre line: the minimum
+    expect(axisControlPoints(path, 800)[2]).toEqual(corner)
+  })
+
+  test('an old four-point arrow becomes a path, keeping its width', () => {
+    const old = axisControlPoints(path, 600) // tip, tail, width point
+    const back = pathFromAxisPoints(old)
+    expect(back).toEqual(path)
+    expect(axisWidthFrom(back, old[old.length - 1])).toBeCloseTo(600, -1)
   })
 
   test('the same path always gives the same arrow; a longer one a proportionally wider one', () => {

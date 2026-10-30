@@ -11,7 +11,17 @@ import { LayerSpecificationWithZIndex } from '../../style/types.ts'
 import { font, text_paint } from '../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
 import { ensureImage, getLabelLevel, iconName } from './symbols.ts'
-import { axisControlPoints, graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
+import {
+  axisControlPoints,
+  axisWidth,
+  axisWidthFrom,
+  axisWidthPoint,
+  graphicsLibrary,
+  isAxis,
+  mapScale,
+  pathFromAxisPoints,
+  renderGraphic
+} from './graphics.ts'
 import { modifiersToDraw } from './fields.ts'
 
 const SELECTION = 'user_selection'
@@ -86,6 +96,9 @@ export class Renderer {
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
 
   private graphicsZoom = -1
+  /** Called with arrows drawn the old way (four free points), to turn them into paths. */
+  onOldArrow?: (layerId: string, feature: UserFeature) => void
+  private oldArrowsReported = new Set<string>()
   // The selected feature, to keep the resize handle at its corner when the map moves.
   private selected: UserFeature | null = null
 
@@ -222,14 +235,34 @@ export class Renderer {
     for (const layer of withGraphics) {
       const features: GeoJSON.Feature[] = []
       for (const stored of layer.features.values()) {
-        const f = changed && stored.id === changed.id ? changed : stored
+        let f = changed && stored.id === changed.id ? changed : stored
         if (f.properties.kind !== 'graphic' || !f.properties.sidc) continue
+        const p = f.properties
+        if (
+          !p.axis &&
+          p.axisWidth === undefined &&
+          controlPoints(f.geometry).length >= 3 &&
+          isAxis(lib, p.sidc!)
+        ) {
+          // An old arrow: draw it as a path, and have it saved that way.
+          const old = controlPoints(f.geometry)
+          const path = pathFromAxisPoints(old)
+          f = {
+            ...f,
+            geometry: { type: 'LineString', coordinates: path },
+            properties: { ...p, axis: true, axisWidth: axisWidthFrom(path, old[old.length - 1]) }
+          }
+          if (!this.oldArrowsReported.has(f.id)) {
+            this.oldArrowsReported.add(f.id)
+            this.onOldArrow?.(layer.id, f)
+          }
+        }
         try {
           const pieces = renderGraphic(lib, {
-            sidc: f.properties.sidc,
+            sidc: f.properties.sidc!,
             points:
               f.properties.axis || f.properties.axisWidth !== undefined
-                ? axisControlPoints(controlPoints(f.geometry))
+                ? axisControlPoints(controlPoints(f.geometry), f.properties.axisWidth)
                 : controlPoints(f.geometry),
             modifiers: modifiersToDraw(f.properties.modifiers, level),
             color: f.properties.color,
@@ -378,9 +411,10 @@ export class Renderer {
         filter: ['all', POINT, ['==', ['get', 'vertex'], true]] as FilterSpecification,
         paint: {
           'circle-radius': 6,
+          // An arrow's size handle is blue, like the resize handle of pictures.
           'circle-color': '#fff',
-          'circle-stroke-color': '#b88a00',
-          'circle-stroke-width': 2
+          'circle-stroke-color': ['case', ['==', ['get', 'width'], true], '#1565c0', '#b88a00'],
+          'circle-stroke-width': ['case', ['==', ['get', 'width'], true], 3, 2]
         }
       },
       {
@@ -518,6 +552,16 @@ export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
   const shape: GeoJSON.Geometry =
     graphic && points.length > 1 ? { type: 'LineString', coordinates: points } : feature.geometry
   const out: GeoJSON.Feature[] = [{ type: 'Feature', geometry: shape, properties: {} }]
+  // Arrows: the size handle, at the arrowhead's corner. Not part of the path (or of
+  // the highlighted line): it only sets the width.
+  const p = feature.properties
+  if (graphic && (p.axis || p.axisWidth !== undefined) && points.length > 1) {
+    out.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: axisWidthPoint(points, p.axisWidth ?? axisWidth(points)) },
+      properties: { vertex: true, index: -1, width: true }
+    })
+  }
   if (feature.geometry.type !== 'Point') {
     points.forEach((c, index) =>
       out.push({
