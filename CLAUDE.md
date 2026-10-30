@@ -8,6 +8,8 @@ Open Infrastructure Map is a web geospatial application displaying world infrast
 
 **This is a fork** whose goal is running everything locally (and offline, from an exported database) for a chosen region. What changed and why is recorded in `docs/FORK_CHANGES.md`; keep it up to date when making fork-specific changes. The user-facing guide is `docs/LOCAL_DEVELOPMENT.md`.
 
+**Specifications:** every requirement the project owner has asked for is in `docs/SPECIFICATIONS.md`, with its status. Add each new request there when it's made and update the status when it's done. Plans for bigger features are in `docs/plans/`.
+
 **Keep fork code out of upstream files.** Upstream won't take the fork's changes, so merges must stay easy: new frontend features go in a module under `web/src/fork/` (added to `MODULES` in `fork/index.ts`; upstream files only call its hooks), backend routes in `web-backend/src/fork/`, tile layers in `tegola/layers.fork.yml`, Compose changes in `docker-compose.override.yml`, English strings in `web/src/fork/locales/en.json`. Change an upstream file only with a one-line hook, and list it in `docs/FORK_CHANGES.md` ("Fork structure", "Merging from upstream").
 
 ## Development Setup
