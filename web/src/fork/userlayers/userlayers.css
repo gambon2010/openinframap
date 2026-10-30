@@ -572,13 +572,15 @@
 
 /* The toolbar, at the top of the map. */
 .oim-ul-toolbar {
+  /* Centred in the top bar, between the search box and the buttons on the right. */
   position: absolute;
   top: 10px;
-  left: 50%;
+  left: var(--oim-top-bar-left, 16px);
+  right: 56px;
   z-index: 4;
   display: none;
-  transform: translateX(-50%);
-  max-width: calc(100% - 32px);
+  width: fit-content;
+  margin: 0 auto;
   padding: 4px;
   border-radius: var(--oim-radius-large);
   background: var(--oim-content-background);
@@ -627,11 +629,12 @@
 .oim-ul-picker {
   position: absolute;
   top: 60px;
-  left: 50%;
+  left: var(--oim-top-bar-left, 16px);
+  right: 56px;
   z-index: 4;
   display: none;
-  transform: translateX(-50%);
-  width: min(560px, calc(100% - 32px));
+  width: min(560px, 100%);
+  margin: 0 auto;
   max-height: calc(100% - 110px);
   overflow-y: auto;
   padding: 8px 10px;

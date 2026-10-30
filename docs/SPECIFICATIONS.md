@@ -85,6 +85,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.9 | Highlight what's clicked: icons, areas (the area if big enough on screen, else the icon), lines. | ✅ |
 | 5.10 | Clicking the same feature again deselects it. | ✅ |
 | 5.11 | Photos never make the details panel scroll (shrink them); vertical scroll only for long details. | ✅ |
+| 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/ui/search-bar.ts` (narrow screens: stays on the left) |
 
 ## 6. Grid connections (power routing)
 

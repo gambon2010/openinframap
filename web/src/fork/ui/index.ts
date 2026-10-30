@@ -1,6 +1,7 @@
 // Fork: changes to upstream's controls. The layer list and the key open on click
 // in the right-hand dock (fork/ui/dock.ts), with one look for all panels
-// (panel.css); the map sources are in a Settings window opened from the header.
+// (panel.css); the map sources are in a Settings window opened from the header;
+// the search box is in the top bar, right of the header (search-bar.ts).
 import { t } from 'i18next'
 import { Map } from 'maplibre-gl'
 import { mount } from 'redom'
@@ -8,6 +9,7 @@ import { ForkModule } from '../types.ts'
 import { dock } from './dock.ts'
 import { makePanel } from './panel.ts'
 import { addSettings } from './settings.ts'
+import { moveSearchToTopBar } from './search-bar.ts'
 
 const ui: ForkModule = {
   init: ({ map, layerSwitcher }) => {
@@ -39,6 +41,7 @@ const ui: ForkModule = {
     }
 
     addSettings(map)
+    moveSearchToTopBar(map)
 
     // For browser tests (development server only).
     if (import.meta.env.DEV) (window as unknown as { oimMap: Map }).oimMap = map

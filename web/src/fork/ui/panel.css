@@ -213,3 +213,14 @@
 .oim-layers-panel .layer-switcher-list input {
   margin: 0;
 }
+
+/* The search box in the top bar, right of the header (search-bar.ts). */
+.maplibregl-ctrl.oim-search.oim-search-top {
+  position: absolute;
+  z-index: 3;
+  margin: 0;
+  width: 17em;
+}
+.oim-search-top .oim-search-control {
+  max-width: none;
+}
