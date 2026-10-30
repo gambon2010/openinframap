@@ -7,7 +7,7 @@
 import { t } from '../../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from './model.ts'
-import { Store } from './store.ts'
+import { Store } from './state/store.ts'
 import { featureLabelParts } from './labels.ts'
 import { identity, status, symbolKind } from './sidc.ts'
 import { GEOMETRY_LABELS, entryOf } from './palette.ts'

@@ -1,6 +1,6 @@
 # Refactor plan: firmer foundations for the fork
 
-Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done.
+Status: **in progress** (agreed 2026-10-30). Phases 1 and 2 done; phase 3 step 9 done.
 
 ## Why
 
@@ -114,7 +114,9 @@ working sessions.
 
 ### Phase 3: My layers (the biggest; prepares users and sync)
 
-9. **Split the store** into four parts (shaped for `docs/plans/sync.md`), with
+9. **Split the store** (done: `userlayers/state/` with `store.ts`, `changes.ts`,
+   `undo.ts`, `local.ts`, `transport.ts`; history playback keeps its name until
+   step 12) into four parts (shaped for `docs/plans/sync.md`), with
    `Store` as a thin front that keeps today's API for the UI:
    - `changes.ts`: pure. `Change`, `applyChange`, steps, `revertFields`, cloning.
      Already mostly pure and tested.

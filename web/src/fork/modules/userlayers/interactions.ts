@@ -7,7 +7,7 @@
 import { t } from '../../core/i18n.ts'
 import { el } from 'redom'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
-import { Store } from './store.ts'
+import { Store } from './state/store.ts'
 import { Tools } from './tools.ts'
 import { Renderer, geometryCentre, translateGeometry } from './render.ts'
 import { UserFeature } from './model.ts'

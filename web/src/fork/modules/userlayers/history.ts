@@ -4,7 +4,7 @@
 import { t } from '../../core/i18n.ts'
 import { Map, LngLatBounds } from 'maplibre-gl'
 import { Change, SavedChange, UserFeature, UserLayer } from './model.ts'
-import { applyChange } from './store.ts'
+import { applyChange } from './state/changes.ts'
 import { loadHistory } from './api.ts'
 import { symbolName } from './palette.ts'
 import { FIELDS } from './fields.ts'

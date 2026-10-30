@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { Change, UserLayer } from './model.ts'
-import { Store, applyChange, revertFields } from './store.ts'
+import { Change, UserLayer } from '../model.ts'
+import { Store } from './store.ts'
+import { applyChange, revertFields } from './changes.ts'
 
 const at = '2026-10-30T10:00:00Z'
 const point: GeoJSON.Point = { type: 'Point', coordinates: [7.75, 48.58] }

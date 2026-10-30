@@ -5,7 +5,7 @@
 import { t } from '../../core/i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
-import { Store } from './store.ts'
+import { Store } from './state/store.ts'
 import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { FeatureProps, UserFeature } from './model.ts'

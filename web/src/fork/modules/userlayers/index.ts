@@ -5,7 +5,7 @@
 // the originals and stay visible when the originals are hidden.
 import { MapMouseEvent } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
-import { Store } from './store.ts'
+import { Store } from './state/store.ts'
 import { Renderer } from './render.ts'
 import { Tools } from './tools.ts'
 import { Panel } from './panel.ts'
