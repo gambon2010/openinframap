@@ -10,6 +10,8 @@ station on that grid.
 """
 
 import json
+import math
+import re
 from typing import Any, Optional
 
 import networkx as nx
@@ -107,7 +109,7 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
     return node, notice
 
 
-EDGE_COLUMNS = """e.edge_id, e.source, e.target, e.voltage, e.name, e.length_m,
+EDGE_COLUMNS = """e.edge_id, e.line_osm_id, e.source, e.target, e.voltage, e.name, e.length_m,
                   ST_AsGeoJSON(ST_Transform(e.geom, 4326)) AS geometry"""
 
 
@@ -313,6 +315,91 @@ async def route(request: Request) -> Response:
     )
 
 
+def line_ends(name: str | None) -> set[frozenset[str]]:
+    """The pairs of places a line's name joins: "Liaison 225 kV n°1 Graffenstaden -
+    Marlenheim" and "graffenstaden - marlenheim" both give {graffenstaden,
+    marlenheim}; a name for several lines on shared pylons ("…;…") gives each."""
+    pairs = set()
+    for part in (name or "").split(";"):
+        part = re.sub(r"(?i)\bliaison\b|\b\d+([.,]\d+)?\s*kv\b|n°\s*\d+|\bno?\.?\s*\d+\b", " ", part)
+        places = [" ".join(p.split()).lower() for p in re.split(r"\s+-\s+|–|—", part)]
+        places = [p for p in places if p]
+        if len(places) == 2:
+            pairs.add(frozenset(places))
+    return pairs
+
+
+def away_from(edge: dict, node: int) -> tuple[float, float] | None:
+    """The direction an edge leaves a node in (east, north; metres-ish), or None."""
+    coords = json.loads(edge["geometry"])["coordinates"] if edge.get("geometry") else None
+    if not coords or len(coords) < 2:
+        return None
+    a, b = (coords[0], coords[1]) if edge["source"] == node else (coords[-1], coords[-2])
+    scale = math.cos(math.radians(a[1]))
+    return ((b[0] - a[0]) * scale, b[1] - a[1])
+
+
+def turn(arriving: tuple[float, float], leaving: tuple[float, float]) -> float:
+    """How much a line turns (degrees, 0 = straight on) going in along `arriving`
+    (pointing away from the node) and out along `leaving`."""
+    angle = math.degrees(math.atan2(leaving[1], leaving[0]) - math.atan2(arriving[1], arriving[0]))
+    return abs(180 - abs((angle + 180) % 360 - 180))
+
+
+# Several ways start where a line ends (a double-circuit line splitting in two near
+# a substation): the straightest one is its continuation if it turns less than this,
+# and clearly less than the next one.
+MAX_TURN = 45
+CLEAR_MARGIN = 15
+
+
+def continuing_edges(
+    node: int, edges: dict[int, dict], candidates: list[dict], names: set[str]
+) -> tuple[list[dict], bool]:
+    """At a junction, the stretches that continue the line being followed: the
+    same OSM way; or a way with one of its names (two lines on shared pylons stay
+    apart); or, for a way ending here, the single way that starts here (OSM often
+    splits one line into several ways). A branch to another line is left out.
+
+    `edges` are the stretches taken so far, `candidates` those meeting `node` that
+    aren't taken yet (same voltage). Returns the stretches to take, and whether to
+    follow them further: where the line splits in two and which half is its own
+    can't be told (often next to a substation), both are shown but not followed."""
+    arrived = {e["line_osm_id"] for e in edges.values() if node in (e["source"], e["target"])}
+    by_way: dict[int, list[dict]] = {}
+    for e in candidates:
+        by_way.setdefault(e["line_osm_id"], []).append(e)
+    taken = [e for way, es in by_way.items() if way in arrived for e in es]
+    wanted = {pair for name in names for pair in line_ends(name)}
+    taken += [
+        e
+        for way, es in by_way.items()
+        if way not in arrived and es[0]["name"] and line_ends(es[0]["name"]) & wanted
+        for e in es
+    ]
+    if taken:
+        return taken, True
+    # A way passing through meets the junction twice (one stretch on each side);
+    # a way that starts or ends here, once.
+    starting = [es[0] for es in by_way.values() if len(es) == 1]
+    # A named line goes on into an unnamed way, not into another line's name.
+    if names:
+        starting = [e for e in starting if not e["name"]]
+    if len(starting) <= 1:
+        return starting, True
+    # Several: the straightest, if it's clearly the one; else all, not followed.
+    arrivals = [away_from(e, node) for e in edges.values() if node in (e["source"], e["target"])]
+    arriving = next((a for a in arrivals if a), None)
+    if arriving is None:
+        return starting, False
+    turns = sorted(
+        (turn(arriving, leaving), i) for i, e in enumerate(starting) if (leaving := away_from(e, node))
+    )
+    if len(turns) >= 2 and turns[0][0] <= MAX_TURN and turns[1][0] - turns[0][0] >= CLEAR_MARGIN:
+        return [starting[turns[0][1]]], True
+    return starting, False
+
+
 # Stretches of line followed from a clicked line before giving up (a very long
 # corridor without substations, or a data error looping through junctions).
 MAX_LINE_EDGES = 2000
@@ -371,10 +458,13 @@ async def line(request: Request) -> Response:
         {"ids": list({n for e in edges.values() for n in (e["source"], e["target"])})},
     )
     node_info = {r._mapping["node_id"]: dict(r._mapping) for r in nodes}
-    # Follow the line through junctions (pylons shared with other lines, branch
-    # points) but not through stations.
+    names = {e["name"] for e in edges.values() if e["name"]}
+    # Follow the line through junctions (pylons shared with other lines, where its
+    # OSM ways join), not through stations, and not into other lines branching off.
     frontier = [n for n, info in node_info.items() if info["kind"] == "junction"]
     seen = set(frontier)
+    # Junctions reached past an unclear split, followed along their own way only.
+    own_way_only: set[int] = set()
     complete = True
     while frontier:
         if len(edges) >= MAX_LINE_EDGES:
@@ -388,21 +478,33 @@ async def line(request: Request) -> Response:
             {"ids": frontier, "voltage": voltage},
         )
         new_nodes: set[int] = set()
-        for row in rows:
-            e = dict(row._mapping)
-            if e["edge_id"] not in edges:
-                edges[e["edge_id"]] = e
-                new_nodes.update((e["source"], e["target"]))
+        candidates = [dict(row._mapping) for row in rows]
+        for node in frontier:
+            here = [e for e in candidates if node in (e["source"], e["target"]) and e["edge_id"] not in edges]
+            if node in own_way_only:
+                # Past an unclear split: along the same OSM way only, to where it ends.
+                arrived = {e["line_osm_id"] for e in edges.values() if node in (e["source"], e["target"])}
+                taking, further = [e for e in here if e["line_osm_id"] in arrived], False
+            else:
+                taking, further = continuing_edges(node, edges, here, names)
+            for e in taking:
+                if e["edge_id"] not in edges:
+                    edges[e["edge_id"]] = e
+                    ends = {e["source"], e["target"]} - {node}
+                    new_nodes.update(ends)
+                    if not further:
+                        own_way_only.update(ends)
         new_nodes -= seen
-        if not new_nodes:
+        lookup = new_nodes
+        if not lookup:
             break
         found_nodes = await database.execute(
             text("SELECT node_id, kind, osm_id, name FROM grid_node WHERE node_id = ANY(:ids)"),
-            {"ids": list(new_nodes)},
+            {"ids": list(lookup)},
         )
         for r in found_nodes:
             node_info[r._mapping["node_id"]] = dict(r._mapping)
-        seen |= new_nodes
+        seen |= lookup
         frontier = [n for n in new_nodes if node_info[n]["kind"] == "junction"]
 
     stations = [station_summary(info) for info in node_info.values() if info["kind"] != "junction"]
