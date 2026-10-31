@@ -1043,10 +1043,18 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
     if only through lower voltages than before (a 225 kV substation fed through 63 kV
     lines), **green** otherwise. About 0.5 s for France (6 s the first time).
   - **grey**: what no source reaches even with nothing lost, missing in OpenStreetMap
-    (about 160,000 stretches of line and 15,000 stations in France, mostly 20 kV):
-    `GET /grid/supply/unconnected`, made once per grid build, served gzipped (3.4 MB).
-- **On the map** (`modules/status/supply.ts`): every power line of 10 kV and more
-  green, the grey ones over it, then red and orange lines and stations.
+    (about 99,000 ways and 15,000 stations in France, mostly 20 kV):
+    `GET /grid/supply/unconnected`, made once per grid build, served gzipped (0.5 MB).
+  - Both send ids only (per way and circuit, in the tiles' order: `{"s1": "red"}`),
+    no shapes.
+- **On the map** (`modules/status/supply.ts`): nothing is drawn over the map.
+  Upstream's power line, substation and plant layers are recoloured while the mode is
+  on (their paint put back when it's off), by the feature state the backend's ids get:
+  each circuit of a way carrying several (power_line_1/2/3) its own colour, so double
+  lines stay double; lines below 10 kV (not in the network) grey. A first version
+  drew a green copy of every line plus the grey lines as a 14 MB GeoJSON over the
+  map: slow, and the double lines showed through. A way gets one colour along its
+  whole length (a tower down turns all of it red, not only from the break).
 - **Copies in My layers** of power lines, substations and plants take their original's
   colour while the mode is on (`ui/supply.ts`, read by My layers' renderer), and their
   own look when it's off.

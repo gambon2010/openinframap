@@ -24,9 +24,7 @@ import gzip
 import heapq
 import json
 from collections import Counter
-from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -218,7 +216,51 @@ async def lost_features(
     return edges, stations, len(rows)
 
 
+WORSE = {"green": 0, "grey": 1, "orange": 2, "red": 3}
+
+
+def worst(a: str | None, b: str) -> str:
+    return b if a is None or WORSE[b] > WORSE[a] else a
+
+
+async def circuit_states(
+    database: AsyncConnection, by_way: dict[int, dict[int, str]]
+) -> dict[str, dict[str, str]]:
+    """{way: {voltage: state}} as the map draws ways: by circuit, in the tiles' order
+    (line_voltages(): highest first, one per circuit; power_line_1/2/3): {"123":
+    {"s1": "red", "s2": "green"}}. A way's circuits of the same voltage share it."""
+    out: dict[str, dict[str, str]] = {}
+    if not by_way:
+        return out
+    rows = await database.execute(
+        text("SELECT osm_id, line_voltages(voltage, circuits) FROM osm_power_line WHERE osm_id = ANY(:ids)"),
+        {"ids": list(by_way)},
+    )
+    for way, voltages_kv in rows:
+        states = {
+            f"s{i}": by_way[way][round(kv * 1000)]
+            for i, kv in enumerate((voltages_kv or [])[:3], start=1)
+            if round(kv * 1000) in by_way[way]
+        }
+        if states:
+            out[str(way)] = states
+    return out
+
+
+def station_key(kind: str, osm_id: int) -> str:
+    """As the tiles name a station: its layer ("power_substation", "power_plant")
+    and id (the point layers, "…_point", have the same ids)."""
+    return f"{'power_substation' if kind == 'substation' else 'power_plant'}:{osm_id}"
+
+
 async def supply(request: Request) -> Response:
+    """Which lines (by circuit) and stations aren't green: ids and states, for the map
+    to colour its own layers (feature state); and counts.
+
+        {"lost": 2, "counts": {"red": {"400": 2}, "orange": {...}},
+         "lines": {"<way>": {"s1": "red"}}, "stations": {"power_substation:<id>": "red"},
+         "features": {"power_line:<way>": "red", ...}}   (the worst, for My layers)
+    """
     database = get_db(request)
     if not (await database.execute(text("SELECT to_regclass('grid_edge') IS NOT NULL"))).scalar():
         return JSONResponse({"error": "The grid network hasn't been built"}, status_code=503)
@@ -236,143 +278,94 @@ async def supply(request: Request) -> Response:
 
     stations: dict[int, str] = {}
     for node in graph.station_voltage:
-        s = state(node, best, graph.baseline)
-        if s != "unknown" and node in lost_stations:
-            s = "red"
-        if s in ("red", "orange"):
-            stations[node] = s
-    edges: dict[int, str] = {}
+        s_ = state(node, best, graph.baseline)
+        if s_ != "unknown" and node in lost_stations:
+            s_ = "red"
+        if s_ in ("red", "orange"):
+            stations[node] = s_
+    # Each way at each of its voltages: the worst of its stretches.
+    by_way: dict[int, dict[int, str]] = {}
     for edge_id, pairs in graph.ends.items():
-        worst = "green"
-        for a, b, _ in pairs:
+        way = index.edges[edge_id].way
+        for a, b, voltage in pairs:
             if a not in graph.baseline and b not in graph.baseline:
-                continue  # not connected to a source even before
+                continue  # not connected to a source even before (grey)
             if edge_id in lost_edges or (a not in best and b not in best):
-                worst = "red"
-                break
-            lowest = min(best.get(a, 0), best.get(b, 0))
-            if lowest < min(graph.baseline.get(a, 0), graph.baseline.get(b, 0)):
-                worst = "orange"
-        if worst != "green":
-            edges[edge_id] = worst
+                s_ = "red"
+            elif min(best.get(a, 0), best.get(b, 0)) < min(
+                graph.baseline.get(a, 0), graph.baseline.get(b, 0)
+            ):
+                s_ = "orange"
+            else:
+                s_ = "green"
+            circuits = by_way.setdefault(way, {})
+            circuits[voltage] = worst(circuits.get(voltage), s_)
+    not_green = {
+        way: {v: s_ for v, s_ in circuits.items() if s_ != "green"}
+        for way, circuits in by_way.items()
+        if any(s_ != "green" for s_ in circuits.values())
+    }
 
     counts: dict[str, Counter[int]] = {"red": Counter(), "orange": Counter()}
-    for node, s in stations.items():
-        counts[s][graph.station_voltage[node] // 1000] += 1
-    ways: dict[int, str] = {}
-    for edge_id, s in edges.items():
-        way = index.edges[edge_id].way
-        if ways.get(way) != "red":
-            ways[way] = s
-    station_rows: Sequence[Any] = []
-    if stations:
-        station_rows = (
-            await database.execute(
-                text(
-                    """SELECT node_id, kind, osm_id, name, ST_AsGeoJSON(ST_Transform(geom, 4326), 6)
-                         FROM grid_node WHERE node_id = ANY(:ids)"""
-                ),
-                {"ids": list(stations)},
-            )
-        ).all()
-    line_rows: Sequence[Any] = []
-    if edges:
-        line_rows = (
-            await database.execute(
-                text(
-                    """SELECT edge_id, ST_AsGeoJSON(ST_Transform(geom, 4326), 6)
-                         FROM grid_edge WHERE edge_id = ANY(:ids)"""
-                ),
-                {"ids": list(edges)},
-            )
-        ).all()
+    for node, s_ in stations.items():
+        counts[s_][graph.station_voltage[node] // 1000] += 1
+    station_states = {
+        station_key(index.nodes[n].kind, index.nodes[n].osm_id or 0): s_ for n, s_ in stations.items()
+    }
+    features: dict[str, str] = dict(station_states)
+    for way, circuits in not_green.items():
+        for s_ in circuits.values():
+            features[f"power_line:{way}"] = worst(features.get(f"power_line:{way}"), s_)
     return JSONResponse(
         {
             "lost": lost_count,
             "pessimistic": pessimistic,
             "counts": {
-                s: {str(kv): n for kv, n in sorted(c.items(), reverse=True)} for s, c in counts.items()
+                k: {str(kv): n for kv, n in sorted(c.items(), reverse=True)} for k, c in counts.items()
             },
-            # Stations and lines that aren't green, to draw.
-            "stations": {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "geometry": json.loads(geometry),
-                        "properties": {
-                            "supply": stations[node],
-                            "kind": kind,
-                            "osm_id": osm_id,
-                            "name": name,
-                            "kv": graph.station_voltage[node] // 1000,
-                        },
-                    }
-                    for node, kind, osm_id, name, geometry in station_rows
-                ],
-            },
-            "lines": {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "geometry": json.loads(geometry),
-                        "properties": {"supply": edges[edge_id]},
-                    }
-                    for edge_id, geometry in line_rows
-                ],
-            },
-            # For copies in My layers: their original's colour (missing: green).
-            "features": {
-                **{f"power_line:{way}": s for way, s in ways.items()},
-                **{
-                    f"{'power_substation' if kind == 'substation' else 'power_plant'}:{osm_id}": stations[
-                        node
-                    ]
-                    for node, kind, osm_id, _, _ in station_rows
-                },
-            },
+            "lines": await circuit_states(database, not_green),
+            "stations": station_states,
+            "features": features,
         }
     )
 
 
-# What no source reaches even with nothing lost, as gzipped GeoJSON, per grid version.
+# What no source reaches even with nothing lost, as gzipped JSON, per grid version.
 _unconnected: tuple[tuple, bytes] | None = None
 
 
 async def unconnected(request: Request) -> Response:
-    """The lines and stations no source reaches even with nothing lost (missing in
-    OpenStreetMap, often 20 kV), drawn grey in power supply mode. The same until the
-    grid is rebuilt: made once (about 3 MB gzipped for France).
+    """The lines (by circuit) and stations no source reaches even with nothing lost
+    (missing in OpenStreetMap, often 20 kV), grey in power supply mode: ids only, as
+    GET /grid/supply. The same until the grid is rebuilt: made once, gzipped.
 
-        GET /grid/supply/unconnected
+        GET /grid/supply/unconnected   {"lines": {...}, "stations": {...}}
     """
     global _unconnected
     database = get_db(request)
+    index = await load_index(database)
     graph = await load_graph(database)
     if _unconnected is None or _unconnected[0] != graph.version:
-        edges = [
-            edge_id
-            for edge_id, pairs in graph.ends.items()
-            if all(a not in graph.baseline and b not in graph.baseline for a, b, _ in pairs)
-        ]
-        stations = [n for n in graph.station_voltage if n not in graph.baseline]
-        features = []
-        for (geometry,) in await database.execute(
-            text(
-                """SELECT ST_AsGeoJSON(ST_Transform(ST_Simplify(geom, 10), 4326), 5)
-                     FROM grid_edge WHERE edge_id = ANY(:ids)"""
-            ),
-            {"ids": edges},
-        ):
-            features.append(f'{{"type":"Feature","geometry":{geometry},"properties":{{}}}}')
-        for (geometry,) in await database.execute(
-            text("SELECT ST_AsGeoJSON(ST_Transform(geom, 4326), 5) FROM grid_node WHERE node_id = ANY(:ids)"),
-            {"ids": stations},
-        ):
-            features.append(f'{{"type":"Feature","geometry":{geometry},"properties":{{"station":true}}}}')
-        body = '{"type":"FeatureCollection","features":[' + ",".join(features) + "]}"
-        _unconnected = (graph.version, gzip.compress(body.encode(), compresslevel=6))
+        # A way's circuit is grey if none of its stretches is reached.
+        reached: dict[int, dict[int, bool]] = {}
+        for edge_id, pairs in graph.ends.items():
+            circuits = reached.setdefault(index.edges[edge_id].way, {})
+            for a, b, voltage in pairs:
+                circuits[voltage] = circuits.get(voltage, False) or a in graph.baseline or b in graph.baseline
+        grey = {
+            way: {v: "grey" for v, ok in circuits.items() if not ok}
+            for way, circuits in reached.items()
+            if not all(circuits.values())
+        }
+        body = {
+            "lines": await circuit_states(database, grey),
+            "stations": {
+                station_key(index.nodes[n].kind, index.nodes[n].osm_id or 0): "grey"
+                for n in graph.station_voltage
+                if n not in graph.baseline
+            },
+        }
+        _unconnected = (graph.version, gzip.compress(json.dumps(body).encode(), compresslevel=6))
     return Response(
         _unconnected[1],
         media_type="application/json",

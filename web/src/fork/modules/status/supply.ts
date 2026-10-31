@@ -1,124 +1,67 @@
 // Fork: power supply mode (backend: web-backend/src/fork/grid_supply.py). While on,
-// the power lines are green, and those the statuses leave without supply red, with
-// less (fed only through lower voltages) orange; the same for substations and
-// plants, and for their copies in My layers (ui/supply.ts). A banner sums it up.
-import { GeoJSONSource, Map } from 'maplibre-gl'
-import type { FeatureCollection } from 'geojson'
+// upstream's power lines, substations and plants are recoloured (nothing is drawn
+// over them): green, red where the statuses leave them without supply, orange with
+// less (fed only through lower voltages), grey where they aren't connected to any
+// source in the data. Each circuit of a way carrying several gets its own colour.
+// Copies in My layers too (ui/supply.ts). A banner sums it up.
+import { Map } from 'maplibre-gl'
 import { el, setChildren } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { BACKEND_BASE_URL } from '../../config.ts'
 import { SUPPLY_COLOURS, Supply, supplyColours } from '../../ui/supply.ts'
-import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 
-const LINES = 'supply_lines'
-const STATIONS = 'supply_stations'
-// What no source reaches anyway (missing in OpenStreetMap), grey.
-const UNCONNECTED = 'supply_unconnected'
 const GREY = '#9e9e9e'
-const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
-const LAYER_IDS = [
-  'status_supply_base',
-  'status_supply_unconnected',
-  'status_supply_unconnected_stations',
-  'status_supply_lines',
-  'status_supply_stations'
-]
 
-interface SupplyResult {
+/** Per id: a line's circuits ({s1: "red"}) or a station ("red"). */
+interface States {
+  lines: Record<string, Record<string, string>>
+  stations: Record<string, string>
+}
+
+interface SupplyResult extends States {
   lost: number
   counts: Record<'red' | 'orange', Record<string, number>>
-  stations: FeatureCollection
-  lines: FeatureCollection
   features: Record<string, Supply>
 }
 
-const colour = [
-  'match',
-  ['get', 'supply'],
-  'red',
-  SUPPLY_COLOURS.red,
-  'orange',
-  SUPPLY_COLOURS.orange,
-  SUPPLY_COLOURS.green
+// Upstream's layers recoloured while the mode is on, by the feature state their
+// features get (the backend says which ids aren't green): a line's circuit k
+// (power_line_k draws a way's k-th voltage) from "sk", a station from "station".
+// Lines below 10 kV aren't in the grid network: grey.
+const LINE_LAYERS = [1, 2, 3].flatMap((k) =>
+  [`power_line_${k}`, `power_line_underground_${k}`].map((id) => ({
+    id,
+    property: 'line-color' as const,
+    state: `s${k}`,
+    voltage: k === 1 ? 'voltage' : `voltage_${k}`
+  }))
+)
+const STATION_LAYERS = [
+  { id: 'power_substation', property: 'fill-color' as const },
+  { id: 'power_substation_point', property: 'circle-color' as const },
+  { id: 'power_plant', property: 'fill-color' as const }
+]
+// The tile layers whose features get states (a station's area and point have the same id).
+const STATE_LAYERS = [
+  'power_line',
+  'power_substation',
+  'power_substation_point',
+  'power_plant',
+  'power_plant_point'
 ]
 
-export function supplySources() {
-  return {
-    [LINES]: { type: 'geojson' as const, data: EMPTY },
-    [STATIONS]: { type: 'geojson' as const, data: EMPTY },
-    [UNCONNECTED]: { type: 'geojson' as const, data: EMPTY }
-  }
-}
-
-/** Hidden until the mode is on. Above the power lines, below the statuses (280). */
-export function supplyLayers(): LayerSpecificationWithZIndex[] {
-  const hidden = { visibility: 'none' as const }
+/** A colour from a feature state ("red", "orange", "grey"), else `otherwise`. */
+export function stateColour(state: string, otherwise: unknown): unknown {
   return [
-    {
-      // Every power line of the network (10 kV and more) green: supplied as normal.
-      zorder: 276,
-      id: 'status_supply_base',
-      type: 'line',
-      source: 'power',
-      'source-layer': 'power_line',
-      filter: ['>=', ['to-number', ['get', 'voltage'], 0], 10],
-      layout: { ...hidden, 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': SUPPLY_COLOURS.green,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1, 12, 2.5, 18, 5]
-      }
-    },
-    {
-      zorder: 276.5,
-      id: 'status_supply_unconnected',
-      type: 'line',
-      source: UNCONNECTED,
-      filter: ['!', ['has', 'station']],
-      layout: { ...hidden, 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': GREY,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.5, 12, 3, 18, 6]
-      }
-    },
-    {
-      zorder: 276.6,
-      id: 'status_supply_unconnected_stations',
-      type: 'circle',
-      source: UNCONNECTED,
-      filter: ['has', 'station'],
-      minzoom: 9,
-      layout: hidden,
-      paint: {
-        'circle-color': GREY,
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 2.5, 14, 6],
-        'circle-stroke-color': '#fff',
-        'circle-stroke-width': 1
-      }
-    },
-    {
-      zorder: 277,
-      id: 'status_supply_lines',
-      type: 'line',
-      source: LINES,
-      layout: { ...hidden, 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': colour as never,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 5, 2, 12, 4, 18, 7]
-      }
-    },
-    {
-      zorder: 278,
-      id: 'status_supply_stations',
-      type: 'circle',
-      source: STATIONS,
-      layout: hidden,
-      paint: {
-        'circle-color': colour as never,
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 4, 12, 9, 16, 14],
-        'circle-stroke-color': '#fff',
-        'circle-stroke-width': 2
-      }
-    }
+    'match',
+    ['coalesce', ['feature-state', state], ''],
+    'red',
+    SUPPLY_COLOURS.red,
+    'orange',
+    SUPPLY_COLOURS.orange,
+    'grey',
+    GREY,
+    otherwise
   ]
 }
 
@@ -147,16 +90,19 @@ export class SupplyMode {
   active = false
   pessimistic = false
   private result: SupplyResult | null = null
+  // What no source reaches anyway (GET /grid/supply/unconnected): fetched once.
+  private grey: States | null = null
+  // The paint each recoloured layer had, put back when the mode is turned off.
+  private original = new globalThis.Map<string, unknown>()
   private listeners: (() => void)[] = []
   banner: HTMLElement = el('div.oim-supply-banner')
 
   constructor(private map: Map) {
     map.getContainer().append(this.banner)
-    // A new style (another background map) starts with empty sources.
+    // A new style (another background map) has upstream's paint and no states again.
     map.on('style.load', () => {
-      this.unconnectedLoaded = false
-      if (this.active) void this.set(true)
-      else this.draw()
+      this.original.clear()
+      this.draw()
     })
   }
 
@@ -164,18 +110,9 @@ export class SupplyMode {
     this.listeners.push(listener)
   }
 
-  private unconnectedLoaded = false
-
   async set(active: boolean, pessimistic = this.pessimistic) {
     this.active = active
     this.pessimistic = pessimistic
-    if (active && !this.unconnectedLoaded) {
-      // Once: the same until the grid is rebuilt (a few MB for a country).
-      this.unconnectedLoaded = true
-      ;(this.map.getSource(UNCONNECTED) as GeoJSONSource | undefined)?.setData(
-        `${BACKEND_BASE_URL}/grid/supply/unconnected`
-      )
-    }
     if (active) await this.refresh()
     else {
       this.result = null
@@ -189,9 +126,15 @@ export class SupplyMode {
     setChildren(this.banner, [el('span', t('supply.working', 'Working out the power supply…'))])
     this.banner.classList.add('visible')
     try {
-      const response = await fetch(`${BACKEND_BASE_URL}/grid/supply?pessimistic=${this.pessimistic ? 1 : 0}`)
-      if (!response.ok) throw new Error(await response.text())
-      this.result = await response.json()
+      const [result, grey] = await Promise.all([
+        fetch(`${BACKEND_BASE_URL}/grid/supply?pessimistic=${this.pessimistic ? 1 : 0}`).then((r) => {
+          if (!r.ok) throw new Error(r.statusText)
+          return r.json()
+        }),
+        this.grey ?? fetch(`${BACKEND_BASE_URL}/grid/supply/unconnected`).then((r) => r.json())
+      ])
+      this.result = result
+      this.grey = grey
     } catch {
       this.result = null
       setChildren(this.banner, [el('span', t('supply.failed', "The power supply couldn't be worked out."))])
@@ -204,13 +147,51 @@ export class SupplyMode {
     return this.result ? supplySummary(this.result) : ''
   }
 
+  private recolour(on: boolean) {
+    const layers = [
+      ...LINE_LAYERS.map((l) => ({
+        ...l,
+        colour: stateColour(l.state, [
+          'case',
+          ['>=', ['to-number', ['get', l.voltage], 0], 10],
+          SUPPLY_COLOURS.green,
+          GREY
+        ])
+      })),
+      ...STATION_LAYERS.map((l) => ({ ...l, colour: stateColour('station', SUPPLY_COLOURS.green) }))
+    ]
+    for (const { id, property, colour } of layers) {
+      if (!this.map.getLayer(id)) continue
+      if (!this.original.has(id)) this.original.set(id, this.map.getPaintProperty(id, property))
+      this.map.setPaintProperty(id, property, (on ? colour : this.original.get(id)) as never)
+    }
+  }
+
+  private applyStates(on: boolean) {
+    for (const sourceLayer of STATE_LAYERS) {
+      this.map.removeFeatureState({ source: 'power', sourceLayer })
+    }
+    if (!on) return
+    // Grey first: what lost its supply is coloured over it.
+    for (const states of [this.grey, this.result]) {
+      if (!states) continue
+      for (const [id, circuits] of Object.entries(states.lines)) {
+        this.map.setFeatureState({ source: 'power', sourceLayer: 'power_line', id: Number(id) }, circuits)
+      }
+      for (const [key, state] of Object.entries(states.stations)) {
+        const [layer, id] = key.split(':')
+        for (const sourceLayer of [layer, `${layer}_point`]) {
+          this.map.setFeatureState({ source: 'power', sourceLayer, id: Number(id) }, { station: state })
+        }
+      }
+    }
+  }
+
   private draw() {
     const on = this.active && this.result !== null
-    for (const id of LAYER_IDS) {
-      if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
-    }
-    ;(this.map.getSource(LINES) as GeoJSONSource | undefined)?.setData(this.result?.lines ?? EMPTY)
-    ;(this.map.getSource(STATIONS) as GeoJSONSource | undefined)?.setData(this.result?.stations ?? EMPTY)
+    if (!this.map.getSource('power')) return
+    this.recolour(on)
+    this.applyStates(on)
     supplyColours.set(on, this.result?.features ?? {})
     this.banner.classList.toggle('visible', on)
     if (on) {

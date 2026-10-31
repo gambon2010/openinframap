@@ -9,7 +9,7 @@ import { ForkModule } from '../../types.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { dock } from '../../ui/dock.ts'
 import { StatusBoard } from './board.ts'
-import { SupplyMode, supplyLayers, supplySources } from './supply.ts'
+import { SupplyMode } from './supply.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
 import { StatusSection, featureKey } from './details.ts'
 import { fieldsOf } from './fields.ts'
@@ -27,8 +27,8 @@ function badgeSwatch(status: (typeof PROBLEMS)[number]): HTMLElement {
 }
 
 const status: ForkModule = {
-  sources: () => ({ ...statusSources(), ...supplySources() }),
-  layers: () => [...statusLayers(), ...supplyLayers()],
+  sources: statusSources,
+  layers: statusLayers,
 
   switcherGroups: () => [
     new LayerGroup(t('layers.status-group', 'Statuses'), [
@@ -38,7 +38,7 @@ const status: ForkModule = {
 
   init: (ctx) => {
     // The statuses are drawn over features: a click goes to the feature underneath.
-    for (const layer of [...statusLayers(), ...supplyLayers()]) delete ctx.clickRouter.handlers[layer.id]
+    for (const layer of statusLayers()) delete ctx.clickRouter.handlers[layer.id]
     const statusMap = new StatusMap(ctx.map)
     const supply = new SupplyMode(ctx.map)
     const board = new StatusBoard(ctx.map, statusMap, supply)
