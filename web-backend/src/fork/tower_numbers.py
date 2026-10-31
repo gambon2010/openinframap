@@ -230,14 +230,23 @@ async def write(database: AsyncConnection, lines: list[Line]) -> None:
                           n.osm_id, n.line_id, l.voltage, n.number, n.total
                      FROM tower_label AS n JOIN tower_line AS l USING (line_id)
                     ORDER BY n.osm_id, l.voltage, n.total DESC, n.line_id)
-               -- On the map (from zoom 16), a tower without a ref shows its number on
-               -- its highest voltage line.
+               -- On the map (from zoom 16) a tower's label is on its row of its
+               -- highest voltage line: its ref, short (tower_short_ref), else its number.
                SELECT k.osm_id, k.line_id, k.voltage, k.number, k.total,
                       t.geometry::geometry(Point, 3857) AS geometry,
-                      NOT t.tags ? 'ref' AND row_number() OVER (PARTITION BY k.osm_id
-                                                ORDER BY k.voltage DESC, k.total DESC) = 1 AS label
+                      row_number() OVER (PARTITION BY k.osm_id ORDER BY k.voltage DESC, k.total DESC) = 1
+                          AS label,
+                      coalesce(tower_short_ref(t.tags -> 'ref'), k.number) AS text
                  FROM kept AS k JOIN osm_power_tower AS t USING (osm_id)
-                WHERE GeometryType(t.geometry) = 'POINT'"""
+                WHERE GeometryType(t.geometry) = 'POINT'
+               -- Towers with a ref on no line of the network: labelled too.
+               UNION ALL
+               SELECT t.osm_id, NULL, NULL, NULL, NULL, t.geometry::geometry(Point, 3857), true,
+                      tower_short_ref(t.tags -> 'ref')
+                 FROM osm_power_tower AS t
+                 LEFT JOIN tower_label AS n USING (osm_id)
+                WHERE n.osm_id IS NULL AND GeometryType(t.geometry) = 'POINT'
+                  AND tower_short_ref(t.tags -> 'ref') IS NOT NULL"""
         )
     )
     await database.execute(text("CREATE INDEX ON tower_number (osm_id)"))

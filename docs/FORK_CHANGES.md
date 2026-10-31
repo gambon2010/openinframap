@@ -904,6 +904,13 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   backend's image (`number_towers` in `scripts/lib/db.sh`): about 30 s for France,
   1.47 million towers. `bash scripts/number-towers.sh` numbers them again, e.g. after
   the line rules change. Imports of older exports number them.
+- **Short tower labels** (asked 2026-10-31): some towers have a whole sentence in
+  their `ref` ("Ligne à 63 kv Lutterbach Masevaux - Pylône N°44"), which upstream
+  wrote under the icon. Towers and poles are now labelled (from zoom 16) by the
+  `tower_number` layer only: their ref cut down to its number (`tower_short_ref` in
+  `schema/tower-numbers.sql`: "44"; a short ref as it is), else their number along
+  the line; towers with a ref on no line of the network are labelled too.
+  Upstream's tower and pole labels are hidden (`hideUpstreamTowerLabels`).
 - **Tower numbers that last** (asked 2026-10-31): a register in the `userdata` schema
   (`tower_line_ref`, `tower_ref`) keeps every number given, so it survives rebuilds
   and goes with exports. At each numbering, a line is matched to the register's

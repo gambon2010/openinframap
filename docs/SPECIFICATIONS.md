@@ -108,6 +108,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 6.11 | Towers numbered along their line ("tower 23 of 61 on A – B, counted from A"): in a tower's details, as its label from zoom 16 when it has no ref, and found by the search ("23 marlenheim"). | ✅ `web-backend/src/fork/tower_numbers.py`, `fork/modules/grid/towers.ts` (asked 2026-10-31) |
 | 6.12 | Routes change voltage only at stations (not at a pylon), and a way with two voltages carries each. | ✅ `grid.py` (2026-10-31) |
 | 6.13 | A tower keeps the same number at every rebuild or renumbering (usable as a lasting reference). A tower added later between two gets a letter ("23a"). | ✅ register in `userdata` (`tower_numbers.py`) |
+| 6.14 | A tower's label is just its number, not a long ref ("…- Pylône N°44" → "44"). | ✅ (asked 2026-10-31) |
 
 ## 7. Extra data (not from OpenStreetMap)
 

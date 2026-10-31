@@ -120,9 +120,14 @@ export class SupplyMode {
     }
   }
 
+  // Each refresh's number: only the latest one's answer is drawn (two quick status
+  // changes ask twice, and the answers can come back in any order).
+  private request = 0
+
   /** Work it out again (the statuses changed). */
   async refresh() {
     if (!this.active) return
+    const request = ++this.request
     setChildren(this.banner, [el('span', t('supply.working', 'Working out the power supply…'))])
     this.banner.classList.add('visible')
     try {
@@ -133,9 +138,12 @@ export class SupplyMode {
         }),
         this.grey ?? fetch(`${BACKEND_BASE_URL}/grid/supply/unconnected`).then((r) => r.json())
       ])
+      if (request !== this.request) return // a newer one is on its way
       this.result = result
       this.grey = grey
-    } catch {
+    } catch (error) {
+      if (request !== this.request) return
+      console.error('Power supply mode:', error)
       this.result = null
       setChildren(this.banner, [el('span', t('supply.failed', "The power supply couldn't be worked out."))])
       return
@@ -189,9 +197,19 @@ export class SupplyMode {
 
   private draw() {
     const on = this.active && this.result !== null
-    if (!this.map.getSource('power')) return
-    this.recolour(on)
-    this.applyStates(on)
+    // Between two styles (another background map): drawn once the new one is there.
+    if (!this.map.getSource('power') || !this.map.isStyleLoaded()) {
+      this.map.once('idle', () => this.draw())
+      return
+    }
+    try {
+      this.recolour(on)
+      this.applyStates(on)
+    } catch (error) {
+      console.error('Power supply mode: colouring the map failed', error)
+      setChildren(this.banner, [el('span', t('supply.failed', "The power supply couldn't be worked out."))])
+      return
+    }
     supplyColours.set(on, this.result?.features ?? {})
     this.banner.classList.toggle('visible', on)
     if (on) {

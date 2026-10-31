@@ -1,7 +1,9 @@
 // Fork: towers numbered along their lines (web-backend/src/fork/tower_numbers.py):
-// the number as the label of a tower without a ref, from zoom 16 (the tower_number
-// tile layer), and "Tower 23 of 61 on A - B, counted from A" in a tower's details.
-import { MapGeoJSONFeature } from 'maplibre-gl'
+// a short label from zoom 16, their ref cut down to its number or their number
+// (the tower_number tile layer; upstream's tower and pole labels, which can be a
+// whole sentence put in ref, are hidden), and "Tower 23 of 61 on A - B, counted
+// from A" in a tower's details.
+import { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el } from 'redom'
 import { BACKEND_BASE_URL } from '../../config.ts'
 import { t } from '../../core/i18n.ts'
@@ -18,6 +20,18 @@ export interface TowerLine {
   end: string | null
 }
 
+// Upstream's layers labelling towers and poles with their ref (and a pole's name).
+const UPSTREAM_LABELS = ['power_tower', 'power_pole']
+
+/** Hide upstream's tower and pole labels: the tower_number layer labels them. */
+export function hideUpstreamTowerLabels(map: Map) {
+  const hide = () => {
+    for (const id of UPSTREAM_LABELS) if (map.getLayer(id)) map.setLayoutProperty(id, 'text-field', '')
+  }
+  if (map.isStyleLoaded()) hide()
+  map.on('style.load', hide)
+}
+
 export function towerNumberLayers(): LayerSpecificationWithZIndex[] {
   return [
     {
@@ -29,7 +43,7 @@ export function towerNumberLayers(): LayerSpecificationWithZIndex[] {
       'source-layer': 'tower_number',
       minzoom: 16,
       layout: {
-        'text-field': ['to-string', ['get', 'number']],
+        'text-field': ['coalesce', ['get', 'text'], ['to-string', ['get', 'number']]],
         'text-font': font,
         'text-size': ['interpolate', ['linear'], ['zoom'], 16, 10, 21, 14],
         'text-optional': true,
