@@ -159,8 +159,10 @@ a second. The graph is kept in the backend and rebuilt when statuses change.
   how much it adds depends on how well transformers are mapped in the region.
 
   **Setting statuses inside a substation** ✔: from the substation's details panel,
-  not by clicking things on the map. The panel lists its voltage levels and its
-  transformers (from OSM), each with its status, so a substation can be damaged as a
+  not by clicking things on the map. Below its "Circuits" table (the lines
+  arriving, which gets a status column too), a "Voltage levels and transformers"
+  section lists its levels (400 kV, 225 kV...) and its transformers from OSM
+  ("3 × 400/225 kV"), each with its status, so a substation can be damaged as a
   whole, or only one transformer or one level.
 
 ## Building it, in steps
