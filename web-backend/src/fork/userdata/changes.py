@@ -88,16 +88,18 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: Us
         if op == "layer_create":
             await db.execute(
                 text(
-                    """INSERT INTO userdata.layer (id, name, style, owner_id)
-                       VALUES (:id, :name, :style, :owner)
+                    """INSERT INTO userdata.layer (id, name, style, owner_id, updated_by)
+                       VALUES (:id, :name, :style, :owner, :by)
                        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, style = EXCLUDED.style,
-                           deleted = false, updated_at = now()"""
+                           deleted = false, updated_at = now(), version = layer.version + 1,
+                           updated_by = EXCLUDED.updated_by"""
                 ),
                 {
                     "id": layer_id,
                     "name": str(data.get("name") or "Layer"),
                     "style": json.dumps(data.get("style") or {}),
                     "owner": int(user.id) if user.id is not None else None,
+                    "by": user.name,
                 },
             )
         elif op == "layer_update":
@@ -105,10 +107,12 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: Us
                 raise HTTPException(409, "That layer doesn't exist (any more)")
             await db.execute(
                 text(
-                    """UPDATE userdata.layer SET name = :name, style = :style, updated_at = now()
+                    """UPDATE userdata.layer SET name = :name, style = :style, updated_at = now(),
+                              version = version + 1, updated_by = :by
                         WHERE id = :id"""
                 ),
                 {
+                    "by": user.name,
                     "id": layer_id,
                     "name": str(data.get("name", before["name"])),
                     "style": json.dumps(data.get("style", before["style"])),
@@ -116,8 +120,11 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: Us
             )
         else:
             await db.execute(
-                text("UPDATE userdata.layer SET deleted = true, updated_at = now() WHERE id = :id"),
-                {"id": layer_id},
+                text(
+                    """UPDATE userdata.layer SET deleted = true, updated_at = now(),
+                              version = version + 1, updated_by = :by WHERE id = :id"""
+                ),
+                {"id": layer_id, "by": user.name},
             )
         after = await layer_json(db, layer_id)
         feature_id = None
@@ -129,8 +136,11 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: Us
             await access.require(db, user, uuid.UUID(before["layer_id"]), "modify")
         if op == "feature_delete":
             await db.execute(
-                text("UPDATE userdata.feature SET deleted = true, updated_at = now() WHERE id = :id"),
-                {"id": feature_id},
+                text(
+                    """UPDATE userdata.feature SET deleted = true, updated_at = now(),
+                              version = version + 1, updated_by = :by WHERE id = :id"""
+                ),
+                {"id": feature_id, "by": user.name},
             )
         else:
             geometry = data.get("geometry") or (before or {}).get("geometry")
@@ -139,17 +149,20 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: Us
             properties = data.get("properties", (before or {}).get("properties", {}))
             await db.execute(
                 text(
-                    """INSERT INTO userdata.feature (id, layer_id, geometry, properties)
-                       VALUES (:id, :layer_id, ST_SetSRID(ST_GeomFromGeoJSON(:geometry), 4326), :properties)
+                    """INSERT INTO userdata.feature (id, layer_id, geometry, properties, updated_by)
+                       VALUES (:id, :layer_id, ST_SetSRID(ST_GeomFromGeoJSON(:geometry), 4326), :properties,
+                               :by)
                        ON CONFLICT (id) DO UPDATE SET layer_id = EXCLUDED.layer_id,
                            geometry = EXCLUDED.geometry, properties = EXCLUDED.properties,
-                           deleted = false, updated_at = now()"""
+                           deleted = false, updated_at = now(), version = feature.version + 1,
+                           updated_by = EXCLUDED.updated_by"""
                 ),
                 {
                     "id": feature_id,
                     "layer_id": layer_id,
                     "geometry": json.dumps(geometry),
                     "properties": json.dumps(properties),
+                    "by": user.name,
                 },
             )
         after = await feature_json(db, feature_id)
@@ -169,3 +182,23 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: Us
             "made_at": parse_time(made_at),
         },
     )
+
+
+async def stale(db: AsyncConnection, bases: dict) -> list[str]:
+    """The items whose version on the server isn't the one the browser's changes
+    started from ({"layer:<id>": 3, "feature:<id>": 1}; 0: didn't exist): someone
+    else saved them meanwhile. Locks them until the end of the transaction."""
+    ids: dict[str, list[uuid.UUID]] = {"layer": [], "feature": []}
+    for key in bases:
+        kind, _, raw = str(key).partition(":")
+        if kind not in ids:
+            raise HTTPException(400, f"Invalid version key: {key}")
+        ids[kind].append(parse_uuid(raw, f"{kind} id"))
+    now: dict[str, int] = {}
+    for kind, table in (("layer", "userdata.layer"), ("feature", "userdata.feature")):
+        if ids[kind]:
+            rows = await db.execute(
+                text(f"SELECT id, version FROM {table} WHERE id = ANY(:ids) FOR UPDATE"), {"ids": ids[kind]}
+            )
+            now.update({f"{kind}:{r.id}": r.version for r in rows})
+    return [key for key, version in bases.items() if now.get(str(key), 0) != version]

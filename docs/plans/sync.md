@@ -164,7 +164,8 @@ and other users get modify access to them, so nothing is lost or hidden.
 2. **Owners and sharing:** layers get an owner and per-user access (view, modify);
    access checked on every read and Save; the sharing dialog; situations record
    their layers. **Built 2026-11-01.**
-3. **Versions, merging and the conflict window.**
+3. **Versions, merging and the conflict window.** **Built 2026-11-01** (the server's
+   changes arrive when Save is refused or the page loads; pushed live in phase 4).
 4. **Live updates** (Server-Sent Events, catching up after a disconnection).
 5. **Per-user settings** (folder, hidden, folded).
 

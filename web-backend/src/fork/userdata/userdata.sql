@@ -160,4 +160,12 @@ CREATE TABLE IF NOT EXISTS userdata.layer_access (
     user_id integer NOT NULL REFERENCES userdata.app_user (id) ON DELETE CASCADE,
     level text NOT NULL CHECK (level IN ('view', 'modify')),
     PRIMARY KEY (layer_id, user_id)
-)
+);
+
+-- Versions (docs/plans/sync.md, phase 3): raised by every saved change to a layer or
+-- an item; Save says the version each change started from and is refused if the
+-- server's has moved on since (someone else saved it meanwhile). And who saved last.
+ALTER TABLE userdata.layer ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1;
+ALTER TABLE userdata.layer ADD COLUMN IF NOT EXISTS updated_by text;
+ALTER TABLE userdata.feature ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1;
+ALTER TABLE userdata.feature ADD COLUMN IF NOT EXISTS updated_by text

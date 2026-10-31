@@ -20,6 +20,10 @@ export interface LoadedLayer {
   style: { color?: string }
   access: LayerAccess
   owner: string | null
+  version: number
+  updated_by: string | null
+  updated_at: string
+  /** With their version, updated_by and updated_at too. */
   features: UserFeature[]
 }
 
@@ -27,14 +31,26 @@ export async function loadAll(): Promise<{ last_save: number | null; layers: Loa
   return json(await fetch(BASE))
 }
 
-export async function saveChanges(changes: Change[], author?: string): Promise<{ save_id: number }> {
-  return json(
-    await fetch(`${BASE}/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ changes, author: author || null })
-    })
-  )
+/** Save was refused: someone else saved some of these items meanwhile. */
+export class StaleError extends Error {
+  constructor(readonly items: string[]) {
+    super('Changed by someone else meanwhile')
+  }
+}
+
+/** Send changes with the versions they started from (bases: "feature:<id>" -> version). */
+export async function saveChanges(
+  changes: Change[],
+  bases: Record<string, number>,
+  author?: string
+): Promise<{ save_id: number }> {
+  const response = await fetch(`${BASE}/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ changes, bases, author: author || null })
+  })
+  if (response.status === 409) throw new StaleError((await response.json()).conflicts ?? [])
+  return json(response)
 }
 
 export async function loadHistory(): Promise<SavedChange[]> {

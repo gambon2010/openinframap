@@ -17,6 +17,8 @@ import { Tools } from '../map/tools.ts'
 import { Renderer } from '../map/render.ts'
 import { Playback } from '../state/playback.ts'
 import { Inspector } from './inspector.ts'
+import { ConflictWindow } from './conflicts.ts'
+import { StaleError } from '../state/api.ts'
 import { Sidebar } from './sidebar.ts'
 import { Situations } from './situations.ts'
 import { Timeline } from './timeline.ts'
@@ -38,6 +40,7 @@ export class Workspace implements IControl {
   readonly timeline: Timeline
   private toast: Toast
   private inspector: Inspector
+  private conflicts: ConflictWindow
   private container!: HTMLElement
   private button!: HTMLButtonElement
   /** What's being done ("Saving"), shown on the Save button. */
@@ -56,6 +59,7 @@ export class Workspace implements IControl {
     this.sidebar = new Sidebar(this)
     this.toast = new Toast(this)
     this.inspector = new Inspector(this)
+    this.conflicts = new ConflictWindow(this)
     store.onChange(() => this.update())
     tools.onChange(() => this.update())
     document.addEventListener('keydown', (e) => this.keydown(e))
@@ -72,7 +76,14 @@ export class Workspace implements IControl {
     const toolbar = this.toolbar.el
     this.map
       .getContainer()
-      .append(toolbar, this.toolbar.picker, this.toast.el, this.timeline.el, this.situations.banner)
+      .append(
+        toolbar,
+        this.toolbar.picker,
+        this.toast.el,
+        this.timeline.el,
+        this.situations.banner,
+        this.conflicts.el
+      )
     // Its half width, so the CSS can keep it clear of the search box.
     new ResizeObserver(() =>
       this.map
@@ -131,7 +142,16 @@ export class Workspace implements IControl {
     try {
       await task()
     } catch (e) {
-      window.alert(`${label}: ${(e as Error).message ?? e}`)
+      if (e instanceof StaleError) {
+        // Merged with what they saved: the conflict window shows what's left to choose.
+        if (!this.store.conflicts.length)
+          window.alert(
+            t(
+              'userlayers.stale-merged',
+              'Someone else saved some of these items meanwhile. Their changes and yours were put together: check, then Save again.'
+            )
+          )
+      } else window.alert(`${label}: ${(e as Error).message ?? e}`)
     } finally {
       this.busy = ''
       this.update()
@@ -141,6 +161,7 @@ export class Workspace implements IControl {
   /** Draw everything again from the store and the tools. */
   update() {
     this.toast.update()
+    this.conflicts.update()
     this.timeline.update()
     this.situations.updateBanner()
     void this.inspector.sync()

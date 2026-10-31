@@ -33,7 +33,7 @@ function sourceId(layerId: string) {
 }
 
 /** A feature as drawn: its properties plus what the map layers need. */
-function drawn(feature: UserFeature, layerColor: string): GeoJSON.Feature {
+function drawn(feature: UserFeature, layerColor: string, conflict = false): GeoJSON.Feature {
   const p = feature.properties
   const supply = p.copy ? supplyColours.of(p.copy.sourceLayer, p.osm_id) : null
   return {
@@ -47,7 +47,9 @@ function drawn(feature: UserFeature, layerColor: string): GeoJSON.Feature {
       copy_key: p.copy ? `${p.copy.source}/${p.copy.sourceLayer}` : null,
       // Power supply mode on: a copied line, substation or plant's original's colour
       // (left out otherwise: the supply layers draw what has one).
-      ...(supply ? { supply } : {})
+      ...(supply ? { supply } : {}),
+      // In conflict with someone else's change (ui/conflicts.ts): marked.
+      ...(conflict ? { conflict: true } : {})
     }
   }
 }
@@ -99,6 +101,8 @@ export class Renderer {
   private map: MapLibreMap
   private primaryLayers: () => LayerSpecificationWithZIndex[]
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
+  /** Items in conflict (store.conflicts), drawn with an orange dashed ring. */
+  conflicted = new Set<string>()
 
   private graphicsZoom = -1
   /** Called with arrows drawn the old way (four free points), to turn them into paths. */
@@ -131,6 +135,26 @@ export class Renderer {
     const source = sourceId(layer.id)
     const color = ['coalesce', ['get', 'color'], layer.style.color ?? DEFAULT_COLOR]
     return [
+      // Items in conflict: an orange dashed ring or outline, under the item.
+      {
+        id: `${source}_conflict_line`,
+        type: 'line',
+        source,
+        filter: ['all', ['has', 'conflict'], LINE_OR_POLYGON],
+        paint: { 'line-color': '#e8590c', 'line-width': 8, 'line-dasharray': [1, 1], 'line-opacity': 0.8 }
+      },
+      {
+        id: `${source}_conflict_point`,
+        type: 'circle',
+        source,
+        filter: ['all', ['has', 'conflict'], POINT],
+        paint: {
+          'circle-radius': 22,
+          'circle-opacity': 0,
+          'circle-stroke-color': '#e8590c',
+          'circle-stroke-width': 3
+        }
+      },
       {
         id: `${source}_fill`,
         type: 'fill',
@@ -403,7 +427,9 @@ export class Renderer {
       const source = sourceId(layer.id)
       const data: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
-        features: [...layer.features.values()].map((f) => drawn(f, layer.style.color ?? DEFAULT_COLOR))
+        features: [...layer.features.values()].map((f) =>
+          drawn(f, layer.style.color ?? DEFAULT_COLOR, this.conflicted.has(f.id))
+        )
       }
       const existing = map.getSource(source) as GeoJSONSource | undefined
       if (existing) existing.setData(data)

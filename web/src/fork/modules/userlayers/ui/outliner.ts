@@ -229,7 +229,15 @@ export class Outliner {
         'span.oim-ul-item-text',
         el('span.oim-ul-item-name', name || what),
         el('small', name ? [what, detail].filter(Boolean).join(' · ') : detail)
-      )
+      ),
+      this.store.isFeatureInConflict(feature.id)
+        ? el('span.oim-ul-conflict-tag', '⚠', {
+            title: t(
+              'userlayers.in-conflict',
+              'In conflict with someone else’s change: see the conflict window'
+            )
+          })
+        : ''
     )
     // Shift or Ctrl / Cmd-click: add to the selection.
     row.onclick = (e) => this.actions.select(feature, e.shiftKey || e.ctrlKey || e.metaKey)

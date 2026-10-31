@@ -6,15 +6,26 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 SCHEMA_SQL = (Path(__file__).parent / "userdata.sql").read_text()
+# The last thing userdata.sql adds: present, the schema is up to date.
+NEWEST_COLUMN = "updated_by"
 
 
 async def ensure_schema(db: AsyncConnection) -> None:
     """Create the userdata schema on first use (databases built before it existed).
     Checked on each request (it's cheap): the database can be rebuilt while the
     backend runs."""
-    # The newest table: an older database gets what it lacks (every statement in
-    # userdata.sql is "if not exists", so running it again is safe).
-    exists = (await db.execute(text("SELECT to_regclass('userdata.layer_access') IS NOT NULL"))).scalar()
+    # The newest addition (a column): an older database gets what it lacks (every
+    # statement in userdata.sql is "if not exists", so running it again is safe).
+    exists = (
+        await db.execute(
+            text(
+                """SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_schema = 'userdata' AND table_name = 'feature'
+                                     AND column_name = :newest)"""
+            ),
+            {"newest": NEWEST_COLUMN},
+        )
+    ).scalar()
     if not exists:
         # One statement at a time (asyncpg doesn't run several in one call).
         for statement in SCHEMA_SQL.split(";\n"):

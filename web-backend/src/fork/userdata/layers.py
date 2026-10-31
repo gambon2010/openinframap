@@ -8,7 +8,7 @@ from starlette.responses import JSONResponse, Response
 
 from ... import Request, get_db
 from . import access
-from .changes import apply_change
+from .changes import apply_change, stale
 from .schema import ensure_schema
 from .users import current_user
 
@@ -33,7 +33,7 @@ async def everything(request: Request) -> Response:
     layers = (
         await db.execute(
             text(
-                """SELECT l.id, l.name, l.style, u.name AS owner
+                """SELECT l.id, l.name, l.style, l.version, l.updated_by, l.updated_at, u.name AS owner
                      FROM userdata.layer AS l LEFT JOIN userdata.app_user AS u ON u.id = l.owner_id
                     WHERE NOT l.deleted ORDER BY l.created_at"""
             )
@@ -43,7 +43,8 @@ async def everything(request: Request) -> Response:
     features = (
         await db.execute(
             text(
-                """SELECT f.id, f.layer_id, ST_AsGeoJSON(f.geometry) AS geometry, f.properties
+                """SELECT f.id, f.layer_id, ST_AsGeoJSON(f.geometry) AS geometry, f.properties,
+                          f.version, f.updated_by, f.updated_at
                      FROM userdata.feature f JOIN userdata.layer l ON l.id = f.layer_id
                     WHERE NOT f.deleted AND NOT l.deleted
                     ORDER BY f.created_at"""
@@ -60,6 +61,10 @@ async def everything(request: Request) -> Response:
                 "id": str(f.id),
                 "geometry": json.loads(f.geometry),
                 "properties": f.properties,
+                # Its version (Save says it started from it), who saved it last and when.
+                "version": f.version,
+                "updated_by": f.updated_by,
+                "updated_at": f.updated_at.isoformat(),
             }
         )
     last_save = (await db.execute(text("SELECT max(id) FROM userdata.save"))).scalar()
@@ -72,6 +77,9 @@ async def everything(request: Request) -> Response:
                     "name": layer.name,
                     "style": layer.style,
                     "access": seen[str(layer.id)],
+                    "version": layer.version,
+                    "updated_by": layer.updated_by,
+                    "updated_at": layer.updated_at.isoformat(),
                     "owner": layer.owner,
                     "features": by_layer[str(layer.id)],
                 }
@@ -82,7 +90,9 @@ async def everything(request: Request) -> Response:
 
 
 async def save(request: Request) -> Response:
-    """Apply the browser's unsaved changes, in order, all or nothing."""
+    """Apply the browser's unsaved changes, in order, all or nothing: {changes,
+    bases: {"layer:<id>" | "feature:<id>": the version they started from}}. 409 with
+    the items saved by someone else meanwhile."""
     db = get_db(request)
     await ensure_schema(db)
     body = await read_json(request)
@@ -90,6 +100,15 @@ async def save(request: Request) -> Response:
     if not isinstance(changes, list) or not changes:
         raise HTTPException(400, "No changes")
     user = current_user(request)
+    # Someone else saved some of these meanwhile: nothing is saved, the browser
+    # fetches them, merges (state/merge.ts) and saves again.
+    bases = body.get("bases") or {}
+    if not isinstance(bases, dict):
+        raise HTTPException(400, "bases must be an object")
+    conflicts = await stale(db, bases)
+    if conflicts:
+        await db.rollback()
+        return JSONResponse({"error": "Changed by someone else meanwhile", "conflicts": conflicts}, 409)
     save_id = (
         await db.execute(
             text(

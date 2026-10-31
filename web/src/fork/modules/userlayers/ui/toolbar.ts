@@ -176,8 +176,12 @@ export class Toolbar {
       () => void this.ws.run(t('userlayers.saving', 'Saving'), () => store.save()),
       {
         primary: pending > 0,
-        disabled: !pending || !!busy || inPlayback,
-        title: t('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
+        disabled: !pending || !!busy || inPlayback || store.conflicts.length > 0,
+        title: store.conflicts.length
+          ? t('userlayers.save-conflicts', 'Resolve the {{count}} conflict(s) first', {
+              count: store.conflicts.length
+            })
+          : t('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
       }
     )
     const more = el(

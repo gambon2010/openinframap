@@ -47,6 +47,10 @@ export interface UserLayer {
   access?: LayerAccess
   /** Its owner's name, for a layer shared with you (null: from before accounts). */
   owner?: string | null
+  /** As saved on the server: its version, who saved it last and when (merge.ts). */
+  version?: number
+  updated_by?: string | null
+  updated_at?: string
 }
 
 export type LayerAccess = 'owner' | 'modify' | 'view'

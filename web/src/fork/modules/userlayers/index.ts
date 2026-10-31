@@ -39,6 +39,9 @@ const userlayers: ForkModule = {
 
     store.onChange(() => {
       // While the past is shown (history, a situation), the live layers wait.
+      renderer.conflicted = new Set(
+        store.conflicts.filter((c) => c.key.startsWith('feature:')).map((c) => c.key.slice('feature:'.length))
+      )
       if (store.view.live) void renderer.render(store.layers, store.hidden)
       // The selection may have been deleted or changed.
       tools.refreshSelection()

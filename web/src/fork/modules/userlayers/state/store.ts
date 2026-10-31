@@ -15,12 +15,19 @@ import {
 import { applyChange, cloneLayers, differences } from './changes.ts'
 import { local } from './local.ts'
 import { loadSaved, send } from './transport.ts'
+import { StaleError } from './api.ts'
+import { Bases, Conflict, baseOf, changeKey, featureKey, reconcile } from './reconcile.ts'
+import { FeatureState, LayerState } from './merge.ts'
 import { UndoHistory } from './undo.ts'
 import { View } from './view.ts'
 
 export class Store {
   layers = new Map<string, UserLayer>()
   pending: Change[] = local.pending()
+  /** How what the pending changes touch was when they started (reconcile.ts). */
+  private bases: Bases = local.bases()
+  /** Items both you and someone else changed: Save waits until they're resolved. */
+  conflicts: Conflict[] = []
   private history = new UndoHistory()
   /** What the map shows (live or a past version) and what may be changed. */
   readonly view = new View()
@@ -48,12 +55,17 @@ export class Store {
     local.setAuthor(name)
   }
 
-  /** The saved layers, with the unsaved changes on top. */
+  /** The saved layers, with the unsaved changes on top (merged with what others
+   * saved meanwhile, if there are any: reconcile.ts). */
   async load() {
     try {
-      this.saved = await loadSaved()
-      this.layers = cloneLayers(this.saved)
-      for (const change of this.pending) applyChange(this.layers, change)
+      const fresh = await loadSaved()
+      if (this.pending.length && Object.keys(this.bases).length) this.bringUpToDate(fresh)
+      else {
+        this.saved = fresh
+        this.layers = cloneLayers(this.saved)
+        for (const change of this.pending) applyChange(this.layers, change)
+      }
       this.error = null
     } catch (e) {
       this.error = String((e as Error).message ?? e)
@@ -65,9 +77,72 @@ export class Store {
     this.notify()
   }
 
+  /**
+   * Your changes as they'd be on the layers they started from (the bases put back
+   * into the server's layers): what reconcile calls yours.
+   */
+  private yours(fresh: Map<string, UserLayer>): Map<string, UserLayer> {
+    const layers = cloneLayers(fresh)
+    const shell = (id: string) => {
+      if (!layers.has(id)) layers.set(id, { id, name: '', style: {}, features: new Map() })
+      return layers.get(id)!
+    }
+    for (const [key, base] of Object.entries(this.bases)) {
+      const id = key.slice(key.indexOf(':') + 1)
+      if (key.startsWith('layer:')) {
+        const state = base.state as LayerState | null
+        if (!state) layers.delete(id)
+        else Object.assign(shell(id), { name: state.name, style: { ...state.style } })
+      } else {
+        for (const layer of layers.values()) layer.features.delete(id)
+        const state = base.state as FeatureState | null
+        if (state) shell(state.layerId).features.set(id, state.feature)
+      }
+    }
+    for (const change of this.pending) applyChange(layers, change)
+    return layers
+  }
+
+  /** Bring the pending changes onto the server's layers, merged; conflicts noted. */
+  private bringUpToDate(fresh: Map<string, UserLayer>) {
+    const out = reconcile(this.bases, this.pending, this.yours(fresh), fresh)
+    this.saved = fresh
+    this.bases = out.bases
+    this.conflicts = out.conflicts
+    this.history.reset()
+    local.setBases(this.bases)
+    this.setPending(out.pending)
+  }
+
+  /** Whether an item or layer is in conflict (shown as such on the map and in the list). */
+  inConflict(key: string): boolean {
+    return this.conflicts.some((c) => c.key === key)
+  }
+
+  isFeatureInConflict(featureId: string): boolean {
+    return this.inConflict(featureKey(featureId))
+  }
+
+  /** Settle a conflict: keep your version (saved with the next Save), or take theirs. */
+  resolve(key: string, keep: 'mine' | 'theirs') {
+    this.conflicts = this.conflicts.filter((c) => c.key !== key)
+    if (keep === 'theirs') this.setPending(this.pending.filter((c) => changeKey(c) !== key))
+    else this.notify()
+  }
+
+  resolveAll(keep: 'mine' | 'theirs') {
+    for (const { key } of [...this.conflicts]) this.resolve(key, keep)
+  }
+
   private record(op: ChangeOp, layer_id: string, feature_id?: string, data?: Change['data'], batch?: string) {
     const change: Change = { op, layer_id, feature_id, data, made_at: new Date().toISOString() }
     if (batch) change.batch = batch
+    // The first change to something: note how it's saved (and its version).
+    const key = changeKey(change)
+    if (!(key in this.bases)) {
+      this.bases[key] = baseOf(this.saved, key)
+      local.setBases(this.bases)
+    }
     applyChange(this.layers, change)
     this.pending.push(change)
     this.history.done()
@@ -232,15 +307,34 @@ export class Store {
     this.notify()
   }
 
-  /** Send the unsaved changes; they're logged on the server for the history. */
+  /** Whether Save can go: something to save, and no conflict left. */
+  get canSave(): boolean {
+    return this.pending.length > 0 && this.conflicts.length === 0
+  }
+
+  /**
+   * Send the unsaved changes; they're logged on the server for the history. If
+   * someone else saved some of the same items meanwhile, nothing is saved: they're
+   * fetched and merged with yours (StaleError, for a message), to save again.
+   */
   async save() {
     if (!this.pending.length) return
+    if (this.conflicts.length) throw new Error('Resolve the conflicts first')
     // Everything cancelled out: nothing to send (and nothing new to load).
     const changed = this.unsavedCount > 0
-    if (changed) await send(this.pending, this.author)
+    if (changed) {
+      try {
+        await send(this.pending, this.bases, this.author)
+      } catch (e) {
+        if (e instanceof StaleError) this.bringUpToDate(await loadSaved())
+        throw e
+      }
+    }
     this.history.saved(this.pending, this.saved)
     this.pending = []
+    this.bases = {}
     local.setPending([])
+    local.setBases({})
     if (changed) await this.load()
     else this.notify()
   }
@@ -249,7 +343,10 @@ export class Store {
   async discard() {
     this.history.discarded()
     this.pending = []
+    this.bases = {}
+    this.conflicts = []
     local.setPending([])
+    local.setBases({})
     await this.load()
   }
 }

@@ -1144,6 +1144,35 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   refused; modify → items changed, lock/delete/share refused; access taken back → the
   layer, its history and the situation gone for them.
 
+## Versions, merging and conflicts in My layers (docs/plans/sync.md, phase 3)
+
+- **Versions** (`userdata.sql`): every layer and item has a `version`, raised by each
+  saved change, and `updated_by` (who saved it last). `/userdata` sends them.
+- **Save checks them** (`changes.py` `stale`, `layers.py` `save`): the browser sends,
+  with its changes, the version each changed item started from (`bases`); if any
+  moved on since (someone else saved it), nothing is saved: 409 with those items.
+- **The browser keeps a base** for everything it changes: how it was saved, and its
+  version, when the first change to it was made (`state/store.ts`, kept with the
+  unsaved changes in the browser, `local.ts`).
+- **Merging** (`state/merge.ts`, pure): field by field, as the plan's table: the
+  position, the layer, each property, each detail (modifier), each part of the
+  symbol code (identity, status, echelon...); a layer's name and each style key.
+  Deleted on one side and changed on the other is a conflict.
+- **Bringing your changes up to date** (`state/reconcile.ts`, pure): when Save is
+  refused, and when the page loads with unsaved changes kept in the browser, your
+  changes are merged with the server's layers: rewritten on top of them, new bases,
+  and the conflicts left. Your undo history starts again then.
+- **The conflict window** (`ui/conflicts.ts`): one conflict at a time ("Conflict 2 of
+  5"), what and in which layer, who changed it and when, the differing fields yours
+  and theirs side by side, **Keep mine** / **Take theirs**, ◀ ▶, **Keep all mine** /
+  **Take all theirs**; "–" folds it to a bar ("⚠ 3 conflict(s): resolve"). Until
+  resolved, the map shows your version with an orange dashed ring (the list a ⚠), and
+  **Save is disabled** ("Resolve the 3 conflict(s) first"). Keep mine: your version
+  is saved with the next Save, against the server's new version.
+- Tested end to end: A's unsaved rename (to "Charlie") on an item B renamed meanwhile
+  ("Bravo"): A's Save with the old version is refused (409); A's page shows the
+  conflict; Keep mine, Save: the server has "Charlie", version 3.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

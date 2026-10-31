@@ -73,6 +73,8 @@ model/   what items are: model.ts (Change, UserLayer...), sidc.ts (symbol codes)
 state/   store.ts (the Store the UI uses) on top of:
            changes.ts    pure: applying changes, steps, revertFields, differences
            undo.ts       undo / redo, including undo after Save
+           merge.ts      field-by-field merge (yours, theirs, the base)
+           reconcile.ts  your unsaved changes brought onto the server's layers
            local.ts      what's kept in the browser
            transport.ts  load and Save (live sync will plug in here)
            view.ts       store.view: live, a situation or a history step;

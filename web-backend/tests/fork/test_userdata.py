@@ -31,14 +31,14 @@ def test_schema_statements_split_cleanly():
         assert statement.count("(") == statement.count(")"), statement[:80]
 
 
-def test_schema_has_statuses_and_is_upgraded_by_its_newest_table():
+def test_schema_is_upgraded_by_its_newest_addition():
     sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
     assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
     assert "CREATE TABLE IF NOT EXISTS userdata.status_change" in sql
-    # ensure_schema checks for the newest table (the last one made), so older
-    # databases get it too.
-    newest = sql.rsplit("CREATE TABLE IF NOT EXISTS ", 1)[1].split()[0]
-    assert f"to_regclass('{newest}')" in Path(schema.__file__).read_text()
+    # ensure_schema checks for the newest addition (the last statement: a column of
+    # userdata.feature), so older databases get everything.
+    last = [s for s in sql.split(";\n") if s.strip()][-1]
+    assert f"userdata.feature ADD COLUMN IF NOT EXISTS {schema.NEWEST_COLUMN} " in last
 
 
 def test_parse_time():

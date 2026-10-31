@@ -99,4 +99,11 @@ export class UndoHistory {
     this.undoing.clear()
     this.redoable = []
   }
+
+  /** Your changes were rewritten (merged with someone else's): start again. */
+  reset() {
+    this.redoable = []
+    this.savedSteps = []
+    this.undoing.clear()
+  }
 }
