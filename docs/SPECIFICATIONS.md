@@ -150,6 +150,14 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.16 | Layer folders in the layer list: "+ New folder", drag a layer onto a folder or a layer, or ⋯ → Move to folder (a list of folders). | ✅ `outliner.ts` |
 | 9.11 | Resize pictures (and symbols, markers) shown on the map: a handle on the map, and a Size setting (20–800 %). | ✅ |
 
+## 12. Feature status and "what if" (docs/plans/feature-status.md)
+
+| # | Requirement | Status |
+|---|---|---|
+| 12.1 | A status on any map feature (power lines, transformers, hospitals, places of worship, stores...), separate from My layers' military symbols: operational, damaged, unknown, suspected damage... | 📝 planned (asked 2026-10-31) |
+| 12.2 | Extra fields by kind, e.g. how full stores are (stock level). | 📝 planned |
+| 12.3 | "What if" on the power grid: what loses its supply when items are damaged or lost. | 📝 planned (was backlog 10.4) |
+
 ## 10. Backlog (parked)
 
 | # | Item | Status |
@@ -157,7 +165,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.1 | Wikipedia and GEM wiki links in popups open offline (cached pages; Kiwix, GEM bulk download looked into). | 🗂 |
 | 10.2 | Military grid coordinates (MGRS) under the cursor and in search; range rings; distance/area measuring. | 🗂 |
 | 10.3 | Terrain: hillshading and line of sight (Copernicus 30 m elevation, offline). | 🗂 |
-| 10.4 | Grid what-if: what loses its connection if a substation is hit. | 🗂 |
+| 10.4 | Grid what-if: what loses its connection if a substation is hit. | ➡ now 12.3 |
 | 10.5 | Time on items: valid from/to and a timeline slider. | 🗂 |
 | 10.6 | Users: a login page, user accounts (local only), access control per user (view the map; read or write each layer). | 🗂 designed: `docs/plans/sync.md` |
 | 10.6b | Auto sync of My layers between users: layers update by themselves; edits sent with Save; field-by-field merge; conflicts one by one in a window that can be minimised (your version shown meanwhile), Save blocked until resolved; owners share layers to view or modify; a situation is only seen by those who can view all its layers. | 🗂 designed: `docs/plans/sync.md` |
