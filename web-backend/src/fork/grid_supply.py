@@ -2,17 +2,19 @@
 Fork: power supply mode (docs/plans/feature-status.md, step 4): what the statuses of
 map features mean for the supply of the grid.
 
-    GET /grid/supply[?pessimistic=1]
+    GET /grid/supply
     GET /grid/supply/unconnected      what no source reaches anyway (grey)
 
 Power comes from plants of SOURCE_OUTPUT and more (or the substation they're in),
 and from where lines leave the built region (they go on outside). What's lost: the
-power lines, substations, plants and towers whose status is Destroyed or Damaged
-(and Suspected damage, pessimistic). Then, over the grid network (schema/grid.sql;
+power lines, substations, plants and towers whose status is Destroyed or Damaged.
+Then, over the grid network (schema/grid.sql;
 voltages meet only at stations, as for routes):
 - red: no supply, nothing reaches it from a source any more;
 - orange: less power, reached only through lower voltages than before (a 225 kV
   substation now fed through 63 kV lines): the best path's lowest voltage dropped;
+- risk (purple): as before, but it would be red or orange if what has Suspected
+  damage were lost too;
 - green: as before.
 What no source reaches even with nothing lost (lines OpenStreetMap doesn't connect,
 often 20 kV) isn't coloured: that's missing data, not lost supply.
@@ -40,7 +42,6 @@ SOURCE_OUTPUT = 10e6
 # A big plant's substation: within this distance (EPSG:3857 units).
 PLANT_SUBSTATION = 1000
 LOST = ("destroyed", "damaged")
-LOST_PESSIMISTIC = (*LOST, "suspected_damage")
 # A source's own "voltage" on its best path (higher than any line).
 UNLIMITED = 10**9
 
@@ -216,7 +217,7 @@ async def lost_features(
     return edges, stations, len(rows)
 
 
-WORSE = {"green": 0, "grey": 1, "orange": 2, "red": 3}
+WORSE = {"green": 0, "grey": 1, "risk": 2, "orange": 3, "red": 4}
 
 
 def worst(a: str | None, b: str) -> str:
@@ -262,7 +263,7 @@ async def supply(request: Request) -> Response:
     """Which lines (by circuit) and stations aren't green: ids and states, for the map
     to colour its own layers (feature state); and counts.
 
-        {"lost": 2, "counts": {"red": {"400": 2}, "orange": {...}},
+        {"lost": 2, "suspected": 1, "counts": {"red": {"400": 2}, "orange": {...}, "risk": {...}},
          "lines": {"<way>": {"s1": "red"}}, "stations": {"power_substation:<id>": "red"},
          "features": {"power_line:<way>": "red", ...}}   (the worst, for My layers)
     """
@@ -271,23 +272,37 @@ async def supply(request: Request) -> Response:
         return JSONResponse({"error": "The grid network hasn't been built"}, status_code=503)
     index = await load_index(database)
     graph = await load_graph(database)
-    pessimistic = request.query_params.get("pessimistic") == "1"
-    lost_edges, lost_stations, lost_count = await lost_features(
-        database, index, LOST_PESSIMISTIC if pessimistic else LOST
-    )
-    best = (
-        best_paths(graph, graph.sources, lost_edges, set(lost_stations))
-        if lost_edges or lost_stations
-        else graph.baseline
-    )
+    lost_edges, lost_stations, lost_count = await lost_features(database, index, LOST)
+    # Suspected damage: what it would cut too if confirmed is "risk" (purple).
+    maybe_edges, maybe_stations, suspected = await lost_features(database, index, ("suspected_damage",))
+    maybe_edges |= lost_edges
+    maybe_stations |= lost_stations
+
+    def paths(edges: set[int], nodes: set[int]) -> dict[Point, int]:
+        return best_paths(graph, graph.sources, edges, set(nodes)) if edges or nodes else graph.baseline
+
+    best = paths(lost_edges, lost_stations)
+    best_if = paths(maybe_edges, maybe_stations) if suspected else best
+
+    def station_state(node: int, best_: dict[Point, int], lost: set[int]) -> str:
+        s_ = state(node, best_, graph.baseline)
+        return "red" if s_ != "unknown" and node in lost else s_
 
     stations: dict[int, str] = {}
     for node in graph.station_voltage:
-        s_ = state(node, best, graph.baseline)
-        if s_ != "unknown" and node in lost_stations:
-            s_ = "red"
-        if s_ in ("red", "orange"):
+        s_ = station_state(node, best, lost_stations)
+        if s_ == "green" and station_state(node, best_if, maybe_stations) in ("red", "orange"):
+            s_ = "risk"
+        if s_ in ("red", "orange", "risk"):
             stations[node] = s_
+
+    def edge_state(edge_id: int, a: Point, b: Point, best_: dict[Point, int], lost: set[int]) -> str:
+        if edge_id in lost or (a not in best_ and b not in best_):
+            return "red"
+        if min(best_.get(a, 0), best_.get(b, 0)) < min(graph.baseline.get(a, 0), graph.baseline.get(b, 0)):
+            return "orange"
+        return "green"
+
     # Each way at each of its voltages: the worst of its stretches.
     by_way: dict[int, dict[int, str]] = {}
     for edge_id, pairs in graph.ends.items():
@@ -295,14 +310,9 @@ async def supply(request: Request) -> Response:
         for a, b, voltage in pairs:
             if a not in graph.baseline and b not in graph.baseline:
                 continue  # not connected to a source even before (grey)
-            if edge_id in lost_edges or (a not in best and b not in best):
-                s_ = "red"
-            elif min(best.get(a, 0), best.get(b, 0)) < min(
-                graph.baseline.get(a, 0), graph.baseline.get(b, 0)
-            ):
-                s_ = "orange"
-            else:
-                s_ = "green"
+            s_ = edge_state(edge_id, a, b, best, lost_edges)
+            if s_ == "green" and edge_state(edge_id, a, b, best_if, maybe_edges) != "green":
+                s_ = "risk"
             circuits = by_way.setdefault(way, {})
             circuits[voltage] = worst(circuits.get(voltage), s_)
     not_green = {
@@ -311,7 +321,7 @@ async def supply(request: Request) -> Response:
         if any(s_ != "green" for s_ in circuits.values())
     }
 
-    counts: dict[str, Counter[int]] = {"red": Counter(), "orange": Counter()}
+    counts: dict[str, Counter[int]] = {"red": Counter(), "orange": Counter(), "risk": Counter()}
     for node, s_ in stations.items():
         counts[s_][graph.station_voltage[node] // 1000] += 1
     station_states = {
@@ -344,7 +354,7 @@ async def supply(request: Request) -> Response:
             # per build, so a browser never uses a copy cached from another one).
             "grid": grid_key(graph),
             "lost": lost_count,
-            "pessimistic": pessimistic,
+            "suspected": suspected,
             "counts": {
                 k: {str(kv): n for kv, n in sorted(c.items(), reverse=True)} for k, c in counts.items()
             },

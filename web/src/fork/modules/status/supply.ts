@@ -22,7 +22,9 @@ interface SupplyResult extends States {
   /** The grid build (for GET /grid/supply/unconnected). */
   grid: string
   lost: number
-  counts: Record<'red' | 'orange', Record<string, number>>
+  /** How many features have Suspected damage. */
+  suspected: number
+  counts: Record<'red' | 'orange' | 'risk', Record<string, number>>
   features: Record<string, Supply>
 }
 
@@ -68,6 +70,8 @@ export function stateColour(state: string, otherwise: unknown): unknown {
     SUPPLY_COLOURS.red,
     'orange',
     SUPPLY_COLOURS.orange,
+    'risk',
+    SUPPLY_COLOURS.risk,
     'grey',
     GREY,
     otherwise
@@ -82,22 +86,24 @@ function byVoltage(counts: Record<string, number>): string {
     .join(', ')
 }
 
-export function supplySummary(result: Pick<SupplyResult, 'counts' | 'lost'>): string {
+export function supplySummary(result: Pick<SupplyResult, 'counts' | 'lost' | 'suspected'>): string {
+  const total = (counts: Record<string, number>) => Object.values(counts).reduce((a, b) => a + b, 0)
   const red = byVoltage(result.counts.red)
-  const orange = Object.values(result.counts.orange).reduce((a, b) => a + b, 0)
-  if (!result.lost) return t('supply.nothing-lost', 'No damaged or destroyed part of the grid: all supplied.')
-  if (!red && !orange) return t('supply.all-supplied', 'Every station still supplied.')
-  return [
+  const orange = total(result.counts.orange)
+  const risk = total(result.counts.risk ?? {})
+  if (!result.lost && !result.suspected) {
+    return t('supply.nothing-lost', 'No damaged or destroyed part of the grid: all supplied.')
+  }
+  const parts = [
     red ? t('supply.red', 'Without supply: {{list}} substations or plants', { list: red }) : '',
-    orange ? t('supply.orange', '{{count}} with less power', { count: orange }) : ''
-  ]
-    .filter(Boolean)
-    .join('; ')
+    orange ? t('supply.orange', '{{count}} with less power', { count: orange }) : '',
+    risk ? t('supply.risk', '{{count}} at risk if the suspected damage is confirmed', { count: risk }) : ''
+  ].filter(Boolean)
+  return parts.length ? parts.join('; ') : t('supply.all-supplied', 'Every station still supplied.')
 }
 
 export class SupplyMode {
   active = false
-  pessimistic = false
   private result: SupplyResult | null = null
   // What no source reaches anyway (GET /grid/supply/unconnected), for the grid build
   // greyGrid.
@@ -121,9 +127,8 @@ export class SupplyMode {
     this.listeners.push(listener)
   }
 
-  async set(active: boolean, pessimistic = this.pessimistic) {
+  async set(active: boolean) {
     this.active = active
-    this.pessimistic = pessimistic
     if (active) await this.refresh()
     else {
       this.result = null
@@ -142,7 +147,7 @@ export class SupplyMode {
     setChildren(this.banner, [el('span', t('supply.working', 'Working out the power supply…'))])
     this.banner.classList.add('visible')
     try {
-      const response = await fetch(`${BACKEND_BASE_URL}/grid/supply?pessimistic=${this.pessimistic ? 1 : 0}`)
+      const response = await fetch(`${BACKEND_BASE_URL}/grid/supply`)
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
       const result = (await response.json()) as SupplyResult
       // What's grey depends only on the grid build: fetched once per build (its
@@ -239,6 +244,7 @@ export class SupplyMode {
               [SUPPLY_COLOURS.green, t('supply.green', 'supplied')],
               [SUPPLY_COLOURS.orange, t('supply.orange-key', 'less power')],
               [SUPPLY_COLOURS.red, t('supply.red-key', 'none')],
+              [SUPPLY_COLOURS.risk, t('supply.risk-key', 'at risk (suspected damage)')],
               [GREY, t('supply.grey', 'not connected in the data')]
             ] as [string, string][]
           ).map(([colour, label]) => el('span', el('i', { style: { background: colour } }), label))

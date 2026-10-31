@@ -1,9 +1,15 @@
 // Fork: power supply mode's colours (modules/status/supply.ts sets them), shared
 // with My layers: copies of power lines, substations and plants take their
 // original's colour while the mode is on, and their own look when it's off.
-export type Supply = 'green' | 'orange' | 'red'
+export type Supply = 'green' | 'orange' | 'red' | 'risk'
 
-export const SUPPLY_COLOURS: Record<Supply, string> = { green: '#2b8a3e', orange: '#f08c00', red: '#d62828' }
+// risk: would be red or orange if what has Suspected damage were lost too.
+export const SUPPLY_COLOURS: Record<Supply, string> = {
+  green: '#2b8a3e',
+  orange: '#f08c00',
+  red: '#d62828',
+  risk: '#9c36b5'
+}
 
 /** Tile layers the mode colours, under one name each (an area and its point are one feature). */
 const LAYERS: Record<string, string> = {

@@ -232,25 +232,19 @@ export class StatusBoard {
     leftColumn.highlight.setData([{ ...feature, properties: {} }])
   }
 
-  /** Power supply mode: on or off, pessimistic or not, and what it finds. */
+  /** Power supply mode: a switch, and what it finds. */
   private supplyControls(): HTMLElement {
-    const on = el('input', { type: 'checkbox', checked: this.supply.active }) as HTMLInputElement
-    const pessimistic = el('input', {
-      type: 'checkbox',
-      checked: this.supply.pessimistic
-    }) as HTMLInputElement
-    on.onchange = () => void this.supply.set(on.checked, pessimistic.checked)
-    pessimistic.onchange = () => void this.supply.set(this.supply.active, pessimistic.checked)
+    const on = this.supply.active
+    const toggle = el(
+      'button.oim-switch' + (on ? '.on' : ''),
+      { type: 'button', role: 'switch', 'aria-checked': String(on) },
+      el('span.oim-switch-knob'),
+      { onclick: () => void this.supply.set(!this.supply.active) }
+    )
     return el(
       'div.oim-board-supply',
-      el('label', on, t('supply.mode', 'Power supply mode')),
-      el(
-        'label',
-        { title: t('supply.pessimistic-title', 'Count suspected damage as lost too') },
-        pessimistic,
-        t('supply.pessimistic', 'Pessimistic')
-      ),
-      this.supply.active && this.supply.summary ? el('p.oim-board-hint', this.supply.summary) : ''
+      el('label.oim-switch-label', toggle, t('supply.mode', 'Power supply mode')),
+      on && this.supply.summary ? el('p.oim-board-hint', this.supply.summary) : ''
     )
   }
 

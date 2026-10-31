@@ -309,6 +309,8 @@ export class Renderer {
       SUPPLY_COLOURS.red,
       'orange',
       SUPPLY_COLOURS.orange,
+      'risk',
+      SUPPLY_COLOURS.risk,
       SUPPLY_COLOURS.green
     ] as unknown as string
     return [

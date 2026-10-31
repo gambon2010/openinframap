@@ -1048,8 +1048,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 
 ### Step 4: power supply mode
 
-- **Turned on** in the Status board ("Power supply mode", and "Pessimistic": suspected
-  damage counts as lost too). A banner at the bottom sums it up ("Without supply: 2 ×
+- **Turned on** with the switch at the top of the Status board ("Power supply mode"). A banner at the bottom sums it up ("Without supply: 2 ×
   400 kV, 2 × 63 kV substations or plants; 1 with less power") with the legend and
   "Turn off".
 - **Worked out** by `web-backend/src/fork/grid_supply.py` (`GET /grid/supply`) on the
@@ -1061,7 +1060,9 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   - for every point, the best path's lowest voltage from a source (widest path), with
     nothing lost (kept) and now: **red** if no source reaches it any more, **orange**
     if only through lower voltages than before (a 225 kV substation fed through 63 kV
-    lines), **green** otherwise. About 0.5 s for France (6 s the first time).
+    lines), **purple** ("at risk") if it would be red or orange were what has
+    Suspected damage lost too, **green** otherwise. (A first version had a
+    "Pessimistic" switch counting suspected damage as lost; replaced by the purple.) About 0.5 s for France (6 s the first time).
   - **grey**: what no source reaches even with nothing lost, missing in OpenStreetMap
     (about 99,000 ways and 15,000 stations in France, mostly 20 kV):
     `GET /grid/supply/unconnected?grid=<build>`, made once per grid build, served

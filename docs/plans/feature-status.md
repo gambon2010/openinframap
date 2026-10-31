@@ -116,8 +116,9 @@ plants, junctions, lines of 10 kV and more) and networkx in the backend.
    - power plants (above a size, e.g. 10 MW);
    - the points where lines leave or enter the built region, since power comes from
      outside too.
-2. **What's lost:** what is Destroyed or Damaged, and also Suspected damage with the
-   "pessimistic" switch. A scenario adds or removes items on top of that.
+2. **What's lost:** what is Destroyed or Damaged. What Suspected damage would cut too
+   is shown purple, "at risk" (built: it replaced a "pessimistic" switch). A scenario
+   adds or removes items on top of that.
 3. **No supply (red):** substations, and the lines between them, no longer connected
    to any source.
 4. **Less power (orange / yellow):** still connected, but weakened. Proposed: either
