@@ -97,7 +97,8 @@ the same URL):
 
 - `search.py`;
 - `grid.py` (routes over the power grid, `/grid/line`), `line_trace.py` (following a
-  line), `grid_check.py` (lines ending at nothing, a command);
+  line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers.py`
+  (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
 - `userdata/`, My layers:
   - `schema.py` and `userdata.sql`;

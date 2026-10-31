@@ -61,7 +61,8 @@
       "water-well": "Water well",
       "icpe": "Classified installation (ICPE)",
       "biomethane-injection": "Biomethane injection point",
-      "distribution-substation": "Distribution substation"
+      "distribution-substation": "Distribution substation",
+      "power-tower": "Tower, numbered along its line"
     }
   },
   "sources": {
@@ -525,5 +526,10 @@
     "empty-folder": "Empty: drag layers here.",
     "new-folder": "New folder",
     "new-folder-title": "A folder to drag layers into"
+  },
+  "tower": {
+    "unnamed-line": "a line",
+    "number": "Tower {{number}} of {{total}} on {{name}} ({{kv}} kV)",
+    "counted-from": "counted from {{start}}"
   }
 }

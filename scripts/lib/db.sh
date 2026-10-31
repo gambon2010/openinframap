@@ -66,7 +66,7 @@ project_images() {
 # when the database is created, eez.sql with the country boundaries, the rest in
 # build-region.sh. A test (scripts/tests) checks every schema/*.sql is either here
 # or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in this order.
-SCHEMA_FILES=(functions views stats places sites grid extra search eez local-stats)
+SCHEMA_FILES=(functions views stats places sites grid tower-numbers extra search eez local-stats)
 
 # Not part of a build: database creation (dev-init, prod-init) and production jobs.
 SCHEMA_NOT_BUILT=(dev-init prod-init refresh_matviews)
@@ -77,4 +77,13 @@ schema_hash() {
     local files=("$REPO_ROOT"/imposm/*.py) name
     for name in "${SCHEMA_FILES[@]}"; do files+=("$REPO_ROOT/schema/$name.sql"); done
     cat "${files[@]}" | md5sum | cut -c1-12
+}
+
+# Number the towers along their lines (web-backend/src/fork/tower_numbers.py) with
+# the backend's image, rebuilt first if its code changed. After grid.sql and
+# tower-numbers.sql (the empty tables).
+number_towers() {
+    local run=(--rm --no-deps --entrypoint /app/.venv/bin/python backend -m src.fork.tower_numbers)
+    docker compose --progress quiet run --build "${run[@]}" </dev/null >/dev/null 2>&1 \
+        || docker compose --progress quiet run "${run[@]}" </dev/null >/dev/null
 }

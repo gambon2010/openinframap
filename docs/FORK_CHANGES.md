@@ -884,6 +884,20 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   not followed. A way with several voltages ("225000;63000") belongs to each, and only
   the clicked line's circuit is highlighted (drawn side by side). Ways are drawn
   whole, into the substations.
+- **Tower numbers** (`web-backend/src/fork/tower_numbers.py`, after `schema/grid.sql`):
+  every line of the network is followed (`line_trace.py`) and its towers are numbered
+  by how far along it they are, from the station its name starts with (else another
+  of its places, else a substation first by name). A line followed twice (from ways
+  side by side near a substation) is kept once. A tower carrying several lines has a
+  number on each; its details say "Tower 23 of 61 on A – B (225 kV), counted from A"
+  (`GET /grid/tower/<id>`, `modules/grid/towers.ts`); a tower without a ref shows the
+  number of its highest-voltage line as its label from zoom 16 (the `tower_number`
+  tile layer); the search finds "23 marlenheim", "pylône 23 reichstett". The tables
+  (`tower_line`, `tower_line_edge`, `tower_number`) are made empty by
+  `schema/tower-numbers.sql` (Tegola serves `tower_number`) and filled with the
+  backend's image (`number_towers` in `scripts/lib/db.sh`): about 30 s for France,
+  1.47 million towers. `bash scripts/number-towers.sh` numbers them again, e.g. after
+  the line rules change. Imports of older exports number them.
 - **Checking the grid** (`web-backend/src/fork/grid_check.py`, `uv run python -m
   src.fork.grid_check` in `web-backend/`): follows every line of 63 kV and more and
   writes each end that isn't at a station to `data/grid-check.csv`, likely data errors

@@ -807,6 +807,9 @@ import_osm() {
     run_with_timer "Preparing place search" run_sql_file schema/places.sql
     run_with_timer "Sorting critical sites" run_sql_file schema/sites.sql
     run_with_timer "Building the power grid network" run_sql_file schema/grid.sql
+    run_with_timer "Preparing tower numbers" run_sql_file schema/tower-numbers.sql
+    run_with_timer "Numbering towers along their lines" number_towers \
+        || warn "Numbering towers failed; towers have no numbers. Retry: bash scripts/number-towers.sh"
     run_with_timer "Creating search indexes" create_search_indexes
     # Extra data kept for this region goes back first; then the extra data tables
     # (which always exist, as Tegola serves them) get whatever is new.

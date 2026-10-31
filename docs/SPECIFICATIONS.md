@@ -105,6 +105,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 6.8 | A selected line follows only the line it is (its name, circuit number, way), not lines branching off or sharing pylons; on a way with two voltages only its own circuit is highlighted; it's drawn into the substations. | ✅ `web-backend/src/fork/line_trace.py` |
 | 6.9 | Large lines should end at something; where they don't, list them as probable data errors. | ✅ `grid_check.py` → `data/grid-check.csv` (asked 2026-10-31) |
 | 6.10 | A circuit opened from a substation's details shows below them, the details staying open (shrunk if needed), not at the bottom right. | ✅ `fork/modules/details/circuit.ts` (asked 2026-10-31) |
+| 6.11 | Towers numbered along their line ("tower 23 of 61 on A – B, counted from A"): in a tower's details, as its label from zoom 16 when it has no ref, and found by the search ("23 marlenheim"). | ✅ `web-backend/src/fork/tower_numbers.py`, `fork/modules/grid/towers.ts` (asked 2026-10-31) |
 
 ## 7. Extra data (not from OpenStreetMap)
 

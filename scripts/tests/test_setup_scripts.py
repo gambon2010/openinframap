@@ -114,6 +114,7 @@ SCRIPT_NAMES = [
     "start.sh",
     "launch.sh",
     "satellite.sh",
+    "number-towers.sh",
 ]
 
 

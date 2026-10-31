@@ -9,6 +9,7 @@ import { addDetailsExtra } from '../../ui/details.ts'
 import { LEFT_ORDER, leftColumn } from '../../ui/left-column.ts'
 import GridRouteControl, { StationKind } from './grid-route.ts'
 import { showLine } from './line.ts'
+import { towerDetails, towerNumberLayers } from './towers.ts'
 
 /** Substations and plants: "Route from here" / "Route to here". */
 function routeButtons(feature: MapGeoJSONFeature, route: GridRouteControl): HTMLElement | null {
@@ -40,6 +41,7 @@ function routeButtons(feature: MapGeoJSONFeature, route: GridRouteControl): HTML
 }
 
 const grid: ForkModule = {
+  layers: towerNumberLayers,
   init: (ctx) => {
     const route = new GridRouteControl(ctx.urlHash)
     leftColumn.addControl(route, LEFT_ORDER.route)
@@ -59,6 +61,8 @@ const grid: ForkModule = {
       const info = await showLine(ctx.map, leftColumn.highlight, Number(feature.properties['osm_id']))
       if (info && content.isConnected) content.insertBefore(info, content.querySelector('.oim-info-footer'))
     })
+    // Towers: their number along each line they carry.
+    addDetailsExtra(towerDetails)
   }
 }
 

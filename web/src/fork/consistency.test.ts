@@ -6,8 +6,11 @@ import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import extra from './modules/extra/index.ts'
 import sites from './modules/sites/index.ts'
 import satellite from './modules/satellite/index.ts'
+import grid from './modules/grid/index.ts'
 
-const MODULES = [extra, sites, satellite]
+const MODULES = [extra, sites, satellite, grid]
+// Upstream's layer switcher entries that fork layers join (openinframap.ts).
+const UPSTREAM_PREFIXES = ['power_']
 
 /** Layer names defined in a Tegola layers file (the "  - name:" entries). */
 function tegolaLayers(file: string): string[] {
@@ -32,6 +35,7 @@ test('every fork map layer can be turned off in the layer switcher', () => {
     'layers' in g ? g.layers.map((l) => l.prefix) : [(g as Layer).prefix]
   )
   expect(prefixes.length).toBeGreaterThan(5)
+  prefixes.push(...UPSTREAM_PREFIXES)
   // Background imagery is chosen in Settings, not in the layer switcher.
   const unswitched = forkStyleLayers
     .filter((l) => !l.id.startsWith('satellite'))

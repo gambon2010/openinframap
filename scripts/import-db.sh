@@ -146,6 +146,12 @@ fi
 if [[ "$(db_query "SELECT to_regclass('grid_edge') IS NULL")" == "t" ]]; then
     run_with_timer "Building the power grid network" run_sql_file schema/grid.sql
 fi
+# Exports made before towers were numbered don't have them (Tegola needs the table).
+if [[ "$(db_query "SELECT to_regclass('tower_number') IS NULL")" == "t" ]]; then
+    run_with_timer "Preparing tower numbers" run_sql_file schema/tower-numbers.sql
+    run_with_timer "Numbering towers along their lines" number_towers \
+        || warn "Numbering towers failed; towers have no numbers. Retry: bash scripts/number-towers.sh"
+fi
 if [[ -f "$USERDATA_DUMP" ]]; then
     run_with_timer "Putting back My layers" restore_user_data \
         || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
