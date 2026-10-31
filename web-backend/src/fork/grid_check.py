@@ -36,7 +36,7 @@ NEAR = 100
 
 
 # Reasons, the likely data errors first.
-KINDS = ["not joined", "open end", "other line", "unclear split", "leaves the region"]
+KINDS = ["not joined", "open end", "other line", "unclear split", "guessed split", "leaves the region"]
 
 
 def kind(reason: str) -> str:

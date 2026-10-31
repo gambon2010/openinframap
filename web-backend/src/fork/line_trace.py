@@ -35,10 +35,11 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 # it turns less than this, and clearly less than the next one (degrees).
 MAX_TURN = 45
 CLEAR_MARGIN = 15
+# A way leaving a junction this close to where the line came from (degrees, 180 =
+# straight back) turns back alongside it.
+BACK_TURN = 150
 # Two ways leaving a junction this straight (degrees) are one line passing through.
 THROUGH_TURN = 30
-# Two ways leaving a junction this close (degrees) run side by side.
-PARALLEL_TURN = 10
 # Stretches followed before giving up (a corridor looping through junctions).
 MAX_EDGES = 5000
 
@@ -105,7 +106,9 @@ def line_ends(name: str | None) -> set[LineEnds]:
     found = set()
     for part in (name or "").split(";"):
         number = re.search(CIRCUIT, part)
-        part = re.sub(r"(?i)\b(liaisons?|lignes?|et)\b|\b\d+([.,]\d+)?\s*kv\b", " ", CIRCUIT.sub(" ", part))
+        part = re.sub(
+            r"(?i)\([^)]*\)|\b(liaisons?|lignes?|et|à)\b|\b\d+([.,]\d+)?\s*kv\b", " ", CIRCUIT.sub(" ", part)
+        )
         places = [place(p) for p in re.split(r"\s+-\s+|\s*[–—]\s*", part)]
         places = [p for p in places if p]
         if len(places) >= 2:
@@ -264,47 +267,48 @@ def _continuing(index: GridIndex, trace: Trace, node: int) -> tuple[list[Edge], 
     if not trace.names and None not in named and len(named) == 1:
         # Clicked on an unnamed part, going on into ways all of one line.
         return starting, True, ""
-    # Several start here: the straightest, if clearly so.
-    if arrived_edges:
-        arriving = arrived_edges[0].away_from(node)
-        turns = sorted((turn(arriving, e.away_from(node)), i) for i, e in enumerate(starting))
-        if turns[0][0] <= MAX_TURN and turns[1][0] - turns[0][0] >= CLEAR_MARGIN:
-            return [starting[turns[0][1]]], True, ""
-        straight = [starting[i] for t, i in turns if t <= MAX_TURN]
-        if len(straight) == 2 and _goes_through(node, straight, PARALLEL_TURN, same_way=True):
-            # A double line parting into its two circuits, side by side: both.
-            return straight, True, ""
-        if turns[0][0] > MAX_TURN and _goes_through(node, starting):
-            # It ends beside another line passing through, cut into two ways there.
-            return [], True, "tap"
-    # Or all of them, if they all lead to the same station (a double line
-    # splitting in two at the substation's gate).
     ways = [_whole_way(index, trace, first) for first in starting]
     ends = [_stations(index, way) for way in ways]
-    if all(ends) and len(set().union(*ends)) == 1:
-        return [e for way in ways for e in way], True, ""
-    # Or the one leading to a station named after one of the line's places.
+    # A named line: the way leading to a station named after one of its places not
+    # reached yet (it goes into that substation, not past it).
     places = {p for name in trace.names for pair, _ in line_ends(name) for p in pair}
     reached = " ".join(place(index.nodes[n].name or "") for n in trace.stations)
     places = {p for p in places if p not in reached}
-    if places:
-        for way, stations in zip(ways, ends):
-            if any(any(p in place(index.nodes[n].name or "") for p in places) for n in stations):
-                return way, True, ""
+    into = [
+        way
+        for way, stations in zip(ways, ends)
+        if any(any(p in place(index.nodes[n].name or "") for p in places) for n in stations)
+    ]
+    if len(into) == 1:
+        return into[0], True, ""
+    # Else the straightest, if clearly so. A way turning back alongside the line
+    # (the other circuit of a double line, going back) isn't it.
+    if arrived_edges:
+        arriving = arrived_edges[0].away_from(node)
+        turns = sorted((turn(arriving, e.away_from(node)), i) for i, e in enumerate(starting))
+        if turns[0][0] <= BACK_TURN:
+            turns = [(t, i) for t, i in turns if t <= BACK_TURN]
+        if len(turns) == 1:
+            return ways[turns[0][1]], True, ""
+        if turns[0][0] <= MAX_TURN and turns[1][0] - turns[0][0] >= CLEAR_MARGIN:
+            return [starting[turns[0][1]]], True, ""
+        if all(ends) and len(set().union(*ends)) == 1:
+            # All lead to the same station (a double line splitting at its gate):
+            # the straightest.
+            return ways[turns[0][1]], True, ""
+        if turns[0][0] > MAX_TURN and _goes_through(node, starting):
+            # It ends beside another line passing through, cut into two ways there.
+            return [], True, "tap"
+        if turns[0][0] <= MAX_TURN:
+            # Side by side, nothing tells them apart: the straightest, a guess.
+            return [starting[turns[0][1]]], True, "guessed split"
     return starting, False, "unclear split"
 
 
-def _goes_through(node: int, edges: list[Edge], within: float = 0, same_way: bool = False) -> bool:
-    """Whether two of these stretches leave the junction in a straight line (or, with
-    `same_way`, side by side), give or take `within` degrees."""
-    within = within or THROUGH_TURN
+def _goes_through(node: int, edges: list[Edge]) -> bool:
+    """Whether two of these stretches leave the junction in a straight line."""
     return any(
-        (
-            180 - turn(a.away_from(node), b.away_from(node))
-            if same_way
-            else turn(a.away_from(node), b.away_from(node))
-        )
-        <= within
+        turn(a.away_from(node), b.away_from(node)) <= THROUGH_TURN
         for i, a in enumerate(edges)
         for b in edges[i + 1 :]
     )
@@ -322,7 +326,16 @@ def _stations(index: GridIndex, way: list[Edge]) -> set[int]:
 
 def trace_line(index: GridIndex, way: int, voltage: int | None = None) -> Trace | None:
     """Follow the line an OSM way is part of (at one of its voltages, by default
-    its highest) to the stations at its ends. None if the way isn't in the network."""
+    its highest) to the stations at its ends. None if the way isn't in the network.
+    A way without a name takes the name of the line it goes on into, and the line
+    is followed again knowing it."""
+    trace = _trace(index, way, voltage, set())
+    if trace and trace.names and not any(index.edges[i].name for i in index.by_way[way]):
+        trace = _trace(index, way, trace.voltage, trace.names)
+    return trace
+
+
+def _trace(index: GridIndex, way: int, voltage: int | None, names: set[str]) -> Trace | None:
     start = [index.edges[i] for i in index.by_way.get(way, [])]
     if not start:
         return None
@@ -330,7 +343,7 @@ def trace_line(index: GridIndex, way: int, voltage: int | None = None) -> Trace 
     start = [e for e in start if voltage in e.voltages]
     trace = Trace(voltage=voltage)
     trace.edges = {e.edge_id for e in start}
-    trace.names = {e.name for e in start if e.name}
+    trace.names = {e.name for e in start if e.name} or set(names)
     frontier = {n for e in start for n in (e.source, e.target)}
     seen: set[int] = set()
     while frontier:
