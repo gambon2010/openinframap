@@ -31,11 +31,14 @@ def test_schema_statements_split_cleanly():
         assert statement.count("(") == statement.count(")"), statement[:80]
 
 
-def test_schema_has_situations_and_is_upgraded_by_its_newest_table():
+def test_schema_has_statuses_and_is_upgraded_by_its_newest_table():
     sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
     assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
-    # ensure_schema checks for the newest table, so older databases get it too.
-    assert "to_regclass('userdata.situation')" in Path(schema.__file__).read_text()
+    assert "CREATE TABLE IF NOT EXISTS userdata.status_change" in sql
+    # ensure_schema checks for the newest table (the last one made), so older
+    # databases get it too.
+    newest = sql.rsplit("CREATE TABLE IF NOT EXISTS ", 1)[1].split()[0]
+    assert f"to_regclass('{newest}')" in Path(schema.__file__).read_text()
 
 
 def test_parse_time():
@@ -86,6 +89,8 @@ def test_routes_are_where_they_were():
         "/userdata/situations/{situation_id}",
         "/userdata/images",
         "/userdata/images/{image_id}",
+        "/userdata/status",
+        "/userdata/status/feature",
         "/userdata/source-feature",
     }
 

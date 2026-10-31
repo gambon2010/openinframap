@@ -10,10 +10,15 @@
 # and put back afterwards, by build-region.sh and import-db.sh.
 USERDATA_DUMP="$DATA_DIR/userdata/userdata.dump"
 
-# user_data_saves — how many times "My layers" were saved (0: nothing to keep).
+# user_data_saves — how many times "My layers" were saved, plus the map features'
+# status changes (also in userdata); 0: nothing to keep.
 user_data_saves() {
-    db_query "SELECT CASE WHEN to_regclass('userdata.save') IS NULL THEN 0
-                          ELSE (SELECT count(*) FROM userdata.save) END" || echo 0
+    local saves statuses
+    saves=$(db_query "SELECT CASE WHEN to_regclass('userdata.save') IS NULL THEN 0
+                          ELSE (SELECT count(*) FROM userdata.save) END" || echo 0)
+    statuses=$(db_query "SELECT CASE WHEN to_regclass('userdata.status_change') IS NULL THEN 0
+                          ELSE (SELECT count(*) FROM userdata.status_change) END" || echo 0)
+    echo $(( ${saves:-0} + ${statuses:-0} ))
 }
 
 save_user_data() {

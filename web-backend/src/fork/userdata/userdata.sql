@@ -71,3 +71,38 @@ CREATE TABLE IF NOT EXISTS userdata.situation (
     author text,
     created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Statuses of map features (docs/plans/feature-status.md): about the real
+-- features of the map, shared by everyone, separate from My layers. A feature is
+-- its table and id (status.py SOURCE_TABLES, as several tile layers show the same
+-- table); its geometry is copied so it's drawn whatever the tiles, and kept
+-- across rebuilds like the rest of userdata.
+CREATE TABLE IF NOT EXISTS userdata.feature_status (
+    source text NOT NULL,
+    feature_id bigint NOT NULL,
+    layer text NOT NULL,
+    status text NOT NULL,
+    evidence text,
+    note text,
+    details jsonb NOT NULL DEFAULT '{}',
+    name text,
+    author text,
+    geometry geometry(Geometry, 4326),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (source, feature_id)
+);
+
+-- Every status change, in order: the status history.
+CREATE TABLE IF NOT EXISTS userdata.status_change (
+    id bigserial PRIMARY KEY,
+    source text NOT NULL,
+    feature_id bigint NOT NULL,
+    status text NOT NULL,
+    previous text,
+    evidence text,
+    note text,
+    details jsonb NOT NULL DEFAULT '{}',
+    author text,
+    made_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS status_change_feature ON userdata.status_change (source, feature_id, id)

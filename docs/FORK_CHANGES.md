@@ -953,6 +953,33 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 
 ---
 
+## Statuses of map features (docs/plans/feature-status.md, step 1)
+
+- **What:** any map feature the details panel shows with an id (power lines,
+  substations, towers, plants, transformers, pipelines, masts, critical sites, extra
+  data...) can be marked Operational, Repaired, Threatened, Suspected damage,
+  Damaged, Destroyed, Under repair or Unknown, with how it's known (seen, reported,
+  imagery), a note and who set it. Shared by everyone; separate from My layers.
+- **Setting it:** a "Status" section in the feature's details
+  (`web/src/fork/modules/status/details.ts`): the status, who set it and when, its
+  note, "Set status" / "Change status" (a form), and the history (newest first).
+  The name typed is remembered with My layers' (`core/author.ts`).
+- **On the map** (look C): only the problems (threatened, suspected damage, damaged,
+  destroyed, under repair), as a coloured casing along both sides of a line, an
+  outline round an area, a ring round a point, and from zoom 12 a badge with the
+  status's sign (⚠ ? ! ✕ 🔧, drawn by the browser) (`modules/status/map.ts`). The
+  layers start with `status_` (the layer switcher's "Damage and threats", K) and
+  aren't clickable: a click goes to the feature underneath. The key lists them.
+- **Stored** in the `userdata` schema (`userdata.sql`): `feature_status` (the current
+  status; the feature is its table and id, as several tile layers show the same
+  table, with a copy of its geometry so it's drawn whatever the tiles) and
+  `status_change` (every change: the history). So statuses are kept across rebuilds
+  and imports like My layers (`user_data_saves` counts their changes too).
+- **Backend** (`web-backend/src/fork/userdata/status.py`): `GET /userdata/status`
+  (the problems, GeoJSON with a badge point), `GET /userdata/status/feature?layer=&id=`,
+  `POST /userdata/status`. Who may set statuses: `can_set_statuses()` in `users.py`
+  (everyone until there are accounts).
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

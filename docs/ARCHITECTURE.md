@@ -33,7 +33,8 @@ ui/        shared building blocks: dock (right), left column, details panel,
            highlight, panels, settings, the key's checkboxes
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
-  grid         routes between stations, where a power line goes
+  grid         routes between stations, where a power line goes, tower numbers
+  status       statuses of map features (damage, threats): details, map
   extra        data from outside OSM
   sites        critical sites
   search       search descriptions, Photon

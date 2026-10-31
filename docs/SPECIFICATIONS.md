@@ -107,6 +107,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 6.10 | A circuit opened from a substation's details shows below them, the details staying open (shrunk if needed), not at the bottom right. | ✅ `fork/modules/details/circuit.ts` (asked 2026-10-31) |
 | 6.11 | Towers numbered along their line ("tower 23 of 61 on A – B, counted from A"): in a tower's details, as its label from zoom 16 when it has no ref, and found by the search ("23 marlenheim"). | ✅ `web-backend/src/fork/tower_numbers.py`, `fork/modules/grid/towers.ts` (asked 2026-10-31) |
 | 6.12 | Routes change voltage only at stations (not at a pylon), and a way with two voltages carries each. | ✅ `grid.py` (2026-10-31) |
+| 6.13 | A tower keeps the same number at every rebuild or renumbering (usable as a lasting reference). | 📝 asked 2026-10-31 |
 
 ## 7. Extra data (not from OpenStreetMap)
 
@@ -159,10 +160,10 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 
 | # | Requirement | Status |
 |---|---|---|
-| 12.1 | A status on map features (power lines, substations, transformers, hospitals, places of worship, supermarkets, convenience stores...), separate from My layers' military symbols: operational, repaired, threatened, suspected damage, damaged, destroyed, under repair, unknown. Only problems shown on the map, with a colour and/or badge next to the item. | 📝 planned (asked 2026-10-31) |
+| 12.1 | A status on map features (power lines, substations, transformers, hospitals, places of worship, supermarkets, convenience stores...), separate from My layers' military symbols: operational, repaired, threatened, suspected damage, damaged, destroyed, under repair, unknown. Only problems shown on the map, with a colour and/or badge next to the item. | ✅ step 1: set in a feature's details, history, on the map (`fork/modules/status/`, `userdata/status.py`) |
 | 12.2 | Extra fields by kind, e.g. how full stores are (stock level). | 📝 planned |
 | 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | 📝 planned (was backlog 10.4) |
-| 12.4 | A status history of its own, independent of My layers' history, that can be played back. | 📝 planned |
+| 12.4 | A status history of its own, independent of My layers' history, that can be played back. | 🚧 kept and shown per feature; playback with the Status board (step 3) |
 
 ## 10. Backlog (parked)
 

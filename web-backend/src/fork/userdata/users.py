@@ -21,3 +21,9 @@ ANYONE = User(id=None, name=None)
 def current_user(request: Request) -> User:
     """The user making the request (anyone, until there's a login)."""
     return ANYONE
+
+
+def can_set_statuses(user: User) -> bool:
+    """Whether a user may set map features' statuses (docs/plans/feature-status.md:
+    only some users, once there are accounts). Everyone may see them."""
+    return True

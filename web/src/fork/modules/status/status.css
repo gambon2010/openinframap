@@ -1,0 +1,96 @@
+/* Fork: the Status section in a feature's details (status/details.ts). */
+.oim-status {
+  margin-top: 0.5em;
+  padding-top: 0.4em;
+  border-top: 1px solid var(--oim-light-grey);
+}
+
+.oim-status h4 {
+  margin: 0 0 0.3em 0;
+}
+
+.oim-status-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.6em;
+  margin-bottom: 0.4em;
+}
+
+.oim-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-weight: bold;
+}
+
+.oim-status-dot {
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 50%;
+  flex: none;
+}
+
+.oim-status-byline,
+.oim-status-was {
+  color: var(--oim-text-color-light, #666);
+  font-size: 0.85em;
+}
+
+.oim-status-note {
+  margin: 0.2em 0 0.4em 0;
+  white-space: pre-wrap;
+}
+
+.oim-status-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.oim-status-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  font-size: 0.9em;
+}
+
+.oim-status-form select,
+.oim-status-form textarea,
+.oim-status-form input {
+  font: inherit;
+  padding: 0.25em;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.oim-status-buttons {
+  display: flex;
+  gap: 0.5em;
+}
+
+.oim-status-error:empty {
+  display: none;
+}
+
+.oim-status-error {
+  color: #d62828;
+  margin: 0;
+}
+
+.oim-status-history {
+  margin-top: 0.4em;
+}
+
+.oim-status-history summary {
+  cursor: pointer;
+}
+
+.oim-status-history ol {
+  margin: 0.3em 0 0 0;
+  padding-left: 1.2em;
+}
+
+.oim-status-history li {
+  margin-bottom: 0.4em;
+}

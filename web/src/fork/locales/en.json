@@ -15,7 +15,9 @@
     "extra-gas": "Gas distribution (open data)",
     "extra-icpe": "Classified installations (ICPE)",
     "sites": "Critical sites",
-    "title": "Layers"
+    "title": "Layers",
+    "status-group": "Statuses",
+    "status": "Damage and threats"
   },
   "search": {
     "place": {
@@ -531,5 +533,33 @@
     "unnamed-line": "a line",
     "number": "Tower {{number}} of {{total}} on {{name}} ({{kv}} kV)",
     "counted-from": "counted from {{start}}"
+  },
+  "status": {
+    "title": "Status",
+    "change": "Change status",
+    "set": "Set status",
+    "history": "History ({{count}})",
+    "was": "was {{status}}",
+    "note-placeholder": "What happened, what is known",
+    "author-placeholder": "Your name",
+    "save": "Save",
+    "note": "Note",
+    "author": "Set by",
+    "cancel": "Cancel",
+    "failed": "Couldn't save: {{error}}",
+    "operational": "Operational",
+    "repaired": "Repaired",
+    "threatened": "Threatened",
+    "suspected-damage": "Suspected damage",
+    "damaged": "Damaged",
+    "destroyed": "Destroyed",
+    "under-repair": "Under repair",
+    "unknown": "Unknown",
+    "how-known": "How it is known",
+    "evidence": {
+      "seen": "Seen",
+      "reported": "Reported",
+      "imagery": "Imagery"
+    }
   }
 }

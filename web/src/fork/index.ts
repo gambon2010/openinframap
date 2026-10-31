@@ -19,10 +19,22 @@ import userlayers from './modules/userlayers/index.ts'
 import details from './modules/details/index.ts'
 import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
+import status from './modules/status/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
-const MODULES: ForkModule[] = [satellite, mapSources, extra, sites, search, details, grid, layout, userlayers]
+const MODULES: ForkModule[] = [
+  satellite,
+  mapSources,
+  extra,
+  sites,
+  search,
+  details,
+  grid,
+  status,
+  layout,
+  userlayers
+]
 
 let context: ForkContext | undefined
 
