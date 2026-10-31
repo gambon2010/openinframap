@@ -10,13 +10,17 @@ from src.fork import grid
 from src.fork.grid import build_graph, describe, distinct_paths, parse_station
 
 
-def edge(edge_id, source, target, length_m, voltage=220000, name=None):
+def edge(edge_id, source, target, length_m, voltage=220000, name=None, tag=None, junctions=()):
+    """A stretch between two stations, unless they're in `junctions`."""
     line = [[source, 0], [target, 0]]
     return {
         "edge_id": edge_id,
         "source": source,
         "target": target,
         "voltage": voltage,
+        "voltage_tag": tag,
+        "source_station": source not in junctions,
+        "target_station": target not in junctions,
         "name": name,
         "length_m": length_m,
         "geometry": json.dumps({"type": "LineString", "coordinates": line}),
@@ -40,7 +44,7 @@ def test_parallel_lines_are_one_hop_with_the_shortest_length():
     info: dict = {}
     graph = build_graph(rows(edge(1, 1, 2, 1000), edge(2, 1, 2, 900), edge(3, 2, 3, 500)), info)
     assert graph[1][2]["length"] == 900
-    assert graph[1][2]["edges"] == [1, 2]
+    assert graph[1][2]["circuits"] == [(1, 220000), (2, 220000)]
     assert set(info) == {1, 2, 3}
 
 
@@ -73,32 +77,71 @@ def test_no_path():
 
 
 def test_describe_splits_at_stations_and_passes_junctions():
-    info = {e["edge_id"]: e for e in (edge(1, 1, 2, 4000), edge(2, 2, 3, 6000, 380000), edge(3, 2, 3, 6500))}
+    info: dict = {}
+    # Node 2 is a junction (a pylon where two lines join), at 220 kV.
+    graph = build_graph(
+        rows(
+            edge(1, 1, 2, 4000, junctions={2}),
+            edge(2, 2, 3, 6000, junctions={2}),
+            edge(3, 2, 3, 6500, junctions={2}, tag="380000;220000", voltage=380000),
+        ),
+        info,
+    )
     names = {
         1: {"kind": "substation", "osm_id": 10, "name": "A"},
         3: {"kind": "plant", "osm_id": 30, "name": "C"},
-    }  # node 2 is a junction between lines
-    out = describe([1, 2, 3], info, names)
+    }
+    out = describe([1, (2, 220000), 3], graph, info, names)
     assert out["length_km"] == 10.0
-    assert out["voltages_kv"] == [380, 220]
+    assert out["voltages_kv"] == [220]
     assert [s["name"] for s in out["stations"]] == ["A", "C"]
     assert out["segments"] == [
         {
             "from": {"kind": "substation", "osm_id": 10, "name": "A"},
             "to": {"kind": "plant", "osm_id": 30, "name": "C"},
             "length_km": 10.0,
-            "voltages_kv": [380, 220],
+            "voltages_kv": [220],
         }
     ]
-    # Both parallel lines between 2 and 3 are drawn.
+    # Both parallel lines between 2 and 3 are drawn (the 220 kV circuit of the double way).
     assert len(out["geometry"]["coordinates"]) == 3
 
 
 def test_describe_ending_at_a_junction():
-    info = {1: edge(1, 1, 2, 2500)}
-    out = describe([1, 2], info, {1: {"kind": "substation", "osm_id": 1, "name": "A"}})
+    info: dict = {}
+    graph = build_graph(rows(edge(1, 1, 2, 2500, junctions={2})), info)
+    out = describe([1, (2, 220000)], graph, info, {1: {"kind": "substation", "osm_id": 1, "name": "A"}})
     assert out["segments"][0]["to"] is None
-    assert out["segments"][0]["length_km"] == 2.5
+
+
+def test_lines_of_different_voltages_meet_only_at_stations():
+    info: dict = {}
+    # 1 -(225 kV)- pylon 2 -(63 kV)- 3: no transformer at the pylon, no route.
+    graph = build_graph(
+        rows(edge(1, 1, 2, 1000, 225000, junctions={2}), edge(2, 2, 3, 1000, 63000, junctions={2})), info
+    )
+    assert distinct_paths(graph, 1, 3, 1) == []
+    # Through a substation (2) they connect.
+    graph = build_graph(rows(edge(1, 1, 2, 1000, 225000), edge(2, 2, 3, 1000, 63000)), info)
+    assert distinct_paths(graph, 1, 3, 1) == [[1, 2, 3]]
+
+
+def test_a_way_with_two_voltages_carries_each():
+    info: dict = {}
+    # 1 -(225/63 kV double way)- pylon 2, then 63 kV on to 3 and 225 kV on to 4.
+    graph = build_graph(
+        rows(
+            edge(1, 1, 2, 1000, 225000, tag="225000;63000", junctions={2}),
+            edge(2, 2, 3, 1000, 63000, junctions={2}),
+            edge(3, 2, 4, 1000, 225000, junctions={2}),
+        ),
+        info,
+    )
+    assert distinct_paths(graph, 1, 3, 1) == [[1, (2, 63000), 3]]
+    assert distinct_paths(graph, 1, 4, 1) == [[1, (2, 225000), 4]]
+    # The backbone (110 kV and more) leaves the 63 kV circuit out.
+    backbone = build_graph(rows(edge(1, 1, 2, 1000, 225000, tag="225000;63000", junctions={2})), info, 110000)
+    assert (2, 63000) not in backbone and (2, 225000) in backbone
 
 
 def test_which_circuit_of_a_way_a_line_is():

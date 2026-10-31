@@ -867,6 +867,12 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   substation's details, which stay open (they used to close, and the panel sat at the
   bottom right). When both don't fit, the details shrink and scroll. Upstream's
   `CircuitInspector` is wrapped, not changed.
+- **Voltages meet only at stations** (`grid.py` `build_graph`): in the route graph a
+  pylon joins only lines of the same voltage, and a way carrying several
+  ("225000;63000") is one line per voltage; voltages meet at substations and plants
+  (their transformers). Before, a route could jump from a 400 kV line to a 225 kV one
+  at a pylon (Logelbach → Guebwiller had a 79.9 km route that way). A junction is
+  `(node id, voltage)` in the graph, a station its node id.
 - **Following a line** (`web-backend/src/fork/line_trace.py`): the network is kept in
   the backend's memory (loaded on the first click, ~4 s for France, and again after a
   rebuild). A line is followed along its own way; then into a way of the same name

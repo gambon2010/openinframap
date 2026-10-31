@@ -20,7 +20,7 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from .. import Request, get_db
-from .line_trace import load_index, trace_line
+from .line_trace import load_index, trace_line, voltages_of
 
 MAX_PATHS = 5
 # Simple paths examined when looking for distinct ones: in a meshed grid there
@@ -108,34 +108,57 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
     return node, notice
 
 
-EDGE_COLUMNS = """e.edge_id, e.line_osm_id, e.source, e.target, e.voltage, e.name, e.length_m,
+EDGE_COLUMNS = """e.edge_id, e.line_osm_id, e.source, e.target, e.voltage, e.voltage_tag, e.name, e.length_m,
+                  sa.kind <> 'junction' AS source_station, sb.kind <> 'junction' AS target_station,
                   ST_AsGeoJSON(ST_Transform(e.geom, 4326)) AS geometry"""
+EDGE_FROM = """grid_edge AS e JOIN grid_node AS sa ON sa.node_id = e.source
+                             JOIN grid_node AS sb ON sb.node_id = e.target"""
+
+# A point of the route graph: a station (its node id), where every voltage meets
+# (through its transformers); or a junction at one voltage, (node id, voltage): at
+# a pylon only lines of the same voltage connect, and a way carrying several
+# ("225000;63000") is one line per voltage.
+Point = int | tuple[int, int]
 
 
-def build_graph(rows: Any, edge_info: dict[int, dict]) -> "nx.Graph[int]":
-    """A simple graph from edge rows; parallel lines become one hop (shortest as weight)."""
-    graph: nx.Graph[int] = nx.Graph()
+def point(node: int, station: bool, voltage: int) -> Point:
+    return node if station else (node, voltage)
+
+
+def node_of(p: Point) -> int:
+    return p if isinstance(p, int) else p[0]
+
+
+def build_graph(rows: Any, edge_info: dict[int, dict], min_voltage: int = 0) -> "nx.Graph[Point]":
+    """The route graph from edge rows, at each voltage of each way (min_voltage and
+    more); parallel lines become one hop (shortest as weight). A hop's "circuits"
+    are its (edge_id, voltage)."""
+    graph: nx.Graph[Point] = nx.Graph()
     for row in rows:
         e = dict(row._mapping)
         edge_info[e["edge_id"]] = e
-        u, v = e["source"], e["target"]
-        if graph.has_edge(u, v):
-            data = graph[u][v]
-            data["edges"].append(e["edge_id"])
-            data["length"] = min(data["length"], e["length_m"])
-        else:
-            graph.add_edge(u, v, length=e["length_m"], edges=[e["edge_id"]])
+        for voltage in voltages_of(e.get("voltage_tag"), e["voltage"]):
+            if voltage < min_voltage:
+                continue
+            u = point(e["source"], e.get("source_station", True), voltage)
+            v = point(e["target"], e.get("target_station", True), voltage)
+            if graph.has_edge(u, v):
+                data = graph[u][v]
+                data["circuits"].append((e["edge_id"], voltage))
+                data["length"] = min(data["length"], e["length_m"])
+            else:
+                graph.add_edge(u, v, length=e["length_m"], circuits=[(e["edge_id"], voltage)])
     return graph
 
 
 async def load_backbone(
     database: AsyncConnection, a: dict, b: dict, edge_info: dict[int, dict]
-) -> "nx.Graph[int]":
+) -> "nx.Graph[Point]":
     """Lines of 110 kV and more around both ends."""
     rows = await database.execute(
         text(
             f"""SELECT {EDGE_COLUMNS}
-                 FROM grid_edge AS e
+                 FROM {EDGE_FROM}
                 WHERE e.voltage >= :min_voltage
                   AND e.geom && ST_Expand(
                           ST_MakeLine(CAST(:a AS geometry), CAST(:b AS geometry)),
@@ -143,21 +166,22 @@ async def load_backbone(
         ),
         {"a": a["geom"], "b": b["geom"], "min_voltage": BACKBONE_VOLTAGE},
     )
-    return build_graph(rows, edge_info)
+    return build_graph(rows, edge_info, BACKBONE_VOLTAGE)
 
 
 async def access_leg(
-    database: AsyncConnection, node: dict, backbone: "nx.Graph[int]", edge_info: dict[int, dict]
-) -> Optional[list[int]]:
+    database: AsyncConnection, node: dict, backbone: "nx.Graph[Point]", edge_info: dict[int, dict]
+) -> Optional[tuple[list[Point], "nx.Graph[Point]"]]:
     """Shortest path over lines of any voltage from a station that isn't on the
-    ≥110 kV grid (e.g. a wind farm on a 65 kV line) to the nearest node that is.
-    [node] if it's already on that grid, None if no such node is within reach."""
+    ≥110 kV grid (e.g. a wind farm on a 65 kV line) to the nearest point that is,
+    and the graph it's in. [node] if it's already on that grid, None if no such
+    point is within reach."""
     if node["node_id"] in backbone:
-        return [node["node_id"]]
+        return [node["node_id"]], backbone
     rows = await database.execute(
         text(
             f"""SELECT {EDGE_COLUMNS}
-                 FROM grid_edge AS e
+                 FROM {EDGE_FROM}
                 WHERE e.geom && ST_Expand(CAST(:geom AS geometry), :radius)"""
         ),
         {"geom": node["geom"], "radius": ACCESS_RADIUS},
@@ -172,7 +196,7 @@ async def access_leg(
     if not reachable:
         return None
     entry = min(reachable, key=lambda n: lengths[n])
-    return list(nx.dijkstra_path(local, node["node_id"], entry, weight="length"))
+    return list(nx.dijkstra_path(local, node["node_id"], entry, weight="length")), local
 
 
 async def node_names(database: AsyncConnection, node_ids: set[int]) -> dict[int, dict]:
@@ -186,9 +210,9 @@ async def node_names(database: AsyncConnection, node_ids: set[int]) -> dict[int,
     return {row._mapping["node_id"]: dict(row._mapping) for row in rows}
 
 
-def distinct_paths(graph: "nx.Graph[int]", source: int, target: int, count: int) -> list[list[int]]:
+def distinct_paths(graph: "nx.Graph[Point]", source: Point, target: Point, count: int) -> list[list[Point]]:
     """Up to `count` short paths that don't mostly overlap each other."""
-    chosen: list[tuple[list[int], dict[frozenset[int], float]]] = []
+    chosen: list[tuple[list[Point], dict[frozenset[Point], float]]] = []
     try:
         candidates = nx.shortest_simple_paths(graph, source, target, weight="length")
         for examined, path in enumerate(candidates):
@@ -210,45 +234,45 @@ def station_summary(node: dict) -> dict[str, Any]:
     return {"kind": node["kind"], "osm_id": node["osm_id"], "name": node["name"]}
 
 
-def describe(path: list[int], edge_info: dict[int, dict], names: dict[int, dict]) -> dict[str, Any]:
-    """Length, voltages, stations and geometry of a node path (all parallel lines drawn)."""
+def describe(
+    path: list[Point], graph: "nx.Graph[Point]", edge_info: dict[int, dict], names: dict[int, dict]
+) -> dict[str, Any]:
+    """Length, voltages, stations and geometry of a path (all parallel lines drawn)."""
     hops = list(zip(path, path[1:]))
-    by_pair: dict[frozenset[int], list[dict]] = {}
-    for e in edge_info.values():
-        by_pair.setdefault(frozenset((e["source"], e["target"])), []).append(e)
-    edges = [e for u, v in hops for e in by_pair.get(frozenset((u, v)), [])]
+    circuits = [graph[u][v]["circuits"] for u, v in hops]
 
     # Stretches between consecutive stations; junctions between lines are passed
     # through. "to" is None when the path ends at a junction (e.g. a line tap).
     segments: list[dict[str, Any]] = []
-    start = names.get(path[0]) if path else None
+    start = names.get(node_of(path[0])) if path else None
     length = 0.0
     voltages: set[int] = set()
-    for u, v in hops:
-        parallel = by_pair[frozenset((u, v))]
-        length += min(e["length_m"] for e in parallel)
-        voltages.update(e["voltage"] // 1000 for e in parallel)
-        if v in names or v == path[-1]:
+    for (u, v), parallel in zip(hops, circuits):
+        length += graph[u][v]["length"]
+        voltages.update(voltage // 1000 for _, voltage in parallel)
+        node = node_of(v)
+        if node in names or v == path[-1]:
             segments.append(
                 {
                     "from": station_summary(start) if start else None,
-                    "to": station_summary(names[v]) if v in names else None,
+                    "to": station_summary(names[node]) if node in names else None,
                     "length_km": round(length / 1000, 1),
                     "voltages_kv": sorted(voltages, reverse=True),
                 }
             )
-            start, length, voltages = names.get(v), 0.0, set()
+            start, length, voltages = names.get(node), 0.0, set()
 
+    edges = list(dict.fromkeys(edge_id for parallel in circuits for edge_id, _ in parallel))
     return {
-        "length_km": round(
-            sum(min(e["length_m"] for e in by_pair[frozenset((u, v))]) for u, v in hops) / 1000, 1
+        "length_km": round(sum(graph[u][v]["length"] for u, v in hops) / 1000, 1),
+        "voltages_kv": sorted(
+            {voltage // 1000 for parallel in circuits for _, voltage in parallel}, reverse=True
         ),
-        "voltages_kv": sorted({e["voltage"] // 1000 for e in edges}, reverse=True),
-        "stations": [station_summary(names[n]) for n in path if n in names],
+        "stations": [station_summary(names[node_of(n)]) for n in path if node_of(n) in names],
         "segments": segments,
         "geometry": {
             "type": "MultiLineString",
-            "coordinates": [json.loads(e["geometry"])["coordinates"] for e in edges],
+            "coordinates": [json.loads(edge_info[e]["geometry"])["coordinates"] for e in edges],
         },
     }
 
@@ -274,30 +298,34 @@ async def route(request: Request) -> Response:
 
     edge_info: dict[int, dict] = {}
     backbone = await load_backbone(database, a, b, edge_info)
-    legs = []
+    legs: list[Optional[list[Point]]] = []
+    leg_graphs: list[Optional["nx.Graph[Point]"]] = []
     for end, node in (("from", a), ("to", b)):
-        leg = await access_leg(database, node, backbone, edge_info)
-        if leg is None:
+        found = await access_leg(database, node, backbone, edge_info)
+        if found is None:
             notices.append(
                 f"{node['name'] or 'This ' + node['kind']} isn't connected to the grid of 110 kV and "
                 f"more within {ACCESS_MAX // 1000} km along lines of known voltage."
             )
-        legs.append(leg)
+        legs.append(found[0] if found else None)
+        leg_graphs.append(found[1] if found else None)
 
-    paths: list[list[int]] = []
-    # Both ends reach the ≥110 kV grid at the same station: the access legs are the whole connection.
+    paths: list[list[Point]] = []
+    # Both ends reach the ≥110 kV grid at the same point: the access legs are the whole connection.
     same_entry = bool(legs[0] and legs[1] and legs[0][-1] == legs[1][-1])
     if legs[0] and legs[1] and not same_entry:
         paths = distinct_paths(backbone, legs[0][-1], legs[1][-1], count)
 
-    all_nodes = {n for path in paths for n in path} | {n for leg in legs if leg for n in leg}
+    all_nodes = {node_of(n) for path in paths for n in path} | {
+        node_of(n) for leg in legs if leg for n in leg
+    }
     names = await node_names(database, all_nodes)
     access = []
-    for end, leg in zip(("from", "to"), legs):
-        if leg and len(leg) > 1:
+    for end, leg, leg_graph in zip(("from", "to"), legs, leg_graphs):
+        if leg and leg_graph is not None and len(leg) > 1:
             path = leg if end == "from" else list(reversed(leg))
-            access.append({"end": end, **describe(path, edge_info, names)})
-    results = [describe(path, edge_info, names) for path in paths]
+            access.append({"end": end, **describe(path, leg_graph, edge_info, names)})
+    results = [describe(path, backbone, edge_info, names) for path in paths]
     if not results and legs[0] and legs[1] and not same_entry:
         notices.append(
             "No connection found over lines of 110 kV or more. OpenStreetMap may be missing a line, "

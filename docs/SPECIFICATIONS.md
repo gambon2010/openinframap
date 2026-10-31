@@ -106,6 +106,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 6.9 | Large lines should end at something; where they don't, list them as probable data errors. | ✅ `grid_check.py` → `data/grid-check.csv` (asked 2026-10-31) |
 | 6.10 | A circuit opened from a substation's details shows below them, the details staying open (shrunk if needed), not at the bottom right. | ✅ `fork/modules/details/circuit.ts` (asked 2026-10-31) |
 | 6.11 | Towers numbered along their line ("tower 23 of 61 on A – B, counted from A"): in a tower's details, as its label from zoom 16 when it has no ref, and found by the search ("23 marlenheim"). | ✅ `web-backend/src/fork/tower_numbers.py`, `fork/modules/grid/towers.ts` (asked 2026-10-31) |
+| 6.12 | Routes change voltage only at stations (not at a pylon), and a way with two voltages carries each. | ✅ `grid.py` (2026-10-31) |
 
 ## 7. Extra data (not from OpenStreetMap)
 
