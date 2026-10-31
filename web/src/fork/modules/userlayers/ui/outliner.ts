@@ -6,13 +6,14 @@
 // the browser until a layer is put in it (a folder is a name the layers share).
 import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
-import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
+import { DEFAULT_COLOR, isOwner, UserFeature, UserLayer } from '../model/model.ts'
 import { Store } from '../state/store.ts'
 import { featureLabelParts } from '../model/labels.ts'
 import { identity, status, symbolKind } from '../model/sidc.ts'
 import { GEOMETRY_LABELS, entryOf } from './palette.ts'
 import { symbolRenderer } from '../map/symbols.ts'
 import { imageUrl } from '../state/api.ts'
+import { openSharing } from './sharing.ts'
 
 export type Filter = 'hostile' | 'friend' | 'planned' | 'units' | 'graphics' | 'pictures'
 
@@ -262,15 +263,35 @@ export class Outliner {
     }
   }
 
+  /** The lock: only the layer's owner can lock or unlock it. */
+  private lockButton(layer: UserLayer, locked: boolean, mayLock: boolean): HTMLElement {
+    const button = this.button(
+      locked ? '🔒' : '🔓',
+      () => this.store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } }),
+      !mayLock
+        ? t('userlayers.lock-owner', 'Only its owner can lock or unlock it')
+        : locked
+          ? t('userlayers.unlock', 'Locked: click to allow changes')
+          : t('userlayers.lock', 'Lock: no changes to its items'),
+      locked ? 'oim-ul-locked' : 'oim-ul-unlocked'
+    ) as HTMLButtonElement
+    button.disabled = !mayLock
+    return button
+  }
+
   private layerRow(layer: UserLayer, items: UserFeature[], searching: boolean): HTMLElement {
     const store = this.store
     const hidden = store.hidden.has(layer.id)
     const locked = Boolean(layer.style.locked)
     const open = searching || this.expanded.has(layer.id)
     const active = layer.id === store.activeLayer
+    // Shared with you: whose it is; to view only, nothing of it can be changed.
+    const owner = isOwner(layer)
+    const changeable = store.view.canChangeLayer(layer)
     const color = el('input.oim-ul-color', {
       type: 'color',
       value: layer.style.color ?? DEFAULT_COLOR,
+      disabled: !changeable,
       title: t('userlayers.layer-color', 'Colour of its drawings and markers')
     }) as HTMLInputElement
     color.onclick = (e) => e.stopPropagation()
@@ -306,39 +327,48 @@ export class Outliner {
       el('summary', '⋯', { title: t('userlayers.more', 'More') }),
       el(
         '.oim-ul-menu-items',
-        this.button(
-          t('userlayers.draw-here', 'Draw into this layer'),
-          () => store.setActive(layer.id),
-          '',
-          'oim-ul-menu-text'
-        ),
-        this.button(
-          t('userlayers.rename', 'Rename'),
-          () => {
-            const value = window.prompt(t('userlayers.rename', 'Rename'), layer.name)
-            if (value && value.trim() && value.trim() !== layer.name)
-              store.updateLayer(layer.id, { name: value.trim() })
-          },
-          '',
-          'oim-ul-menu-text'
-        ),
-        folders,
-        this.button(
-          t('userlayers.delete', 'Delete'),
-          () => {
-            const message = t(
-              'userlayers.delete-layer',
-              'Delete the layer "{{name}}" and its {{count}} item(s)?',
-              {
-                name: layer.name,
-                count: layer.features.size
-              }
+        changeable
+          ? this.button(
+              t('userlayers.draw-here', 'Draw into this layer'),
+              () => store.setActive(layer.id),
+              '',
+              'oim-ul-menu-text'
             )
-            if (window.confirm(message)) store.deleteLayer(layer.id)
-          },
-          '',
-          'oim-ul-menu-text'
-        )
+          : el('p.oim-ul-menu-note', t('userlayers.view-only', 'Shared with you to view only')),
+        owner && layer.access !== undefined
+          ? this.button(t('userlayers.share', 'Share…'), () => openSharing(layer), '', 'oim-ul-menu-text')
+          : '',
+        changeable
+          ? this.button(
+              t('userlayers.rename', 'Rename'),
+              () => {
+                const value = window.prompt(t('userlayers.rename', 'Rename'), layer.name)
+                if (value && value.trim() && value.trim() !== layer.name)
+                  store.updateLayer(layer.id, { name: value.trim() })
+              },
+              '',
+              'oim-ul-menu-text'
+            )
+          : '',
+        changeable ? folders : '',
+        owner
+          ? this.button(
+              t('userlayers.delete', 'Delete'),
+              () => {
+                const message = t(
+                  'userlayers.delete-layer',
+                  'Delete the layer "{{name}}" and its {{count}} item(s)?',
+                  {
+                    name: layer.name,
+                    count: layer.features.size
+                  }
+                )
+                if (window.confirm(message)) store.deleteLayer(layer.id)
+              },
+              '',
+              'oim-ul-menu-text'
+            )
+          : ''
       )
     ) as HTMLDetailsElement
     // The list scrolls (and would cut the menu off): it floats beside its button,
@@ -361,16 +391,21 @@ export class Outliner {
         () => store.setHidden(layer.id, !hidden),
         hidden ? t('userlayers.show', 'Show on the map') : t('userlayers.hide', 'Hide from the map')
       ),
-      this.button(
-        locked ? '🔒' : '🔓',
-        () => store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } }),
-        locked
-          ? t('userlayers.unlock', 'Locked: click to allow changes')
-          : t('userlayers.lock', 'Lock: no changes to its items'),
-        locked ? 'oim-ul-locked' : 'oim-ul-unlocked'
-      ),
+      this.lockButton(layer, locked, owner && changeable),
       color,
       el('span.oim-ul-layer-label', `${open ? '▾' : '▸'} ${layer.name}`),
+      !owner
+        ? el('span.oim-ul-shared-tag', layer.access === 'view' ? '👁' : '👥', {
+            title:
+              layer.access === 'view'
+                ? t('userlayers.shared-view', "{{owner}}'s, shared with you to view", {
+                    owner: layer.owner ?? '?'
+                  })
+                : t('userlayers.shared-modify', "{{owner}}'s, shared with you to change", {
+                    owner: layer.owner ?? '?'
+                  })
+          })
+        : '',
       active ? el('span.oim-ul-active-tag', t('userlayers.active', 'drawing here')) : '',
       el(
         'span.oim-ul-count-badge',

@@ -1,7 +1,7 @@
 // Fork: "My layers" backend calls (web-backend/src/fork/userdata/). Relative
 // URLs: the dev server proxies /userdata to the backend (vite.config.ts), which
 // keeps the requests same-origin (the backend only allows GET across origins).
-import { Change, SavedChange, UserFeature } from '../model/model.ts'
+import { Change, LayerAccess, SavedChange, UserFeature } from '../model/model.ts'
 
 const BASE = '/userdata'
 
@@ -18,6 +18,8 @@ export interface LoadedLayer {
   id: string
   name: string
   style: { color?: string }
+  access: LayerAccess
+  owner: string | null
   features: UserFeature[]
 }
 
@@ -69,12 +71,39 @@ export async function listSituations(): Promise<Situation[]> {
   return (await json<{ situations: Situation[] }>(await fetch(`${BASE}/situations`))).situations
 }
 
-export async function createSituation(name: string, author?: string): Promise<Situation> {
+/** A situation covering these layers (only those who can see them all see it). */
+export async function createSituation(name: string, layers: string[], author?: string): Promise<Situation> {
   return json(
     await fetch(`${BASE}/situations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, author: author || null })
+      body: JSON.stringify({ name, layers, author: author || null })
+    })
+  )
+}
+
+/** Who a layer is shared with (its owner only). */
+export interface LayerSharing {
+  owner: string | null
+  /** From before accounts: everyone may change it. */
+  open_to_all: boolean
+  people: { id: number; name: string; level: 'view' | 'modify' | null }[]
+}
+
+export async function layerSharing(layerId: string): Promise<LayerSharing> {
+  return json(await fetch(`${BASE}/layers/${layerId}/access`))
+}
+
+export async function shareLayer(
+  layerId: string,
+  userId: number,
+  level: 'view' | 'modify' | null
+): Promise<LayerSharing> {
+  return json(
+    await fetch(`${BASE}/layers/${layerId}/access`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, level })
     })
   )
 }

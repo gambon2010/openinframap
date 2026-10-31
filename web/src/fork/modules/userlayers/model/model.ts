@@ -42,6 +42,18 @@ export interface UserLayer {
    * locked: its items can't be changed or moved. */
   style: { color?: string; folder?: string; locked?: boolean }
   features: Map<string, UserFeature>
+  /** Your access (docs/plans/sync.md): its owner (one you just made: none said),
+   * shared with you to modify, or to view (read-only). */
+  access?: LayerAccess
+  /** Its owner's name, for a layer shared with you (null: from before accounts). */
+  owner?: string | null
+}
+
+export type LayerAccess = 'owner' | 'modify' | 'view'
+
+/** Whether you own a layer: may lock, share or delete it. */
+export function isOwner(layer: Pick<UserLayer, 'access'>): boolean {
+  return layer.access === undefined || layer.access === 'owner'
 }
 
 export type ChangeOp =

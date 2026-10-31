@@ -1119,6 +1119,31 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   Disabled for another admin (take away the admin right first; the backend refuses
   it too).
 
+## Owners and sharing for My layers (docs/plans/sync.md, phase 2)
+
+- **Rules** (`web-backend/src/fork/userdata/access.py`, one place): a layer belongs to
+  who made it (`layer.owner_id`); its owner shares it per account to **view** or
+  **modify** (`userdata.layer_access`). The owner may do everything; modify: its
+  items, name, colour, folder; view: see it, read-only. Only the owner locks or
+  unlocks it, deletes it, shares it. Moving an item needs modify on both layers.
+  Admins see nothing more of other people's layers.
+- **Layers from before accounts** (no owner) stay open to everyone (modify); admins act
+  as their owner. The first time an admin shares one, they become its owner and every
+  other account gets modify access, so nothing changes until it's changed on purpose.
+- **Checked on the server:** `/userdata` sends only the layers you can see, with your
+  access and their owner; Save (`changes.py`) refuses a change to a layer you may not
+  change (403, nothing saved); the history leaves out layers you can't see; a
+  situation records its layers (those shown on the map when it's made) and is seen
+  only by who can see them all. Saves record the account (`save.user_id`, its name as
+  author).
+- **Frontend:** a layer shared to view is read-only (`view.canEdit`); the lock and
+  Delete are its owner's; a shared layer shows 👥 (can change) or 👁 (view only) with
+  whose it is; **"Share…"** in the layer's menu (owner) opens the sharing dialog
+  (`ui/sharing.ts`, `GET/PUT /userdata/layers/{id}/access`), saved at once.
+- Tested end to end with two accounts: not shared → not seen; view → seen, changes
+  refused; modify → items changed, lock/delete/share refused; access taken back → the
+  layer, its history and the situation gone for them.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

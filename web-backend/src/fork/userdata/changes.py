@@ -9,6 +9,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 from starlette.exceptions import HTTPException
 
+from . import access
+from .users import ANYONE, User
+
 LAYER_OPS = {"layer_create", "layer_update", "layer_delete"}
 FEATURE_OPS = {"feature_create", "feature_update", "feature_delete"}
 
@@ -62,7 +65,10 @@ async def feature_json(db: AsyncConnection, feature_id: uuid.UUID) -> dict | Non
     }
 
 
-async def apply_change(db: AsyncConnection, save_id: int, change: dict) -> None:
+async def apply_change(db: AsyncConnection, save_id: int, change: dict, user: User = ANYONE) -> None:
+    """Apply one change and log it, if the user may (access.py): a new layer is
+    theirs; changing a layer's items, name or colour needs modify access; its lock,
+    deleting it or making it again, the owner; moving an item, modify on both layers."""
     op = change.get("op")
     if op not in LAYER_OPS | FEATURE_OPS:
         raise HTTPException(400, f"Unknown change: {op}")
@@ -72,10 +78,18 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict) -> None:
 
     if op in LAYER_OPS:
         before = await layer_json(db, layer_id)
+        if op == "layer_update":
+            await access.require(db, user, layer_id, "modify")
+            locked = (before or {}).get("style", {}).get("locked")
+            if "style" in data and bool((data.get("style") or {}).get("locked")) != bool(locked):
+                await access.require(db, user, layer_id, "owner")
+        else:
+            await access.require(db, user, layer_id, "owner")
         if op == "layer_create":
             await db.execute(
                 text(
-                    """INSERT INTO userdata.layer (id, name, style) VALUES (:id, :name, :style)
+                    """INSERT INTO userdata.layer (id, name, style, owner_id)
+                       VALUES (:id, :name, :style, :owner)
                        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, style = EXCLUDED.style,
                            deleted = false, updated_at = now()"""
                 ),
@@ -83,6 +97,7 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict) -> None:
                     "id": layer_id,
                     "name": str(data.get("name") or "Layer"),
                     "style": json.dumps(data.get("style") or {}),
+                    "owner": int(user.id) if user.id is not None else None,
                 },
             )
         elif op == "layer_update":
@@ -109,6 +124,9 @@ async def apply_change(db: AsyncConnection, save_id: int, change: dict) -> None:
     else:
         feature_id = parse_uuid(change.get("feature_id"), "feature id")
         before = await feature_json(db, feature_id)
+        await access.require(db, user, layer_id, "modify")
+        if before and before["layer_id"] != str(layer_id):
+            await access.require(db, user, uuid.UUID(before["layer_id"]), "modify")
         if op == "feature_delete":
             await db.execute(
                 text("UPDATE userdata.feature SET deleted = true, updated_at = now() WHERE id = :id"),

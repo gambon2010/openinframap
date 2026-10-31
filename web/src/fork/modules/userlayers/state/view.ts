@@ -2,8 +2,8 @@
 //   live        the layers as they are; editable, except locked layers
 //   situation   a saved situation (a past version), read-only
 //   playback    a step of the history, read-only
-// Every "can I change this?" asks canEdit, so view-only access to a shared layer
-// (docs/plans/sync.md) will be one more rule there.
+// Every "can I change this?" asks canEdit: a locked layer, or one shared with you
+// to view only (docs/plans/sync.md), can't be changed.
 import { UserLayer } from '../model/model.ts'
 import { Situation } from './api.ts'
 
@@ -21,8 +21,14 @@ export class View {
   }
 
   /** Whether a layer's items (and the layer) may be changed now. */
+  /** Its items may be changed now: live, not locked, not shared with you to view only. */
   canEdit(layer: UserLayer | null | undefined): boolean {
-    return this.live && !!layer && !layer.style.locked
+    return this.live && !!layer && !layer.style.locked && layer.access !== 'view'
+  }
+
+  /** The layer itself (name, colour, folder) may be changed: as canEdit, locked or not. */
+  canChangeLayer(layer: UserLayer | null | undefined): boolean {
+    return this.live && !!layer && layer.access !== 'view'
   }
 
   showSituation(situation: Situation, layers: Map<string, UserLayer>) {

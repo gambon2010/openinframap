@@ -529,7 +529,20 @@
     "folder-new-layer": "New layer in this folder",
     "empty-folder": "Empty: drag layers here.",
     "new-folder": "New folder",
-    "new-folder-title": "A folder to drag layers into"
+    "new-folder-title": "A folder to drag layers into",
+    "lock-owner": "Only its owner can lock or unlock it",
+    "view-only": "Shared with you to view only",
+    "share": "Share…",
+    "shared-view": "{{owner}}'s, shared with you to view",
+    "shared-modify": "{{owner}}'s, shared with you to change",
+    "share-title": "Share \"{{name}}\"",
+    "share-none": "No access",
+    "share-view": "Can view",
+    "share-modify": "Can change",
+    "share-open": "This layer is from before there were accounts: everyone can change it. Choosing here makes you its owner; everyone keeps \"Can change\" until you change it.",
+    "share-intro": "Who else can see or change this layer.",
+    "share-nobody": "There are no other accounts yet.",
+    "share-loading": "Loading…"
   },
   "tower": {
     "unnamed-line": "a line",

@@ -143,4 +143,21 @@ CREATE TABLE IF NOT EXISTS userdata.user_session (
     user_id integer NOT NULL REFERENCES userdata.app_user (id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     expires_at timestamptz NOT NULL
+);
+
+-- Owners and sharing (docs/plans/sync.md, phase 2). A layer belongs to who made it;
+-- layers made before there were accounts have no owner: open to everyone, admins
+-- act as their owner (access.py). The owner shares a layer per account, to view or
+-- to modify.
+ALTER TABLE userdata.layer ADD COLUMN IF NOT EXISTS owner_id integer
+    REFERENCES userdata.app_user (id) ON DELETE SET NULL;
+ALTER TABLE userdata.save ADD COLUMN IF NOT EXISTS user_id integer
+    REFERENCES userdata.app_user (id) ON DELETE SET NULL;
+-- The layers a situation covers (null: from before; seen by everyone).
+ALTER TABLE userdata.situation ADD COLUMN IF NOT EXISTS layer_ids uuid[];
+CREATE TABLE IF NOT EXISTS userdata.layer_access (
+    layer_id uuid NOT NULL REFERENCES userdata.layer (id),
+    user_id integer NOT NULL REFERENCES userdata.app_user (id) ON DELETE CASCADE,
+    level text NOT NULL CHECK (level IN ('view', 'modify')),
+    PRIMARY KEY (layer_id, user_id)
 )

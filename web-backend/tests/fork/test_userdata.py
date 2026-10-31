@@ -89,6 +89,7 @@ def test_routes_are_where_they_were():
         "/userdata/situations/{situation_id}",
         "/userdata/images",
         "/userdata/images/{image_id}",
+        "/userdata/layers/{layer_id}/access",
         "/userdata/status",
         "/userdata/status/feature",
         "/userdata/status/history",

@@ -481,6 +481,13 @@ shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`
 
 ## My layers
 
+**Sharing:** a layer is yours when you make it. **"Share…"** in its menu (⋯) lets you
+give each other account **Can view** (read-only) or **Can change** (its items, name,
+colour). Only you can lock, share or delete it. A layer shared with you shows 👥 (you
+can change it) or 👁 (view only). Layers made before there were accounts are open to
+everyone; an admin who shares one becomes its owner. A situation is seen only by
+those who can see all the layers it covers (the ones shown when it was made).
+
 The **My layers** button (top right, the stacked-layers icon with a red dot) turns
 on the My layers workspace; click it again to close it. It has two parts:
 

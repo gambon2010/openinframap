@@ -14,6 +14,8 @@ export async function loadSaved(): Promise<Map<string, UserLayer>> {
         id: layer.id,
         name: layer.name,
         style: layer.style,
+        access: layer.access,
+        owner: layer.owner,
         features: new Map(layer.features.map((f) => [f.id, f]))
       }
     ])

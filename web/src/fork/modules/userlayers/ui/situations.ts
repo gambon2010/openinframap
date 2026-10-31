@@ -86,7 +86,11 @@ export class Situations {
           )
         await this.ws.run(t('userlayers.saving', 'Saving'), async () => {
           if (includePending) await store.save()
-          await createSituation(name.trim(), store.author)
+          // The layers shown on the map (saved ones: the server knows them).
+          const shown = [...store.layers.values()]
+            .filter((l) => !store.hidden.has(l.id) && l.access !== undefined)
+            .map((l) => l.id)
+          await createSituation(name.trim(), shown, store.author)
           await this.load()
         })
       } else this.ws.update()

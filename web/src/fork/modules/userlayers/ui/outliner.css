@@ -162,3 +162,43 @@
 .oim-ul-star.on {
   color: #f9a825;
 }
+
+/* Shared with you (docs/plans/sync.md): whose it is, view or change. */
+.oim-ul-shared-tag {
+  font-size: 0.85em;
+  cursor: help;
+}
+
+.oim-ul-menu-note {
+  margin: 0.2em 0.5em;
+  font-size: 0.85em;
+  color: var(--oim-text-color-light, #666);
+}
+
+/* The sharing dialog (sharing.ts). */
+.oim-ul-sharing-list {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.oim-ul-sharing-list td {
+  padding: 0.3em 0.4em;
+  border-bottom: 1px solid var(--oim-light-grey);
+}
+
+.oim-ul-sharing-list select {
+  font: inherit;
+}
+
+.oim-ul-sharing-note {
+  margin-top: 0;
+  font-size: 0.9em;
+}
+
+.oim-ul-sharing-error {
+  color: #c92a2a;
+}
+
+.oim-ul-sharing-error:empty {
+  display: none;
+}

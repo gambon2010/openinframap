@@ -163,7 +163,7 @@ and other users get modify access to them, so nothing is lost or hidden.
    2026-11-01.**
 2. **Owners and sharing:** layers get an owner and per-user access (view, modify);
    access checked on every read and Save; the sharing dialog; situations record
-   their layers.
+   their layers. **Built 2026-11-01.**
 3. **Versions, merging and the conflict window.**
 4. **Live updates** (Server-Sent Events, catching up after a disconnection).
 5. **Per-user settings** (folder, hidden, folded).
