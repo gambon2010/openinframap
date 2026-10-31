@@ -1,6 +1,6 @@
 # Plan: a status on anything on the map, and power supply ("what if") on the grid
 
-Status: **proposal, being reviewed** (2026-10-31). Nothing is built yet. Answers so
+Status: **agreed** (2026-10-31). Nothing is built yet. Answers so
 far are marked ✔.
 
 ## What it does
@@ -55,7 +55,7 @@ far are marked ✔.
      during this playback;
    - My layers' own history stays about the layers.
 
-## How a status looks (to choose)
+## How a status looks: C ✔
 
 Only problems are shown ✔. Suggestions:
 
@@ -74,7 +74,7 @@ Only problems are shown ✔. Suggestions:
   | Under repair | blue, `🔧` |
 
   Readable in black and white; adds a little clutter.
-- **C. Both (recommended):** the coloured ring or casing, plus the badge from zoom 12
+- **C. Both (chosen ✔):** the coloured ring or casing, plus the badge from zoom 12
   (closer in, where there's room). From afar only the colour shows, so the map stays
   clean; closer, the badge says exactly what it is.
 
@@ -86,8 +86,10 @@ lines themselves, not a badge, and only while that mode is on.
 
 ## Setting a status
 
-- In a feature's details (left panel): a "Status" row with the choices, a note, a
-  source, and the extra fields for its kind (through `addDetailsExtra`).
+- In a feature's details (left panel) ✔: a "Status" row with the choices, a note, a
+  source, and the extra fields for its kind (through `addDetailsExtra`). Statuses are
+  set there, not by clicking on the map; a substation's panel also lists its levels
+  and transformers.
 - **On a copy in My layers:** its card shows the original's status and can change it.
   It's the same shared status, not a copy of it.
 - **Several at once:** select features on the map (Shift-click) and set them together.
@@ -99,8 +101,9 @@ The statuses are shared with everyone, as they're about features of the map ✔:
   and id), with the extra fields, note, source, author and time;
 - `status_change`: every change, in order, for the status history.
 
-They're separate from My layers' change log ✔. With users (`plans/sync.md`), a status
-records who set it; whether everyone may set them is decided there. A copy in My
+They're separate from My layers' change log ✔. **Only some users may set statuses** ✔:
+with users (`plans/sync.md`), a right "can set statuses" given per user; everyone
+can see them. Until accounts exist, anyone using the app can. A copy in My
 layers points to its original (source table and id): its status is read from there.
 
 ## Power supply
@@ -123,15 +126,15 @@ plants, junctions, lines of 10 kV and more) and networkx in the backend.
    - **(b)** it's fed only through lower voltages than before: e.g. a 225 kV
      substation now reached only through 63 kV lines (much less can get through).
 
-   (a) and (b) can both apply, and either makes it orange. With the detailed
-   transformer model (below), losing one of two transformers also makes it orange.
+   **Chosen: (b)** ✔. With the detailed model (below), losing one of two
+   transformers between the same levels also makes it orange (less can get through).
 5. Shown as colours on the map and on copies (see 3 above), plus a list ("4 × 225 kV,
    18 × 63 kV substations without supply; 12 weakened").
 
 The whole French grid (about 280,000 nodes) fits in memory, and one run takes about
 a second. The graph is kept in the backend and rebuilt when statuses change.
 
-### Transformers: simple or detailed
+### Substations: the detailed model ✔
 
 - **Simple:** a substation is one point of the network. A damaged or destroyed
   transformer (or the substation itself) takes the whole substation out: every line
@@ -152,9 +155,13 @@ a second. The graph is kept in the backend and rebuilt when statuses change.
   - substations without their transformers mapped (common in OSM) keep their levels
     joined as one (the simple way), so they're never wrongly cut off.
 
-  The detailed model is more work (the grid build, and routes have to go through the
-  busbars) and depends on how well transformers are mapped in the region; it can be
-  checked before deciding.
+  Chosen ✔. It's more work (the grid build, and routes go through the busbars), and
+  how much it adds depends on how well transformers are mapped in the region.
+
+  **Setting statuses inside a substation** ✔: from the substation's details panel,
+  not by clicking things on the map. The panel lists its voltage levels and its
+  transformers (from OSM), each with its status, so a substation can be damaged as a
+  whole, or only one transformer or one level.
 
 ## Building it, in steps
 
@@ -168,7 +175,8 @@ a second. The graph is kept in the backend and rebuilt when statuses change.
    - red, from the statuses, on the map and on copies in My layers;
    - then orange (weakened);
    - then scenarios.
-5. **Detailed transformers**, if chosen.
+5. **The detailed substation model** ✔: levels and transformers in the grid
+   network, and their statuses in the substation's panel.
 6. **Later, France only, estimated:** which hospitals and stores lose power. The
    distribution data links street substations to their source substation.
 
@@ -176,8 +184,5 @@ Each step can be used on its own.
 
 ## Questions left
 
-1. **The look:** A, B or C (recommended), or something else?
-2. **"Less power" (orange):** (a) a feed lost, (b) only lower voltages left, or both?
-3. **Transformers:** simple first and detailed later (recommended), or detailed now?
-4. **Who may set statuses** once there are users: anyone who can view the map, or
-   only some users? (Can wait for `plans/sync.md`.)
+None for now; the look of the status row in the details panel will be checked on
+screenshots before building.
