@@ -1394,7 +1394,7 @@ Upstream files the fork still changes, and how:
 | `schema/functions.sql` | Function order fixed for fresh installs |
 | `tegola/generate_tegola_config.py`, `Dockerfile` | More than one layers file |
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
-| `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first |
+| `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's |
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
