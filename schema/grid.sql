@@ -102,13 +102,31 @@ SELECT v.line_id, v.idx, v.key, v.geom
 CREATE INDEX ON grid_junction (key);
 ANALYZE grid_junction;
 
+-- What meets at each junction position: how many lines, and the highest voltage.
+CREATE TEMP TABLE grid_key_lines AS
+SELECT j.key, count(DISTINCT j.line_id) AS lines, max(l.voltage) AS voltage
+  FROM grid_junction AS j
+  JOIN grid_line AS l USING (line_id)
+ GROUP BY j.key;
+CREATE INDEX ON grid_key_lines (key);
+ANALYZE grid_key_lines;
+
 -- Each distinct junction position -> the best station within reach, if any.
+-- A station mapped as a point only takes a junction where a line ends (one line
+-- there), or where its voltage covers the line's: otherwise a small distribution
+-- substation next to a 63 kV line (often a point without a voltage) would cut that
+-- line in two where its ways join.
 CREATE TEMP TABLE grid_key_station AS
 SELECT DISTINCT ON (j.key) j.key, s.kind, s.osm_id
   FROM (SELECT DISTINCT key, geom FROM grid_junction) AS j
+  JOIN grid_key_lines AS kl ON kl.key = j.key
   -- The constant reach lets the spatial index be used (the per-station one alone can't).
   JOIN grid_station AS s ON ST_DWithin(s.geom, j.geom, greatest(:station_point_snap, :station_polygon_snap))
                         AND ST_DWithin(s.geom, j.geom, s.snap)
+ WHERE GeometryType(s.geom) <> 'POINT'
+    OR kl.lines = 1
+    OR EXISTS (SELECT 1 FROM unnest(string_to_array(s.voltage_tag, ';')) AS v
+                WHERE convert_voltage(v) >= kl.voltage)
  ORDER BY j.key, s.priority, ST_Distance(s.geom, j.geom);
 CREATE INDEX ON grid_key_station (key);
 ANALYZE grid_key_station;
