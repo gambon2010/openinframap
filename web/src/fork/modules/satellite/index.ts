@@ -52,6 +52,33 @@ export function parseTiers(value: string | undefined): Tier[] {
 
 const TIERS = parseTiers(import.meta.env.VITE_SATELLITE_TIERS)
 
+type Bounds = [west: number, south: number, east: number, north: number]
+
+/** The address of a tier's TileJSON (the background map server's /<name>.json), with its bounds. */
+export function tileJsonUrl(tileUrl: string): string {
+  return tileUrl.replace(/\/\{z\}.*$/, '.json')
+}
+
+/** Whether any of the imagery's bounds overlap the view. */
+export function covers(imagery: Bounds[], view: Bounds): boolean {
+  return imagery.some(([w, s, e, n]) => w < view[2] && e > view[0] && s < view[3] && n > view[1])
+}
+
+// What the imagery covers, read once; null if it can't be told (then it's offered everywhere).
+let coverage: Promise<Bounds[] | null> | undefined
+function imageryBounds(): Promise<Bounds[] | null> {
+  coverage ??= Promise.all(
+    TIERS.map((tier) =>
+      fetch(tileJsonUrl(tier.url))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => (Array.isArray(json?.bounds) ? (json.bounds as Bounds) : null))
+    )
+  )
+    .then((bounds) => (bounds.every((b) => b) ? (bounds as Bounds[]) : null))
+    .catch(() => null)
+  return coverage
+}
+
 const sourceId = (i: number) => `satellite_${i}`
 
 /** Background map layers drawn above the imagery in hybrid mode (the rest is hidden by it). */
@@ -181,9 +208,33 @@ const satellite: ForkModule = {
           )
         : ''
     )
+    // No imagery where the map is: the satellite choices can't be picked.
+    const nothingHere = el(
+      'p.oim-map-sources-note',
+      t('satellite.not-here', 'No satellite imagery here: move the map to where you have some.')
+    )
+    nothingHere.hidden = true
+    section.append(nothingHere)
+    const checkCoverage = async () => {
+      const imagery = await imageryBounds()
+      const b = map.getBounds()
+      const here = !imagery || covers(imagery, [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()])
+      for (const r of radios) {
+        if (r.input.value === 'map') continue
+        r.input.disabled = !here
+        r.row.classList.toggle('disabled', !here)
+      }
+      nothingHere.hidden = here
+    }
+    map.on('moveend', () => {
+      if (section.isConnected) void checkCoverage()
+    })
     addSettingsSection({
       el: section,
-      refresh: () => radios.forEach((r) => (r.input.checked = r.input.value === mode))
+      refresh: () => {
+        radios.forEach((r) => (r.input.checked = r.input.value === mode))
+        void checkCoverage()
+      }
     })
   }
 }

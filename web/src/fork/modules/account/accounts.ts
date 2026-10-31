@@ -5,7 +5,7 @@ import { el, setChildren } from 'redom'
 import { t } from '../../core/i18n.ts'
 import type { Me } from './index.ts'
 
-interface Account {
+export interface Account {
   id: number
   name: string
   is_admin: boolean
@@ -21,6 +21,21 @@ async function call(url: string, method: string, body?: unknown): Promise<unknow
   })
   if (!response.ok) throw new Error((await response.text()) || response.statusText)
   return response.json()
+}
+
+/** Why a right can't be changed here (the box is disabled), or '' if it can. */
+export function lockedReason(
+  account: Pick<Account, 'name' | 'is_admin'>,
+  key: 'is_admin' | 'can_set_statuses' | 'disabled',
+  me: string
+): string {
+  if (account.name === me && key !== 'can_set_statuses') {
+    return t('account.locked-self', 'Your own: another admin can change it')
+  }
+  if (key === 'disabled' && account.is_admin) {
+    return t('account.locked-admin', 'An admin: take away the admin right first')
+  }
+  return ''
 }
 
 export class AccountsSection {
@@ -59,7 +74,13 @@ export class AccountsSection {
 
   private show(users: Account[]) {
     const tick = (account: Account, key: 'is_admin' | 'can_set_statuses' | 'disabled', label: string) => {
-      const box = el('input', { type: 'checkbox', checked: account[key], title: label }) as HTMLInputElement
+      const locked = lockedReason(account, key, this.me.name)
+      const box = el('input', {
+        type: 'checkbox',
+        checked: account[key],
+        disabled: Boolean(locked),
+        title: locked || label
+      }) as HTMLInputElement
       box.onchange = () => void this.change(account.id, { [key]: box.checked })
       return el('td', box)
     }

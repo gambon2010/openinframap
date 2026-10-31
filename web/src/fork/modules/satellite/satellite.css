@@ -31,3 +31,9 @@
   padding-top: 6px;
   border-top: 1px solid var(--oim-grey);
 }
+
+/* No imagery where the map is (index.ts checkCoverage). */
+.oim-background-choice.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

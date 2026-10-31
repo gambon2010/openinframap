@@ -1114,6 +1114,10 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   admins (add, rights, new password, disable), and goes back to the login page when
   an answer from the site says the session has ended (401).
 - **Scripts:** `start.sh` / `launch.sh` start the gate and open http://localhost:8800.
+- **What can't be changed is locked** in Settings → Accounts (greyed out, the reason as
+  its tooltip) rather than refused after: your own admin right and Disabled, and
+  Disabled for another admin (take away the admin right first; the backend refuses
+  it too).
 
 ## Satellite imagery (offline)
 
@@ -1175,6 +1179,11 @@ shown by `web/src/fork/modules/satellite/`.
   to copy along with `data/basemap/`.
 - **Not run yet:** a full `build-region.sh` with the satellite questions (only the
   steps on their own), and France at full size.
+
+- **Only where there's imagery:** the satellite choices in Settings are greyed out
+  when no imagery covers the map ("No satellite imagery here"). The bounds come from
+  the background map server's TileJSON (`/<name>.json`), which needs its
+  `--public-url` (`docker-compose.override.yml`).
 
 ## One look for the panels; Settings
 

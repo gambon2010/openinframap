@@ -236,7 +236,8 @@
     "hybrid-help": "Imagery with roads, railways and borders",
     "title": "Background",
     "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.",
-    "zooms": "Imagery up to zoom {{zoom}}."
+    "zooms": "Imagery up to zoom {{zoom}}.",
+    "not-here": "No satellite imagery here: move the map to where you have some."
   },
   "userlayers": {
     "now": "Now",
@@ -652,6 +653,8 @@
     "password": "Password (8 characters at least)",
     "add": "Add an account",
     "create": "Create",
-    "logout": "log out ({{name}})"
+    "logout": "log out ({{name}})",
+    "locked-self": "Your own: another admin can change it",
+    "locked-admin": "An admin: take away the admin right first"
   }
 }

@@ -206,6 +206,12 @@ async def update_user(request: Request) -> Response:
         changes.get("is_admin") is False or changes.get("disabled") is True
     ):
         raise HTTPException(400, "You can't take away your own admin right or disable yourself")
+    if changes.get("disabled") is True:
+        admin = (
+            await db.execute(text("SELECT is_admin FROM userdata.app_user WHERE id = :id"), {"id": user_id})
+        ).scalar()
+        if admin and changes.get("is_admin") is not False:
+            raise HTTPException(400, "An admin can't be disabled: take away the admin right first")
     if not changes:
         raise HTTPException(400, "Nothing to change")
     sets = ", ".join(f"{key} = :{key}" for key in changes)

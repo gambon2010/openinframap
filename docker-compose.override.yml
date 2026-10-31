@@ -44,7 +44,9 @@ services:
   # http://localhost:8090/<region>/{z}/{x}/{y}.mvt. Also used to cut extracts.
   basemap:
     image: protomaps/go-pmtiles:v1.28.0
-    command: ["serve", "/data", "--cors=*"]
+    # --public-url: its TileJSON (/<name>.json) then answers, with each file's bounds
+    # (the frontend greys out satellite imagery where there's none).
+    command: ["serve", "/data", "--cors=*", "--public-url=http://localhost:8800/basemap"]
     ports:
       - "127.0.0.1:8090:8080"
     volumes:

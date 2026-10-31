@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
-import { isHybridOverlay, parseTiers } from './index.ts'
+import { describe, expect, it, test } from 'vitest'
+import { covers, isHybridOverlay, parseTiers, tileJsonUrl } from './index.ts'
 
 describe('VITE_SATELLITE_TIERS', () => {
   test('tiers, coarsest first', () => {
@@ -44,4 +44,17 @@ test('in "satellite with roads", roads, railways and borders stay above the imag
     expect(isHybridOverlay(id)).toBe(true)
   for (const id of ['osm_water', 'osm_landuse_wood', 'osm_buildings', 'power_line_1'])
     expect(isHybridOverlay(id)).toBe(false)
+})
+
+describe('imagery coverage', () => {
+  it('reads the bounds from the TileJSON next to the tiles', () => {
+    expect(tileJsonUrl('http://h:8800/basemap/luxembourg.sat-regional/{z}/{x}/{y}.webp')).toBe(
+      'http://h:8800/basemap/luxembourg.sat-regional.json'
+    )
+  })
+  it('is offered only where some imagery is', () => {
+    const luxembourg: [number, number, number, number] = [5.73, 49.44, 6.53, 50.18]
+    expect(covers([luxembourg], [6, 49.5, 6.2, 49.7])).toBe(true)
+    expect(covers([luxembourg], [7.2, 47.7, 7.4, 47.8])).toBe(false)
+  })
 })
