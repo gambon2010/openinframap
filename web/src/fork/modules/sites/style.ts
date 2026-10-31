@@ -43,7 +43,7 @@ export const site_kinds: { [category: string]: string[] } = {
   transport: ['airport', 'port', 'border', 'rail_yard'],
   military: ['military'],
   military_disused: ['military_disused'],
-  food: ['supermarket', 'wholesale', 'distribution', 'silo', 'slaughterhouse'],
+  food: ['supermarket', 'convenience', 'wholesale', 'distribution', 'silo', 'slaughterhouse'],
   water_waste: ['dam', 'landfill', 'weather']
 }
 
@@ -105,6 +105,7 @@ export function site_kind_label(kind: string): string {
       slaughterhouse: t('sites.kind.slaughterhouse', 'Slaughterhouse'),
       distribution: t('sites.kind.distribution', 'Distribution centre'),
       supermarket: t('sites.kind.supermarket', 'Supermarket'),
+      convenience: t('sites.kind.convenience', 'Convenience store'),
       wholesale: t('sites.kind.wholesale', 'Wholesaler, cash & carry'),
       dam: t('sites.kind.dam', 'Dam'),
       landfill: t('sites.kind.landfill', 'Landfill'),

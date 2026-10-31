@@ -22,3 +22,15 @@ def test_unknown_layers_and_bad_ids_are_refused():
 def test_only_problems_are_shown():
     assert set(status.PROBLEMS) < set(status.STATUSES)
     assert not {"operational", "repaired", "unknown"} & set(status.PROBLEMS)
+
+
+def test_extra_fields_are_checked():
+    assert status.clean_details({"stock": "low", "short": " water, bread ", "capacity": ""}) == {
+        "stock": "low",
+        "short": "water, bread",
+    }
+    assert status.clean_details(None) == {}
+    for bad in ({"stock": "plenty"}, {"colour": "red"}, ["stock"]):
+        with pytest.raises(HTTPException) as e:
+            status.clean_details(bad)
+        assert e.value.status_code == 400

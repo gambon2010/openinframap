@@ -69,6 +69,7 @@ KINDS = {
     "distribution": ("food", "warehouse"),
     "wholesale": ("food", "grocery"),
     "supermarket": ("food", "shop"),
+    "convenience": ("food", "convenience"),
     "dam": ("water_waste", "dam"),
     "landfill": ("water_waste", "waste-basket"),
     "weather": ("water_waste", "observation-tower"),

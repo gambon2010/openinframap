@@ -8,6 +8,8 @@ import { ForkModule } from '../../types.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
 import { StatusSection, featureKey } from './details.ts'
+import { fieldsOf } from './fields.ts'
+import { SelectionPanel } from './selection.ts'
 import { PROBLEMS, statusLook } from './statuses.ts'
 import './status.css'
 
@@ -37,11 +39,23 @@ const status: ForkModule = {
     const load = () => void statusMap.refresh()
     if (ctx.map.isStyleLoaded()) load()
     else ctx.map.once('load', load)
+    // Several at once: picked with Shift-click. MapLibre's Shift-drag box zoom would
+    // take those clicks.
+    ctx.map.boxZoom.disable()
+    const startSelection = () => new SelectionPanel(ctx.map, load)
+    if (ctx.map.isStyleLoaded()) startSelection()
+    else ctx.map.once('load', startSelection)
 
     addDetailsExtra(async (feature, content) => {
       const key = featureKey(feature)
       if (!key) return
-      const section = new StatusSection(key.layer, key.id, feature.properties['name'], load)
+      const section = new StatusSection(
+        key.layer,
+        key.id,
+        feature.properties['name'],
+        fieldsOf(feature),
+        load
+      )
       if (!(await section.load()) || !content.isConnected) return
       content.insertBefore(section.el, content.querySelector('.oim-info-footer'))
     })

@@ -6,7 +6,8 @@ line damaged, a substation destroyed... Shared by everyone, with their own histo
     GET  /userdata/status                       the features with a problem (GeoJSON)
     GET  /userdata/status/feature?layer=&id=    one feature's status and history
     POST /userdata/status                       {layer, id, status, evidence?, note?,
-                                                 name?, author?}: set it
+                                                 details?, name?, author?}: set it
+                                                (details: the extra fields, FIELDS)
 """
 
 import json
@@ -36,6 +37,34 @@ STATUSES = (
 PROBLEMS = ("threatened", "suspected_damage", "damaged", "destroyed", "under_repair")
 # How it's known.
 EVIDENCE = ("seen", "reported", "imagery")
+# Extra fields by kind of feature (the frontend asks for those that apply): a
+# store's or depot's stock and what's short, a hospital's capacity, the fuel left.
+FIELDS: dict[str, tuple[str, ...] | None] = {
+    "stock": ("full", "half", "low", "empty", "unknown"),
+    "short": None,  # free text
+    "capacity": ("normal", "saturated", "closed"),
+    "fuel": ("yes", "no", "rationed"),
+}
+
+
+def clean_details(raw: Any) -> dict[str, str]:
+    """The extra fields given, checked; empty ones left out."""
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise HTTPException(400, "details must be an object")
+    details = {}
+    for key, value in raw.items():
+        if key not in FIELDS:
+            raise HTTPException(400, f"Unknown field: {key}")
+        value = str(value or "").strip()
+        if not value:
+            continue
+        allowed = FIELDS[key]
+        if allowed is not None and value not in allowed:
+            raise HTTPException(400, f"{key} must be one of: {', '.join(allowed)}")
+        details[key] = value[:500]
+    return details
 
 
 def feature_of(layer: str, raw_id: Any) -> tuple[str, str, int]:
@@ -57,6 +86,7 @@ def change_json(r: Any) -> dict:
         "evidence": r.evidence,
         "note": r.note,
         "author": r.author,
+        "details": r.details or {},
         "at": r.made_at.isoformat(),
     }
 
@@ -70,7 +100,7 @@ async def statuses(request: Request) -> Response:
         return await set_status(request)
     rows = await db.execute(
         text(
-            """SELECT source, feature_id, layer, status, evidence, note, name, author, updated_at,
+            """SELECT source, feature_id, layer, status, evidence, note, name, author, updated_at, details,
                       ST_AsGeoJSON(geometry, 7) AS geometry,
                       ST_AsGeoJSON(ST_PointOnSurface(geometry), 7) AS badge
                  FROM userdata.feature_status
@@ -92,6 +122,7 @@ async def statuses(request: Request) -> Response:
                     "note": r.note,
                     "name": r.name,
                     "author": r.author,
+                    "details": r.details or {},
                     "updated_at": r.updated_at.isoformat(),
                     "badge": json.loads(r.badge)["coordinates"],
                 },
@@ -108,7 +139,7 @@ async def feature_status(request: Request) -> Response:
     current = (
         await db.execute(
             text(
-                """SELECT status, evidence, note, author, updated_at FROM userdata.feature_status
+                """SELECT status, evidence, note, author, updated_at, details FROM userdata.feature_status
                     WHERE source = :source AND feature_id = :id"""
             ),
             {"source": table, "id": feature_id},
@@ -116,7 +147,7 @@ async def feature_status(request: Request) -> Response:
     ).first()
     history = await db.execute(
         text(
-            """SELECT status, previous, evidence, note, author, made_at FROM userdata.status_change
+            """SELECT status, previous, evidence, note, author, made_at, details FROM userdata.status_change
                 WHERE source = :source AND feature_id = :id ORDER BY id DESC"""
         ),
         {"source": table, "id": feature_id},
@@ -128,6 +159,7 @@ async def feature_status(request: Request) -> Response:
             "note": current.note if current else None,
             "author": current.author if current else None,
             "updated_at": current.updated_at.isoformat() if current else None,
+            "details": (current.details or {}) if current else {},
             "history": [change_json(r) for r in history],
             "can_set": can_set_statuses(current_user(request)),
         }
@@ -148,6 +180,7 @@ async def set_status(request: Request) -> Response:
     if evidence is not None and evidence not in EVIDENCE:
         raise HTTPException(400, f"How it's known must be one of: {', '.join(EVIDENCE)}")
     note = str(body.get("note") or "").strip() or None
+    details = clean_details(body.get("details"))
     name = str(body.get("name") or "").strip() or None
     author = current_user(request).name or str(body.get("author") or "").strip() or None
 
@@ -171,24 +204,28 @@ async def set_status(request: Request) -> Response:
         "note": note,
         "name": name,
         "author": author,
+        "details": json.dumps(details),
     }
     await db.execute(
         text(
             f"""INSERT INTO userdata.feature_status
-                      (source, feature_id, layer, status, evidence, note, name, author, geometry)
-               VALUES (:source, :id, :layer, :status, :evidence, :note, :name, :author, {the_geometry})
+                      (source, feature_id, layer, status, evidence, note, name, author, details, geometry)
+               VALUES (:source, :id, :layer, :status, :evidence, :note, :name, :author,
+                       CAST(:details AS jsonb), {the_geometry})
                ON CONFLICT (source, feature_id) DO UPDATE
                   SET layer = EXCLUDED.layer, status = EXCLUDED.status, evidence = EXCLUDED.evidence,
                       note = EXCLUDED.note, name = coalesce(EXCLUDED.name, feature_status.name),
-                      author = EXCLUDED.author, geometry = EXCLUDED.geometry, updated_at = now()"""
+                      author = EXCLUDED.author, details = EXCLUDED.details, geometry = EXCLUDED.geometry,
+                      updated_at = now()"""
         ),
         params,
     )
     await db.execute(
         text(
             """INSERT INTO userdata.status_change
-                      (source, feature_id, status, previous, evidence, note, author)
-               VALUES (:source, :id, :status, :previous, :evidence, :note, :author)"""
+                      (source, feature_id, status, previous, evidence, note, author, details)
+               VALUES (:source, :id, :status, :previous, :evidence, :note, :author,
+                       CAST(:details AS jsonb))"""
         ),
         params,
     )

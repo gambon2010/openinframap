@@ -990,6 +990,24 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   `POST /userdata/status`. Who may set statuses: `can_set_statuses()` in `users.py`
   (everyone until there are accounts).
 
+### Step 2: extra fields, several at once, convenience stores
+
+- **Extra fields by kind** (`modules/status/fields.ts`, checked by `clean_details` in
+  `status.py`, kept in `details`): stock (Full, Half, Low, Empty, Unknown) and what's
+  short for supermarkets, convenience stores, wholesale, distribution centres, silos
+  and fuel depots; capacity (Normal, Saturated, Closed) for hospitals and clinics;
+  fuel available (Yes, No, Rationed) for fuel stations and depots. Shown under the
+  status ("Stock: Low · What is short: water") and in the history.
+- **Several at once** (`ui/selection.ts`, `modules/status/selection.ts`): Shift-click
+  adds a feature to a selection (or takes it out) instead of showing its details. The
+  picked features are outlined in purple (their whole shape) and listed in a panel
+  in the left column; "Set status for all" sets them together, each getting only the
+  extra fields of its kind. MapLibre's Shift-drag box zoom is off for good (it
+  swallowed Shift-clicks; My layers had already turned it off while open).
+- **Convenience stores** (`shop=convenience`) are critical sites now (food supply,
+  from zoom 14, Maki's convenience icon): `imposm/sites.py`, `schema/sites.sql`,
+  `scripts/make_site_icons.py`. They appear at the next rebuild of the region.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

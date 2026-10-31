@@ -1,7 +1,7 @@
 # Plan: a status on anything on the map, and power supply ("what if") on the grid
 
-Status: **agreed** (2026-10-31). Step 1 is built (statuses, their history per
-feature, the look on the map). Answers so far are marked ✔.
+Status: **agreed** (2026-10-31). Steps 1 and 2 are built (statuses, their history
+per feature, the look on the map; extra fields, several at once, convenience stores). Answers so far are marked ✔.
 
 ## What it does
 

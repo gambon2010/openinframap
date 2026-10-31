@@ -94,3 +94,50 @@
 .oim-status-history li {
   margin-bottom: 0.4em;
 }
+
+.oim-status-fields {
+  margin: 0.2em 0;
+  font-size: 0.9em;
+}
+
+/* The features picked with Shift-click (selection.ts). */
+.oim-selection-panel .oim-side-panel-body {
+  padding: 0 0.5em 0.5em 0.5em;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.oim-selection-panel .oim-popup-header {
+  padding: 0.5em 2.4em 0.5em 0.5em;
+  margin: 0 -0.5em 0.3em -0.5em;
+}
+
+.oim-selection-hint,
+.oim-selection-saved {
+  margin: 0.2em 0;
+  font-size: 0.85em;
+}
+
+.oim-selection-saved {
+  color: #2b8a3e;
+}
+
+.oim-selection-list {
+  list-style: none;
+  margin: 0.3em 0;
+  padding: 0;
+}
+
+.oim-selection-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding: 0.1em 0;
+}
+
+.oim-selection-remove {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-weight: bold;
+}

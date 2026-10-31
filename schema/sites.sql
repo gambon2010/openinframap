@@ -60,6 +60,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type = 'distributor' THEN 'distribution'
         WHEN type = 'wholesale' THEN 'wholesale'
         WHEN type = 'supermarket' THEN 'supermarket'
+        WHEN type = 'convenience' THEN 'convenience'
         -- water and waste, monitoring
         WHEN type = 'dam' THEN 'dam'
         WHEN type = 'landfill' THEN 'landfill'
@@ -79,7 +80,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('airport', 'port', 'border', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military') THEN 'military'
         WHEN kind = 'military_disused' THEN 'military_disused'
-        WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket') THEN 'food'
+        WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket', 'convenience') THEN 'food'
         WHEN kind IN ('dam', 'landfill', 'weather') THEN 'water_waste'
     END
 $$;
@@ -102,6 +103,8 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         -- Supermarkets: hypermarkets (a building over ~5,000 m², in mercator
         -- units at French latitudes) from zoom 12, the rest from zoom 14.
         WHEN kind = 'supermarket' THEN CASE WHEN area > 10000 THEN 1 ELSE 2 END
+        -- Convenience stores: many small ones, from zoom 14.
+        WHEN kind = 'convenience' THEN 2
         WHEN kind IN ('pharmacy', 'worship', 'silo', 'military_disused', 'fuel', 'weapons')
           AND NOT tags ? 'wikidata' THEN 2
         ELSE 1

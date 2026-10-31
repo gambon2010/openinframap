@@ -191,7 +191,8 @@
       "landfill": "Landfill",
       "weather": "Weather station, radar",
       "hindu": "Hindu temple",
-      "sikh": "Sikh gurdwara"
+      "sikh": "Sikh gurdwara",
+      "convenience": "Convenience store"
     }
   },
   "route": {
@@ -560,6 +561,37 @@
       "seen": "Seen",
       "reported": "Reported",
       "imagery": "Imagery"
+    },
+    "field": {
+      "stock": "Stock",
+      "short": "What is short",
+      "capacity": "Capacity",
+      "fuel": "Fuel available"
+    },
+    "stock": {
+      "full": "Full",
+      "half": "Half",
+      "low": "Low",
+      "empty": "Empty",
+      "unknown": "Unknown"
+    },
+    "capacity": {
+      "normal": "Normal",
+      "saturated": "Saturated",
+      "closed": "Closed"
+    },
+    "fuel": {
+      "yes": "Yes",
+      "no": "No",
+      "rationed": "Rationed"
     }
+  },
+  "selection": {
+    "remove": "Take out of the selection",
+    "set-status": "Set status for all",
+    "title": "{{count}} selected",
+    "hint": "Shift-click on the map to add or take out.",
+    "save": "Save for all {{count}}",
+    "saved": "Saved for {{count}} features."
   }
 }

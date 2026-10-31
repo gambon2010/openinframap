@@ -6,13 +6,13 @@
 //   leftColumn.add(element, order)       a panel at its place (lower = higher up)
 //   leftColumn.details / .highlight      show something in the details panel
 //
-// Places: 10 My layers' sidebar, 20 the details panel, 25 the selected circuit,
-// 30 the grid route.
+// Places: 10 My layers' sidebar, 20 the details panel, 22 the features picked with
+// Shift-click, 25 the selected circuit, 30 the grid route.
 import { IControl, Map } from 'maplibre-gl'
 import { DetailsPanel } from './details.ts'
 import { FeatureHighlight } from './highlight.ts'
 
-export const LEFT_ORDER = { sidebar: 10, details: 20, circuit: 25, route: 30 } as const
+export const LEFT_ORDER = { sidebar: 10, details: 20, selection: 22, circuit: 25, route: 30 } as const
 
 class LeftColumn {
   private map?: Map

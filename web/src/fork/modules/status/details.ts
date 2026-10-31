@@ -3,8 +3,9 @@
 import { MapGeoJSONFeature } from 'maplibre-gl'
 import { el, setChildren } from 'redom'
 import { t } from '../../core/i18n.ts'
-import { author, setAuthor } from '../../core/author.ts'
-import { Evidence, STATUSES, Status, evidenceLabel, statusLook } from './statuses.ts'
+import { Evidence, Status, evidenceLabel, statusLook } from './statuses.ts'
+import { Details, Field, detailsText } from './fields.ts'
+import { saveStatus, statusForm } from './form.ts'
 
 interface Change {
   status: Status
@@ -12,6 +13,7 @@ interface Change {
   evidence: Evidence | null
   note: string | null
   author: string | null
+  details: Details
   at: string
 }
 
@@ -21,6 +23,7 @@ interface FeatureStatus {
   note: string | null
   author: string | null
   updated_at: string | null
+  details: Details
   history: Change[]
   can_set: boolean
 }
@@ -53,6 +56,7 @@ export class StatusSection {
     private layer: string,
     private id: number,
     private name: string | undefined,
+    private fields: Field[],
     private onChanged: () => void
   ) {
     this.el = el('div.oim-status', el('h4', t('status.title', 'Status')), this.body)
@@ -85,6 +89,8 @@ export class StatusSection {
           )
         : ''
     )
+    const extra = detailsText(data.details)
+    const fields = extra ? el('p.oim-status-fields', extra) : null
     const note = data.note ? el('p.oim-status-note', data.note) : null
     const change = data.can_set
       ? el(
@@ -98,7 +104,7 @@ export class StatusSection {
       : null
     setChildren(
       this.body,
-      [current, note, change, this.history(data.history)].filter(Boolean) as HTMLElement[]
+      [current, fields, note, change, this.history(data.history)].filter(Boolean) as HTMLElement[]
     )
   }
 
@@ -120,6 +126,7 @@ export class StatusSection {
                 )
               : '',
             el('div.oim-status-byline', byline(c)),
+            detailsText(c.details) ? el('div.oim-status-fields', detailsText(c.details)) : '',
             c.note ? el('div.oim-status-note', c.note) : ''
           )
         )
@@ -128,74 +135,16 @@ export class StatusSection {
   }
 
   private form(data: FeatureStatus): HTMLElement {
-    const status = el(
-      'select',
-      STATUSES.map((s) =>
-        el('option', statusLook(s).label, { value: s, selected: s === (data.status ?? 'unknown') })
-      )
-    ) as HTMLSelectElement
-    const evidence = el(
-      'select',
-      el('option', '—', { value: '' }),
-      (['seen', 'reported', 'imagery'] as Evidence[]).map((e) =>
-        el('option', evidenceLabel(e), { value: e, selected: e === data.evidence })
-      )
-    ) as HTMLSelectElement
-    const note = el('textarea', {
-      rows: 2,
-      placeholder: t('status.note-placeholder', 'What happened, what is known')
-    }) as HTMLTextAreaElement
-    const who = el('input', {
-      type: 'text',
-      value: author(),
-      placeholder: t('status.author-placeholder', 'Your name')
-    }) as HTMLInputElement
-    const error = el('p.oim-status-error')
-    const save = el('button.oim-button', t('status.save', 'Save'), { type: 'submit' }) as HTMLButtonElement
-    const form = el(
-      'form.oim-status-form',
-      el('label', t('status.title', 'Status'), status),
-      el('label', t('status.how-known', 'How it is known'), evidence),
-      el('label', t('status.note', 'Note'), note),
-      el('label', t('status.author', 'Set by'), who),
-      error,
-      el(
-        'div.oim-status-buttons',
-        save,
-        el('button.oim-button', t('status.cancel', 'Cancel'), {
-          type: 'button',
-          onclick: () => this.show(data)
-        })
-      )
-    ) as HTMLFormElement
-    form.onsubmit = async (e) => {
-      e.preventDefault()
-      save.disabled = true
-      setAuthor(who.value.trim())
-      try {
-        const response = await fetch('/userdata/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            layer: this.layer,
-            id: this.id,
-            status: status.value,
-            evidence: evidence.value || null,
-            note: note.value,
-            name: this.name,
-            author: who.value.trim()
-          })
-        })
-        if (!response.ok) throw new Error(await response.text())
-      } catch (err) {
-        error.textContent = t('status.failed', "Couldn't save: {{error}}", { error: (err as Error).message })
-        save.disabled = false
-        return
-      }
-      await this.load()
-      this.onChanged()
-    }
-    return form
+    return statusForm({
+      initial: data,
+      fields: this.fields,
+      onSubmit: async (values) => {
+        await saveStatus([{ layer: this.layer, id: this.id, name: this.name, fields: this.fields }], values)
+        await this.load()
+        this.onChanged()
+      },
+      onCancel: () => this.show(data)
+    })
   }
 }
 

@@ -111,9 +111,9 @@ export class Workspace implements IControl {
     } catch {
       // Not remembered.
     }
-    // Shift-click selects several items: the map's Shift-drag zoom would swallow it.
-    if (open) this.map.boxZoom.disable()
-    else this.map.boxZoom.enable()
+    // Shift-click selects several items (and, closed, map features: modules/status),
+    // so the map's Shift-drag zoom, which would swallow it, stays off.
+    this.map.boxZoom.disable()
     this.button.classList.toggle('oim-dock-active', open)
     this.button.setAttribute('aria-pressed', String(open))
     if (!open) {
