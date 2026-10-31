@@ -862,6 +862,23 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   "Connects Heisdorf – Roost · 13.3 km" and has a "Show whole line" link that zooms
   to it. Lines without a known voltage (not in the network) highlight just
   themselves.
+- **Following a line** (`web-backend/src/fork/line_trace.py`): the network is kept in
+  the backend's memory (loaded on the first click, ~4 s for France, and again after a
+  rebuild). A line is followed along its own way; then into a way of the same name
+  (compared by the places it joins and its circuit number: "n°1", "N0 1"); where its
+  way ends, into the single way starting there, the straightest one, both circuits
+  of a double line parting side by side, all of them if they lead to one station, or
+  the one leading to a station named in the line's name. A line ending beside
+  another one passing through is a tap (connected). Where none of that tells, the
+  first stretch of each way is shown, not followed. A way with several voltages
+  ("225000;63000") belongs to each, and only the clicked line's circuit is highlighted
+  (the map draws them side by side). Ways are drawn whole, into the substations.
+- **Checking the grid** (`web-backend/src/fork/grid_check.py`, `uv run python -m
+  src.fork.grid_check` in `web-backend/`): follows every line of 63 kV and more and
+  writes each end that isn't at a station to `data/grid-check.csv`, likely data errors
+  first: "not joined to a station / line N m away", "open end", "other line" (its way
+  ends where only other lines go on), "unclear split", "leaves the region". On France:
+  168 not joined, 72 open ends, 48 other line, 227 unclear splits, 102 leaving.
 - **Limits:** paths are physical connections in OpenStreetMap, not how power flows;
   a missing line or substation in OpenStreetMap can hide a connection; both ends
   must be in the built region (France–Germany needs Europe or a custom region);

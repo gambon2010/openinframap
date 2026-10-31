@@ -10,8 +10,6 @@ station on that grid.
 """
 
 import json
-import math
-import re
 from typing import Any, Optional
 
 import networkx as nx
@@ -22,6 +20,7 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from .. import Request, get_db
+from .line_trace import load_index, trace_line
 
 MAX_PATHS = 5
 # Simple paths examined when looking for distinct ones: in a meshed grid there
@@ -315,130 +314,22 @@ async def route(request: Request) -> Response:
     )
 
 
-def line_ends(name: str | None) -> set[frozenset[str]]:
-    """The pairs of places a line's name joins: "Liaison 225 kV n°1 Graffenstaden -
-    Marlenheim" and "graffenstaden - marlenheim" both give {graffenstaden,
-    marlenheim}; a name for several lines on shared pylons ("…;…") gives each."""
-    pairs = set()
-    for part in (name or "").split(";"):
-        part = re.sub(r"(?i)\bliaison\b|\b\d+([.,]\d+)?\s*kv\b|n°\s*\d+|\bno?\.?\s*\d+\b", " ", part)
-        places = [" ".join(p.split()).lower() for p in re.split(r"\s+-\s+|–|—", part)]
-        places = [p for p in places if p]
-        if len(places) == 2:
-            pairs.add(frozenset(places))
-    return pairs
-
-
-def away_from(edge: dict, node: int) -> tuple[float, float] | None:
-    """The direction an edge leaves a node in (east, north; metres-ish), or None."""
-    coords = json.loads(edge["geometry"])["coordinates"] if edge.get("geometry") else None
-    if not coords or len(coords) < 2:
-        return None
-    a, b = (coords[0], coords[1]) if edge["source"] == node else (coords[-1], coords[-2])
-    scale = math.cos(math.radians(a[1]))
-    return ((b[0] - a[0]) * scale, b[1] - a[1])
-
-
-def turn(arriving: tuple[float, float], leaving: tuple[float, float]) -> float:
-    """How much a line turns (degrees, 0 = straight on) going in along `arriving`
-    (pointing away from the node) and out along `leaving`."""
-    angle = math.degrees(math.atan2(leaving[1], leaving[0]) - math.atan2(arriving[1], arriving[0]))
-    return abs(180 - abs((angle + 180) % 360 - 180))
-
-
-# Several ways start where a line ends (a double-circuit line splitting in two near
-# a substation): the straightest one is its continuation if it turns less than this,
-# and clearly less than the next one.
-MAX_TURN = 45
-CLEAR_MARGIN = 15
-
-
-def continuing_edges(
-    node: int, edges: dict[int, dict], candidates: list[dict], names: set[str]
-) -> tuple[list[dict], bool]:
-    """At a junction, the stretches that continue the line being followed: the
-    same OSM way; or a way with one of its names (two lines on shared pylons stay
-    apart); or, for a way ending here, the single way that starts here (OSM often
-    splits one line into several ways). A branch to another line is left out.
-
-    `edges` are the stretches taken so far, `candidates` those meeting `node` that
-    aren't taken yet (same voltage). Returns the stretches to take, and whether to
-    follow them further: where the line splits in two and which half is its own
-    can't be told (often next to a substation), both are shown but not followed."""
-    arrived = {e["line_osm_id"] for e in edges.values() if node in (e["source"], e["target"])}
-    by_way: dict[int, list[dict]] = {}
-    for e in candidates:
-        by_way.setdefault(e["line_osm_id"], []).append(e)
-    taken = [e for way, es in by_way.items() if way in arrived for e in es]
-    wanted = {pair for name in names for pair in line_ends(name)}
-    taken += [
-        e
-        for way, es in by_way.items()
-        if way not in arrived and es[0]["name"] and line_ends(es[0]["name"]) & wanted
-        for e in es
-    ]
-    if taken:
-        return taken, True
-    # A way passing through meets the junction twice (one stretch on each side);
-    # a way that starts or ends here, once.
-    starting = [es[0] for es in by_way.values() if len(es) == 1]
-    # A named line goes on into an unnamed way, not into another line's name.
-    if names:
-        starting = [e for e in starting if not e["name"]]
-    if len(starting) <= 1:
-        return starting, True
-    # Several: the straightest, if it's clearly the one; else all, not followed.
-    arrivals = [away_from(e, node) for e in edges.values() if node in (e["source"], e["target"])]
-    arriving = next((a for a in arrivals if a), None)
-    if arriving is None:
-        return starting, False
-    turns = sorted(
-        (turn(arriving, leaving), i) for i, e in enumerate(starting) if (leaving := away_from(e, node))
-    )
-    if len(turns) >= 2 and turns[0][0] <= MAX_TURN and turns[1][0] - turns[0][0] >= CLEAR_MARGIN:
-        return [starting[turns[0][1]]], True
-    return starting, False
-
-
-async def way_to(
-    database: AsyncConnection,
-    starting: list[dict],
-    places: set[str],
-    node_info: dict[int, dict],
-    voltage: int,
-) -> tuple[list[dict], bool]:
-    """Where a line splits into several ways and which is its own can't be told
-    from the ways: the one leading to a station named after a place in the line's
-    name (one not reached yet) is its own, taken whole and followed further. Else
-    only the first stretch of each is shown."""
-    reached = " ".join((info["name"] or "").lower() for info in node_info.values())
-    wanted = {p for p in places if p not in reached}
-    for first in starting:
-        rows = await database.execute(
-            text(
-                f"""SELECT {EDGE_COLUMNS} FROM grid_edge AS e
-                     WHERE e.line_osm_id = :way AND e.voltage = :voltage"""
-            ),
-            {"way": first["line_osm_id"], "voltage": voltage},
-        )
-        way = [dict(r._mapping) for r in rows]
-        stations = await database.execute(
-            text("SELECT name FROM grid_node WHERE node_id = ANY(:ids) AND kind <> 'junction'"),
-            {"ids": list({n for e in way for n in (e["source"], e["target"])})},
-        )
-        if any(name and any(p in name.lower() for p in wanted) for (name,) in stations):
-            return way, True
-    return starting, False
-
-
-# Stretches of line followed from a clicked line before giving up (a very long
-# corridor without substations, or a data error looping through junctions).
-MAX_LINE_EDGES = 2000
+def circuit_of(voltage_tag: str | None, voltage: int) -> dict:
+    """Which of a way's voltages ("63000;20000") a line of `voltage` is: its index
+    (1-based) and how many there are, as the map draws them side by side."""
+    voltages: list[float | None] = []
+    for value in (voltage_tag or "").split(";"):
+        try:
+            voltages.append(float(value.strip()))
+        except ValueError:
+            voltages.append(None)
+    index = next((i + 1 for i, v in enumerate(voltages) if v == voltage), 1)
+    return {"index": index, "count": max(1, len(voltages))}
 
 
 async def line(request: Request) -> Response:
-    """Where a power line goes: the clicked line plus every connected stretch of
-    the same voltage, through junctions, up to the stations at its ends.
+    """Where a power line goes: the clicked line followed through junctions to the
+    stations at its ends (line_trace.py says how).
 
         GET /grid/line/<osm_id>
     """
@@ -449,15 +340,9 @@ async def line(request: Request) -> Response:
         raise HTTPException(400, "Invalid line id")
 
     has_grid = (await database.execute(text("SELECT to_regclass('grid_edge') IS NOT NULL"))).scalar()
-    edges: dict[int, dict] = {}
-    if has_grid:
-        start = await database.execute(
-            text(f"SELECT {EDGE_COLUMNS} FROM grid_edge AS e WHERE e.line_osm_id = :osm_id"),
-            {"osm_id": osm_id},
-        )
-        edges = {row._mapping["edge_id"]: dict(row._mapping) for row in start}
-
-    if not edges:
+    index = await load_index(database) if has_grid else None
+    trace = trace_line(index, osm_id) if index else None
+    if index is None or trace is None:
         # Not in the network (no known voltage, or below 10 kV): just the line itself.
         rows = await database.execute(
             text(
@@ -483,94 +368,55 @@ async def line(request: Request) -> Response:
             }
         )
 
-    voltage = max(e["voltage"] for e in edges.values())
-    nodes = await database.execute(
-        text("SELECT node_id, kind, osm_id, name FROM grid_node WHERE node_id = ANY(:ids)"),
-        {"ids": list({n for e in edges.values() for n in (e["source"], e["target"])})},
-    )
-    node_info = {r._mapping["node_id"]: dict(r._mapping) for r in nodes}
-    names = {e["name"] for e in edges.values() if e["name"]}
-    # Follow the line through junctions (pylons shared with other lines, where its
-    # OSM ways join), not through stations, and not into other lines branching off.
-    frontier = [n for n, info in node_info.items() if info["kind"] == "junction"]
-    seen = set(frontier)
-    # The places the line's name joins ("Graffenstaden", "Marlenheim"), to tell
-    # which way it takes where it splits in two.
-    places = {place for name in names for pair in line_ends(name) for place in pair}
-    # Ways only begun where the line splits unclearly: drawn as far as taken.
-    stubs: set[int] = set()
-    complete = True
-    while frontier:
-        if len(edges) >= MAX_LINE_EDGES:
-            complete = False
-            break
-        rows = await database.execute(
-            text(
-                f"""SELECT {EDGE_COLUMNS} FROM grid_edge AS e
-                     WHERE (e.source = ANY(:ids) OR e.target = ANY(:ids)) AND e.voltage = :voltage"""
-            ),
-            {"ids": frontier, "voltage": voltage},
-        )
-        new_nodes: set[int] = set()
-        candidates = [dict(row._mapping) for row in rows]
-        for node in frontier:
-            here = [e for e in candidates if node in (e["source"], e["target"]) and e["edge_id"] not in edges]
-            taking, further = continuing_edges(node, edges, here, names)
-            if not names and any(e["name"] for e in taking):
-                # Clicked on an unnamed part: the line's name is the one it goes on into.
-                names = {e["name"] for e in taking if e["name"]}
-                places = {place for name in names for pair in line_ends(name) for place in pair}
-            if not further and len(taking) > 1:
-                taking, further = await way_to(database, taking, places, node_info, voltage)
-                if not further:
-                    stubs.update(e["line_osm_id"] for e in taking)
-            for e in taking:
-                if e["edge_id"] not in edges:
-                    edges[e["edge_id"]] = e
-                    if further:
-                        new_nodes.update({e["source"], e["target"]} - {node})
-        new_nodes -= seen
-        lookup = new_nodes
-        if not lookup:
-            break
-        found_nodes = await database.execute(
-            text("SELECT node_id, kind, osm_id, name FROM grid_node WHERE node_id = ANY(:ids)"),
-            {"ids": list(lookup)},
-        )
-        for r in found_nodes:
-            node_info[r._mapping["node_id"]] = dict(r._mapping)
-        seen |= lookup
-        frontier = [n for n in new_nodes if node_info[n]["kind"] == "junction"]
-
-    stations = [station_summary(info) for info in node_info.values() if info["kind"] != "junction"]
+    stations = [
+        {"kind": node.kind, "osm_id": node.osm_id, "name": node.name}
+        for node in (index.nodes[n] for n in trace.stations)
+    ]
     # Drawn: the ways followed, whole (the network leaves out the part of a line
     # inside the substation it ends in), and the stubs as far as taken.
-    whole = {e["line_osm_id"] for e in edges.values()} - stubs
+    whole = trace.ways(index) - trace.stubs
     drawn = await database.execute(
         text(
-            "SELECT ST_AsGeoJSON(ST_Transform(geometry, 4326)) FROM osm_power_line WHERE osm_id = ANY(:ids)"
+            """SELECT ST_AsGeoJSON(ST_Transform(geometry, 4326)), voltage
+                 FROM osm_power_line WHERE osm_id = ANY(:ids)"""
         ),
         {"ids": list(whole)},
     )
-    coordinates = [json.loads(geometry)["coordinates"] for (geometry,) in drawn]
-    coordinates += [
-        json.loads(e["geometry"])["coordinates"] for e in edges.values() if e["line_osm_id"] in stubs
+    parts = [
+        {"coordinates": json.loads(geometry)["coordinates"], **circuit_of(tag, trace.voltage)}
+        for geometry, tag in drawn
     ]
+    stub_edges = [e for e in trace.edges if index.edges[e].way in trace.stubs]
+    if stub_edges:
+        rows = await database.execute(
+            text(
+                """SELECT ST_AsGeoJSON(ST_Transform(geom, 4326)), voltage_tag
+                     FROM grid_edge WHERE edge_id = ANY(:ids)"""
+            ),
+            {"ids": stub_edges},
+        )
+        parts += [
+            {"coordinates": json.loads(geometry)["coordinates"], **circuit_of(tag, trace.voltage)}
+            for geometry, tag in rows
+        ]
     # Parallel circuits between the same two points count once in the length.
     by_pair: dict[frozenset[int], float] = {}
-    for e in edges.values():
-        pair = frozenset((e["source"], e["target"]))
-        by_pair[pair] = min(by_pair.get(pair, e["length_m"]), e["length_m"])
+    for e in (index.edges[i] for i in trace.edges):
+        pair = frozenset((e.source, e.target))
+        by_pair[pair] = min(by_pair.get(pair, e.length_m), e.length_m)
     return JSONResponse(
         {
             "stations": sorted(stations, key=lambda s: s["name"] or ""),
             "length_km": round(sum(by_pair.values()) / 1000, 1),
-            "voltages_kv": [voltage // 1000],
-            "complete": complete,
+            "voltages_kv": [trace.voltage // 1000],
+            "complete": trace.complete,
             "geometry": {
                 "type": "MultiLineString",
-                "coordinates": coordinates,
+                "coordinates": [part["coordinates"] for part in parts],
             },
+            # The same, one per way, with which of its voltages is this line's: a
+            # way carrying several is drawn as parallel lines, one per voltage.
+            "parts": parts,
         }
     )
 

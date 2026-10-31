@@ -4,7 +4,14 @@
  * length. One for the whole page (left-column.ts); modules can draw into it
  * (modules/grid/line.ts: the whole power line).
  */
-import { Map, GeoJSONSource, LngLatBounds, MapGeoJSONFeature, FilterSpecification } from 'maplibre-gl'
+import {
+  Map,
+  GeoJSONSource,
+  LngLatBounds,
+  MapGeoJSONFeature,
+  FilterSpecification,
+  ExpressionSpecification
+} from 'maplibre-gl'
 import type { Feature } from 'geojson'
 import { sourceGeometry } from '../core/map-data.ts'
 
@@ -15,6 +22,9 @@ const DARK_YELLOW = '#b88a00'
 const MIN_AREA_PIXELS = 16
 // How long to wait for a feature's whole shape before drawing the tiles' pieces (ms).
 const WHOLE_SHAPE_WAIT = 400
+// Parallel lines of a way with several voltages (as upstream's style_oim_power.ts).
+const PARALLEL_SPACING = 14
+const PARALLEL_MIN_ZOOM = 10
 
 export class FeatureHighlight {
   _map: Map
@@ -44,6 +54,30 @@ export class FeatureHighlight {
         },
         before
       )
+      // A way carrying several voltages is drawn as parallel lines, one per voltage
+      // (upstream's voltage_offset, style_oim_power.ts: 14 px apart, from zoom 10,
+      // closer below zoom 21): a highlight with `vindex` / `vcount` sits on one of them.
+      const count: ExpressionSpecification = ['coalesce', ['get', 'vcount'], 1]
+      const index: ExpressionSpecification = ['coalesce', ['get', 'vindex'], 1]
+      const spread: ExpressionSpecification = [
+        'case',
+        ['>=', count, 3],
+        ['*', ['-', index, 2], PARALLEL_SPACING],
+        ['==', count, 2],
+        ['-', ['*', ['-', index, 1], PARALLEL_SPACING], PARALLEL_SPACING / 2],
+        0
+      ]
+      const offset: ExpressionSpecification = [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        PARALLEL_MIN_ZOOM - 0.001,
+        0,
+        PARALLEL_MIN_ZOOM,
+        ['*', 0.3, spread],
+        21,
+        spread
+      ]
       map.addLayer(
         {
           id: 'feature_highlight_glow',
@@ -51,7 +85,13 @@ export class FeatureHighlight {
           source: SOURCE,
           filter: ['!=', ['geometry-type'], 'Point'],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': YELLOW, 'line-width': 12, 'line-blur': 3, 'line-opacity': 0.75 }
+          paint: {
+            'line-color': YELLOW,
+            'line-width': 12,
+            'line-blur': 3,
+            'line-opacity': 0.75,
+            'line-offset': offset
+          }
         },
         before
       )
@@ -62,7 +102,7 @@ export class FeatureHighlight {
           source: SOURCE,
           filter: ['!=', ['geometry-type'], 'Point'],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': DARK_YELLOW, 'line-width': 2 }
+          paint: { 'line-color': DARK_YELLOW, 'line-width': 2, 'line-offset': offset }
         },
         before
       )

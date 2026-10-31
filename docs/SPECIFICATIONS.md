@@ -102,6 +102,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 6.5 | The panel lists what the route goes through: each stretch with its distance, and a total. | ✅ |
 | 6.6 | Highlight a power line when selected to see where it goes. | ✅ |
 | 6.7 | Works on a country the size of France. | ✅ (build ~2 min) |
+| 6.8 | A selected line follows only the line it is (its name, circuit number, way), not lines branching off or sharing pylons; on a way with two voltages only its own circuit is highlighted; it's drawn into the substations. | ✅ `web-backend/src/fork/line_trace.py` |
+| 6.9 | Large lines should end at something; where they don't, list them as probable data errors. | ✅ `grid_check.py` → `data/grid-check.csv` (asked 2026-10-31) |
 
 ## 7. Extra data (not from OpenStreetMap)
 

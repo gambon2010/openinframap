@@ -10,6 +10,8 @@ import { FeatureHighlight } from '../../ui/highlight.ts'
 import { Station } from './grid-route.ts'
 
 type LineResponse = {
+  /** Each way, with which of its voltages is this line's (drawn side by side). */
+  parts?: { coordinates: number[][]; index: number; count: number }[]
   stations: Station[]
   length_km: number
   voltages_kv: number[]
@@ -37,7 +39,15 @@ export async function showLine(
     return null
   }
   if (!stillWanted()) return null
-  highlight.setData([{ type: 'Feature', geometry: data.geometry, properties: {} }])
+  highlight.setData(
+    data.parts
+      ? data.parts.map((part) => ({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: part.coordinates },
+          properties: { vindex: part.index, vcount: part.count }
+        }))
+      : [{ type: 'Feature', geometry: data.geometry, properties: {} }]
+  )
 
   const names = data.stations.map(
     (s) =>

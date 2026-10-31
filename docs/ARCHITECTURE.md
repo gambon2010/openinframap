@@ -96,7 +96,8 @@ Starlette routes, put ahead of upstream's (the fork's search replaces upstream's
 the same URL):
 
 - `search.py`;
-- `grid.py` (routes over the power grid, `/grid/line`);
+- `grid.py` (routes over the power grid, `/grid/line`), `line_trace.py` (following a
+  line), `grid_check.py` (lines ending at nothing, a command);
 - `map_data.py` (a map feature's full geometry);
 - `userdata/`, My layers:
   - `schema.py` and `userdata.sql`;
