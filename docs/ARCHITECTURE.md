@@ -30,7 +30,7 @@ structure", "Merging from upstream"). Upstream imports only three fork files:
 index.ts, types.ts, config.ts   the module registry and hooks, the types, the URLs
 core/      no UI, imported by anything: i18n.ts (t())
 ui/        shared building blocks: dock (right), left column, details panel,
-           highlight, panels, settings, the key's checkboxes
+           highlight, panels, settings, the key's checkboxes, live updates (live.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers

@@ -103,12 +103,54 @@ export class Store {
     return layers
   }
 
+  /**
+   * Someone saved something you can see (a live update, ui/live.ts): fetch the
+   * layers again. With no unsaved changes, they're simply shown; with some, they're
+   * merged with yours (conflicts not yet resolved stay).
+   */
+  async refresh() {
+    if (this.saving) {
+      this.refreshAfterSave = true
+      return
+    }
+    let fresh: Map<string, UserLayer>
+    try {
+      fresh = await loadSaved()
+    } catch {
+      return // offline for a moment: the next update tries again
+    }
+    if (this.saving) {
+      this.refreshAfterSave = true
+      return
+    }
+    if (this.pending.length && Object.keys(this.bases).length) this.bringUpToDate(fresh)
+    else {
+      this.saved = fresh
+      this.layers = cloneLayers(fresh)
+      for (const change of this.pending) applyChange(this.layers, change)
+      if (this.activeLayer && !this.layers.has(this.activeLayer)) {
+        this.activeLayer = this.layers.keys().next().value ?? null
+      }
+      this.notify()
+    }
+  }
+
+  // A Save is under way: a live update waits for it (and comes after).
+  private saving = false
+  private refreshAfterSave = false
+
   /** Bring the pending changes onto the server's layers, merged; conflicts noted. */
   private bringUpToDate(fresh: Map<string, UserLayer>) {
     const out = reconcile(this.bases, this.pending, this.yours(fresh), fresh)
     this.saved = fresh
     this.bases = out.bases
-    this.conflicts = out.conflicts
+    // Conflicts not resolved yet stay, while you still have changes to them (their
+    // base is now the server's, so merging again wouldn't find them).
+    const still = this.conflicts.filter(
+      (old) =>
+        !out.conflicts.some((c) => c.key === old.key) && out.pending.some((c) => changeKey(c) === old.key)
+    )
+    this.conflicts = [...still, ...out.conflicts]
     this.history.reset()
     local.setBases(this.bases)
     this.setPending(out.pending)
@@ -322,21 +364,30 @@ export class Store {
     if (this.conflicts.length) throw new Error('Resolve the conflicts first')
     // Everything cancelled out: nothing to send (and nothing new to load).
     const changed = this.unsavedCount > 0
-    if (changed) {
-      try {
-        await send(this.pending, this.bases, this.author)
-      } catch (e) {
-        if (e instanceof StaleError) this.bringUpToDate(await loadSaved())
-        throw e
+    this.saving = true
+    try {
+      if (changed) {
+        try {
+          await send(this.pending, this.bases, this.author)
+        } catch (e) {
+          if (e instanceof StaleError) this.bringUpToDate(await loadSaved())
+          throw e
+        }
+      }
+      this.history.saved(this.pending, this.saved)
+      this.pending = []
+      this.bases = {}
+      local.setPending([])
+      local.setBases({})
+      if (changed) await this.load()
+      else this.notify()
+    } finally {
+      this.saving = false
+      if (this.refreshAfterSave) {
+        this.refreshAfterSave = false
+        void this.refresh()
       }
     }
-    this.history.saved(this.pending, this.saved)
-    this.pending = []
-    this.bases = {}
-    local.setPending([])
-    local.setBases({})
-    if (changed) await this.load()
-    else this.notify()
   }
 
   /** Forget the unsaved changes and go back to what's saved. */

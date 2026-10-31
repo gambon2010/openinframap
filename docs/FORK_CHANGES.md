@@ -1181,6 +1181,25 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   ("Bravo"): A's Save with the old version is refused (409); A's page shows the
   conflict; Keep mine, Save: the server has "Charlie", version 3.
 
+## Live updates (docs/plans/sync.md, phase 4)
+
+- **The backend pushes** (`web-backend/src/fork/userdata/events.py`, `GET
+  /userdata/events`, Server-Sent Events): each open page keeps a connection; every 2
+  seconds it looks for new saved changes on layers that user can see ("changes": how
+  many, which layers, by whom), a change in what they can see ("access": a layer
+  shared with them or not any more), a status changed ("status"). A comment every 25
+  s keeps it open through proxies. The event id is the last change: the browser
+  reconnects by itself after a break and is told what it missed.
+- **No database connection held:** the stream takes one for each look; `main.py`'s
+  database middleware skips it (`streaming_paths`, a one-line hook), and the login
+  middleware then opens one just to check the session.
+- **The page** (`fork/ui/live.ts`, one connection, `onLive(kind, listener)`): My layers
+  fetches the layers again (`store.refresh`): shown as they are if you have nothing
+  unsaved, merged with your changes otherwise (phase 3; conflicts not yet resolved
+  stay); a Save under way first. The statuses (map, supply, board) refresh too.
+- Tested: A's page open, B saves a layer and shares it with A, sets a status: A's list
+  shows the layer 2 s later, its statuses refresh, no reload.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command
@@ -1465,7 +1484,7 @@ Upstream files the fork still changes, and how:
 | `schema/functions.sql` | Function order fixed for fresh installs |
 | `tegola/generate_tegola_config.py`, `Dockerfile` | More than one layers file |
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
-| `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's |
+| `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's; the database middleware skips the fork's streams (`streaming_paths`) |
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |

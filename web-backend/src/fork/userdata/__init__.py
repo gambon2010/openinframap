@@ -14,16 +14,18 @@ points in that history) and images people put on the map.
 - situations.py, images.py
 - status.py: statuses of map features (shared, with their own history)
 - access.py: who may see and change which layer; sharing.py: sharing a layer
+- events.py: live updates (Server-Sent Events)
 """
 
 from starlette.routing import Route
 
-from . import images, layers, sharing, situations, status
+from . import events, images, layers, sharing, situations, status
 
 routes = [
     Route("/userdata", endpoint=layers.everything),
     Route("/userdata/save", endpoint=layers.save, methods=["POST"]),
     Route("/userdata/history", endpoint=layers.history),
+    Route("/userdata/events", endpoint=events.events),
     Route("/userdata/situations", endpoint=situations.situations, methods=["GET", "POST"]),
     Route("/userdata/situations/{situation_id}", endpoint=situations.delete_situation, methods=["DELETE"]),
     Route("/userdata/images", endpoint=images.add_image, methods=["POST"]),

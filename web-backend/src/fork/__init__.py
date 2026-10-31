@@ -11,6 +11,7 @@ from starlette.staticfiles import StaticFiles
 from ..config import IMAGES_DIR
 from . import auth, circuits, grid, grid_supply, map_data, search, userdata
 from .auth import LoginMiddleware
+from .userdata.events import STREAMING as events_streaming
 
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -30,3 +31,6 @@ routes: list[BaseRoute] = [
 
 # main.py adds these after its database middleware (they need the connection).
 middleware = [Middleware(LoginMiddleware)]
+
+# Paths main.py's database middleware leaves alone: streams holding no connection.
+streaming_paths = events_streaming

@@ -388,3 +388,72 @@ describe('undo after a save puts back only what that step changed', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('live updates (refresh)', () => {
+  /** The server's layers: one item, its name and version. */
+  const serve = (name: string, version: number) =>
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              last_save: version,
+              layers: [
+                {
+                  id: 'L',
+                  name: 'Grid',
+                  style: {},
+                  access: 'owner',
+                  owner: 'me',
+                  version: 1,
+                  updated_by: 'me',
+                  updated_at: at,
+                  features: [
+                    {
+                      type: 'Feature',
+                      id: 'F',
+                      geometry: point,
+                      properties: { kind: 'marker', name },
+                      version,
+                      updated_by: 'Bob',
+                      updated_at: at
+                    }
+                  ]
+                }
+              ]
+            })
+          )
+      )
+    )
+
+  test('with nothing unsaved, what others saved is shown', async () => {
+    localStorage.clear()
+    serve('Alpha', 1)
+    const store = new Store()
+    await store.load()
+    serve('Bravo', 2)
+    await store.refresh()
+    expect(store.layers.get('L')!.features.get('F')!.properties.name).toBe('Bravo')
+    expect(store.pending).toEqual([])
+  })
+
+  test('with unsaved changes, merged; a conflict stays until resolved', async () => {
+    localStorage.clear()
+    serve('Alpha', 1)
+    const store = new Store()
+    await store.load()
+    const item = store.layers.get('L')!.features.get('F')!
+    store.updateFeature('L', { ...item, properties: { ...item.properties, name: 'Charlie' } })
+    serve('Bravo', 2)
+    await store.refresh()
+    expect(store.conflicts.map((c) => c.key)).toEqual(['feature:F'])
+    expect(store.canSave).toBe(false)
+    // Another update meanwhile: the conflict is still there.
+    await store.refresh()
+    expect(store.conflicts).toHaveLength(1)
+    store.resolve('feature:F', 'theirs')
+    expect(store.layers.get('L')!.features.get('F')!.properties.name).toBe('Bravo')
+    expect(store.pending).toEqual([])
+  })
+})

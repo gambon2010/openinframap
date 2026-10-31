@@ -8,6 +8,7 @@ import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { dock } from '../../ui/dock.ts'
+import { onLive } from '../../ui/live.ts'
 import { StatusBoard } from './board.ts'
 import { SupplyMode } from './supply.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
@@ -58,6 +59,8 @@ const status: ForkModule = {
       'top-right'
     )
     dock.add(button, board.panel, () => void board.load())
+    // Someone set a status: the map, the supply and the board follow.
+    onLive('status', load)
     if (ctx.map.isStyleLoaded()) load()
     else ctx.map.once('load', load)
     // Several at once: picked with Shift-click. MapLibre's Shift-drag box zoom would

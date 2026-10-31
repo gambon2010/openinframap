@@ -4,6 +4,7 @@
 // pictures, markers, drawings, and copies of map features, which are drawn like
 // the originals and stay visible when the originals are hidden.
 import { MapMouseEvent } from 'maplibre-gl'
+import { onLive } from '../../ui/live.ts'
 import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
 import { Renderer } from './map/render.ts'
@@ -47,6 +48,9 @@ const userlayers: ForkModule = {
       tools.refreshSelection()
     })
     void store.load()
+    // Others' saved changes, as they come (docs/plans/sync.md, phase 4).
+    onLive('changes', () => void store.refresh())
+    onLive('access', () => void store.refresh())
   }
 }
 

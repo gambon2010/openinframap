@@ -166,7 +166,8 @@ and other users get modify access to them, so nothing is lost or hidden.
    their layers. **Built 2026-11-01.**
 3. **Versions, merging and the conflict window.** **Built 2026-11-01** (the server's
    changes arrive when Save is refused or the page loads; pushed live in phase 4).
-4. **Live updates** (Server-Sent Events, catching up after a disconnection).
+4. **Live updates** (Server-Sent Events, catching up after a disconnection). **Built
+   2026-11-01.**
 5. **Per-user settings** (folder, hidden, folded).
 
 ## Still open (later, not needed to start)

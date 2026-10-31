@@ -85,6 +85,7 @@ def test_routes_are_where_they_were():
         "/userdata",
         "/userdata/save",
         "/userdata/history",
+        "/userdata/events",
         "/userdata/situations",
         "/userdata/situations/{situation_id}",
         "/userdata/images",
@@ -108,3 +109,17 @@ def test_the_logged_in_user_or_anyone_without_the_middleware():
     assert not can_set_statuses(alice)
     assert can_set_statuses(User(id="2", name="Bob", can_set_statuses=True))
     assert can_set_statuses(User(id="3", name="Admin", is_admin=True))
+
+
+def test_live_events_are_server_sent_events():
+    from src.fork.userdata.events import STREAMING, event, summary
+
+    assert event("changes", {"changes": []}, 12) == 'id: 12\nevent: changes\ndata: {"changes": []}\n\n'
+    assert event("ready", {}).startswith("event: ready\n")
+    assert "/userdata/events" in STREAMING
+    changes = [
+        {"layer_id": "b", "author": "Bob"},
+        {"layer_id": "a", "author": None},
+        {"layer_id": "b", "author": "Bob"},
+    ]
+    assert summary(changes) == {"count": 3, "layers": ["a", "b"], "authors": ["Bob"]}

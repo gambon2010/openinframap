@@ -21,7 +21,7 @@ from . import State
 from .config import DATABASE_URL, DEBUG
 from .sitemap import sitemap
 from .views import routes
-from .fork import routes as fork_routes, middleware as fork_middleware
+from .fork import routes as fork_routes, middleware as fork_middleware, streaming_paths
 
 
 @contextlib.asynccontextmanager
@@ -43,7 +43,7 @@ class DBSessionMiddleware:
 
     async def __call__(self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable) -> None:
         db = scope.get("state", {}).get("db_engine")
-        if scope["type"] != "http" or db is None:
+        if scope["type"] != "http" or db is None or scope["path"] in streaming_paths:  # fork: streams
             await self.app(scope, receive, send)
             return
 

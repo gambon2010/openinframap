@@ -46,6 +46,11 @@ class LoginMiddleware:
         if database is not None:
             await ensure_schema(database)
             user = await user_of(database, cookie(scope, COOKIE))
+        elif (engine := scope.get("state", {}).get("db_engine")) is not None:
+            # A stream without a connection of its own (main.py): one just for this.
+            async with engine.connect() as connection:
+                await ensure_schema(connection)
+                user = await user_of(connection, cookie(scope, COOKIE))
         scope["user"] = user  # type: ignore[typeddict-unknown-key]
         path = scope["path"]
         if user is None and not any(path == p or path.startswith(p + "/") for p in OPEN):
