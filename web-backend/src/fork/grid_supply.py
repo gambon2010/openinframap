@@ -247,6 +247,11 @@ async def circuit_states(
     return out
 
 
+def grid_key(graph: SupplyGraph) -> str:
+    """Names the grid build (its edges' count and highest id)."""
+    return "-".join(str(v) for v in graph.version)
+
+
 def station_key(kind: str, osm_id: int) -> str:
     """As the tiles name a station: its layer ("power_substation", "power_plant")
     and id (the point layers, "…_point", have the same ids)."""
@@ -318,6 +323,9 @@ async def supply(request: Request) -> Response:
             features[f"power_line:{way}"] = worst(features.get(f"power_line:{way}"), s_)
     return JSONResponse(
         {
+            # The grid build: GET /grid/supply/unconnected?grid=<this> (a new address
+            # per build, so a browser never uses a copy cached from another one).
+            "grid": grid_key(graph),
             "lost": lost_count,
             "pessimistic": pessimistic,
             "counts": {
@@ -339,7 +347,9 @@ async def unconnected(request: Request) -> Response:
     (missing in OpenStreetMap, often 20 kV), grey in power supply mode: ids only, as
     GET /grid/supply. The same until the grid is rebuilt: made once, gzipped.
 
-        GET /grid/supply/unconnected   {"lines": {...}, "stations": {...}}
+        GET /grid/supply/unconnected?grid=<build>   {"lines": {...}, "stations": {...}}
+
+    Cached by the browser for a day: its address changes with the grid build.
     """
     global _unconnected
     database = get_db(request)
@@ -369,7 +379,7 @@ async def unconnected(request: Request) -> Response:
     return Response(
         _unconnected[1],
         media_type="application/json",
-        headers={"Content-Encoding": "gzip", "Cache-Control": "max-age=3600"},
+        headers={"Content-Encoding": "gzip", "Cache-Control": "max-age=86400"},
     )
 
 

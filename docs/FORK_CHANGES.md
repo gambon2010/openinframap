@@ -906,7 +906,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   the line rules change. Imports of older exports number them.
 - **Short tower labels** (asked 2026-10-31): some towers have a whole sentence in
   their `ref` ("Ligne à 63 kv Lutterbach Masevaux - Pylône N°44"), which upstream
-  wrote under the icon. Towers and poles are now labelled (from zoom 16) by the
+  wrote under the icon. Towers and poles are now labelled (from zoom 15) by the
   `tower_number` layer only: their ref cut down to its number (`tower_short_ref` in
   `schema/tower-numbers.sql`: "44"; a short ref as it is), else their number along
   the line; towers with a ref on no line of the network are labelled too.
@@ -1051,7 +1051,10 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
     lines), **green** otherwise. About 0.5 s for France (6 s the first time).
   - **grey**: what no source reaches even with nothing lost, missing in OpenStreetMap
     (about 99,000 ways and 15,000 stations in France, mostly 20 kV):
-    `GET /grid/supply/unconnected`, made once per grid build, served gzipped (0.5 MB).
+    `GET /grid/supply/unconnected?grid=<build>`, made once per grid build, served
+    gzipped (0.5 MB). Its address names the grid build (`grid` in `/grid/supply`'s
+    answer): a first version had a fixed address cached for an hour, and browsers
+    that had its old answer (shapes) failed to colour anything (all green).
   - Both send ids only (per way and circuit, in the tiles' order: `{"s1": "red"}`),
     no shapes.
 - **On the map** (`modules/status/supply.ts`): nothing is drawn over the map.

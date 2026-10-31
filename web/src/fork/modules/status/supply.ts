@@ -19,6 +19,8 @@ interface States {
 }
 
 interface SupplyResult extends States {
+  /** The grid build (for GET /grid/supply/unconnected). */
+  grid: string
   lost: number
   counts: Record<'red' | 'orange', Record<string, number>>
   features: Record<string, Supply>
@@ -49,6 +51,13 @@ const STATE_LAYERS = [
   'power_plant',
   'power_plant_point'
 ]
+
+function isStates(value: unknown): value is States {
+  const v = value as States | null
+  return (
+    typeof v?.lines === 'object' && v.lines !== null && typeof v.stations === 'object' && v.stations !== null
+  )
+}
 
 /** A colour from a feature state ("red", "orange", "grey"), else `otherwise`. */
 export function stateColour(state: string, otherwise: unknown): unknown {
@@ -90,8 +99,10 @@ export class SupplyMode {
   active = false
   pessimistic = false
   private result: SupplyResult | null = null
-  // What no source reaches anyway (GET /grid/supply/unconnected): fetched once.
+  // What no source reaches anyway (GET /grid/supply/unconnected), for the grid build
+  // greyGrid.
   private grey: States | null = null
+  private greyGrid = ''
   // The paint each recoloured layer had, put back when the mode is turned off.
   private original = new globalThis.Map<string, unknown>()
   private listeners: (() => void)[] = []
@@ -131,16 +142,21 @@ export class SupplyMode {
     setChildren(this.banner, [el('span', t('supply.working', 'Working out the power supply…'))])
     this.banner.classList.add('visible')
     try {
-      const [result, grey] = await Promise.all([
-        fetch(`${BACKEND_BASE_URL}/grid/supply?pessimistic=${this.pessimistic ? 1 : 0}`).then((r) => {
-          if (!r.ok) throw new Error(r.statusText)
-          return r.json()
-        }),
-        this.grey ?? fetch(`${BACKEND_BASE_URL}/grid/supply/unconnected`).then((r) => r.json())
-      ])
+      const response = await fetch(`${BACKEND_BASE_URL}/grid/supply?pessimistic=${this.pessimistic ? 1 : 0}`)
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+      const result = (await response.json()) as SupplyResult
+      // What's grey depends only on the grid build: fetched once per build (its
+      // address names the build, so a copy cached from another build isn't used).
+      if (!this.grey || this.greyGrid !== result.grid) {
+        const greyResponse = await fetch(`${BACKEND_BASE_URL}/grid/supply/unconnected?grid=${result.grid}`)
+        if (!greyResponse.ok) throw new Error(`${greyResponse.status} ${greyResponse.statusText}`)
+        this.greyGrid = result.grid
+        this.grey = await greyResponse.json()
+      }
+      const grey = this.grey
+      if (!isStates(result) || !isStates(grey)) throw new Error('unexpected answer from the backend')
       if (request !== this.request) return // a newer one is on its way
       this.result = result
-      this.grey = grey
     } catch (error) {
       if (request !== this.request) return
       console.error('Power supply mode:', error)

@@ -2,13 +2,13 @@
 # generate_tegola_config.py (it takes more than one layers file). Field sets
 # (geom, name, wiki...) are layers.yml's. See docs/FORK_CHANGES.md.
 layers:
-  # Fork: each tower's label from zoom 16: its ref, short, or its number along its
+  # Fork: each tower's label from zoom 15: its ref, short, or its number along its
   # line (web-backend/src/fork/tower_numbers.py).
   - name: tower_number
     map:
       - power
     geometry_type: Point
-    min_zoom: 16
+    min_zoom: 15
     field_sets: [geom]
     fields:
       - name: number
