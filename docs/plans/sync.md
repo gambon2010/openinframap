@@ -1,6 +1,7 @@
 # Plan: users, shared layers and live sync for My layers
 
-Status: **agreed in discussion (2026-10-30)**. Nothing is built yet; it builds on the refactor
+Status: **agreed in discussion (2026-10-30)**; building started 2026-10-31 (see "Building
+it"). It builds on the refactor
 (`docs/plans/refactor.md`, phases 3 and 4). Backlog items 10.6 and 10.6b in
 `docs/SPECIFICATIONS.md`.
 
@@ -137,9 +138,38 @@ and other users get modify access to them, so nothing is lost or hidden.
   - a new `events.py` for the push connection;
   - login routes.
 
+## Login for the whole app (decided 2026-10-31)
+
+- **Nothing shows without logging in:** the map, its tiles, the background map, the
+  search, as well as My layers and statuses.
+- **Admins create the accounts** (no sign-up). The first account is made on first
+  start (a setup page when there's no user yet) and is an admin. Admins create
+  accounts, reset passwords, and give the rights: **admin**, **can set statuses**.
+- **The gate:** an nginx service (`gate/`, Compose `gate`) is the one entry point
+  from the network. It serves the frontend and passes the tiles (Tegola), the
+  background map (pmtiles) and the backend through, each request checked with the
+  backend (`auth_request` to `/auth/check`, the session cookie); without a valid
+  session it sends you to the login page. The other services listen on this
+  computer only (127.0.0.1), for the scripts.
+- **The backend checks too** (a middleware): every route but login answers 401
+  without a session, in case someone reaches it directly.
+- **Sessions:** a random token in an HttpOnly cookie, stored hashed with its expiry
+  (30 days, renewed while used); logging out deletes it. Passwords: scrypt.
+
+## Building it
+
+1. **Accounts and login, the gate** (users, sessions, login and setup pages, user
+   management for admins, the "can set statuses" right; the gate).
+2. **Owners and sharing:** layers get an owner and per-user access (view, modify);
+   access checked on every read and Save; the sharing dialog; situations record
+   their layers.
+3. **Versions, merging and the conflict window.**
+4. **Live updates** (Server-Sent Events, catching up after a disconnection).
+5. **Per-user settings** (folder, hidden, folded).
+
 ## Still open (later, not needed to start)
 
 - Login: **local accounts only** (decided 2026-10-30).
-- Who can create users: an admin, or anyone?
+- Who can create users: **admins only** (decided 2026-10-31).
 - Offline for a long time: the push connection catches up fine, but a very long
   offline session may end with many conflicts. Good enough for now.
