@@ -6,12 +6,15 @@
  */
 import { Map, GeoJSONSource, LngLatBounds, MapGeoJSONFeature, FilterSpecification } from 'maplibre-gl'
 import type { Feature } from 'geojson'
+import { sourceGeometry } from '../core/map-data.ts'
 
 const SOURCE = 'feature_highlight'
 const YELLOW = '#ffd400'
 const DARK_YELLOW = '#b88a00'
 // An area smaller than this on screen is easier to see as its icon.
 const MIN_AREA_PIXELS = 16
+// How long to wait for a feature's whole shape before drawing the tiles' pieces (ms).
+const WHOLE_SHAPE_WAIT = 400
 
 export class FeatureHighlight {
   _map: Map
@@ -101,7 +104,7 @@ export class FeatureHighlight {
       ? feature
       : drawn.find((f) => f.geometry.type.endsWith('Polygon'))
     if (area && this.screenSize(area) >= MIN_AREA_PIXELS) {
-      this.setData(this.allPieces(area))
+      this.showWhole(area)
       return
     }
     const icon = feature.geometry.type === 'Point' ? feature : drawn.find((f) => f.geometry.type === 'Point')
@@ -118,8 +121,32 @@ export class FeatureHighlight {
         }
       ])
     } else {
-      this.setData(this.allPieces(feature))
+      this.showWhole(feature)
     }
+  }
+
+  /**
+   * An area or a line: its whole shape from the backend. Tiles cut big areas at
+   * their edges, so outlining the tiles' pieces draws those cuts as lines across
+   * the area: they're only drawn if the backend doesn't answer in a moment.
+   */
+  private showWhole(feature: MapGeoJSONFeature) {
+    const stillWanted = this.begin()
+    const pieces = this.allPieces(feature)
+    const id = feature.properties['osm_id']
+    if (id === undefined || !feature.sourceLayer) {
+      this.setData(pieces)
+      return
+    }
+    this.setData([])
+    const fallback = window.setTimeout(() => {
+      if (stillWanted()) this.setData(pieces)
+    }, WHOLE_SHAPE_WAIT)
+    void sourceGeometry(feature.sourceLayer, Number(id)).then((geometry) => {
+      if (!geometry || !stillWanted()) return
+      window.clearTimeout(fallback)
+      this.setData([{ type: 'Feature', geometry, properties: {} }])
+    })
   }
 
   /** A big area or long line is split over several tiles: collect all pieces. */

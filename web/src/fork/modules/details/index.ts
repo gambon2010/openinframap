@@ -1,6 +1,7 @@
 // Fork: a clicked map feature's details in the left details panel (instead of
 // upstream's popup), with the feature highlighted; a second click on it closes
-// them. Search results open the same way. Other modules add to the details with
+// them, and a click near a line selects it (near-click.ts). Search results open
+// the same way. Other modules add to the details with
 // addDetailsExtra (ui/details.ts), e.g. the grid's "Route from here".
 import { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el } from 'redom'
@@ -10,6 +11,7 @@ import type InfoPopup from '../../../popup/infopopup.ts'
 import { DetailsPanel, detailsExtras } from '../../ui/details.ts'
 import { FeatureHighlight } from '../../ui/highlight.ts'
 import { leftColumn } from '../../ui/left-column.ts'
+import { selectNearLines } from './near-click.ts'
 
 class Details {
   map: Map
@@ -130,6 +132,7 @@ let details: Details | undefined
 const detailsModule: ForkModule = {
   init: (ctx) => {
     details = new Details(ctx)
+    selectNearLines(ctx.map, ctx.clickRouter)
   },
   popup: {
     open: (feature) => {

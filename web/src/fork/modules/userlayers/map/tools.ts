@@ -9,7 +9,7 @@ import { Store } from '../state/store.ts'
 import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { FeatureProps, UserFeature } from '../model/model.ts'
-import { sourceGeometry } from '../state/api.ts'
+import { sourceGeometry } from '../../../core/map-data.ts'
 
 export type Tool =
   | { mode: 'select' }

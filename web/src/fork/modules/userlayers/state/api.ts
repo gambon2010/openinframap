@@ -54,13 +54,6 @@ export function imageUrl(id: string): string {
   return `${BASE}/images/${id}`
 }
 
-/** The full geometry of a map feature (tiles have it cut and simplified). */
-export async function sourceGeometry(layer: string, id: number): Promise<GeoJSON.Geometry | null> {
-  const response = await fetch(`${BASE}/source-feature?${new URLSearchParams({ layer, id: String(id) })}`)
-  if (!response.ok) return null
-  return (await response.json()).geometry
-}
-
 /** A named moment: the layers as they were after a saved change (userdata.situation). */
 export interface Situation {
   id: number
