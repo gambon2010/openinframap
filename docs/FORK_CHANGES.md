@@ -862,6 +862,13 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   "Connects Heisdorf – Roost · 13.3 km" and has a "Show whole line" link that zooms
   to it. Lines without a known voltage (not in the network) highlight just
   themselves.
+- **Every circuit named** (`web-backend/src/fork/circuits.py`, asked 2026-10-31): most
+  circuits (route=power relations) have no name in OpenStreetMap (7 of 10 at
+  Sierentz), shown as "-" in a substation's circuits. The fork's routes replace
+  upstream's `/api/substation`, `/api/circuit` and `/api/line` (same answers) and fill
+  in the name: the one its lines carry that names the substations it joins, for its
+  circuit number (from RTE's code, `MUHLBL71SIERE` = n°1); else "Muhlbach – Sierentz"
+  from its substations; else the code. A missing voltage comes from its lines.
 - **Selected circuit** (`web/src/fork/modules/details/circuit.ts`): "view" on one of
   a substation's circuits opens upstream's circuit panel in the left column below the
   substation's details, which stay open (they used to close, and the panel sat at the

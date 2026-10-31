@@ -8,7 +8,7 @@ from starlette.routing import BaseRoute, Mount
 from starlette.staticfiles import StaticFiles
 
 from ..config import IMAGES_DIR
-from . import grid, grid_supply, map_data, search, userdata
+from . import circuits, grid, grid_supply, map_data, search, userdata
 
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -16,6 +16,8 @@ routes: list[BaseRoute] = [
     # Offline Wikidata images (scripts/fetch_images.py).
     Mount("/local-images", app=StaticFiles(directory=str(IMAGES_DIR)), name="local-images"),
     *search.routes,
+    # Replaces upstream's at the same URLs: every circuit named.
+    *circuits.routes,
     *userdata.routes,
     *map_data.routes,
     *grid.routes,
