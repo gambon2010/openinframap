@@ -345,6 +345,60 @@ async def search_towers(database: AsyncConnection, query: str, limit: Optional[i
     return found
 
 
+# A status typed in the search box ("damaged", "under rep"): the features that have
+# it (fork: userdata/status.py).
+STATUS_WORDS = {
+    "operational": "operational",
+    "repaired": "repaired",
+    "threatened": "threatened",
+    "suspected damage": "suspected_damage",
+    "damaged": "damaged",
+    "destroyed": "destroyed",
+    "under repair": "under_repair",
+}
+
+
+def statuses_named(query: str) -> list[str]:
+    """The statuses a query names: the start of one (4 letters at least) or all of it."""
+    query = " ".join(plain(query).split())
+    if len(query) < 4:
+        return []
+    return [status for words, status in STATUS_WORDS.items() if words.startswith(query) or query == words]
+
+
+async def search_statuses(database: AsyncConnection, query: str, limit: Optional[int] = 10) -> list[dict]:
+    statuses = statuses_named(query)
+    if not statuses or not await table_exists(database, "userdata.feature_status"):
+        return []
+    result = await database.execute(
+        text(
+            """SELECT status, name, layer, ST_AsGeoJSON(ST_PointOnSurface(geometry)) AS geometry
+                 FROM userdata.feature_status
+                WHERE status = ANY(:statuses) AND geometry IS NOT NULL
+                ORDER BY updated_at DESC
+                LIMIT :limit"""
+        ),
+        {"statuses": statuses, "limit": limit},
+    )
+    return [
+        {
+            "type": "feature",
+            "source": "status",
+            "kind": "status",
+            "subtype": r.status,
+            "name": r.name or r.layer.replace("_", " ").capitalize(),
+            "local_name": None,
+            "operator": None,
+            "town": None,
+            # Its status shows on the map with the statuses' layer (K).
+            "layer": "K",
+            "geometry": json.loads(r.geometry),
+            "match_rank": 0,
+        }
+        for r in result
+    ]
+
+
 def result_tier(row: dict) -> int:
     """0 = big places, 1 = infrastructure, 2 = small places (for equally good matches)."""
     if row["type"] != "place":
@@ -389,12 +443,13 @@ async def search(request: Request) -> Response:
         places = tg.create_task(search_places(database, query, language, limit))
         features = tg.create_task(search_features(database, query, language, limit))
         towers = tg.create_task(search_towers(database, query, limit))
+        statuses = tg.create_task(search_statuses(database, query, limit))
 
     # Best match first (exact, then name prefix, then word, then name + town); for
     # equally good matches big places, then infrastructure, then small places; then
     # the biggest.
     results = sorted(
-        await substations + await plants + await places + await features + await towers,
+        await substations + await plants + await places + await features + await towers + await statuses,
         key=lambda row: (row["match_rank"], result_tier(row), -sort_key(row)),
     )
     for row in results:

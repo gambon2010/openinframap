@@ -139,6 +139,10 @@ export class StatusMap {
     }
   }
 
+  // The statuses as they were at a step of their history (the Status board's
+  // playback), drawn instead of the current ones; null: the current ones.
+  private past: FeatureCollection | null = null
+
   /** Load the statuses again (after one was set). */
   async refresh() {
     try {
@@ -151,14 +155,21 @@ export class StatusMap {
     this.draw()
   }
 
+  /** Draw these statuses (from the history) instead of the current ones; null: back to them. */
+  showPast(features: FeatureCollection | null) {
+    this.past = features
+    this.draw()
+  }
+
   private draw() {
     const shapes = this.map.getSource(SHAPES) as GeoJSONSource | undefined
     const badges = this.map.getSource(BADGES) as GeoJSONSource | undefined
     if (!shapes || !badges) return
-    shapes.setData(this.data)
+    const data = this.past ?? this.data
+    shapes.setData(data)
     badges.setData({
       type: 'FeatureCollection',
-      features: this.data.features.map((f) => ({
+      features: data.features.map((f) => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: f.properties?.badge } as Point,
         properties: { status: f.properties?.status, point: f.geometry.type.endsWith('Point') }

@@ -1008,6 +1008,24 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   from zoom 14, Maki's convenience icon): `imposm/sites.py`, `schema/sites.sql`,
   `scripts/make_site_icons.py`. They appear at the next rebuild of the region.
 
+### Step 3: the Status board, playback, search by status
+
+- **The Status board** (`modules/status/board.ts`): a ⚠ button with the others on the
+  right opens it in the dock. Every feature with a status (`GET
+  /userdata/status?all=1`), newest first, with counts per status (click one to show
+  only those, more than one at a time), a filter by kind (power, critical sites,
+  telecoms, pipelines, water, open data) and by name. A row shows the status, who set
+  it and when, the extra fields and the note; clicking it zooms there and highlights
+  the feature.
+- **Playback** (`playback.ts`, `GET /userdata/status/history`): a timeline over every
+  status change, with first, back, play, forward and Now. At an earlier step the map
+  (`StatusMap.showPast`) and the board show the statuses as they were then (the
+  timeline turns yellow); closing the board goes back to now. My layers' history is
+  separate.
+- **Search by status** (`search.py` `search_statuses`): typing a status ("damaged",
+  "under rep", 4 letters at least) finds the features that have it; the result says
+  "Status: Damaged" and switches the statuses layer on.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

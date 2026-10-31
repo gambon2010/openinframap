@@ -91,6 +91,7 @@ def test_routes_are_where_they_were():
         "/userdata/images/{image_id}",
         "/userdata/status",
         "/userdata/status/feature",
+        "/userdata/status/history",
         "/userdata/source-feature",
     }
 

@@ -141,3 +141,114 @@
   cursor: pointer;
   font-weight: bold;
 }
+
+/* The Status board (board.ts), in the right-hand dock. */
+.oim-status-board .oim-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.oim-board-timeline {
+  padding: 0.4em;
+  border-radius: var(--oim-radius-large, 6px);
+  background: var(--oim-light-grey);
+}
+
+.oim-board-timeline.past {
+  background: #fff3bf;
+}
+
+.oim-board-timeline input[type='range'] {
+  width: 100%;
+}
+
+.oim-board-timeline-label {
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.oim-board-timeline-buttons {
+  display: flex;
+  gap: 0.3em;
+  flex-wrap: wrap;
+}
+
+.oim-board-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+}
+
+.oim-board-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  border: 1px solid var(--oim-light-grey);
+  border-radius: 1em;
+  background: none;
+  padding: 0.15em 0.6em;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85em;
+}
+
+.oim-board-count.on {
+  border-color: var(--oim-text-color);
+  font-weight: bold;
+}
+
+.oim-board-filters {
+  display: flex;
+  gap: 0.4em;
+}
+
+.oim-board-filters input {
+  flex: 1;
+  min-width: 0;
+}
+
+.oim-board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.oim-board-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--oim-light-grey);
+  background: none;
+  padding: 0.4em 0.2em;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.oim-board-row:hover {
+  background: var(--oim-light-grey);
+}
+
+.oim-board-row-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.oim-board-status {
+  margin-left: auto;
+  font-size: 0.85em;
+}
+
+.oim-board-empty,
+.oim-board-hint {
+  color: var(--oim-text-color-light, #666);
+  font-size: 0.9em;
+}
+
+.oim-status-board-button {
+  font-size: 1.1em;
+  line-height: 1;
+}

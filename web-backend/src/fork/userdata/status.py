@@ -5,6 +5,7 @@ line damaged, a substation destroyed... Shared by everyone, with their own histo
 
     GET  /userdata/status                       the features with a problem (GeoJSON)
     GET  /userdata/status/feature?layer=&id=    one feature's status and history
+    GET  /userdata/status/history               every change, oldest first
     POST /userdata/status                       {layer, id, status, evidence?, note?,
                                                  details?, name?, author?}: set it
                                                 (details: the extra fields, FIELDS)
@@ -92,8 +93,9 @@ def change_json(r: Any) -> dict:
 
 
 async def statuses(request: Request) -> Response:
-    """GET: the features with a problem, as GeoJSON (their geometry, and "badge": a
-    point on them for the status sign). POST: set a feature's status."""
+    """GET: the features with a problem (?all=1: every feature that has a status),
+    as GeoJSON (their geometry, and "badge": a point on them for the status sign).
+    POST: set a feature's status."""
     db = get_db(request)
     await ensure_schema(db)
     if request.method == "POST":
@@ -104,9 +106,9 @@ async def statuses(request: Request) -> Response:
                       ST_AsGeoJSON(geometry, 7) AS geometry,
                       ST_AsGeoJSON(ST_PointOnSurface(geometry), 7) AS badge
                  FROM userdata.feature_status
-                WHERE status = ANY(:problems) AND geometry IS NOT NULL"""
+                WHERE (CAST(:all AS boolean) OR status = ANY(:problems)) AND geometry IS NOT NULL"""
         ),
-        {"problems": list(PROBLEMS)},
+        {"problems": list(PROBLEMS), "all": request.query_params.get("all") == "1"},
     )
     features = []
     for r in rows:
@@ -115,6 +117,7 @@ async def statuses(request: Request) -> Response:
                 "type": "Feature",
                 "geometry": json.loads(r.geometry),
                 "properties": {
+                    "source": r.source,
                     "layer": r.layer,
                     "id": r.feature_id,
                     "status": r.status,
@@ -129,6 +132,26 @@ async def statuses(request: Request) -> Response:
             }
         )
     return JSONResponse({"type": "FeatureCollection", "features": features})
+
+
+async def history(request: Request) -> Response:
+    """Every status change, oldest first (the Status board plays them back): the
+    feature is source + feature_id, as in GET /userdata/status?all=1."""
+    db = get_db(request)
+    await ensure_schema(db)
+    rows = await db.execute(
+        text(
+            """SELECT id, source, feature_id, status, previous, evidence, note, author, made_at, details
+                 FROM userdata.status_change ORDER BY id"""
+        )
+    )
+    return JSONResponse(
+        {
+            "changes": [
+                {"id": r.id, "source": r.source, "feature_id": r.feature_id, **change_json(r)} for r in rows
+            ]
+        }
+    )
 
 
 async def feature_status(request: Request) -> Response:

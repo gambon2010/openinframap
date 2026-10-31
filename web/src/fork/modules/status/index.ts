@@ -1,16 +1,19 @@
 // Fork: statuses of map features (docs/plans/feature-status.md, step 1): set in a
-// feature's details (details.ts), shown on the map when they're a problem (map.ts).
+// feature's details (details.ts), shown on the map when they're a problem (map.ts),
+// listed and played back on the Status board (board.ts), found by the search.
 // Backend: web-backend/src/fork/userdata/status.py.
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
+import { dock } from '../../ui/dock.ts'
+import { StatusBoard } from './board.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
 import { StatusSection, featureKey } from './details.ts'
 import { fieldsOf } from './fields.ts'
 import { SelectionPanel } from './selection.ts'
-import { PROBLEMS, statusLook } from './statuses.ts'
+import { PROBLEMS, Status, statusLook } from './statuses.ts'
 import './status.css'
 
 function badgeSwatch(status: (typeof PROBLEMS)[number]): HTMLElement {
@@ -36,7 +39,22 @@ const status: ForkModule = {
     // The statuses are drawn over features: a click goes to the feature underneath.
     for (const layer of statusLayers()) delete ctx.clickRouter.handlers[layer.id]
     const statusMap = new StatusMap(ctx.map)
-    const load = () => void statusMap.refresh()
+    const board = new StatusBoard(ctx.map, statusMap)
+    const load = () => {
+      void statusMap.refresh()
+      if (board.panel.classList.contains('visible')) void board.load()
+    }
+    // The board's button, with the others on the right; its panel in the dock.
+    const button = el('button.maplibregl-ctrl-icon.oim-status-board-button', '⚠', {
+      type: 'button',
+      title: t('board.title', 'Status board'),
+      'aria-label': t('board.title', 'Status board')
+    })
+    ctx.map.addControl(
+      { onAdd: () => el('div.maplibregl-ctrl.maplibregl-ctrl-group', button), onRemove: () => {} },
+      'top-right'
+    )
+    dock.add(button, board.panel, () => void board.load())
     if (ctx.map.isStyleLoaded()) load()
     else ctx.map.once('load', load)
     // Several at once: picked with Shift-click. MapLibre's Shift-drag box zoom would
@@ -60,6 +78,14 @@ const status: ForkModule = {
       content.insertBefore(section.el, content.querySelector('.oim-info-footer'))
     })
   },
+
+  // A search result found by its status ("damaged": search.py search_statuses).
+  searchDescription: (result) =>
+    result.type === 'feature' && result.kind === 'status' && result.subtype
+      ? t('status.search-result', 'Status: {{status}}', {
+          status: statusLook(result.subtype as Status).label
+        })
+      : undefined,
 
   key: async () => [
     {

@@ -584,7 +584,8 @@
       "yes": "Yes",
       "no": "No",
       "rationed": "Rationed"
-    }
+    },
+    "search-result": "Status: {{status}}"
   },
   "selection": {
     "remove": "Take out of the selection",
@@ -593,5 +594,31 @@
     "hint": "Shift-click on the map to add or take out.",
     "save": "Save for all {{count}}",
     "saved": "Saved for {{count}} features."
+  },
+  "board": {
+    "kind": {
+      "power": "Power",
+      "sites": "Critical sites",
+      "telecoms": "Telecoms",
+      "pipelines": "Pipelines",
+      "water": "Water",
+      "extra": "Open data"
+    },
+    "title": "Status board",
+    "unavailable": "The statuses couldn't be loaded.",
+    "filter-status": "Show only these (click again: all)",
+    "all-kinds": "All kinds",
+    "search": "Name",
+    "none": "No feature with a status here.",
+    "no-history": "No status set yet.",
+    "now": "Now ({{count}} changes)",
+    "as-of": "As of {{when}} (change {{step}} of {{count}})",
+    "before": "Before the first change",
+    "first": "Before the first change",
+    "back": "One change back",
+    "play": "Play the changes",
+    "forward": "One change on",
+    "live": "Now",
+    "live-title": "Back to the statuses now"
   }
 }

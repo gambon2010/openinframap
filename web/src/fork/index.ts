@@ -28,10 +28,11 @@ const MODULES: ForkModule[] = [
   mapSources,
   extra,
   sites,
+  // Before search: its search results' descriptions come first.
+  status,
   search,
   details,
   grid,
-  status,
   layout,
   userlayers
 ]

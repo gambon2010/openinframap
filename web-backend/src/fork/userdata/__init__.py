@@ -29,4 +29,5 @@ routes = [
     Route("/userdata/images/{image_id}", endpoint=images.get_image),
     Route("/userdata/status", endpoint=status.statuses, methods=["GET", "POST"]),
     Route("/userdata/status/feature", endpoint=status.feature_status),
+    Route("/userdata/status/history", endpoint=status.history),
 ]

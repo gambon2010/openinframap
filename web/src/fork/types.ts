@@ -40,6 +40,7 @@ export interface BackendSearchResult {
   id?: number
   place_type?: string
   kind?: string
+  subtype?: string
   source?: string
   town?: string
   layer?: string

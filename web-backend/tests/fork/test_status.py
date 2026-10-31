@@ -34,3 +34,14 @@ def test_extra_fields_are_checked():
         with pytest.raises(HTTPException) as e:
             status.clean_details(bad)
         assert e.value.status_code == 400
+
+
+def test_a_status_typed_in_the_search_box():
+    from src.fork.search import statuses_named
+
+    assert statuses_named("Damaged") == ["damaged"]
+    assert statuses_named("under rep") == ["under_repair"]
+    assert statuses_named("dest") == ["destroyed"]
+    assert statuses_named("dam") == []  # too short: also "dam" (a site)
+    assert statuses_named("suspected  damage") == ["suspected_damage"]
+    assert statuses_named("marlenheim") == []
