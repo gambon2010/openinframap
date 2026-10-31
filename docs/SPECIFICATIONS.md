@@ -166,6 +166,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | ✅ step 4: red and orange from the statuses, grey for what isn't connected in the data, copies in My layers (`grid_supply.py`, `fork/modules/status/supply.ts`); scenarios not yet |
 | 12.3b | Show the substations and lines connected to nothing (no source even with nothing lost) in a different colour. | ✅ grey in power supply mode (asked 2026-10-31) |
 | 12.4 | A status history of its own, independent of My layers' history, that can be played back. | ✅ per feature, and played back on the Status board (step 3: list, counts, filters, search by status) |
+| 12.5 | Detailed substation model (voltage levels, transformers). | ❌ dropped (2026-10-31) |
 
 ## 10. Backlog (parked)
 
@@ -179,6 +180,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.6 | Users: a login page, user accounts (local only), access control per user (view the map; read or write each layer). | 🗂 designed: `docs/plans/sync.md` |
 | 10.6b | Auto sync of My layers between users: layers update by themselves; edits sent with Save; field-by-field merge; conflicts one by one in a window that can be minimised (your version shown meanwhile), Save blocked until resolved; owners share layers to view or modify; a situation is only seen by those who can view all its layers. | 🗂 designed: `docs/plans/sync.md` |
 | 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | 🗂 |
+| 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |
 
 ## 11. Quality
 

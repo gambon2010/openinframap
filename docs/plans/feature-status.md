@@ -1,6 +1,7 @@
 # Plan: a status on anything on the map, and power supply ("what if") on the grid
 
-Status: **agreed** (2026-10-31). Steps 1 to 4 are built (step 4 without scenarios) (statuses, their history
+Status: **agreed** (2026-10-31). Steps 1 to 4 are built; scenarios are in the backlog
+(SPECIFICATIONS 10.8) and step 5 (the detailed substation model) is dropped (statuses, their history
 per feature, the look on the map; extra fields, several at once, convenience stores;
 the Status board with playback and search by status; power supply mode). Answers so far are marked ✔.
 
@@ -136,6 +137,9 @@ plants, junctions, lines of 10 kV and more) and networkx in the backend.
 The whole French grid (about 280,000 nodes) fits in memory, and one run takes about
 a second. The graph is kept in the backend and rebuilt when statuses change.
 
+> **Dropped** (2026-10-31): the owner doesn't want the detailed model; a substation
+> stays one point of the network.
+
 ### Substations: the detailed model ✔
 
 - **Simple:** a substation is one point of the network. A damaged or destroyed
@@ -179,7 +183,7 @@ a second. The graph is kept in the backend and rebuilt when statuses change.
    - red, from the statuses, on the map and on copies in My layers;
    - then orange (weakened);
    - then scenarios.
-5. **The detailed substation model** ✔: levels and transformers in the grid
+5. ~~**The detailed substation model**~~ (dropped): levels and transformers in the grid
    network, and their statuses in the substation's panel.
 6. **Later, France only, estimated:** which hospitals and stores lose power. The
    distribution data links street substations to their source substation.
