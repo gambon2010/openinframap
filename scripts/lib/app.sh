@@ -86,10 +86,11 @@ port_in_use() {
     curl -s -o /dev/null --max-time 2 "http://localhost:$1/"
 }
 
-# The app is opened through the gate (gate/nginx.conf), which asks for a login;
+# The app is opened through the gate (gate/nginx.conf), which asks for a login,
+# over https with its own certificate (the browser warns once);
 # the frontend dev server itself is FRONTEND_PORT.
 GATE_PORT=8800
-APP_URL="http://localhost:$GATE_PORT"
+APP_URL="https://localhost:$GATE_PORT"
 
 BACKEND_PORT=8001
 
@@ -129,8 +130,12 @@ start_app() {
     if port_in_use "$GATE_PORT"; then
         ok "Gate already running."
     else
+        # Where it keeps its HTTPS certificate (made on its first start); made here, or
+        # Docker makes it owned by root.
+        mkdir -p "$DATA_DIR/gate"
         up_services gate
         ok "Gate started: $APP_URL (log in there; the first time, it makes the admin account)."
+        info "Its certificate is its own: the browser warns once (\"Advanced\" → \"Proceed\")."
     fi
     if port_in_use "$FRONTEND_PORT"; then
         ok "Frontend already running."

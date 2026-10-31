@@ -1113,7 +1113,15 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   `account` module shows "log out (name)" in the header, Settings → Accounts for
   admins (add, rights, new password, disable), and goes back to the login page when
   an answer from the site says the session has ended (401).
-- **Scripts:** `start.sh` / `launch.sh` start the gate and open http://localhost:8800.
+- **Scripts:** `start.sh` / `launch.sh` start the gate and open https://localhost:8800.
+- **HTTPS** (asked 2026-11-01): the gate has its own image (`gate/Dockerfile`: nginx and
+  openssl) and makes a self-signed certificate on first start (`gate/10-certificate.sh`,
+  10 years, for localhost, this computer's name and addresses; kept in `data/gate/`).
+  Plain http on 8800 is sent to https; the session cookie is `Secure` (the gate
+  passes `X-Forwarded-Proto`; in nginx, a location setting a header of its own loses
+  the server's, so they're repeated). Browsers warn once (nobody vouches for the
+  certificate); installing `data/gate/cert.pem` avoids it. The gate's image is saved
+  with the others for offline use.
 - **What can't be changed is locked** in Settings → Accounts (greyed out, the reason as
   its tooltip) rather than refused after: your own admin right and Disabled, and
   Disabled for another admin (take away the admin right first; the backend refuses

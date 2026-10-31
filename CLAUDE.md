@@ -21,7 +21,7 @@ bash scripts/launch.sh   # first time: build/import a region, .env files, start 
 bash scripts/start.sh    # every day: db + tegola + backend (Docker), frontend in a new terminal, browser
 ```
 
-Services (the fork's ports and services are in `docker-compose.override.yml`): `gate` (nginx, port 8800: **the app is opened there**; the one way in from the network, every request needs a logged-in session, `gate/nginx.conf`), `db` (PostGIS, 5432), `tegola` (7800), `backend` (8001), `basemap` (offline background map, `pmtiles serve` of `data/basemap/`, 8090), all four on 127.0.0.1 only, and the frontend (`cd web && npm start`, port 5173, reached through the gate). Stop: Ctrl+C in the frontend window, then `docker compose stop`.
+Services (the fork's ports and services are in `docker-compose.override.yml`): `gate` (nginx, https on port 8800 with its own self-signed certificate made on first start in `data/gate/`: **the app is opened there**; the one way in from the network, every request needs a logged-in session, `gate/nginx.conf`), `db` (PostGIS, 5432), `tegola` (7800), `backend` (8001), `basemap` (offline background map, `pmtiles serve` of `data/basemap/`, 8090), all four on 127.0.0.1 only, and the frontend (`cd web && npm start`, port 5173, reached through the gate). Stop: Ctrl+C in the frontend window, then `docker compose stop`.
 
 ## Commands
 

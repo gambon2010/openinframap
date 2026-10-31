@@ -415,10 +415,10 @@ def test_start(sandbox):
     # on it, in the background: give it a moment to be called.
     assert sandbox.docker_calls("up", "gate")
     for _ in range(50):
-        if ["xdg-open", "http://localhost:8800"] in sandbox.calls():
+        if ["xdg-open", "https://localhost:8800"] in sandbox.calls():
             break
         time.sleep(0.1)
-    assert ["xdg-open", "http://localhost:8800"] in sandbox.calls()
+    assert ["xdg-open", "https://localhost:8800"] in sandbox.calls()
     assert not sandbox.wiped()
 
 

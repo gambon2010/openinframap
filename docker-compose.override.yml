@@ -46,21 +46,23 @@ services:
     image: protomaps/go-pmtiles:v1.28.0
     # --public-url: its TileJSON (/<name>.json) then answers, with each file's bounds
     # (the frontend greys out satellite imagery where there's none).
-    command: ["serve", "/data", "--cors=*", "--public-url=http://localhost:8800/basemap"]
+    command: ["serve", "/data", "--cors=*", "--public-url=https://localhost:8800/basemap"]
     ports:
       - "127.0.0.1:8090:8080"
     volumes:
       - ./data/basemap:/data:ro,z
 
-  # The gate (gate/nginx.conf): the one entry point, http://<this computer>:8800.
+  # The gate (gate/nginx.conf): the one entry point, https://<this computer>:8800.
   # Every request needs a logged-in session (docs/plans/sync.md); the other
   # services above only listen on this computer. On the host's network, to reach
   # them and the frontend dev server (npm start) on 127.0.0.1.
   gate:
-    image: nginx:1.27-alpine
+    build: gate
     network_mode: host
     volumes:
       - ./gate/nginx.conf:/etc/nginx/nginx.conf:ro,z
+      # Its HTTPS certificate, made on first start (gate/10-certificate.sh).
+      - ./data/gate:/etc/nginx/certs:z
     restart: unless-stopped
 
   # Helper image for scripts/build-region.sh. Not started by `docker compose up`.

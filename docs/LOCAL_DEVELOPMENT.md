@@ -40,7 +40,7 @@ bash scripts/launch.sh
 3. Creates `web/.env` and `web-backend/.env` if they don't exist.
 4. Starts the Tegola tile server.
 5. Asks **"Start the app now?"**: it starts the backend and the gate (Docker),
-   opens the frontend in a new terminal window, and opens http://localhost:8800 in
+   opens the frontend in a new terminal window, and opens https://localhost:8800 in
    your browser once it's up.
 6. Offers to fill the Wikidata cache for offline popups (with a time estimate).
 
@@ -59,8 +59,18 @@ window and the browser. Anything already running is left alone.
 
 ### Logging in
 
-The whole app is behind a login: open it at **http://localhost:8800** (from another
-computer: `http://<this computer's address>:8800`).
+The whole app is behind a login: open it at **https://localhost:8800** (from another
+computer: `https://<this computer's address>:8800`).
+
+**The browser warns the first time** ("Your connection is not private"): the gate
+made its own certificate (nobody else vouches for it), so choose **Advanced →
+Proceed**, once per browser. The connection is encrypted all the same: passwords
+and the session don't cross the network in clear. To avoid the warning, install
+`data/gate/cert.pem` as a trusted certificate on each computer (browser or system
+settings, "Certificates" → import). The certificate is valid 10 years, for
+`localhost` and this computer's name and network addresses when it was made; if the
+address changes, delete `data/gate/` and restart the gate (`docker compose restart
+gate`) to make a new one.
 
 - **The first time**, the page asks you to create the first account: it's an admin.
 - **Admins** add the other accounts in **Settings → Accounts** (nobody can sign up
