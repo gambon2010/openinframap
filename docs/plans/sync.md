@@ -89,7 +89,8 @@ today.
   - "draw into" layer;
   - favourite symbols.
 
-The folder, which is on the layer today, moves to a per-user setting.
+The folder, which was on the layer, is now a per-user setting (phase 5); the layer's
+old `style.folder` is only the fallback for whoever hasn't chosen one.
 
 ## Situations
 
@@ -168,7 +169,8 @@ and other users get modify access to them, so nothing is lost or hidden.
    changes arrive when Save is refused or the page loads; pushed live in phase 4).
 4. **Live updates** (Server-Sent Events, catching up after a disconnection). **Built
    2026-11-01.**
-5. **Per-user settings** (folder, hidden, folded).
+5. **Per-user settings** (folder, hidden, folded, open in the list). **Built
+   2026-11-01** ("draw into" and favourite symbols stay per browser for now).
 
 ## Still open (later, not needed to start)
 

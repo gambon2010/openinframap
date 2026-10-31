@@ -758,7 +758,8 @@ was hard to read. Version 3, built in steps:
   spelled out, compass points); "+ Add detail" lists the rest by question (who,
   what, when, where, how sure); notes always shown; Duplicate.
 - **Step 3, the outliner** (`outliner.ts`, `labels.ts`): folders (one level,
-  `style.folder` on each layer, folded state per browser) with an eye and a lock
+  `style.folder` on each layer, folded state per browser; both per account since
+  sync phase 5) with an eye and a lock
   for all their layers; layers with eye, lock (`style.locked`: no drags, deletes or
   edits, the card read-only, nothing new drawn into it), colour, item count, ⋯
   (draw into, rename, move to folder, delete); items with their symbol and a status
@@ -1199,6 +1200,24 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   stay); a Save under way first. The statuses (map, supply, board) refresh too.
 - Tested: A's page open, B saves a layer and shares it with A, sets a status: A's list
   shows the layer 2 s later, its statuses refresh, no reload.
+
+## Per-user settings (docs/plans/sync.md, phase 5)
+
+- **The backend** (`web-backend/src/fork/userdata/settings.py`, `GET/PUT
+  /userdata/settings/{key}`): one JSON value per account and key (at most 200 KB),
+  in `userdata.user_setting` (`userdata.sql`'s last statement: `schema.py` checks
+  for it to know the schema is up to date). Without an account (`ANYONE`): 403.
+- **My layers** (`web/src/fork/modules/userlayers/state/personal.ts`, key
+  "userlayers"): each layer's folder, the layers hidden, the layers open and the
+  folders folded in the list, the folders still empty. Kept in this browser too
+  (shown at once, used when the server can't be reached), sent half a second after
+  a change. The first time, what the browser kept before (`oim-userlayers-hidden`,
+  `-folded`, `-empty-folders`) is taken over and sent.
+- **Folders aren't changes any more:** moving a layer to a folder isn't recorded,
+  saved or undone, and works on layers shared with you to view only. A layer's
+  `style.folder` (set before) is only the fallback when you haven't chosen.
+- Tested: a layer whose shared folder is "Shared" shows in the account's "Mine";
+  moved to a new folder from its menu, the server has it and nothing is unsaved.
 
 ## Satellite imagery (offline)
 

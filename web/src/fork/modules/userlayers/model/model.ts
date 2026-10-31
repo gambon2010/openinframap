@@ -38,7 +38,7 @@ export interface UserFeature {
 export interface UserLayer {
   id: string
   name: string
-  /** color: of its drawings and markers; folder: the folder it's in (outliner);
+  /** color: of its drawings and markers; folder: its folder before folders were personal (state/personal.ts: the fallback);
    * locked: its items can't be changed or moved. */
   style: { color?: string; folder?: string; locked?: boolean }
   features: Map<string, UserFeature>

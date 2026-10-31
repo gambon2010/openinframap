@@ -168,4 +168,15 @@ CREATE TABLE IF NOT EXISTS userdata.layer_access (
 ALTER TABLE userdata.layer ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1;
 ALTER TABLE userdata.layer ADD COLUMN IF NOT EXISTS updated_by text;
 ALTER TABLE userdata.feature ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1;
-ALTER TABLE userdata.feature ADD COLUMN IF NOT EXISTS updated_by text
+ALTER TABLE userdata.feature ADD COLUMN IF NOT EXISTS updated_by text;
+
+-- Personal settings (docs/plans/sync.md, phase 5), one JSON value per account and
+-- key: My layers' "userlayers" (each layer's folder, the layers hidden, open and
+-- folded in the list, empty folders), so they follow the account to any computer.
+CREATE TABLE IF NOT EXISTS userdata.user_setting (
+    user_id integer NOT NULL REFERENCES userdata.app_user (id) ON DELETE CASCADE,
+    key text NOT NULL,
+    value jsonb NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, key)
+)

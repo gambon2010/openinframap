@@ -35,10 +35,10 @@ def test_schema_is_upgraded_by_its_newest_addition():
     sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
     assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
     assert "CREATE TABLE IF NOT EXISTS userdata.status_change" in sql
-    # ensure_schema checks for the newest addition (the last statement: a column of
-    # userdata.feature), so older databases get everything.
+    # ensure_schema checks for the newest addition (the last statement makes that
+    # table), so older databases get everything.
     last = [s for s in sql.split(";\n") if s.strip()][-1]
-    assert f"userdata.feature ADD COLUMN IF NOT EXISTS {schema.NEWEST_COLUMN} " in last
+    assert f"CREATE TABLE IF NOT EXISTS {schema.NEWEST_TABLE} " in last
 
 
 def test_parse_time():
@@ -86,6 +86,7 @@ def test_routes_are_where_they_were():
         "/userdata/save",
         "/userdata/history",
         "/userdata/events",
+        "/userdata/settings/{key}",
         "/userdata/situations",
         "/userdata/situations/{situation_id}",
         "/userdata/images",

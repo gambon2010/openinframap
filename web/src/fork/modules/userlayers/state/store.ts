@@ -18,6 +18,7 @@ import { loadSaved, send } from './transport.ts'
 import { StaleError } from './api.ts'
 import { Bases, Conflict, baseOf, changeKey, featureKey, reconcile } from './reconcile.ts'
 import { FeatureState, LayerState } from './merge.ts'
+import { PersonalSettings } from './personal.ts'
 import { UndoHistory } from './undo.ts'
 import { View } from './view.ts'
 
@@ -33,11 +34,21 @@ export class Store {
   readonly view = new View()
   // The layers as saved (before the pending changes), to rebuild them after an undo.
   private saved = new Map<string, UserLayer>()
-  hidden = new Set<string>(local.hidden())
+  /** Your own folders, hidden layers... (personal.ts): not changes, never shared. */
+  readonly personal = new PersonalSettings()
+  hidden = new Set<string>(this.personal.data.hidden)
   activeLayer: string | null = null
   loaded = false
   error: string | null = null
   private listeners: (() => void)[] = []
+
+  constructor() {
+    // Your settings from the server (another computer may have changed them).
+    this.personal.onChange(() => {
+      this.hidden = new Set(this.personal.data.hidden)
+      this.notify()
+    })
+  }
 
   onChange(listener: () => void) {
     this.listeners.push(listener)
@@ -237,9 +248,8 @@ export class Store {
 
   createLayer(name: string, folder?: string): string {
     const id = uuid()
-    const style: UserLayer['style'] = { color: DEFAULT_COLOR }
-    if (folder) style.folder = folder
-    this.record('layer_create', id, undefined, { name, style })
+    if (folder) this.personal.setFolder(id, folder)
+    this.record('layer_create', id, undefined, { name, style: { color: DEFAULT_COLOR } })
     this.activeLayer = id
     this.notify()
     return id
@@ -340,7 +350,7 @@ export class Store {
   setHidden(layerId: string, hidden: boolean) {
     if (hidden) this.hidden.add(layerId)
     else this.hidden.delete(layerId)
-    local.setHidden([...this.hidden])
+    this.personal.toggle('hidden', layerId, hidden)
     this.notify()
   }
 
