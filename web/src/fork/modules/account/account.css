@@ -1,0 +1,45 @@
+/* Fork: Settings → Accounts (accounts.ts). */
+.oim-accounts {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.oim-accounts th,
+.oim-accounts td {
+  padding: 0.25em 0.4em;
+  border-bottom: 1px solid var(--oim-light-grey);
+  text-align: left;
+}
+
+.oim-accounts td:nth-child(n + 2):nth-child(-n + 4) {
+  text-align: center;
+}
+
+.oim-accounts-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4em 0.8em;
+  margin-top: 0.6em;
+}
+
+.oim-accounts-add h4 {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.oim-accounts-add input[type='text'],
+.oim-accounts-add input[type='password'] {
+  flex: 1 1 10em;
+  font: inherit;
+  padding: 0.3em;
+}
+
+.oim-accounts-error {
+  color: #c92a2a;
+}
+
+.oim-accounts-error:empty {
+  display: none;
+}

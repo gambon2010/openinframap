@@ -39,9 +39,9 @@ bash scripts/launch.sh
    region, or import a ready-made one.
 3. Creates `web/.env` and `web-backend/.env` if they don't exist.
 4. Starts the Tegola tile server.
-5. Asks **"Start the app now?"**: it starts the backend (Docker), opens the frontend
-   in a new terminal window, and opens http://localhost:5173 in your browser once
-   it's up.
+5. Asks **"Start the app now?"**: it starts the backend and the gate (Docker),
+   opens the frontend in a new terminal window, and opens http://localhost:8800 in
+   your browser once it's up.
 6. Offers to fill the Wikidata cache for offline popups (with a time estimate).
 
 For a quick test, pick **Luxembourg**: it builds in under a minute.
@@ -56,6 +56,26 @@ It asks nothing: it starts the database, Tegola and the backend, opens the front
 window and the browser. Anything already running is left alone.
 
 **To stop:** Ctrl+C in the frontend window (or close it), then `docker compose stop`.
+
+### Logging in
+
+The whole app is behind a login: open it at **http://localhost:8800** (from another
+computer: `http://<this computer's address>:8800`).
+
+- **The first time**, the page asks you to create the first account: it's an admin.
+- **Admins** add the other accounts in **Settings → Accounts** (nobody can sign up
+  alone), set new passwords, and give the rights: **Admin** (manage accounts) and
+  **Can set statuses** (damage and threats on the map). An account can be disabled.
+- **"log out (name)"** in the header ends the session; otherwise it lasts 30 days
+  from the last visit.
+
+Behind it, the **gate** (`gate/nginx.conf`, the `gate` Compose service) is the only
+way in from the network: it checks the session on every request, for the map tiles,
+the background map and the page too. The database, Tegola, the backend and the
+background map server only listen on this computer (127.0.0.1), and the backend
+refuses any call without a session too. http://localhost:5173 (the frontend dev
+server) still answers on this computer, but the map's data doesn't load there: use
+port 8800.
 
 ---
 

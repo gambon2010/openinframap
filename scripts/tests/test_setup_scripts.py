@@ -411,12 +411,14 @@ def test_start(sandbox):
     assert result.returncode == 0, result.stderr + result.stdout
     assert sandbox.docker_calls("up", "db")
     assert sandbox.docker_calls("up", "tegola")
-    # The browser is opened in the background: give it a moment to be called.
+    # The gate (the way in, asking for a login) is started, and the browser opened
+    # on it, in the background: give it a moment to be called.
+    assert sandbox.docker_calls("up", "gate")
     for _ in range(50):
-        if ["xdg-open", "http://localhost:5173"] in sandbox.calls():
+        if ["xdg-open", "http://localhost:8800"] in sandbox.calls():
             break
         time.sleep(0.1)
-    assert ["xdg-open", "http://localhost:5173"] in sandbox.calls()
+    assert ["xdg-open", "http://localhost:8800"] in sandbox.calls()
     assert not sandbox.wiped()
 
 

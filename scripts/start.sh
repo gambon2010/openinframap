@@ -7,7 +7,8 @@ set -euo pipefail
 #   bash scripts/start.sh
 #
 # Starts the database and Tegola (Docker), opens the backend and frontend in
-# their own terminal windows, and opens http://localhost:5173 once it's up.
+# their own terminal windows, and opens http://localhost:8800 (the gate, which asks
+# for a login) once it's up.
 # Anything already running is left alone. Needs a database built by
 # scripts/launch.sh (first-time setup) or scripts/build-region.sh. If the
 # region's export in data/exports/ is out of date, it's exported again.

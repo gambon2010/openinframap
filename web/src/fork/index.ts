@@ -20,6 +20,7 @@ import details from './modules/details/index.ts'
 import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
 import status from './modules/status/index.ts'
+import account from './modules/account/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
@@ -34,7 +35,9 @@ const MODULES: ForkModule[] = [
   details,
   grid,
   layout,
-  userlayers
+  userlayers,
+  // After layout: its header link goes after Settings.
+  account
 ]
 
 let context: ForkContext | undefined

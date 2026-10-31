@@ -5,8 +5,9 @@ services:
   db:
     # The database port on the host, for the web-backend when it runs outside
     # Docker (uvicorn): postgresql://osm:osm@localhost:5432/osm.
+    # This computer only: from the network, everything goes through the gate.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     # :z labels the mounts for SELinux (Fedora); same container paths, so these
     # replace upstream's.
     volumes:
@@ -16,7 +17,7 @@ services:
   tegola:
     # 7800 rather than upstream's 8080 (often taken); !override replaces the list.
     ports: !override
-      - "7800:80"
+      - "127.0.0.1:7800:80"
 
   # Web backend (stats pages, search, Wikidata popups). The image has its own
   # Python and packages, so it also runs on a computer without internet once
@@ -30,7 +31,7 @@ services:
     # (and download) packages at startup.
     entrypoint: ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
     ports:
-      - "8001:80"
+      - "127.0.0.1:8001:80"
     volumes:
       # Offline Wikidata cache filled by scripts/fetch_images.py on the host.
       - ./data/images:/data/images:z
@@ -45,9 +46,20 @@ services:
     image: protomaps/go-pmtiles:v1.28.0
     command: ["serve", "/data", "--cors=*"]
     ports:
-      - "8090:8080"
+      - "127.0.0.1:8090:8080"
     volumes:
       - ./data/basemap:/data:ro,z
+
+  # The gate (gate/nginx.conf): the one entry point, http://<this computer>:8800.
+  # Every request needs a logged-in session (docs/plans/sync.md); the other
+  # services above only listen on this computer. On the host's network, to reach
+  # them and the frontend dev server (npm start) on 127.0.0.1.
+  gate:
+    image: nginx:1.27-alpine
+    network_mode: host
+    volumes:
+      - ./gate/nginx.conf:/etc/nginx/nginx.conf:ro,z
+    restart: unless-stopped
 
   # Helper image for scripts/build-region.sh. Not started by `docker compose up`.
   osmium:

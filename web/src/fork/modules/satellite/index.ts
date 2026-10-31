@@ -22,6 +22,8 @@ export interface Tier {
   attribution: string
 }
 
+import { throughGate } from '../../config.ts'
+
 export type BackgroundMode = 'map' | 'satellite' | 'hybrid'
 
 const MODE_KEY = 'oim-background-mode'
@@ -42,7 +44,7 @@ export function parseTiers(value: string | undefined): Tier[] {
       Number.isInteger(maxzoom) &&
       minzoom <= maxzoom
     ) {
-      tiers.push({ url, minzoom, maxzoom, attribution: attribution.trim() })
+      tiers.push({ url: throughGate(url), minzoom, maxzoom, attribution: attribution.trim() })
     }
   }
   return tiers.sort((a, b) => a.minzoom - b.minzoom)

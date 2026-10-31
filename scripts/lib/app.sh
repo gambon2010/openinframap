@@ -86,7 +86,10 @@ port_in_use() {
     curl -s -o /dev/null --max-time 2 "http://localhost:$1/"
 }
 
-APP_URL="http://localhost:5173"
+# The app is opened through the gate (gate/nginx.conf), which asks for a login;
+# the frontend dev server itself is FRONTEND_PORT.
+GATE_PORT=8800
+APP_URL="http://localhost:$GATE_PORT"
 
 BACKEND_PORT=8001
 
@@ -122,6 +125,13 @@ start_app() {
         up_services backend
         ok "Backend started (Docker). Its log: docker compose logs -f backend"
     fi
+    # The gate: the one way in, asking for a login (docs/plans/sync.md).
+    if port_in_use "$GATE_PORT"; then
+        ok "Gate already running."
+    else
+        up_services gate
+        ok "Gate started: $APP_URL (log in there; the first time, it makes the admin account)."
+    fi
     if port_in_use "$FRONTEND_PORT"; then
         ok "Frontend already running."
     else
@@ -150,8 +160,8 @@ start_app() {
 print_manual_start() {
     echo "Start the app:"
     echo ""
-    echo "  Backend (Docker):"
-    echo "    docker compose up -d backend"
+    echo "  Backend and the gate (Docker):"
+    echo "    docker compose up -d backend gate"
     echo ""
     echo "  Frontend (in a terminal you keep open):"
     echo "    cd web && npm install && npm start"

@@ -1,0 +1,155 @@
+<!doctype html>
+<!-- Fork: the login page (auth/routes.py). With no account yet, it makes the first
+     one, an admin. Then it goes back to the page asked for (?next=/...). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log in · Open Infrastructure Map</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f1f3f5;
+        --card: #fff;
+        --text: #212529;
+        --muted: #6c757d;
+        --border: #ced4da;
+        --accent: #2b8a3e;
+        --error: #c92a2a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1a1b1e;
+          --card: #25262b;
+          --text: #e9ecef;
+          --muted: #909296;
+          --border: #495057;
+        }
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, sans-serif;
+      }
+      form {
+        width: min(340px, calc(100vw - 32px));
+        padding: 1.5em;
+        border-radius: 10px;
+        background: var(--card);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        display: flex;
+        flex-direction: column;
+        gap: 0.8em;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.3em;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9em;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25em;
+        font-size: 0.9em;
+      }
+      input {
+        font: inherit;
+        padding: 0.5em;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--card);
+        color: var(--text);
+      }
+      button {
+        font: inherit;
+        padding: 0.6em;
+        border: 0;
+        border-radius: 6px;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+      }
+      .error {
+        color: var(--error);
+      }
+      .error:empty,
+      .repeat[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="form">
+      <h1 id="title">Open Infrastructure Map</h1>
+      <p id="intro">Log in to see the map.</p>
+      <label>Name <input id="name" autocomplete="username" required /></label>
+      <label>Password <input id="password" type="password" autocomplete="current-password" required /></label>
+      <label class="repeat" hidden
+        >Password again <input id="repeat" type="password" autocomplete="new-password"
+      /></label>
+      <p class="error" id="error" role="alert"></p>
+      <button id="submit" type="submit">Log in</button>
+    </form>
+    <script>
+      const $ = (id) => document.getElementById(id)
+      // Back where we were going: a path of this site only, with the map's place
+      // (the part after #, which the browser kept through the redirect here).
+      const next = new URLSearchParams(location.search).get('next') || '/'
+      const target = (next.startsWith('/') && !next.startsWith('//') ? next : '/') + location.hash
+      let setup = false
+
+      fetch('/auth/me').then(async (response) => {
+        if (response.ok) return location.replace(target)
+        const body = await response.json().catch(() => ({}))
+        if (body.setup) {
+          setup = true
+          $('intro').textContent = 'No account yet: make the first one. It will be an admin, who can make the others.'
+          $('submit').textContent = 'Create the admin account'
+          $('password').autocomplete = 'new-password'
+          document.querySelector('.repeat').hidden = false
+          $('repeat').required = true
+        }
+      })
+
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault()
+        $('error').textContent = ''
+        if (setup && $('password').value !== $('repeat').value) {
+          $('error').textContent = "The two passwords aren't the same."
+          return
+        }
+        $('submit').disabled = true
+        try {
+          const response = await fetch(setup ? '/auth/setup' : '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: $('name').value, password: $('password').value })
+          })
+          if (!response.ok) {
+            const text = await response.text()
+            let message = text
+            try {
+              message = JSON.parse(text).detail || JSON.parse(text).error || text
+            } catch {}
+            throw new Error(message || response.statusText)
+          }
+          location.replace(target)
+        } catch (err) {
+          $('error').textContent = err.message
+          $('submit').disabled = false
+        }
+      })
+    </script>
+  </body>

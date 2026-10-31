@@ -21,7 +21,7 @@ from . import State
 from .config import DATABASE_URL, DEBUG
 from .sitemap import sitemap
 from .views import routes
-from .fork import routes as fork_routes
+from .fork import routes as fork_routes, middleware as fork_middleware
 
 
 @contextlib.asynccontextmanager
@@ -70,5 +70,6 @@ app = Starlette(
     middleware=[
         Middleware(CORSMiddleware, allow_origin_regex="http://localhost.*"),
         Middleware(DBSessionMiddleware),
+        *fork_middleware,  # fork: login (after the database: it needs the connection)
     ],
 )

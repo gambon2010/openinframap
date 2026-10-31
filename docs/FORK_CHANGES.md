@@ -1090,6 +1090,31 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - Not yet: scenarios ("what if these were lost?" without setting statuses), and the
   detailed substation model (step 5: levels and transformers).
 
+## Login for the whole app (docs/plans/sync.md, phase 1)
+
+- **Accounts** (`web-backend/src/fork/auth/`, tables `userdata.app_user` and
+  `userdata.user_session`): local only, made by admins; the first one at setup (the
+  login page offers it while there's no account). Rights: admin, can set statuses.
+  Passwords hashed with scrypt; sessions are a random token in an HttpOnly cookie
+  (`oim_session`), stored hashed, 30 days from the last visit.
+- **Every call needs a session:** `LoginMiddleware` (added in `main.py` after the
+  database middleware, one line) answers 401 to anything but `/login` and `/auth/*`.
+  `current_user()` (`userdata/users.py`) is the logged-in user; statuses use its
+  rights (`can_set_statuses`) and name.
+- **The gate** (`gate/nginx.conf`, Compose `gate`, on the host's network, port 8800):
+  the only way in from the network. It checks the session with the backend
+  (`auth_request` → `/auth/check`) on every request and passes it to the frontend dev
+  server, Tegola (`/tegola/`), the background map (`/basemap/`) or the backend; a page
+  without a session goes to `/login?next=…` (the map's place after `#` is kept). The
+  database, Tegola, the backend and the background map server listen on 127.0.0.1
+  only (checked: from the network address only 8800 answers).
+- **Frontend:** `throughGate()` (`fork/config.ts`) sends the local services of
+  `web/.env` (localhost:7800, 8001, 8090) through the gate, at the page's address. The
+  `account` module shows "log out (name)" in the header, Settings → Accounts for
+  admins (add, rights, new password, disable), and goes back to the login page when
+  an answer from the site says the session has ended (401).
+- **Scripts:** `start.sh` / `launch.sh` start the gate and open http://localhost:8800.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

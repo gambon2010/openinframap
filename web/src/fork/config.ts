@@ -1,11 +1,32 @@
 export const TILE_BASE_URL: string = import.meta.env.VITE_TILE_BASE_URL ?? 'https://openinframap.org'
 
+// The app is opened through the gate (gate/nginx.conf, http://<this computer>:8800),
+// which checks the login on every request: the local services in web/.env
+// (Tegola, the backend, the background map, on localhost) are reached through it,
+// at the page's own address. Other addresses (openinframap.org...) are left as they are.
+const THROUGH_GATE: [RegExp, string][] = [
+  [/^https?:\/\/(localhost|127\.0\.0\.1):7800/, '/tegola'],
+  [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, ''],
+  [/^https?:\/\/(localhost|127\.0\.0\.1):8090/, '/basemap']
+]
+
+/** A local service's address as reached through the gate, from this page. */
+export function throughGate(url: string, origin = globalThis.location?.origin): string {
+  if (!origin) return url
+  for (const [service, path] of THROUGH_GATE) {
+    if (service.test(url)) return url.replace(service, origin + path)
+  }
+  return url
+}
+
 // Basemap (roads, buildings, water, labels) vector tiles in the Protomaps
 // schema. Defaults to openinframap.org; set VITE_BASEMAP_URL to use your own
 // tile server, e.g. `pmtiles serve` or a Martin instance. The "Map sources"
 // panel (src/map-sources/) can override it for the current browser tab.
 export const DEFAULT_BASEMAP_URL = `${TILE_BASE_URL}/20250311/{z}/{x}/{y}.mvt`
-export const CONFIGURED_BASEMAP_URL: string = import.meta.env.VITE_BASEMAP_URL || DEFAULT_BASEMAP_URL
+export const CONFIGURED_BASEMAP_URL: string = throughGate(
+  import.meta.env.VITE_BASEMAP_URL || DEFAULT_BASEMAP_URL
+)
 
 export const BASEMAP_SESSION_KEY = 'oim-basemap-url'
 
@@ -38,19 +59,21 @@ export function setSessionUrl(key: string, url: string | null) {
   }
 }
 
-export const BASEMAP_URL: string = getSessionUrl(BASEMAP_SESSION_KEY) || CONFIGURED_BASEMAP_URL
+export const BASEMAP_URL: string = throughGate(getSessionUrl(BASEMAP_SESSION_KEY) || CONFIGURED_BASEMAP_URL)
 
 /** The Photon URL in use right now ('' = none); read on every search so changes apply live. */
 export function getPhotonUrl(): string {
   return getSessionUrl(PHOTON_SESSION_KEY) ?? CONFIGURED_PHOTON_URL
 }
 
-export const BACKEND_BASE_URL: string = import.meta.env.VITE_BACKEND_BASE_URL ?? 'https://openinframap.org'
+export const BACKEND_BASE_URL: string = throughGate(
+  import.meta.env.VITE_BACKEND_BASE_URL ?? 'https://openinframap.org'
+)
 
 // Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.).
 // Production nginx serves these at /map/*; local Tegola serves them at /maps/*.
 // When VITE_TEGOLA_URL is set we point directly at Tegola — Tegola returns
 // Access-Control-Allow-Origin: * so cross-origin tile fetches work fine.
 export const OIM_TILES: string = import.meta.env.VITE_TEGOLA_URL
-  ? `${import.meta.env.VITE_TEGOLA_URL}/maps`
+  ? `${throughGate(import.meta.env.VITE_TEGOLA_URL)}/maps`
   : `${TILE_BASE_URL}/map`

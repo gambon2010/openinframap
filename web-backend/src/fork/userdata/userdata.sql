@@ -123,4 +123,24 @@ CREATE TABLE IF NOT EXISTS userdata.tower_ref (
     label text NOT NULL,
     PRIMARY KEY (line_key, osm_id)
 );
-CREATE INDEX IF NOT EXISTS tower_ref_osm_id ON userdata.tower_ref (osm_id)
+CREATE INDEX IF NOT EXISTS tower_ref_osm_id ON userdata.tower_ref (osm_id);
+
+-- Accounts (docs/plans/sync.md, "Login for the whole app"): local only, made by
+-- admins (the first one at setup). Passwords hashed with scrypt (auth/passwords.py).
+CREATE TABLE IF NOT EXISTS userdata.app_user (
+    id serial PRIMARY KEY,
+    name text NOT NULL UNIQUE,
+    password_hash text NOT NULL,
+    is_admin boolean NOT NULL DEFAULT false,
+    can_set_statuses boolean NOT NULL DEFAULT false,
+    disabled boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Who is logged in: a random token in a cookie, stored hashed (sha256).
+CREATE TABLE IF NOT EXISTS userdata.user_session (
+    token_hash text PRIMARY KEY,
+    user_id integer NOT NULL REFERENCES userdata.app_user (id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL
+)

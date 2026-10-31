@@ -41,6 +41,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   satellite    imagery as the background
   map-sources  background tiles and Photon (Settings)
   layout       the dock, the Settings link, the search box in the top bar
+  account      who is logged in, log out, Settings → Accounts (admins)
   userlayers   My layers (below)
 locales/en.json   the fork's English strings
 ```
@@ -94,9 +95,12 @@ sharing and live sync are designed in `plans/sync.md`. They plug into
 ## Backend: `web-backend/src/fork/`
 
 Starlette routes, put ahead of upstream's (the fork's search replaces upstream's at
-the same URL):
+the same URL), and a login check (`auth/`: every route but logging in needs a
+session):
 
+- `auth/`: accounts, sessions, the login page, `LoginMiddleware`;
 - `search.py`;
+- `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
 - `grid.py` (routes over the power grid, `/grid/line`), `grid_supply.py` (power
   supply mode), `line_trace.py` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers.py`

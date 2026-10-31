@@ -96,7 +96,14 @@ def test_routes_are_where_they_were():
     }
 
 
-def test_anyone_until_there_is_a_login():
-    from src.fork.userdata.users import ANYONE, current_user
+def test_the_logged_in_user_or_anyone_without_the_middleware():
+    from types import SimpleNamespace
 
-    assert current_user(None) is ANYONE  # type: ignore[arg-type]
+    from src.fork.userdata.users import ANYONE, User, can_set_statuses, current_user
+
+    alice = User(id="1", name="Alice")
+    assert current_user(SimpleNamespace(scope={"user": alice})) is alice  # type: ignore[arg-type]
+    assert current_user(SimpleNamespace(scope={})) is ANYONE  # type: ignore[arg-type]
+    assert not can_set_statuses(alice)
+    assert can_set_statuses(User(id="2", name="Bob", can_set_statuses=True))
+    assert can_set_statuses(User(id="3", name="Admin", is_admin=True))

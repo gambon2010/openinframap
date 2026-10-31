@@ -639,5 +639,19 @@
     "grey": "not connected in the data",
     "risk": "{{count}} at risk if the suspected damage is confirmed",
     "risk-key": "at risk (suspected damage)"
+  },
+  "account": {
+    "title": "Accounts",
+    "name": "Name",
+    "admin": "Admin",
+    "statuses": "Can set statuses",
+    "disabled": "Disabled",
+    "you": "you",
+    "new-password": "New password",
+    "password-for": "New password for {{name}}",
+    "password": "Password (8 characters at least)",
+    "add": "Add an account",
+    "create": "Create",
+    "logout": "log out ({{name}})"
   }
 }

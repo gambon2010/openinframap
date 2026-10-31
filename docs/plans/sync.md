@@ -159,7 +159,8 @@ and other users get modify access to them, so nothing is lost or hidden.
 ## Building it
 
 1. **Accounts and login, the gate** (users, sessions, login and setup pages, user
-   management for admins, the "can set statuses" right; the gate).
+   management for admins, the "can set statuses" right; the gate). **Built
+   2026-11-01.**
 2. **Owners and sharing:** layers get an owner and per-user access (view, modify);
    access checked on every read and Save; the sharing dialog; situations record
    their layers.
