@@ -7,7 +7,7 @@ import { sourceGeometry } from '../../core/map-data.ts'
 import { closeButton } from '../../ui/details.ts'
 import { LEFT_ORDER, leftColumn } from '../../ui/left-column.ts'
 import { selection } from '../../ui/selection.ts'
-import { Field, fieldsOf } from './fields.ts'
+import { Field, canHaveStatus, fieldsOf } from './fields.ts'
 import { FeatureRef, saveStatus, statusForm } from './form.ts'
 
 const SOURCE = 'feature_selection'
@@ -140,7 +140,10 @@ export class SelectionPanel {
   }
 
   private form(): HTMLElement {
-    const features = selection.features.map(([, f]) => refOf(f))
+    // Small parts (switches, poles...) are left out: they can't have a status.
+    const features = selection.features
+      .filter(([, f]) => canHaveStatus(f.sourceLayer, f.properties))
+      .map(([, f]) => refOf(f))
     // The extra fields any of them has; each gets only its own.
     const fields = [
       ...new globalThis.Map(features.flatMap((f) => f.fields).map((f) => [f.key, f])).values()

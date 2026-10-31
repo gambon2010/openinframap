@@ -68,9 +68,15 @@ def clean_details(raw: Any) -> dict[str, str]:
     return details
 
 
+# Small parts a status would say nothing useful about (inside a substation, on
+# the street): switches, compensators, cabinets, gantries. Poles, and busbars and
+# bays (power lines inside substations), are left out in can_have_status.
+NO_STATUS = {"power_switch", "power_compensator", "power_portal_way", "telecoms_cabinet", "water_cabinet"}
+
+
 def feature_of(layer: str, raw_id: Any) -> tuple[str, str, int]:
     """(table, id column, id) of a tile layer's feature."""
-    if layer not in SOURCE_TABLES:
+    if layer not in SOURCE_TABLES or layer in NO_STATUS:
         raise HTTPException(404, "Features of that layer can't have a status")
     try:
         feature_id = int(raw_id)
@@ -154,11 +160,24 @@ async def history(request: Request) -> Response:
     )
 
 
+async def can_have_status(db: Any, table: str, feature_id: int) -> bool:
+    """Not a pole, nor a busbar or bay (a power line inside a substation)."""
+    if table == "osm_power_tower":
+        kind = "SELECT type FROM osm_power_tower WHERE osm_id = :id LIMIT 1"
+        return (await db.execute(text(kind), {"id": feature_id})).scalar() != "pole"
+    if table == "osm_power_line":
+        kind = "SELECT line FROM osm_power_line WHERE osm_id = :id LIMIT 1"
+        return (await db.execute(text(kind), {"id": feature_id})).scalar() not in ("busbar", "bay")
+    return True
+
+
 async def feature_status(request: Request) -> Response:
     """One feature's status (null if it never had one) and its history, newest first."""
     db = get_db(request)
     await ensure_schema(db)
     table, _, feature_id = feature_of(request.query_params.get("layer", ""), request.query_params.get("id"))
+    if not await can_have_status(db, table, feature_id):
+        raise HTTPException(404, "That feature can't have a status")
     current = (
         await db.execute(
             text(
@@ -196,6 +215,8 @@ async def set_status(request: Request) -> Response:
     body = await read_json(request)
     layer = str(body.get("layer") or "")
     table, id_column, feature_id = feature_of(layer, body.get("id"))
+    if not await can_have_status(db, table, feature_id):
+        raise HTTPException(404, "That feature can't have a status")
     status = body.get("status")
     if status not in STATUSES:
         raise HTTPException(400, f"The status must be one of: {', '.join(STATUSES)}")

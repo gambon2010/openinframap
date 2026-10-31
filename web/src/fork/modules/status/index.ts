@@ -12,7 +12,7 @@ import { StatusBoard } from './board.ts'
 import { SupplyMode } from './supply.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
 import { StatusSection, featureKey } from './details.ts'
-import { fieldsOf } from './fields.ts'
+import { canHaveStatus, fieldsOf } from './fields.ts'
 import { SelectionPanel } from './selection.ts'
 import { PROBLEMS, Status, statusLook } from './statuses.ts'
 import './status.css'
@@ -69,7 +69,7 @@ const status: ForkModule = {
 
     addDetailsExtra(async (feature, content) => {
       const key = featureKey(feature)
-      if (!key) return
+      if (!key || !canHaveStatus(feature.sourceLayer, feature.properties)) return
       const section = new StatusSection(
         key.layer,
         key.id,

@@ -82,3 +82,21 @@ export function detailsText(details: Details | undefined): string {
     })
     .join(' · ')
 }
+
+// Small parts a status would say nothing useful about: switches, compensators,
+// cabinets, gantries, poles, and busbars and bays (lines inside substations). As
+// web-backend/src/fork/userdata/status.py (NO_STATUS, can_have_status).
+const NO_STATUS = [
+  'power_switch',
+  'power_compensator',
+  'power_portal_way',
+  'telecoms_cabinet',
+  'water_cabinet'
+]
+
+export function canHaveStatus(layer: string | undefined, properties: Record<string, unknown>): boolean {
+  if (!layer || NO_STATUS.includes(layer)) return false
+  if (layer === 'power_tower' && properties['type'] === 'pole') return false
+  if (layer === 'power_line' && ['busbar', 'bay'].includes(String(properties['line']))) return false
+  return true
+}

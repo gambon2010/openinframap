@@ -45,3 +45,10 @@ def test_a_status_typed_in_the_search_box():
     assert statuses_named("dam") == []  # too short: also "dam" (a site)
     assert statuses_named("suspected  damage") == ["suspected_damage"]
     assert statuses_named("marlenheim") == []
+
+
+def test_small_parts_cant_have_a_status():
+    for layer in ("power_switch", "power_compensator", "telecoms_cabinet"):
+        with pytest.raises(HTTPException) as e:
+            status.feature_of(layer, 1)
+        assert e.value.status_code == 404

@@ -321,6 +321,23 @@ async def supply(request: Request) -> Response:
     for way, circuits in not_green.items():
         for s_ in circuits.values():
             features[f"power_line:{way}"] = worst(features.get(f"power_line:{way}"), s_)
+    lines = await circuit_states(database, not_green)
+    # The lines inside a substation without supply, or with less (its bays and
+    # busbars, often not in the network): its colour.
+    inside = [index.nodes[n].osm_id for n in stations if index.nodes[n].kind == "substation"]
+    if inside:
+        rows = await database.execute(
+            text(
+                """SELECT l.osm_id, s.osm_id
+                     FROM substation AS s
+                     JOIN osm_power_line AS l ON ST_Within(l.geometry, s.geometry)
+                    WHERE s.osm_id = ANY(:ids) AND GeometryType(s.geometry) <> 'POINT'"""
+            ),
+            {"ids": inside},
+        )
+        by_osm = {index.nodes[n].osm_id: s_ for n, s_ in stations.items()}
+        for way, station in rows:
+            lines[str(way)] = {f"s{k}": by_osm[station] for k in (1, 2, 3)}
     return JSONResponse(
         {
             # The grid build: GET /grid/supply/unconnected?grid=<this> (a new address
@@ -331,7 +348,7 @@ async def supply(request: Request) -> Response:
             "counts": {
                 k: {str(kv): n for kv, n in sorted(c.items(), reverse=True)} for k, c in counts.items()
             },
-            "lines": await circuit_states(database, not_green),
+            "lines": lines,
             "stations": station_states,
             "features": features,
         }

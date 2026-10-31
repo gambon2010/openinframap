@@ -997,6 +997,12 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   `POST /userdata/status`. Who may set statuses: `can_set_statuses()` in `users.py`
   (everyone until there are accounts).
 
+- **Not on small parts** (asked 2026-10-31): switches, disconnectors, compensators,
+  gantries, street cabinets, poles, busbars and bays get no Status section (and are
+  left out of "Set status for all"): a status there says nothing useful, and power
+  supply mode doesn't use them (`NO_STATUS`, `can_have_status` in `status.py`;
+  `canHaveStatus` in `modules/status/fields.ts`). Transformers keep it (step 5).
+
 ### Step 2: extra fields, several at once, convenience stores
 
 - **Extra fields by kind** (`modules/status/fields.ts`, checked by `clean_details` in
@@ -1068,6 +1074,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - **Copies in My layers** of power lines, substations and plants take their original's
   colour while the mode is on (`ui/supply.ts`, read by My layers' renderer), and their
   own look when it's off.
+- **Inside a substation** without supply (or with less), every power line within its
+  outline (bays, connections, often not in the network) takes its colour.
 - Not yet: scenarios ("what if these were lost?" without setting statuses), and the
   detailed substation model (step 5: levels and transformers).
 
