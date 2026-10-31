@@ -1,13 +1,10 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   catalogueCode,
   concreteSidc,
   entryOf,
   CATEGORIES,
   categoriesFor,
-  readFavourites,
-  toggleFavourite,
-  rememberRecent,
   searchCatalogue,
   symbolName
 } from './palette.ts'
@@ -79,31 +76,5 @@ describe('search', () => {
       const missing = searchCatalogue('', mode).filter((e) => !inSome.has(e[0]))
       expect(missing.map((e) => e[1])).toEqual([])
     }
-  })
-})
-
-describe('favourites', () => {
-  beforeEach(() => localStorage.clear())
-
-  test('star and unstar, remembered', () => {
-    toggleFavourite('S*G*UCI---------')
-    toggleFavourite('G*G*OLAGM------')
-    expect(readFavourites()).toEqual(['S*G*UCI---------', 'G*G*OLAGM------'])
-    toggleFavourite('S*G*UCI---------')
-    expect(readFavourites()).toEqual(['G*G*OLAGM------'])
-  })
-})
-
-describe('recently used', () => {
-  beforeEach(() => localStorage.clear())
-
-  test('most recent first, no repeats, at most 12', () => {
-    let recent: string[] = []
-    for (let i = 0; i < 14; i++) recent = rememberRecent(`code${i}`, recent)
-    recent = rememberRecent('code5', recent)
-    expect(recent[0]).toBe('code5')
-    expect(recent).toHaveLength(12)
-    expect(new Set(recent).size).toBe(12)
-    expect(JSON.parse(localStorage.getItem('oim-userlayers-recent')!)).toEqual(recent)
   })
 })

@@ -37,7 +37,16 @@ export class Store {
   /** Your own folders, hidden layers... (personal.ts): not changes, never shared. */
   readonly personal = new PersonalSettings()
   hidden = new Set<string>(this.personal.data.hidden)
-  activeLayer: string | null = null
+  /** The layer new items go into: yours (personal.ts), else the first there is. */
+  get activeLayer(): string | null {
+    const chosen = this.personal.data.active
+    if (chosen && this.layers.has(chosen)) return chosen
+    return this.layers.keys().next().value ?? null
+  }
+
+  set activeLayer(id: string | null) {
+    this.personal.setActive(id)
+  }
   loaded = false
   error: string | null = null
   private listeners: (() => void)[] = []
@@ -80,9 +89,6 @@ export class Store {
       this.error = null
     } catch (e) {
       this.error = String((e as Error).message ?? e)
-    }
-    if (!this.activeLayer || !this.layers.has(this.activeLayer)) {
-      this.activeLayer = this.layers.keys().next().value ?? null
     }
     this.loaded = true
     this.notify()
@@ -139,9 +145,6 @@ export class Store {
       this.saved = fresh
       this.layers = cloneLayers(fresh)
       for (const change of this.pending) applyChange(this.layers, change)
-      if (this.activeLayer && !this.layers.has(this.activeLayer)) {
-        this.activeLayer = this.layers.keys().next().value ?? null
-      }
       this.notify()
     }
   }
@@ -208,9 +211,6 @@ export class Store {
     this.pending = pending
     this.layers = cloneLayers(this.saved)
     for (const change of this.pending) applyChange(this.layers, change)
-    if (this.activeLayer && !this.layers.has(this.activeLayer)) {
-      this.activeLayer = this.layers.keys().next().value ?? null
-    }
     local.setPending(this.pending)
     this.notify()
   }
@@ -268,7 +268,6 @@ export class Store {
 
   deleteLayer(id: string) {
     this.record('layer_delete', id)
-    if (this.activeLayer === id) this.activeLayer = this.layers.keys().next().value ?? null
     this.notify()
   }
 

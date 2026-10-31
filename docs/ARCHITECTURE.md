@@ -76,7 +76,7 @@ state/   store.ts (the Store the UI uses) on top of:
            merge.ts      field-by-field merge (yours, theirs, the base)
            reconcile.ts  your unsaved changes brought onto the server's layers
            local.ts      what's kept in the browser
-           personal.ts   yours only, per account (folders, hidden, folded)
+           personal.ts   yours only, per account (folders, hidden, draw into, favourites)
            transport.ts  load and Save (live sync will plug in here)
            view.ts       store.view: live, a situation or a history step;
                          canEdit(layer) is the one "may this be changed now?"

@@ -1,17 +1,21 @@
 // Fork: what's personal in My layers (docs/plans/sync.md, phase 5): each layer's
 // folder, the layers hidden from the map, those open and the folders folded in the
-// list, and folders made but still empty. Kept for the account on the server (GET /
-// PUT /userdata/settings/userlayers), so it follows you to any computer, and in this
-// browser (to show it at once, and when the server can't be reached). The first time,
-// what this browser remembered (before accounts) is taken over.
+// list, folders made but still empty, the layer you draw into, your favourite and
+// recently used symbols. Kept for the account on the server (GET / PUT
+// /userdata/settings/userlayers), so it follows you to any computer, and in this
+// browser (to show it at once, and when the server can't be reached). What the
+// account doesn't have yet is taken from what this browser remembered before.
 const URL = '/userdata/settings/userlayers'
 const KEY = 'oim-userlayers-personal'
 // Kept in the browser before accounts.
 const OLD = {
   hidden: 'oim-userlayers-hidden',
   folded: 'oim-userlayers-folded',
-  empty: 'oim-userlayers-empty-folders'
+  empty: 'oim-userlayers-empty-folders',
+  favourites: 'oim-userlayers-favourites',
+  recent: 'oim-userlayers-recent'
 }
+const MAX_RECENT = 12
 
 export interface Personal {
   /** A layer's folder for you (null: in none); absent: the folder it had before
@@ -24,6 +28,11 @@ export interface Personal {
   folded: string[]
   /** Folders made with "New folder" that no layer is in yet. */
   empty: string[]
+  /** The layer new items go into ("Draw into this layer"). */
+  active: string | null
+  /** Catalogue codes (ui/palette.ts) starred, and the last picked (most recent first). */
+  favourites: string[]
+  recent: string[]
 }
 
 function readJson<T>(key: string, fallback: T): T {
@@ -36,16 +45,27 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 function empty(): Personal {
-  return { folders: {}, hidden: [], expanded: [], folded: [], empty: [] }
+  return {
+    folders: {},
+    hidden: [],
+    expanded: [],
+    folded: [],
+    empty: [],
+    active: null,
+    favourites: [],
+    recent: []
+  }
 }
 
-/** What this browser remembered before folders and the rest were personal. */
+/** What this browser remembered before these were personal. */
 function fromThisBrowser(): Personal {
   return {
     ...empty(),
     hidden: readJson<string[]>(OLD.hidden, []),
     folded: readJson<string[]>(OLD.folded, []),
-    empty: readJson<string[]>(OLD.empty, [])
+    empty: readJson<string[]>(OLD.empty, []),
+    favourites: readJson<string[]>(OLD.favourites, []),
+    recent: readJson<string[]>(OLD.recent, [])
   }
 }
 
@@ -54,8 +74,13 @@ export function complete(value: Partial<Personal> | null | undefined): Personal 
   return { ...empty(), ...(value ?? {}) }
 }
 
+/** A stored value, what it doesn't have yet taken from what this browser kept before. */
+function withThisBrowser(value: Partial<Personal> | null | undefined): Personal {
+  return { ...fromThisBrowser(), ...(value ?? {}) }
+}
+
 export class PersonalSettings {
-  data: Personal = complete(readJson<Personal | null>(KEY, null) ?? fromThisBrowser())
+  data: Personal = withThisBrowser(readJson<Partial<Personal> | null>(KEY, null))
   private timer: ReturnType<typeof setTimeout> | undefined
   private listeners: (() => void)[] = []
 
@@ -63,14 +88,15 @@ export class PersonalSettings {
     this.listeners.push(listener)
   }
 
-  /** Your settings from the server (the first time: this browser's, sent there). */
+  /** Your settings from the server (the first time, or for what they don't have yet:
+   * this browser's, sent there). */
   async load() {
     try {
       const response = await fetch(URL)
       if (!response.ok) return
-      const { value } = await response.json()
-      if (value) this.data = complete(value)
-      else this.save()
+      const { value } = (await response.json()) as { value: Partial<Personal> | null }
+      this.data = withThisBrowser(value ?? this.data)
+      if (!value || Object.keys(empty()).some((key) => !(key in value))) this.save()
       this.keep()
       for (const listener of this.listeners) listener()
     } catch {
@@ -111,8 +137,25 @@ export class PersonalSettings {
     this.save()
   }
 
+  setActive(layerId: string | null) {
+    if (this.data.active === layerId) return
+    this.data.active = layerId
+    this.save()
+  }
+
+  /** Star or unstar a symbol. */
+  toggleFavourite(code: string) {
+    this.toggle('favourites', code, !this.data.favourites.includes(code))
+  }
+
+  /** Remember a symbol picked, most recent first. */
+  rememberRecent(code: string) {
+    this.data.recent = [code, ...this.data.recent.filter((c) => c !== code)].slice(0, MAX_RECENT)
+    this.save()
+  }
+
   /** Add or take out a value of one of the lists. */
-  toggle(list: 'hidden' | 'expanded' | 'folded' | 'empty', value: string, on: boolean) {
+  toggle(list: 'hidden' | 'expanded' | 'folded' | 'empty' | 'favourites', value: string, on: boolean) {
     const set = new Set(this.data[list])
     if (on) set.add(value)
     else set.delete(value)

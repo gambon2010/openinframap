@@ -25,7 +25,10 @@ describe('personal settings', () => {
       hidden: ['a'],
       expanded: [],
       folded: [],
-      empty: []
+      empty: [],
+      active: null,
+      favourites: [],
+      recent: []
     })
     expect(complete(null).folders).toEqual({})
   })
@@ -106,7 +109,49 @@ describe('personal settings', () => {
   })
 })
 
+describe('symbols', () => {
+  test('favourites: starred and unstarred', () => {
+    const p = new PersonalSettings()
+    p.toggleFavourite('S*G*UCI---------')
+    p.toggleFavourite('G*G*OLAGM------')
+    expect(p.data.favourites).toEqual(['S*G*UCI---------', 'G*G*OLAGM------'])
+    p.toggleFavourite('S*G*UCI---------')
+    expect(new PersonalSettings().data.favourites).toEqual(['G*G*OLAGM------'])
+  })
+
+  test('recently used: most recent first, no repeats, at most 12', () => {
+    const p = new PersonalSettings()
+    for (let i = 0; i < 14; i++) p.rememberRecent(`code${i}`)
+    p.rememberRecent('code5')
+    expect(p.data.recent[0]).toBe('code5')
+    expect(p.data.recent).toHaveLength(12)
+    expect(new Set(p.data.recent).size).toBe(12)
+  })
+
+  test("this browser's older favourites fill in what the account doesn't have yet", async () => {
+    const fetch = answer({ hidden: ['b'] })
+    vi.stubGlobal('fetch', fetch)
+    localStorage.setItem('oim-userlayers-favourites', '["S*G*UCI---------"]')
+    const p = new PersonalSettings()
+    await p.load()
+    expect(p.data).toMatchObject({ hidden: ['b'], favourites: ['S*G*UCI---------'] })
+    vi.advanceTimersByTime(600)
+    expect(fetch.mock.calls.some((c) => (c as unknown[])[1])).toBe(true)
+  })
+})
+
 describe('the store', () => {
+  test('the layer you draw into is remembered; gone, the first one is used', () => {
+    vi.stubGlobal('fetch', answer(null))
+    const store = new Store()
+    const a = store.createLayer('A')
+    const b = store.createLayer('B')
+    store.setActive(a)
+    expect(new Store().personal.data.active).toBe(a)
+    store.deleteLayer(a)
+    expect(store.activeLayer).toBe(b)
+  })
+
   test('a layer made in a folder is in it for you only: not in its shared style', () => {
     vi.stubGlobal('fetch', answer(null))
     const store = new Store()

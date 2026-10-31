@@ -507,8 +507,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   layers onto it (or onto a layer already in it), or ⋯ → Move to folder and pick
   one. Folders fold to one line; their ◉ and 🔒 act on all their layers, + makes a
   new layer in it, ✎ renames it. Folders are yours: someone you share a layer with
-  puts it in their own folders. They, the layers hidden and what's folded follow
-  your account to any computer. Each layer: ◉ show/hide, 🔒 lock (its
+  puts it in their own folders. They, the layers hidden, what's folded, the layer you
+  draw into and your favourite symbols follow your account to any computer. Each layer: ◉ show/hide, 🔒 lock (its
   items can't be changed or moved), colour, its items (click the name), ⋯ to draw
   into it, rename, move to a folder or delete. Items show their symbol and a status
   line; drag one onto another layer to move it. Under

@@ -1209,10 +1209,13 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   for it to know the schema is up to date). Without an account (`ANYONE`): 403.
 - **My layers** (`web/src/fork/modules/userlayers/state/personal.ts`, key
   "userlayers"): each layer's folder, the layers hidden, the layers open and the
-  folders folded in the list, the folders still empty. Kept in this browser too
+  folders folded in the list, the folders still empty, the layer you draw into
+  (`store.activeLayer`: yours if it's still there, else the first), favourite and
+  recently used symbols (the picker, `ui/palette.ts`). Kept in this browser too
   (shown at once, used when the server can't be reached), sent half a second after
-  a change. The first time, what the browser kept before (`oim-userlayers-hidden`,
-  `-folded`, `-empty-folders`) is taken over and sent.
+  a change. What the account doesn't have yet is taken from what the browser kept
+  before (`oim-userlayers-hidden`, `-folded`, `-empty-folders`, `-favourites`,
+  `-recent`) and sent.
 - **Folders aren't changes any more:** moving a layer to a folder isn't recorded,
   saved or undone, and works on layers shared with you to view only. A layer's
   `style.folder` (set before) is only the fallback when you haven't chosen.

@@ -173,14 +173,15 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | # | Item | Status |
 |---|---|---|
 | 10.1 | Wikipedia and GEM wiki links in popups open offline (cached pages; Kiwix, GEM bulk download looked into). | 🗂 |
-| 10.2 | Military grid coordinates (MGRS) under the cursor and in search; range rings; distance/area measuring. | 🗂 |
+| 10.2 | Military grid coordinates (MGRS) under the cursor and in search; range rings; distance/area measuring. | 🚧 (asked 2026-11-01) |
 | 10.3 | Terrain: hillshading and line of sight (Copernicus 30 m elevation, offline). | 🗂 |
 | 10.4 | Grid what-if: what loses its connection if a substation is hit. | ➡ now 12.3 |
 | 10.5 | Time on items: valid from/to and a timeline slider. | 🗂 |
 | 10.6 | Users: a login page, user accounts (local only), access control per user (view the map; read or write each layer). The whole app behind login; admins create the accounts. | ✅ accounts, login and the gate (every call needs a session); owners and sharing per layer (view, modify) (2026-11-01, `docs/plans/sync.md`) |
 | 10.6c | HTTPS without a certificate signed by anyone else. | ✅ the gate makes its own (self-signed, the browser warns once) (2026-11-01) |
 | 10.6b | Auto sync of My layers between users: layers update by themselves; edits sent with Save; field-by-field merge; conflicts one by one in a window that can be minimised (your version shown meanwhile), Save blocked until resolved; owners share layers to view or modify; a situation is only seen by those who can view all its layers. | ✅ sharing (view, modify), versions, field-by-field merge, the conflict window, live updates, per-user settings (folder, hidden, folded) (2026-11-01) |
-| 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | 🗂 |
+| 10.6d | The "draw into" layer and favourite (and recent) symbols follow the account, like folders. | ✅ `state/personal.ts` (2026-11-01) |
+| 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | 🚧 (asked 2026-11-01) |
 | 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |
 
 ## 11. Quality

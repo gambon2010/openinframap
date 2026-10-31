@@ -7,6 +7,7 @@ import { el } from 'redom'
 import catalogue from '../model/symbols-2525c.json'
 import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../map/graphics.ts'
+import type { PersonalSettings } from '../state/personal.ts'
 
 /** [code with * for identity and status, name, depth, graphic geometry (L, A, M)] */
 export type Entry = [code: string, name: string, depth: number, geometry?: 'L' | 'A' | 'M']
@@ -20,8 +21,6 @@ const AFFILIATIONS: [string, string][] = [
   ['U', 'Unknown']
 ]
 const MAX_RESULTS = 150
-const RECENT_KEY = 'oim-userlayers-recent'
-const MAX_RECENT = 12
 
 export const GEOMETRY_LABELS: Record<string, [string, string]> = {
   L: ['╱', 'Line'],
@@ -138,46 +137,6 @@ export function categoriesFor(mode: PaletteMode): string[] {
   )
 }
 
-const FAVOURITES_KEY = 'oim-userlayers-favourites'
-
-export function readFavourites(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(FAVOURITES_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-/** Star or unstar a catalogue code; returns the favourites. */
-export function toggleFavourite(code: string, favourites = readFavourites()): string[] {
-  const next = favourites.includes(code) ? favourites.filter((c) => c !== code) : [...favourites, code]
-  try {
-    localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next))
-  } catch {
-    // Not remembered.
-  }
-  return next
-}
-
-function readRecent(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-/** Remember a picked catalogue code, most recent first. */
-export function rememberRecent(code: string, recent = readRecent()): string[] {
-  const next = [code, ...recent.filter((c) => c !== code)].slice(0, MAX_RECENT)
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(next))
-  } catch {
-    // Not remembered.
-  }
-  return next
-}
-
 export interface Pick {
   sidc: string
   name: string
@@ -199,8 +158,12 @@ export class Palette {
   // Graphics the renderer can draw (a few catalogue entries are only headings).
   private drawable?: Set<string>
 
-  constructor(onPick: (pick: Pick) => void) {
+  /** Favourites and recently used: yours, kept for your account (state/personal.ts). */
+  private personal: PersonalSettings
+
+  constructor(onPick: (pick: Pick) => void, personal: PersonalSettings) {
     this.onPick = onPick
+    this.personal = personal
     this.search = el('input.oim-ul-palette-search', { type: 'search' }) as HTMLInputElement
     this.chips = el('.oim-ul-chips')
     this.frames = el('.oim-ul-frames')
@@ -312,14 +275,14 @@ export class Palette {
       }
     }
     button.onclick = () => {
-      rememberRecent(code)
+      this.personal.rememberRecent(code)
       this.onPick({ sidc, name, geometry })
     }
     return button
   }
 
   private labelled(entry: Entry): HTMLElement {
-    const starred = readFavourites().includes(entry[0])
+    const starred = this.personal.data.favourites.includes(entry[0])
     const star = el(`button.oim-ul-star${starred ? '.on' : ''}`, starred ? '★' : '☆', {
       type: 'button',
       title: starred
@@ -327,7 +290,7 @@ export class Palette {
         : t('userlayers.favourite', 'Add to favourites')
     })
     star.onclick = () => {
-      toggleFavourite(entry[0])
+      this.personal.toggleFavourite(entry[0])
       this.update()
     }
     return el('.oim-ul-symbol-entry', this.button(entry), el('span', entry[1]), star)
@@ -342,7 +305,7 @@ export class Palette {
     if (!query && !this.group) {
       const ofMode = (e: Entry | undefined): e is Entry =>
         Boolean(e) && (this.mode === 'graphics') === Boolean(e![3])
-      const favourites = readFavourites()
+      const favourites = this.personal.data.favourites
         .map((code) => BY_CODE.get(catalogueCode(code)))
         .filter(ofMode)
       if (favourites.length) {
@@ -351,7 +314,7 @@ export class Palette {
           el('.oim-ul-symbol-grid', ...favourites.map((e) => this.labelled(e)))
         )
       }
-      const recent = readRecent()
+      const recent = this.personal.data.recent
         .map((code) => BY_CODE.get(catalogueCode(code)))
         .filter((e): e is Entry => Boolean(e) && (this.mode === 'graphics') === Boolean(e![3]))
       if (recent.length) {

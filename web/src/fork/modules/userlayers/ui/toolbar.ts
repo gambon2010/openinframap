@@ -33,7 +33,7 @@ export class Toolbar {
 
   constructor(ws: Workspace) {
     this.ws = ws
-    this.palette = new Palette((pick) => void this.picked(pick))
+    this.palette = new Palette((pick) => void this.picked(pick), ws.store.personal)
     this.picker = el('.oim-ul-picker', this.palette.el)
     this.fileInput = el('input', {
       type: 'file',

@@ -170,7 +170,7 @@ and other users get modify access to them, so nothing is lost or hidden.
 4. **Live updates** (Server-Sent Events, catching up after a disconnection). **Built
    2026-11-01.**
 5. **Per-user settings** (folder, hidden, folded, open in the list). **Built
-   2026-11-01** ("draw into" and favourite symbols stay per browser for now).
+   2026-11-01** (and the "draw into" layer and favourite symbols).
 
 ## Still open (later, not needed to start)
 
