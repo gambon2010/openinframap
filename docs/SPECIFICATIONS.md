@@ -154,9 +154,10 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 
 | # | Requirement | Status |
 |---|---|---|
-| 12.1 | A status on any map feature (power lines, transformers, hospitals, places of worship, stores...), separate from My layers' military symbols: operational, damaged, unknown, suspected damage... | 📝 planned (asked 2026-10-31) |
+| 12.1 | A status on map features (power lines, substations, transformers, hospitals, places of worship, supermarkets, convenience stores...), separate from My layers' military symbols: operational, repaired, threatened, suspected damage, damaged, destroyed, under repair, unknown. Only problems shown on the map, with a colour and/or badge next to the item. | 📝 planned (asked 2026-10-31) |
 | 12.2 | Extra fields by kind, e.g. how full stores are (stock level). | 📝 planned |
-| 12.3 | "What if" on the power grid: what loses its supply when items are damaged or lost. | 📝 planned (was backlog 10.4) |
+| 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | 📝 planned (was backlog 10.4) |
+| 12.4 | A status history of its own, independent of My layers' history, that can be played back. | 📝 planned |
 
 ## 10. Backlog (parked)
 
