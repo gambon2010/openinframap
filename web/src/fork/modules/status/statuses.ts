@@ -2,6 +2,7 @@
 // and how each looks: only problems are shown on the map, as a coloured ring or
 // casing plus a badge (docs/plans/feature-status.md, look C).
 import { t } from '../../core/i18n.ts'
+import { SUPPLY_COLOURS } from '../../ui/supply.ts'
 
 export type Status =
   | 'operational'
@@ -44,7 +45,13 @@ export function statusLook(status: Status): StatusLook {
     case 'threatened':
       return { label: t('status.threatened', 'Threatened'), color: '#e6b800', symbol: '⚠' }
     case 'suspected_damage':
-      return { label: t('status.suspected-damage', 'Suspected damage'), color: '#f08c00', symbol: '?' }
+      // The purple of power supply mode's "at risk" (what it would cut if confirmed),
+      // not orange, which there means less power.
+      return {
+        label: t('status.suspected-damage', 'Suspected damage'),
+        color: SUPPLY_COLOURS.risk,
+        symbol: '?'
+      }
     case 'damaged':
       return { label: t('status.damaged', 'Damaged'), color: '#d62828', symbol: '!' }
     case 'destroyed':

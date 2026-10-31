@@ -69,7 +69,7 @@ Only problems are shown ✔. Suggestions:
   | Status | Badge |
   |---|---|
   | Threatened | yellow, `⚠` |
-  | Suspected damage | orange, `?` |
+  | Suspected damage | purple, `?` (orange is "less power" in power supply mode) |
   | Damaged | red, `!` |
   | Destroyed | black, `✕` |
   | Under repair | blue, `🔧` |

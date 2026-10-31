@@ -988,6 +988,9 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   (`web/src/fork/modules/status/details.ts`): the status, who set it and when, its
   note, "Set status" / "Change status" (a form), and the history (newest first).
   The name typed is remembered with My layers' (`core/author.ts`).
+- **Colours:** threatened yellow, suspected damage purple (as power supply mode's
+  "at risk"; orange there means less power), damaged red, destroyed black, under
+  repair blue.
 - **On the map** (look C): only the problems (threatened, suspected damage, damaged,
   destroyed, under repair), as a coloured casing along both sides of a line, an
   outline round an area, a ring round a point, and from zoom 12 a badge with the
