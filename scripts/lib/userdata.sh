@@ -11,14 +11,17 @@
 USERDATA_DUMP="$DATA_DIR/userdata/userdata.dump"
 
 # user_data_saves — how many times "My layers" were saved, plus the map features'
-# status changes (also in userdata); 0: nothing to keep.
+# status changes and the towers in the register of tower numbers (also in
+# userdata); 0: nothing to keep.
 user_data_saves() {
-    local saves statuses
+    local saves statuses towers
     saves=$(db_query "SELECT CASE WHEN to_regclass('userdata.save') IS NULL THEN 0
                           ELSE (SELECT count(*) FROM userdata.save) END" || echo 0)
     statuses=$(db_query "SELECT CASE WHEN to_regclass('userdata.status_change') IS NULL THEN 0
                           ELSE (SELECT count(*) FROM userdata.status_change) END" || echo 0)
-    echo $(( ${saves:-0} + ${statuses:-0} ))
+    towers=$(db_query "SELECT CASE WHEN to_regclass('userdata.tower_ref') IS NULL THEN 0
+                          ELSE (SELECT count(*) FROM userdata.tower_ref) END" || echo 0)
+    echo $(( ${saves:-0} + ${statuses:-0} + ${towers:-0} ))
 }
 
 save_user_data() {

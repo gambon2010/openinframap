@@ -9,7 +9,8 @@ import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { font, text_paint } from '../../../style/common.ts'
 
 export interface TowerLine {
-  number: number
+  /** "23", or "23a" for a tower added later between 23 and 24. */
+  number: string
   total: number
   voltage_kv: number
   name: string | null

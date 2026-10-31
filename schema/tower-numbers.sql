@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS tower_line (
 CREATE TABLE IF NOT EXISTS tower_line_edge (
     line_id integer, edge_id integer, start_m double precision, backwards boolean);
 CREATE TABLE IF NOT EXISTS tower_number (
-    osm_id bigint, line_id integer, voltage integer, number integer, total integer,
+    osm_id bigint, line_id integer, voltage integer, number text, total integer,
     geometry geometry(Point, 3857), label boolean);

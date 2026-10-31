@@ -904,6 +904,16 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   backend's image (`number_towers` in `scripts/lib/db.sh`): about 30 s for France,
   1.47 million towers. `bash scripts/number-towers.sh` numbers them again, e.g. after
   the line rules change. Imports of older exports number them.
+- **Tower numbers that last** (asked 2026-10-31): a register in the `userdata` schema
+  (`tower_line_ref`, `tower_ref`) keeps every number given, so it survives rebuilds
+  and goes with exports. At each numbering, a line is matched to the register's
+  line it shares most towers with (30% at least, same voltage), and counted the way
+  it was. A tower already numbered keeps its number; one added between two gets the
+  one before's number and a letter ("23a", "23b"; before the first: "0a"); past the
+  end, the next numbers; a number is never given again. "Of 61" is how many towers
+  the line has now. Numbering runs after My layers' data is put back (build and
+  import), and the rebuild keeps that data when the register has towers. Two
+  numberings of France in a row: 0 of 1,472,964 changed.
 - **Checking the grid** (`web-backend/src/fork/grid_check.py`, `uv run python -m
   src.fork.grid_check` in `web-backend/`): follows every line of 63 kV and more and
   writes each end that isn't at a station to `data/grid-check.csv`, likely data errors

@@ -14,7 +14,7 @@ async def ensure_schema(db: AsyncConnection) -> None:
     backend runs."""
     # The newest table: an older database gets what it lacks (every statement in
     # userdata.sql is "if not exists", so running it again is safe).
-    exists = (await db.execute(text("SELECT to_regclass('userdata.status_change') IS NOT NULL"))).scalar()
+    exists = (await db.execute(text("SELECT to_regclass('userdata.tower_ref') IS NOT NULL"))).scalar()
     if not exists:
         # One statement at a time (asyncpg doesn't run several in one call).
         for statement in SCHEMA_SQL.split(";\n"):

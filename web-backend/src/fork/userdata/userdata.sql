@@ -105,4 +105,22 @@ CREATE TABLE IF NOT EXISTS userdata.status_change (
     author text,
     made_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS status_change_feature ON userdata.status_change (source, feature_id, id)
+CREATE INDEX IF NOT EXISTS status_change_feature ON userdata.status_change (source, feature_id, id);
+
+-- Towers' numbers along their lines (tower_numbers.py), kept so a tower keeps its
+-- number at every renumbering: a line is matched to the one it was by the towers
+-- they share, a tower already numbered keeps its number ("23"), one added between
+-- two gets a letter ("23a"), past the end the next numbers; a number is never
+-- given again. Kept with userdata across rebuilds and in exports.
+CREATE TABLE IF NOT EXISTS userdata.tower_line_ref (
+    line_key bigserial PRIMARY KEY,
+    voltage integer NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS userdata.tower_ref (
+    osm_id bigint NOT NULL,
+    line_key bigint NOT NULL,
+    label text NOT NULL,
+    PRIMARY KEY (line_key, osm_id)
+);
+CREATE INDEX IF NOT EXISTS tower_ref_osm_id ON userdata.tower_ref (osm_id)
