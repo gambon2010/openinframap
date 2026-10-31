@@ -23,6 +23,7 @@ import {
   renderGraphic
 } from './graphics.ts'
 import { modifiersToDraw } from '../model/fields.ts'
+import { SUPPLY_COLOURS, supplyColours } from '../../../ui/supply.ts'
 
 const SELECTION = 'user_selection'
 const DRAFT = 'user_draft'
@@ -34,6 +35,7 @@ function sourceId(layerId: string) {
 /** A feature as drawn: its properties plus what the map layers need. */
 function drawn(feature: UserFeature, layerColor: string): GeoJSON.Feature {
   const p = feature.properties
+  const supply = p.copy ? supplyColours.of(p.copy.sourceLayer, p.osm_id) : null
   return {
     type: 'Feature',
     geometry: feature.geometry,
@@ -42,7 +44,10 @@ function drawn(feature: UserFeature, layerColor: string): GeoJSON.Feature {
       copy: undefined,
       fid: feature.id,
       icon: iconName(p, layerColor),
-      copy_key: p.copy ? `${p.copy.source}/${p.copy.sourceLayer}` : null
+      copy_key: p.copy ? `${p.copy.source}/${p.copy.sourceLayer}` : null,
+      // Power supply mode on: a copied line, substation or plant's original's colour
+      // (left out otherwise: the supply layers draw what has one).
+      ...(supply ? { supply } : {})
     }
   }
 }
@@ -111,6 +116,10 @@ export class Renderer {
     })
     map.on('move', () => {
       if (resizable(this.selected)) this.select(this.selected)
+    })
+    // Power supply mode turned on or off, or its colours changed.
+    supplyColours.onChange(() => {
+      if (this.last) void this.render(this.last.layers, this.last.hidden)
     })
     // A new style (e.g. another background map) drops everything added here.
     map.on('style.load', () => {
@@ -288,6 +297,44 @@ export class Renderer {
     }
   }
 
+  /** Power supply mode: copies of power lines, substations and plants in their
+   * original's colour (ui/supply.ts), over their own look; nothing while it's off. */
+  private supplyLayers(layer: UserLayer): LayerSpecification[] {
+    if (!supplyColours.active) return []
+    const source = sourceId(layer.id)
+    const colour = [
+      'match',
+      ['get', 'supply'],
+      'red',
+      SUPPLY_COLOURS.red,
+      'orange',
+      SUPPLY_COLOURS.orange,
+      SUPPLY_COLOURS.green
+    ] as unknown as string
+    return [
+      {
+        id: `${source}__supply_line`,
+        type: 'line',
+        source,
+        filter: ['all', ['has', 'supply'], LINE_OR_POLYGON] as FilterSpecification,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': colour, 'line-width': 5 }
+      },
+      {
+        id: `${source}__supply_point`,
+        type: 'circle',
+        source,
+        filter: ['all', ['has', 'supply'], POINT] as FilterSpecification,
+        paint: {
+          'circle-color': colour,
+          'circle-radius': 9,
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 2
+        }
+      }
+    ]
+  }
+
   /** Upstream's layers for the data copies came from, drawing the copies instead. */
   private copyLayers(layer: UserLayer): LayerSpecification[] {
     const keys = new Set<string>()
@@ -366,6 +413,7 @@ export class Renderer {
       }
       for (const spec of [
         ...this.copyLayers(layer),
+        ...this.supplyLayers(layer),
         ...this.graphicLayers(layer),
         ...this.ownLayers(layer)
       ]) {

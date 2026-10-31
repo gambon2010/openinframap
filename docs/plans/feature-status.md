@@ -1,8 +1,8 @@
 # Plan: a status on anything on the map, and power supply ("what if") on the grid
 
-Status: **agreed** (2026-10-31). Steps 1 to 3 are built (statuses, their history
+Status: **agreed** (2026-10-31). Steps 1 to 4 are built (step 4 without scenarios) (statuses, their history
 per feature, the look on the map; extra fields, several at once, convenience stores;
-the Status board with playback and search by status). Answers so far are marked ✔.
+the Status board with playback and search by status; power supply mode). Answers so far are marked ✔.
 
 ## What it does
 

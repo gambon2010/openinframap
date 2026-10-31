@@ -252,3 +252,65 @@
   font-size: 1.1em;
   line-height: 1;
 }
+
+/* Power supply mode (supply.ts). */
+.oim-board-supply {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 1em;
+  padding: 0.4em;
+  border-radius: var(--oim-radius-large, 6px);
+  border: 1px solid var(--oim-light-grey);
+}
+
+.oim-board-supply label {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.oim-board-supply p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.oim-supply-banner {
+  display: none;
+  position: absolute;
+  bottom: 2.2em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  max-width: min(640px, calc(100vw - 32px));
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.4em 0.8em;
+  border-radius: var(--oim-radius-large, 6px);
+  background: var(--oim-content-background, #fff);
+  box-shadow: var(--oim-drop-shadow);
+  font-size: 0.9em;
+}
+
+.oim-supply-banner.visible {
+  display: flex;
+}
+
+.oim-supply-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 0.7em;
+  font-size: 0.85em;
+}
+
+.oim-supply-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.oim-supply-legend i {
+  display: inline-block;
+  width: 1.2em;
+  height: 0.35em;
+  border-radius: 0.2em;
+}

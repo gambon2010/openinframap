@@ -8,7 +8,7 @@ from starlette.routing import BaseRoute, Mount
 from starlette.staticfiles import StaticFiles
 
 from ..config import IMAGES_DIR
-from . import grid, map_data, search, userdata
+from . import grid, grid_supply, map_data, search, userdata
 
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -19,4 +19,5 @@ routes: list[BaseRoute] = [
     *userdata.routes,
     *map_data.routes,
     *grid.routes,
+    *grid_supply.routes,
 ]

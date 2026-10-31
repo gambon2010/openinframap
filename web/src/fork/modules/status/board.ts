@@ -12,6 +12,7 @@ import { STATUSES, Status, statusLook } from './statuses.ts'
 import { detailsText } from './fields.ts'
 import { StatusChange, featuresAt } from './playback.ts'
 import { StatusMap } from './map.ts'
+import { SupplyMode } from './supply.ts'
 
 const PLAY_STEP_MS = 900
 
@@ -64,8 +65,12 @@ export class StatusBoard {
 
   constructor(
     private map: Map,
-    private statusMap: StatusMap
+    private statusMap: StatusMap,
+    private supply: SupplyMode
   ) {
+    supply.onChange(() => {
+      if (this.panel.classList.contains('visible')) this.render()
+    })
     const made = makePanel('oim-status-board', t('board.title', 'Status board'))
     this.panel = made.panel
     this.body = made.body
@@ -163,7 +168,13 @@ export class StatusBoard {
     }
     const listEl = el('ul.oim-board-list')
     this.renderList(listEl, features)
-    setChildren(this.body, [this.timeline(), chips, el('div.oim-board-filters', kind, search), listEl])
+    setChildren(this.body, [
+      this.supplyControls(),
+      this.timeline(),
+      chips,
+      el('div.oim-board-filters', kind, search),
+      listEl
+    ])
   }
 
   private renderList(list: HTMLElement, features: Feature[]) {
@@ -219,6 +230,28 @@ export class StatusBoard {
     if (box.isEmpty()) return
     this.map.fitBounds(box, { padding: 80, maxZoom: 16 })
     leftColumn.highlight.setData([{ ...feature, properties: {} }])
+  }
+
+  /** Power supply mode: on or off, pessimistic or not, and what it finds. */
+  private supplyControls(): HTMLElement {
+    const on = el('input', { type: 'checkbox', checked: this.supply.active }) as HTMLInputElement
+    const pessimistic = el('input', {
+      type: 'checkbox',
+      checked: this.supply.pessimistic
+    }) as HTMLInputElement
+    on.onchange = () => void this.supply.set(on.checked, pessimistic.checked)
+    pessimistic.onchange = () => void this.supply.set(this.supply.active, pessimistic.checked)
+    return el(
+      'div.oim-board-supply',
+      el('label', on, t('supply.mode', 'Power supply mode')),
+      el(
+        'label',
+        { title: t('supply.pessimistic-title', 'Count suspected damage as lost too') },
+        pessimistic,
+        t('supply.pessimistic', 'Pessimistic')
+      ),
+      this.supply.active && this.supply.summary ? el('p.oim-board-hint', this.supply.summary) : ''
+    )
   }
 
   private timeline(): HTMLElement {

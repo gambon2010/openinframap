@@ -1026,6 +1026,33 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   "under rep", 4 letters at least) finds the features that have it; the result says
   "Status: Damaged" and switches the statuses layer on.
 
+### Step 4: power supply mode
+
+- **Turned on** in the Status board ("Power supply mode", and "Pessimistic": suspected
+  damage counts as lost too). A banner at the bottom sums it up ("Without supply: 2 ×
+  400 kV, 2 × 63 kV substations or plants; 1 with less power") with the legend and
+  "Turn off".
+- **Worked out** by `web-backend/src/fork/grid_supply.py` (`GET /grid/supply`) on the
+  grid network held in memory, voltages meeting only at stations (as routes):
+  - sources: plants of 10 MW and more (or the substation they're in), and line ends
+    at the edge of the region (power comes from outside);
+  - lost: power lines, substations, plants and towers Destroyed or Damaged (a tower
+    cuts the lines it carries);
+  - for every point, the best path's lowest voltage from a source (widest path), with
+    nothing lost (kept) and now: **red** if no source reaches it any more, **orange**
+    if only through lower voltages than before (a 225 kV substation fed through 63 kV
+    lines), **green** otherwise. About 0.5 s for France (6 s the first time).
+  - **grey**: what no source reaches even with nothing lost, missing in OpenStreetMap
+    (about 160,000 stretches of line and 15,000 stations in France, mostly 20 kV):
+    `GET /grid/supply/unconnected`, made once per grid build, served gzipped (3.4 MB).
+- **On the map** (`modules/status/supply.ts`): every power line of 10 kV and more
+  green, the grey ones over it, then red and orange lines and stations.
+- **Copies in My layers** of power lines, substations and plants take their original's
+  colour while the mode is on (`ui/supply.ts`, read by My layers' renderer), and their
+  own look when it's off.
+- Not yet: scenarios ("what if these were lost?" without setting statuses), and the
+  detailed substation model (step 5: levels and transformers).
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

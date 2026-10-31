@@ -162,7 +162,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 |---|---|---|
 | 12.1 | A status on map features (power lines, substations, transformers, hospitals, places of worship, supermarkets, convenience stores...), separate from My layers' military symbols: operational, repaired, threatened, suspected damage, damaged, destroyed, under repair, unknown. Only problems shown on the map, with a colour and/or badge next to the item. | ✅ step 1: set in a feature's details, history, on the map (`fork/modules/status/`, `userdata/status.py`) |
 | 12.2 | Extra fields by kind, e.g. how full stores are (stock level); several features at once (Shift-click); convenience stores as critical sites. | ✅ step 2 (`fork/modules/status/`; convenience stores from the next rebuild) |
-| 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | 📝 planned (was backlog 10.4) |
+| 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | ✅ step 4: red and orange from the statuses, grey for what isn't connected in the data, copies in My layers (`grid_supply.py`, `fork/modules/status/supply.ts`); scenarios not yet |
+| 12.3b | Show the substations and lines connected to nothing (no source even with nothing lost) in a different colour. | ✅ grey in power supply mode (asked 2026-10-31) |
 | 12.4 | A status history of its own, independent of My layers' history, that can be played back. | ✅ per feature, and played back on the Status board (step 3: list, counts, filters, search by status) |
 
 ## 10. Backlog (parked)
