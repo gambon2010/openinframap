@@ -862,6 +862,11 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   "Connects Heisdorf – Roost · 13.3 km" and has a "Show whole line" link that zooms
   to it. Lines without a known voltage (not in the network) highlight just
   themselves.
+- **Selected circuit** (`web/src/fork/modules/details/circuit.ts`): "view" on one of
+  a substation's circuits opens upstream's circuit panel in the left column below the
+  substation's details, which stay open (they used to close, and the panel sat at the
+  bottom right). When both don't fit, the details shrink and scroll. Upstream's
+  `CircuitInspector` is wrapped, not changed.
 - **Following a line** (`web-backend/src/fork/line_trace.py`): the network is kept in
   the backend's memory (loaded on the first click, ~4 s for France, and again after a
   rebuild). A line is followed along its own way; then into a way of the same name

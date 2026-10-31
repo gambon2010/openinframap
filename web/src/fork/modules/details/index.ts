@@ -2,7 +2,8 @@
 // upstream's popup), with the feature highlighted; a second click on it closes
 // them, and a click near a line selects it (near-click.ts). Search results open
 // the same way. Other modules add to the details with
-// addDetailsExtra (ui/details.ts), e.g. the grid's "Route from here".
+// addDetailsExtra (ui/details.ts), e.g. the grid's "Route from here". A circuit
+// opened from them shows below them (circuit.ts).
 import { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el } from 'redom'
 import { ForkContext, ForkModule } from '../../types.ts'
@@ -12,6 +13,7 @@ import { DetailsPanel, detailsExtras } from '../../ui/details.ts'
 import { FeatureHighlight } from '../../ui/highlight.ts'
 import { leftColumn } from '../../ui/left-column.ts'
 import { selectNearLines } from './near-click.ts'
+import { circuitBelowDetails } from './circuit.ts'
 
 class Details {
   map: Map
@@ -27,13 +29,8 @@ class Details {
     this.panel = leftColumn.details
     this.highlight = leftColumn.highlight
 
-    // Opening a circuit from the details replaces them.
-    const inspector = ctx.circuitInspector
-    const show = inspector.show.bind(inspector)
-    inspector.show = (id: number) => {
-      this.panel.close()
-      return show(id)
-    }
+    // A circuit opened from the details ("View") shows below them.
+    circuitBelowDetails(ctx.circuitInspector, this.panel)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.panel.isOpen()) this.panel.close()
     })
