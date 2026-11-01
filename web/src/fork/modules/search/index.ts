@@ -4,6 +4,7 @@
 import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
 import type { SearchResult } from '../../../search/search.ts'
+import PhotonSearch from './photon.ts'
 
 // What the named features of schema/search.sql are (critical sites: fork/sites).
 function feature_kind_label(kind: string): string {
@@ -39,6 +40,9 @@ function feature_kind_label(kind: string): string {
 }
 
 const search: ForkModule = {
+  // Addresses from a Photon server, if one is configured.
+  searchProviders: (language) => [new PhotonSearch(language)],
+
   searchDescription: (result) => {
     if (result.type === 'feature' && result.kind) {
       // The town tells apart the many features with the same name ("Mairie").

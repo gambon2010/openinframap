@@ -707,5 +707,18 @@
     "logout": "log out ({{name}})",
     "locked-self": "Your own: another admin can change it",
     "locked-admin": "An admin: take away the admin right first"
+  },
+  "measure": {
+    "hint-rings": "Click the centre of the rings. Esc: stop.",
+    "hint-points": "Click points; double-click or Enter to finish. Backspace: take back the last point. Esc: stop.",
+    "title": "Measure",
+    "radii": "Ring distances",
+    "radii-none": "e.g. 1, 5, 10 km or 500 m, 3 nm",
+    "remove": "Remove from the map",
+    "clear": "Remove all",
+    "about": "Measurements stay on the map until removed; they are not saved. The grid reference under the cursor is at the bottom left: click it to copy it.",
+    "mgrs-result": "Military grid reference (MGRS)",
+    "copy-mgrs": "Click to copy the grid reference",
+    "area-summary": "{{area}}, perimeter {{perimeter}}"
   }
 }

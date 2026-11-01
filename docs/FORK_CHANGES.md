@@ -1222,6 +1222,25 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - Tested: a layer whose shared folder is "Shared" shows in the account's "Mine";
   moved to a new folder from its menu, the server has it and nothing is unsaved.
 
+## Measuring and grid references (SPECIFICATIONS 10.2)
+
+`web/src/fork/modules/measure/`:
+- **Where the cursor is** (`readout.ts`), bottom left: latitude, longitude and the
+  military grid reference (MGRS, to the metre; the `mgrs` package from proj4js, MIT,
+  bundled: works offline). Off the map: its centre. A click copies the reference.
+- **Search** (`mgrs.ts`, `MgrsSearch`): a grid reference typed in any usual way
+  ("32TLT7257789913", "32T LT 725 899") goes to the centre of the square it names.
+  Search providers now come from the modules (`searchProviders` hook,
+  `forkSearchProviders` in `search/search.ts`, which used to name Photon).
+- **The Measure panel** (📏 on the right; `tool.ts`, `geo.ts`): distance (each
+  leg's length and bearing in degrees and NATO mils, the total), area (and
+  perimeter), range rings (distances typed: "1, 5, 10 km", "500 m", "3 nm"). On a
+  sphere of the mean radius (within 0.5 %). Click points; double-click or Enter
+  finishes, Backspace takes back a point, Esc stops. Measurements stay on the map
+  until removed and aren't saved. While a tool is on it has the map's clicks
+  (`fork/ui/map-clicks.ts`): feature details don't open and My layers' tools wait.
+- Not done: the MGRS grid drawn on the map, and polar areas (UPS).
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command
@@ -1417,7 +1436,7 @@ hooks upstream files call:
 | `key/key.ts` | `await forkKey(...)` once its sections are built; `data-icon` on sprites |
 | `key/svg.ts` | swatches carry `data-colour`, `data-dash` or `data-layer` |
 | `popup/infopopup.ts` | `forkPopup.hiddenKeys()`, `.renderKey()`, `.title()`, `.html()`; `forkPopup.open()` first in `popup()` (details in the side panel) |
-| `search/search.ts` | `forkSearchSelected(result)`, `PhotonSearch` and `dropDuplicates` (all from `fork/index.ts`); results carry the backend's result (`backend`) |
+| `search/search.ts` | `forkSearchSelected(result)`, `forkSearchProviders(language)` (Photon, grid references) and `dropDuplicates` (all from `fork/index.ts`); results carry the backend's result (`backend`) |
 | `search/openinframap.ts` | `forkSearchDescription(result)`; `backend: result` |
 | `index.ts` | `addForkTranslations()` |
 

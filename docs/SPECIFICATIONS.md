@@ -173,7 +173,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | # | Item | Status |
 |---|---|---|
 | 10.1 | Wikipedia and GEM wiki links in popups open offline (cached pages; Kiwix, GEM bulk download looked into). | 🗂 |
-| 10.2 | Military grid coordinates (MGRS) under the cursor and in search; range rings; distance/area measuring. | 🚧 (asked 2026-11-01) |
+| 10.2 | Military grid coordinates (MGRS) under the cursor and in search; range rings; distance/area measuring. | ✅ `fork/modules/measure/` (2026-11-01) |
 | 10.3 | Terrain: hillshading and line of sight (Copernicus 30 m elevation, offline). | 🗂 |
 | 10.4 | Grid what-if: what loses its connection if a substation is hit. | ➡ now 12.3 |
 | 10.5 | Time on items: valid from/to and a timeline slider. | 🗂 |

@@ -7,7 +7,7 @@ import type InfoPopup from '../popup/infopopup.ts'
 import type { CircuitInspector } from '../circuit/circuitinspector.ts'
 import { ClickRouter } from '../click-router.ts'
 import { LayerSpecificationWithZIndex } from '../style/types.ts'
-import type { SearchResult } from '../search/search.ts'
+import type { SearchResult, ISearchProvider } from '../search/search.ts'
 import type { HideSpec } from './ui/key/feature-hider.ts'
 
 /** Handed to modules once the map and its controls exist (before clicks are routed). */
@@ -74,4 +74,6 @@ export interface ForkModule {
   searchDescription?: (result: BackendSearchResult) => string | undefined
   /** A search result was picked. */
   searchSelected?: (result: SearchResult, ctx: ForkContext) => void
+  /** More search providers (search/search.ts), besides upstream's coordinates and the backend. */
+  searchProviders?: (language: string) => ISearchProvider[]
 }

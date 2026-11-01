@@ -94,8 +94,12 @@ port 8800.
 - **Top left:** the search box. Below it, clicking anything on the map opens its
   **details** (and highlights it); under those, the **Grid connection** panel when
   you pick a route (see below). **–** shrinks a panel to its title, **×** closes it.
-- **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **My
-  layers**. Click a button to open its panel next to the buttons; click it again
+- **Bottom left:** where the cursor is: latitude, longitude and the military grid
+  reference (MGRS); click it to copy the grid reference. The search box also finds
+  grid references ("32T LT 725 899").
+- **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **Status
+  board** (⚠), **Measure** (📏: distance and bearing, area, range rings; click
+  points, double-click or Enter to finish, Esc to stop), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside.
 - **Header:** about, stats, export (online) and **settings** (background map and

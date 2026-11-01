@@ -10,6 +10,7 @@ import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
+import { mapClicks } from '../../../ui/map-clicks.ts'
 
 export type Tool =
   | { mode: 'select' }
@@ -46,9 +47,10 @@ export function dropRepeats(points: [number, number][]): [number, number][] {
 export class Tools {
   tool: Tool = { mode: 'select' }
   selected: string | null = null
-  /** Off while a past version is shown (a situation, the history). */
+  /** Off while a past version is shown (a situation, the history), or while another
+   * tool has the map's clicks (measuring: ui/map-clicks.ts). */
   get enabled(): boolean {
-    return this.store.view.live
+    return this.store.view.live && !mapClicks.taken
   }
   message = ''
   private map: Map

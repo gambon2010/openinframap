@@ -6,7 +6,7 @@ import i18next from 'i18next'
 import { Map, MapGeoJSONFeature, SourceSpecification } from 'maplibre-gl'
 import { LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { LayerSpecificationWithZIndex } from '../style/types.ts'
-import type { SearchResult } from '../search/search.ts'
+import type { SearchResult, ISearchProvider } from '../search/search.ts'
 import { BackendSearchResult, ForkContext, ForkModule } from './types.ts'
 import { extendKey } from './ui/key/toggles.ts'
 import { leftColumn } from './ui/left-column.ts'
@@ -21,6 +21,7 @@ import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
 import status from './modules/status/index.ts'
 import account from './modules/account/index.ts'
+import measure from './modules/measure/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
@@ -34,6 +35,7 @@ const MODULES: ForkModule[] = [
   search,
   details,
   grid,
+  measure,
   layout,
   userlayers,
   // After layout: its header link goes after Settings.
@@ -104,6 +106,10 @@ export function forkSearchSelected(result: SearchResult) {
   for (const m of MODULES) m.searchSelected?.(result, context)
 }
 
-/** search/search.ts: the Photon geocoder, and merging results found twice. */
-export { default as PhotonSearch } from './modules/search/photon.ts'
+/** search/search.ts: the modules' search providers (Photon, grid references...). */
+export function forkSearchProviders(language: string): ISearchProvider[] {
+  return MODULES.flatMap((m) => m.searchProviders?.(language) ?? [])
+}
+
+/** search/search.ts: merging results found twice. */
 export { dropDuplicates } from './modules/search/index.ts'

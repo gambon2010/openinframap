@@ -2,7 +2,7 @@ import './search.css'
 import i18next, { t } from 'i18next'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
-import { forkSearchSelected, PhotonSearch, dropDuplicates } from '../fork/index.ts'
+import { forkSearchSelected, forkSearchProviders, dropDuplicates } from '../fork/index.ts'
 import type { BackendSearchResult } from '../fork/types.ts'
 import CoordinatesSearch from './coordinates'
 import OIMSearchProvider from './openinframap'
@@ -39,7 +39,7 @@ export default class OIMSearch implements IControl {
       // Fork: places come from the local database (OIMSearchProvider) instead of
       // the online OpenCage; Photon only searches when a server is configured.
       new OIMSearchProvider(i18next.language),
-      new PhotonSearch(i18next.language)
+      ...forkSearchProviders(i18next.language)
     ]
 
     this.input = el('input', {
