@@ -3,7 +3,7 @@
 /** What a feature in a user layer is. Copies of map features keep their original
  * properties too, so they're drawn like the original. */
 export interface FeatureProps {
-  kind: 'symbol' | 'graphic' | 'image' | 'marker' | 'drawing' | 'copy'
+  kind: 'symbol' | 'graphic' | 'image' | 'marker' | 'drawing' | 'copy' | 'measure'
   name?: string
   /** symbol, graphic: its MIL-STD-2525C code (symbols drawn by @syncpoint/signs,
    * graphics by the C5ISR renderer from the control points in the geometry). */
@@ -23,6 +23,12 @@ export interface FeatureProps {
   /** drawing, marker: colour and line width. */
   color?: string
   width?: number
+  /** measure: a distance (a line), an area (a polygon) or range rings (a point). */
+  measure?: 'distance' | 'area' | 'rings'
+  /** measure, rings: their radii in metres. */
+  radii?: number[]
+  /** It can't be changed, moved or deleted until unlocked (any item). */
+  locked?: boolean
   /** copy: the map layer it was copied from. */
   copy?: { source: string; sourceLayer: string; layer: string }
   [key: string]: unknown

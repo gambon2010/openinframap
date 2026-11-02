@@ -19,6 +19,7 @@ import { StaleError } from './api.ts'
 import { Bases, Conflict, baseOf, changeKey, featureKey, reconcile } from './reconcile.ts'
 import { FeatureState, LayerState } from './merge.ts'
 import { PersonalSettings } from './personal.ts'
+import { measurePrefs } from '../measure/prefs.ts'
 import { UndoHistory } from './undo.ts'
 import { View } from './view.ts'
 
@@ -60,10 +61,30 @@ export class Store {
     // Your settings from the server (another computer may have changed them).
     this.personal.onChange(() => {
       this.hidden = new Set(this.personal.data.hidden)
+      this.usePrefs()
       this.notify()
+    })
+    this.usePrefs()
+    // Measuring preferences changed (settings, a ring's card): kept for your account.
+    measurePrefs.onChange(() => {
+      const { north, radii } = measurePrefs
+      if (
+        this.personal.data.north === north &&
+        JSON.stringify(this.personal.data.radii) === JSON.stringify(radii)
+      )
+        return
+      this.personal.data.north = north
+      this.personal.data.radii = radii
+      this.personal.save()
     })
     // The unsaved changes can't be kept in this browser (or can again): the page says so.
     local.onTrouble(() => this.notify())
+  }
+
+  /** Your measuring preferences, from your settings. */
+  private usePrefs() {
+    const { north, radii } = this.personal.data
+    measurePrefs.set({ ...(north ? { north } : {}), ...(radii?.length ? { radii } : {}) })
   }
 
   /** Why the unsaved changes can't be kept in this browser (null: they are). */

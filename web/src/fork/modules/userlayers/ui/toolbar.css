@@ -86,3 +86,8 @@
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 2px 8px;
 }
+
+/* The measuring tools: a little apart from the drawing ones. */
+.oim-ul-tool-icon.oim-ul-tool-gap {
+  margin-left: 8px;
+}

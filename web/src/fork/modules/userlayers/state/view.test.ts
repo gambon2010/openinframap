@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { View } from './view.ts'
 import { UserLayer } from '../model/model.ts'
 
@@ -22,4 +22,26 @@ test('live layers can be changed, unless locked; nothing in the past can', () =>
   expect(view.canEdit(layer())).toBe(false)
   view.goLive()
   expect(view.canEdit(layer())).toBe(true)
+})
+
+describe('one item locked', () => {
+  test("can't be changed, moved or deleted; the rest of its layer can", () => {
+    const view = new View()
+    const layer = { id: 'l', name: 'L', style: {}, features: new Map() } as never
+    const free = {
+      type: 'Feature',
+      id: 'a',
+      geometry: { type: 'Point', coordinates: [0, 0] },
+      properties: { kind: 'marker' }
+    } as never
+    const locked = {
+      type: 'Feature',
+      id: 'b',
+      geometry: { type: 'Point', coordinates: [0, 0] },
+      properties: { kind: 'measure', locked: true }
+    } as never
+    expect(view.canEditItem(layer, free)).toBe(true)
+    expect(view.canEditItem(layer, locked)).toBe(false)
+    expect(view.canEdit(layer)).toBe(true)
+  })
 })

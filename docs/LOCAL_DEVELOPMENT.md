@@ -98,10 +98,7 @@ port 8800.
   reference (MGRS); click it to copy the grid reference. The search box also finds
   grid references ("32T LT 725 899").
 - **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **Status
-  board** (⚠), **Measure** (📏: distance and bearing, area, range rings; click
-  points, double-click or Enter to finish, right-click to drop the one you're
-  making, Esc to stop; bearings from true,
-  magnetic (compass) or grid north: °T, °M, °G), **My layers**. Click a button to open its panel next to the buttons; click it again
+  board** (⚠), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside.
 - **Header:** about, stats, export (online), **settings** (background map and
@@ -517,6 +514,13 @@ on the My layers workspace; click it again to close it. It has two parts:
   new layer in it, ✎ renames it. Folders are yours: someone you share a layer with
   puts it in their own folders. They, the layers hidden, what's folded, the layer you
   draw into and your favourite symbols follow your account to any computer.
+  **Measuring** is in My layers' toolbar: 📏 a distance (each leg's length and
+  bearing, the total, marks along it like a ruler, finer as you zoom in, down to
+  10 m), ⬠ an area, ◎ range rings (their distances on the ring's card). Click
+  points; double-click or Enter to finish; right-click starts again. A measurement
+  is saved and shared like any item; drag its points to change it, and 🔒 Lock it
+  on its card so it stays as it is. Bearings from true, magnetic (compass) or grid
+  north: in the list's settings.
   **Import a file…** under the list puts a GeoJSON, KML or GPX file in a new layer;
   Until you Save, what you import or draw is kept in this browser (big files too:
   if it ever can't be, the panel tells you to Save now).

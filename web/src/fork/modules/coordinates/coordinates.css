@@ -1,0 +1,26 @@
+/* Fork: where the cursor is, at the bottom right (coordinates/readout.ts). */
+
+.maplibregl-ctrl.oim-coords {
+  display: flex;
+  gap: 10px;
+  margin: 0 10px 2px 0;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--oim-radius-small, 4px);
+  background: rgb(255 255 255 / 80%);
+  color: #222;
+  font:
+    12px/1.4 ui-monospace,
+    monospace;
+  cursor: copy;
+}
+
+.oim-coords.copied .oim-coords-mgrs::after {
+  content: ' ✓';
+}
+
+@media (max-width: 600px) {
+  .oim-coords-latlng {
+    display: none;
+  }
+}

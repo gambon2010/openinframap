@@ -183,3 +183,31 @@ describe('files from elsewhere', () => {
     ).toHaveLength(3)
   })
 })
+
+describe('measurements', () => {
+  test('come back as they were: their type, ring distances and lock', () => {
+    const rings = layer('M', [
+      {
+        id: 'r',
+        geometry: { type: 'Point', coordinates: [7, 47] },
+        properties: { kind: 'measure', measure: 'rings', radii: [500, 2000], locked: true }
+      },
+      {
+        id: 'd',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [7, 47],
+            [7.1, 47.1]
+          ]
+        },
+        properties: { kind: 'measure', measure: 'distance', name: 'Road' }
+      }
+    ])
+    for (const format of ['geojson', 'kml'] as const) {
+      const [r, d] = readFile(`x.${format}`, exportLayers([rings], format))
+      expect(r.properties).toEqual({ kind: 'measure', measure: 'rings', radii: [500, 2000], locked: true })
+      expect(d.properties).toEqual({ kind: 'measure', measure: 'distance', name: 'Road' })
+    }
+  })
+})

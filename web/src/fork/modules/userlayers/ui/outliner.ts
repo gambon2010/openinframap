@@ -206,7 +206,7 @@ export class Outliner {
     const row = el(
       `li.oim-ul-item${selected ? '.selected' : ''}`,
       {
-        draggable: this.store.view.canEdit(layer),
+        draggable: this.store.view.canEditItem(layer, feature),
         title: t(
           'userlayers.item-title',
           'Click: select · Shift-click: select several · drag onto a layer: move'
@@ -218,6 +218,9 @@ export class Outliner {
         el('span.oim-ul-item-name', name || what),
         el('small', name ? [what, detail].filter(Boolean).join(' · ') : detail)
       ),
+      feature.properties.locked
+        ? el('span.oim-ul-item-locked', '🔒', { title: t('userlayers.item-locked', 'Locked') })
+        : '',
       this.store.isFeatureInConflict(feature.id)
         ? el('span.oim-ul-conflict-tag', '⚠', {
             title: t(
@@ -424,7 +427,12 @@ export class Outliner {
       header,
       (id) => {
         const from = store.layerOf(id)
-        if (from && from.id !== layer.id && store.view.canEdit(from) && store.view.canEdit(layer))
+        if (
+          from &&
+          from.id !== layer.id &&
+          store.view.canEditItem(from, from.features.get(id)) &&
+          store.view.canEdit(layer)
+        )
           store.moveFeature(id, layer.id)
       },
       // A layer dropped on a layer: into the same folder (or out, if it's in none).

@@ -33,6 +33,9 @@ export interface Personal {
   /** Catalogue codes (ui/palette.ts) starred, and the last picked (most recent first). */
   favourites: string[]
   recent: string[]
+  /** Measuring (measure/prefs.ts): bearings from which north; new rings' distances (m). */
+  north?: 'true' | 'magnetic' | 'grid'
+  radii?: number[]
 }
 
 function readJson<T>(key: string, fallback: T): T {

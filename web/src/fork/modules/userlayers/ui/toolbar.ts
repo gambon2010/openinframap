@@ -9,6 +9,7 @@ import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
+import { measurePrefs } from '../measure/prefs.ts'
 
 /** The map toolbar's tools: [id, glyph, label, key]. */
 export const TOOLS: [string, string, string, string][] = [
@@ -19,7 +20,11 @@ export const TOOLS: [string, string, string, string][] = [
   ['area', '▱', 'Area', 'R'],
   ['marker', '📍', 'Marker', 'M'],
   ['image', '🖼', 'Picture', 'P'],
-  ['copy', '⧉', 'Copy from the map', 'C']
+  ['copy', '⧉', 'Copy from the map', 'C'],
+  // Measuring (kinds/measure.ts): a measurement is an item like the others.
+  ['measure-distance', '📏', 'Measure a distance', 'D'],
+  ['measure-area', '⬠', 'Measure an area', 'E'],
+  ['measure-rings', '◎', 'Range rings', 'O']
 ]
 
 export class Toolbar {
@@ -52,8 +57,11 @@ export class Toolbar {
     const tool = this.ws.tools.tool
     if (this.paletteMode === 'symbols') return 'symbol'
     if (this.paletteMode === 'graphics') return 'graphic'
+    if (tool.mode === 'place' && tool.properties.kind === 'measure') return 'measure-rings'
     if (tool.mode === 'place') return tool.properties.kind === 'symbol' ? 'symbol' : tool.properties.kind
     if (tool.mode === 'graphic') return 'graphic'
+    if ((tool.mode === 'line' || tool.mode === 'area') && tool.properties?.kind === 'measure')
+      return tool.mode === 'area' ? 'measure-area' : 'measure-distance'
     return tool.mode
   }
 
@@ -77,6 +85,28 @@ export class Toolbar {
         tools.setTool(
           { mode: id, points: [] },
           t('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
+        )
+        break
+      case 'measure-distance':
+      case 'measure-area': {
+        const area = id === 'measure-area'
+        tools.setTool(
+          {
+            mode: area ? 'area' : 'line',
+            points: [],
+            properties: { kind: 'measure', measure: area ? 'area' : 'distance' }
+          },
+          t(
+            'userlayers.measure-hint',
+            'Click points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.'
+          )
+        )
+        break
+      }
+      case 'measure-rings':
+        tools.setTool(
+          { mode: 'place', properties: { kind: 'measure', measure: 'rings', radii: measurePrefs.radii } },
+          t('userlayers.rings-hint', 'Click the centre of the rings (their distances: on its card).')
         )
         break
       case 'marker':
@@ -117,7 +147,8 @@ export class Toolbar {
         const b = action(glyph, () => this.chooseTool(id), {
           title: `${t(`userlayers.tool.${id}`, label)} (${key})`,
           active: active === id,
-          className: 'oim-ul-tool-icon'
+          // The measuring tools: a little apart from the drawing ones.
+          className: `oim-ul-tool-icon${id === 'measure-distance' ? '.oim-ul-tool-gap' : ''}`
         })
         b.setAttribute('aria-pressed', String(active === id))
         b.setAttribute('aria-label', t(`userlayers.tool.${id}`, label))

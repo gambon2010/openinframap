@@ -13,6 +13,8 @@ import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { getLabelLevel } from './symbols.ts'
 import { ensureImage, iconName } from './icons.ts'
 import { KINDS, kindOf } from '../kinds/index.ts'
+import { Measurement, measurementFeatures, measurementOf } from '../measure/features.ts'
+import { measurePrefs } from '../measure/prefs.ts'
 import {
   axisControlPoints,
   axisWidth,
@@ -77,6 +79,12 @@ function graphicsSourceId(layerId: string) {
   return `user_${layerId}_g`
 }
 
+function measureSourceId(layerId: string) {
+  return `user_${layerId}_m`
+}
+
+const isMeasure = (f: UserFeature) => kindOf(f.properties).drawn === 'measure'
+
 /** The control points of a graphic (stored as a line through them). */
 export function controlPoints(geometry: GeoJSON.Geometry): [number, number][] {
   if (geometry.type === 'LineString' || geometry.type === 'MultiPoint')
@@ -129,6 +137,10 @@ export class Renderer {
     map.on('move', () => {
       if (resizable(this.selected)) this.select(this.selected)
     })
+    // Measurements' marks depend on the zoom and what's in view; their bearings on
+    // the north chosen.
+    map.on('moveend', () => this.renderMeasures())
+    measurePrefs.onChange(() => this.renderMeasures())
     // Power supply mode turned on or off, or its colours changed.
     supplyColours.onChange(() => {
       if (this.last) void this.render(this.last.layers, this.last.hidden)
@@ -442,14 +454,16 @@ export class Renderer {
       if (existing) existing.setData(data)
       else map.addSource(source, { type: 'geojson', data, promoteId: 'fid' })
 
-      const graphicsSource = graphicsSourceId(layer.id)
-      if (!map.getSource(graphicsSource)) {
-        map.addSource(graphicsSource, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      }
+      const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
+      if (!map.getSource(graphicsSourceId(layer.id)))
+        map.addSource(graphicsSourceId(layer.id), { type: 'geojson', data: empty })
+      if (!map.getSource(measureSourceId(layer.id)))
+        map.addSource(measureSourceId(layer.id), { type: 'geojson', data: empty })
       for (const spec of [
         ...this.copyLayers(layer),
         ...this.supplyLayers(layer),
         ...this.graphicLayers(layer),
+        ...this.measureLayers(layer),
         ...this.ownLayers(layer)
       ]) {
         wanted.add(spec.id)
@@ -474,7 +488,9 @@ export class Renderer {
         id.startsWith('user_') &&
         id !== SELECTION &&
         id !== DRAFT &&
-        ![...layers.keys()].some((l) => sourceId(l) === id || graphicsSourceId(l) === id)
+        ![...layers.keys()].some(
+          (l) => sourceId(l) === id || graphicsSourceId(l) === id || measureSourceId(l) === id
+        )
       ) {
         map.removeSource(id)
       }
@@ -482,7 +498,101 @@ export class Renderer {
     this.ensureOverlays()
     // The selection's resize handle needs the image, which may only be loaded now.
     if (resizable(this.selected)) this.select(this.selected)
+    this.renderMeasures()
     await this.renderGraphics()
+  }
+
+  /** The measurements (measure/features.ts): labels, and marks for what's in view.
+   * `changed`: one being dragged, drawn as it is now. */
+  renderMeasures(changed?: UserFeature) {
+    if (!this.last) return
+    const map = this.map
+    const b = map.getBounds()
+    const ticks = {
+      zoom: map.getZoom(),
+      bounds: { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }
+    }
+    for (const layer of this.last.layers.values()) {
+      const source = map.getSource(measureSourceId(layer.id)) as GeoJSONSource | undefined
+      if (!source) continue
+      const features: GeoJSON.Feature[] = []
+      for (const stored of layer.features.values()) {
+        const f = changed?.id === stored.id ? changed : stored
+        if (!isMeasure(f)) continue
+        const m = measurementOf(f)
+        if (!m) continue
+        features.push(
+          ...measurementFeatures(m, {
+            north: measurePrefs.north,
+            ticks,
+            properties: {
+              fid: f.id,
+              color: f.properties.color ?? layer.style.color ?? DEFAULT_COLOR,
+              ...(this.conflicted.has(f.id) ? { conflict: true } : {})
+            }
+          })
+        )
+      }
+      source.setData({ type: 'FeatureCollection', features })
+    }
+  }
+
+  private measureLayers(layer: UserLayer): LayerSpecification[] {
+    const source = measureSourceId(layer.id)
+    const color = ['get', 'color']
+    return [
+      {
+        id: `${source}_fill`,
+        type: 'fill',
+        source,
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: { 'fill-color': color, 'fill-opacity': 0.12 }
+      },
+      // The lines and their marks (ticks: thinner) in one layer.
+      {
+        id: `${source}_line`,
+        type: 'line',
+        source,
+        filter: ['==', ['geometry-type'], 'LineString'],
+        layout: { 'line-join': 'round' },
+        paint: {
+          'line-color': color,
+          'line-width': ['match', ['coalesce', ['get', 'tick'], ''], 'major', 2, 'minor', 1.2, 2.5]
+        }
+      },
+      {
+        id: `${source}_vertex`,
+        type: 'circle',
+        source,
+        filter: ['==', ['get', 'vertex'], true],
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#fff',
+          'circle-stroke-color': color,
+          'circle-stroke-width': 2
+        }
+      },
+      // Lengths, bearings, the total; and the marks' distances, smaller, in its colour.
+      {
+        id: `${source}_label`,
+        type: 'symbol',
+        source,
+        filter: ['any', ['has', 'label'], ['has', 'tickLabel']],
+        layout: {
+          'text-field': ['coalesce', ['get', 'label'], ['get', 'tickLabel']],
+          'text-font': font,
+          'text-size': ['case', ['has', 'tickLabel'], 10, ['==', ['get', 'big'], true], 14, 12],
+          'text-offset': ['case', ['has', 'tickLabel'], ['literal', [0, 1]], ['literal', [0, -1.1]]],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: {
+          'text-color': ['case', ['has', 'tickLabel'], color, '#222'],
+          'text-halo-color': '#fff',
+          'text-halo-width': 2
+        }
+      }
+    ] as unknown as LayerSpecification[]
   }
 
   /** Map layer ids of My layers' features (for clicks). */
@@ -559,13 +669,29 @@ export class Renderer {
         id: `${DRAFT}_point`,
         type: 'circle',
         source: DRAFT,
-        filter: POINT,
+        filter: ['all', POINT, ['!', ['has', 'label']], ['!', ['has', 'tickLabel']]] as FilterSpecification,
         paint: {
           'circle-radius': 5,
           'circle-color': '#fff',
           'circle-stroke-color': '#1565c0',
           'circle-stroke-width': 2
         }
+      },
+      {
+        // A measurement being drawn: its lengths and bearings so far.
+        id: `${DRAFT}_label`,
+        type: 'symbol',
+        source: DRAFT,
+        filter: ['any', ['has', 'label'], ['has', 'tickLabel']],
+        layout: {
+          'text-field': ['coalesce', ['get', 'label'], ['get', 'tickLabel']],
+          'text-font': font,
+          'text-size': ['case', ['has', 'tickLabel'], 10, 12],
+          'text-offset': [0, -1.1],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: { 'text-color': '#1565c0', 'text-halo-color': '#fff', 'text-halo-width': 2 }
       }
     ]
     for (const spec of overlays) if (!map.getLayer(spec.id)) map.addLayer(spec)
@@ -631,11 +757,30 @@ export class Renderer {
       void this.renderGraphics(feature)
       return
     }
+    if (isMeasure(feature)) {
+      this.renderMeasures(feature)
+      return
+    }
     const color = layer.style.color ?? DEFAULT_COLOR
     source.setData({
       type: 'FeatureCollection',
       features: [...layer.features.values()].map((f) => drawn(f.id === feature.id ? feature : f, color))
     })
+  }
+
+  /** A measurement being drawn (to the cursor), with its labels and marks. */
+  measureDraft(m: Measurement) {
+    this.ensureOverlays()
+    const b = this.map.getBounds()
+    const features = measurementFeatures(m, {
+      draft: true,
+      north: measurePrefs.north,
+      ticks: {
+        zoom: this.map.getZoom(),
+        bounds: { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }
+      }
+    })
+    ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 
   /** The shape being drawn (line/area tools). */

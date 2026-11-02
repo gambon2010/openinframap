@@ -24,7 +24,21 @@ export interface Imported {
 }
 
 // What says what an item is in My layers (kept on export, read back on import).
-const OWN = ['kind', 'sidc', 'modifiers', 'axis', 'axisWidth', 'size', 'color', 'width', 'image', 'copy']
+const OWN = [
+  'kind',
+  'sidc',
+  'modifiers',
+  'axis',
+  'axisWidth',
+  'size',
+  'color',
+  'width',
+  'image',
+  'copy',
+  'measure',
+  'radii',
+  'locked'
+]
 
 // ---------------------------------------------------------------------------------
 // Export
@@ -209,7 +223,7 @@ export function toItem(geometry: GeoJSON.Geometry, raw: Record<string, unknown>)
     const value = raw[`oim:${key}`] ?? raw[key]
     if (
       typeof value !== 'string' ||
-      !['modifiers', 'copy', 'axis', 'axisWidth', 'size', 'width'].includes(key)
+      !['modifiers', 'copy', 'axis', 'axisWidth', 'size', 'width', 'radii', 'locked'].includes(key)
     )
       return value
     try {

@@ -22,7 +22,7 @@ import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
 import status from './modules/status/index.ts'
 import account from './modules/account/index.ts'
-import measure from './modules/measure/index.ts'
+import coordinates from './modules/coordinates/index.ts'
 import print from './modules/print/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
@@ -37,7 +37,7 @@ const MODULES: ForkModule[] = [
   search,
   details,
   grid,
-  measure,
+  coordinates,
   layout,
   userlayers,
   // After layout: their header links go after Settings.

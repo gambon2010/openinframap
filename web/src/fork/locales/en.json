@@ -311,7 +311,10 @@
       "copy": "copy of",
       "area": "area",
       "line": "line",
-      "drawing": "drawing"
+      "drawing": "drawing",
+      "measure-distance": "distance",
+      "measure-area": "measured area",
+      "measure-rings": "range rings"
     },
     "changed": {
       "moved": "moved"
@@ -591,7 +594,18 @@
     "export": "Export…",
     "export-shown": "The layers shown, as",
     "legend-symbols": "Symbols",
-    "not-kept": "Your unsaved changes can't be kept in this browser ({{error}}): if the page is reloaded or closed before you Save, they're lost. Save now."
+    "not-kept": "Your unsaved changes can't be kept in this browser ({{error}}): if the page is reloaded or closed before you Save, they're lost. Save now.",
+    "ring-distances": "Ring distances",
+    "settings-more": "Labels, bearings, name",
+    "bearings-from": "Measured bearings from",
+    "measure-hint": "Click points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.",
+    "rings-hint": "Click the centre of the rings (their distances: on its card).",
+    "item-locked-note": "🔒 Locked: unlock it to change, move or delete it.",
+    "unlock-item": "🔓 Unlock",
+    "lock-item": "🔒 Lock",
+    "unlock-item-title": "Allow changes to this item again",
+    "lock-item-title": "Keep this item from being changed, moved or deleted",
+    "item-locked": "Locked"
   },
   "tower": {
     "unnamed-line": "a line",

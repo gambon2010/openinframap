@@ -40,7 +40,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   extra        data from outside OSM
   sites        critical sites
   search       search descriptions, Photon
-  measure      distances, areas, range rings; cursor position and MGRS; MGRS search
+  coordinates  the cursor's position and MGRS; MGRS in search
   print        the map as a PDF with a legend (ui/legend.ts: modules add to it)
   satellite    imagery as the background
   map-sources  background tiles and Photon (Settings)
@@ -86,12 +86,14 @@ state/   store.ts (the Store the UI uses) on top of:
                          canEdit(layer) is the one "may this be changed now?"
            playback.ts   the saved history, step by step; api.ts the backend
 kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
-         drawing, copy); types.ts says what a kind defines, index.ts lists them
+         drawing, measure, copy); types.ts says what a kind defines, index.ts lists them
          and has kindOf(properties)
 map/     render.ts, graphics.ts (tactical graphics), symbols.ts (drawing the
          images), icons.ts (adding them to the map, by the kinds' prefixes),
          tools.ts, interactions.ts (hover, right-click, copy / paste), legend.ts
 io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
+measure/ measurements, pure: geo.ts (distances, areas, great circles), north.ts,
+         ticks.ts (marks along a distance), features.ts (labels, marks), prefs.ts
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast; editor.ts
          (the card), outliner.ts (the list), palette.ts (the picker);
@@ -207,7 +209,8 @@ Pick an order between the existing ones (`LEFT_ORDER`). To show details, use
 `mapMode.enter({ name, cursor?, doubleClickZoom?, click?, dblclick?, contextmenu?,
 mousemove?, keydown?, exit? })` from `ui/map-mode.ts`, and `mapMode.leave(name)`
 when done. Escape and other tools end it: tidy up in `exit`. Meanwhile clicks on
-map features don't open their details. Example: `modules/measure/tool.ts`.
+map features don't open their details. Example: My layers' tools
+(`modules/userlayers/map/tools.ts`, `setTool`).
 
 **A backend route:** a module in `web-backend/src/fork/`, with its routes added in
 `fork/__init__.py`. For My layers, check rights through `userdata/users.py`.

@@ -100,7 +100,7 @@ export class Interactions {
     this.tooltip.classList.remove('visible')
     const { feature, layerId } = item
     this.tools.select(feature.id)
-    const locked = !this.store.view.canEdit(this.store.layers.get(layerId))
+    const locked = !this.store.view.canEditItem(this.store.layers.get(layerId), feature)
     const entry = (label: string, onclick: () => void, disabled = false) => {
       const b = el('button', label, { type: 'button', disabled }) as HTMLButtonElement
       b.onclick = () => {

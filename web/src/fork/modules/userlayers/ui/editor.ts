@@ -367,6 +367,9 @@ export async function buildEditor(
   notes.onchange = () => update({ notes: notes.value.trim() || undefined })
   parts.push(notes)
 
+  // --- What its kind adds (a measurement's ring distances...) ---
+  parts.push(...(itemKind.card?.(feature, update) ?? []))
+
   // --- Appearance ---
   const look: HTMLElement[] = []
   const lookRow = (label: string, control: HTMLElement) =>

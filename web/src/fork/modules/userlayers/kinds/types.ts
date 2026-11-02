@@ -29,8 +29,9 @@ export interface ItemKind {
   military?: boolean
   /** How the map draws it: points as its icon and lines and areas in its colour
    * (standard), by the tactical graphics renderer (graphic), or as a clone of the
-   * map's own layers (copy). */
-  drawn: 'standard' | 'graphic' | 'copy'
+   * map's own layers (copy), or as a measurement with its labels and marks
+   * (measure/features.ts). */
+  drawn: 'standard' | 'graphic' | 'copy' | 'measure'
   /** Points: the name of the image they're drawn with ("<prefix>:<value>"). */
   icon?(p: FeatureProps, layerColour: string): string | null
   /** The images named by icon(): their prefix, and how one is drawn. */
@@ -50,4 +51,7 @@ export interface ItemKind {
   appearanceFirst?: boolean
   /** The filter chips it's under. */
   filters?(p: FeatureProps): KindFilter[]
+  /** More on its card, after its name and before its appearance (ui/editor.ts):
+   * update changes its properties (one change, undoable). */
+  card?(item: Item, update: (changes: Partial<FeatureProps>) => void): HTMLElement[]
 }

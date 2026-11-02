@@ -5,10 +5,11 @@ import { drawing } from './drawing.ts'
 import { graphic } from './graphic.ts'
 import { image } from './image.ts'
 import { marker } from './marker.ts'
+import { measure } from './measure.ts'
 import { symbol } from './symbol.ts'
 import { ItemKind } from './types.ts'
 
-export const KINDS: ItemKind[] = [symbol, graphic, image, marker, drawing, copy]
+export const KINDS: ItemKind[] = [symbol, graphic, image, marker, drawing, measure, copy]
 
 const BY_ID = new Map(KINDS.map((k) => [k.id as string, k]))
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { parseMgrs, toMgrs } from '../../core/mgrs.ts'
+import { parseMgrs, toMgrs } from '../../../core/mgrs.ts'
 import { bearing } from './geo.ts'
 import { declination, fromNorth, gridConvergence, offset } from './north.ts'
 import { legBearing } from './features.ts'

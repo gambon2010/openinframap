@@ -90,6 +90,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.10 | Clicking the same feature again deselects it. | ✅ |
 | 5.11 | Photos never make the details panel scroll (shrink them); vertical scroll only for long details. | ✅ |
 | 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/modules/layout/search-bar.ts` (narrow screens: stays on the left) |
+| 5.13 | The header's "about" and "stats" pages: do they still make sense for this app? Remove them or update what they say (about: probably keep; stats: doubtful). | 📋 asked 2026-11-03 |
 
 ## 6. Grid connections (power routing)
 
@@ -180,8 +181,9 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.6 | Users: a login page, user accounts (local only), access control per user (view the map; read or write each layer). The whole app behind login; admins create the accounts. | ✅ accounts, login and the gate (every call needs a session); owners and sharing per layer (view, modify) (2026-11-01, `docs/plans/sync.md`) |
 | 10.6c | HTTPS without a certificate signed by anyone else. | ✅ the gate makes its own (self-signed, the browser warns once) (2026-11-01) |
 | 10.6b | Auto sync of My layers between users: layers update by themselves; edits sent with Save; field-by-field merge; conflicts one by one in a window that can be minimised (your version shown meanwhile), Save blocked until resolved; owners share layers to view or modify; a situation is only seen by those who can view all its layers. | ✅ sharing (view, modify), versions, field-by-field merge, the conflict window, live updates, per-user settings (folder, hidden, folded) (2026-11-01) |
+| 10.2c | Measurements are My layers items (saved, shared, lockable), made with tools in the layer toolbar; editable after placing, and lockable; marks along distances like a ruler (labelled, e.g. "5 km"), finer when zoomed in (down to 10 m), never a mass of tiny marks when zoomed out. | ✅ `userlayers/kinds/measure.ts`, `measure/ticks.ts` (2026-11-03) |
 | 10.6d | The "draw into" layer and favourite (and recent) symbols follow the account, like folders. | ✅ `state/personal.ts` (2026-11-01) |
-| 10.2b | Measured bearings from true, magnetic (compass) or grid (MGRS) north, chosen. | ✅ `measure/north.ts` (2026-11-02) |
+| 10.2b | Measured bearings from true, magnetic (compass) or grid (MGRS) north, chosen. | ✅ `userlayers/measure/north.ts` (2026-11-02; per account since 2026-11-03) |
 | 10.7b | Unsaved changes kept in the browser whatever their size (big imports), with a warning if they can't be. | ✅ IndexedDB (`state/local.ts`) (2026-11-02) |
 | 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | ✅ My layers' Import / Export (`userlayers/io/`), "print" in the header (`fork/modules/print/`) (2026-11-01) |
 | 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |

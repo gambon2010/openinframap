@@ -6,6 +6,8 @@ import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from '../model/model.ts'
 import { Outliner } from './outliner.ts'
+import { measurePrefs } from '../measure/prefs.ts'
+import type { North } from '../measure/north.ts'
 import { download, importFile } from '../io/files.ts'
 import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
 import { LabelLevel } from '../model/fields.ts'
@@ -59,6 +61,20 @@ export class Sidebar {
       setLabelLevel(level.value as LabelLevel)
       void renderer.render(store.layers, store.hidden)
     }
+    // Bearings of measurements (measure/north.ts): true, magnetic (compass) or grid north.
+    const north = el(
+      'select',
+      (
+        [
+          ['true', t('measure.north-true', 'True north')],
+          ['magnetic', t('measure.north-magnetic', 'Magnetic north (compass)')],
+          ['grid', t('measure.north-grid', 'Grid north (MGRS)')]
+        ] as [North, string][]
+      ).map(([value, label]) => el('option', label, { value, selected: value === measurePrefs.north }))
+    ) as HTMLSelectElement
+    north.onchange = () => measurePrefs.set({ north: north.value as North })
+    // Loaded from your account later, or changed elsewhere.
+    measurePrefs.onChange(() => (north.value = measurePrefs.north))
     const author = el('input.oim-ul-author', {
       type: 'text',
       value: store.author,
@@ -71,8 +87,9 @@ export class Sidebar {
       this.outliner.el,
       el(
         'details.oim-ul-settings',
-        el('summary', t('userlayers.settings', 'Labels and name')),
+        el('summary', t('userlayers.settings-more', 'Labels, bearings, name')),
         el('label.oim-ul-field', el('span', t('userlayers.labels-on-map', 'Labels on the map')), level),
+        el('label.oim-ul-field', el('span', t('userlayers.bearings-from', 'Measured bearings from')), north),
         el('label.oim-ul-field', el('span', t('userlayers.author-label', 'Saved as')), author)
       )
     )

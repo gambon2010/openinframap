@@ -16,7 +16,12 @@ import { kindOf } from '../kinds/index.ts'
 export type Tool =
   | { mode: 'select' }
   | { mode: 'place'; properties: FeatureProps }
-  | { mode: 'line' | 'area'; points: [number, number][] }
+  | {
+      mode: 'line' | 'area'
+      points: [number, number][]
+      /** What it makes (none: a drawing): a measurement, for the measuring tools. */
+      properties?: FeatureProps
+    }
   | { mode: 'copy' }
   | {
       mode: 'graphic'
@@ -119,6 +124,7 @@ export class Tools {
         doubleClickZoom: !drawing(tool),
         // Its own keys (keydown below) stop the tool on Escape.
         keydown: (e) => e.key === 'Escape',
+        contextmenu: () => this.cancelDrawing(),
         exit: () => {
           if (this.tool.mode !== 'select') this.setTool({ mode: 'select' })
         }
@@ -222,7 +228,7 @@ export class Tools {
       case 'line':
       case 'area':
         this.tool.points.push(lngLat)
-        this.renderer.draft(this.tool.points, this.tool.mode === 'area')
+        this.drawDraft()
         break
       case 'graphic':
         this.tool.points.push(lngLat)
@@ -269,7 +275,11 @@ export class Tools {
       const geometry: GeoJSON.Geometry = area
         ? { type: 'Polygon', coordinates: [[...points, points[0]]] }
         : { type: 'LineString', coordinates: points }
-      const id = this.store.addFeature(this.activeLayer(), geometry, { kind: 'drawing' })
+      const id = this.store.addFeature(
+        this.activeLayer(),
+        geometry,
+        this.tool.properties ?? { kind: 'drawing' }
+      )
       this.setTool({ mode: 'select' })
       this.select(id)
     } else {
@@ -330,7 +340,12 @@ export class Tools {
     if (!this.enabled || this.tool.mode !== 'select' || !this.selected) return
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
-    if (!layer || !feature || kindOf(feature.properties).movable === false || !this.store.view.canEdit(layer))
+    if (
+      !layer ||
+      !feature ||
+      kindOf(feature.properties).movable === false ||
+      !this.store.view.canEditItem(layer, feature)
+    )
       return
     // The resize handle of a picture, symbol or marker.
     if (this.handleAt(e.point, 'user_selection_resize')) {
@@ -387,8 +402,31 @@ export class Tools {
     )[0]
   }
 
+  /** The line or area being drawn; a measurement: with its lengths so far, to the cursor. */
+  private drawDraft(cursor?: [number, number]) {
+    if (this.tool.mode !== 'line' && this.tool.mode !== 'area') return
+    const measuring = this.tool.properties?.kind === 'measure'
+    if (!measuring) {
+      this.renderer.draft(this.tool.points, this.tool.mode === 'area')
+      return
+    }
+    const points = cursor && this.tool.points.length ? [...this.tool.points, cursor] : this.tool.points
+    this.renderer.measureDraft({ type: this.tool.mode === 'area' ? 'area' : 'distance', points })
+  }
+
+  /** Right-click while drawing: what's drawn so far is dropped; again: the tool stops. */
+  private cancelDrawing() {
+    if (drawing(this.tool) && this.tool.points.length) {
+      this.tool.points = []
+      this.renderer.draft([], false)
+      this.notify()
+    } else this.setTool({ mode: 'select' })
+  }
+
   private mousemove(e: MapMouseEvent) {
     if (this.tool.mode !== 'select') this.map.getCanvas().style.cursor = 'crosshair'
+    if ((this.tool.mode === 'line' || this.tool.mode === 'area') && this.tool.properties?.kind === 'measure')
+      this.drawDraft([e.lngLat.lng, e.lngLat.lat])
     else if (!this.dragging && this.selected)
       this.map.getCanvas().style.cursor = this.handleAt(e.point, 'user_selection_resize') ? 'nwse-resize' : ''
     if (!this.dragging) return
@@ -415,6 +453,8 @@ export class Tools {
     } else {
       feature.geometry = moveVertex(feature.geometry, index, to)
     }
+    // A measurement's labels and marks follow.
+    if (kindOf(feature.properties).drawn === 'measure') this.renderer.preview(layerId, feature)
     this.renderer.select(feature)
   }
 
@@ -443,6 +483,11 @@ export class Tools {
       else this.select(null)
     } else if (e.key === 'Enter') {
       this.finishDrawing()
+    } else if (e.key === 'Backspace' && drawing(this.tool) && this.tool.points.length) {
+      // Take back the last point.
+      this.tool.points.pop()
+      this.drawDraft()
+      this.notify()
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && this.selected) {
       this.deleteSelected()
     }
@@ -450,7 +495,10 @@ export class Tools {
 
   /** Delete everything selected (not what's in a locked layer), as one undo step. */
   deleteSelected() {
-    const ids = this.selection().filter((id) => this.store.view.canEdit(this.store.layerOf(id)))
+    const ids = this.selection().filter((id) => {
+      const layer = this.store.layerOf(id)
+      return this.store.view.canEditItem(layer, layer?.features.get(id))
+    })
     if (ids.length) this.store.deleteFeatures(ids)
     this.select(null)
   }

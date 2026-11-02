@@ -39,7 +39,7 @@ export class Inspector {
         updateEach: (change) =>
           store.updateFeatures(
             items
-              .filter((i) => view.canEdit(i.layer))
+              .filter((i) => view.canEditItem(i.layer, i.feature))
               .map((i) => ({
                 layerId: i.layer.id,
                 feature: { ...i.feature, properties: change(i.feature.properties) }
@@ -48,7 +48,9 @@ export class Inspector {
           ),
         moveTo: (layerId) =>
           store.moveFeatures(
-            items.filter((i) => view.canEdit(i.layer) && i.layer.id !== layerId).map((i) => i.feature.id),
+            items
+              .filter((i) => view.canEditItem(i.layer, i.feature) && i.layer.id !== layerId)
+              .map((i) => i.feature.id),
             layerId
           ),
         remove: () => {
@@ -92,8 +94,9 @@ export class Inspector {
       canEdit: (l) => view.canEdit(l)
     })
     if (this.editorKey !== key) return // something newer
-    if (!view.canEdit(layer)) {
-      // A locked layer's items can be looked at, not changed.
+    const itemLocked = Boolean(feature.properties.locked)
+    if (!view.canEditItem(layer, feature)) {
+      // A locked layer's items, or a locked item, can be looked at, not changed.
       editor
         .querySelectorAll<HTMLButtonElement | HTMLInputElement>('input, select, textarea, button')
         .forEach((c) => {
@@ -102,10 +105,31 @@ export class Inspector {
       editor.insertBefore(
         el(
           'p.oim-ul-locked-note',
-          t('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
+          view.canEdit(layer) && itemLocked
+            ? t('userlayers.item-locked-note', '🔒 Locked: unlock it to change, move or delete it.')
+            : t('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
         ),
         editor.children[1] ?? null
       )
+    }
+    if (view.canEdit(layer)) {
+      // Lock or unlock this one item (any item, e.g. a measurement to keep as it is).
+      const lock = el(
+        'button.oim-ul-button.oim-ul-item-lock',
+        itemLocked ? t('userlayers.unlock-item', '🔓 Unlock') : t('userlayers.lock-item', '🔒 Lock'),
+        {
+          type: 'button',
+          title: itemLocked
+            ? t('userlayers.unlock-item-title', 'Allow changes to this item again')
+            : t('userlayers.lock-item-title', 'Keep this item from being changed, moved or deleted')
+        }
+      ) as HTMLButtonElement
+      lock.onclick = () =>
+        store.updateFeature(layer.id, {
+          ...feature,
+          properties: { ...feature.properties, locked: itemLocked ? undefined : true }
+        })
+      editor.insertBefore(lock, editor.children[1] ?? null)
     }
     panel.show(editor, () => {
       // Closed (×, Esc) or replaced by another feature's details: deselect.

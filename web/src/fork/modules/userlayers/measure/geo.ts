@@ -59,6 +59,37 @@ export function destination([lng, lat]: LngLat, metres: number, bearingDeg: numb
   return [((deg(lng2) + 540) % 360) - 180, deg(lat2)]
 }
 
+/** The point a fraction of the way from a to b along the great circle. */
+export function intermediate([lng1, lat1]: LngLat, [lng2, lat2]: LngLat, f: number): LngLat {
+  const d = distance([lng1, lat1], [lng2, lat2]) / R
+  if (d === 0) return [lng1, lat1]
+  const A = Math.sin((1 - f) * d) / Math.sin(d)
+  const B = Math.sin(f * d) / Math.sin(d)
+  const [φ1, λ1, φ2, λ2] = [rad(lat1), rad(lng1), rad(lat2), rad(lng2)]
+  const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2)
+  const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2)
+  const z = A * Math.sin(φ1) + B * Math.sin(φ2)
+  return [deg(Math.atan2(y, x)), deg(Math.atan2(z, Math.sqrt(x * x + y * y)))]
+}
+
+// Legs longer than this are drawn through points along their great circle.
+const SEGMENT = 20000
+
+/**
+ * A path drawn as the great circles its distance is measured along (on the flat
+ * map a long leg curves; a straight line there would be another, longer path).
+ */
+export function greatCirclePath(points: LngLat[]): LngLat[] {
+  const out: LngLat[] = points.slice(0, 1)
+  for (let i = 1; i < points.length; i++) {
+    const [a, b] = [points[i - 1], points[i]]
+    const n = Math.min(256, Math.ceil(distance(a, b) / SEGMENT))
+    for (let k = 1; k < n; k++) out.push(intermediate(a, b, k / n))
+    out.push(b)
+  }
+  return out
+}
+
 /** A circle of a radius (metres) round a centre, as a closed ring. */
 export function circle(centre: LngLat, metres: number, steps = 96): LngLat[] {
   const ring: LngLat[] = []

@@ -1224,31 +1224,52 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 
 ## Measuring and grid references (SPECIFICATIONS 10.2)
 
-`web/src/fork/modules/measure/`:
+**Grid references** (`web/src/fork/modules/coordinates/`):
 - **Where the cursor is** (`readout.ts`), bottom right (above the credits; the left
-  side has the panels): latitude, longitude and the military grid reference (MGRS, to the metre; the `mgrs` package from proj4js, MIT,
-  bundled: works offline). Off the map: its centre. A click copies the reference.
+  side has the panels): latitude, longitude and the military grid reference (MGRS,
+  to the metre; the `mgrs` package from proj4js, MIT, bundled: works offline;
+  formatting in `fork/core/mgrs.ts`). Off the map: its centre. A click copies it.
 - **Search** (`mgrs.ts`, `MgrsSearch`): a grid reference typed in any usual way
   ("32TLT7257789913", "32T LT 725 899") goes to the centre of the square it names.
-  Search providers now come from the modules (`searchProviders` hook,
+  Search providers come from the modules (`searchProviders` hook,
   `forkSearchProviders` in `search/search.ts`, which used to name Photon).
-- **The Measure panel** (📏 on the right; `panel.ts`; the tool `tool.ts`; what a
-  measurement comes to and its labels `features.ts`, pure; its map layers
-  `layers.ts`; maths `geo.ts`): distance (each
-  leg's length and bearing in degrees and NATO mils, the total), area (and
-  perimeter), range rings (distances typed: "1, 5, 10 km", "500 m", "3 nm"). On a
-  sphere of the mean radius (within 0.5 %). Click points; double-click or Enter
-  finishes, Backspace takes back a point, right-click drops the measurement being
-  made (with none, stops the tool), Esc stops. Measurements stay on the map
-  until removed and aren't saved. While a tool is on it has the map (the map
-  mode, below): feature details don't open and My layers' tools wait.
-- **Which north** (`north.ts`, chosen in the panel, remembered in the browser):
-  bearings from true north (°T), magnetic north (°M: the declination at the leg's
-  start from the World Magnetic Model 2025, `magvar` package, MIT, offline, valid to
-  2030) or grid north (°G: UTM/MGRS grid convergence). The panel says how far that
-  north is from true north at the map's centre (Alsace: magnetic 3.4° east, grid
-  1.3° west).
-- Not done: the MGRS grid drawn on the map, and polar areas (UPS).
+
+**Measuring is a My layers tool** (2026-11-02; it was a panel of its own before):
+a measurement is an item of the kind `measure` (`userlayers/kinds/measure.ts`),
+so it's saved, shared, in the history, undone, exported and printed like the
+others, and its points are moved like a drawing's.
+- **The tools**, in My layers' toolbar after the drawing ones: 📏 distance (D),
+  ⬠ area (E), ◎ range rings (O). Distance and area are the line and area tools
+  making a measurement (`Tool.properties`): while drawing, the lengths, bearings and
+  marks so far follow the cursor (`Renderer.measureDraft`). Click points; double-click
+  or Enter finishes; Backspace takes back a point; right-click drops what's drawn so
+  far (again: stops; any drawing tool); Esc stops.
+- **What it shows** (`userlayers/measure/features.ts`, pure): each leg's length and
+  bearing in degrees and NATO mils, the total; an area and its perimeter; rings and
+  their radii, labelled four times. Lines follow great circles (`greatCirclePath`):
+  the path the distance is measured along, which curves on the flat map for long
+  legs. On a sphere of the mean radius (within 0.5 %).
+- **Marks along distances** (`measure/ticks.ts`, pure), like a ruler: a mark every
+  `minor`, a longer labelled one every `major` ("5 km", "500 m"), counted from the
+  start across legs. The steps are round (1, 2 or 5 × 10ⁿ), never closer than about
+  15 px on screen (labels about 90 px), never under 10 m; only the marks in view are
+  made (redrawn as the map moves), and a line far too long for its scale gets none
+  rather than millions. They're drawn in the measurement's line and label layers:
+  as a layer of their own they weren't painted beyond zoom 13 in the headless
+  browser used for testing, though MapLibre had built them (cause not found).
+- **Range rings' distances** are on the item's card (`ItemKind.card`, a new hook);
+  new rings get the last ones set.
+- **Which north** (`measure/north.ts`), in My layers' settings ("Measured bearings
+  from"), kept per account (`personal.ts` `north`, `radii`; `measure/prefs.ts`):
+  true north (°T), magnetic north (°M: the declination at the leg's start from the
+  World Magnetic Model 2025, `magvar` package, MIT, offline, valid to 2030) or grid
+  north (°G: UTM/MGRS grid convergence).
+- **Locking one item** (any kind): 🔒 Lock on its card. A locked item can't be
+  changed, moved or deleted until unlocked (`View.canEditItem`, used by dragging,
+  deleting, moving to another layer, the card and the right-click menu); 🔒 in the list.
+- Exports keep a measurement's type, ring distances and lock.
+- Not done: the MGRS grid drawn on the map, polar areas (UPS), adding or removing a
+  point of a placed measurement (its points are moved, as a drawing's).
 
 ## Import, export and printing (SPECIFICATIONS 10.7)
 
@@ -1298,9 +1319,8 @@ double-click; Escape ends it (unless its `keydown` uses the key); entering a mod
 ends the one before (its `exit` runs). Meanwhile upstream's click router opens no
 feature details: `mapMode.install` wraps its `handleClick` once (fork/index.ts),
 replacing the wrappers measuring and My layers each had, and `claimClicks` lets a
-module keep some clicks without a mode (My layers, on its own items). Measuring
-and My layers' drawing and placing tools are modes: starting one stops the other.
-Replaces `ui/map-clicks.ts`.
+module keep some clicks without a mode (My layers, on its own items). My layers'
+drawing, placing and measuring tools are modes. Replaces `ui/map-clicks.ts`.
 
 ## My layers: kinds of item (refactor, 2026-11-02)
 

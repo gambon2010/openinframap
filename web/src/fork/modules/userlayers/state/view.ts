@@ -4,7 +4,7 @@
 //   playback    a step of the history, read-only
 // Every "can I change this?" asks canEdit: a locked layer, or one shared with you
 // to view only (docs/plans/sync.md), can't be changed.
-import { UserLayer } from '../model/model.ts'
+import { UserFeature, UserLayer } from '../model/model.ts'
 import { Situation } from './api.ts'
 
 export type ViewMode = 'live' | 'situation' | 'playback'
@@ -24,6 +24,12 @@ export class View {
   /** Its items may be changed now: live, not locked, not shared with you to view only. */
   canEdit(layer: UserLayer | null | undefined): boolean {
     return this.live && !!layer && !layer.style.locked && layer.access !== 'view'
+  }
+
+  /** One item may be changed, moved or deleted now: its layer can be, and it isn't
+   * locked itself. */
+  canEditItem(layer: UserLayer | null | undefined, feature: UserFeature | null | undefined): boolean {
+    return this.canEdit(layer) && !!feature && !feature.properties.locked
   }
 
   /** The layer itself (name, colour, folder) may be changed: as canEdit, locked or not. */

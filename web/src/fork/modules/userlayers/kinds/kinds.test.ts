@@ -87,6 +87,6 @@ describe('the kinds', () => {
       KINDS.filter((k) => k.drawn !== 'standard')
         .map((k) => k.id)
         .sort()
-    ).toEqual(['copy', 'graphic'])
+    ).toEqual(['copy', 'graphic', 'measure'])
   })
 })
