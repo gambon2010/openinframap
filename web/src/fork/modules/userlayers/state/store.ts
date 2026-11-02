@@ -24,9 +24,12 @@ import { View } from './view.ts'
 
 export class Store {
   layers = new Map<string, UserLayer>()
-  pending: Change[] = local.pending()
+  /** The unsaved changes (kept in this browser: local.ts; back when the page opens,
+   * at the first load()). */
+  pending: Change[] = []
   /** How what the pending changes touch was when they started (reconcile.ts). */
-  private bases: Bases = local.bases()
+  private bases: Bases = {}
+  private restored = false
   /** Items both you and someone else changed: Save waits until they're resolved. */
   conflicts: Conflict[] = []
   private history = new UndoHistory()
@@ -59,6 +62,28 @@ export class Store {
       this.hidden = new Set(this.personal.data.hidden)
       this.notify()
     })
+    // The unsaved changes can't be kept in this browser (or can again): the page says so.
+    local.onTrouble(() => this.notify())
+  }
+
+  /** Why the unsaved changes can't be kept in this browser (null: they are). */
+  get keepTrouble(): string | null {
+    return local.trouble
+  }
+
+  /** The unsaved changes this browser kept (a reload, a crash), before any made since. */
+  private async restore() {
+    if (this.restored) return
+    this.restored = true
+    const kept = await local.load()
+    if (kept.pending.length) {
+      this.pending = [...kept.pending, ...this.pending]
+      // A base kept is older than one noted since for the same thing: it wins.
+      this.bases = { ...this.bases, ...kept.bases }
+    }
+    // Written now (nothing was before: it would have overwritten what was kept).
+    local.setBases(this.bases)
+    local.setPending(this.pending)
   }
 
   onChange(listener: () => void) {
@@ -80,6 +105,7 @@ export class Store {
   /** The saved layers, with the unsaved changes on top (merged with what others
    * saved meanwhile, if there are any: reconcile.ts). */
   async load() {
+    await this.restore()
     try {
       const fresh = await loadSaved()
       if (this.pending.length && Object.keys(this.bases).length) this.bringUpToDate(fresh)

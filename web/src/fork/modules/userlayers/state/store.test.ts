@@ -60,7 +60,8 @@ describe('Store', () => {
     store = new Store()
   })
 
-  test('every edit is a pending change, kept in the browser', () => {
+  test('every edit is a pending change, kept in the browser', async () => {
+    await store.load()
     const layer = store.createLayer('Grid')
     const id = store.addFeature(layer, point, { kind: 'symbol', sidc: 'SFGPUCI--------' })
     expect(store.activeLayer).toBe(layer)
@@ -477,5 +478,54 @@ describe('importing a file', () => {
     expect(JSON.parse(localStorage.getItem('oim-userlayers-pending')!)).toHaveLength(51)
     store.undo()
     expect(store.layers.has(id)).toBe(false)
+  })
+})
+
+describe('kept in this browser', () => {
+  // A page opening: nothing read yet (local.ts holds that for the whole page).
+  let Fresh: typeof Store
+  beforeEach(async () => {
+    localStorage.clear()
+    vi.resetModules()
+    Fresh = (await import('./store.ts')).Store
+  })
+
+  test('a reload: the unsaved changes come back at load, before any made since', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ layers: [] }) }))
+    )
+    // Kept by the page before the reload.
+    localStorage.setItem(
+      'oim-userlayers-pending',
+      JSON.stringify([{ op: 'layer_create', layer_id: 'k', data: { name: 'Kept', style: {} }, made_at: at }])
+    )
+    const store = new Fresh()
+    // Made before the kept ones were read: it mustn't overwrite them.
+    store.createLayer('Since')
+    expect(JSON.parse(localStorage.getItem('oim-userlayers-pending')!)).toHaveLength(1)
+    await store.load()
+    expect(store.pending.map((c) => c.data?.name)).toEqual(['Kept', 'Since'])
+    expect([...store.layers.values()].map((l) => l.name).sort()).toEqual(['Kept', 'Since'])
+    expect(JSON.parse(localStorage.getItem('oim-userlayers-pending')!)).toHaveLength(2)
+    vi.unstubAllGlobals()
+  })
+
+  test("storage full: the page is told why, and told again when it's kept", async () => {
+    const store = new Fresh()
+    await store.load()
+    const heard = vi.fn()
+    store.onChange(heard)
+    const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    store.createLayer('Too big')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(store.keepTrouble).toBe('QuotaExceededError')
+    expect(heard).toHaveBeenCalled()
+    setItem.mockRestore()
+    store.createLayer('Fits')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(store.keepTrouble).toBeNull()
   })
 })

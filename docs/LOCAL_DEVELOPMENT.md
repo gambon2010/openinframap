@@ -518,6 +518,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   puts it in their own folders. They, the layers hidden, what's folded, the layer you
   draw into and your favourite symbols follow your account to any computer.
   **Import a file…** under the list puts a GeoJSON, KML or GPX file in a new layer;
+  Until you Save, what you import or draw is kept in this browser (big files too:
+  if it ever can't be, the panel tells you to Save now).
   **Export…** saves the layers shown as one (⋯ → Export as: one layer). GPX keeps
   only points and lines; KML and GeoJSON exported here come back with their symbols. Each layer: ◉ show/hide, 🔒 lock (its
   items can't be changed or moved), colour, its items (click the name), ⋯ to draw

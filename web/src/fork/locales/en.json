@@ -590,7 +590,8 @@
     "import-title": "GeoJSON, KML or GPX: a new layer with what it has",
     "export": "Export…",
     "export-shown": "The layers shown, as",
-    "legend-symbols": "Symbols"
+    "legend-symbols": "Symbols",
+    "not-kept": "Your unsaved changes can't be kept in this browser ({{error}}): if the page is reloaded or closed before you Save, they're lost. Save now."
   },
   "tower": {
     "unnamed-line": "a line",

@@ -1276,6 +1276,19 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## Unsaved changes in IndexedDB (2026-11-02)
+
+My layers' unsaved changes (and their bases) were kept in localStorage, which
+holds about 5 MB per site: a big imported file went past it, and the copy was
+silently not kept. `userlayers/state/local.ts` now keeps them in IndexedDB
+(database `oim-userlayers`, written 300 ms after the last edit and at once when
+the page is hidden or closed); localStorage where there's no IndexedDB. The first
+time, what localStorage had is moved over. They're read back at the store's first
+`load()`, and nothing is written before: an edit made meanwhile would have
+overwritten them (both are kept, the older first). When they can't be kept
+(storage full or blocked), the My layers panel says so: Save now. Tested: a 3 MB
+GPX-size import kept across a reload; an old localStorage copy moved over.
+
 ## The map mode (2026-11-02)
 
 `fork/ui/map-mode.ts`: one tool at a time takes the map over. `mapMode.enter({name,

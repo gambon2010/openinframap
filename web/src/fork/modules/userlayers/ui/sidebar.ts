@@ -108,6 +108,18 @@ export class Sidebar {
         )
       )
     }
+    if (store.keepTrouble && store.pending.length) {
+      this.message.append(
+        el(
+          'p.oim-ul-error',
+          t(
+            'userlayers.not-kept',
+            "Your unsaved changes can't be kept in this browser ({{error}}): if the page is reloaded or closed before you Save, they're lost. Save now.",
+            { error: store.keepTrouble }
+          )
+        )
+      )
+    }
     this.ws.situations.updateLine()
     this.outliner.draw()
   }
