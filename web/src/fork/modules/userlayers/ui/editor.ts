@@ -24,9 +24,10 @@ import {
   withStatus,
   withUnitModifiers
 } from '../model/sidc.ts'
-import { GEOMETRY_LABELS, entryOf, symbolName } from './palette.ts'
+import { GEOMETRY_LABELS, entryOf } from './palette.ts'
 import { symbolSvg } from '../map/symbols.ts'
 import { MAX_SIZE, MIN_SIZE } from '../map/render.ts'
+import { kindOf } from '../kinds/index.ts'
 
 export interface EditorActions {
   update: (properties: FeatureProps) => void
@@ -170,18 +171,18 @@ export async function buildEditor(
 ): Promise<HTMLElement> {
   const p = feature.properties
   const update = (changes: Partial<FeatureProps>) => actions.update({ ...p, ...changes })
-  const military = (p.kind === 'symbol' || p.kind === 'graphic') && Boolean(p.sidc)
+  const itemKind = kindOf(p)
+  const military = Boolean(itemKind.military && p.sidc)
   const sidc = p.sidc ?? ''
   const kind = military ? symbolKind(sidc) : null
   const parts: (HTMLElement | string)[] = []
 
   // --- Header: the symbol, large, and the designation (rename in place) ---
   const preview = el('span.oim-ul-card-symbol')
-  let what = t(`userlayers.kind.${p.kind}`, p.kind)
+  let what = itemKind.what(feature)
   if (military) {
-    what = symbolName(sidc) ?? sidc
     const geometry = entryOf(sidc)?.[3]
-    if (p.kind === 'symbol') {
+    if (itemKind.drawn === 'standard') {
       try {
         preview.innerHTML = await symbolSvg(sidc, 36)
       } catch {
@@ -190,7 +191,7 @@ export async function buildEditor(
     } else if (geometry) {
       preview.textContent = GEOMETRY_LABELS[geometry][0]
     }
-  } else if (p.kind === 'copy') {
+  } else if (itemKind.drawn === 'copy') {
     what = t('userlayers.copy-of', 'Copy of a map feature ({{layer}})', { layer: p.copy?.layer })
   }
   const modifiers = { ...(p.modifiers ?? {}) }
@@ -230,7 +231,7 @@ export async function buildEditor(
         title: t(`userlayers.affiliation.${id}`, label),
         'aria-pressed': String(identity(sidc) === id)
       })
-      if (p.kind === 'symbol') {
+      if (itemKind.drawn === 'standard') {
         try {
           b.innerHTML = await symbolSvg(withIdentity(sidc, id), 16)
         } catch {
@@ -370,7 +371,7 @@ export async function buildEditor(
   const look: HTMLElement[] = []
   const lookRow = (label: string, control: HTMLElement) =>
     el('.oim-ul-detail', el('span.oim-ul-detail-name', label), control)
-  if (p.kind === 'symbol' || p.kind === 'image' || p.kind === 'marker') {
+  if (itemKind.sized && feature.geometry.type === 'Point') {
     const value = p.size ?? 1
     const size = el('input', {
       type: 'range',
@@ -390,7 +391,7 @@ export async function buildEditor(
     reset.onclick = () => update({ size: 1 })
     look.push(lookRow(t('userlayers.size', 'Size'), el('span.oim-ul-unit', size, shown, reset)))
   }
-  if (p.kind === 'drawing' || p.kind === 'marker' || p.kind === 'graphic') {
+  if (itemKind.coloured) {
     const color = el('input', {
       type: 'color',
       value: p.color ?? layer.style.color ?? DEFAULT_COLOR,
@@ -399,7 +400,7 @@ export async function buildEditor(
     color.onchange = () => update({ color: color.value })
     look.push(lookRow(t('userlayers.color', 'Colour'), color))
   }
-  if (p.kind === 'drawing' && feature.geometry.type !== 'Point') {
+  if (itemKind.lineWidth && feature.geometry.type !== 'Point') {
     const width = el('input', {
       type: 'range',
       min: '1',
@@ -415,7 +416,7 @@ export async function buildEditor(
     parts.push(
       el(
         'details.oim-ul-editor-section',
-        { open: p.kind === 'image' },
+        { open: Boolean(itemKind.appearanceFirst) },
         el('summary', t('userlayers.s.appearance', 'Appearance')),
         ...look
       )
@@ -426,7 +427,7 @@ export async function buildEditor(
   const hint =
     feature.geometry.type === 'Point'
       ? t('userlayers.drag-hint', 'Drag it on the map to move it.')
-      : p.kind === 'copy'
+      : itemKind.drawn === 'copy'
         ? ''
         : p.axis || p.axisWidth !== undefined
           ? t(
@@ -500,7 +501,7 @@ export function buildBulkCard(
   const names = items.map(({ feature }) => {
     const p = feature.properties
     const name = (p.modifiers?.['T'] || p.name || '').trim()
-    const what = p.sidc ? (symbolName(p.sidc) ?? p.sidc) : t(`userlayers.kind.${p.kind}`, p.kind)
+    const what = kindOf(p).what(feature)
     return el('li', name ? `${name} · ${what}` : what)
   })
   parts.push(el('ul.oim-ul-bulk-list', names))

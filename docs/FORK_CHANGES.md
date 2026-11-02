@@ -1272,6 +1272,20 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## My layers: kinds of item (refactor, 2026-11-02)
+
+What each kind of item is (symbol, graphic, image, marker, drawing, copy) was
+spread over a dozen `kind === ...` tests (the map, the list, the card, the history,
+files). Now each kind is a file in `userlayers/kinds/` (`ItemKind`, `kinds/types.ts`)
+saying how it's named, drawn (standard, graphic or copy), its icon and how that's
+drawn (`images`: prefix and maker; `map/icons.ts` adds them to the map by prefix,
+replacing `ensureImage`'s list in `symbols.ts`), its thumbnail, what the card
+offers (size, colour, line width, military fields), whether it moves, its filter
+chips. The rest asks `kindOf(properties)`. No change in behaviour; a new kind is a
+file and two lines (recipe in `docs/ARCHITECTURE.md`). Left as they are: the
+toolbar's tools (they make items) and the card's MIL-STD fields (they depend on the
+symbol code, not the kind).
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

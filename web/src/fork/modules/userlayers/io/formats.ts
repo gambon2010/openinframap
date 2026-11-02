@@ -6,6 +6,7 @@
 // DOMParser (KML, GPX).
 import { gpx, kml } from '@tmcw/togeojson'
 import { FeatureProps, UserLayer } from '../model/model.ts'
+import { KIND_IDS, kindOf } from '../kinds/index.ts'
 
 export type Format = 'geojson' | 'kml' | 'gpx'
 
@@ -222,14 +223,11 @@ export function toItem(geometry: GeoJSON.Geometry, raw: Record<string, unknown>)
     string | undefined
   const notes = NOTE_KEYS.map((k) => raw[k]).find((v) => typeof v === 'string' && v.trim()) as
     string | undefined
-  if (
-    typeof kind === 'string' &&
-    ['symbol', 'graphic', 'image', 'marker', 'drawing', 'copy'].includes(kind)
-  ) {
+  if (typeof kind === 'string' && KIND_IDS.includes(kind)) {
     // Exported from My layers: as it was. A copy of a map feature keeps all the
     // original's fields (it's drawn from them).
     const properties: FeatureProps =
-      kind === 'copy'
+      kindOf({ kind: kind as FeatureProps['kind'] }).drawn === 'copy'
         ? (Object.fromEntries(
             Object.entries(raw).filter(([k]) => k !== 'layer' && !k.startsWith('oim:'))
           ) as FeatureProps)

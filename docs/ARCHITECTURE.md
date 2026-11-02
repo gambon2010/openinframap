@@ -85,8 +85,13 @@ state/   store.ts (the Store the UI uses) on top of:
            view.ts       store.view: live, a situation or a history step;
                          canEdit(layer) is the one "may this be changed now?"
            playback.ts   the saved history, step by step; api.ts the backend
-map/     render.ts, graphics.ts (tactical graphics), symbols.ts, tools.ts,
-         interactions.ts (hover, right-click, copy / paste)
+kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
+         drawing, copy); types.ts says what a kind defines, index.ts lists them
+         and has kindOf(properties)
+map/     render.ts, graphics.ts (tactical graphics), symbols.ts (drawing the
+         images), icons.ts (adding them to the map, by the kinds' prefixes),
+         tools.ts, interactions.ts (hover, right-click, copy / paste), legend.ts
+io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast; editor.ts
          (the card), outliner.ts (the list), palette.ts (the picker);
@@ -182,6 +187,21 @@ Pick an order between the existing ones (`LEFT_ORDER`). To show details, use
 
 **A panel in the right dock:** `makePanel()` (`ui/panel.ts`) and
 `dock.add(button, panel)`.
+
+**A kind of item in My layers** (e.g. a checkpoint):
+1. A file in `modules/userlayers/kinds/` exporting an `ItemKind` (`kinds/types.ts`):
+   its names (`noun`, `what`), how it's drawn (`drawn: 'standard'` draws points as
+   its `icon` and lines and areas in its colour), its icon images (`images`: a
+   prefix and how one is drawn), its list thumbnail, and what the card offers
+   (`sized`, `coloured`, `lineWidth`, `military`), whether it can be dragged
+   (`movable`) and its filter chips.
+2. Add it to `KINDS` in `kinds/index.ts` and its id to `FeatureProps.kind`
+   (`model/model.ts`).
+3. A way to make one: a tool in `ui/toolbar.ts` (`{ mode: 'place', properties: {
+   kind: '...' } }` for a point), or a file import (`io/formats.ts` reads the kind
+   back by itself).
+4. Its English name: `npm run fork-strings`. `kinds/kinds.test.ts` checks the
+   registry (unique ids and image prefixes, an icon only with images).
 
 **A backend route:** a module in `web-backend/src/fork/`, with its routes added in
 `fork/__init__.py`. For My layers, check rights through `userdata/users.py`.

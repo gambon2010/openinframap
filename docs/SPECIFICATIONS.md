@@ -191,3 +191,4 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 |---|---|---|
 | 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | ✅ 136 frontend (`npm run test:fork`), 19 backend (`tests/fork/`), 77 scripts (`scripts/tests/`) |
 | 11.2 | Tests for the setup scripts. | ✅ the scripts run in a sandbox with fake Docker/network (options, refusals, safety rules); a real Luxembourg build, export and import in a separate test database (opt-in) |
+| 11.3 | Easy to extend without changing the structure ("modding"): a map mode interface, My layers' item kinds as a registry, the measure and print files split. | 🚧 (asked 2026-11-02): kinds ✅ |

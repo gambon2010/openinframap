@@ -6,7 +6,7 @@ import { Map, LngLatBounds } from 'maplibre-gl'
 import { Change, SavedChange, UserFeature, UserLayer } from '../model/model.ts'
 import { applyChange } from './changes.ts'
 import { loadHistory } from './api.ts'
-import { symbolName } from '../ui/palette.ts'
+import { kindOf } from '../kinds/index.ts'
 import { FIELDS } from '../model/fields.ts'
 import { ECHELONS, IDENTITIES, STATUSES } from '../model/sidc.ts'
 
@@ -29,20 +29,10 @@ function featureLabel(feature: Partial<UserFeature> | undefined): string {
   if (!p) return t('userlayers.feature', 'a feature')
   const label = p.modifiers?.['T'] || p.name
   const name = label ? ` "${label}"` : ''
-  switch (p.kind) {
-    case 'symbol':
-      return `${t('userlayers.kind.symbol', 'symbol')}${name || ` (${symbolName(p.sidc ?? '') ?? p.sidc})`}`
-    case 'graphic':
-      return `${t('userlayers.kind.graphic', 'graphic')}${name || ` (${symbolName(p.sidc ?? '') ?? p.sidc})`}`
-    case 'image':
-      return `${t('userlayers.kind.image', 'picture')}${name}`
-    case 'marker':
-      return `${t('userlayers.kind.marker', 'marker')}${name}`
-    case 'copy':
-      return `${t('userlayers.kind.copy', 'copy of')} ${p.copy?.layer ?? ''}${name}`
-    default:
-      return `${feature?.geometry?.type === 'Polygon' ? t('userlayers.kind.area', 'area') : t('userlayers.kind.line', 'line')}${name}`
-  }
+  const kind = kindOf(p)
+  const item = { geometry: feature?.geometry as GeoJSON.Geometry, properties: p }
+  // Unnamed symbols and graphics: what they are.
+  return `${kind.noun(item)}${name || (kind.military ? ` (${kind.what(item)})` : '')}`
 }
 
 const label = (list: [string, string][], code: string) => list.find(([c]) => c === code)?.[1] ?? code

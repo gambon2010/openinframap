@@ -1,20 +1,16 @@
-// Fork: the images "My layers" draws, added to the map before any feature uses
-// them (upstream's SymbolLoader would report unknown ones as missing icons):
-// - milsym:<code>[|<modifiers as JSON>]: a MIL-STD-2525C symbol with its labels,
-//   drawn by @syncpoint/signs (MIT), the library ODINv2 uses. It's big (3.5 MB), so
-//   it's only loaded when needed.
-// - userimg:<id>: a picture uploaded to the backend.
-// - user-marker:<colour>: a plain pin.
-import { Map } from 'maplibre-gl'
+// Fork: drawing the images of My layers' items (the kinds, kinds/, name them and
+// map/icons.ts adds them to the map):
+// - a MIL-STD-2525C symbol with its labels, drawn by @syncpoint/signs (MIT), the
+//   library ODINv2 uses. It's big (3.5 MB), so it's only loaded when needed;
+// - a picture uploaded to the backend;
+// - a plain pin (marker).
 import { imageUrl } from '../state/api.ts'
-import { FeatureProps } from '../model/model.ts'
-import { LabelLevel, modifiersToDraw } from '../model/fields.ts'
+import { LabelLevel } from '../model/fields.ts'
 
 type Signs = typeof import('@syncpoint/signs')
 let signs: Promise<Signs> | undefined
 
-const loading = new globalThis.Map<string, Promise<void>>()
-const ratio = Math.min(Math.round(window.devicePixelRatio || 1), 2)
+export const ratio = Math.min(Math.round(window.devicePixelRatio || 1), 2)
 
 /** The symbol for a code, as an SVG string (for the palette and the popup). */
 export async function symbolSvg(sidc: string, size = 30): Promise<string> {
@@ -45,7 +41,7 @@ function canvas(width: number, height: number) {
 }
 
 /** A symbol with its anchor (e.g. the frame's centre, not counting labels) in the middle. */
-async function symbolImage(sidc: string, modifiers: Record<string, string>): Promise<ImageData> {
+export async function symbolImage(sidc: string, modifiers: Record<string, string>): Promise<ImageData> {
   const { Symbol } = await (signs ??= import('@syncpoint/signs'))
   const symbol = new Symbol(sidc, { size: 30, modifiers })
   const { width, height } = symbol.getSize()
@@ -59,12 +55,12 @@ async function symbolImage(sidc: string, modifiers: Record<string, string>): Pro
 }
 
 /** A picture, scaled so it's 64 px wide on the map at size 1. */
-async function pictureImage(id: string): Promise<{ image: HTMLImageElement; pixelRatio: number }> {
+export async function pictureImage(id: string): Promise<{ image: HTMLImageElement; pixelRatio: number }> {
   const image = await loadImage(imageUrl(id))
   return { image, pixelRatio: Math.max(image.naturalWidth / 64, 0.1) }
 }
 
-function markerImage(color: string): ImageData {
+export function markerImage(color: string): ImageData {
   const { c, ctx } = canvas(24, 34)
   ctx.beginPath()
   ctx.moveTo(12, 33)
@@ -110,42 +106,4 @@ export function symbolImageName(sidc: string, modifiers: Record<string, string>)
   const keys = Object.keys(modifiers).sort()
   if (!keys.length) return `milsym:${sidc}`
   return `milsym:${sidc}|${JSON.stringify(Object.fromEntries(keys.map((k) => [k, modifiers[k]])))}`
-}
-
-/** The image name a point feature is drawn with. */
-export function iconName(p: FeatureProps, layerColor: string): string | null {
-  if (p.kind === 'symbol' && p.sidc) return symbolImageName(p.sidc, modifiersToDraw(p.modifiers, labelLevel))
-  if (p.kind === 'image' && p.image) return `userimg:${p.image}`
-  if (p.kind === 'marker') return `user-marker:${p.color ?? layerColor}`
-  return null
-}
-
-/** Add an image to the map if it isn't there yet (once, however often it's asked for). */
-export function ensureImage(map: Map, name: string): Promise<void> {
-  if (map.hasImage(name)) return Promise.resolve()
-  let promise = loading.get(name)
-  if (!promise) {
-    promise = ensureImageNow(map, name).finally(() => loading.delete(name))
-    loading.set(name, promise)
-  }
-  return promise
-}
-
-async function ensureImageNow(map: Map, name: string) {
-  const [type, ...rest] = name.split(':')
-  const value = rest.join(':')
-  try {
-    if (type === 'milsym') {
-      const [sidc, modifiers] = value.split(/\|(.*)/s)
-      const data = await symbolImage(sidc, modifiers ? JSON.parse(modifiers) : {})
-      if (!map.hasImage(name)) map.addImage(name, data, { pixelRatio: ratio })
-    } else if (type === 'userimg') {
-      const { image, pixelRatio } = await pictureImage(value)
-      if (!map.hasImage(name)) map.addImage(name, image, { pixelRatio })
-    } else if (type === 'user-marker') {
-      if (!map.hasImage(name)) map.addImage(name, markerImage(value), { pixelRatio: ratio })
-    }
-  } catch (e) {
-    console.warn('My layers: could not draw', name, e)
-  }
 }

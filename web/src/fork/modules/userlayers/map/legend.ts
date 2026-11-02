@@ -6,6 +6,7 @@ import type { LegendEntry, LegendSection } from '../../../ui/legend.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { symbolName } from '../ui/palette.ts'
 import { symbolSvg } from './symbols.ts'
+import { kindOf } from '../kinds/index.ts'
 
 /** Whether any of a feature's points is in view. */
 export function inView(feature: UserFeature, bounds: Pick<LngLatBounds, 'contains'>): boolean {
@@ -37,7 +38,7 @@ export async function userLegend(
       const label = symbolName(sidc) ?? sidc
       symbols.set(
         sidc,
-        f.properties.kind === 'symbol'
+        kindOf(f.properties).military && kindOf(f.properties).drawn === 'standard'
           ? symbolSvg(sidc, 40).then((svg) => ({ label, svg }))
           : { label, colour, shape: 'line' }
       )

@@ -1,7 +1,7 @@
 // Fork: an item of My layers in a few words, for lists (outliner) and messages.
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from './model.ts'
-import { symbolName } from '../ui/palette.ts'
+import { kindOf } from '../kinds/index.ts'
 import { IDENTITIES, status } from './sidc.ts'
 import { fromDtg, relativeTime } from './fields.ts'
 
@@ -12,12 +12,7 @@ export function featureLabelParts(
 ): { name: string; what: string; detail: string } {
   const p = feature.properties
   const name = (p.modifiers?.['T'] || p.name || '').trim()
-  const what =
-    p.kind === 'symbol' || p.kind === 'graphic'
-      ? (symbolName(p.sidc ?? '') ?? p.sidc ?? '')
-      : p.kind === 'copy'
-        ? t('userlayers.copy-of-short', 'Copy: {{layer}}', { layer: p.copy?.layer ?? '' })
-        : t(`userlayers.kind.${p.kind}`, p.kind)
+  const what = kindOf(p).what(feature)
   const detail: string[] = []
   if (p.sidc) {
     const id = IDENTITIES.find(([c]) => c === p.sidc![1])?.[1]

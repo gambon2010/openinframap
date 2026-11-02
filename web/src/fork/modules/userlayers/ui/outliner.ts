@@ -9,12 +9,11 @@ import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR, isOwner, UserFeature, UserLayer } from '../model/model.ts'
 import { Store } from '../state/store.ts'
+import { kindOf } from '../kinds/index.ts'
 import type { Format } from '../io/formats.ts'
 import { featureLabelParts } from '../model/labels.ts'
-import { identity, status, symbolKind } from '../model/sidc.ts'
-import { GEOMETRY_LABELS, entryOf } from './palette.ts'
+import { identity, status } from '../model/sidc.ts'
 import { symbolRenderer } from '../map/symbols.ts'
-import { imageUrl } from '../state/api.ts'
 import { openSharing } from './sharing.ts'
 
 export type Filter = 'hostile' | 'friend' | 'planned' | 'units' | 'graphics' | 'pictures'
@@ -37,9 +36,11 @@ export function matches(feature: UserFeature, query: string, filters: Set<Filter
     if (filter === 'hostile' && !(sidc && ['H', 'S', 'J', 'K'].includes(identity(sidc)))) return false
     if (filter === 'friend' && !(sidc && ['F', 'A'].includes(identity(sidc)))) return false
     if (filter === 'planned' && !(sidc && status(sidc) === 'A')) return false
-    if (filter === 'units' && !(p.kind === 'symbol' && sidc && symbolKind(sidc) === 'unit')) return false
-    if (filter === 'graphics' && !(p.kind === 'graphic' || p.kind === 'drawing')) return false
-    if (filter === 'pictures' && !(p.kind === 'image' || p.kind === 'marker')) return false
+    if (
+      (filter === 'units' || filter === 'graphics' || filter === 'pictures') &&
+      !kindOf(p).filters?.(p).includes(filter)
+    )
+      return false
   }
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   if (!words.length) return true
@@ -185,33 +186,17 @@ export class Outliner {
   private thumbnail(feature: UserFeature): HTMLElement {
     const p = feature.properties
     const span = el('span.oim-ul-thumb')
-    if (p.kind === 'symbol' && p.sidc) {
-      if (this.render) {
-        try {
-          span.innerHTML = this.render(p.sidc, 12)
-        } catch {
-          span.textContent = '⬚'
+    const thumbnail = kindOf(p).thumbnail(feature, this.render)
+    if (thumbnail === null) {
+      span.textContent = '⬚'
+      // The symbol library loads once; draw the list again then.
+      void symbolRenderer().then((render) => {
+        if (!this.render) {
+          this.render = render
+          this.actions.update()
         }
-      } else {
-        span.textContent = '⬚'
-        // The symbol library loads once; draw the list again then.
-        void symbolRenderer().then((render) => {
-          if (!this.render) {
-            this.render = render
-            this.actions.update()
-          }
-        })
-      }
-    } else if (p.kind === 'graphic') {
-      span.textContent = GEOMETRY_LABELS[entryOf(p.sidc ?? '')?.[3] ?? 'L']?.[0] ?? '➚'
-    } else if (p.kind === 'image' && p.image) {
-      span.append(el('img', { src: imageUrl(p.image), alt: '' }))
-    } else {
-      span.textContent =
-        { marker: '📍', drawing: feature.geometry.type === 'Polygon' ? '▱' : '╱', copy: '⧉' }[
-          p.kind as string
-        ] ?? '•'
-    }
+      })
+    } else span.append(thumbnail)
     return span
   }
 

@@ -10,7 +10,9 @@ import { FilterSpecification, GeoJSONSource, LayerSpecification, Map as MapLibre
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
-import { ensureImage, getLabelLevel, iconName } from './symbols.ts'
+import { getLabelLevel } from './symbols.ts'
+import { ensureImage, iconName } from './icons.ts'
+import { KINDS, kindOf } from '../kinds/index.ts'
 import {
   axisControlPoints,
   axisWidth,
@@ -61,8 +63,15 @@ const LINE_OR_POLYGON: FilterSpecification = [
   ['literal', ['LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']]
 ]
 const POINT: FilterSpecification = ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]]
-// Copies are drawn by clones of upstream's layers, graphics from their own source.
-const OWN: FilterSpecification = ['!', ['in', ['get', 'kind'], ['literal', ['copy', 'graphic']]]]
+// Kinds drawn the standard way (kinds/): copies are drawn by clones of upstream's
+// layers, graphics from their own source.
+const OWN: FilterSpecification = [
+  '!',
+  ['in', ['get', 'kind'], ['literal', KINDS.filter((k) => k.drawn !== 'standard').map((k) => k.id)]]
+]
+
+/** Drawn by the tactical graphics renderer (graphics.ts). */
+const isGraphic = (f: UserFeature) => kindOf(f.properties).drawn === 'graphic'
 
 function graphicsSourceId(layerId: string) {
   return `user_${layerId}_g`
@@ -83,8 +92,7 @@ export const MAX_SIZE = 8
 
 /** Kinds drawn as an image that the resize handle (and the Size slider) apply to. */
 export function resizable(feature: UserFeature | null): boolean {
-  const kind = feature?.properties.kind
-  return feature?.geometry.type === 'Point' && (kind === 'image' || kind === 'symbol' || kind === 'marker')
+  return feature?.geometry.type === 'Point' && Boolean(kindOf(feature.properties).sized)
 }
 
 /**
@@ -254,8 +262,7 @@ export class Renderer {
     if (!this.last) return
     const { layers } = this.last
     const map = this.map
-    const hasGraphics = (l: UserLayer) =>
-      [...l.features.values()].some((f) => f.properties.kind === 'graphic')
+    const hasGraphics = (l: UserLayer) => [...l.features.values()].some(isGraphic)
     // A layer whose last graphic was deleted: nothing left to draw.
     for (const layer of layers.values()) {
       if (!hasGraphics(layer))
@@ -277,7 +284,7 @@ export class Renderer {
       const features: GeoJSON.Feature[] = []
       for (const stored of layer.features.values()) {
         let f = changed && stored.id === changed.id ? changed : stored
-        if (f.properties.kind !== 'graphic' || !f.properties.sidc) continue
+        if (!isGraphic(f) || !f.properties.sidc) continue
         const p = f.properties
         if (
           !p.axis &&
@@ -620,7 +627,7 @@ export class Renderer {
     const layer = this.last?.layers.get(layerId)
     const source = this.map.getSource(sourceId(layerId)) as GeoJSONSource | undefined
     if (!layer || !source) return
-    if (feature.properties.kind === 'graphic') {
+    if (isGraphic(feature)) {
       void this.renderGraphics(feature)
       return
     }
@@ -656,7 +663,7 @@ export class Renderer {
 /** A selected feature as drawn: its shape (a graphic: the line through its control
  * points), and its points as handles when it has more than one. */
 export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
-  const graphic = feature.properties.kind === 'graphic'
+  const graphic = isGraphic(feature)
   const points = graphic ? controlPoints(feature.geometry) : vertices(feature.geometry)
   const shape: GeoJSON.Geometry =
     graphic && points.length > 1 ? { type: 'LineString', coordinates: points } : feature.geometry

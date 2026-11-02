@@ -11,6 +11,7 @@ import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
 import { mapClicks } from '../../../ui/map-clicks.ts'
+import { kindOf } from '../kinds/index.ts'
 
 export type Tool =
   | { mode: 'select' }
@@ -315,7 +316,8 @@ export class Tools {
     if (!this.enabled || this.tool.mode !== 'select' || !this.selected) return
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
-    if (!layer || !feature || feature.properties.kind === 'copy' || !this.store.view.canEdit(layer)) return
+    if (!layer || !feature || kindOf(feature.properties).movable === false || !this.store.view.canEdit(layer))
+      return
     // The resize handle of a picture, symbol or marker.
     if (this.handleAt(e.point, 'user_selection_resize')) {
       const half = this.renderer.iconHalfSize(feature)
@@ -387,12 +389,12 @@ export class Tools {
       this.renderer.preview(layerId, feature)
     } else if (index === undefined) {
       feature.geometry = { type: 'Point', coordinates: to }
-    } else if (feature.properties.kind === 'graphic' && index === -1) {
+    } else if (kindOf(feature.properties).drawn === 'graphic' && index === -1) {
       // An arrow's size handle: only the width changes.
       const width = axisWidthFrom(controlPoints(feature.geometry), to)
       feature.properties = { ...feature.properties, axisWidth: width }
       this.renderer.preview(layerId, feature)
-    } else if (feature.properties.kind === 'graphic') {
+    } else if (kindOf(feature.properties).drawn === 'graphic') {
       const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))
       feature.geometry = graphicGeometry(points)
       this.renderer.preview(layerId, feature)
