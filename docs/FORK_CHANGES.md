@@ -1262,7 +1262,9 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   taken apart, heights dropped. **Import a file…** under the list makes a new layer
   (`Store.importLayer`: one change, undone at once, shown once); **Export…** saves the
   layers shown (a situation's while one is shown); each layer's ⋯ → Export as.
-- **Print** (`fork/modules/print/`, "print" in the header): title, A4 or A3,
+- **Print** (`fork/modules/print/`, "print" in the header; `pdf.ts` puts the page
+  together from `parts.ts` (header, map and north, legend, footer), `layout.ts`
+  (sizes, scale, pure) and `images.ts` (the map's picture, symbols as PNG)): title, A4 or A3,
   landscape or portrait, legend or not. jsPDF, loaded only when used. The map as on
   screen, drawn again at twice the resolution (`setPixelRatio`), north as the map is
   turned, the scale (1:N) and a bar, the centre's position and MGRS, the map's credits,
