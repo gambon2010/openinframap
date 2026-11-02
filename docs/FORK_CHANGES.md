@@ -1239,6 +1239,12 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   finishes, Backspace takes back a point, Esc stops. Measurements stay on the map
   until removed and aren't saved. While a tool is on it has the map's clicks
   (`fork/ui/map-clicks.ts`): feature details don't open and My layers' tools wait.
+- **Which north** (`north.ts`, chosen in the panel, remembered in the browser):
+  bearings from true north (°T), magnetic north (°M: the declination at the leg's
+  start from the World Magnetic Model 2025, `magvar` package, MIT, offline, valid to
+  2030) or grid north (°G: UTM/MGRS grid convergence). The panel says how far that
+  north is from true north at the map's centre (Alsace: magnetic 3.4° east, grid
+  1.3° west).
 - Not done: the MGRS grid drawn on the map, and polar areas (UPS).
 
 ## Import, export and printing (SPECIFICATIONS 10.7)

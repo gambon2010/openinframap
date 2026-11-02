@@ -8,7 +8,7 @@ const leg: [number, number][] = [
 
 describe('measurements', () => {
   test('what they come to', () => {
-    expect(summary({ kind: 'distance', points: leg })).toBe('111 km, 000° (0 mils)')
+    expect(summary({ kind: 'distance', points: leg })).toBe('111 km, 000°T (0 mils)')
     expect(summary({ kind: 'distance', points: [...leg, [8, 48]] })).toMatch(/^186 km$/)
     expect(summary({ kind: 'rings', points: [[7, 47]], radii: [1000, 5000] })).toBe('1 km, 5 km')
     expect(

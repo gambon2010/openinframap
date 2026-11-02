@@ -729,7 +729,16 @@
     "about": "Measurements stay on the map until removed; they are not saved. The grid reference under the cursor is at the bottom left: click it to copy it.",
     "mgrs-result": "Military grid reference (MGRS)",
     "copy-mgrs": "Click to copy the grid reference",
-    "area-summary": "{{area}}, perimeter {{perimeter}}"
+    "area-summary": "{{area}}, perimeter {{perimeter}}",
+    "north-true": "True north",
+    "north-magnetic": "Magnetic north (compass)",
+    "north-grid": "Grid north (MGRS)",
+    "bearings": "Bearings from",
+    "north-true-note": "Bearings from true north (the direction of the pole).",
+    "east": "east",
+    "west": "west",
+    "north-magnetic-note": "Magnetic north here: {{angle}} {{side}} of true north (WMM2025, today).",
+    "north-grid-note": "Grid north here: {{angle}} {{side}} of true north (UTM/MGRS)."
   },
   "print": {
     "default-title": "Open Infrastructure Map",

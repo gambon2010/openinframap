@@ -54,6 +54,7 @@
     "jspdf": "^4.2.1",
     "lodash.invert": "^4.3.0",
     "lodash.sortby": "^4.7.0",
+    "magvar": "^2.2.0",
     "maplibre-gl": "^6.9.0",
     "mgrs": "^2.2.0",
     "redom": "^3.29.1",

@@ -13,6 +13,7 @@ import { formatDistance, parseDistances } from './geo.ts'
 import { MgrsSearch } from './mgrs.ts'
 import { CoordinatesReadout } from './readout.ts'
 import { MeasureMode, MeasureTool, summary } from './tool.ts'
+import { North, describeNorth } from './north.ts'
 import './measure.css'
 
 const TOOLS: [MeasureMode, string, string][] = [
@@ -57,6 +58,29 @@ const measure: ForkModule = {
       tool.radii = parseDistances(radii.value)
       update()
     }
+    // Bearings from true, magnetic or grid north (kept, like the ring distances).
+    const north = el(
+      'select.oim-measure-north',
+      (
+        [
+          ['true', t('measure.north-true', 'True north')],
+          ['magnetic', t('measure.north-magnetic', 'Magnetic north (compass)')],
+          ['grid', t('measure.north-grid', 'Grid north (MGRS)')]
+        ] as [North, string][]
+      ).map(([value, label]) => el('option', label, { value, selected: value === tool.north }))
+    ) as HTMLSelectElement
+    north.onchange = () => tool.setNorth(north.value as North)
+    const northNote = el('span.oim-measure-note')
+    const northRow = el(
+      'label.oim-measure-radii-row',
+      t('measure.bearings', 'Bearings from'),
+      north,
+      northNote
+    )
+    // The difference is the map centre's.
+    map.on('moveend', () => {
+      if (tool.north !== 'true') update()
+    })
 
     const update = () => {
       const buttons = TOOLS.map(([mode, icon, label]) => {
@@ -74,6 +98,8 @@ const measure: ForkModule = {
       radiiNote.textContent = tool.radii.length
         ? tool.radii.map(formatDistance).join(', ')
         : t('measure.radii-none', 'e.g. 1, 5, 10 km or 500 m, 3 nm')
+      const centre = map.getCenter()
+      northNote.textContent = describeNorth(tool.north, centre.lng, centre.lat)
       const draft = tool.draft
       const list = tool.done
         .slice()
@@ -85,7 +111,7 @@ const measure: ForkModule = {
           }) as HTMLButtonElement
           remove.onclick = () => tool.remove(m.id)
           const name = TOOLS.find(([mode]) => mode === m.kind)!
-          return el('li', el('span.oim-measure-kind', name[1]), el('span', summary(m)), remove)
+          return el('li', el('span.oim-measure-kind', name[1]), el('span', summary(m, tool.north)), remove)
         })
       const clear = el('button.oim-measure-clear', t('measure.clear', 'Remove all'), {
         type: 'button'
@@ -93,9 +119,9 @@ const measure: ForkModule = {
       clear.onclick = () => tool.clear()
       const parts: (HTMLElement | '')[] = [
         el('.oim-measure-tools', buttons),
-        tool.mode === 'rings' ? radiiRow : '',
+        tool.mode === 'rings' ? radiiRow : northRow,
         tool.mode ? el('p.oim-measure-hint', hint(tool.mode)) : '',
-        draft && draft.points.length > 1 ? el('p.oim-measure-now', summary(draft)) : '',
+        draft && draft.points.length > 1 ? el('p.oim-measure-now', summary(draft, tool.north)) : '',
         list.length ? el('ul.oim-measure-list', list) : '',
         list.length > 1 ? clear : '',
         !tool.mode && !list.length

@@ -87,10 +87,11 @@ export function formatArea(m2: number): string {
   return `${number(km2, km2 < 100 ? 1 : 0)} km²`
 }
 
-/** "047° (836 mils)": degrees, and NATO mils (6400 to a full turn). */
-export function formatBearing(degrees: number): string {
+/** "047° (836 mils)": degrees, and NATO mils (6400 to a full turn); with the north
+ * it's from ("047°M (836 mils)"). */
+export function formatBearing(degrees: number, north = ''): string {
   const mils = Math.round((degrees * 6400) / 360) % 6400
-  return `${String(Math.round(degrees) % 360).padStart(3, '0')}° (${mils} mils)`
+  return `${String(Math.round(degrees) % 360).padStart(3, '0')}°${north} (${mils} mils)`
 }
 
 /** Distances typed for range rings: "1, 5, 10 km", "500 m, 2.5km", "3 nm" → metres. */

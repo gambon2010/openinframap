@@ -5,6 +5,7 @@
 import { GeoJSONSource, Map, MapMouseEvent } from 'maplibre-gl'
 import { font } from '../../../style/common.ts'
 import { mapClicks } from '../../ui/map-clicks.ts'
+import { North, fromNorth, northLetter } from './north.ts'
 import { t } from '../../core/i18n.ts'
 import {
   LngLat,
@@ -28,10 +29,25 @@ export interface Measurement {
 }
 
 const SOURCE = 'oim-measure'
+const NORTH_KEY = 'oim-measure-north'
+
+function rememberedNorth(): North {
+  try {
+    const value = localStorage.getItem(NORTH_KEY)
+    return value === 'magnetic' || value === 'grid' ? value : 'true'
+  } catch {
+    return 'true'
+  }
+}
 const COLOUR = '#d6336c'
 
+/** A leg's bearing, from the north chosen ("047°M (836 mils)"). */
+export function legBearing(a: LngLat, b: LngLat, north: North): string {
+  return formatBearing(fromNorth(bearing(a, b), north, a[0], a[1]), northLetter(north))
+}
+
 /** What a measurement comes to, in words ("12.3 km", "3.2 ha, perimeter 1.1 km"). */
-export function summary(m: Pick<Measurement, 'kind' | 'points' | 'radii'>): string {
+export function summary(m: Pick<Measurement, 'kind' | 'points' | 'radii'>, north: North = 'true'): string {
   if (m.kind === 'rings') return (m.radii ?? []).map(formatDistance).join(', ')
   if (m.kind === 'area') {
     const ring = [...m.points, m.points[0]]
@@ -42,7 +58,7 @@ export function summary(m: Pick<Measurement, 'kind' | 'points' | 'radii'>): stri
   }
   const length = formatDistance(pathLength(m.points))
   if (m.points.length !== 2) return length
-  return `${length}, ${formatBearing(bearing(m.points[0], m.points[1]))}`
+  return `${length}, ${legBearing(m.points[0], m.points[1], north)}`
 }
 
 const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): GeoJSON.Feature => ({
@@ -54,7 +70,7 @@ const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): G
 const middle = (a: LngLat, b: LngLat): LngLat => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
 
 /** The features that draw a measurement (draft: the one being made, to the cursor). */
-export function measurementFeatures(m: Measurement, draft = false): GeoJSON.Feature[] {
+export function measurementFeatures(m: Measurement, draft = false, north: North = 'true'): GeoJSON.Feature[] {
   const out: GeoJSON.Feature[] = []
   const props = { draft }
   if (m.kind === 'rings') {
@@ -92,7 +108,7 @@ export function measurementFeatures(m: Measurement, draft = false): GeoJSON.Feat
     out.push(
       point(middle(a, b), {
         ...props,
-        label: `${formatDistance(pathLength([a, b]))}\n${formatBearing(bearing(a, b))}`
+        label: `${formatDistance(pathLength([a, b]))}\n${legBearing(a, b, north)}`
       })
     )
   }
@@ -116,6 +132,8 @@ export class MeasureTool {
   done: Measurement[] = []
   /** Range rings' radii, metres. */
   radii = [1000, 5000, 10000]
+  /** The north bearings are measured from (remembered in this browser). */
+  north: North = rememberedNorth()
   private nextId = 1
   private listeners: (() => void)[] = []
 
@@ -160,6 +178,18 @@ export class MeasureTool {
     if (!this.mode || !this.points.length) return null
     const points = this.cursor && this.mode !== 'rings' ? [...this.points, this.cursor] : this.points
     return { id: 0, kind: this.mode, points, radii: this.radii }
+  }
+
+  /** Bearings from another north (the labels change at once). */
+  setNorth(north: North) {
+    this.north = north
+    try {
+      localStorage.setItem(NORTH_KEY, north)
+    } catch {
+      // Not remembered.
+    }
+    this.draw()
+    this.notify()
   }
 
   /** Start a tool (the same again: stop it). */
@@ -244,8 +274,8 @@ export class MeasureTool {
     const data: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
       features: [
-        ...this.done.flatMap((m) => measurementFeatures(m)),
-        ...(draft ? measurementFeatures(draft, true) : [])
+        ...this.done.flatMap((m) => measurementFeatures(m, false, this.north)),
+        ...(draft ? measurementFeatures(draft, true, this.north) : [])
       ]
     }
     const source = map.getSource(SOURCE) as GeoJSONSource | undefined

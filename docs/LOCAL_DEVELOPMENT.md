@@ -99,7 +99,8 @@ port 8800.
   grid references ("32T LT 725 899").
 - **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **Status
   board** (⚠), **Measure** (📏: distance and bearing, area, range rings; click
-  points, double-click or Enter to finish, Esc to stop), **My layers**. Click a button to open its panel next to the buttons; click it again
+  points, double-click or Enter to finish, Esc to stop; bearings from true,
+  magnetic (compass) or grid north: °T, °M, °G), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside.
 - **Header:** about, stats, export (online), **settings** (background map and
