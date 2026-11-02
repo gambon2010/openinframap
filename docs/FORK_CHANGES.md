@@ -1236,7 +1236,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   leg's length and bearing in degrees and NATO mils, the total), area (and
   perimeter), range rings (distances typed: "1, 5, 10 km", "500 m", "3 nm"). On a
   sphere of the mean radius (within 0.5 %). Click points; double-click or Enter
-  finishes, Backspace takes back a point, Esc stops. Measurements stay on the map
+  finishes, Backspace takes back a point, right-click drops the measurement being
+  made (with none, stops the tool), Esc stops. Measurements stay on the map
   until removed and aren't saved. While a tool is on it has the map's clicks
   (`fork/ui/map-clicks.ts`): feature details don't open and My layers' tools wait.
 - **Which north** (`north.ts`, chosen in the panel, remembered in the browser):

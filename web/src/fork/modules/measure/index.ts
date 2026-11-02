@@ -23,10 +23,11 @@ const TOOLS: [MeasureMode, string, string][] = [
 ]
 
 function hint(mode: MeasureMode): string {
-  if (mode === 'rings') return t('measure.hint-rings', 'Click the centre of the rings. Esc: stop.')
+  if (mode === 'rings')
+    return t('measure.hint-rings', 'Click the centre of the rings. Right-click or Esc: stop.')
   return t(
     'measure.hint-points',
-    'Click points; double-click or Enter to finish. Backspace: take back the last point. Esc: stop.'
+    'Click points; double-click or Enter to finish. Backspace: take back the last point. Right-click: drop this measurement (again: stop). Esc: stop.'
   )
 }
 

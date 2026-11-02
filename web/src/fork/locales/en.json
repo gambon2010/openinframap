@@ -719,8 +719,8 @@
     "locked-admin": "An admin: take away the admin right first"
   },
   "measure": {
-    "hint-rings": "Click the centre of the rings. Esc: stop.",
-    "hint-points": "Click points; double-click or Enter to finish. Backspace: take back the last point. Esc: stop.",
+    "hint-rings": "Click the centre of the rings. Right-click or Esc: stop.",
+    "hint-points": "Click points; double-click or Enter to finish. Backspace: take back the last point. Right-click: drop this measurement (again: stop). Esc: stop.",
     "title": "Measure",
     "radii": "Ring distances",
     "radii-none": "e.g. 1, 5, 10 km or 500 m, 3 nm",

@@ -39,3 +39,34 @@ describe('measurements', () => {
     expect(features.every((f) => f.properties?.draft)).toBe(true)
   })
 })
+
+describe('the tool', () => {
+  test('right-click drops the measurement being made, then stops the tool', async () => {
+    const { MeasureTool } = await import('./tool.ts')
+    const handlers: Record<string, (e: unknown) => void> = {}
+    const map = {
+      on: (name: string, handler: (e: unknown) => void) => (handlers[name] = handler),
+      once: () => undefined,
+      project: ([x, y]: [number, number]) => ({ x: x * 1000, y: y * 1000 }),
+      getSource: () => ({ setData: () => undefined }),
+      doubleClickZoom: { enable: () => undefined, disable: () => undefined },
+      getCanvas: () => ({ style: {} })
+    }
+    const tool = new MeasureTool(map as never)
+    const rightClick = () =>
+      handlers.contextmenu({
+        preventDefault: () => undefined,
+        originalEvent: { preventDefault: () => undefined }
+      })
+    tool.start('distance')
+    handlers.click({ lngLat: { lng: 7, lat: 47 } })
+    handlers.click({ lngLat: { lng: 7.1, lat: 47 } })
+    expect(tool.points).toHaveLength(2)
+    rightClick()
+    expect(tool.points).toHaveLength(0)
+    expect(tool.done).toHaveLength(0)
+    expect(tool.mode).toBe('distance')
+    rightClick()
+    expect(tool.mode).toBeNull()
+  })
+})

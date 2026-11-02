@@ -144,6 +144,13 @@ export class MeasureTool {
       e.preventDefault()
       this.finish()
     })
+    // Right-click: the measurement being made is dropped; none: the tool stops.
+    map.on('contextmenu', (e) => {
+      if (!this.mode) return
+      e.preventDefault()
+      e.originalEvent.preventDefault()
+      this.cancel()
+    })
     map.on('mousemove', (e) => {
       if (!this.mode || !this.points.length) return
       this.cursor = [e.lngLat.lng, e.lngLat.lat]
@@ -213,6 +220,15 @@ export class MeasureTool {
     mapClicks.release('measure')
     this.map.doubleClickZoom.enable()
     this.map.getCanvas().style.cursor = ''
+    this.draw()
+    this.notify()
+  }
+
+  /** Drop the measurement being made (the tool stays on); nothing being made: stop. */
+  cancel() {
+    if (!this.points.length) return this.stop()
+    this.points = []
+    this.cursor = null
     this.draw()
     this.notify()
   }
