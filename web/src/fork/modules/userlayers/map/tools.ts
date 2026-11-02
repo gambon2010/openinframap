@@ -10,7 +10,7 @@ import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
-import { mapClicks } from '../../../ui/map-clicks.ts'
+import { mapMode } from '../../../ui/map-mode.ts'
 import { kindOf } from '../kinds/index.ts'
 
 export type Tool =
@@ -45,13 +45,16 @@ export function dropRepeats(points: [number, number][]): [number, number][] {
   return points.filter((p, i, all) => i === 0 || p[0] !== all[i - 1][0] || p[1] !== all[i - 1][1])
 }
 
+// Its name while a drawing or placing tool has the map (ui/map-mode.ts).
+const MODE = 'userlayers-draw'
+
 export class Tools {
   tool: Tool = { mode: 'select' }
   selected: string | null = null
   /** Off while a past version is shown (a situation, the history), or while another
-   * tool has the map's clicks (measuring: ui/map-clicks.ts). */
+   * tool has the map (measuring: ui/map-mode.ts). */
   get enabled(): boolean {
-    return this.store.view.live && !mapClicks.taken
+    return this.store.view.live && (!mapMode.current || mapMode.current === MODE)
   }
   message = ''
   private map: Map
@@ -105,10 +108,21 @@ export class Tools {
   setTool(tool: Tool, message = '') {
     this.tool = tool
     this.message = message
-    if (drawing(tool)) this.map.doubleClickZoom.disable()
-    else this.map.doubleClickZoom.enable()
     this.renderer.draft([], false)
-    this.map.getCanvas().style.cursor = tool.mode === 'select' ? '' : 'crosshair'
+    // A tool other than select has the map (another one, like measuring, stops);
+    // when it's taken back (Esc, measuring started), select again.
+    if (tool.mode === 'select') mapMode.leave(MODE)
+    else
+      mapMode.enter({
+        name: MODE,
+        cursor: 'crosshair',
+        doubleClickZoom: !drawing(tool),
+        // Its own keys (keydown below) stop the tool on Escape.
+        keydown: (e) => e.key === 'Escape',
+        exit: () => {
+          if (this.tool.mode !== 'select') this.setTool({ mode: 'select' })
+        }
+      })
     this.notify()
   }
 

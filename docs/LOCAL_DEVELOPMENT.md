@@ -94,7 +94,7 @@ port 8800.
 - **Top left:** the search box. Below it, clicking anything on the map opens its
   **details** (and highlights it); under those, the **Grid connection** panel when
   you pick a route (see below). **–** shrinks a panel to its title, **×** closes it.
-- **Bottom left:** where the cursor is: latitude, longitude and the military grid
+- **Bottom right** (above the credits): where the cursor is: latitude, longitude and the military grid
   reference (MGRS); click it to copy the grid reference. The search box also finds
   grid references ("32T LT 725 899").
 - **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **Status

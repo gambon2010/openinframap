@@ -3,7 +3,6 @@
 // They can hold military and emergency symbols (MIL-STD-2525C, as in ODINv2),
 // pictures, markers, drawings, and copies of map features, which are drawn like
 // the originals and stay visible when the originals are hidden.
-import { MapMouseEvent } from 'maplibre-gl'
 import { onLive } from '../../ui/live.ts'
 import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
@@ -13,9 +12,10 @@ import { Workspace } from './ui/workspace.ts'
 import { Interactions } from './map/interactions.ts'
 import { addLegend } from '../../ui/legend.ts'
 import { userLegend } from './map/legend.ts'
+import { mapMode } from '../../ui/map-mode.ts'
 
 const userlayers: ForkModule = {
-  init: ({ map, clickRouter, primaryLayers }) => {
+  init: ({ map, primaryLayers }) => {
     const store = new Store()
     const renderer = new Renderer(map, primaryLayers)
     // Arrows drawn with four free points are turned into paths (an unsaved change each).
@@ -32,13 +32,8 @@ const userlayers: ForkModule = {
     new Interactions(map, store, tools, renderer, () => workspace.isOpen)
 
     // Clicks My layers handles (its features, or a tool in use) don't open
-    // upstream's info popups. The click router calls handleClick for every click
-    // on its layers; wrapping it here keeps click-router.ts as upstream has it.
-    const router = clickRouter as unknown as { handleClick: (e: MapMouseEvent) => void }
-    const handleClick = router.handleClick.bind(clickRouter)
-    router.handleClick = (e) => {
-      if (!tools.capturesClick(e)) handleClick(e)
-    }
+    // upstream's info popups.
+    mapMode.claimClicks((e) => tools.capturesClick(e))
 
     store.onChange(() => {
       // While the past is shown (history, a situation), the live layers wait.

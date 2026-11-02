@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { measurementFeatures, summary } from './tool.ts'
+import { measurementFeatures, summary } from './features.ts'
 
 const leg: [number, number][] = [
   [7, 47],
@@ -41,8 +41,9 @@ describe('measurements', () => {
 })
 
 describe('the tool', () => {
-  test('right-click drops the measurement being made, then stops the tool', async () => {
+  test('right-click drops the measurement being made, then stops the tool; Esc stops it', async () => {
     const { MeasureTool } = await import('./tool.ts')
+    const { mapMode } = await import('../../ui/map-mode.ts')
     const handlers: Record<string, (e: unknown) => void> = {}
     const map = {
       on: (name: string, handler: (e: unknown) => void) => (handlers[name] = handler),
@@ -52,21 +53,25 @@ describe('the tool', () => {
       doubleClickZoom: { enable: () => undefined, disable: () => undefined },
       getCanvas: () => ({ style: {} })
     }
+    const router = { handleClick: () => undefined }
+    mapMode.install(map as never, router as never)
     const tool = new MeasureTool(map as never)
-    const rightClick = () =>
-      handlers.contextmenu({
-        preventDefault: () => undefined,
-        originalEvent: { preventDefault: () => undefined }
-      })
+    const event = { preventDefault: () => undefined, originalEvent: { preventDefault: () => undefined } }
+    const click = (lng: number) => handlers.click({ ...event, lngLat: { lng, lat: 47 } })
     tool.start('distance')
-    handlers.click({ lngLat: { lng: 7, lat: 47 } })
-    handlers.click({ lngLat: { lng: 7.1, lat: 47 } })
+    expect(mapMode.current).toBe('measure')
+    click(7)
+    click(7.1)
     expect(tool.points).toHaveLength(2)
-    rightClick()
+    handlers.contextmenu(event)
     expect(tool.points).toHaveLength(0)
     expect(tool.done).toHaveLength(0)
     expect(tool.mode).toBe('distance')
-    rightClick()
+    handlers.contextmenu(event)
+    expect(tool.mode).toBeNull()
+    expect(mapMode.current).toBeNull()
+    tool.start('area')
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     expect(tool.mode).toBeNull()
   })
 })

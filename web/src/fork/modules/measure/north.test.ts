@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { parseMgrs, toMgrs } from '../../core/mgrs.ts'
 import { bearing } from './geo.ts'
 import { declination, fromNorth, gridConvergence, offset } from './north.ts'
-import { legBearing } from './tool.ts'
+import { legBearing } from './features.ts'
 
 describe('norths', () => {
   test('magnetic: about 3.4° east in Alsace (WMM2025), west in Canada', () => {

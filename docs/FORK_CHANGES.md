@@ -1225,21 +1225,23 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 ## Measuring and grid references (SPECIFICATIONS 10.2)
 
 `web/src/fork/modules/measure/`:
-- **Where the cursor is** (`readout.ts`), bottom left: latitude, longitude and the
-  military grid reference (MGRS, to the metre; the `mgrs` package from proj4js, MIT,
+- **Where the cursor is** (`readout.ts`), bottom right (above the credits; the left
+  side has the panels): latitude, longitude and the military grid reference (MGRS, to the metre; the `mgrs` package from proj4js, MIT,
   bundled: works offline). Off the map: its centre. A click copies the reference.
 - **Search** (`mgrs.ts`, `MgrsSearch`): a grid reference typed in any usual way
   ("32TLT7257789913", "32T LT 725 899") goes to the centre of the square it names.
   Search providers now come from the modules (`searchProviders` hook,
   `forkSearchProviders` in `search/search.ts`, which used to name Photon).
-- **The Measure panel** (📏 on the right; `tool.ts`, `geo.ts`): distance (each
+- **The Measure panel** (📏 on the right; `panel.ts`; the tool `tool.ts`; what a
+  measurement comes to and its labels `features.ts`, pure; its map layers
+  `layers.ts`; maths `geo.ts`): distance (each
   leg's length and bearing in degrees and NATO mils, the total), area (and
   perimeter), range rings (distances typed: "1, 5, 10 km", "500 m", "3 nm"). On a
   sphere of the mean radius (within 0.5 %). Click points; double-click or Enter
   finishes, Backspace takes back a point, right-click drops the measurement being
   made (with none, stops the tool), Esc stops. Measurements stay on the map
-  until removed and aren't saved. While a tool is on it has the map's clicks
-  (`fork/ui/map-clicks.ts`): feature details don't open and My layers' tools wait.
+  until removed and aren't saved. While a tool is on it has the map (the map
+  mode, below): feature details don't open and My layers' tools wait.
 - **Which north** (`north.ts`, chosen in the panel, remembered in the browser):
   bearings from true north (°T), magnetic north (°M: the declination at the leg's
   start from the World Magnetic Model 2025, `magvar` package, MIT, offline, valid to
@@ -1271,6 +1273,19 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - MGRS formatting moved to `fork/core/mgrs.ts` (used by measure and print).
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
+
+## The map mode (2026-11-02)
+
+`fork/ui/map-mode.ts`: one tool at a time takes the map over. `mapMode.enter({name,
+cursor, doubleClickZoom, click, dblclick, contextmenu, mousemove, keydown, exit})`
+gives it the map's events (right-click without the browser's menu), the cursor and
+double-click; Escape ends it (unless its `keydown` uses the key); entering a mode
+ends the one before (its `exit` runs). Meanwhile upstream's click router opens no
+feature details: `mapMode.install` wraps its `handleClick` once (fork/index.ts),
+replacing the wrappers measuring and My layers each had, and `claimClicks` lets a
+module keep some clicks without a mode (My layers, on its own items). Measuring
+and My layers' drawing and placing tools are modes: starting one stops the other.
+Replaces `ui/map-clicks.ts`.
 
 ## My layers: kinds of item (refactor, 2026-11-02)
 

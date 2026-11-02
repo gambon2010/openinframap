@@ -31,7 +31,7 @@ index.ts, types.ts, config.ts   the module registry and hooks, the types, the UR
 core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
 ui/        shared building blocks: dock (right), left column, details panel,
            highlight, panels, settings, the key's checkboxes, live updates (live.ts),
-           who has the map's clicks (map-clicks.ts: measuring), a printed
+           who has the map (map-mode.ts: measuring, drawing), a printed
            map's legend (legend.ts), modal windows (panel.ts makeModal)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
@@ -202,6 +202,12 @@ Pick an order between the existing ones (`LEFT_ORDER`). To show details, use
    back by itself).
 4. Its English name: `npm run fork-strings`. `kinds/kinds.test.ts` checks the
    registry (unique ids and image prefixes, an icon only with images).
+
+**A tool that takes the map over** (clicks, right-click, keys, the cursor):
+`mapMode.enter({ name, cursor?, doubleClickZoom?, click?, dblclick?, contextmenu?,
+mousemove?, keydown?, exit? })` from `ui/map-mode.ts`, and `mapMode.leave(name)`
+when done. Escape and other tools end it: tidy up in `exit`. Meanwhile clicks on
+map features don't open their details. Example: `modules/measure/tool.ts`.
 
 **A backend route:** a module in `web-backend/src/fork/`, with its routes added in
 `fork/__init__.py`. For My layers, check rights through `userdata/users.py`.

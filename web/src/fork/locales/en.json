@@ -726,7 +726,7 @@
     "radii-none": "e.g. 1, 5, 10 km or 500 m, 3 nm",
     "remove": "Remove from the map",
     "clear": "Remove all",
-    "about": "Measurements stay on the map until removed; they are not saved. The grid reference under the cursor is at the bottom left: click it to copy it.",
+    "about": "Measurements stay on the map until removed; they are not saved. The grid reference under the cursor is at the bottom right: click it to copy it.",
     "mgrs-result": "Military grid reference (MGRS)",
     "copy-mgrs": "Click to copy the grid reference",
     "area-summary": "{{area}}, perimeter {{perimeter}}",

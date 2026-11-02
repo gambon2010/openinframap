@@ -104,7 +104,7 @@
 .maplibregl-ctrl.oim-coords {
   display: flex;
   gap: 10px;
-  margin: 0 0 4px 10px;
+  margin: 0 10px 2px 0;
   padding: 2px 6px;
   border: 0;
   border-radius: var(--oim-radius-small, 4px);
