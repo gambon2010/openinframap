@@ -3,14 +3,7 @@
 import { IControl, Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
-import { toMgrs } from './mgrs.ts'
-
-/** "47.75000 N, 7.30000 E". */
-export function formatLatLng(lng: number, lat: number): string {
-  const ns = lat < 0 ? 'S' : 'N'
-  const ew = lng < 0 ? 'W' : 'E'
-  return `${Math.abs(lat).toFixed(5)} ${ns}, ${Math.abs(lng).toFixed(5)} ${ew}`
-}
+import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 
 export class CoordinatesReadout implements IControl {
   private el = el('button.maplibregl-ctrl.oim-coords', {

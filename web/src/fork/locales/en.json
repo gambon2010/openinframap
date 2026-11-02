@@ -1,7 +1,8 @@
 {
   "nav": {
     "exports": "export (online)",
-    "settings": "settings"
+    "settings": "settings",
+    "print": "print"
   },
   "key": {
     "show-all": "Show all",
@@ -580,7 +581,16 @@
     "layer": "Layer",
     "save-conflicts": "Resolve the {{count}} conflict(s) first",
     "stale-merged": "Someone else saved some of these items meanwhile. Their changes and yours were put together: check, then Save again.",
-    "in-conflict": "In conflict with someone else’s change: see the conflict window"
+    "in-conflict": "In conflict with someone else’s change: see the conflict window",
+    "import-failed": "This file can't be read ({{error}}). GeoJSON, KML and GPX files can.",
+    "import-empty": "There is nothing to put on the map in this file.",
+    "import-many": "This file has {{count}} items: the map may get slow. Import them?",
+    "export-as": "Export as",
+    "import": "Import a file…",
+    "import-title": "GeoJSON, KML or GPX: a new layer with what it has",
+    "export": "Export…",
+    "export-shown": "The layers shown, as",
+    "legend-symbols": "Symbols"
   },
   "tower": {
     "unnamed-line": "a line",
@@ -720,5 +730,23 @@
     "mgrs-result": "Military grid reference (MGRS)",
     "copy-mgrs": "Click to copy the grid reference",
     "area-summary": "{{area}}, perimeter {{perimeter}}"
+  },
+  "print": {
+    "default-title": "Open Infrastructure Map",
+    "landscape": "Landscape",
+    "portrait": "Portrait",
+    "make": "Make the PDF",
+    "title": "Print the map",
+    "about": "The map as it is on screen now, with what is shown on it.",
+    "title-field": "Title",
+    "paper": "Paper",
+    "orientation": "Orientation",
+    "with-legend": "With a legend",
+    "making": "Making the PDF…",
+    "failed": "The PDF couldn't be made: {{error}}",
+    "legend": "Legend",
+    "legend-more": "…and {{count}} more",
+    "centre": "Centre: {{position}}",
+    "map-layers": "Map layers shown"
   }
 }

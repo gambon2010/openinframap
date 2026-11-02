@@ -6,6 +6,7 @@ import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from '../model/model.ts'
 import { Outliner } from './outliner.ts'
+import { download, importFile } from '../io/files.ts'
 import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
 import { LabelLevel } from '../model/fields.ts'
 import type { Workspace } from './workspace.ts'
@@ -30,7 +31,9 @@ export class Sidebar {
         if (!add) this.zoomTo(feature)
       },
       isSelected: (id) => ws.tools.selection().includes(id),
-      newLayer: (folder) => ws.newLayer(folder)
+      newLayer: (folder) => ws.newLayer(folder),
+      exportLayers: (layers, format) => download(layers, format),
+      importFile: () => void importFile(ws.store, ws.map)
     })
   }
 

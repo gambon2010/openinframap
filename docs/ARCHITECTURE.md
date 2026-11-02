@@ -28,10 +28,11 @@ structure", "Merging from upstream"). Upstream imports only three fork files:
 
 ```
 index.ts, types.ts, config.ts   the module registry and hooks, the types, the URLs
-core/      no UI, imported by anything: i18n.ts (t())
+core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
 ui/        shared building blocks: dock (right), left column, details panel,
            highlight, panels, settings, the key's checkboxes, live updates (live.ts),
-           who has the map's clicks (map-clicks.ts: measuring)
+           who has the map's clicks (map-clicks.ts: measuring), a printed
+           map's legend (legend.ts), modal windows (panel.ts makeModal)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
@@ -40,6 +41,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   sites        critical sites
   search       search descriptions, Photon
   measure      distances, areas, range rings; cursor position and MGRS; MGRS search
+  print        the map as a PDF with a legend (ui/legend.ts: modules add to it)
   satellite    imagery as the background
   map-sources  background tiles and Photon (Settings)
   layout       the dock, the Settings link, the search box in the top bar

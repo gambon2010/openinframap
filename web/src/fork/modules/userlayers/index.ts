@@ -11,6 +11,8 @@ import { Renderer } from './map/render.ts'
 import { Tools } from './map/tools.ts'
 import { Workspace } from './ui/workspace.ts'
 import { Interactions } from './map/interactions.ts'
+import { addLegend } from '../../ui/legend.ts'
+import { userLegend } from './map/legend.ts'
 
 const userlayers: ForkModule = {
   init: ({ map, clickRouter, primaryLayers }) => {
@@ -47,6 +49,15 @@ const userlayers: ForkModule = {
       // The selection may have been deleted or changed.
       tools.refreshSelection()
     })
+    // On a printed map: the layers shown and the symbols in view.
+    addLegend(() =>
+      userLegend(
+        [...(store.view.past ?? store.layers).values()].filter(
+          (l) => store.view.past || !store.hidden.has(l.id)
+        ),
+        map.getBounds()
+      )
+    )
     void store.load()
     void store.personal.load()
     // Others' saved changes, as they come (docs/plans/sync.md, phase 4).

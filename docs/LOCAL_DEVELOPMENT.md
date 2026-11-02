@@ -102,8 +102,10 @@ port 8800.
   points, double-click or Enter to finish, Esc to stop), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside.
-- **Header:** about, stats, export (online) and **settings** (background map and
-  address search servers; see below).
+- **Header:** about, stats, export (online), **settings** (background map and
+  address search servers; see below) and **print** (the map as a PDF: title, A4 or
+  A3, with a legend of what's shown, the scale, north and the centre's grid
+  reference).
 
 ---
 
@@ -512,7 +514,10 @@ on the My layers workspace; click it again to close it. It has two parts:
   one. Folders fold to one line; their ◉ and 🔒 act on all their layers, + makes a
   new layer in it, ✎ renames it. Folders are yours: someone you share a layer with
   puts it in their own folders. They, the layers hidden, what's folded, the layer you
-  draw into and your favourite symbols follow your account to any computer. Each layer: ◉ show/hide, 🔒 lock (its
+  draw into and your favourite symbols follow your account to any computer.
+  **Import a file…** under the list puts a GeoJSON, KML or GPX file in a new layer;
+  **Export…** saves the layers shown as one (⋯ → Export as: one layer). GPX keeps
+  only points and lines; KML and GeoJSON exported here come back with their symbols. Each layer: ◉ show/hide, 🔒 lock (its
   items can't be changed or moved), colour, its items (click the name), ⋯ to draw
   into it, rename, move to a folder or delete. Items show their symbol and a status
   line; drag one onto another layer to move it. Under

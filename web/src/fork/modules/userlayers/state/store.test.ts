@@ -457,3 +457,25 @@ describe('live updates (refresh)', () => {
     expect(store.pending).toEqual([])
   })
 })
+
+describe('importing a file', () => {
+  beforeEach(() => localStorage.clear())
+
+  test('a new layer with its items, drawn into next; one undo takes it all back', () => {
+    const store = new Store()
+    const listener = vi.fn()
+    store.onChange(listener)
+    const items = Array.from({ length: 50 }, (_, i) => ({
+      geometry: { type: 'Point', coordinates: [i, 0] } as GeoJSON.Point,
+      properties: { kind: 'marker' as const, name: `p${i}` }
+    }))
+    const id = store.importLayer('depots', items)
+    expect(store.layers.get(id)?.features.size).toBe(50)
+    expect(store.activeLayer).toBe(id)
+    // Shown once, not once per item.
+    expect(listener.mock.calls.length).toBeLessThan(5)
+    expect(JSON.parse(localStorage.getItem('oim-userlayers-pending')!)).toHaveLength(51)
+    store.undo()
+    expect(store.layers.has(id)).toBe(false)
+  })
+})

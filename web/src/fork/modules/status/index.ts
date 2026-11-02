@@ -9,8 +9,9 @@ import { ForkModule } from '../../types.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { dock } from '../../ui/dock.ts'
 import { onLive } from '../../ui/live.ts'
+import { addLegend } from '../../ui/legend.ts'
 import { StatusBoard } from './board.ts'
-import { SupplyMode } from './supply.ts'
+import { SupplyMode, supplyKey } from './supply.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
 import { StatusSection, featureKey } from './details.ts'
 import { canHaveStatus, fieldsOf } from './fields.ts'
@@ -42,6 +43,18 @@ const status: ForkModule = {
     for (const layer of statusLayers()) delete ctx.clickRouter.handlers[layer.id]
     const statusMap = new StatusMap(ctx.map)
     const supply = new SupplyMode(ctx.map)
+    // On a printed map, while the mode is on.
+    addLegend(() =>
+      supply.active
+        ? [
+            {
+              title: t('supply.title', 'Power supply'),
+              order: 10,
+              entries: supplyKey().map(([colour, label]) => ({ label, colour, shape: 'line' as const }))
+            }
+          ]
+        : []
+    )
     const board = new StatusBoard(ctx.map, statusMap, supply)
     const load = () => {
       void statusMap.refresh()

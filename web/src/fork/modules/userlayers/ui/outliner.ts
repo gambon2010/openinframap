@@ -9,6 +9,7 @@ import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR, isOwner, UserFeature, UserLayer } from '../model/model.ts'
 import { Store } from '../state/store.ts'
+import type { Format } from '../io/formats.ts'
 import { featureLabelParts } from '../model/labels.ts'
 import { identity, status, symbolKind } from '../model/sidc.ts'
 import { GEOMETRY_LABELS, entryOf } from './palette.ts'
@@ -75,7 +76,17 @@ export interface OutlinerActions {
   select: (feature: UserFeature, add: boolean) => void
   isSelected: (id: string) => boolean
   newLayer: (folder?: string) => void
+  /** Download layers as a file (io/files.ts). */
+  exportLayers: (layers: UserLayer[], format: Format) => void
+  /** Choose a file: a new layer with its items. */
+  importFile: () => void
 }
+
+const FORMATS: [Format, string][] = [
+  ['geojson', 'GeoJSON'],
+  ['kml', 'KML (Google Earth)'],
+  ['gpx', 'GPX (GPS)']
+]
 
 export class Outliner {
   el: HTMLElement = el('.oim-ul-outliner')
@@ -130,6 +141,17 @@ export class Outliner {
     if (this.folderOf(layer) === folder) return
     this.personal.setFolder(layer.id, folder)
     this.actions.update()
+  }
+
+  /** A submenu of the file formats, downloading the layers given. */
+  private exportMenu(title: string, layers: () => UserLayer[]): HTMLElement {
+    return el(
+      'details.oim-ul-submenu',
+      el('summary', title),
+      ...FORMATS.map(([format, label]) =>
+        this.button(label, () => this.actions.exportLayers(layers(), format), '', 'oim-ul-menu-text')
+      )
+    )
   }
 
   private askFolderName(current = ''): string | null {
@@ -311,6 +333,7 @@ export class Outliner {
           )
         : ''
     )
+    const exportMenu = this.exportMenu(t('userlayers.export-as', 'Export as'), () => [layer])
     const menu = el(
       'details.oim-ul-menu',
       el('summary', '⋯', { title: t('userlayers.more', 'More') }),
@@ -341,6 +364,7 @@ export class Outliner {
           : '',
         // Your own folders: even a layer you may only view goes in one.
         store.view.live ? folders : '',
+        exportMenu,
         owner
           ? this.button(
               t('userlayers.delete', 'Delete'),
@@ -561,6 +585,27 @@ export class Outliner {
       title: t('userlayers.new-folder-title', 'A folder to drag layers into')
     })
     createFolder.onclick = () => this.newFolder()
+    const importButton = el('button.oim-ul-button', `⤓ ${t('userlayers.import', 'Import a file…')}`, {
+      type: 'button',
+      title: t('userlayers.import-title', 'GeoJSON, KML or GPX: a new layer with what it has')
+    })
+    importButton.onclick = () => this.actions.importFile()
+    // The layers shown (a situation's, while one is shown).
+    const shown = () =>
+      [...(this.past ?? store.layers).values()].filter((l) => this.past || !store.hidden.has(l.id))
+    const exportAll = shown().length
+      ? el(
+          'details.oim-ul-menu.oim-ul-export',
+          el('summary.oim-ul-button', `⤒ ${t('userlayers.export', 'Export…')}`),
+          el(
+            '.oim-ul-menu-items',
+            el('p.oim-ul-menu-note', t('userlayers.export-shown', 'The layers shown, as')),
+            ...FORMATS.map(([format, label]) =>
+              this.button(label, () => this.actions.exportLayers(shown(), format), '', 'oim-ul-menu-text')
+            )
+          )
+        )
+      : ''
     this.chipsBox.replaceChildren(chips)
     this.body.replaceChildren(
       store.layers.size
@@ -574,7 +619,8 @@ export class Outliner {
               'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
             )
           ),
-      el('.oim-ul-row', create, this.past ? '' : createFolder)
+      el('.oim-ul-row', create, this.past ? '' : createFolder),
+      el('.oim-ul-row', this.past ? '' : importButton, exportAll)
     )
     return this.el
   }

@@ -61,6 +61,17 @@ function isStates(value: unknown): value is States {
   )
 }
 
+/** The mode's colours and what they mean (the banner, a printed map's legend). */
+export function supplyKey(): [colour: string, label: string][] {
+  return [
+    [SUPPLY_COLOURS.green, t('supply.green', 'supplied')],
+    [SUPPLY_COLOURS.orange, t('supply.orange-key', 'less power')],
+    [SUPPLY_COLOURS.red, t('supply.red-key', 'none')],
+    [SUPPLY_COLOURS.risk, t('supply.risk-key', 'at risk (suspected damage)')],
+    [GREY, t('supply.grey', 'not connected in the data')]
+  ]
+}
+
 /** A colour from a feature state ("red", "orange", "grey"), else `otherwise`. */
 export function stateColour(state: string, otherwise: unknown): unknown {
   return [
@@ -239,15 +250,7 @@ export class SupplyMode {
         el('span', this.summary),
         el(
           'span.oim-supply-legend',
-          (
-            [
-              [SUPPLY_COLOURS.green, t('supply.green', 'supplied')],
-              [SUPPLY_COLOURS.orange, t('supply.orange-key', 'less power')],
-              [SUPPLY_COLOURS.red, t('supply.red-key', 'none')],
-              [SUPPLY_COLOURS.risk, t('supply.risk-key', 'at risk (suspected damage)')],
-              [GREY, t('supply.grey', 'not connected in the data')]
-            ] as [string, string][]
-          ).map(([colour, label]) => el('span', el('i', { style: { background: colour } }), label))
+          supplyKey().map(([colour, label]) => el('span', el('i', { style: { background: colour } }), label))
         ),
         el('button.oim-button', t('supply.off', 'Turn off'), {
           type: 'button',

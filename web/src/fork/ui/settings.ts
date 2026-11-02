@@ -3,7 +3,7 @@
 // map or satellite, modules/satellite; the map sources, modules/map-sources).
 import { t } from '../core/i18n.ts'
 import { el } from 'redom'
-import { makePanel } from './panel.ts'
+import { makeModal } from './panel.ts'
 
 export interface SettingsSection {
   el: HTMLElement
@@ -26,29 +26,13 @@ export function addSettingsSection(section: SettingsSection) {
 }
 
 export function addSettings() {
-  const made = makePanel('oim-modal', t('settings.title', 'Settings'), ...sections.map((s) => s.el))
-  const panel = made.panel
+  const made = makeModal(t('settings.title', 'Settings'), ...sections.map((s) => s.el))
   body = made.body
-  const backdrop = el('.oim-modal-backdrop', panel)
-  document.body.append(backdrop)
-
-  const close = () => backdrop.classList.remove('visible')
-  // The panel's close button hides the panel: hide the whole window instead.
-  new MutationObserver(() => {
-    if (!panel.classList.contains('visible')) close()
-  }).observe(panel, { attributes: true, attributeFilter: ['class'] })
-  backdrop.onclick = (event) => {
-    if (event.target === backdrop) close()
-  }
-  backdrop.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') close()
-  })
 
   const open = (event: Event) => {
     event.preventDefault()
     for (const section of sections) section.refresh?.()
-    panel.classList.add('visible')
-    backdrop.classList.add('visible')
+    made.open()
     ;[...sections]
       .reverse()
       .find((s) => s.focus)

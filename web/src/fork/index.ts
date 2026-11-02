@@ -22,6 +22,7 @@ import satellite from './modules/satellite/index.ts'
 import status from './modules/status/index.ts'
 import account from './modules/account/index.ts'
 import measure from './modules/measure/index.ts'
+import print from './modules/print/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
@@ -38,7 +39,8 @@ const MODULES: ForkModule[] = [
   measure,
   layout,
   userlayers,
-  // After layout: its header link goes after Settings.
+  // After layout: their header links go after Settings.
+  print,
   account
 ]
 

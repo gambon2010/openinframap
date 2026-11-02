@@ -50,6 +50,8 @@ export class Store {
   loaded = false
   error: string | null = null
   private listeners: (() => void)[] = []
+  // Many changes at once (an imported file): kept and shown once, at the end.
+  private quiet = false
 
   constructor() {
     // Your settings from the server (another computer may have changed them).
@@ -202,6 +204,7 @@ export class Store {
     applyChange(this.layers, change)
     this.pending.push(change)
     this.history.done()
+    if (this.quiet) return
     local.setPending(this.pending)
     this.notify()
   }
@@ -269,6 +272,23 @@ export class Store {
   deleteLayer(id: string) {
     this.record('layer_delete', id)
     this.notify()
+  }
+
+  /** A new layer with items (an imported file): one change, undone at once. */
+  importLayer(name: string, items: { geometry: GeoJSON.Geometry; properties: FeatureProps }[]): string {
+    const id = uuid()
+    const batch = uuid()
+    this.quiet = true
+    try {
+      this.record('layer_create', id, undefined, { name, style: { color: DEFAULT_COLOR } }, batch)
+      for (const item of items) this.record('feature_create', id, uuid(), item, batch)
+    } finally {
+      this.quiet = false
+    }
+    local.setPending(this.pending)
+    this.activeLayer = id
+    this.notify()
+    return id
   }
 
   addFeature(layerId: string, geometry: GeoJSON.Geometry, properties: FeatureProps): string {

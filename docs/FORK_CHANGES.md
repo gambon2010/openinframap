@@ -1241,6 +1241,30 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   (`fork/ui/map-clicks.ts`): feature details don't open and My layers' tools wait.
 - Not done: the MGRS grid drawn on the map, and polar areas (UPS).
 
+## Import, export and printing (SPECIFICATIONS 10.7)
+
+- **My layers to and from files** (`userlayers/io/formats.ts`, pure; `io/files.ts`):
+  GeoJSON, KML (a folder per layer, colours) and GPX (points as waypoints, lines and
+  area outlines as tracks: GPX has no areas, symbols or colours). Exported items keep
+  what they are (kind, symbol code, details, notes) in their properties or KML's
+  ExtendedData (`oim:...`), so they come back as they were. Files from elsewhere
+  (`@tmcw/togeojson` reads KML and GPX): points become markers, the rest drawings,
+  with their name, colour if any, other fields in the notes; multi-geometries are
+  taken apart, heights dropped. **Import a file…** under the list makes a new layer
+  (`Store.importLayer`: one change, undone at once, shown once); **Export…** saves the
+  layers shown (a situation's while one is shown); each layer's ⋯ → Export as.
+- **Print** (`fork/modules/print/`, "print" in the header): title, A4 or A3,
+  landscape or portrait, legend or not. jsPDF, loaded only when used. The map as on
+  screen, drawn again at twice the resolution (`setPixelRatio`), north as the map is
+  turned, the scale (1:N) and a bar, the centre's position and MGRS, the map's credits,
+  the date and who printed it. The legend (`fork/ui/legend.ts`, `addLegend`): the map
+  layers on (print), the layers shown and the symbols in view (My layers), the power
+  supply colours while the mode is on (status). Long legends end with "…and N more".
+- `fork/ui/panel.ts` `makeModal`: the window Settings used, shared with Print.
+- MGRS formatting moved to `fork/core/mgrs.ts` (used by measure and print).
+- Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
+  printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

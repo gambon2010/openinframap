@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { MgrsSearch, parseMgrs, toMgrs } from './mgrs.ts'
+import { MgrsSearch } from './mgrs.ts'
+import { parseMgrs, toMgrs } from '../../core/mgrs.ts'
 
 describe('MGRS', () => {
   test('written in groups, to the precision asked', () => {
