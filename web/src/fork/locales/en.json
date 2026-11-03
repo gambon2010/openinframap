@@ -610,7 +610,8 @@
     "area-crossing": "Not there: the area's outline would cross itself.",
     "legs": "Legs (type a length to change it)",
     "measure-total": "In all",
-    "area-crossing-close": "Closing the area here would make it cross itself: add a point elsewhere, or take one back (Backspace)."
+    "area-crossing-close": "Closing the area here would make it cross itself: add a point elsewhere, or take one back (Backspace).",
+    "area-too-close": "Too close to another point of the area."
   },
   "tower": {
     "unnamed-line": "a line",

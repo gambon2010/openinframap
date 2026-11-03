@@ -1248,7 +1248,8 @@ others, and its points are moved like a drawing's.
 - **What it shows** (`userlayers/measure/features.ts`, pure): each leg's length and
   bearing in degrees and NATO mils, written along the leg and above it; the total
   beyond the end; an area and its perimeter; rings and their radii, outside each
-  ring. A leg too short on screen for its whole label shows only its length. Where
+  ring (only rings at least 25 px across on screen; none: the largest; the bigger
+  ring's label wins). A leg too short on screen for its whole label shows only its length. Where
   labels would overlap, the total stays, then the legs, then the marks
   (`symbol-sort-key`). Lines follow great circles (`greatCirclePath`, a point every
   2 km so the straight pieces on the flat map stay within a metre of it).
@@ -1266,7 +1267,8 @@ others, and its points are moved like a drawing's.
   (`withLegLength`); an area's closing leg follows from the others.
 - **No areas that cross themselves** (`model/shapes.ts`, any area, drawn or
   measured; a click on the first point closes an area, and a last point finished on
-  it is dropped): a point that would make the outline cross isn't added, closing one
+  it is dropped; a new point at least 12 px from the others, dragging one closer is
+  fine): a point that would make the outline cross isn't added, closing one
   that would is refused (add a point, or take one back), a point dragged stops
   where it would cross, a leg length that would is refused.
 - **Testing note:** the headless browser used for checks only draws a new frame when

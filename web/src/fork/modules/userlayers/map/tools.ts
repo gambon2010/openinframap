@@ -56,6 +56,10 @@ const MODE = 'userlayers-draw'
 
 // How near (pixels) a click must be to an area's first point to close it there.
 const CLOSE_PX = 10
+// A new point of an area: at least this far (pixels) from the others; closer than
+// REPEAT_PX it's the second click of a double-click.
+const MIN_SEPARATION_PX = 12
+const REPEAT_PX = 4
 
 const CROSSING = () => t('userlayers.area-crossing', "Not there: the area's outline would cross itself.")
 
@@ -241,6 +245,17 @@ export class Tools {
           this.finishDrawing()
           break
         }
+        // Not on top of another of an area's points: the second click of a
+        // double-click is let go quietly, one a little further off refused.
+        if (this.tool.mode === 'area' && this.tool.points.length) {
+          const near = this.nearestPx(lngLat)
+          if (near <= REPEAT_PX) break
+          if (near < MIN_SEPARATION_PX) {
+            this.message = t('userlayers.area-too-close', 'Too close to another point of the area.')
+            this.notify()
+            break
+          }
+        }
         // An area's outline mustn't cross itself (model/shapes.ts).
         if (this.tool.mode === 'area' && pathCrossesItself([...this.tool.points, lngLat])) {
           this.message = CROSSING()
@@ -272,6 +287,18 @@ export class Tools {
         break
       }
     }
+  }
+
+  /** How far (pixels) a point is from the nearest point drawn so far. */
+  private nearestPx(lngLat: [number, number]): number {
+    if (!drawing(this.tool)) return Infinity
+    const b = this.map.project(lngLat)
+    return Math.min(
+      ...this.tool.points.map((p) => {
+        const a = this.map.project(p)
+        return Math.hypot(a.x - b.x, a.y - b.y)
+      })
+    )
   }
 
   /** Whether a point is on the first point of the area being drawn (a few pixels). */

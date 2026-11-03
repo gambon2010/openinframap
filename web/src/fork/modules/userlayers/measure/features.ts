@@ -96,6 +96,8 @@ const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): G
 
 // About how wide a character of a 12 px label is (to tell whether one fits).
 const LABEL_CHAR_PX = 6.6
+// A ring smaller than this on screen (radius, px) isn't labelled.
+const MIN_RING_PX = 25
 
 export interface DrawOptions {
   /** The one being drawn (to the cursor): dashed, no marks. */
@@ -146,11 +148,20 @@ export function measurementFeatures(m: Measurement, options: DrawOptions = {}): 
       { anchor: 'top', offset: [0, 0.3], priority: 1 },
       { anchor: 'right', offset: [-0.4, 0], priority: 1 }
     ]
-    for (const radius of m.radii ?? []) {
+    // Labelled only when big enough on screen to be seen (none is: the largest);
+    // where labels would overlap, the bigger ring's stays.
+    const radii = [...(m.radii ?? [])].sort((a, b) => b - a)
+    const zoom = options.ticks?.zoom ?? options.zoom
+    const seen = (r: number) => zoom === undefined || r / metresPerPixel(centre[1], zoom) >= MIN_RING_PX
+    const labelled = radii.filter(seen)
+    if (!labelled.length && radii.length) labelled.push(radii[0])
+    for (const radius of radii) {
       const ring = circle(centre, radius)
       out.push(line(ring))
+      if (!labelled.includes(radius)) continue
+      const priority = 1 + labelled.indexOf(radius) / 100
       for (let i = 0; i < 4; i++)
-        out.push(label(ring[(i * (ring.length - 1)) / 4], formatDistance(radius), sides[i]))
+        out.push(label(ring[(i * (ring.length - 1)) / 4], formatDistance(radius), { ...sides[i], priority }))
     }
     return out
   }

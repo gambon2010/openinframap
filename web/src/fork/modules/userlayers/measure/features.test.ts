@@ -127,3 +127,17 @@ describe('labels that fit', () => {
     expect(label(7)).toMatch(/^[\d.]+ km$/)
   })
 })
+
+describe('range rings zoomed out', () => {
+  test('only the rings big enough on screen are labelled (none: the largest)', () => {
+    const rings = (zoom: number) =>
+      new Set(
+        measurementFeatures({ type: 'rings', points: [[4.5, 48]], radii: [1000, 5000, 10000] }, { zoom })
+          .map((f) => f.properties?.label)
+          .filter(Boolean)
+      )
+    expect(rings(14)).toEqual(new Set(['1 km', '5 km', '10 km']))
+    expect(rings(10)).toEqual(new Set(['5 km', '10 km']))
+    expect(rings(5)).toEqual(new Set(['10 km']))
+  })
+})
