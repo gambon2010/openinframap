@@ -1,0 +1,103 @@
+{% extends "_base.html" %}
+{# Fork: the about page (fork/about.py), replacing upstream's about.html. #}
+{% block title %}About{% endblock %}
+{% set breadcrumbs = [('About', None)] %}
+{% block content -%}
+<p>
+  A map of the infrastructure
+  {%- if build.region_name %} of <strong>{{ build.region_name }}</strong>{% endif %}:
+  the power grid, telecoms, water, oil and gas, and critical sites (hospitals,
+  depots, military sites...), from OpenStreetMap and open data. It runs on its own
+  computer and works offline. On top of the map: your own layers (units, graphics,
+  pictures, measurements), shared with the people you choose; the status of
+  infrastructure (damaged, threatened...) and which substations lose power because of
+  it; routes over the grid.
+</p>
+
+<h3>This map's data</h3>
+<table>
+  {%- if build.region_name %}
+  <tr><th>Region</th><td>{{ build.region_name }}</td></tr>
+  {%- endif %}
+  {%- if build.osm_timestamp %}
+  <tr>
+    <th>OpenStreetMap data as of</th>
+    <td>{{ build.osm_timestamp[:10] }} <small>({{ build.osm_timestamp[11:16] }} UTC)</small></td>
+  </tr>
+  {%- endif %}
+  {%- if build.built_at %}
+  <tr><th>Map built</th><td>{{ build.built_at[:10] }}</td></tr>
+  {%- endif %}
+  {%- if build.source %}
+  <tr><th>Downloaded from</th><td><a href="{{ build.source }}">{{ build.source }}</a></td></tr>
+  {%- endif %}
+  {%- if build.git_commit %}
+  <tr><th>Built with version</th><td><code>{{ build.git_commit }}</code></td></tr>
+  {%- endif %}
+  {%- if wikidata %}
+  <tr><th>Wikidata entries kept offline</th><td>{{ "{:,}".format(wikidata) }}</td></tr>
+  {%- endif %}
+</table>
+{%- if not build %}
+<p>No record of how this database was built (it predates the build record).</p>
+{%- endif %}
+
+{%- if sources %}
+<h4>Data from outside OpenStreetMap</h4>
+<table>
+  <tr><th>Dataset</th><th>Items</th><th>Imported</th><th>Licence</th></tr>
+  {%- for s in sources %}
+  <tr>
+    <td>{% if s.url %}<a href="{{ s.url }}">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}<br /><small>{{ s.attribution }}</small></td>
+    <td>{{ "{:,}".format(s.features) if s.features is not none else "" }}</td>
+    <td>{{ s.imported_at.strftime("%Y-%m-%d") }}</td>
+    <td>{{ s.licence }}</td>
+  </tr>
+  {%- endfor %}
+</table>
+<p>Lines and substations OpenStreetMap already has are shown from OpenStreetMap.</p>
+{%- endif %}
+
+<h3>Using it</h3>
+<ul>
+  <li><strong>Search</strong> (top): names of substations, plants, places, sites; coordinates
+    (<code>47.75, 7.31</code>); military grid references (<code>32T LT 725 899</code>). Where the
+    cursor is, with its grid reference: bottom right (click to copy).</li>
+  <li><strong>Click</strong> anything on the map for its details; from a substation, a route over
+    the grid; from a line, where it goes.</li>
+  <li><strong>Layers</strong> and <strong>Key</strong> (buttons on the right): what's shown, and what
+    the colours mean. <strong>Status board</strong> (⚠): damage and threats, and the power supply mode.</li>
+  <li><strong>My layers</strong>: your own layers, drawn with the toolbar at the top. Keys:
+    <kbd>V</kbd> select, <kbd>S</kbd> symbol, <kbd>A</kbd> graphic, <kbd>L</kbd> line,
+    <kbd>R</kbd> area, <kbd>M</kbd> marker, <kbd>P</kbd> picture, <kbd>C</kbd> copy from the map,
+    <kbd>D</kbd> measure a distance, <kbd>E</kbd> an area, <kbd>O</kbd> range rings;
+    <kbd>Enter</kbd> or a double-click finishes, <kbd>Backspace</kbd> takes back a point,
+    right-click starts again, <kbd>Esc</kbd> stops; <kbd>Ctrl</kbd>+<kbd>Z</kbd> /
+    <kbd>Ctrl</kbd>+<kbd>Y</kbd> undo and redo; <kbd>Delete</kbd> deletes what's selected.
+    Changes are shared once you <strong>Save</strong>.</li>
+  <li><strong>settings</strong> (top): the background map, satellite imagery, address search; your
+    account (admins: everyone's). <strong>print</strong>: the map as a PDF with a legend.</li>
+</ul>
+
+<h3>Credits and licences</h3>
+<ul>
+  <li>Map data <a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>,
+    under the Open Database Licence (ODbL).</li>
+  <li>Built on <a href="https://github.com/openinframap/openinframap">Open Infrastructure Map</a>
+    (&copy; Open Infrastructure Map contributors, BSD licence); this is a fork of it, run
+    offline for one region.</li>
+  <li>Maritime boundaries (EEZ) &copy; <a href="https://www.marineregions.org/">MarineRegions.org</a>, CC BY.</li>
+  <li>Background map: <a href="https://protomaps.com/">Protomaps</a>, from OpenStreetMap data.</li>
+  <li>Satellite imagery, when downloaded: NASA Blue Marble (public domain); ESA WorldCover
+    Sentinel-2 composite (CC BY 4.0); national aerial photographs, each credited on the map
+    while shown.</li>
+  {%- for s in sources %}
+  <li>{{ s.name }}: {{ s.attribution }}, {{ s.licence }}.</li>
+  {%- endfor %}
+  <li>Photos and descriptions: Wikidata (CC0) and Wikimedia Commons (each photo's own licence).</li>
+  <li>Military symbols: <a href="https://github.com/syncpoint/signs">@syncpoint/signs</a> (MIT) and
+    the C5ISR renderer (Apache 2.0); magnetic declination: the World Magnetic Model 2025 (NOAA,
+    public domain); grid references: <code>mgrs</code> (MIT); the map itself:
+    <a href="https://maplibre.org/">MapLibre GL JS</a> (BSD).</li>
+</ul>
+{%- endblock %}

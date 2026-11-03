@@ -90,7 +90,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.10 | Clicking the same feature again deselects it. | ✅ |
 | 5.11 | Photos never make the details panel scroll (shrink them); vertical scroll only for long details. | ✅ |
 | 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/modules/layout/search-bar.ts` (narrow screens: stays on the left) |
-| 5.13 | The header's "about" and "stats" pages: do they still make sense for this app? Remove them or update what they say (about: probably keep; stats: doubtful). | 📋 asked 2026-11-03 |
+| 5.13 | The header's "about" and "stats" pages: do they still make sense for this app? Remove them or update what they say (about: probably keep; stats: doubtful). | ✅ "stats" and "export (online)" removed; "about" is the fork's page: this map's data, how to use it, credits (2026-11-03) |
 
 ## 6. Grid connections (power routing)
 

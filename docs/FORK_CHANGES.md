@@ -1354,6 +1354,23 @@ file and two lines (recipe in `docs/ARCHITECTURE.md`). Left as they are: the
 toolbar's tools (they make items) and the card's MIL-STD fields (they depend on the
 symbol code, not the kind).
 
+## The header and the about page (2026-11-03)
+
+- **Removed from the header** (`fork/modules/layout/index.ts`, at start, so
+  `index.html` keeps upstream's): "stats" (upstream's statistics of OpenStreetMap's
+  completeness by country, for its contributors; a power plant's own page, linked
+  from its details, stays) and "export (online)" (a paid online export; the map has
+  its own, My layers' Export).
+- **The about page** (`web-backend/src/fork/about.py`, replacing upstream's at
+  `/about`, which described the public website): what this map is; its data
+  (region, OpenStreetMap extract date, build date and source, version: the
+  `oim_build_info` table; the outside datasets with items, import date, licence:
+  `extra.source`; Wikidata entries kept offline); how to use it (search, the
+  buttons, My layers' keys); credits and licences. Its template
+  (`fork/templates/fork_about.html`) is found first, then upstream's for the layout
+  (`_base.html`), with upstream's filters. Upstream's footer (with its export link)
+  is left as is: it's in upstream's layout.
+
 ## Satellite imagery (offline)
 
 Plan: `docs/plans/satellite-imagery.md`. Built by `scripts/satellite.py` (the command

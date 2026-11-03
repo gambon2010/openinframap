@@ -16,6 +16,14 @@ const ui: ForkModule = {
   init: ({ map, layerSwitcher }) => {
     dock.attach(map)
 
+    // The header: upstream's statistics (OpenStreetMap's completeness by country,
+    // for its contributors) and its link to a paid online export don't fit this map
+    // (offline, with its own export); "about" is the fork's page (backend fork/about.py).
+    for (const link of document.querySelectorAll<HTMLAnchorElement>('header nav a')) {
+      const href = link.getAttribute('href') ?? ''
+      if (href === '/stats' || href.includes('infrageomatics.com')) link.closest('li')?.remove()
+    }
+
     // Layers: upstream shows its list while the pointer is over the button, level
     // with it and over the other buttons. Put the list in a docked panel instead.
     const container = map.getContainer()

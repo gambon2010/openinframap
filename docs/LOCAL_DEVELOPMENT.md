@@ -101,7 +101,8 @@ port 8800.
   board** (⚠), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside.
-- **Header:** about, stats, export (online), **settings** (background map and
+- **Header:** **about** (this map: its region and the date of its data, the
+  datasets, how to use it, credits and licences), **settings** (background map and
   address search servers; see below) and **print** (the map as a PDF: title, A4 or
   A3, with a legend of what's shown, the scale, north and the centre's grid
   reference).

@@ -113,6 +113,8 @@ the same URL), and a login check (`auth/`: every route but logging in needs a
 session):
 
 - `auth/`: accounts, sessions, the login page, `LoginMiddleware`;
+- `about.py` and `templates/` (the about page, replacing upstream's: built on its
+  `_base.html` layout);
 - `search.py`;
 - `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
 - `grid.py` (routes over the power grid, `/grid/line`), `grid_supply.py` (power
