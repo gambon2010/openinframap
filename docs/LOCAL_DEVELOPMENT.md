@@ -518,8 +518,9 @@ on the My layers workspace; click it again to close it. It has two parts:
   bearing, the total, marks along it like a ruler, finer as you zoom in, down to
   10 m), ⬠ an area, ◎ range rings (their distances on the ring's card). Click
   points; double-click or Enter to finish; right-click starts again. A measurement
-  is saved and shared like any item; drag its points to change it, and 🔒 Lock it
-  on its card so it stays as it is. Bearings from true, magnetic (compass) or grid
+  is saved and shared like any item; drag its points to change it, or type a leg's
+  length on its card (the following legs keep theirs), and 🔒 Lock it on its card
+  so it stays as it is. An area's outline can't cross itself. Bearings from true, magnetic (compass) or grid
   north: in the list's settings.
   **Import a file…** under the list puts a GeoJSON, KML or GPX file in a new layer;
   Until you Save, what you import or draw is kept in this browser (big files too:

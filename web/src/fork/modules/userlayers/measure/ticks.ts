@@ -1,10 +1,13 @@
-// Fork: the marks along a measured distance, like a ruler's: small ones every
-// `minor`, longer labelled ones every `major` (from the start: "5 km"). How far
-// apart they are depends on the zoom: never closer than about 15 px on screen
-// (labels about 90 px), down to 10 m when zoomed in a lot; always round steps (1, 2
-// or 5 × 10ⁿ). Only the marks in view are made: zoomed in on a long line there
-// would be far too many. Pure.
-import { LngLat, bearing, destination, distance, intermediate } from './geo.ts'
+// Fork: the marks along a measured distance, like a ruler's: a labelled mark every
+// `major` ("18 km", "18 km 200 m") from the start (marked too), with one plain mark
+// halfway between (on a full value: majors are 1 or 2 × 10ⁿ; a 5 × 10ⁿ step has
+// none, its half isn't one). How far apart depends on the zoom: labels about 80 px
+// apart, never under 10 m; zoomed out so the whole measurement is short on screen,
+// none at all. Only the marks in view are made. Pure.
+//
+// Marks sit on the line as drawn: the great-circle path (geo.ts greatCirclePath),
+// straight on the flat map between its points, and across it as seen on screen.
+import { LngLat, distance, greatCirclePath } from './geo.ts'
 
 /** Where the marks are drawn: the zoom, and what's in view (none: everywhere). */
 export interface TickView {
@@ -12,11 +15,11 @@ export interface TickView {
   bounds?: { west: number; south: number; east: number; north: number }
 }
 
-const MIN_STEP = 10
-const MINOR_PX = 15
-const MAJOR_PX = 90
-const MINOR_HALF_PX = 4
-const MAJOR_HALF_PX = 7
+const MAJOR_PX = 80
+const MIN_MAJOR = 20
+// Shorter than this on screen: no marks.
+const MIN_LINE_PX = 160
+const HALF_PX = { major: 7, minor: 4 }
 // Beyond this many candidate marks, none (a line far longer than the view).
 const MAX_CANDIDATES = 300000
 
@@ -32,18 +35,78 @@ export function niceAtLeast(x: number): number {
   return 10 * power
 }
 
-/** The marks' steps for a scale: minor, and major (a multiple of minor). */
-export function tickSteps(metresPerPx: number): { minor: number; major: number } {
-  const minor = Math.max(MIN_STEP, niceAtLeast(metresPerPx * MINOR_PX))
-  let major = Math.max(minor, niceAtLeast(metresPerPx * MAJOR_PX))
-  while (Math.abs(major / minor - Math.round(major / minor)) > 1e-9) major = niceAtLeast(major * 1.001)
-  return { minor, major }
+/** The labelled step for a scale, and the plain mark halfway (null: none). */
+export function tickSteps(metresPerPx: number): { major: number; minor: number | null } {
+  const major = Math.max(MIN_MAJOR, niceAtLeast(metresPerPx * MAJOR_PX))
+  const lead = Math.round(major / 10 ** Math.floor(Math.log10(major)))
+  return { major, minor: lead === 5 ? null : major / 2 }
 }
 
-/** "800 m", "5 km", "2.5 km", "1,200 km". */
-export function formatTick(metres: number): string {
-  if (metres < 1000) return `${Math.round(metres)} m`
-  return `${(metres / 1000).toLocaleString('en', { maximumFractionDigits: 2 })} km`
+/** A mark's label: whole km when the step is ("18 km"), else km and m ("18 km 450 m"). */
+export function formatTick(metres: number, major: number): string {
+  const km = Math.floor(metres / 1000 + 1e-9)
+  const m = Math.round(metres - km * 1000)
+  if (major >= 1000 || (km && !m)) return `${Math.round(metres / 1000).toLocaleString('en')} km`
+  if (!km) return `${m} m`
+  return `${km.toLocaleString('en')} km ${m} m`
+}
+
+// --- The drawn line, in Web Mercator (0–1), where screen directions are true ---
+
+type XY = [number, number]
+
+export function toMercator([lng, lat]: LngLat): XY {
+  const y = (1 - Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / Math.PI) / 2
+  return [(lng + 180) / 360, y]
+}
+
+export function fromMercator([x, y]: XY): LngLat {
+  return [x * 360 - 180, (360 / Math.PI) * Math.atan(Math.exp(Math.PI * (1 - 2 * y))) - 90]
+}
+
+interface Segment {
+  a: XY
+  b: XY
+  start: number
+  length: number
+}
+
+/** A path's segments with their lengths (metres) and where each starts along it. */
+export function segmentsOf(path: LngLat[]): Segment[] {
+  const out: Segment[] = []
+  let start = 0
+  for (let i = 1; i < path.length; i++) {
+    const length = distance(path[i - 1], path[i])
+    if (!length) continue
+    out.push({ a: toMercator(path[i - 1]), b: toMercator(path[i]), start, length })
+    start += length
+  }
+  return out
+}
+
+/** A point along a path, and the line's direction there on screen (degrees,
+ * clockwise from east). */
+export interface Along {
+  point: LngLat
+  merc: XY
+  angle: number
+}
+
+export function along(segment: Segment, d: number): Along {
+  const f = Math.min(1, Math.max(0, (d - segment.start) / segment.length))
+  const merc: XY = [
+    segment.a[0] + (segment.b[0] - segment.a[0]) * f,
+    segment.a[1] + (segment.b[1] - segment.a[1]) * f
+  ]
+  const angle = (Math.atan2(segment.b[1] - segment.a[1], segment.b[0] - segment.a[0]) * 180) / Math.PI
+  return { point: fromMercator(merc), merc, angle }
+}
+
+/** Text turned along a direction, never upside down (degrees for text-rotate). */
+export function readableAngle(angle: number): number {
+  let a = ((angle % 360) + 360) % 360
+  if (a > 90 && a < 270) a -= 180
+  return a > 180 ? a - 360 : a
 }
 
 function inView(p: LngLat, view: TickView): boolean {
@@ -62,39 +125,55 @@ export function ticksAlong(
   properties: Record<string, unknown> = {}
 ): GeoJSON.Feature[] {
   if (points.length < 2) return []
+  const segments = segmentsOf(greatCirclePath(points))
+  if (!segments.length) return []
+  const total = segments[segments.length - 1].start + segments[segments.length - 1].length
   const b = view.bounds
   const lat = b ? (b.south + b.north) / 2 : points.reduce((s, p) => s + p[1], 0) / points.length
-  const { minor, major } = tickSteps(metresPerPixel(lat, view.zoom))
-  const legs = points.slice(1).map((p, i) => distance(points[i], p))
-  if (legs.reduce((s, l) => s + l, 0) / minor > MAX_CANDIDATES) return []
+  const mpp = metresPerPixel(lat, view.zoom)
+  if (total / mpp < MIN_LINE_PX) return []
+  const { major, minor } = tickSteps(mpp)
+  const step = minor ?? major
+  if (total / step > MAX_CANDIDATES) return []
+  const world = 512 * 2 ** view.zoom
   const out: GeoJSON.Feature[] = []
-  let start = 0
-  for (let i = 0; i < legs.length; i++) {
-    const [a, z] = [points[i], points[i + 1]]
-    const length = legs[i]
-    for (let d = Math.floor(start / minor + 1) * minor; d < start + length; d += minor) {
-      const p = intermediate(a, z, (d - start) / length)
-      if (!inView(p, view)) continue
-      const isMajor = Math.abs(d / major - Math.round(d / major)) < 1e-6
-      const half = (isMajor ? MAJOR_HALF_PX : MINOR_HALF_PX) * metresPerPixel(p[1], view.zoom)
-      const across = bearing(p, z) + 90
+  let s = 0
+  for (let k = 0; k * step < total; k++) {
+    const d = k * step
+    while (s < segments.length - 1 && segments[s].start + segments[s].length < d) s++
+    const at = along(segments[s], d)
+    if (!inView(at.point, view)) continue
+    const isMajor = Math.abs(d / major - Math.round(d / major)) < 1e-6
+    // Across the line on screen, a few pixels each side.
+    const half = (isMajor ? HALF_PX.major : HALF_PX.minor) / world
+    const rad = (at.angle * Math.PI) / 180
+    const [nx, ny] = [-Math.sin(rad) * half, Math.cos(rad) * half]
+    out.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          fromMercator([at.merc[0] + nx, at.merc[1] + ny]),
+          fromMercator([at.merc[0] - nx, at.merc[1] - ny])
+        ]
+      },
+      properties: { ...properties, tick: isMajor ? 'major' : 'minor' }
+    })
+    if (isMajor && d > 0) {
       out.push({
         type: 'Feature',
-        geometry: {
-          type: 'LineString',
-          coordinates: [destination(p, half, across), destination(p, half, across + 180)]
-        },
-        properties: { ...properties, tick: isMajor ? 'major' : 'minor' }
+        geometry: { type: 'Point', coordinates: at.point },
+        properties: {
+          ...properties,
+          tickLabel: formatTick(d, major),
+          rotate: readableAngle(at.angle),
+          // Under the line (the legs' labels are above it).
+          offset: [0, 0.7],
+          anchor: 'top',
+          priority: 2
+        }
       })
-      if (isMajor) {
-        out.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: p },
-          properties: { ...properties, tickLabel: formatTick(d) }
-        })
-      }
     }
-    start += length
   }
   return out
 }

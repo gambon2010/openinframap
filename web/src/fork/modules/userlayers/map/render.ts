@@ -6,7 +6,13 @@
 // Tactical graphics (arrows, phase lines, areas...) are drawn by the C5ISR renderer
 // (graphics.ts) into a second source per layer (user_<id>_g), redrawn when the
 // zoom changes (arrow heads and teeth depend on the scale).
-import { FilterSpecification, GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl'
+import {
+  FilterSpecification,
+  GeoJSONSource,
+  LayerSpecification,
+  Map as MapLibreMap,
+  SymbolLayerSpecification
+} from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
@@ -77,6 +83,23 @@ const isGraphic = (f: UserFeature) => kindOf(f.properties).drawn === 'graphic'
 
 function graphicsSourceId(layerId: string) {
   return `user_${layerId}_g`
+}
+
+/** Measurement labels: turned and placed as each says (measure/features.ts); where
+ * two would overlap, the one with the lower priority stays (the total first). */
+const MEASURE_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {
+  'text-field': ['coalesce', ['get', 'label'], ['get', 'tickLabel']],
+  'text-font': font,
+  'text-size': ['case', ['has', 'tickLabel'], 10, ['==', ['get', 'big'], true], 14, 12],
+  'text-rotate': ['coalesce', ['get', 'rotate'], 0],
+  'text-rotation-alignment': 'map',
+  'text-offset': ['coalesce', ['array', 'number', 2, ['get', 'offset']], ['literal', [0, 0]]],
+  'text-anchor': ['coalesce', ['get', 'anchor'], 'center'],
+  'symbol-sort-key': ['coalesce', ['get', 'priority'], 1],
+  'text-allow-overlap': false,
+  'text-padding': 1,
+  // One line along the leg ("23.7 km · 005°T (89 mils)").
+  'text-max-width': 40
 }
 
 function measureSourceId(layerId: string) {
@@ -572,20 +595,14 @@ export class Renderer {
           'circle-stroke-width': 2
         }
       },
-      // Lengths, bearings, the total; and the marks' distances, smaller, in its colour.
+      // Lengths and bearings (along their leg, above it), the total, the marks'
+      // distances (under the line, smaller, in its colour): measure/features.ts.
       {
         id: `${source}_label`,
         type: 'symbol',
         source,
         filter: ['any', ['has', 'label'], ['has', 'tickLabel']],
-        layout: {
-          'text-field': ['coalesce', ['get', 'label'], ['get', 'tickLabel']],
-          'text-font': font,
-          'text-size': ['case', ['has', 'tickLabel'], 10, ['==', ['get', 'big'], true], 14, 12],
-          'text-offset': ['case', ['has', 'tickLabel'], ['literal', [0, 1]], ['literal', [0, -1.1]]],
-          'text-allow-overlap': true,
-          'text-ignore-placement': true
-        },
+        layout: MEASURE_LABEL_LAYOUT,
         paint: {
           'text-color': ['case', ['has', 'tickLabel'], color, '#222'],
           'text-halo-color': '#fff',
@@ -682,15 +699,8 @@ export class Renderer {
         id: `${DRAFT}_label`,
         type: 'symbol',
         source: DRAFT,
-        filter: ['any', ['has', 'label'], ['has', 'tickLabel']],
-        layout: {
-          'text-field': ['coalesce', ['get', 'label'], ['get', 'tickLabel']],
-          'text-font': font,
-          'text-size': ['case', ['has', 'tickLabel'], 10, 12],
-          'text-offset': [0, -1.1],
-          'text-allow-overlap': true,
-          'text-ignore-placement': true
-        },
+        filter: ['has', 'label'],
+        layout: MEASURE_LABEL_LAYOUT,
         paint: { 'text-color': '#1565c0', 'text-halo-color': '#fff', 'text-halo-width': 2 }
       }
     ]
@@ -771,15 +781,8 @@ export class Renderer {
   /** A measurement being drawn (to the cursor), with its labels and marks. */
   measureDraft(m: Measurement) {
     this.ensureOverlays()
-    const b = this.map.getBounds()
-    const features = measurementFeatures(m, {
-      draft: true,
-      north: measurePrefs.north,
-      ticks: {
-        zoom: this.map.getZoom(),
-        bounds: { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }
-      }
-    })
+    // Its marks come once it's done.
+    const features = measurementFeatures(m, { draft: true, north: measurePrefs.north })
     ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 

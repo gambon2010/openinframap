@@ -72,8 +72,9 @@ export function intermediate([lng1, lat1]: LngLat, [lng2, lat2]: LngLat, f: numb
   return [deg(Math.atan2(y, x)), deg(Math.atan2(z, Math.sqrt(x * x + y * y)))]
 }
 
-// Legs longer than this are drawn through points along their great circle.
-const SEGMENT = 20000
+// Legs longer than this are drawn through points along their great circle (close
+// enough that straight pieces on the flat map stay within a metre of it).
+const SEGMENT = 2000
 
 /**
  * A path drawn as the great circles its distance is measured along (on the flat
@@ -83,7 +84,7 @@ export function greatCirclePath(points: LngLat[]): LngLat[] {
   const out: LngLat[] = points.slice(0, 1)
   for (let i = 1; i < points.length; i++) {
     const [a, b] = [points[i - 1], points[i]]
-    const n = Math.min(256, Math.ceil(distance(a, b) / SEGMENT))
+    const n = Math.min(2000, Math.ceil(distance(a, b) / SEGMENT))
     for (let k = 1; k < n; k++) out.push(intermediate(a, b, k / n))
     out.push(b)
   }
@@ -108,6 +109,29 @@ export function formatDistance(metres: number): string {
   if (metres < 1000) return `${Math.round(metres)} m`
   const km = metres / 1000
   return `${number(km, km < 10 ? 2 : km < 100 ? 1 : 0)} km`
+}
+
+/** To the metre, for typing over: "18 km 450 m", "18 km", "450 m". */
+export function formatLength(metres: number): string {
+  const total = Math.round(metres)
+  const km = Math.floor(total / 1000)
+  const m = total - km * 1000
+  if (!km) return `${m} m`
+  return m ? `${km} km ${m} m` : `${km} km`
+}
+
+/** A length as typed ("18 km 450 m", "2.5 km", "800 m", "3 nm"; a bare number:
+ * metres) in metres; null if there's none. */
+export function parseLength(text: string): number | null {
+  let total = 0
+  let found = false
+  for (const [, number, unit] of text.matchAll(/(\d+(?:[.,]\d+)?)\s*(km|nm|m)?/gi)) {
+    const value = parseFloat(number.replace(',', '.'))
+    if (!Number.isFinite(value)) continue
+    total += value * ({ km: 1000, nm: 1852, m: 1 }[(unit ?? 'm').toLowerCase() as 'km' | 'nm' | 'm'] ?? 1)
+    found = true
+  }
+  return found && total > 0 ? total : null
 }
 
 /** "450 m²", "3.2 ha", "12.5 km²", "4,096 km²". */

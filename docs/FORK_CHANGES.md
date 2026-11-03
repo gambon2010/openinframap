@@ -1240,23 +1240,36 @@ so it's saved, shared, in the history, undone, exported and printed like the
 others, and its points are moved like a drawing's.
 - **The tools**, in My layers' toolbar after the drawing ones: 📏 distance (D),
   ⬠ area (E), ◎ range rings (O). Distance and area are the line and area tools
-  making a measurement (`Tool.properties`): while drawing, the lengths, bearings and
-  marks so far follow the cursor (`Renderer.measureDraft`). Click points; double-click
-  or Enter finishes; Backspace takes back a point; right-click drops what's drawn so
-  far (again: stops; any drawing tool); Esc stops.
+  making a measurement (`Tool.properties`): while drawing, the lengths and bearings
+  so far follow the cursor (`Renderer.measureDraft`; marks only once it's done).
+  Click points; double-click or Enter finishes; Backspace takes back a point;
+  right-click drops what's drawn so far (again: stops; any drawing tool); Esc stops.
+  Points can be moved afterwards, not added or removed.
 - **What it shows** (`userlayers/measure/features.ts`, pure): each leg's length and
-  bearing in degrees and NATO mils, the total; an area and its perimeter; rings and
-  their radii, labelled four times. Lines follow great circles (`greatCirclePath`):
-  the path the distance is measured along, which curves on the flat map for long
-  legs. On a sphere of the mean radius (within 0.5 %).
-- **Marks along distances** (`measure/ticks.ts`, pure), like a ruler: a mark every
-  `minor`, a longer labelled one every `major` ("5 km", "500 m"), counted from the
-  start across legs. The steps are round (1, 2 or 5 × 10ⁿ), never closer than about
-  15 px on screen (labels about 90 px), never under 10 m; only the marks in view are
-  made (redrawn as the map moves), and a line far too long for its scale gets none
-  rather than millions. They're drawn in the measurement's line and label layers:
-  as a layer of their own they weren't painted beyond zoom 13 in the headless
-  browser used for testing, though MapLibre had built them (cause not found).
+  bearing in degrees and NATO mils, written along the leg and above it; the total
+  beyond the end; an area and its perimeter; rings and their radii, outside each
+  ring. Where labels would overlap, the total stays, then the legs, then the marks
+  (`symbol-sort-key`). Lines follow great circles (`greatCirclePath`, a point every
+  2 km so the straight pieces on the flat map stay within a metre of it).
+- **Marks along distances** (`measure/ticks.ts`, pure), like a ruler: a mark at the
+  start, a labelled mark every `major` with one plain mark halfway, on full values
+  (majors 1 or 2 × 10ⁿ; a 5 × 10ⁿ step has no halfway mark), labels about 80 px
+  apart, never under 10 m. Labels: "18 km" when the step is a kilometre or more,
+  else "18 km 450 m"; under the line, along it. None when the whole measurement is
+  under 160 px on screen (zoomed out). Placed on the line as drawn (in Web Mercator,
+  where screen directions are true) and square to it; only those in view are made,
+  again as the map moves. Drawn in the measurement's line and label layers.
+- **Legs on the card** (`ItemKind.card`, a new hook, which can also change the
+  shape): each leg's length, typed over ("18 km 450 m", "2.5 km", "800"): its end
+  moves along the same bearing and the legs after keep their length and bearing
+  (`withLegLength`); an area's closing leg follows from the others.
+- **No areas that cross themselves** (`model/shapes.ts`, any area, drawn or
+  measured): a point that would make the outline cross isn't added, closing one
+  that would is refused (add a point, or take one back), a point dragged stops
+  where it would cross, a leg length that would is refused.
+- **Testing note:** the headless browser used for checks only draws a new frame when
+  something asks for one, so labels fading in and freshly updated sources can be
+  missing from screenshots; force repaints (`map.triggerRepaint()`) before taking one.
 - **Range rings' distances** are on the item's card (`ItemKind.card`, a new hook);
   new rings get the last ones set.
 - **Which north** (`measure/north.ts`), in My layers' settings ("Measured bearings

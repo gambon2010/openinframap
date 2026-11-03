@@ -605,7 +605,12 @@
     "lock-item": "🔒 Lock",
     "unlock-item-title": "Allow changes to this item again",
     "lock-item-title": "Keep this item from being changed, moved or deleted",
-    "item-locked": "Locked"
+    "item-locked": "Locked",
+    "leg-n": "Leg {{n}}",
+    "area-crossing": "Not there: the area's outline would cross itself.",
+    "legs": "Legs (type a length to change it)",
+    "measure-total": "In all",
+    "area-crossing-close": "Closing the area here would make it cross itself: add a point elsewhere, or take one back (Backspace)."
   },
   "tower": {
     "unnamed-line": "a line",

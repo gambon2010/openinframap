@@ -6,12 +6,14 @@
 import { t } from '../../../core/i18n.ts'
 import { FeatureProps } from '../model/model.ts'
 import { North, fromNorth, northLetter } from './north.ts'
-import { TickView, ticksAlong } from './ticks.ts'
+import { TickView, along, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
 import {
   LngLat,
   area,
   bearing,
   circle,
+  destination,
+  distance,
   formatArea,
   formatBearing,
   formatDistance,
@@ -46,6 +48,26 @@ export function measurementOf(item: {
   return null
 }
 
+/**
+ * The points with one leg (from point i to i + 1) made `metres` long: its end moves
+ * along the same bearing, and the legs after it keep their own length and bearing.
+ */
+export function withLegLength(points: LngLat[], i: number, metres: number): LngLat[] {
+  const out = points.slice(0, i + 1)
+  for (let j = i; j < points.length - 1; j++) {
+    const [a, b] = [points[j], points[j + 1]]
+    const length = j === i ? metres : distance(a, b)
+    out.push(destination(out[j], length, bearing(a, b)))
+  }
+  return out
+}
+
+/** A measurement's legs (an area's closing one too): their lengths and bearings. */
+export function legsOf(m: Measurement): { length: number; from: LngLat; to: LngLat }[] {
+  const points = m.type === 'area' ? [...m.points, m.points[0]] : m.points
+  return points.slice(1).map((to, i) => ({ length: distance(points[i], to), from: points[i], to }))
+}
+
 /** A leg's bearing, from the north chosen ("047°M (836 mils)"). */
 export function legBearing(a: LngLat, b: LngLat, north: North): string {
   return formatBearing(fromNorth(bearing(a, b), north, a[0], a[1]), northLetter(north))
@@ -72,16 +94,28 @@ const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): G
   properties
 })
 
-const middle = (a: LngLat, b: LngLat): LngLat => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
-
 export interface DrawOptions {
-  /** The one being drawn (to the cursor): dashed. */
+  /** The one being drawn (to the cursor): dashed, no marks. */
   draft?: boolean
   north?: North
   /** Where marks go along distances (none: no marks). */
   ticks?: TickView
   /** Copied onto every feature (the item's id, its colour). */
   properties?: Record<string, unknown>
+}
+
+// Labels: turned along the line (rotate), beside it (offset in ems, anchor), and
+// which one wins when two would overlap (priority: lower first).
+type Placement = { rotate?: number; offset?: [number, number]; anchor?: string; priority: number }
+
+/** Where a label goes beyond the end of a line heading `angle` (screen degrees). */
+function beyond(angle: number): Placement {
+  const [c, s] = [Math.cos((angle * Math.PI) / 180), Math.sin((angle * Math.PI) / 180)]
+  if (c > 0.7) return { anchor: 'left', offset: [0.6, 0], priority: 0 }
+  if (c < -0.7) return { anchor: 'right', offset: [-0.6, 0], priority: 0 }
+  return s > 0
+    ? { anchor: 'top', offset: [0, 0.6], priority: 0 }
+    : { anchor: 'bottom', offset: [0, -0.6], priority: 0 }
 }
 
 /** The features that draw a measurement. */
@@ -93,17 +127,25 @@ export function measurementFeatures(m: Measurement, options: DrawOptions = {}): 
     geometry: { type: 'LineString', coordinates },
     properties: props
   })
+  const label = (at: LngLat, text: string, placement: Placement, extra: Record<string, unknown> = {}) =>
+    point(at, { ...props, label: text, ...placement, ...extra })
   const out: GeoJSON.Feature[] = []
   if (m.type === 'rings') {
     const centre = m.points[0]
     out.push(point(centre, { ...props, vertex: true }))
+    // Labelled outside each ring, north, east, south and west (one is on screen
+    // even when it's big).
+    const sides: Placement[] = [
+      { anchor: 'bottom', offset: [0, -0.3], priority: 1 },
+      { anchor: 'left', offset: [0.4, 0], priority: 1 },
+      { anchor: 'top', offset: [0, 0.3], priority: 1 },
+      { anchor: 'right', offset: [-0.4, 0], priority: 1 }
+    ]
     for (const radius of m.radii ?? []) {
       const ring = circle(centre, radius)
       out.push(line(ring))
-      // Labelled north, east, south and west (one is on screen even when it's big).
-      for (let i = 0; i < 4; i++) {
-        out.push(point(ring[(i * (ring.length - 1)) / 4], { ...props, label: formatDistance(radius) }))
-      }
+      for (let i = 0; i < 4; i++)
+        out.push(label(ring[(i * (ring.length - 1)) / 4], formatDistance(radius), sides[i]))
     }
     return out
   }
@@ -117,28 +159,38 @@ export function measurementFeatures(m: Measurement, options: DrawOptions = {}): 
         m.points.reduce((s, p) => s + p[0], 0) / m.points.length,
         m.points.reduce((s, p) => s + p[1], 0) / m.points.length
       ]
-      out.push(point(centre, { ...props, label: formatArea(area(m.points)), big: true }))
+      out.push(label(centre, formatArea(area(m.points)), { priority: 0 }, { big: true }))
     }
     out.push(line(ring))
     return out
   }
   out.push(line(greatCirclePath(m.points)))
-  if (options.ticks) out.push(...ticksAlong(m.points, options.ticks, props))
-  // Each leg: its length and bearing; the end: the total.
+  if (options.ticks && !options.draft) out.push(...ticksAlong(m.points, options.ticks, props))
+  // Each leg: its length and bearing, beside it and along it; the end: the total.
+  let lastAngle = 0
   for (let i = 1; i < m.points.length; i++) {
     const [a, b] = [m.points[i - 1], m.points[i]]
+    const segments = segmentsOf(greatCirclePath([a, b]))
+    if (!segments.length) continue
+    const last = segments[segments.length - 1]
+    const mid = along(
+      segments.find((s) => s.start + s.length >= (last.start + last.length) / 2) ?? last,
+      (last.start + last.length) / 2
+    )
+    lastAngle = along(last, last.start + last.length).angle
     out.push(
-      point(middle(a, b), {
-        ...props,
-        label: `${formatDistance(pathLength([a, b]))}\n${legBearing(a, b, north)}`
+      label(mid.point, `${formatDistance(pathLength([a, b]))} · ${legBearing(a, b, north)}`, {
+        rotate: readableAngle(mid.angle),
+        // Above the line (the marks' labels are under it).
+        offset: [0, -0.7],
+        anchor: 'bottom',
+        priority: 1
       })
     )
   }
   if (m.points.length > 2) {
     out.push(
-      point(m.points[m.points.length - 1], {
-        ...props,
-        label: formatDistance(pathLength(m.points)),
+      label(m.points[m.points.length - 1], formatDistance(pathLength(m.points)), beyond(lastAngle), {
         big: true
       })
     )

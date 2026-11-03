@@ -12,6 +12,7 @@ import { FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
 import { mapMode } from '../../../ui/map-mode.ts'
 import { kindOf } from '../kinds/index.ts'
+import { areaCrossesItself, areaPoints, pathCrossesItself } from '../model/shapes.ts'
 
 export type Tool =
   | { mode: 'select' }
@@ -53,6 +54,8 @@ export function dropRepeats(points: [number, number][]): [number, number][] {
 // Its name while a drawing or placing tool has the map (ui/map-mode.ts).
 const MODE = 'userlayers-draw'
 
+const CROSSING = () => t('userlayers.area-crossing', "Not there: the area's outline would cross itself.")
+
 export class Tools {
   tool: Tool = { mode: 'select' }
   selected: string | null = null
@@ -62,6 +65,8 @@ export class Tools {
     return this.store.view.live && (!mapMode.current || mapMode.current === MODE)
   }
   message = ''
+  // The tool's own hint (message shows a warning instead for a moment).
+  private hint = ''
   private map: Map
   private store: Store
   private renderer: Renderer
@@ -113,6 +118,7 @@ export class Tools {
   setTool(tool: Tool, message = '') {
     this.tool = tool
     this.message = message
+    this.hint = message
     this.renderer.draft([], false)
     // A tool other than select has the map (another one, like measuring, stops);
     // when it's taken back (Esc, measuring started), select again.
@@ -227,8 +233,18 @@ export class Tools {
       }
       case 'line':
       case 'area':
+        // An area's outline mustn't cross itself (model/shapes.ts).
+        if (this.tool.mode === 'area' && pathCrossesItself([...this.tool.points, lngLat])) {
+          this.message = CROSSING()
+          this.notify()
+          break
+        }
         this.tool.points.push(lngLat)
         this.drawDraft()
+        if (this.message !== this.hint) {
+          this.message = this.hint
+          this.notify()
+        }
         break
       case 'graphic':
         this.tool.points.push(lngLat)
@@ -271,6 +287,15 @@ export class Tools {
       return
     }
     const area = this.tool.mode === 'area'
+    if (area && areaCrossesItself(points)) {
+      // Closing it would cross: a point more (or one taken back) first.
+      this.message = t(
+        'userlayers.area-crossing-close',
+        'Closing the area here would make it cross itself: add a point elsewhere, or take one back (Backspace).'
+      )
+      this.notify()
+      return
+    }
     if (points.length >= (area ? 3 : 2)) {
       const geometry: GeoJSON.Geometry = area
         ? { type: 'Polygon', coordinates: [[...points, points[0]]] }
@@ -451,7 +476,11 @@ export class Tools {
       feature.geometry = graphicGeometry(points)
       this.renderer.preview(layerId, feature)
     } else {
-      feature.geometry = moveVertex(feature.geometry, index, to)
+      const moved = moveVertex(feature.geometry, index, to)
+      // An area's point can't go where the outline would cross itself: it stops.
+      const ring = areaPoints(moved)
+      if (ring && areaCrossesItself(ring)) return
+      feature.geometry = moved
     }
     // A measurement's labels and marks follow.
     if (kindOf(feature.properties).drawn === 'measure') this.renderer.preview(layerId, feature)

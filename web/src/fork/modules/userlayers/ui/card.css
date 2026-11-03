@@ -204,3 +204,18 @@
   flex: 1;
   min-width: 6em;
 }
+
+/* A measurement's legs (kinds/measure.ts): the length typed over, the bearing. */
+.oim-ul-legs-title {
+  margin: 8px 0 4px;
+  font-size: 0.9rem;
+}
+
+.oim-ul-leg .oim-ul-leg-length {
+  width: 9em;
+}
+
+.oim-ul-leg small {
+  margin-left: 6px;
+  color: var(--oim-dark-grey);
+}

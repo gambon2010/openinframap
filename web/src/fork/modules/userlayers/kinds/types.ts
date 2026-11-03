@@ -52,6 +52,10 @@ export interface ItemKind {
   /** The filter chips it's under. */
   filters?(p: FeatureProps): KindFilter[]
   /** More on its card, after its name and before its appearance (ui/editor.ts):
-   * update changes its properties (one change, undoable). */
-  card?(item: Item, update: (changes: Partial<FeatureProps>) => void): HTMLElement[]
+   * update changes its properties, setGeometry its shape (each one change, undoable). */
+  card?(
+    item: Item,
+    update: (changes: Partial<FeatureProps>) => void,
+    setGeometry: (geometry: GeoJSON.Geometry) => void
+  ): HTMLElement[]
 }

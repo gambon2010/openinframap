@@ -31,6 +31,8 @@ import { kindOf } from '../kinds/index.ts'
 
 export interface EditorActions {
   update: (properties: FeatureProps) => void
+  /** Change its shape (a measurement's leg lengths). */
+  setGeometry: (geometry: GeoJSON.Geometry) => void
   moveTo: (layerId: string) => void
   duplicate: () => void
   remove: () => void
@@ -368,7 +370,7 @@ export async function buildEditor(
   parts.push(notes)
 
   // --- What its kind adds (a measurement's ring distances...) ---
-  parts.push(...(itemKind.card?.(feature, update) ?? []))
+  parts.push(...(itemKind.card?.(feature, update, actions.setGeometry) ?? []))
 
   // --- Appearance ---
   const look: HTMLElement[] = []

@@ -87,6 +87,7 @@ export class Inspector {
     const focused = (document.activeElement as HTMLElement | null)?.getAttribute?.('data-field')
     const editor = await buildEditor(feature, layer, [...store.layers.values()], {
       update: (properties) => store.updateFeature(layer.id, { ...feature, properties }),
+      setGeometry: (geometry) => store.updateFeature(layer.id, { ...feature, geometry }),
       moveTo: (layerId) => store.moveFeature(id, layerId),
       duplicate: () => this.duplicate(layer.id, feature),
       remove: () => tools.deleteSelected(),
