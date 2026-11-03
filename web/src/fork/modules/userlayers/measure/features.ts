@@ -6,7 +6,7 @@
 import { t } from '../../../core/i18n.ts'
 import { FeatureProps } from '../model/model.ts'
 import { North, fromNorth, northLetter } from './north.ts'
-import { TickView, along, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
+import { TickView, along, metresPerPixel, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
 import {
   LngLat,
   area,
@@ -94,12 +94,17 @@ const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): G
   properties
 })
 
+// About how wide a character of a 12 px label is (to tell whether one fits).
+const LABEL_CHAR_PX = 6.6
+
 export interface DrawOptions {
   /** The one being drawn (to the cursor): dashed, no marks. */
   draft?: boolean
   north?: North
   /** Where marks go along distances (none: no marks). */
   ticks?: TickView
+  /** The map's zoom (labels too long for their leg on screen get shorter). */
+  zoom?: number
   /** Copied onto every feature (the item's id, its colour). */
   properties?: Record<string, unknown>
 }
@@ -178,8 +183,15 @@ export function measurementFeatures(m: Measurement, options: DrawOptions = {}): 
       (last.start + last.length) / 2
     )
     lastAngle = along(last, last.start + last.length).angle
+    // On screen, a leg shorter than its full label: only its length.
+    const length = formatDistance(pathLength([a, b]))
+    const full = `${length} · ${legBearing(a, b, north)}`
+    const zoom = options.ticks?.zoom ?? options.zoom
+    const fits =
+      zoom === undefined ||
+      (last.start + last.length) / metresPerPixel(mid.point[1], zoom) > full.length * LABEL_CHAR_PX + 16
     out.push(
-      label(mid.point, `${formatDistance(pathLength([a, b]))} · ${legBearing(a, b, north)}`, {
+      label(mid.point, fits ? full : length, {
         rotate: readableAngle(mid.angle),
         // Above the line (the marks' labels are under it).
         offset: [0, -0.7],

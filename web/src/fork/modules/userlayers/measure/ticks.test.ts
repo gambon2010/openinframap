@@ -119,3 +119,16 @@ describe('marks along a path', () => {
     expect(ticksAlong(long, { zoom: 20 })).toEqual([])
   })
 })
+
+describe('marks worth showing', () => {
+  test('at least four labelled steps along the line, else none', () => {
+    const line: [number, number][] = [
+      [7, 47.0],
+      [7, 47.56]
+    ]
+    // About 62 km: 20 km steps zoomed out (3), 10 km steps one zoom in (6).
+    const majors = (zoom: number) => ticksAlong(line, { zoom }).filter((f) => f.properties?.tickLabel).length
+    expect(majors(8.5)).toBe(0)
+    expect(majors(10)).toBeGreaterThanOrEqual(4)
+  })
+})

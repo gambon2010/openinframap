@@ -2,8 +2,8 @@
 // `major` ("18 km", "18 km 200 m") from the start (marked too), with one plain mark
 // halfway between (on a full value: majors are 1 or 2 × 10ⁿ; a 5 × 10ⁿ step has
 // none, its half isn't one). How far apart depends on the zoom: labels about 80 px
-// apart, never under 10 m; zoomed out so the whole measurement is short on screen,
-// none at all. Only the marks in view are made. Pure.
+// apart, never under 10 m; fewer than four labelled steps along the whole
+// measurement (zoomed out): none at all. Only the marks in view are made. Pure.
 //
 // Marks sit on the line as drawn: the great-circle path (geo.ts greatCirclePath),
 // straight on the flat map between its points, and across it as seen on screen.
@@ -17,8 +17,9 @@ export interface TickView {
 
 const MAJOR_PX = 80
 const MIN_MAJOR = 20
-// Shorter than this on screen: no marks.
-const MIN_LINE_PX = 160
+// Fewer labelled steps than this along the whole measurement: no marks (one or two
+// lone marks say little).
+const MIN_MAJORS = 4
 const HALF_PX = { major: 7, minor: 4 }
 // Beyond this many candidate marks, none (a line far longer than the view).
 const MAX_CANDIDATES = 300000
@@ -131,8 +132,8 @@ export function ticksAlong(
   const b = view.bounds
   const lat = b ? (b.south + b.north) / 2 : points.reduce((s, p) => s + p[1], 0) / points.length
   const mpp = metresPerPixel(lat, view.zoom)
-  if (total / mpp < MIN_LINE_PX) return []
   const { major, minor } = tickSteps(mpp)
+  if (total < MIN_MAJORS * major) return []
   const step = minor ?? major
   if (total / step > MAX_CANDIDATES) return []
   const world = 512 * 2 ** view.zoom

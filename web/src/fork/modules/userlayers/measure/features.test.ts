@@ -113,3 +113,17 @@ describe('lengths as written and typed', () => {
     expect(parseLength('far')).toBeNull()
   })
 })
+
+describe('labels that fit', () => {
+  test('a leg too short on screen for all its label: only its length', () => {
+    const leg: [number, number][] = [
+      [7, 47.8],
+      [7.5, 47.8]
+    ]
+    const label = (zoom: number) =>
+      measurementFeatures({ type: 'distance', points: leg }, { zoom }).find((f) => f.properties?.label)
+        ?.properties?.label
+    expect(label(11)).toMatch(/·/)
+    expect(label(7)).toMatch(/^[\d.]+ km$/)
+  })
+})

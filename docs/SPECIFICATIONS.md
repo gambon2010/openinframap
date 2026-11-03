@@ -184,6 +184,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.2c | Measurements are My layers items (saved, shared, lockable), made with tools in the layer toolbar; editable after placing, and lockable; marks along distances like a ruler (labelled, e.g. "5 km"), finer when zoomed in (down to 10 m), never a mass of tiny marks when zoomed out. | ✅ `userlayers/kinds/measure.ts`, `measure/ticks.ts` (2026-11-03) |
 | 10.2d | Measuring, refined: marks on the line at any zoom, one plain mark between labelled ones on full values, a mark at the start, "18 km 450 m" when zoomed in and whole km when not, no marks while drawing or when zoomed far out; labels along the line beside it; each leg's length editable on the card; points moved, not added. | ✅ (2026-11-03) |
 | 10.2e | Areas can't be drawn crossing themselves. | ✅ `model/shapes.ts` (2026-11-03) |
+| 10.2f | Zoomed out, a leg shows only its length when its label doesn't fit; no lone marks (at least four labelled steps); clicking an area's first point closes it. | ✅ (2026-11-03) |
 | 10.6d | The "draw into" layer and favourite (and recent) symbols follow the account, like folders. | ✅ `state/personal.ts` (2026-11-01) |
 | 10.2b | Measured bearings from true, magnetic (compass) or grid (MGRS) north, chosen. | ✅ `userlayers/measure/north.ts` (2026-11-02; per account since 2026-11-03) |
 | 10.7b | Unsaved changes kept in the browser whatever their size (big imports), with a warning if they can't be. | ✅ IndexedDB (`state/local.ts`) (2026-11-02) |

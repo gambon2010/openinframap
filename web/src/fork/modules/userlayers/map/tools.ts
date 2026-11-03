@@ -54,6 +54,9 @@ export function dropRepeats(points: [number, number][]): [number, number][] {
 // Its name while a drawing or placing tool has the map (ui/map-mode.ts).
 const MODE = 'userlayers-draw'
 
+// How near (pixels) a click must be to an area's first point to close it there.
+const CLOSE_PX = 10
+
 const CROSSING = () => t('userlayers.area-crossing', "Not there: the area's outline would cross itself.")
 
 export class Tools {
@@ -233,6 +236,11 @@ export class Tools {
       }
       case 'line':
       case 'area':
+        // A click on an area's first point closes it.
+        if (this.tool.mode === 'area' && this.tool.points.length >= 3 && this.nearFirst(lngLat)) {
+          this.finishDrawing()
+          break
+        }
         // An area's outline mustn't cross itself (model/shapes.ts).
         if (this.tool.mode === 'area' && pathCrossesItself([...this.tool.points, lngLat])) {
           this.message = CROSSING()
@@ -266,10 +274,22 @@ export class Tools {
     }
   }
 
+  /** Whether a point is on the first point of the area being drawn (a few pixels). */
+  private nearFirst(lngLat: [number, number]): boolean {
+    if (!drawing(this.tool) || !this.tool.points.length) return false
+    const a = this.map.project(this.tool.points[0])
+    const b = this.map.project(lngLat)
+    return Math.hypot(a.x - b.x, a.y - b.y) <= CLOSE_PX
+  }
+
   finishDrawing() {
     if (!drawing(this.tool)) return
     // A double-click adds the same point twice.
-    const points = dropRepeats(this.tool.points)
+    let points = dropRepeats(this.tool.points)
+    // An area finished on its first point: that's where it closes anyway.
+    if (this.tool.mode === 'area' && points.length > 3 && this.nearFirst(points[points.length - 1])) {
+      points = points.slice(0, -1)
+    }
     if (this.tool.mode === 'graphic') {
       if (points.length < this.tool.min) {
         this.message = t('userlayers.graphic-more', 'This graphic needs at least {{n}} points.', {

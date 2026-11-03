@@ -782,7 +782,11 @@ export class Renderer {
   measureDraft(m: Measurement) {
     this.ensureOverlays()
     // Its marks come once it's done.
-    const features = measurementFeatures(m, { draft: true, north: measurePrefs.north })
+    const features = measurementFeatures(m, {
+      draft: true,
+      north: measurePrefs.north,
+      zoom: this.map.getZoom()
+    })
     ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 
