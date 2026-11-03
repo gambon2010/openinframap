@@ -1248,8 +1248,9 @@ others, and its points are moved like a drawing's.
 - **What it shows** (`userlayers/measure/features.ts`, pure): each leg's length and
   bearing in degrees and NATO mils, written along the leg and above it; the total
   beyond the end; an area and its perimeter; rings and their radii, outside each
-  ring (only rings at least 25 px across on screen; none: the largest; the bigger
-  ring's label wins). A leg too short on screen for its whole label shows only its length. Where
+  ring (only rings at least 25 px across on screen; the bigger ring's label wins;
+  when the largest is under 60 px, one label above it with its diameter, "Ø 20 km":
+  the map's font has no ⌀). A leg too short on screen for its whole label shows only its length. Where
   labels would overlap, the total stays, then the legs, then the marks
   (`symbol-sort-key`). Lines follow great circles (`greatCirclePath`, a point every
   2 km so the straight pieces on the flat map stay within a metre of it).

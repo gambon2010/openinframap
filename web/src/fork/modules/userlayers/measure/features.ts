@@ -96,8 +96,10 @@ const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): G
 
 // About how wide a character of a 12 px label is (to tell whether one fits).
 const LABEL_CHAR_PX = 6.6
-// A ring smaller than this on screen (radius, px) isn't labelled.
+// A ring smaller than this on screen (radius, px) isn't labelled; when the largest is
+// smaller than ONE_LABEL_RING_PX, it gets one label (its diameter) instead of four.
 const MIN_RING_PX = 25
+const ONE_LABEL_RING_PX = 60
 
 export interface DrawOptions {
   /** The one being drawn (to the cursor): dashed, no marks. */
@@ -155,6 +157,16 @@ export function measurementFeatures(m: Measurement, options: DrawOptions = {}): 
     const seen = (r: number) => zoom === undefined || r / metresPerPixel(centre[1], zoom) >= MIN_RING_PX
     const labelled = radii.filter(seen)
     if (!labelled.length && radii.length) labelled.push(radii[0])
+    // Small on screen (zoomed out): one label above the largest, its diameter.
+    const largestPx =
+      zoom === undefined || !radii.length ? Infinity : radii[0] / metresPerPixel(centre[1], zoom)
+    if (largestPx < ONE_LABEL_RING_PX) {
+      for (const radius of radii) out.push(line(circle(centre, radius)))
+      out.push(
+        label(circle(centre, radii[0])[0], `Ø ${formatDistance(2 * radii[0])}`, { ...sides[0], priority: 1 })
+      )
+      return out
+    }
     for (const radius of radii) {
       const ring = circle(centre, radius)
       out.push(line(ring))

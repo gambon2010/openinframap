@@ -138,6 +138,11 @@ describe('range rings zoomed out', () => {
       )
     expect(rings(14)).toEqual(new Set(['1 km', '5 km', '10 km']))
     expect(rings(10)).toEqual(new Set(['5 km', '10 km']))
-    expect(rings(5)).toEqual(new Set(['10 km']))
+    // Small on screen: one label, the diameter.
+    const far = measurementFeatures(
+      { type: 'rings', points: [[4.5, 48]], radii: [1000, 5000, 10000] },
+      { zoom: 7 }
+    )
+    expect(far.filter((f) => f.properties?.label).map((f) => f.properties!.label)).toEqual(['Ø 20 km'])
   })
 })
