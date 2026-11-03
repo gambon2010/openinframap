@@ -29,7 +29,10 @@ services:
       DATABASE_URL: "postgresql+asyncpg://osm:osm@db:5432/osm"
     # Run the venv built into the image directly: `uv run` would try to sync
     # (and download) packages at startup.
-    entrypoint: ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
+    # --proxy-headers: behind the gate, its X-Forwarded-Proto (https) makes the
+    # backend's own links and redirects https (only the gate reaches port 80 here).
+    entrypoint:
+      ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80", "--proxy-headers", "--forwarded-allow-ips=*"]
     ports:
       - "127.0.0.1:8001:80"
     volumes:

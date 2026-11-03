@@ -1120,7 +1120,11 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   10 years, for localhost, this computer's name and addresses; kept in `data/gate/`).
   Plain http on 8800 is sent to https; the session cookie is `Secure` (the gate
   passes `X-Forwarded-Proto`; in nginx, a location setting a header of its own loses
-  the server's, so they're repeated). Browsers warn once (nobody vouches for the
+  the server's, so they're repeated). The gate passes the host with its port
+  (`$http_host`) and the backend trusts its `X-Forwarded-Proto` (uvicorn
+  `--proxy-headers` in `docker-compose.override.yml`), so the backend's redirects
+  (a power plant's page) stay on https://…:8800 (2026-11-03: they went to
+  http://localhost). Browsers warn once (nobody vouches for the
   certificate); installing `data/gate/cert.pem` avoids it. The gate's image is saved
   with the others for offline use.
 - **What can't be changed is locked** in Settings → Accounts (greyed out, the reason as
