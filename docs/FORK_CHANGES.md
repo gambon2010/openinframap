@@ -1569,9 +1569,11 @@ the key opened over the buttons too; the Map sources panel was another button.
 - **The coordinates** are next to the scale, bottom left.
 - **Place names when zoomed in** (`modules/map-sources/labels.ts`): upstream shows
   town names up to zoom 12 and neighbourhood names at 13-14 only (online, the
-  OpenStreetMap layer took over), so close in nothing said where you were. Town
-  names now stay at every zoom; neighbourhood and field names (many) from zoom 17
-  (`PLACE_LABEL_ZOOMS`, set on each style load).
+  OpenStreetMap layer took over), so close in nothing said where you were. Town,
+  village and hamlet names now stay at every zoom; field and neighbourhood names
+  (OSM's place=locality, which the background map files with towns as
+  `kind_detail` "locality": "Holzweg", "Im Tal", dozens per town) only from zoom 17
+  (`LOCALITY_FILTER`, `CLOSE_ZOOM`, set on each style load).
 
 ## Tests
 
