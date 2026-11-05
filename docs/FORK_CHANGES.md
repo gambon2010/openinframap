@@ -1548,9 +1548,10 @@ the key opened over the buttons too; the Map sources panel was another button.
   selection's yellow), the border, text and size unchanged (nothing moves). It
   replaces each module's own: My layers' chips (status, identity, filters,
   palette groups), identity frames, tool and toolbar buttons, the selected item in
-  the list; the status board's counts; the grid route's chosen path; the dock's open
-  panel button (which keeps `oim-dock-active` for its code). The layer you draw
-  into keeps its blue row: it means something else ("drawing here").
+  the list; the status board's counts; the grid route's chosen path. Not the map's
+  buttons on the right: the open panel's keeps its dark ring (`oim-dock-active`), a
+  coloured background would hide its icon. The layer you draw into keeps its blue
+  row: it means something else ("drawing here").
 - **Range rings and measurements** selected glow under their own lines and rings
   (`_m_highlight` in each measurement source, like graphics' `_g_highlight`;
   `Renderer.highlightItems`), not a circle at their centre.

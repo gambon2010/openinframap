@@ -65,8 +65,8 @@ Examples:
 - the details panel's `onShow`: the route folds itself.
 
 **Styles:** panels share `ui/panel.css` (build them with `makePanel()`). Anything
-chosen, switched on or selected (a chip, an option, a tool, a list row, the open
-panel's button) gets the class `oim-on`: a highlighted background
+chosen, switched on or selected (a chip, an option, a tool, a list row; not the
+map's icon buttons, whose open panel gets a dark ring) gets the class `oim-on`: a highlighted background
 (`--oim-on-background`), its border and text unchanged. Don't give a module its own
 `.active` or `.selected` look.
 
