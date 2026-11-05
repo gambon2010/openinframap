@@ -86,9 +86,8 @@
   border-radius: 4px;
   cursor: pointer;
 }
-.oim-ul-item:hover,
-.oim-ul-item.selected {
-  background: #fff3c4;
+.oim-ul-item:hover {
+  background: var(--oim-light-grey);
 }
 .oim-ul-thumb {
   flex: 0 0 26px;

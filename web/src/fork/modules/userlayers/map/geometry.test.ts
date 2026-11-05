@@ -10,6 +10,7 @@ import {
   resizable,
   selectionFeatures,
   visibleBox,
+  withoutMinZoom,
   sizeFromDrag,
   translateGeometry,
   vertices
@@ -192,5 +193,22 @@ describe("an image's visible part", () => {
 
   test('nothing visible: the whole image', () => {
     expect(visibleBox(new Uint8Array(64), 4, 4)).toEqual({ left: -2, top: -2, right: 2, bottom: 2 })
+  })
+})
+
+describe('copies at every zoom', () => {
+  test("the original's minimum zooms are left out, its other conditions kept", () => {
+    const filter = [
+      'any',
+      ['all', ['>', ['get', 'output'], 750], ['>', ['zoom'], 5]],
+      ['all', ['<', ['get', 'area'], 100], ['<', ['zoom'], 16]],
+      ['<=', 9, ['zoom']]
+    ]
+    expect(withoutMinZoom(filter)).toEqual([
+      'any',
+      ['all', ['>', ['get', 'output'], 750], true],
+      ['all', ['<', ['get', 'area'], 100], ['<', ['zoom'], 16]],
+      true
+    ])
   })
 })

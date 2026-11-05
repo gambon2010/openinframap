@@ -342,7 +342,7 @@ export class Outliner {
     const { name, what, detail } = featureLabelParts(feature)
     const selected = this.actions.isSelected(feature.id)
     const row = el(
-      `li.oim-ul-item${selected ? '.selected' : ''}`,
+      `li.oim-ul-item${selected ? '.oim-on' : ''}`,
       {
         draggable: this.store.view.canEditItem(layer, feature),
         'aria-selected': String(selected),
@@ -739,7 +739,7 @@ export class Outliner {
       '.oim-ul-chips.oim-ul-filters',
       FILTERS.map(([filter, label]) => {
         const on = this.filters.has(filter)
-        const b = el(`button.oim-ul-chip${on ? '.active' : ''}`, t(`userlayers.filter.${filter}`, label), {
+        const b = el(`button.oim-ul-chip${on ? '.oim-on' : ''}`, t(`userlayers.filter.${filter}`, label), {
           type: 'button',
           'aria-pressed': String(on)
         })

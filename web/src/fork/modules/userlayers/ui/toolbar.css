@@ -41,10 +41,6 @@
   background: none;
   font-size: 1.05rem;
 }
-.oim-ul-tool-icon.active {
-  background: var(--oim-light-grey);
-  box-shadow: inset 0 0 0 2px var(--oim-dark-grey);
-}
 .oim-ul-toolbar-label {
   color: var(--oim-text-color-light);
   font-size: 0.8rem;

@@ -65,7 +65,7 @@ const CONDITIONS: [string, string][] = [
 ]
 
 function chip(label: string, active: boolean, onclick: () => void, title = '') {
-  const b = el(`button.oim-ul-chip${active ? '.active' : ''}`, label, {
+  const b = el(`button.oim-ul-chip${active ? '.oim-on' : ''}`, label, {
     type: 'button',
     title,
     'aria-pressed': String(active)
@@ -233,7 +233,7 @@ export async function buildEditor(
     const ids = el('.oim-ul-frames')
     for (const id of MAIN_IDENTITIES) {
       const label = IDENTITIES.find(([c]) => c === id)?.[1] ?? id
-      const b = el(`button.oim-ul-frame${identity(sidc) === id ? '.active' : ''}`, {
+      const b = el(`button.oim-ul-frame${identity(sidc) === id ? '.oim-on' : ''}`, {
         type: 'button',
         title: t(`userlayers.affiliation.${id}`, label),
         'aria-pressed': String(identity(sidc) === id)

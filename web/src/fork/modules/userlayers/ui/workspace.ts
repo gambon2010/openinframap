@@ -126,6 +126,7 @@ export class Workspace implements IControl {
     // so the map's Shift-drag zoom, which would swallow it, stays off.
     this.map.boxZoom.disable()
     this.button.classList.toggle('oim-dock-active', open)
+    this.button.classList.toggle('oim-on', open)
     this.button.setAttribute('aria-pressed', String(open))
     if (!open) {
       this.situations.backToLive()

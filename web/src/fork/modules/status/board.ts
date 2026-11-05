@@ -133,7 +133,7 @@ export class StatusBoard {
         const look = statusLook(s)
         const on = this.filter.statuses.has(s)
         return el(
-          'button.oim-board-count' + (on ? '.on' : ''),
+          'button.oim-board-count' + (on ? '.oim-on' : ''),
           { type: 'button', title: t('board.filter-status', 'Show only these (click again: all)') },
           el('span.oim-status-dot', { style: { background: look.color } }),
           `${look.label} ${counts.get(s)}`,

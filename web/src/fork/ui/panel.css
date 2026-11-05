@@ -36,9 +36,17 @@
   color: var(--oim-text-color);
 }
 
-/* The button of the open panel. */
-.maplibregl-ctrl-group button.oim-dock-active {
-  box-shadow: inset 0 0 0 2px var(--oim-dark-grey);
+/* --- Fork-wide: something chosen, switched on or selected ---
+ * A chip or option picked, a tool or mode on, a list row selected, the open panel's
+ * button: class `oim-on`. Its background is highlighted (the map selection's yellow);
+ * its border, text and size stay as they were, so nothing moves. */
+:root {
+  --oim-on-background: #fff3c4;
+}
+html .oim-on,
+html button.oim-on,
+html .maplibregl-ctrl button.oim-on:not(:disabled):hover {
+  background-color: var(--oim-on-background);
 }
 
 /* --- Shared title bar --- */

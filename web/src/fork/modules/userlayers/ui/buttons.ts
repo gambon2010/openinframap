@@ -13,7 +13,7 @@ export function action(
   } = {}
 ): HTMLButtonElement {
   const button = el(
-    `button.oim-ul-button${options.primary ? '.primary' : ''}${options.active ? '.active' : ''}${options.className ? '.' + options.className : ''}`,
+    `button.oim-ul-button${options.primary ? '.primary' : ''}${options.active ? '.oim-on' : ''}${options.className ? '.' + options.className : ''}`,
     label,
     { type: 'button', title: options.title ?? '', disabled: options.disabled ?? false }
   ) as HTMLButtonElement

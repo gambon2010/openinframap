@@ -1,9 +1,9 @@
-/* Fork: where the cursor is, at the bottom right (coordinates/readout.ts). */
+/* Fork: where the cursor is, at the bottom left next to the scale (coordinates/readout.ts). */
 
 .maplibregl-ctrl.oim-coords {
   display: flex;
   gap: 10px;
-  margin: 0 10px 2px 0;
+  margin: 0 0 10px 10px;
   padding: 2px 6px;
   border: 0;
   border-radius: var(--oim-radius-small, 4px);
@@ -23,4 +23,14 @@
   .oim-coords-latlng {
     display: none;
   }
+}
+
+/* Beside the scale, to its right, bottoms lined up (MapLibre stacks the controls
+ * in a corner, and this one is added before the scale). */
+.maplibregl-ctrl-bottom-left:has(> .oim-coords) {
+  display: flex;
+  align-items: flex-end;
+}
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl.oim-coords {
+  order: 1;
 }

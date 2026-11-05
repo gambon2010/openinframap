@@ -64,6 +64,12 @@ Examples:
 - `leftColumn.add`;
 - the details panel's `onShow`: the route folds itself.
 
+**Styles:** panels share `ui/panel.css` (build them with `makePanel()`). Anything
+chosen, switched on or selected (a chip, an option, a tool, a list row, the open
+panel's button) gets the class `oim-on`: a highlighted background
+(`--oim-on-background`), its border and text unchanged. Don't give a module its own
+`.active` or `.selected` look.
+
 **Strings:** write `t('module.key', 'English text', values)` from `core/i18n.ts`.
 Values are never HTML-escaped, because text goes on the page as text, never through
 `innerHTML`. `npm run fork-strings` adds new keys to `en.json`, and a test fails if

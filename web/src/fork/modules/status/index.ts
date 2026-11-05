@@ -11,6 +11,7 @@ import { dock } from '../../ui/dock.ts'
 import { onLive } from '../../ui/live.ts'
 import { addLegend } from '../../ui/legend.ts'
 import { StatusBoard } from './board.ts'
+import { clickThroughStatuses } from './click.ts'
 import { SupplyMode, supplyKey } from './supply.ts'
 import { StatusMap, badgeImage, statusLayers, statusSources } from './map.ts'
 import { StatusSection, featureKey } from './details.ts'
@@ -41,6 +42,8 @@ const status: ForkModule = {
   init: (ctx) => {
     // The statuses are drawn over features: a click goes to the feature underneath.
     for (const layer of statusLayers()) delete ctx.clickRouter.handlers[layer.id]
+    // A click on a status still opens its feature, even drawn elsewhere (a point).
+    clickThroughStatuses(ctx.map, ctx.clickRouter)
     const statusMap = new StatusMap(ctx.map)
     const supply = new SupplyMode(ctx.map)
     // On a printed map, while the mode is on.

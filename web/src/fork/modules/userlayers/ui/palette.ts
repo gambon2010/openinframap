@@ -223,7 +223,7 @@ export class Palette {
   private framesRow() {
     this.frames.textContent = ''
     for (const [value, label] of AFFILIATIONS) {
-      const button = el(`button.oim-ul-frame${value === this.affiliation ? '.active' : ''}`, {
+      const button = el(`button.oim-ul-frame${value === this.affiliation ? '.oim-on' : ''}`, {
         type: 'button',
         title: t(`userlayers.affiliation.${value}`, label),
         'aria-pressed': String(value === this.affiliation)
@@ -245,7 +245,7 @@ export class Palette {
   private chipsRow() {
     this.chips.textContent = ''
     const chip = (label: string, group: string | undefined) => {
-      const button = el(`button.oim-ul-chip${this.group === group ? '.active' : ''}`, label, {
+      const button = el(`button.oim-ul-chip${this.group === group ? '.oim-on' : ''}`, label, {
         type: 'button'
       })
       button.onclick = () => {

@@ -390,7 +390,7 @@ export default class GridRouteControl implements IControl {
         const item = el(
           'li',
           {
-            class: 'oim-route-path' + (this._selected === i ? ' selected' : ''),
+            class: 'oim-route-path' + (this._selected === i ? ' oim-on' : ''),
             title: t('route.select', 'Show only this path')
           },
           el('span', {

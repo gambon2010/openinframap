@@ -193,11 +193,6 @@
   font-size: 0.85em;
 }
 
-.oim-board-count.on {
-  border-color: var(--oim-text-color);
-  font-weight: bold;
-}
-
 .oim-board-filters {
   display: flex;
   gap: 0.4em;

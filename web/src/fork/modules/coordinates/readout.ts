@@ -1,4 +1,4 @@
-// Fork: where the cursor is, at the bottom right (above the credits): latitude, longitude and the
+// Fork: where the cursor is, at the bottom left next to the scale: latitude, longitude and the
 // military grid reference (MGRS, to the metre). A click copies the grid reference.
 import { IControl, Map } from 'maplibre-gl'
 import { el } from 'redom'

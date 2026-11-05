@@ -1235,8 +1235,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 ## Measuring and grid references (SPECIFICATIONS 10.2)
 
 **Grid references** (`web/src/fork/modules/coordinates/`):
-- **Where the cursor is** (`readout.ts`), bottom right (above the credits; the left
-  side has the panels): latitude, longitude and the military grid reference (MGRS,
+- **Where the cursor is** (`readout.ts`), bottom left, to the right of the scale
+  (that corner laid out as a row, `coordinates.css`): latitude, longitude and the military grid reference (MGRS,
   to the metre; the `mgrs` package from proj4js, MIT, bundled: works offline;
   formatting in `fork/core/mgrs.ts`). Off the map: its centre. A click copies it.
 - **Search** (`mgrs.ts`, `MgrsSearch`): a grid reference typed in any usual way
@@ -1540,6 +1540,31 @@ the key opened over the buttons too; the Map sources panel was another button.
   outside closes it.
 
 ---
+
+## One look for what's on; selections and statuses (2026-11-05)
+
+- **`oim-on`** (`fork/ui/panel.css`): the one look for anything chosen, switched on
+  or selected, app-wide: a highlighted background (`--oim-on-background`, the map
+  selection's yellow), the border, text and size unchanged (nothing moves). It
+  replaces each module's own: My layers' chips (status, identity, filters,
+  palette groups), identity frames, tool and toolbar buttons, the selected item in
+  the list; the status board's counts; the grid route's chosen path; the dock's open
+  panel button (which keeps `oim-dock-active` for its code). The layer you draw
+  into keeps its blue row: it means something else ("drawing here").
+- **Range rings and measurements** selected glow under their own lines and rings
+  (`_m_highlight` in each measurement source, like graphics' `_g_highlight`;
+  `Renderer.highlightItems`), not a circle at their centre.
+- **Copies stay at every zoom** (`withoutMinZoom` in `copyLayers`): a copied
+  plant, substation or line keeps the original's look, but the original's "only
+  once zoomed in" conditions (small plants, low voltages) are left out of its
+  filter; its other ones (a point while zoomed out, the area closer) are kept.
+  Upstream's own layers still thin out when zoomed out.
+- **A click on a status opens its feature** (`modules/status/click.ts`): zoomed
+  out, a substation is drawn as a point while its status still outlines its area,
+  and a click inside the outline hit nothing. The feature is found among what's
+  drawn (same tile layer and id) and handed to the click router; the pointer is a
+  hand there.
+- **The coordinates** are next to the scale, bottom left.
 
 ## Tests
 

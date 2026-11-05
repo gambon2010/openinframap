@@ -161,6 +161,10 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.18 | Polish drawing on the map (2026-11-05): a line to the cursor while drawing; a faint preview while placing; the same hints for every tool; labels "Marker", "Line", "Area"...; the card's picture for every item; Lock in the right-click menu. | ✅ |
 | 9.19 | A graphic being drawn (an arrow...) previewed as it will look, faint, like a symbol being placed; right-click opens only the quick-actions menu, not the card. | ✅ (2026-11-05) |
 | 9.20 | Shift + scroll while placing: the item's size (an arrow being drawn: its width) instead of zooming; the same on a selected item. | ✅ (2026-11-05) |
+| 9.21 | The selection shows the item itself: a graphic, range rings or a measurement glow under their own lines, a picture or symbol gets a box fitting its image; one handle colour; items move as they're dragged, a line, area or graphic dragged by its body moves whole. | ✅ (2026-11-05) |
+| 9.22 | One look app-wide for what's chosen or on (chips, tools, selected rows): a highlighted background, the border unchanged (`oim-on`). | ✅ (2026-11-05) |
+| 9.23 | A copied feature stays visible when zoomed out, even where the original thins out. | ✅ (2026-11-05) |
+| 9.24 | A click on a feature's status outline (e.g. a substation drawn as a point when zoomed out) selects the feature; the coordinates next to the scale. | ✅ (2026-11-05) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

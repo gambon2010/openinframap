@@ -60,6 +60,7 @@ class Dock {
   private sync(entry: Docked) {
     const open = entry.panel.classList.contains('visible')
     entry.button.classList.toggle('oim-dock-active', open)
+    entry.button.classList.toggle('oim-on', open)
     entry.button.setAttribute('aria-expanded', String(open))
     if (!open) return
     for (const other of this.docked) {

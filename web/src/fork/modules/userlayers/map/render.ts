@@ -274,7 +274,7 @@ export class Renderer {
               id: `${source}_highlight`,
               type: 'line',
               source,
-              filter: this.highlightFilter(),
+              filter: this.highlightFilter('graphic'),
               layout: { 'line-join': 'round', 'line-cap': 'round' },
               paint: {
                 'line-color': HIGHLIGHT,
@@ -469,9 +469,12 @@ export class Renderer {
       if (!keys.has(key)) continue
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { zorder, minzoom, maxzoom, 'source-layer': _sourceLayer, ...rest } = original
+      // A copy stays at every zoom: the original's "only once zoomed in" conditions
+      // (small plants, low voltages) are left out; its other ones (a point while
+      // zoomed out, an area closer) are kept.
       const filter = (
         original.filter
-          ? ['all', ['==', ['get', 'copy_key'], key], original.filter]
+          ? ['all', ['==', ['get', 'copy_key'], key], withoutMinZoom(original.filter)]
           : ['==', ['get', 'copy_key'], key]
       ) as FilterSpecification
       clones.push({
@@ -633,6 +636,15 @@ export class Renderer {
     const color = ['get', 'color']
     return [
       {
+        // A selected measurement glows under its lines and rings, like a line.
+        id: `${source}_highlight`,
+        type: 'line',
+        source,
+        filter: this.highlightFilter('measure'),
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': HIGHLIGHT, 'line-width': 12, 'line-opacity': 0.6 }
+      },
+      {
         id: `${source}_fill`,
         type: 'fill',
         source,
@@ -792,24 +804,32 @@ export class Renderer {
     for (const spec of overlays) if (!map.getLayer(spec.id)) map.addLayer(spec)
   }
 
-  // The graphics highlighted: drawn from their own pieces (renderGraphics).
+  // The graphics and measurements highlighted: they glow under their own lines
+  // (renderGraphics, renderMeasures), not a shape drawn over them.
   private highlighted: string[] = []
 
-  private highlightFilter(): FilterSpecification {
-    return [
-      'all',
-      LINE_OR_POLYGON,
-      ['in', ['get', 'fid'], ['literal', this.highlighted]]
-    ] as FilterSpecification
+  /** The pieces of the highlighted items a glow goes under: a graphic's lines and
+   * outlines; a measurement's lines and rings, not its tick marks. */
+  private highlightFilter(of: 'graphic' | 'measure'): FilterSpecification {
+    const ids = ['in', ['get', 'fid'], ['literal', this.highlighted]]
+    return (of === 'graphic'
+      ? ['all', LINE_OR_POLYGON, ids]
+      : [
+          'all',
+          ['==', ['geometry-type'], 'LineString'],
+          ['!', ['has', 'tick']],
+          ids
+        ]) as unknown as FilterSpecification
   }
 
-  private highlightGraphics(features: UserFeature[]) {
-    const ids = features.filter(isGraphic).map((f) => f.id)
+  private highlightItems(features: UserFeature[]) {
+    const ids = features.filter((f) => isGraphic(f) || isMeasure(f)).map((f) => f.id)
     if (ids.join() === this.highlighted.join()) return
     this.highlighted = ids
     for (const layer of this.map.getStyle().layers) {
-      if (layer.id.startsWith('user_') && layer.id.endsWith('_g_highlight'))
-        this.map.setFilter(layer.id, this.highlightFilter())
+      if (!layer.id.startsWith('user_')) continue
+      if (layer.id.endsWith('_g_highlight')) this.map.setFilter(layer.id, this.highlightFilter('graphic'))
+      if (layer.id.endsWith('_m_highlight')) this.map.setFilter(layer.id, this.highlightFilter('measure'))
     }
   }
 
@@ -821,12 +841,10 @@ export class Renderer {
     }
     this.selected = null
     this.ensureOverlays()
-    this.highlightGraphics(features)
+    this.highlightItems(features)
     ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({
       type: 'FeatureCollection',
-      features: features.flatMap(
-        (f) => this.outline(f) ?? selectionFeatures(f).slice(0, isGraphic(f) ? 0 : 1)
-      )
+      features: features.flatMap((f) => this.outline(f) ?? selectionFeatures(f).slice(0, glows(f) ? 0 : 1))
     })
   }
 
@@ -863,7 +881,7 @@ export class Renderer {
   select(feature: UserFeature | null) {
     this.selected = feature
     this.ensureOverlays()
-    this.highlightGraphics(feature ? [feature] : [])
+    this.highlightItems(feature ? [feature] : [])
     const features = feature ? (this.outline(feature) ?? selectionFeatures(feature)) : []
     const handle = feature ? this.resizeHandle(feature) : null
     if (handle) {
@@ -1027,13 +1045,16 @@ export class Renderer {
   }
 }
 
-/** A selected feature as drawn: its shape (not a graphic's: it glows under its own
- * lines, Renderer.highlightGraphics), and its points as handles when it has more
- * than one. */
+/** Items that glow under their own lines when selected (Renderer.highlightItems)
+ * rather than have their shape drawn over them: graphics and measurements. */
+const glows = (f: UserFeature) => isGraphic(f) || isMeasure(f)
+
+/** A selected feature as drawn: its shape (unless it glows), and its points as
+ * handles when it has more than one. */
 export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
   const graphic = isGraphic(feature)
   const points = graphic ? controlPoints(feature.geometry) : vertices(feature.geometry)
-  const out: GeoJSON.Feature[] = graphic
+  const out: GeoJSON.Feature[] = glows(feature)
     ? []
     : [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
   // Arrows: the size handle, at the arrowhead's corner. Not part of the path (or of
@@ -1141,4 +1162,18 @@ export function visibleBox(rgba: ArrayLike<number>, width: number, height: numbe
     right: (x1 + 1 - width / 2) / ratio,
     bottom: (y1 + 1 - height / 2) / ratio
   }
+}
+
+const isZoom = (e: unknown) => Array.isArray(e) && e.length === 1 && e[0] === 'zoom'
+
+/** A filter with its minimum-zoom conditions (zoom > n, zoom >= n, n < zoom,
+ * n <= zoom) always true; the rest unchanged. */
+export function withoutMinZoom<T>(filter: T): T {
+  if (!Array.isArray(filter)) return filter
+  const [op, a, b] = filter as unknown[]
+  if (filter.length === 3) {
+    if ((op === '>' || op === '>=') && isZoom(a) && typeof b === 'number') return true as T
+    if ((op === '<' || op === '<=') && typeof a === 'number' && isZoom(b)) return true as T
+  }
+  return filter.map((part) => withoutMinZoom(part)) as T
 }

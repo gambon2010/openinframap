@@ -80,8 +80,7 @@
   cursor: pointer;
 }
 
-.oim-route-path:hover,
-.oim-route-path.selected {
+.oim-route-path:hover {
   background: var(--oim-light-grey);
 }
 
