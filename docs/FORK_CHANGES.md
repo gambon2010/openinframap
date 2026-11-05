@@ -1570,10 +1570,11 @@ the key opened over the buttons too; the Map sources panel was another button.
 - **Place names when zoomed in** (`modules/map-sources/labels.ts`): upstream shows
   town names up to zoom 12 and neighbourhood names at 13-14 only (online, the
   OpenStreetMap layer took over), so close in nothing said where you were. Town,
-  village and hamlet names now stay at every zoom; field and neighbourhood names
-  (OSM's place=locality, which the background map files with towns as
-  `kind_detail` "locality": "Holzweg", "Im Tal", dozens per town) only from zoom 17
-  (`LOCALITY_FILTER`, `CLOSE_ZOOM`, set on each style load).
+  village, hamlet and neighbourhood names now stay at every zoom (neighbourhoods
+  from 13). Field names are never shown: OSM's place=locality (the cadastre's
+  lieux-dits, "Holzweg", "Im Tal", dozens per village, very many in Alsace), which
+  the background map files with towns as `kind_detail` "locality"
+  (`LOCALITY_FILTER`, set on each style load).
 
 ## Tests
 
