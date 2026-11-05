@@ -215,9 +215,11 @@ export class Palette {
     }
     if (mode === 'graphics' && !this.drawable) {
       const lib = await graphicsLibrary()
+      // Every graphic in the catalogue (not a search: that leaves out second versions).
       this.drawable = new Set(
-        searchCatalogue('', 'graphics')
-          .filter(([code]) => pointCount(lib, concreteSidc(code, 'F', 'P')))
+        catalogue.groups
+          .flatMap((g) => g.symbols as Entry[])
+          .filter(([code, , , geometry]) => geometry && pointCount(lib, concreteSidc(code, 'F', 'P')))
           .map(([code]) => code)
       )
     }
