@@ -833,18 +833,23 @@ export class Renderer {
   /** A picture, symbol or marker's outline: the box around its image, on screen. */
   private outline(feature: UserFeature): GeoJSON.Feature[] | null {
     if (!resizable(feature)) return null
-    const half = this.iconHalfSize(feature)
-    if (!half) return null
+    const box = this.iconBox(feature)
+    if (!box) return null
     const size = feature.properties.size ?? 1
     const pad = 4
-    const [w, h] = [half[0] * size + pad, half[1] * size + pad]
+    const [l, t, r, b] = [
+      box.left * size - pad,
+      box.top * size - pad,
+      box.right * size + pad,
+      box.bottom * size + pad
+    ]
     const c = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
     const ring = [
-      [-w, -h],
-      [w, -h],
-      [w, h],
-      [-w, h],
-      [-w, -h]
+      [l, t],
+      [r, t],
+      [r, b],
+      [l, b],
+      [l, t]
     ].map(([x, y]) => {
       const at = this.map.unproject([c.x + x, c.y + y])
       return [at.lng, at.lat]
@@ -871,24 +876,33 @@ export class Renderer {
     ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 
-  /** Half the width and height on screen (px) of a point feature's image at size 1. */
-  iconHalfSize(feature: UserFeature): [number, number] | null {
+  // The visible part of each image (by name): see visibleBox.
+  private boxes = new Map<string, IconBox>()
+
+  /** Where a point feature's image is drawn, its empty margins left out: px from
+   * its centre at size 1. */
+  iconBox(feature: UserFeature): IconBox | null {
     const layer = [...(this.last?.layers.values() ?? [])].find((l) => l.features.has(feature.id))
     const name = iconName(feature.properties, layer?.style.color ?? DEFAULT_COLOR)
     const image = name ? this.map.getImage(name) : null
-    if (!image) return null
-    const ratio = image.pixelRatio || 1
-    return [image.data.width / ratio / 2, image.data.height / ratio / 2]
+    if (!name || !image) return null
+    const key = `${name}@${image.data.width}x${image.data.height}`
+    let box = this.boxes.get(key)
+    if (!box) {
+      box = visibleBox(image.data.data, image.data.width, image.data.height, image.pixelRatio || 1)
+      this.boxes.set(key, box)
+    }
+    return box
   }
 
   /** Where the resize handle goes: the bottom-right corner of the image. */
   private resizeHandle(feature: UserFeature): [number, number] | null {
     if (!resizable(feature)) return null
-    const half = this.iconHalfSize(feature)
-    if (!half) return null
+    const box = this.iconBox(feature)
+    if (!box) return null
     const size = feature.properties.size ?? 1
     const centre = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
-    const corner = this.map.unproject([centre.x + half[0] * size, centre.y + half[1] * size])
+    const corner = this.map.unproject([centre.x + box.right * size, centre.y + box.bottom * size])
     return [corner.lng, corner.lat]
   }
 
@@ -1096,4 +1110,35 @@ export function geometryCentre(geometry: GeoJSON.Geometry): [number, number] {
   else add(geometry.coordinates)
   if (!xs.length) return [0, 0]
   return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]
+}
+
+/** A box around an image's drawn part: px from its centre (left and top negative). */
+export interface IconBox {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+/** The box around an image's visible pixels (RGBA, alpha over a small threshold),
+ * in px from its centre on screen; the whole image when nothing is visible. */
+export function visibleBox(rgba: ArrayLike<number>, width: number, height: number, ratio = 1): IconBox {
+  let [x0, y0, x1, y1] = [width, height, -1, -1]
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (rgba[(y * width + x) * 4 + 3] > 16) {
+        if (x < x0) x0 = x
+        if (x > x1) x1 = x
+        if (y < y0) y0 = y
+        if (y > y1) y1 = y
+      }
+    }
+  }
+  if (x1 < 0) [x0, y0, x1, y1] = [0, 0, width - 1, height - 1]
+  return {
+    left: (x0 - width / 2) / ratio,
+    top: (y0 - height / 2) / ratio,
+    right: (x1 + 1 - width / 2) / ratio,
+    bottom: (y1 + 1 - height / 2) / ratio
+  }
 }

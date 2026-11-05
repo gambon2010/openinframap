@@ -1421,7 +1421,10 @@ symbol code, not the kind).
   selected `fid`s: `Renderer.highlightGraphics`), not a line through its control
   points; a picture, symbol or marker gets a thin box around its image
   (`Renderer.outline`, worked out on screen like the resize handle) instead of a
-  circle. Every handle (points, size, an arrow's width) is the same yellow.
+  circle; the box and the resize handle fit the image's visible pixels, its empty
+  margins left out (`visibleBox`, cached per image: a hostile diamond's square
+  image is mostly empty).
+  Every handle (points, size, an arrow's width) is the same yellow.
 - **Dragging moves the item**, not only its highlight: every drag (a point, an
   item's point, a size, a width) redraws it as it goes (`renderer.preview`); it's
   saved on mouseup as before.

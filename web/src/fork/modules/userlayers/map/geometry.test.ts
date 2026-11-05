@@ -9,6 +9,7 @@ import {
   moveVertex,
   resizable,
   selectionFeatures,
+  visibleBox,
   sizeFromDrag,
   translateGeometry,
   vertices
@@ -170,5 +171,26 @@ describe('copy and paste', () => {
     const [cx, cy] = geometryCentre(line)
     const pasted = translateGeometry(line, 5 - cx, 5 - cy)
     expect(geometryCentre(pasted)).toEqual([5, 5])
+  })
+})
+
+describe("an image's visible part", () => {
+  // 4×4, one visible pixel block at x 2..3, y 1..2.
+  const rgba = new Uint8Array(4 * 4 * 4)
+  for (const [x, y] of [
+    [2, 1],
+    [3, 1],
+    [2, 2],
+    [3, 2]
+  ])
+    rgba[(y * 4 + x) * 4 + 3] = 255
+
+  test('the box around the pixels drawn, from the centre', () => {
+    expect(visibleBox(rgba, 4, 4)).toEqual({ left: 0, top: -1, right: 2, bottom: 1 })
+    expect(visibleBox(rgba, 4, 4, 2)).toEqual({ left: 0, top: -0.5, right: 1, bottom: 0.5 })
+  })
+
+  test('nothing visible: the whole image', () => {
+    expect(visibleBox(new Uint8Array(64), 4, 4)).toEqual({ left: -2, top: -2, right: 2, bottom: 2 })
   })
 })

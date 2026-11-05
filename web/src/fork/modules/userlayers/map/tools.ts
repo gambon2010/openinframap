@@ -458,15 +458,15 @@ export class Tools {
       return
     // The resize handle of a picture, symbol or marker.
     if (this.handleAt(e.point, 'user_selection_resize')) {
-      const half = this.renderer.iconHalfSize(feature)
-      if (half) {
+      const box = this.renderer.iconBox(feature)
+      if (box) {
         e.preventDefault()
         this.map.dragPan.disable()
         const centre = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
         this.dragging = {
           feature: structuredClone(feature),
           layerId: layer.id,
-          resize: { x: centre.x, y: centre.y, distanceAtSize1: Math.hypot(half[0], half[1]) }
+          resize: { x: centre.x, y: centre.y, distanceAtSize1: Math.hypot(box.right, box.bottom) }
         }
         return
       }
