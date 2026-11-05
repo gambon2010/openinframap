@@ -34,7 +34,8 @@ describe('the catalogue', () => {
 
   test('has symbols and tactical graphics', () => {
     expect(searchCatalogue('', 'symbols').length).toBeGreaterThan(1400)
-    expect(searchCatalogue('', 'graphics').length).toBeGreaterThan(200)
+    // 216 in the source, less the 17 rectangular ones (need a width: removed).
+    expect(searchCatalogue('', 'graphics').length).toBeGreaterThan(190)
   })
 })
 

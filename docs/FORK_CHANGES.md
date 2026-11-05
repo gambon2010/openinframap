@@ -1329,6 +1329,16 @@ others, and its points are moved like a drawing's.
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## Rectangular fire support areas removed (2026-11-05)
+
+The 17 "…, rectangular" graphics (FSA, ACA, FFA, NFA, RFA, PAA, sensor zone, DA,
+ZOR, TBA, TVAR, ATI zone, call for fire zone, censor zone, CFZ, blue and purple kill
+boxes) need a width in metres besides their two points, which the drawing tool never
+asks for: the renderer refused them ("requires a modifiers object that has 1
+distance/AM value") and nothing was placed. Removed from `model/symbols-2525c.json`:
+the irregular versions draw a rectangle just as well (four points). The position
+area for artillery (PAA) had only the rectangular one, so it's gone.
+
 ## Plain labels on tactical graphics (2026-11-05)
 
 The renderer writes the standard's text on 110 graphics, and several share a letter
