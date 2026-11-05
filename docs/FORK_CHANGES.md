@@ -193,6 +193,12 @@ upstream's own `web-backend/Dockerfile`.
 - `pool_pre_ping=True` on the database engine (`web-backend/src/main.py`): a backend
   running on the host survives the database being rebuilt or re-imported underneath
   it. Before, the first request afterwards failed.
+- **Start order** (2026-11-05, `docker-compose.override.yml`): the database has a
+  health check (`pg_isready` over TCP, which only answers once its first-start setup
+  is done); Tegola and the backend wait for it (`depends_on: condition:
+  service_healthy`). Tegola connects once at start and exits if it can't: started
+  together with the database it used to stay down. It also restarts by itself up
+  to 5 times (`restart: on-failure:5`).
 
 ---
 

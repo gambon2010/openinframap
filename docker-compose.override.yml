@@ -13,11 +13,26 @@ services:
     volumes:
       - ./schema/dev-init.sql:/docker-entrypoint-initdb.d/90-dev-init.sql:z
       - ./schema/functions.sql:/docker-entrypoint-initdb.d/91-functions.sql:z
+    # Ready once it answers over TCP (during its first-start setup it only listens
+    # on its socket): the services below wait for this rather than racing it.
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
 
   tegola:
     # 7800 rather than upstream's 8080 (often taken); !override replaces the list.
     ports: !override
       - "127.0.0.1:7800:80"
+    # Tegola connects to the database once, at start, and exits if it can't (it
+    # did when started together with it): it waits for the database to be ready,
+    # and tries again a few times if it still fails.
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure:5
 
   # Web backend (stats pages, search, Wikidata popups). The image has its own
   # Python and packages, so it also runs on a computer without internet once
@@ -40,7 +55,8 @@ services:
       - ./data/images:/data/images:z
       - ./data/wikidata_json:/data/wikidata_json:z
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   # Offline background map: serves data/basemap/<region>.pmtiles (Protomaps
   # extracts made by scripts/build-region.sh) at
