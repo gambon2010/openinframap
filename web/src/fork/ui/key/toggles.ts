@@ -31,7 +31,7 @@ export function keySprite(name: string, size = 25): HTMLElement {
 }
 
 /** What unticking an upstream row hides, from its swatch. */
-function swatchSpec(swatch: Element | null): HideSpec | undefined {
+export function swatchSpec(swatch: Element | null): HideSpec | undefined {
   if (!swatch) return undefined
   const data = (swatch as HTMLElement).dataset ?? {}
   if (data.icon) return { icon: data.icon }

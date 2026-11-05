@@ -13,7 +13,8 @@ import { Interactions } from './map/interactions.ts'
 import { addLegend } from '../../ui/legend.ts'
 import { userLegend } from './map/legend.ts'
 import { mapMode } from '../../ui/map-mode.ts'
-import { layerOrder } from './ui/outliner.ts'
+import { layerOrder, sortLayers } from './ui/outliner.ts'
+import { LngLatBounds } from 'maplibre-gl'
 
 const userlayers: ForkModule = {
   init: ({ map, primaryLayers }) => {
@@ -47,15 +48,25 @@ const userlayers: ForkModule = {
       // The selection may have been deleted or changed.
       tools.refreshSelection()
     })
-    // On a printed map: the layers shown and the symbols in view.
-    addLegend(() =>
-      userLegend(
+    // On a printed map: each layer shown, with what of it is in the printed area
+    // (in the list's order).
+    addLegend((map, area) => {
+      const corners = [
+        map.unproject([area.x, area.y]),
+        map.unproject([area.x + area.w, area.y]),
+        map.unproject([area.x, area.y + area.h]),
+        map.unproject([area.x + area.w, area.y + area.h])
+      ]
+      const bounds = new LngLatBounds(corners[0], corners[0])
+      for (const c of corners) bounds.extend(c)
+      const layers = sortLayers(
         [...(store.view.past ?? store.layers).values()].filter(
           (l) => store.view.past || !store.hidden.has(l.id)
         ),
-        map.getBounds()
+        layerOrder([...store.layers.values()], store.personal)
       )
-    )
+      return userLegend(layers, bounds)
+    })
     void store.load()
     void store.personal.load()
     // Others' saved changes, as they come (docs/plans/sync.md, phase 4).

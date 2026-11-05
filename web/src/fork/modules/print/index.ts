@@ -10,6 +10,7 @@ import { t } from '../../core/i18n.ts'
 import { author } from '../../core/author.ts'
 import { makePanel } from '../../ui/panel.ts'
 import { addLegend } from '../../ui/legend.ts'
+import { keyLegend } from '../../ui/key/legend.ts'
 import { printMap } from './pdf.ts'
 import { Orientation, Paper, mapBox, pageSize, printedArea } from './layout.ts'
 import { PrintFrame } from './frame.ts'
@@ -26,16 +27,9 @@ function remembered(): string {
 }
 
 const print: ForkModule = {
-  init: ({ map, layerSwitcher }) => {
-    // The legend starts with the map's layers that are on (their names).
-    addLegend(() => {
-      const visible = new Set(layerSwitcher._visible)
-      const titles = layerSwitcher._layers
-        .flatMap((item) => ('layers' in item ? item.layers : [item]))
-        .filter((layer) => visible.has(layer.id))
-        .map((layer) => ({ label: layer.title }))
-      return [{ title: t('print.map-layers', 'Map layers shown'), entries: titles }]
-    })
+  init: ({ map }) => {
+    // The legend starts with the key's rows of what's in the printed area.
+    addLegend((map, area) => keyLegend(map, area))
     const title = el('input', {
       type: 'text',
       value: remembered() || t('print.default-title', 'Open Infrastructure Map')

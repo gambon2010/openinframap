@@ -200,6 +200,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.7b | Unsaved changes kept in the browser whatever their size (big imports), with a warning if they can't be. | ✅ IndexedDB (`state/local.ts`) (2026-11-02) |
 | 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | ✅ My layers' Import / Export (`userlayers/io/`), "print" in the header (`fork/modules/print/`) (2026-11-01) |
 | 10.7c | The printed map fills the page (margins only what printers need), the legend in the room left: a box over the map's corner; a frame on screen shows what's printed. | ✅ (2026-11-05) |
+| 10.7d | The printed legend explains what's on the page: the key's rows for the infrastructure there; My layers by layer name, each item with its own picture (graphics drawn small). | ✅ (2026-11-05) |
 | 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |
 | 10.9 | Buildings: show building outlines on the map (a layer to switch on); copy chosen buildings' outlines into My layers. | 🗂 (asked 2026-11-05) |
 

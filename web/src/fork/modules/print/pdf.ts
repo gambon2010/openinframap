@@ -38,7 +38,7 @@ export async function printMap(map: Map, options: PrintOptions) {
   const [{ jsPDF }, picture, sections] = await Promise.all([
     import('jspdf'),
     capture(map, area, ratio),
-    options.legend ? legendSections(map) : Promise.resolve([])
+    options.legend ? legendSections(map, area) : Promise.resolve([])
   ])
   const pdf = new jsPDF({ orientation: options.orientation, unit: 'mm', format: options.paper })
   const now = new Date()

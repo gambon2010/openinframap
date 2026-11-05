@@ -51,6 +51,15 @@ export interface InfoContent {
   credits: string
 }
 
+/** Text the PDF's built-in fonts can write (they have no ≥, ≤, −...). */
+export function printable(text: string): string {
+  return text
+    .replace(/≥/g, '>=')
+    .replace(/≤/g, '<=')
+    .replace(/−/g, '-')
+    .replace(/[\u2009\u202f]/g, ' ')
+}
+
 /** Points to millimetres, for line heights. */
 const PT = 0.3528
 
@@ -86,6 +95,7 @@ function layOutInfo(
   let y = box.y + INFO_PADDING
   const text = (lines: string[], size: number, style: string, colour: number, at = x) => {
     pdf.setFont('helvetica', style).setFontSize(size).setTextColor(colour)
+    lines = lines.map(printable)
     if (draw) pdf.text(lines, at, y + size * PT * 0.8)
     y += lines.length * size * PT * 1.2
   }
@@ -124,7 +134,7 @@ function layOutInfo(
     for (const [i, entry] of section.entries.entries()) {
       // No swatch (a layer's name): the text from the left.
       const indent = (entry.svg && pictures.get(entry.svg)) || entry.colour ? 9 : 0
-      const lines: string[] = pdf.splitTextToSize(entry.label, w - indent)
+      const lines: string[] = pdf.splitTextToSize(printable(entry.label), w - indent)
       const h = Math.max(4.2, lines.length * 7 * PT * 1.2 + 1)
       if (y + h > legendBottom) {
         const left = rowsLeft() - i

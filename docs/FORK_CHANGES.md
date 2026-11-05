@@ -1329,6 +1329,26 @@ others, and its points are moved like a drawing's.
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## The printed legend: what's on the page (2026-11-05)
+
+It listed the layer switcher's names (Labels, Borders), a colour square per My
+layers layer, and graphics as a line in the layer's colour: none of it explained
+the map.
+- **The key, only what's on the page** (`fork/ui/key/legend.ts` `keyLegend`): the Key
+  panel's rows (upstream's and the modules', read from its DOM: label, swatch, and
+  what it draws, `swatchSpec` / `data-hide`), kept when a feature they draw is drawn
+  in the printed area (`specConditions`, moved out of `FeatureHider`, turned into a
+  `queryRenderedFeatures` filter over the area), under the Key's own headings, with
+  their swatches (inline SVG, sprites fetched).
+- **My layers by layer** (`userlayers/map/legend.ts`): a section per layer shown, by
+  its name, in the list's order, listing what of it is in the printed area, each kind
+  once: a unit's symbol, a graphic drawn small by the real renderer from made-up
+  points in its usual shape (`map/graphic-svg.ts`; in its own colour, else the
+  renderer's, as on the map), lines, areas and markers in their colour by name.
+  Copies are left to the key; pictures and measurements explain themselves.
+- Legend sources get the printed area (`addLegend((map, area) => …)`).
+- The PDF's built-in font has no ≥ or ≤: written >= and <= (`printable`).
+
 ## Three-point graphics drawn square (2026-11-05)
 
 Of the 31 graphics in the catalogue drawn from exactly three points, the renderer
