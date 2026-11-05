@@ -1338,7 +1338,8 @@ of ours, G*F*ACPI ("Position area for artillery (paa)"), which `toDCode`
 (`map/graphics.ts`, `BEYOND_C`) turns into 2525D's irregular PAA: the irregular fire
 support area's code (G*F*ACSI, for the affiliation and status) with its entity
 swapped. Note: G*F*ACPI isn't a real 2525C code, for anything exported to other
-systems. The renderer writes "PAA" on every side of it: written once (`ONE_LABEL`).
+systems. The renderer writes "PAA" on every side, as the standard's template does
+(readable whatever part of a large area is in view): kept.
 
 ## One graphic, two versions (2026-11-06)
 

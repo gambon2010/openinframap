@@ -269,7 +269,7 @@ describe('beyond 2525C', () => {
       ],
       scale: mapScale(12, 48.58)
     })
-    // Once, not on every side.
-    expect(pieces.filter((p) => p.properties?.label === 'PAA').length).toBe(1)
+    // On every side, as the renderer draws it (readable whatever part is in view).
+    expect(pieces.filter((p) => p.properties?.label === 'PAA').length).toBe(4)
   })
 })
