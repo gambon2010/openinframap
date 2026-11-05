@@ -7,9 +7,8 @@ import { t } from '../../core/i18n.ts'
 import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 
 export class CoordinatesReadout implements IControl {
-  // Its tooltip (coordinates.css, data-tip): shown at once on hover, unlike a title.
   private el = el('div.maplibregl-ctrl.oim-coords', {
-    'data-tip': t('measure.copy-mgrs-key', 'G (with the pointer on the map): copy the grid reference there')
+    title: t('measure.copy-grid-tip', 'G: copy grid at pointer')
   })
   private latLng = el('span.oim-coords-latlng')
   private mgrs = el('span.oim-coords-mgrs')

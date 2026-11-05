@@ -11,6 +11,7 @@ import { BackendSearchResult, ForkContext, ForkModule } from './types.ts'
 import { extendKey } from './ui/key/toggles.ts'
 import { leftColumn } from './ui/left-column.ts'
 import { mapMode } from './ui/map-mode.ts'
+import { tooltips } from './ui/tooltip.ts'
 import extra from './modules/extra/index.ts'
 import sites from './modules/sites/index.ts'
 import search from './modules/search/index.ts'
@@ -74,6 +75,8 @@ export function forkInit(ctx: ForkContext) {
   leftColumn.attach(ctx.map)
   // Who has the map (measuring, drawing), before the modules that take it.
   mapMode.install(ctx.map, ctx.clickRouter)
+  // One tooltip for every title on the page.
+  tooltips.install()
   for (const m of MODULES) m.init?.(ctx)
 }
 

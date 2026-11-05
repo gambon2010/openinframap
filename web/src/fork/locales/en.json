@@ -784,7 +784,7 @@
     "west": "west",
     "north-magnetic-note": "Magnetic north here: {{angle}} {{side}} of true north (WMM2025, today).",
     "north-grid-note": "Grid north here: {{angle}} {{side}} of true north (UTM/MGRS).",
-    "copy-mgrs-key": "G (with the pointer on the map): copy the grid reference there"
+    "copy-grid-tip": "G: copy grid at pointer"
   },
   "print": {
     "default-title": "Open Infrastructure Map",

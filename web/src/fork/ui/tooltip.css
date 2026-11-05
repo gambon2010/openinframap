@@ -1,0 +1,19 @@
+/* Fork: the page's tooltip (ui/tooltip.ts). */
+.oim-tooltip {
+  position: fixed;
+  z-index: 10000;
+  display: none;
+  max-width: 280px;
+  padding: 4px 8px;
+  border-radius: var(--oim-radius-small, 3px);
+  background: #222;
+  color: #fff;
+  font:
+    12px/1.4 system-ui,
+    sans-serif;
+  white-space: pre-line;
+  pointer-events: none;
+}
+.oim-tooltip.visible {
+  display: block;
+}

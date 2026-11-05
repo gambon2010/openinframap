@@ -14,22 +14,6 @@
     monospace;
 }
 
-/* Its tooltip: drawn here, shown as soon as the pointer is on it (a title waits
- * for the pointer to rest, and often didn't show). */
-.oim-coords:hover::before {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  padding: 4px 8px;
-  border-radius: var(--oim-radius-small, 4px);
-  background: #222;
-  color: #fff;
-  font: 12px/1.4 sans-serif;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 .oim-coords.copied .oim-coords-mgrs::after {
   content: ' ✓';
 }

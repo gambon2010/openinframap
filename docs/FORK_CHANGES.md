@@ -1241,8 +1241,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   to the metre; the `mgrs` package from proj4js, MIT, bundled: works offline;
   formatting in `fork/core/mgrs.ts`). Off the map: its centre. **G** copies the grid reference under the cursor (the
   pointer stays where it is; not while typing in a field), which the readout's tooltip says
-  (drawn in CSS, shown at once on hover: a `title` waited for the pointer to rest
-  and often didn't show); clicking it does nothing.
+  ("G: copy grid at pointer", the page's tooltip: `ui/tooltip.ts`); clicking it does
+  nothing.
 - **Search** (`mgrs.ts`, `MgrsSearch`): a grid reference typed in any usual way
   ("32TLT7257789913", "32T LT 725 899") goes to the centre of the square it names.
   Search providers come from the modules (`searchProviders` hook,
@@ -1328,6 +1328,19 @@ others, and its points are moved like a drawing's.
 - MGRS formatting moved to `fork/core/mgrs.ts` (used by measure and print).
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
+
+## One tooltip for the page (2026-11-05)
+
+The browser's tooltips (`title`) wait for the pointer to rest, often didn't show
+(the coordinates' "press G"), and look like nothing else here. `fork/ui/tooltip.ts`
+(installed by `forkInit`) shows every title on the page, the fork's, upstream's and
+MapLibre's, as one tooltip of its own: the title moves to `data-tip` when the pointer
+first comes (an icon-only control keeps it as its `aria-label`); shown after 350 ms,
+at once when going from one control to the next; below the element, above if there's
+no room, kept on screen (`placeTip`); hidden on a click, a key, a scroll or the wheel;
+on keyboard focus too; from where the pointer is (`elementFromPoint`: disabled
+buttons send no pointer events). The coordinates' tooltip: "G: copy grid at pointer"
+(its CSS one removed).
 
 ## The printed legend: what's on the page (2026-11-05)
 

@@ -68,7 +68,9 @@ Examples:
 chosen, switched on or selected (a chip, an option, a tool, a list row; not the
 map's icon buttons, whose open panel gets a dark ring) gets the class `oim-on`: a highlighted background
 (`--oim-on-background`), its border and text unchanged. Don't give a module its own
-`.active` or `.selected` look.
+`.active` or `.selected` look. Tooltips: give the element a `title`; `ui/tooltip.ts`
+shows it as the page's own tooltip (never the browser's), for every title on the
+page, upstream's included.
 
 **Strings:** write `t('module.key', 'English text', values)` from `core/i18n.ts`.
 Values are never HTML-escaped, because text goes on the page as text, never through
