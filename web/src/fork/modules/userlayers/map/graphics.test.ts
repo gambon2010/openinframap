@@ -15,6 +15,7 @@ import {
   pointCount,
   renderGraphic,
   isSquare,
+  SQUARE,
   squareUp,
   toDCode
 } from './graphics.ts'
@@ -185,11 +186,44 @@ describe('three-point graphics drawn square', () => {
     }
   })
 
-  test('Disrupt: the arrow from the first point, square to the base', () => {
-    for (const sidc of ['GFTPT----------', 'GFMPOED--------']) {
-      const p3 = squareUp(sidc, [a, b, skewed])[2]
-      expect(Math.abs(dot(metres(p3, a), metres(b, a)))).toBeLessThan(1e-6)
+  test('Disrupt: on the perpendicular through one end (the task: the second)', () => {
+    const task = squareUp('GFTPT----------', [a, b, skewed])[2]
+    expect(Math.abs(dot(metres(task, b), metres(b, a)))).toBeLessThan(1e-6)
+    const obstacle = squareUp('GFMPOED--------', [a, b, skewed])[2]
+    expect(Math.abs(dot(metres(obstacle, a), metres(b, a)))).toBeLessThan(1e-6)
+  })
+
+  // Through the real renderer: whatever each graphic's points mean, once squared up
+  // its main stroke (stem, arrows, sides: the longest line not along the base) is at
+  // a right angle to the base.
+  test.each(Object.keys(SQUARE))('%s drawn square', (key) => {
+    const rule = SQUARE[key]
+    const sidc = (key.slice(0, 1) + 'F' + key.slice(2, 3) + 'P' + key.slice(4)).padEnd(15, '-')
+    const raw: [number, number][] = []
+    raw[rule.base[0]] = a
+    raw[rule.base[1]] = b
+    raw[rule.free] = skewed
+    const points = squareUp(sidc, raw)
+    const pieces = renderGraphic(lib, { sidc, points, scale: mapScale(13, 48.58) })
+    const base = metres(b, a)
+    const baseLength = Math.hypot(base[0], base[1])
+    let best = { length: 0, cos: 1 }
+    for (const piece of pieces) {
+      const g = piece.geometry
+      const lines =
+        g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : []
+      for (const line of lines) {
+        for (let i = 1; i < line.length; i++) {
+          const d = metres(line[i], line[i - 1])
+          const length = Math.hypot(d[0], d[1])
+          const cos = Math.abs(dot(d, base)) / (length * baseLength)
+          if (cos < Math.cos((10 * Math.PI) / 180) && length > best.length) best = { length, cos }
+        }
+      }
     }
+    expect(best.length).toBeGreaterThan(0)
+    // Within a degree of a right angle.
+    expect(best.cos).toBeLessThan(Math.sin(Math.PI / 180))
   })
 
   test('Ambush and attack by fire position: the first point (the arrow tip) moves', () => {

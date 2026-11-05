@@ -1334,8 +1334,9 @@ Bypass. Checked one by one (each drawn with its third point skewed):
 - **Square, third point on the perpendicular through the middle of points 1-2**:
   Block (task and obstacle effect), Penetrate, Contain, Clear, Breach, Bypass (and
   easy, difficult, impossible), Canalize.
-- **Disrupt** (task and obstacle effect): point 3 is the tip of the arrow from point
-  1, on the perpendicular through point 1.
+- **Disrupt**: its arrows run along the line from one end of the base to point 3
+  (the task: from point 2; the obstacle effect: from point 1): point 3 on the
+  perpendicular through that end.
 - **Ambush, Attack by fire position**: point 1 (the arrow's tip) on the perpendicular
   through the middle of points 2-3.
 - Left free (their angle means something, or the renderer already fixes it):
@@ -1347,6 +1348,11 @@ free point onto the perpendicular, keeping its distance from the base. Used whil
 drawing (the preview and the stored points), when a point is dragged (the free one
 stays on the perpendicular, or follows when the base moves), for the handles, and
 when drawing on the map, so items drawn before are square too.
+Each graphic's points mean something of their own (the standard's, per graphic), so
+there's no one rule: `graphics.test.ts` draws every graphic in `SQUARE` through the
+real renderer with its free point skewed, squares it up, and checks its main stroke
+(the longest line not along the base) is at a right angle to the base. (The task
+Disrupt was first squared through point 1: that check fails on it.)
 
 ## Printing reworked: the map fills the page (2026-11-05)
 

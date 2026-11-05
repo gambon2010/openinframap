@@ -245,11 +245,11 @@ export function colour(value: unknown): string | null {
 /**
  * Three-point graphics drawn square: a base between two points and the third on the
  * perpendicular through its middle (Block, Contain, Clear, Breach, Bypass...; Disrupt:
- * through its first point): where
+ * through one end): where
  * the third point goes, which two make the base. 2525C codes, affiliation and status
  * left out (positions 1 and 3). Others take their points as they are.
  */
-const SQUARE: Record<string, { base: [number, number]; free: number; through?: number }> = {}
+export const SQUARE: Record<string, { base: [number, number]; free: number; through?: number }> = {}
 for (const code of [
   'G*T*B', // Block
   'G*M*OEB', // Block (obstacle effect)
@@ -264,8 +264,10 @@ for (const code of [
   'G*T*C' // Canalize
 ])
   SQUARE[code] = { base: [0, 1], free: 2 }
-// Disrupt: the third point is the tip of the arrow from the first, square to the base.
-for (const code of ['G*T*T', 'G*M*OED']) SQUARE[code] = { base: [0, 1], free: 2, through: 0 }
+// Disrupt: its arrows run along the line from one of the base's ends to the third
+// point (the task: from the second; the obstacle effect: from the first).
+SQUARE['G*T*T'] = { base: [0, 1], free: 2, through: 1 }
+SQUARE['G*M*OED'] = { base: [0, 1], free: 2, through: 0 }
 for (const code of [
   'G*G*SLA', // Ambush: the arc's ends, the arrow's tip
   'G*G*OAF' // Attack by fire position: the base's ends, the arrow's tip
