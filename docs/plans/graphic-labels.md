@@ -90,7 +90,7 @@ French notes:
 
 | Graphic                             | Standard     | English | French name                                       | French |
 |-------------------------------------|--------------|---------|---------------------------------------------------|--------|
-| Bearing line                        | B            | BL      | Ligne de relèvement (agreed)                      | AZIMUT |
+| Bearing line                        | B            | BRG     | Ligne de relèvement (agreed)                      | AZIMUT |
 | Bridgehead                          | B            | BRHD    | Tête de pont ✓                                    | TDP    |
 | Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)                            | L BO   |
 | Line of departure                   | LD           | LD      | Ligne de débouché ✓                               | LD     |
