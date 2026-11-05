@@ -1390,6 +1390,12 @@ symbol code, not the kind).
 - **While drawing** a line, an area or a graphic, a dashed line goes on to the cursor
   (an area: and back to its start), without a point at the cursor
   (`Renderer.draft(points, closed, cursor)`).
+- **A graphic being drawn** (an arrow, a boundary...) shows as it will look once
+  done, faint, through the points so far and the cursor, once it has enough points
+  for a shape (an arrow: two): the same drawing as finished graphics
+  (`Renderer.graphicDraft`, `graphicSpecs` with an opacity), at most once per frame.
+- **Right-click** opens only the quick-actions menu: the item isn't selected and its
+  card stays closed (Rename opens it; Delete deletes that item).
 - **While placing** a marker, a symbol or a picture, it shows faint under the cursor
   (`Renderer.ghost`, an overlay kept with the draft); range rings show as a draft.
   Both go when the mouse leaves the map or the tool changes.

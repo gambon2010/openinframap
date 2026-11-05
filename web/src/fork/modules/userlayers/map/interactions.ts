@@ -98,8 +98,9 @@ export class Interactions {
     e.preventDefault()
     e.originalEvent.preventDefault()
     this.tooltip.classList.remove('visible')
+    // Only the quick actions: the item isn't selected (its card stays closed; Rename
+    // opens it).
     const { feature, layerId } = item
-    this.tools.select(feature.id)
     const locked = !this.store.view.canEditItem(this.store.layers.get(layerId), feature)
     const entry = (label: string, onclick: () => void, disabled = false) => {
       const b = el('button', label, { type: 'button', disabled }) as HTMLButtonElement
@@ -167,7 +168,7 @@ export class Interactions {
           : entry(t('userlayers.lock-item', '🔒 Lock'), () => update({ locked: true }))
       )
     }
-    items.push(entry(t('userlayers.delete', 'Delete'), () => this.tools.deleteSelected(), locked))
+    items.push(entry(t('userlayers.delete', 'Delete'), () => this.store.deleteFeatures([feature.id]), locked))
     this.menu.replaceChildren(...items)
     // Keep it inside the map.
     const box = this.map.getContainer().getBoundingClientRect()

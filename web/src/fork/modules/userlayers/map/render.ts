@@ -40,6 +40,8 @@ const DRAFT = 'user_draft'
 // What a placing tool would put down, faint under the cursor ("user_draft…": kept
 // with the draft when the map's layers are tidied).
 const GHOST = 'user_draft_ghost'
+// A graphic being drawn, as it will look (faint).
+const GRAPHIC_DRAFT = 'user_draft_graphic'
 
 function sourceId(layerId: string) {
   return `user_${layerId}`
@@ -83,6 +85,15 @@ const OWN: FilterSpecification = [
 
 /** Drawn by the tactical graphics renderer (graphics.ts). */
 const isGraphic = (f: UserFeature) => kindOf(f.properties).drawn === 'graphic'
+
+/** A graphic being drawn (Renderer.graphicDraft). */
+export interface GraphicDraft {
+  sidc: string
+  points: [number, number][]
+  /** An arrow: the points are its path (its width follows from them). */
+  axis?: boolean
+  colour: string
+}
 
 function graphicsSourceId(layerId: string) {
   return `user_${layerId}_g`
@@ -243,14 +254,20 @@ export class Renderer {
   }
 
   private graphicLayers(layer: UserLayer): LayerSpecification[] {
-    const source = graphicsSourceId(layer.id)
+    return this.graphicSpecs(graphicsSourceId(layer.id), layer.style.color ?? DEFAULT_COLOR)
+  }
+
+  /** The map layers a graphic's pieces are drawn with (graphics.ts renderGraphic):
+   * fills, a casing, lines in their colour (else `colour`), labels; faint for a
+   * preview (opacity). */
+  private graphicSpecs(source: string, colour: string, opacity = 1): LayerSpecification[] {
     return [
       {
         id: `${source}_fill`,
         type: 'fill',
         source,
         filter: ['all', POLYGON, ['!=', ['get', 'fill'], null]],
-        paint: { 'fill-color': ['get', 'fill'], 'fill-opacity': ['get', 'fillOpacity'] }
+        paint: { 'fill-color': ['get', 'fill'], 'fill-opacity': ['*', ['get', 'fillOpacity'], opacity] }
       },
       {
         id: `${source}_casing`,
@@ -261,7 +278,7 @@ export class Renderer {
         paint: {
           'line-color': ['get', 'casing'],
           'line-width': ['+', ['get', 'width'], 2],
-          'line-opacity': 0.8
+          'line-opacity': 0.8 * opacity
         }
       },
       {
@@ -271,8 +288,9 @@ export class Renderer {
         filter: LINE_OR_POLYGON,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': ['coalesce', ['get', 'stroke'], layer.style.color ?? DEFAULT_COLOR],
-          'line-width': ['get', 'width']
+          'line-color': ['coalesce', ['get', 'stroke'], colour],
+          'line-width': ['get', 'width'],
+          'line-opacity': opacity
         }
       },
       {
@@ -292,7 +310,8 @@ export class Renderer {
         paint: {
           'text-color': ['get', 'color'],
           'text-halo-color': ['coalesce', ['get', 'halo'], '#ffffff'],
-          'text-halo-width': 2
+          'text-halo-width': 2,
+          'text-opacity': opacity
         }
       }
     ] as LayerSpecification[]
@@ -843,9 +862,57 @@ export class Renderer {
     ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 
+  /** A graphic being drawn (an arrow, a boundary...), as it will look once done,
+   * faint: its points so far and the cursor. Drawn once per frame at most (the
+   * graphic is computed again as the mouse moves); null: none. */
+  graphicDraft(draft: GraphicDraft | null) {
+    this.pendingGraphic = draft
+    if (this.graphicFrame) return
+    this.graphicFrame = requestAnimationFrame(() => {
+      this.graphicFrame = 0
+      void this.drawGraphicDraft()
+    })
+  }
+
+  private pendingGraphic: GraphicDraft | null = null
+  private graphicFrame = 0
+
+  private async drawGraphicDraft() {
+    const draft = this.pendingGraphic
+    const map = this.map
+    this.ensureOverlays()
+    if (!map.getSource(GRAPHIC_DRAFT)) {
+      map.addSource(GRAPHIC_DRAFT, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      for (const spec of this.graphicSpecs(GRAPHIC_DRAFT, DEFAULT_COLOR, 0.6)) map.addLayer(spec)
+    }
+    const source = map.getSource(GRAPHIC_DRAFT) as GeoJSONSource
+    if (!draft) {
+      source.setData({ type: 'FeatureCollection', features: [] })
+      return
+    }
+    // In the colour of the layer it goes into.
+    map.setPaintProperty(`${GRAPHIC_DRAFT}_line`, 'line-color', ['coalesce', ['get', 'stroke'], draft.colour])
+    const lib = await graphicsLibrary()
+    if (this.pendingGraphic !== draft) return // something newer
+    const bounds = map.getBounds()
+    let pieces: GeoJSON.Feature[] = []
+    try {
+      pieces = renderGraphic(lib, {
+        sidc: draft.sidc,
+        points: draft.axis ? axisControlPoints(draft.points, axisWidth(draft.points)) : draft.points,
+        modifiers: {},
+        scale: mapScale(map.getZoom(), map.getCenter().lat),
+        bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+      })
+    } catch {
+      // Not drawable with these points (yet): nothing.
+    }
+    source.setData({ type: 'FeatureCollection', features: pieces })
+  }
+
   /** The shape being drawn (line/area tools); cursor: where the line goes on to
-   * (no point drawn there: none has been put down yet). */
-  draft(points: [number, number][], closed: boolean, cursor?: [number, number]) {
+   * (no point drawn there: none has been put down yet); line: false, the points only. */
+  draft(points: [number, number][], closed: boolean, cursor?: [number, number], line = true) {
     this.ensureOverlays()
     const coordinates = cursor && points.length ? [...points, cursor] : points
     const features: GeoJSON.Feature[] = points.map((c) => ({
@@ -853,7 +920,7 @@ export class Renderer {
       geometry: { type: 'Point', coordinates: c },
       properties: {}
     }))
-    if (coordinates.length > 1) {
+    if (line && coordinates.length > 1) {
       features.push({
         type: 'Feature',
         geometry: {

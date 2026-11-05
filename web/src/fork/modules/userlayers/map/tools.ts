@@ -133,6 +133,7 @@ export class Tools {
     this.message = message
     this.hint = message
     this.renderer.draft([], false)
+    this.renderer.graphicDraft(null)
     this.drawGhost(null)
     // A tool other than select has the map (another one, like measuring, stops);
     // when it's taken back (Esc, measuring started), select again.
@@ -278,7 +279,7 @@ export class Tools {
         break
       case 'graphic':
         this.tool.points.push(lngLat)
-        this.renderer.draft(this.tool.points, false)
+        this.drawDraft(lngLat)
         // Graphics with a fixed number of points (block, breach...) finish by themselves.
         if (this.tool.points.length >= this.tool.max) this.finishDrawing()
         else this.notify()
@@ -484,9 +485,29 @@ export class Tools {
   /** The line or area being drawn; a measurement: with its lengths so far, to the cursor. */
   private drawDraft(cursor?: [number, number]) {
     if (!drawing(this.tool)) return
+    if (this.tool.mode === 'graphic') {
+      // As it will look once done, faint, once it has enough points for a shape
+      // (an arrow: two); until then the points and a line to the cursor.
+      const points = cursor ? [...this.tool.points, cursor] : this.tool.points
+      const needed = this.tool.axis ? 2 : Math.max(2, this.tool.min)
+      if (points.length >= needed && this.tool.properties.sidc) {
+        const active = this.store.activeLayer ? this.store.layers.get(this.store.activeLayer) : undefined
+        this.renderer.draft(this.tool.points, false, undefined, false)
+        this.renderer.graphicDraft({
+          sidc: this.tool.properties.sidc,
+          points,
+          axis: this.tool.axis,
+          colour: this.tool.properties.color ?? active?.style.color ?? DEFAULT_COLOR
+        })
+      } else {
+        this.renderer.graphicDraft(null)
+        this.renderer.draft(this.tool.points, false, cursor)
+      }
+      return
+    }
     // On to where the next point would go (an area: and back to its start).
     const area = this.tool.mode === 'area'
-    if (this.tool.mode !== 'graphic' && this.tool.properties?.kind === 'measure') {
+    if (this.tool.properties?.kind === 'measure') {
       const points = cursor && this.tool.points.length ? [...this.tool.points, cursor] : this.tool.points
       this.renderer.measureDraft({ type: area ? 'area' : 'distance', points })
       return
@@ -516,6 +537,7 @@ export class Tools {
     if (drawing(this.tool) && this.tool.points.length) {
       this.tool.points = []
       this.renderer.draft([], false)
+      this.renderer.graphicDraft(null)
       this.notify()
     } else this.setTool({ mode: 'select' })
   }
