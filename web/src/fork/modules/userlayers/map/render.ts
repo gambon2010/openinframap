@@ -17,6 +17,7 @@ import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { getLabelLevel } from './symbols.ts'
+import { isDirection } from './graphic-variants.ts'
 import { ensureImage, iconName } from './icons.ts'
 import { KINDS, kindOf } from '../kinds/index.ts'
 import { Measurement, measurementFeatures, measurementOf } from '../measure/features.ts'
@@ -397,7 +398,9 @@ export class Renderer {
             points:
               f.properties.axis || f.properties.axisWidth !== undefined
                 ? axisControlPoints(controlPoints(f.geometry), f.properties.axisWidth)
-                : squareUp(f.properties.sidc, controlPoints(f.geometry)),
+                : isDirection(f.properties.sidc)
+                  ? [...controlPoints(f.geometry)].reverse()
+                  : squareUp(f.properties.sidc, controlPoints(f.geometry)),
             modifiers: modifiersToDraw(f.properties.modifiers, level),
             color: f.properties.color,
             scale,
@@ -1011,7 +1014,9 @@ export class Renderer {
         sidc: draft.sidc,
         points: draft.axis
           ? axisControlPoints(draft.points, Math.max(10, axisWidth(draft.points) * (draft.widthFactor ?? 1)))
-          : draft.points,
+          : isDirection(draft.sidc)
+            ? [...draft.points].reverse()
+            : draft.points,
         modifiers: {},
         scale: mapScale(map.getZoom(), map.getCenter().lat),
         bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]

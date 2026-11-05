@@ -1329,6 +1329,25 @@ others, and its points are moved like a drawing's.
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## One graphic, two versions (2026-11-06)
+
+Block, Disrupt and Fix were each in the picker twice (the task and the obstacle
+effect), Main attack, Supporting attack and Aviation too (an axis of advance and a
+direction of attack), with the same names. Now one entry each, and a switch on the
+card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle effect**,
+**Axis of advance (wide) / Direction of attack (thin)**. The two versions take the
+same points (an arrow: its path, tail to tip), so switching keeps the drawing; an
+axis gets its width back (`axisWidth`), a direction has none. The second versions
+are left out of the picker (`NOT_IN_PICKER`) and named for what they are in the
+catalogue ("Block (obstacle effect)", "Main attack (direction of attack)") for the
+legend. The obstacle effects are green: the standard's colour for friendly
+obstacles (as is neutral; the shapes differ).
+- **Directions of attack pointed backwards**: the renderer wants their tip first,
+  the tool gives the path tail to tip. Reversed for the renderer (`isDirection`: the
+  three, and the feint's direction of attack), on the map and in the preview.
+- **Engagement area** was in the catalogue twice (G*G*GAE, G*G*DAE: the same 2525D
+  symbol): G*G*DAE removed.
+
 ## Rectangular fire support areas removed (2026-11-05)
 
 The 17 "…, rectangular" graphics (FSA, ACA, FFA, NFA, RFA, PAA, sensor zone, DA,

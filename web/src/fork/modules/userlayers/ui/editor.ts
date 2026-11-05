@@ -26,8 +26,10 @@ import {
 } from '../model/sidc.ts'
 import { GEOMETRY_LABELS, entryOf } from './palette.ts'
 import { symbolSvg } from '../map/symbols.ts'
-import { MAX_SIZE, MIN_SIZE } from '../map/render.ts'
+import { MAX_SIZE, MIN_SIZE, controlPoints } from '../map/render.ts'
 import { kindOf } from '../kinds/index.ts'
+import { variantsOf, withKey } from '../map/graphic-variants.ts'
+import { axisWidth } from '../map/graphics.ts'
 
 export interface EditorActions {
   update: (properties: FeatureProps) => void
@@ -276,6 +278,31 @@ export async function buildEditor(
       }
     }
     strip.push(statusRow)
+    // Two versions of one graphic (graphic-variants.ts): task or obstacle effect, axis
+    // of advance or direction of attack. Same points: the drawing stays.
+    const versions = kind === 'graphic' ? variantsOf(sidc) : null
+    if (versions) {
+      const [first, second] = versions.variants.labels()
+      const switchTo = (index: 0 | 1) => {
+        if (index === versions.index) return
+        const next = withKey(sidc, versions.variants.keys[index])
+        if (!versions.variants.arrow) return setSidc(next)
+        // An axis has a width (its size handle); a direction of attack doesn't.
+        const path = controlPoints(feature.geometry)
+        update(
+          index === 0
+            ? { sidc: next, axis: true, axisWidth: axisWidth(path) }
+            : { sidc: next, axis: undefined, axisWidth: undefined }
+        )
+      }
+      strip.push(
+        el(
+          '.oim-ul-chips',
+          chip(first, versions.index === 0, () => switchTo(0)),
+          chip(second, versions.index === 1, () => switchTo(1))
+        )
+      )
+    }
     if (kind === 'unit') {
       const m = unitModifiers(sidc)
       strip.push(

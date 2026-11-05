@@ -74,7 +74,6 @@ export const GRAPHIC_LABELS: Record<string, GraphicLabels> = {
   'G*G*OAK': { name: "Position d'attaque" },
   'G*G*OAO': { name: 'Objectif' },
   'G*G*GAE': { fr: { EA: 'ZE' }, name: "Zone d'engagement" },
-  'G*G*DAE': { fr: { EA: 'ZE' }, name: "Zone d'engagement" },
   'G*G*SAO': { fr: { AO: 'ZA' }, name: "Zone d'action" },
   'G*G*SAN': { fr: { NAI: 'ZIR' }, name: "Zone d'intérêt du renseignement" },
   'G*G*SAT': { fr: { TAI: 'ZIO' }, name: "Zone d'intérêt des objectifs" },

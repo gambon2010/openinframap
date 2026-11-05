@@ -639,7 +639,13 @@
     "width-metres": "Width: {{n}} m",
     "graphic-labels-en": "English",
     "graphic-labels-standard": "Standard (MIL-STD-2525)",
-    "graphic-labels": "Graphic labels"
+    "graphic-labels": "Graphic labels",
+    "variant": {
+      "task": "Task",
+      "obstacle": "Obstacle effect",
+      "axis": "Axis of advance (wide)",
+      "direction": "Direction of attack (thin)"
+    }
   },
   "tower": {
     "unnamed-line": "a line",

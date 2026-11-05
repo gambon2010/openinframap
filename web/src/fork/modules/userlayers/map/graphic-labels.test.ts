@@ -43,7 +43,6 @@ beforeAll(async () => {
 
 // Graphics that are the same thing, and may share a label.
 const SAME = [
-  ['G*G*GAE', 'G*G*DAE'], // engagement area, twice in the catalogue
   ['G*G*PM', 'G*G*PY'], // decoy mined area, fenced or not
   ['G*F*ATS', 'G*F*LTS'], // smoke, an area or a line
   ['G*S*LRM', 'G*S*LRO', 'G*S*LRW'], // main supply route, its traffic either way
