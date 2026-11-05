@@ -159,6 +159,14 @@ export class Interactions {
         )
       )
     }
+    // Lock or unlock this one item (whoever may change its layer).
+    if (this.store.view.canEdit(this.store.layers.get(layerId))) {
+      items.push(
+        feature.properties.locked
+          ? entry(t('userlayers.unlock-item', '🔓 Unlock'), () => update({ locked: undefined }))
+          : entry(t('userlayers.lock-item', '🔒 Lock'), () => update({ locked: true }))
+      )
+    }
     items.push(entry(t('userlayers.delete', 'Delete'), () => this.tools.deleteSelected(), locked))
     this.menu.replaceChildren(...items)
     // Keep it inside the map.

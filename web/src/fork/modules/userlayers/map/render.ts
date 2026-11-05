@@ -37,6 +37,9 @@ import { SUPPLY_COLOURS, supplyColours } from '../../../ui/supply.ts'
 
 const SELECTION = 'user_selection'
 const DRAFT = 'user_draft'
+// What a placing tool would put down, faint under the cursor ("user_draft…": kept
+// with the draft when the map's layers are tidied).
+const GHOST = 'user_draft_ghost'
 
 function sourceId(layerId: string) {
   return `user_${layerId}`
@@ -532,7 +535,7 @@ export class Renderer {
       if (
         id.startsWith('user_') &&
         id !== SELECTION &&
-        id !== DRAFT &&
+        !id.startsWith(DRAFT) &&
         ![...layers.keys()].some(
           (l) => sourceId(l) === id || graphicsSourceId(l) === id || measureSourceId(l) === id
         )
@@ -644,7 +647,7 @@ export class Renderer {
   private ensureOverlays() {
     const map = this.map
     const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
-    for (const id of [SELECTION, DRAFT]) {
+    for (const id of [SELECTION, DRAFT, GHOST]) {
       if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: empty })
     }
     const overlays: LayerSpecification[] = [
@@ -715,6 +718,19 @@ export class Renderer {
           'circle-stroke-color': '#1565c0',
           'circle-stroke-width': 2
         }
+      },
+      {
+        // What a placing tool would put down, faint, under the cursor.
+        id: GHOST,
+        type: 'symbol',
+        source: GHOST,
+        layout: {
+          'icon-image': ['get', 'icon'],
+          'icon-size': ['coalesce', ['get', 'size'], 1],
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true
+        },
+        paint: { 'icon-opacity': 0.55 }
       },
       {
         // A measurement being drawn: its lengths and bearings so far.
@@ -800,6 +816,21 @@ export class Renderer {
     })
   }
 
+  /** What a placing tool would put down (an icon: map/icons.ts), faint at a point;
+   * null: nothing. */
+  async ghost(icon: string | null, at: [number, number] | null, size = 1) {
+    this.ensureOverlays()
+    if (icon) await ensureImage(this.map, icon)
+    const features: GeoJSON.Feature[] =
+      icon && at
+        ? [{ type: 'Feature', geometry: { type: 'Point', coordinates: at }, properties: { icon, size } }]
+        : []
+    ;(this.map.getSource(GHOST) as GeoJSONSource | undefined)?.setData({
+      type: 'FeatureCollection',
+      features
+    })
+  }
+
   /** A measurement being drawn (to the cursor), with its labels and marks. */
   measureDraft(m: Measurement) {
     this.ensureOverlays()
@@ -812,10 +843,12 @@ export class Renderer {
     ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 
-  /** The shape being drawn (line/area tools). */
-  draft(coordinates: [number, number][], closed: boolean) {
+  /** The shape being drawn (line/area tools); cursor: where the line goes on to
+   * (no point drawn there: none has been put down yet). */
+  draft(points: [number, number][], closed: boolean, cursor?: [number, number]) {
     this.ensureOverlays()
-    const features: GeoJSON.Feature[] = coordinates.map((c) => ({
+    const coordinates = cursor && points.length ? [...points, cursor] : points
+    const features: GeoJSON.Feature[] = points.map((c) => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: c },
       properties: {}

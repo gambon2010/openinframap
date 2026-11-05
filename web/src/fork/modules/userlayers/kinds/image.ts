@@ -8,7 +8,7 @@ import { ItemKind } from './types.ts'
 export const image: ItemKind = {
   id: 'image',
   noun: () => t('userlayers.kind.image', 'picture'),
-  what: () => t('userlayers.kind.image', 'picture'),
+  what: () => t('userlayers.what.image', 'Picture'),
   drawn: 'standard',
   icon: (p) => (p.image ? `userimg:${p.image}` : null),
   images: {

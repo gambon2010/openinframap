@@ -196,6 +196,11 @@ export async function buildEditor(
   } else if (itemKind.drawn === 'copy') {
     what = t('userlayers.copy-of', 'Copy of a map feature ({{layer}})', { layer: p.copy?.layer })
   }
+  // Not a symbol: its own small picture (a pin, a line, a photo...).
+  if (!military) {
+    const picture = itemKind.thumbnail(feature)
+    if (picture) preview.append(picture)
+  }
   const modifiers = { ...(p.modifiers ?? {}) }
   // Items made before the fields existed had a name: it's the designation.
   if (military && !modifiers['T'] && p.name) modifiers['T'] = p.name

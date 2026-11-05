@@ -8,10 +8,11 @@ import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { Store } from '../state/store.ts'
 import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
-import { FeatureProps, UserFeature } from '../model/model.ts'
+import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
 import { mapMode } from '../../../ui/map-mode.ts'
 import { kindOf } from '../kinds/index.ts'
+import { iconName } from './icons.ts'
 import { areaCrossesItself, areaPoints, pathCrossesItself } from '../model/shapes.ts'
 
 export type Tool =
@@ -109,6 +110,11 @@ export class Tools {
       }
     })
     map.on('mousemove', (e) => this.mousemove(e))
+    // Off the map: no preview, no line to the cursor.
+    map.on('mouseout', () => {
+      this.drawGhost(null)
+      this.drawDraft()
+    })
     map.on('mousedown', (e) => this.mousedown(e))
     map.on('mouseup', () => this.mouseup())
     document.addEventListener('keydown', (e) => this.keydown(e))
@@ -127,6 +133,7 @@ export class Tools {
     this.message = message
     this.hint = message
     this.renderer.draft([], false)
+    this.drawGhost(null)
     // A tool other than select has the map (another one, like measuring, stops);
     // when it's taken back (Esc, measuring started), select again.
     if (tool.mode === 'select') mapMode.leave(MODE)
@@ -476,14 +483,32 @@ export class Tools {
 
   /** The line or area being drawn; a measurement: with its lengths so far, to the cursor. */
   private drawDraft(cursor?: [number, number]) {
-    if (this.tool.mode !== 'line' && this.tool.mode !== 'area') return
-    const measuring = this.tool.properties?.kind === 'measure'
-    if (!measuring) {
-      this.renderer.draft(this.tool.points, this.tool.mode === 'area')
+    if (!drawing(this.tool)) return
+    // On to where the next point would go (an area: and back to its start).
+    const area = this.tool.mode === 'area'
+    if (this.tool.mode !== 'graphic' && this.tool.properties?.kind === 'measure') {
+      const points = cursor && this.tool.points.length ? [...this.tool.points, cursor] : this.tool.points
+      this.renderer.measureDraft({ type: area ? 'area' : 'distance', points })
       return
     }
-    const points = cursor && this.tool.points.length ? [...this.tool.points, cursor] : this.tool.points
-    this.renderer.measureDraft({ type: this.tool.mode === 'area' ? 'area' : 'distance', points })
+    this.renderer.draft(this.tool.points, area, cursor)
+  }
+
+  /** A placing tool: what it would put down, faint under the cursor (null: none). */
+  private drawGhost(cursor: [number, number] | null) {
+    if (this.tool.mode !== 'place' || !cursor) {
+      void this.renderer.ghost(null, null)
+      // Range rings are previewed as a draft.
+      if (this.tool.mode === 'place') this.renderer.draft([], false)
+      return
+    }
+    const p = this.tool.properties
+    if (p.kind === 'measure') {
+      this.renderer.measureDraft({ type: 'rings', points: [cursor], radii: p.radii as number[] })
+      return
+    }
+    const active = this.store.activeLayer ? this.store.layers.get(this.store.activeLayer) : undefined
+    void this.renderer.ghost(iconName(p, active?.style.color ?? DEFAULT_COLOR), cursor, p.size ?? 1)
   }
 
   /** Right-click while drawing: what's drawn so far is dropped; again: the tool stops. */
@@ -497,8 +522,8 @@ export class Tools {
 
   private mousemove(e: MapMouseEvent) {
     if (this.tool.mode !== 'select') this.map.getCanvas().style.cursor = 'crosshair'
-    if ((this.tool.mode === 'line' || this.tool.mode === 'area') && this.tool.properties?.kind === 'measure')
-      this.drawDraft([e.lngLat.lng, e.lngLat.lat])
+    if (drawing(this.tool)) this.drawDraft([e.lngLat.lng, e.lngLat.lat])
+    else if (this.tool.mode === 'place') this.drawGhost([e.lngLat.lng, e.lngLat.lat])
     else if (!this.dragging && this.selected)
       this.map.getCanvas().style.cursor = this.handleAt(e.point, 'user_selection_resize') ? 'nwse-resize' : ''
     if (!this.dragging) return

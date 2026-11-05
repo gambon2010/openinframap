@@ -219,3 +219,9 @@
   margin-left: 6px;
   color: var(--oim-dark-grey);
 }
+/* A picture item's photo in the card's header (kinds/image.ts thumbnail). */
+.oim-ul-card-symbol img {
+  max-width: 64px;
+  max-height: 44px;
+  border-radius: 3px;
+}

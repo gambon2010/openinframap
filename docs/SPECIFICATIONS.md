@@ -158,6 +158,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.16 | Layer folders in the layer list: "+ New folder", drag a layer onto a folder or a layer, or ⋯ → Move to folder (a list of folders). | ✅ `outliner.ts` |
 | 9.11 | Resize pictures (and symbols, markers) shown on the map: a handle on the map, and a Size setting (20–800 %). | ✅ |
 | 9.17 | Polish the list (2026-11-05): folder lock only on your layers; folder buttons off while a situation is shown; singular counts; search layers and folders by name; reorder layers by dragging (drawing order follows); names typed in place; zoom to a layer; drop zone only while dragging; long layers show 200 items first; keyboard. | ✅ |
+| 9.18 | Polish drawing on the map (2026-11-05): a line to the cursor while drawing; a faint preview while placing; the same hints for every tool; labels "Marker", "Line", "Area"...; the card's picture for every item; Lock in the right-click menu. | ✅ |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

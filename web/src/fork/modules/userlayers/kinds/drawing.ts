@@ -7,7 +7,7 @@ const area = (item: Item) => item.geometry?.type === 'Polygon' || item.geometry?
 export const drawing: ItemKind = {
   id: 'drawing',
   noun: (item) => (area(item) ? t('userlayers.kind.area', 'area') : t('userlayers.kind.line', 'line')),
-  what: () => t('userlayers.kind.drawing', 'drawing'),
+  what: (item) => (area(item) ? t('userlayers.what.area', 'Area') : t('userlayers.what.line', 'Line')),
   drawn: 'standard',
   thumbnail: (item) => (area(item) ? '▱' : '╱'),
   coloured: true,

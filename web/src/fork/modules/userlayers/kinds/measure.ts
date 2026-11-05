@@ -19,10 +19,16 @@ import { ItemKind, Item } from './types.ts'
 
 const ICONS = { distance: '📏', area: '⬠', rings: '◎' }
 
+// In sentences ("…a distance"), and as a label ("Distance: 3 km").
 const NAMES = () => ({
   distance: t('userlayers.kind.measure-distance', 'distance'),
   area: t('userlayers.kind.measure-area', 'measured area'),
   rings: t('userlayers.kind.measure-rings', 'range rings')
+})
+const LABELS = () => ({
+  distance: t('userlayers.what.measure-distance', 'Distance'),
+  area: t('userlayers.what.measure-area', 'Measured area'),
+  rings: t('userlayers.what.measure-rings', 'Range rings')
 })
 
 const typeOf = (item: Item) => item.properties.measure ?? 'distance'
@@ -32,7 +38,7 @@ export const measure: ItemKind = {
   noun: (item) => NAMES()[typeOf(item)],
   what: (item) => {
     const m = measurementOf(item)
-    return m ? `${NAMES()[m.type]}: ${summary(m, measurePrefs.north)}` : NAMES()[typeOf(item)]
+    return m ? `${LABELS()[m.type]}: ${summary(m, measurePrefs.north)}` : LABELS()[typeOf(item)]
   },
   drawn: 'measure',
   thumbnail: (item) => ICONS[typeOf(item)],

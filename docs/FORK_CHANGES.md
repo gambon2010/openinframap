@@ -1385,6 +1385,22 @@ symbol code, not the kind).
   big import doesn't make every change slow; rows are reached with Tab, Enter opens or
   selects, the focus survives the list being drawn again.
 
+## My layers: drawing on the map, polished (2026-11-05)
+
+- **While drawing** a line, an area or a graphic, a dashed line goes on to the cursor
+  (an area: and back to its start), without a point at the cursor
+  (`Renderer.draft(points, closed, cursor)`).
+- **While placing** a marker, a symbol or a picture, it shows faint under the cursor
+  (`Renderer.ghost`, an overlay kept with the draft); range rings show as a draft.
+  Both go when the mouse leaves the map or the tool changes.
+- **Hints:** every drawing tool says how to take a point back (Backspace) and start
+  again (right-click); placing tools that right-click stops.
+- **Names for people:** the kinds' labels (`ItemKind.what`, the list, the tooltip, the
+  card) are "Marker", "Line" or "Area", "Picture", "Distance: …"; the lower-case
+  words stay for sentences (`noun`).
+- **The card** shows the item's own small picture in its header (not only symbols).
+- **The right-click menu** has Lock / Unlock.
+
 ## The header and the about page (2026-11-03)
 
 - **Removed from the header** (`fork/modules/layout/index.ts`, at start, so

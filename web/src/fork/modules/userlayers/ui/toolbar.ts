@@ -84,7 +84,10 @@ export class Toolbar {
       case 'area':
         tools.setTool(
           { mode: id, points: [] },
-          t('userlayers.draw-hint', 'Click to add points; double-click or Enter to finish.')
+          t(
+            'userlayers.draw-hint',
+            'Click to add points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.'
+          )
         )
         break
       case 'measure-distance':
@@ -106,13 +109,16 @@ export class Toolbar {
       case 'measure-rings':
         tools.setTool(
           { mode: 'place', properties: { kind: 'measure', measure: 'rings', radii: measurePrefs.radii } },
-          t('userlayers.rings-hint', 'Click the centre of the rings (their distances: on its card).')
+          t(
+            'userlayers.rings-hint',
+            'Click the centre of the rings (their distances: on its card). Right-click: stop.'
+          )
         )
         break
       case 'marker':
         tools.setTool(
           { mode: 'place', properties: { kind: 'marker' } },
-          t('userlayers.marker-hint', 'Click the map to put a marker there.')
+          t('userlayers.marker-hint', 'Click the map to put a marker there. Right-click: stop.')
         )
         break
       case 'image':
@@ -256,7 +262,9 @@ export class Toolbar {
     if (!pick.geometry) {
       tools.setTool(
         { mode: 'place', properties: { kind: 'symbol', sidc: pick.sidc } },
-        t('userlayers.place-hint', 'Click the map to put "{{name}}" there.', { name: pick.name })
+        t('userlayers.place-hint', 'Click the map to put "{{name}}" there. Right-click: stop.', {
+          name: pick.name
+        })
       )
       return
     }
@@ -282,7 +290,7 @@ export class Toolbar {
         },
         t(
           'userlayers.axis-hint',
-          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Drag the blue handle to change its width.',
+          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again. Drag the blue handle to change its width.',
           { name: pick.name }
         )
       )
@@ -291,13 +299,17 @@ export class Toolbar {
     const max = Number.isFinite(count.max) && count.max < 1000 ? count.max : Infinity
     const hint =
       count.min === max
-        ? t('userlayers.graphic-hint-fixed', '"{{name}}": click {{n}} points on the map.', {
-            name: pick.name,
-            n: count.min
-          })
+        ? t(
+            'userlayers.graphic-hint-fixed',
+            '"{{name}}": click {{n}} points on the map. Backspace: take back a point.',
+            {
+              name: pick.name,
+              n: count.min
+            }
+          )
         : t(
             'userlayers.graphic-hint',
-            '"{{name}}": click at least {{n}} points; double-click or Enter to finish.',
+            '"{{name}}": click at least {{n}} points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.',
             {
               name: pick.name,
               n: count.min
@@ -319,7 +331,7 @@ export class Toolbar {
       this.paletteMode = null
       this.ws.tools.setTool(
         { mode: 'place', properties: { kind: 'image', image: id, name: '' } },
-        t('userlayers.image-hint', 'Click the map to put the picture there.')
+        t('userlayers.image-hint', 'Click the map to put the picture there. Right-click: stop.')
       )
     })
   }
