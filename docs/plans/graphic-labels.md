@@ -89,7 +89,7 @@ French notes:
 | Final coordination line             | FCL          | FCL     | Ligne de coordination finale        | LCF           |
 | Probable line of deployment         | PLD          | PLD     | Ligne probable de déploiement       | LPD           |
 | Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)           | LRCL          |
-| Release line                        | RL           | RL      | Ligne de libération                 | LL → **LLIB** |
+| Release line                        | RL           | RL      | Ligne de libération                 | LLIB          |
 | Light line                          | LL           | LL      | Ligne de feux masqués               | LFM           |
 | Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓      | FLOT          |
 | Forward edge of battle area         | FEBA         | FEBA    | Limite avant de la zone de bataille | LAZB          |
