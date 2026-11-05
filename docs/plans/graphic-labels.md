@@ -28,32 +28,32 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 
 ## Tactical tasks (the most used)
 
-| Graphic | Standard | English | French name | French |
-|---|---|---|---|---|
-| Block | B | **B** | Bloquer | **B** |
-| Breach | B | BREACH | Ouvrir une brèche | BRÈCHE |
-| Bypass | B | BYPASS | Contourner | CTRN |
-| Canalize | C | CNLZ | Canaliser | CNLS |
-| Clear | C | **C** | Nettoyer | NETTOY |
-| Contain | C ENY | CNTN ENEMY | Contenir | CNTN ENNEMI |
-| Counterattack | CATK | CATK | Contre-attaque | CATQ |
-| Counterattack by fire | CATK | CATK FIRE | Contre-attaque par le feu | CAF |
-| Cover | C | COVER | Couvrir | CVR |
-| Delay | D | DELAY | Freiner | FREINER |
-| Disrupt | D | **D** | Désorganiser | D |
-| Fix | F | **F** | Fixer | **F** |
-| Guard | G | GUARD | Flanc-garder | FG |
-| Isolate | I | ISOL | Isoler | ISOLER |
-| Occupy | O | OCCUPY | Occuper | OCCUPER |
-| Penetrate | P | PNTR | Percer | PERCER |
-| Retain | R | **R** | Tenir | TENIR |
-| Retirement | R | RTMT | Repli | REPLI |
-| Screen | S | SCREEN | Surveiller | SURV |
-| Secure | S | SECURE | Sécuriser | SÉCUR |
-| Seize | S | **S** | S'emparer de | S |
-| Withdraw | W | WDRW | Se retirer | RETRAIT |
-| Withdraw under pressure | WP | WUP | Retraite sous pression | RSP |
-| Relief in place | RIP | RIP | Relève sur place | RSP → **RELÈVE** |
+| Graphic                 | Standard | English    | French name               | French           |
+|-------------------------|----------|------------|---------------------------|------------------|
+| Block                   | B        | **B**      | Bloquer                   | **B**            |
+| Breach                  | B        | BREACH     | Ouvrir une brèche         | BRÈCHE           |
+| Bypass                  | B        | BYPASS     | Contourner                | CTRN             |
+| Canalize                | C        | CNLZ       | Canaliser                 | CNLS             |
+| Clear                   | C        | **C**      | Nettoyer                  | NETTOY           |
+| Contain                 | C ENY    | CNTN ENEMY | Contenir                  | CNTN ENNEMI      |
+| Counterattack           | CATK     | CATK       | Contre-attaque            | CATQ             |
+| Counterattack by fire   | CATK     | CATK FIRE  | Contre-attaque par le feu | CAF              |
+| Cover                   | C        | COVER      | Couvrir                   | CVR              |
+| Delay                   | D        | DELAY      | Freiner                   | FREINER          |
+| Disrupt                 | D        | **D**      | Désorganiser              | D                |
+| Fix                     | F        | **F**      | Fixer                     | **F**            |
+| Guard                   | G        | GUARD      | Flanc-garder              | FG               |
+| Isolate                 | I        | ISOL       | Isoler                    | ISOLER           |
+| Occupy                  | O        | OCCUPY     | Occuper                   | OCCUPER          |
+| Penetrate               | P        | PNTR       | Percer                    | PERCER           |
+| Retain                  | R        | **R**      | Tenir                     | TENIR            |
+| Retirement              | R        | RTMT       | Repli                     | REPLI            |
+| Screen                  | S        | SCREEN     | Surveiller                | SURV             |
+| Secure                  | S        | SECURE     | Sécuriser                 | SÉCUR            |
+| Seize                   | S        | **S**      | S'emparer de              | S                |
+| Withdraw                | W        | WDRW       | Se retirer                | RETRAIT          |
+| Withdraw under pressure | WP       | WUP        | Retraite sous pression    | RSP              |
+| Relief in place         | RIP      | RIP        | Relève sur place          | RSP → **RELÈVE** |
 
 Two French clashes, resolved:
 - **RSP** would be both "retraite sous pression" and "relève sur place". The relief
@@ -62,23 +62,23 @@ Two French clashes, resolved:
 
 ## Lines
 
-| Graphic | Standard | English | French name | French |
-|---|---|---|---|---|
-| Bearing line | B | BL | Ligne de relèvement | LR |
-| Bridgehead | B | BRHD | Tête de pont | TDP |
-| Phase line | PL | PL | Ligne de phase / ligne de coordination | LC? |
-| Line of departure | LD | LD | Ligne de débouché | LD |
-| Line of contact | LC | LC | Ligne de contact | LCT |
-| Line of departure / line of contact | LD/LC | LD/LC | Débouché / contact | LD/LCT |
-| Limit of advance | LOA | LOA | Limite d'avance | LA |
-| Final coordination line | FCL | FCL | Ligne de coordination finale | LCF |
-| Probable line of deployment | PLD | PLD | Ligne probable de déploiement | LPD |
-| Holding line | HL | HL | Ligne de recueil | LR → **LREC** |
-| Release line | RL | RL | Ligne de libération | LL → **LLIB** |
-| Light line | LL | LL | Ligne de feux masqués | LFM |
-| Forward line of own troops | FLOT | FLOT | Ligne avant des troupes amies | LATA |
-| Forward edge of battle area | FEBA | FEBA | Limite avant de la zone de bataille | LAZB |
-| Airhead line | AIRHEAD LINE | AIRHEAD | Tête aéroportée | TAP |
+| Graphic                             | Standard     | English | French name                            | French        |
+|-------------------------------------|--------------|---------|----------------------------------------|---------------|
+| Bearing line                        | B            | BL      | Ligne de relèvement                    | LR            |
+| Bridgehead                          | B            | BRHD    | Tête de pont                           | TDP           |
+| Phase line                          | PL           | PL      | Ligne de phase / ligne de coordination | LC?           |
+| Line of departure                   | LD           | LD      | Ligne de débouché                      | LD            |
+| Line of contact                     | LC           | LC      | Ligne de contact                       | LCT           |
+| Line of departure / line of contact | LD/LC        | LD/LC   | Débouché / contact                     | LD/LCT        |
+| Limit of advance                    | LOA          | LOA     | Limite d'avance                        | LA            |
+| Final coordination line             | FCL          | FCL     | Ligne de coordination finale           | LCF           |
+| Probable line of deployment         | PLD          | PLD     | Ligne probable de déploiement          | LPD           |
+| Holding line                        | HL           | HL      | Ligne de recueil                       | LR → **LREC** |
+| Release line                        | RL           | RL      | Ligne de libération                    | LL → **LLIB** |
+| Light line                          | LL           | LL      | Ligne de feux masqués                  | LFM           |
+| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des troupes amies          | LATA          |
+| Forward edge of battle area         | FEBA         | FEBA    | Limite avant de la zone de bataille    | LAZB          |
+| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête aéroportée                        | TAP           |
 
 French clashes resolved: LR (bearing line) vs ligne de recueil → **LREC**; LL is
 kept for nothing (light line is LFM), ligne de libération → **LLIB**. "Phase line"
@@ -87,50 +87,50 @@ in French is to check: the French Army often says *ligne de coordination*. If so
 
 ## Areas and positions
 
-| Graphic | Standard | English | French name | French |
-|---|---|---|---|---|
-| Assembly area | AA | AA | Zone de regroupement | ZR |
-| Assault position | ASLT | ASLT | Position d'assaut | PASLT |
-| Attack position | ATK | ATK | Position d'attaque | PATQ |
-| Objective | OBJ | OBJ | Objectif | OBJ |
-| Engagement area | EA | EA | Zone d'engagement | ZE |
-| Area of operations | AO | AO | Zone d'opérations | ZO |
-| Named area of interest | NAI | NAI | Zone d'intérêt nommée | ZIN |
-| Targeted area of interest | TAI | TAI | Zone d'intérêt ciblée | ZIC |
-| Limited access area | LAA | LAA | Zone d'accès restreint | ZAR |
-| Drop zone | DZ | DZ | Zone de mise à terre | ZMT |
-| Landing zone | LZ | LZ | Zone de poser | ZP |
-| Pickup zone | PZ | PZ | Zone d'embarquement | ZE → **ZEMB** |
-| Extraction zone | EZ | EZ | Zone d'extraction | ZX |
-| Prepared but not occupied | (P) | (P) | Préparée, non occupée | (P) |
-| Airhead | AIRHEAD LINE | AIRHEAD | Tête aéroportée | TAP |
+| Graphic                   | Standard     | English | French name            | French        |
+|---------------------------|--------------|---------|------------------------|---------------|
+| Assembly area             | AA           | AA      | Zone de regroupement   | ZR            |
+| Assault position          | ASLT         | ASLT    | Position d'assaut      | PASLT         |
+| Attack position           | ATK          | ATK     | Position d'attaque     | PATQ          |
+| Objective                 | OBJ          | OBJ     | Objectif               | OBJ           |
+| Engagement area           | EA           | EA      | Zone d'engagement      | ZE            |
+| Area of operations        | AO           | AO      | Zone d'opérations      | ZO            |
+| Named area of interest    | NAI          | NAI     | Zone d'intérêt nommée  | ZIN           |
+| Targeted area of interest | TAI          | TAI     | Zone d'intérêt ciblée  | ZIC           |
+| Limited access area       | LAA          | LAA     | Zone d'accès restreint | ZAR           |
+| Drop zone                 | DZ           | DZ      | Zone de mise à terre   | ZMT           |
+| Landing zone              | LZ           | LZ      | Zone de poser          | ZP            |
+| Pickup zone               | PZ           | PZ      | Zone d'embarquement    | ZE → **ZEMB** |
+| Extraction zone           | EZ           | EZ      | Zone d'extraction      | ZX            |
+| Prepared but not occupied | (P)          | (P)     | Préparée, non occupée  | (P)           |
+| Airhead                   | AIRHEAD LINE | AIRHEAD | Tête aéroportée        | TAP           |
 
 French clash: ZE (engagement) vs zone d'embarquement → **ZEMB**.
 
 ## Obstacles and mines
 
-| Graphic | Standard | English | French name | French |
-|---|---|---|---|---|
-| Mined area | M | **M** | Zone minée | **M** |
-| Decoy mined area (and fenced) | M | DECOY M | Zone minée factice | M FACT |
-| Obstacle free area | FREE | FREE | Zone libre d'obstacles | LIBRE |
-| Unexploded ordnance area | UXO | UXO | Munitions non explosées | UXO |
-| Trip wire | t | TRIP | Fil piège | PIÈGE |
-| Smoke / linear smoke target | SMOKE | SMOKE | Fumigène | FUMI |
+| Graphic                       | Standard | English | French name             | French |
+|-------------------------------|----------|---------|-------------------------|--------|
+| Mined area                    | M        | **M**   | Zone minée              | **M**  |
+| Decoy mined area (and fenced) | M        | DECOY M | Zone minée factice      | M FACT |
+| Obstacle free area            | FREE     | FREE    | Zone libre d'obstacles  | LIBRE  |
+| Unexploded ordnance area      | UXO      | UXO     | Munitions non explosées | UXO    |
+| Trip wire                     | t        | TRIP    | Fil piège               | PIÈGE  |
+| Smoke / linear smoke target   | SMOKE    | SMOKE   | Fumigène                | FUMI   |
 
 ## Support and movement
 
-| Graphic | Standard | English | French name | French |
-|---|---|---|---|---|
-| Main supply route | MSR | MSR | Itinéraire principal de ravitaillement | IPR |
-| One-way / two-way traffic (on an MSR) | MSR | MSR | Idem | IPR |
-| Alternate supply route | ASR | ASR | Itinéraire de ravitaillement de secours | IRS |
-| Alternating traffic | ALT ASR | ALT ASR | Circulation alternée | IRS ALT |
-| Forward arming and refuelling point | FARP | FARP | Point de ravitaillement avancé | FARP |
-| Brigade / division / regimental support area | BSA, DSA, RSA | BSA, DSA, RSA | Zone de soutien (brigade…) | ZSB, ZSD, ZSR |
-| Detainee / EPW / refugee holding area | AREA … HOLDING | DETAINEES, POW, REFUGEES | Détenus, prisonniers, réfugiés | DÉTENUS, PRISON, RÉFUGIÉS |
-| Electro-optical intercept | O | EO | Interception électro-optique | EO |
-| Electronic / acoustic / torpedo (decoys, sensors) | E, A, T | ELEC, ACOU, TORP | Électronique, acoustique, torpille | ÉLEC, ACOU, TORP |
+| Graphic                                           | Standard       | English                  | French name                             | French                    |
+|---------------------------------------------------|----------------|--------------------------|-----------------------------------------|---------------------------|
+| Main supply route                                 | MSR            | MSR                      | Itinéraire principal de ravitaillement  | IPR                       |
+| One-way / two-way traffic (on an MSR)             | MSR            | MSR                      | Idem                                    | IPR                       |
+| Alternate supply route                            | ASR            | ASR                      | Itinéraire de ravitaillement de secours | IRS                       |
+| Alternating traffic                               | ALT ASR        | ALT ASR                  | Circulation alternée                    | IRS ALT                   |
+| Forward arming and refuelling point               | FARP           | FARP                     | Point de ravitaillement avancé          | FARP                      |
+| Brigade / division / regimental support area      | BSA, DSA, RSA  | BSA, DSA, RSA            | Zone de soutien (brigade…)              | ZSB, ZSD, ZSR             |
+| Detainee / EPW / refugee holding area             | AREA … HOLDING | DETAINEES, POW, REFUGEES | Détenus, prisonniers, réfugiés          | DÉTENUS, PRISON, RÉFUGIÉS |
+| Electro-optical intercept                         | O              | EO                       | Interception électro-optique            | EO                        |
+| Electronic / acoustic / torpedo (decoys, sensors) | E, A, T        | ELEC, ACOU, TORP         | Électronique, acoustique, torpille      | ÉLEC, ACOU, TORP          |
 
 ## Kept as they are (technical acronyms)
 
