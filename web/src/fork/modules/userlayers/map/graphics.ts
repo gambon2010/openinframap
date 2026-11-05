@@ -198,6 +198,10 @@ function normalise(feature: GeoJSON.Feature): GeoJSON.Feature | null {
   if ('symbolID' in p) return null
   const isLabel = feature.geometry.type === 'Point'
   if (isLabel && !p['label']) return null
+  // A shape filled with no outline colour (an arrowhead): outlined in its fill, not
+  // in the layer's colour, which the map would use instead.
+  const stroke =
+    colour(p['strokeColor']) ?? (feature.geometry.type.endsWith('Polygon') ? colour(p['fillColor']) : null)
   return {
     type: 'Feature',
     geometry: feature.geometry,
@@ -210,9 +214,9 @@ function normalise(feature: GeoJSON.Feature): GeoJSON.Feature | null {
           align: p['labelAlign'] === 'left' || p['labelAlign'] === 'right' ? p['labelAlign'] : 'center'
         }
       : {
-          stroke: colour(p['strokeColor']),
+          stroke,
           // Light lines (yellow) get a dark edge, or they vanish on the light map.
-          casing: haloFor(colour(p['strokeColor']) ?? '#000000') === '#1a1a1a' ? '#1a1a1a' : null,
+          casing: haloFor(stroke ?? '#000000') === '#1a1a1a' ? '#1a1a1a' : null,
           fill: colour(p['fillColor']),
           fillOpacity: Number(p['fillOpacity'] ?? 0.3),
           width: Number(p['strokeWidth'] ?? 2) || 2,

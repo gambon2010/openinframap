@@ -241,3 +241,17 @@ describe('three-point graphics drawn square', () => {
     expect(isSquare('GFTPK----------')).toBe(false) // counterattack
   })
 })
+
+describe('filled shapes without an outline colour', () => {
+  test("an obstacle Disrupt's arrowheads are outlined in their fill, not the layer's colour", () => {
+    const points = squareUp('GFMPOED--------', [
+      [7.7, 48.58],
+      [7.74, 48.58],
+      [7.72, 48.55]
+    ])
+    const pieces = renderGraphic(lib, { sidc: 'GFMPOED--------', points, scale: mapScale(12, 48.58) })
+    const heads = pieces.filter((p) => p.geometry.type === 'Polygon' && p.properties?.fill)
+    expect(heads.length).toBeGreaterThan(0)
+    for (const head of heads) expect(head.properties?.stroke).toBe(head.properties?.fill)
+  })
+})

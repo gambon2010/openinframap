@@ -1384,6 +1384,11 @@ free point onto the perpendicular, keeping its distance from the base. Used whil
 drawing (the preview and the stored points), when a point is dragged (the free one
 stays on the perpendicular, or follows when the base moves), for the handles, and
 when drawing on the map, so items drawn before are square too.
+Filled shapes the renderer gives no outline colour (an obstacle Disrupt's
+arrowheads) are outlined in their fill (`normalise`), not in the layer's colour the
+map falls back to (they had red edges in a red layer). Obstacles are green: the
+standard's colour for friendly obstacles.
+
 Each graphic's points mean something of their own (the standard's, per graphic), so
 there's no one rule: `graphics.test.ts` draws every graphic in `SQUARE` through the
 real renderer with its free point skewed, squares it up, and checks its main stroke
