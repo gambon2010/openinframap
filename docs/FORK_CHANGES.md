@@ -1425,6 +1425,8 @@ symbol code, not the kind).
 - **Dragging moves the item**, not only its highlight: every drag (a point, an
   item's point, a size, a width) redraws it as it goes (`renderer.preview`); it's
   saved on mouseup as before.
+- **A selected line, area or graphic moves whole** when dragged by its body (not a
+  point handle), like a symbol; the cursor shows it (`dragging.move`, `translateGeometry`).
 
 ## The header and the about page (2026-11-03)
 

@@ -6,7 +6,15 @@ import { t } from '../../../core/i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { Store } from '../state/store.ts'
-import { MAX_SIZE, MIN_SIZE, Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
+import {
+  MAX_SIZE,
+  MIN_SIZE,
+  Renderer,
+  controlPoints,
+  moveVertex,
+  sizeFromDrag,
+  translateGeometry
+} from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
@@ -97,6 +105,8 @@ export class Tools {
     layerId: string
     index?: number
     resize?: { x: number; y: number; distanceAtSize1: number }
+    // The whole item being moved: where it was grabbed, and its shape then.
+    move?: { from: [number, number]; geometry: GeoJSON.Geometry }
   } | null = null
   // The last click My layers took (decided before it changes the tool).
   private captured: Event | null = null
@@ -482,11 +492,16 @@ export class Tools {
       return
     }
     const hit = this.hit(e.point)
-    if (!hit || String(hit.properties.fid) !== this.selected || feature.geometry.type !== 'Point') return
+    if (!hit || String(hit.properties.fid) !== this.selected) return
     e.preventDefault()
     this.map.dragPan.disable()
-    // Moved on a copy, saved as one change on mouseup.
-    this.dragging = { feature: structuredClone(feature), layerId: layer.id }
+    // The whole item (grabbed anywhere on it), moved on a copy, saved as one change
+    // on mouseup.
+    this.dragging = {
+      feature: structuredClone(feature),
+      layerId: layer.id,
+      move: { from: [e.lngLat.lng, e.lngLat.lat], geometry: structuredClone(feature.geometry) }
+    }
   }
 
   /** A selection handle (resize or point) under the pointer, if any. */
@@ -659,18 +674,22 @@ export class Tools {
     if (drawing(this.tool)) this.drawDraft([e.lngLat.lng, e.lngLat.lat])
     else if (this.tool.mode === 'place') this.drawGhost([e.lngLat.lng, e.lngLat.lat])
     else if (!this.dragging && this.selected)
-      this.map.getCanvas().style.cursor = this.handleAt(e.point, 'user_selection_resize') ? 'nwse-resize' : ''
+      this.map.getCanvas().style.cursor = this.handleAt(e.point, 'user_selection_resize')
+        ? 'nwse-resize'
+        : String(this.hit(e.point)?.properties.fid) === this.selected
+          ? 'move'
+          : ''
     if (!this.dragging) return
     const to: [number, number] = [e.lngLat.lng, e.lngLat.lat]
-    const { feature, index, resize, layerId } = this.dragging
+    const { feature, index, resize, move, layerId } = this.dragging
     if (resize) {
       const size = sizeFromDrag(
         Math.hypot(e.point.x - resize.x, e.point.y - resize.y),
         resize.distanceAtSize1
       )
       feature.properties = { ...feature.properties, size }
-    } else if (index === undefined) {
-      feature.geometry = { type: 'Point', coordinates: to }
+    } else if (move) {
+      feature.geometry = translateGeometry(move.geometry, to[0] - move.from[0], to[1] - move.from[1])
     } else if (kindOf(feature.properties).drawn === 'graphic' && index === -1) {
       // An arrow's size handle: only the width changes.
       const width = axisWidthFrom(controlPoints(feature.geometry), to)
@@ -678,7 +697,7 @@ export class Tools {
     } else if (kindOf(feature.properties).drawn === 'graphic') {
       const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))
       feature.geometry = graphicGeometry(points)
-    } else {
+    } else if (index !== undefined) {
       const moved = moveVertex(feature.geometry, index, to)
       // An area's point can't go where the outline would cross itself: it stops.
       const ring = areaPoints(moved)
