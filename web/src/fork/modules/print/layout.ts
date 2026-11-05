@@ -6,8 +6,10 @@ export type Orientation = 'landscape' | 'portrait'
 
 const PAPERS: Record<Paper, [number, number]> = { a4: [297, 210], a3: [420, 297] }
 
-/** What printers leave blank at the paper's edges: lasers about 4 mm, inkjets 3-5. */
-export const MARGIN = 5
+/** What printers leave blank at the paper's edges: lasers about 4 mm, inkjets 3-5;
+ * a quarter inch is what nearly all can print to, so printed at actual size
+ * (100 %, which the written scale needs) nothing is cut off. */
+export const MARGIN = 6.35
 /** The box's padding, and its distance from the map's frame. */
 export const INFO_PADDING = 3
 /** The printed area's distance from the edges of the map on screen (CSS px). */

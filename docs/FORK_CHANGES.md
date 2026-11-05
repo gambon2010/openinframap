@@ -1331,8 +1331,11 @@ others, and its points are moved like a drawing's.
 The map took about a third of an A4 page: it was the screen's picture (twice as wide
 as tall) fitted in a much squarer box, under 10 mm margins, a header and a footer
 for a line each, and a 62 mm legend column even for two entries.
-- **The page** (`layout.ts`): the map fills it but 5 mm margins (what printers can
-  print to: lasers about 4 mm, inkjets 3-5); a box over the map's bottom-right corner
+- **The page** (`layout.ts`): the map fills it but quarter-inch (6.35 mm) margins,
+  what nearly every printer can print to (lasers about 4 mm, inkjets 3-5), so at
+  actual size nothing is cut off; the written scale holds only at actual size
+  ("fit to page" shrinks it, the bar shrinks with the map), which the box says
+  under the scale. A box over the map's bottom-right corner
   (about a fifth of the page wide, only as tall as it needs, at most 70 % of the
   map) has the title, when and by whom, the legend (what doesn't fit: "…and N
   more"), the scale and its bar, the centre and its MGRS, the credits (`parts.ts`
@@ -1345,7 +1348,9 @@ for a line each, and a 62 mm legend column even for two entries.
   moved and zoomed under the frame. Paper and orientation change the frame.
 - **Sharper**: drawn again at 300 dpi for the paper (`printRatio`: `setPixelRatio` up
   to what the graphics card can draw, 8192 px a side at most) and cropped to the
-  frame (`images.ts` `capture`). A4 landscape: 3389 × 2361 px.
+  frame (`images.ts` `capture`). A4 landscape: 3358 × 2330 px. The map's WebGL canvas
+  is read with `toDataURL`, then cropped: `drawImage` straight from it swapped red
+  and blue with some graphics drivers (friendly light blue symbols printed yellow).
 - `makeModal` (`fork/ui/panel.ts`) is Settings' only.
 
 ## Unsaved changes in IndexedDB (2026-11-02)

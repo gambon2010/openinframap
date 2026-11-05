@@ -106,7 +106,7 @@ function layOutInfo(
   text(pdf.splitTextToSize(content.byline, w), 7, 'normal', 80)
 
   // What's at the bottom, measured first: the legend gets the room that's left.
-  const footer = 4 + 4 + 3 * 7 * PT * 1.2 + 6 * PT * 1.2 * 2
+  const footer = 4 + 4 + 3 * 7 * PT * 1.2 + 6 * PT * 1.2 * 3
   // (The same when drawn as when measured: the box is only as tall as it needs.)
   const legendBottom = box.y + maxHeight - INFO_PADDING - footer
 
@@ -172,6 +172,9 @@ function layOutInfo(
     pdf.text(label, barX + bar.mm, y + 4.6, { align: 'center' })
   }
   y += 6
+  // The written scale holds only printed at actual size ("fit to page" shrinks it;
+  // the bar shrinks with the map and stays true).
+  text([t('print.actual-size', 'Print at actual size (100 %) for this scale')], 6, 'italic', 90)
   const mgrs = toMgrs(content.centre.lng, content.centre.lat)
   text(
     [

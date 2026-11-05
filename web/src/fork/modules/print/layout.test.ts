@@ -19,8 +19,11 @@ describe('the page', () => {
     expect(pageSize('a3', 'portrait')).toEqual({ w: 297, h: 420 })
   })
 
-  test('the map fills the page but 5 mm margins', () => {
-    expect(mapBox(pageSize('a4', 'landscape'))).toEqual({ x: 5, y: 5, w: 287, h: 200 })
+  test('the map fills the page but quarter-inch margins', () => {
+    const box = mapBox(pageSize('a4', 'landscape'))
+    expect(box.x).toBe(6.35)
+    expect(box.w).toBeCloseTo(284.3, 5)
+    expect(box.h).toBeCloseTo(197.3, 5)
   })
 
   test("the box sits in the map's bottom-right corner, about a fifth of the page wide", () => {
@@ -41,11 +44,11 @@ describe('the page', () => {
 
 describe('what is printed of the screen', () => {
   test("the paper's shape, as big as fits, a little in from the edges, centred", () => {
-    const map = mapBox(pageSize('a4', 'landscape')) // 287 × 200
+    const map = mapBox(pageSize('a4', 'landscape'))
     // A wide screen: as tall as fits, centred across.
     const area = printedArea(1432, 732, map)
     expect(area.h).toBe(700)
-    expect(area.w).toBe(Math.round((700 * 287) / 200))
+    expect(Math.abs(area.w - (700 * map.w) / map.h)).toBeLessThanOrEqual(1)
     expect(Math.abs(area.x + area.w / 2 - 716)).toBeLessThanOrEqual(1)
     // Portrait paper on the same screen: narrower.
     expect(printedArea(1432, 732, mapBox(pageSize('a4', 'portrait'))).w).toBeLessThan(area.w)
@@ -54,8 +57,8 @@ describe('what is printed of the screen', () => {
   test('drawn sharp enough for 300 dpi, within what the graphics card can draw', () => {
     const map = mapBox(pageSize('a4', 'landscape'))
     const area = { x: 0, y: 0, w: 1000, h: 697 }
-    // 287 mm at 300 dpi: 3390 px for 1000 px.
-    expect(printRatio(area, { w: 1400, h: 900 }, map, 8192)).toBeCloseTo(3.39, 2)
+    // 284.3 mm at 300 dpi: 3358 px for 1000 px.
+    expect(printRatio(area, { w: 1400, h: 900 }, map, 8192)).toBeCloseTo(3.358, 2)
     // A small card: as much as it can draw.
     expect(printRatio(area, { w: 1400, h: 900 }, map, 4096)).toBeCloseTo(4096 / 1400, 3)
     expect(printRatio(area, { w: 1400, h: 900 }, map, 1000)).toBe(1)

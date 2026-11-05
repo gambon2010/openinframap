@@ -802,6 +802,7 @@
     "legend-more": "…and {{count}} more",
     "centre": "Centre: {{position}}",
     "map-layers": "Map layers shown",
-    "about-frame": "What is inside the frame on the map is printed, filling the page. Move or zoom the map to change it. The legend goes in a box over its bottom-right corner."
+    "about-frame": "What is inside the frame on the map is printed, filling the page. Move or zoom the map to change it. The legend goes in a box over its bottom-right corner.",
+    "actual-size": "Print at actual size (100 %) for this scale"
   }
 }

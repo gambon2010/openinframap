@@ -28,22 +28,27 @@ export async function capture(map: Map, area: Box, ratio: number): Promise<Pictu
       map.once('idle', () => resolve())
       map.triggerRepaint()
     })
-    // The picture is only there while a frame is being drawn: copied out then.
-    const crop = await new Promise<HTMLCanvasElement>((resolve) => {
+    // The picture is only there while a frame is being drawn: taken then, whole
+    // (toDataURL: drawImage straight from the map's WebGL canvas swaps red and blue
+    // with some graphics drivers: blue symbols came out yellow), then cropped.
+    const whole = await new Promise<{ url: string; k: number }>((resolve) => {
       map.once('render', () => {
         const source = map.getCanvas()
-        const k = source.width / source.clientWidth
-        const out = document.createElement('canvas')
-        out.width = Math.round(area.w * k)
-        out.height = Math.round(area.h * k)
-        out
-          .getContext('2d')!
-          .drawImage(source, area.x * k, area.y * k, out.width, out.height, 0, 0, out.width, out.height)
-        resolve(out)
+        resolve({ url: source.toDataURL('image/png'), k: source.width / source.clientWidth })
       })
       map.triggerRepaint()
     })
-    return { url: crop.toDataURL('image/jpeg', 0.92), width: crop.width, height: crop.height }
+    const image = new Image()
+    image.src = whole.url
+    await image.decode()
+    const k = whole.k
+    const out = document.createElement('canvas')
+    out.width = Math.round(area.w * k)
+    out.height = Math.round(area.h * k)
+    out
+      .getContext('2d')!
+      .drawImage(image, area.x * k, area.y * k, out.width, out.height, 0, 0, out.width, out.height)
+    return { url: out.toDataURL('image/jpeg', 0.92), width: out.width, height: out.height }
   } finally {
     map.setPixelRatio(before)
   }

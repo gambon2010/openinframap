@@ -106,7 +106,8 @@ port 8800.
   address search servers; see below) and **print** (the map as a PDF: title, A4 or
   A3, landscape or portrait). While the print window is open, a frame on the map
   shows what will be printed; move or zoom the map under it. The map fills the
-  page (5 mm margins, what printers can print to), with a box over its bottom-right
+  page (quarter-inch margins, what nearly every printer can print to; print at
+  actual size, 100 %, for the written scale to be true), with a box over its bottom-right
   corner: the title, the date, a legend of what's shown, the scale, the centre's
   grid reference; north in the top-right corner.
 
