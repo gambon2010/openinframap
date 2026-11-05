@@ -77,23 +77,23 @@ French notes:
 
 ## Lines
 
-| Graphic                             | Standard     | English | French name                         | French   |
-|-------------------------------------|--------------|---------|-------------------------------------|----------|
-| Bearing line                        | B            | BL      | Ligne de relèvement                 | LRLV     |
-| Bridgehead                          | B            | BRHD    | Tête de pont ✓                      | TDP      |
-| Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)              | L BO     |
-| Line of departure                   | LD           | LD      | Ligne de débouché ✓                 | LD       |
-| Line of contact                     | LC           | LC      | Ligne de contact ✓                  | L CTC    |
-| Line of departure / line of contact | LD/LC        | LD/LC   | Débouché / contact                  | LD/L CTC |
-| Limit of advance                    | LOA          | LOA     | Limite avant ✓ (LIMAV)              | LIMAV    |
-| Final coordination line             | FCL          | FCL     | Ligne de coordination finale        | LCF      |
-| Probable line of deployment         | PLD          | PLD     | Ligne probable de déploiement       | LPD      |
-| Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)           | LRCL     |
-| Release line                        | RL           | RL      | Ligne de libération                 | LLIB     |
-| Light line                          | LL           | LL      | Ligne de feux masqués               | LFM      |
-| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓      | FLOT     |
-| Forward edge of battle area         | FEBA         | FEBA    | Limite avant de la zone de bataille | LAZB     |
-| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête aéroportée                     | TAP      |
+| Graphic                             | Standard     | English | French name                          | French |
+|-------------------------------------|--------------|---------|--------------------------------------|--------|
+| Bearing line                        | B            | BL      | Ligne de relèvement (agreed)         | AZIMUT |
+| Bridgehead                          | B            | BRHD    | Tête de pont ✓                       | TDP    |
+| Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)               | L BO   |
+| Line of departure                   | LD           | LD      | Ligne de débouché ✓                  | LD     |
+| Line of contact                     | LC           | LC      | Ligne de contact ✓                   | L CTC  |
+| Line of departure / line of contact | LD/LC        | LD/C    | Ligne de débouché / contact (agreed) | LD/C   |
+| Limit of advance                    | LOA          | LOA     | Limite avant ✓ (LIMAV)               | LIMAV  |
+| Final coordination line             | FCL          | FCL     | Ligne de coordination finale         | LCF    |
+| Probable line of deployment         | PLD          | PLD     | Ligne probable de déploiement        | LPD    |
+| Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)            | LRCL   |
+| Release line                        | RL           | RL      | Ligne de libération                  | LLIB   |
+| Light line                          | LL           | LL      | Ligne de feux masqués                | LFM    |
+| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓       | FLOT   |
+| Forward edge of battle area         | FEBA         | FEBA    | Limite avant de la zone de bataille  | LAZB   |
+| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête aéroportée                      | TAP    |
 
 French: phase line is *ligne de bond* (L BO), line of contact *ligne de contact*
 (L CTC), holding line *ligne de recueil* (LRCL), all TTA 106. Release line, light
@@ -120,7 +120,7 @@ What some lines mean:
 | Targeted area of interest | TAI          | TAI     | Zone d'intérêt ciblée               | ZIC    |
 | Limited access area       | LAA          | LAA     | Zone d'accès restreint (agreed)     | ZRES   |
 | Drop zone                 | DZ           | DZ      | Zone de saut ✓                      | ZS     |
-| Landing zone              | LZ           | LZ      | Zone de poser                       | ZP     |
+| Landing zone              | LZ           | LZ      | LZ, as used in French (agreed)      | LZ     |
 | Pickup zone               | PZ           | PZ      | Zone d'embarquement                 | ZEMB   |
 | Extraction zone           | EZ           | EZ      | Zone d'extraction                   | ZX     |
 | Prepared but not occupied | (P)          | (P)     | Préparée, non occupée               | (P)    |
