@@ -1563,7 +1563,9 @@ the key opened over the buttons too; the Map sources panel was another button.
   out, a substation is drawn as a point while its status still outlines its area,
   and a click inside the outline hit nothing. The feature is found among what's
   drawn (same tile layer and id) and handed to the click router; the pointer is a
-  hand there.
+  hand there. Not drawn at all (its layer off in the layer switcher, e.g. Power):
+  its layer is switched on, as when a search result is picked (`switcherLayersFor`),
+  and it opens once drawn.
 - **The coordinates** are next to the scale, bottom left.
 
 ## Tests

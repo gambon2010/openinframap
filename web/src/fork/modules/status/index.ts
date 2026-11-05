@@ -42,8 +42,9 @@ const status: ForkModule = {
   init: (ctx) => {
     // The statuses are drawn over features: a click goes to the feature underneath.
     for (const layer of statusLayers()) delete ctx.clickRouter.handlers[layer.id]
-    // A click on a status still opens its feature, even drawn elsewhere (a point).
-    clickThroughStatuses(ctx.map, ctx.clickRouter)
+    // A click on a status opens its feature, even drawn elsewhere (a point) or not
+    // at all (its layer switched off: switched on).
+    clickThroughStatuses(ctx.map, ctx.clickRouter, ctx.layerSwitcher)
     const statusMap = new StatusMap(ctx.map)
     const supply = new SupplyMode(ctx.map)
     // On a printed map, while the mode is on.

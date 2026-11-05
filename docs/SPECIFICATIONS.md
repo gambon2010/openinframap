@@ -164,7 +164,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.21 | The selection shows the item itself: a graphic, range rings or a measurement glow under their own lines, a picture or symbol gets a box fitting its image; one handle colour; items move as they're dragged, a line, area or graphic dragged by its body moves whole. | ✅ (2026-11-05) |
 | 9.22 | One look app-wide for what's chosen or on (chips, tools, selected rows): a highlighted background, the border unchanged (`oim-on`). | ✅ (2026-11-05) |
 | 9.23 | A copied feature stays visible when zoomed out, even where the original thins out. | ✅ (2026-11-05) |
-| 9.24 | A click on a feature's status outline (e.g. a substation drawn as a point when zoomed out) selects the feature; the coordinates next to the scale. | ✅ (2026-11-05) |
+| 9.24 | A click on a feature's status outline (e.g. a substation drawn as a point when zoomed out, or its layer off: switched on) selects the feature; the coordinates next to the scale. | ✅ (2026-11-05) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 
