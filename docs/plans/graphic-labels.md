@@ -29,7 +29,8 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
    give the full name next to it: "WUP: Withdraw under pressure".
 9. **French uses the French Army's terms**: TTA 106 (the Army's tactical symbols
    and abbreviations, DGA), its *sigles* where it has one (TEN, RETAR, L BO, ZE…);
-   ✓ = found there, "(to check)" = not in it. Otherwise built by the same rules
+   ✓ = found there, "(agreed)" = chosen with the project owner, "(to check)" =
+   neither yet. Otherwise built by the same rules
    from the French words: RSP (repli sous la pression).
 10. **Technical acronyms stay as they are** (fire support, airspace: FSCL, ROZ, FFA…).
    Whoever uses those knows them; the legend spells them out.
@@ -42,7 +43,7 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 | Breach                  | B        | BREACH  | Bréchage ✓                       | BRCH       |
 | Bypass                  | B        | BYPASS  | Contourner ✓                     | CTRN       |
 | Canalize                | C        | CNLZ    | Canaliser ✓                      | CNLS       |
-| Clear                   | C        | **C**   | Nettoyer (to check)              | NETT       |
+| Clear                   | C        | **C**   | Nettoyer (agreed)                | NETT       |
 | Contain                 | C ENY    | CNTN    | Contenir ✓                       | CNTN       |
 | Counterattack           | CATK     | CATK    | Contre-attaquer ✓ (C.ATK)        | CATK       |
 | Counterattack by fire   | CATK     | CATK F  | Contre-attaque par le feu        | CATK F     |
@@ -53,12 +54,12 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 | Guard                   | G        | **G**   | Flanc-garder ✓ (G on the symbol) | **G**      |
 | Isolate                 | I        | **I**   | Isoler ✓                         | **I**      |
 | Occupy                  | O        | **O**   | Occuper ✓                        | **O**      |
-| Penetrate               | P        | **P**   | Percer (to check)                | **P**      |
+| Penetrate               | P        | **P**   | Percer (agreed)                  | **P**      |
 | Retain                  | R        | **R**   | Tenir ✓ (TEN)                    | TEN        |
 | Retirement              | R        | RTMT    | Retraite                         | RETR       |
 | Screen                  | S        | SCREEN  | Surveiller ✓                     | SURV       |
-| Secure                  | S        | SECURE  | Sécuriser (to check)             | SÉCUR      |
-| Seize                   | S        | **S**   | S'emparer de (to check)          | S          |
+| Secure                  | S        | SECURE  | Sécuriser (agreed)               | SÉCUR      |
+| Seize                   | S        | **S**   | Saisir (agreed)                  | SAISIR     |
 | Withdraw                | W        | **W**   | (Se) replier ✓ (W on the symbol) | **W**      |
 | Withdraw under pressure | WP       | WUP     | Repli sous la pression           | RSP        |
 | Relief in place         | RIP      | RIP     | Relève sur position ✓ (RIP)      | **RELÈVE** |
@@ -172,6 +173,7 @@ SHORADEZ, HIDACZ, MEZ, LOMEZ, HIMEZ, WFZ. Their field texts ("MAX ALT:",
    stay: F, G, I, P, W, and E, A, T, t (decoys, sensors, trip wire).
 2. The 6-letter limit for "short words": DETAINEES and REFUGEES are longer but
    clearer in full. Allow up to 8?
-3. The French terms marked "(to check)": not in TTA 106 (Clear, Penetrate, Secure,
-   Seize, release line, the logistics routes and zones…). Source used: TTA 106
+3. The French terms marked "(to check)": not in TTA 106 nor agreed yet (release
+   line, light line, the logistics routes and zones…). Clear, Penetrate, Secure and
+   Seize are agreed: Nettoyer (NETT), Percer (P), Sécuriser (SÉCUR), Saisir (SAISIR). Source used: TTA 106
    *Symboles tactiques* (French Army, DGA), as found online.
