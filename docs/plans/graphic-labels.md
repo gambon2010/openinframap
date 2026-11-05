@@ -1,6 +1,6 @@
 # Plan: plain labels on tactical graphics
 
-Status: **proposal, for review** (2026-11-05). Nothing built yet.
+Status: **agreed, to build** (2026-11-05).
 
 ## Goal
 
@@ -88,23 +88,23 @@ French notes:
 
 ## Lines
 
-| Graphic                             | Standard     | English | French name                                       | French |
-|-------------------------------------|--------------|---------|---------------------------------------------------|--------|
-| Bearing line                        | B            | BRG     | Ligne de relèvement (agreed)                      | AZIMUT |
-| Bridgehead                          | B            | BRHD    | Tête de pont ✓                                    | TDP    |
-| Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)                            | L BO   |
-| Line of departure                   | LD           | LD      | Ligne de débouché ✓                               | LD     |
-| Line of contact                     | LC           | LC      | Ligne de contact ✓                                | L CTC  |
-| Line of departure / line of contact | LD/LC        | LD/C    | Ligne de débouché / contact (agreed)              | LD/C   |
-| Limit of advance                    | LOA          | LOA     | LOA until checked (LIMAV is the forward boundary) | LOA    |
-| Final coordination line             | FCL          | FCL     | FCL, kept in French like FSCL (agreed)            | FCL    |
-| Probable line of deployment         | PLD          | PLD     | Ligne de prise de déploiement opérationnel ✓      | LPDO   |
-| Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)                         | LRCL   |
-| Release line                        | RL           | RL      | Ligne d'identification et d'accueil ✓ (agreed)    | LIA    |
-| Light line                          | LL           | LL      | Ligne de feux masqués, black-out (agreed)         | BLK    |
-| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓                    | FLOT   |
-| Forward edge of battle area         | FEBA         | FEBA    | FEBA, kept in French (agreed)                     | FEBA   |
-| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête de pont aéroportée (agreed)                  | TPA    |
+| Graphic                             | Standard     | English | French name                                    | French |
+|-------------------------------------|--------------|---------|------------------------------------------------|--------|
+| Bearing line                        | B            | BRG     | Ligne de relèvement (agreed)                   | AZIMUT |
+| Bridgehead                          | B            | BRHD    | Tête de pont ✓                                 | TDP    |
+| Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)                         | L BO   |
+| Line of departure                   | LD           | LD      | Ligne de débouché ✓                            | LD     |
+| Line of contact                     | LC           | LC      | Ligne de contact ✓                             | L CTC  |
+| Line of departure / line of contact | LD/LC        | LD/C    | Ligne de débouché / contact (agreed)           | LD/C   |
+| Limit of advance                    | LOA          | LOA     | LOA, kept in French (agreed)                   | LOA    |
+| Final coordination line             | FCL          | FCL     | FCL, kept in French like FSCL (agreed)         | FCL    |
+| Probable line of deployment         | PLD          | PLD     | Ligne de prise de déploiement opérationnel ✓   | LPDO   |
+| Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)                      | LRCL   |
+| Release line                        | RL           | RL      | Ligne d'identification et d'accueil ✓ (agreed) | LIA    |
+| Light line                          | LL           | LL      | Ligne de feux masqués, black-out (agreed)      | BLK    |
+| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓                 | FLOT   |
+| Forward edge of battle area         | FEBA         | FEBA    | FEBA, kept in French (agreed)                  | FEBA   |
+| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête de pont aéroportée (agreed)               | TPA    |
 
 French: phase line is *ligne de bond* (L BO), line of contact *ligne de contact*
 (L CTC), holding line *ligne de recueil* (LRCL), all TTA 106. English acronyms are
@@ -155,17 +155,17 @@ EMB alone is *embuscade* in TTA 106), Z-EXF (*zone d'exfiltration*).
 
 ## Support and movement
 
-| Graphic                                           | Standard       | English                  | French name                                              | French                  |
-|---------------------------------------------------|----------------|--------------------------|----------------------------------------------------------|-------------------------|
-| Main supply route                                 | MSR            | MSR                      | MSR, kept in French (agreed)                             | MSR                     |
-| One-way / two-way traffic (on an MSR)             | MSR            | MSR                      | MSR, kept in French (agreed)                             | MSR                     |
-| Alternate supply route                            | ASR            | ASR                      | ASR, kept in French (agreed)                             | ASR                     |
-| Alternating traffic                               | ALT ASR        | ALT ASR                  | Circulation alternée (agreed)                            | ASR ALT                 |
-| Forward arming and refuelling point               | FARP           | FARP                     | Point de ravitaillement avancé                           | FARP                    |
-| Brigade / division / regimental support area      | BSA, DSA, RSA  | BSA, DSA, RSA            | Zone de soutien ✓ (agreed)                               | ZS BRIG, ZS DIV, ZS RGT |
-| Detainee / EPW / refugee holding area             | AREA … HOLDING | DETAINEES, POW, REFUGEES | Zones: détenus, prisonniers de guerre, réfugiés (agreed) | Z-DÉT, Z-PG, Z-RÉF      |
-| Electro-optical intercept                         | O              | EO                       | Interception électro-optique (agreed)                    | IEO                     |
-| Electronic / acoustic / torpedo (decoys, sensors) | E, A, T        | E, A, T                  | Électronique, acoustique, torpille                       | E, A, T                 |
+| Graphic                                           | Standard       | English       | French name                                              | French                  |
+|---------------------------------------------------|----------------|---------------|----------------------------------------------------------|-------------------------|
+| Main supply route                                 | MSR            | MSR           | MSR, kept in French (agreed)                             | MSR                     |
+| One-way / two-way traffic (on an MSR)             | MSR            | MSR           | MSR, kept in French (agreed)                             | MSR                     |
+| Alternate supply route                            | ASR            | ASR           | ASR, kept in French (agreed)                             | ASR                     |
+| Alternating traffic                               | ALT ASR        | ALT ASR       | Circulation alternée (agreed)                            | ASR ALT                 |
+| Forward arming and refuelling point               | FARP           | FARP          | Point de ravitaillement avancé                           | FARP                    |
+| Brigade / division / regimental support area      | BSA, DSA, RSA  | BSA, DSA, RSA | Zone de soutien ✓ (agreed)                               | ZS BRIG, ZS DIV, ZS RGT |
+| Detainee / EPW / refugee holding area             | AREA … HOLDING | DET, POW, REF | Zones: détenus, prisonniers de guerre, réfugiés (agreed) | Z-DÉT, Z-PG, Z-RÉF      |
+| Electro-optical intercept                         | O              | EO            | Interception électro-optique (agreed)                    | IEO                     |
+| Electronic / acoustic / torpedo (decoys, sensors) | E, A, T        | E, A, T       | Électronique, acoustique, torpille                       | E, A, T                 |
 
 ## Kept as they are (technical acronyms)
 
@@ -197,7 +197,5 @@ SHORADEZ, HIDACZ, MEZ, LOMEZ, HIMEZ, WFZ. Their field texts ("MAX ALT:",
 
 ## Still open
 
-1. **Limit of advance in French**: LOA for now. LIMAV is TTA 106's forward boundary,
-   not this; the doctrinal French term is still to find.
-2. **English holding areas**: DETAINEES and REFUGEES are longer than the 6-letter
-   limit for words in full. Keep them in full, or DET, POW, REF?
+Nothing: every label is decided (the limit of advance stays LOA in French; the
+holding areas are DET, POW, REF in English).
