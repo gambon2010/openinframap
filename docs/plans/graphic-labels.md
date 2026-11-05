@@ -31,8 +31,7 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
    acronym or word where French military usage keeps it (LZ, FEBA, MSR, black-out).
    Source: TTA 106 (the Army's tactical symbols
    and abbreviations, DGA), its *sigles* where it has one (TEN, RETAR, L BO, ZE…);
-   ✓ = found there, "(agreed)" = chosen with the project owner, "(to check)" =
-   neither yet. Otherwise built by the same rules
+   ✓ = found there, "(agreed)" = chosen with the project owner. Otherwise built by the same rules
    from the French words: RSP (repli sous la pression).
 11. **A French label never means something else in French doctrine**: each is
    checked against TTA 106's abbreviations and the letters on its task symbols.
@@ -187,15 +186,18 @@ SHORADEZ, HIDACZ, MEZ, LOMEZ, HIMEZ, WFZ. Their field texts ("MAX ALT:",
   shared with other systems (ATAK, ODIN), off by default.
 - A test: no two graphics have the same label in one language.
 
-## Open questions
+## Decided
 
-1. Which of the shared letters go to the most common graphic: proposed **B**
-   Block, **C** Clear, **D** Disrupt, **M** Mined area, **O** Occupy, **R** Retain,
-   **S** Seize (the others sharing them get a word). Letters only one graphic has
-   stay: F, G, I, P, W, and E, A, T, t (decoys, sensors, trip wire).
-2. The 6-letter limit for "short words": DETAINEES and REFUGEES are longer but
-   clearer in full. Allow up to 8?
-3. The French terms marked "(to check)": not in TTA 106 nor agreed yet (release
-   line, light line, the logistics routes and zones…). Clear, Penetrate, Secure and
-   Seize are agreed: Nettoyer (NETT), Percer (P), Sécuriser (SÉCUR), Saisir (SAISIR). Source used: TTA 106
-   *Symboles tactiques* (French Army, DGA), as found online.
+- Single letters: **B** Block, **C** Clear, **D** Disrupt, **M** Mined area, **O**
+  Occupy, **R** Retain, **S** Seize (the most common of those sharing them), and the
+  letters only one graphic has: F, G, I, W, and E, A, T, t (decoys, sensors, trip
+  wire). In French: B, D, M, O, F, G, I, W, E, A, T, t (French has its own words for
+  Clear, Retain, Seize, Penetrate: NETT, TEN, SAISIR, PERCER).
+- Every French term above: TTA 106's (✓) or agreed with the project owner.
+
+## Still open
+
+1. **Limit of advance in French**: LOA for now. LIMAV is TTA 106's forward boundary,
+   not this; the doctrinal French term is still to find.
+2. **English holding areas**: DETAINEES and REFUGEES are longer than the 6-letter
+   limit for words in full. Keep them in full, or DET, POW, REF?
