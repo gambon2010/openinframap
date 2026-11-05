@@ -1,21 +1,21 @@
 // Fork: where the cursor is, at the bottom left next to the scale: latitude, longitude and the
 // military grid reference (MGRS, to the metre). G copies the grid reference under the
-// cursor (the pointer stays where it is), which the readout says.
+// cursor (the pointer stays where it is), which the readout's tooltip says.
 import { IControl, Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 
 export class CoordinatesReadout implements IControl {
-  private el = el('div.maplibregl-ctrl.oim-coords')
-  private hint = el('span.oim-coords-hint', t('measure.copy-mgrs-hint', 'G: copy'), {
-    title: t('measure.copy-mgrs-key', 'G (with the pointer on the map): copy the grid reference there')
+  // Its tooltip (coordinates.css, data-tip): shown at once on hover, unlike a title.
+  private el = el('div.maplibregl-ctrl.oim-coords', {
+    'data-tip': t('measure.copy-mgrs-key', 'G (with the pointer on the map): copy the grid reference there')
   })
   private latLng = el('span.oim-coords-latlng')
   private mgrs = el('span.oim-coords-mgrs')
 
   onAdd(map: Map): HTMLElement {
-    this.el.append(this.latLng, this.mgrs, this.hint)
+    this.el.append(this.latLng, this.mgrs)
     const show = (lng: number, lat: number) => {
       this.latLng.textContent = formatLatLng(lng, lat)
       this.mgrs.textContent = toMgrs(lng, lat) ?? '—'
