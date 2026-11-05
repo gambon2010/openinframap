@@ -1,6 +1,7 @@
-// Fork: the pictures in a printed map: the map itself, drawn again sharper, and
-// symbols (SVG) as PNG, which jsPDF needs.
+// Fork: the pictures in a printed map: the printed part of the map, drawn again
+// sharper, and symbols (SVG) as PNG, which jsPDF needs.
 import type { Map } from 'maplibre-gl'
+import type { Box } from './layout.ts'
 
 export interface Picture {
   url: string
@@ -8,8 +9,18 @@ export interface Picture {
   height: number
 }
 
-export /** The map as an image, drawn again at `ratio` times the screen's pixels. */
-async function capture(map: Map, ratio: number): Promise<Picture> {
+/** The most pixels a side the graphics card can draw (8192 if it doesn't say). */
+export function maxCanvasSide(map: Map): number {
+  const gl = map.painter?.context?.gl as WebGLRenderingContext | undefined
+  const most = gl
+    ? Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE), gl.getParameter(gl.MAX_TEXTURE_SIZE))
+    : 0
+  // Some room below the limit: memory, and cards that claim more than they draw.
+  return Math.min(most || 8192, 8192)
+}
+
+/** A part of the map (`area`, CSS px), drawn again at `ratio` times the screen's pixels. */
+export async function capture(map: Map, area: Box, ratio: number): Promise<Picture> {
   const before = map.getPixelRatio()
   map.setPixelRatio(ratio)
   try {
@@ -17,13 +28,22 @@ async function capture(map: Map, ratio: number): Promise<Picture> {
       map.once('idle', () => resolve())
       map.triggerRepaint()
     })
-    // The picture is only there while a frame is being drawn.
-    const url = await new Promise<string>((resolve) => {
-      map.once('render', () => resolve(map.getCanvas().toDataURL('image/jpeg', 0.92)))
+    // The picture is only there while a frame is being drawn: copied out then.
+    const crop = await new Promise<HTMLCanvasElement>((resolve) => {
+      map.once('render', () => {
+        const source = map.getCanvas()
+        const k = source.width / source.clientWidth
+        const out = document.createElement('canvas')
+        out.width = Math.round(area.w * k)
+        out.height = Math.round(area.h * k)
+        out
+          .getContext('2d')!
+          .drawImage(source, area.x * k, area.y * k, out.width, out.height, 0, 0, out.width, out.height)
+        resolve(out)
+      })
       map.triggerRepaint()
     })
-    const canvas = map.getCanvas()
-    return { url, width: canvas.width, height: canvas.height }
+    return { url: crop.toDataURL('image/jpeg', 0.92), width: crop.width, height: crop.height }
   } finally {
     map.setPixelRatio(before)
   }

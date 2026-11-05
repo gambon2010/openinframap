@@ -42,3 +42,32 @@
   opacity: 0.6;
   cursor: progress;
 }
+
+/* The window: beside the map, not over it (the map is moved under the frame). */
+.oim-print-panel {
+  position: fixed;
+  top: 64px;
+  left: 12px;
+  z-index: 1500;
+  display: none;
+  flex-direction: column;
+  width: min(340px, calc(100vw - 24px));
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.9rem;
+}
+.oim-print-panel.visible {
+  display: flex;
+}
+
+/* What will be printed: framed, the rest dimmed. */
+.oim-print-frame {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 2px solid #222;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 25%);
+  pointer-events: none;
+}

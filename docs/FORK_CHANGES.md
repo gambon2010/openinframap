@@ -1321,10 +1321,32 @@ others, and its points are moved like a drawing's.
   the date and who printed it. The legend (`fork/ui/legend.ts`, `addLegend`): the map
   layers on (print), the layers shown and the symbols in view (My layers), the power
   supply colours while the mode is on (status). Long legends end with "…and N more".
-- `fork/ui/panel.ts` `makeModal`: the window Settings used, shared with Print.
+- `fork/ui/panel.ts` `makeModal`: the window Settings used, shared with Print (Print's is a floating panel since 2026-11-05).
 - MGRS formatting moved to `fork/core/mgrs.ts` (used by measure and print).
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
+
+## Printing reworked: the map fills the page (2026-11-05)
+
+The map took about a third of an A4 page: it was the screen's picture (twice as wide
+as tall) fitted in a much squarer box, under 10 mm margins, a header and a footer
+for a line each, and a 62 mm legend column even for two entries.
+- **The page** (`layout.ts`): the map fills it but 5 mm margins (what printers can
+  print to: lasers about 4 mm, inkjets 3-5); a box over the map's bottom-right corner
+  (about a fifth of the page wide, only as tall as it needs, at most 70 % of the
+  map) has the title, when and by whom, the legend (what doesn't fit: "…and N
+  more"), the scale and its bar, the centre and its MGRS, the credits (`parts.ts`
+  `drawInfo`, laid out twice: measured, then drawn). North in the top-right corner.
+  About 90 % of the page is map.
+- **What's printed** (`printedArea`): the biggest area of the paper's map's shape that
+  fits on the map on screen, a little in from its edges, at the screen's zoom.
+  While the print window is open, a frame shows it and dims the rest (`frame.ts`);
+  the window is no longer modal (`makePanel`, floating top left), so the map can be
+  moved and zoomed under the frame. Paper and orientation change the frame.
+- **Sharper**: drawn again at 300 dpi for the paper (`printRatio`: `setPixelRatio` up
+  to what the graphics card can draw, 8192 px a side at most) and cropped to the
+  frame (`images.ts` `capture`). A4 landscape: 3389 × 2361 px.
+- `makeModal` (`fork/ui/panel.ts`) is Settings' only.
 
 ## Unsaved changes in IndexedDB (2026-11-02)
 

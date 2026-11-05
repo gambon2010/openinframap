@@ -104,8 +104,11 @@ port 8800.
 - **Header:** **about** (this map: its region and the date of its data, the
   datasets, how to use it, credits and licences), **settings** (background map and
   address search servers; see below) and **print** (the map as a PDF: title, A4 or
-  A3, with a legend of what's shown, the scale, north and the centre's grid
-  reference).
+  A3, landscape or portrait). While the print window is open, a frame on the map
+  shows what will be printed; move or zoom the map under it. The map fills the
+  page (5 mm margins, what printers can print to), with a box over its bottom-right
+  corner: the title, the date, a legend of what's shown, the scale, the centre's
+  grid reference; north in the top-right corner.
 
 ---
 

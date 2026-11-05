@@ -1,5 +1,17 @@
 import { describe, expect, test } from 'vitest'
-import { fit, formatScale, metresPerPixel, pageLayout, pageSize, scaleBar, scaleOf } from './layout.ts'
+import {
+  fit,
+  formatScale,
+  infoBox,
+  infoWidth,
+  mapBox,
+  metresPerPixel,
+  pageSize,
+  printRatio,
+  printedArea,
+  scaleBar,
+  scaleOf
+} from './layout.ts'
 
 describe('the page', () => {
   test('paper sizes', () => {
@@ -7,19 +19,46 @@ describe('the page', () => {
     expect(pageSize('a3', 'portrait')).toEqual({ w: 297, h: 420 })
   })
 
-  test('the map leaves room for the legend, when there is one', () => {
-    const page = pageSize('a4', 'landscape')
-    const withLegend = pageLayout(page, true)
-    const without = pageLayout(page, false)
-    expect(without.legend).toBeNull()
-    expect(without.map.w).toBe(277)
-    expect(withLegend.map.w + withLegend.legend!.w + 5).toBe(277)
-    expect(withLegend.legend!.x).toBeGreaterThan(withLegend.map.x + withLegend.map.w)
+  test('the map fills the page but 5 mm margins', () => {
+    expect(mapBox(pageSize('a4', 'landscape'))).toEqual({ x: 5, y: 5, w: 287, h: 200 })
+  })
+
+  test("the box sits in the map's bottom-right corner, about a fifth of the page wide", () => {
+    const map = mapBox(pageSize('a4', 'landscape'))
+    expect(infoWidth(pageSize('a4', 'landscape'))).toBe(59)
+    expect(infoWidth(pageSize('a4', 'portrait'))).toBe(55)
+    expect(infoWidth(pageSize('a3', 'landscape'))).toBe(75)
+    const box = infoBox(map, 59, 40)
+    expect(box.x + box.w).toBe(map.x + map.w)
+    expect(box.y + box.h).toBe(map.y + map.h)
   })
 
   test('an image fitted in a box keeps its shape', () => {
     const box = fit({ x: 0, y: 0, w: 200, h: 100 }, 1000, 1000)
     expect(box).toEqual({ x: 50, y: 0, w: 100, h: 100 })
+  })
+})
+
+describe('what is printed of the screen', () => {
+  test("the paper's shape, as big as fits, a little in from the edges, centred", () => {
+    const map = mapBox(pageSize('a4', 'landscape')) // 287 × 200
+    // A wide screen: as tall as fits, centred across.
+    const area = printedArea(1432, 732, map)
+    expect(area.h).toBe(700)
+    expect(area.w).toBe(Math.round((700 * 287) / 200))
+    expect(Math.abs(area.x + area.w / 2 - 716)).toBeLessThanOrEqual(1)
+    // Portrait paper on the same screen: narrower.
+    expect(printedArea(1432, 732, mapBox(pageSize('a4', 'portrait'))).w).toBeLessThan(area.w)
+  })
+
+  test('drawn sharp enough for 300 dpi, within what the graphics card can draw', () => {
+    const map = mapBox(pageSize('a4', 'landscape'))
+    const area = { x: 0, y: 0, w: 1000, h: 697 }
+    // 287 mm at 300 dpi: 3390 px for 1000 px.
+    expect(printRatio(area, { w: 1400, h: 900 }, map, 8192)).toBeCloseTo(3.39, 2)
+    // A small card: as much as it can draw.
+    expect(printRatio(area, { w: 1400, h: 900 }, map, 4096)).toBeCloseTo(4096 / 1400, 3)
+    expect(printRatio(area, { w: 1400, h: 900 }, map, 1000)).toBe(1)
   })
 })
 

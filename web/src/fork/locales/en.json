@@ -792,7 +792,6 @@
     "portrait": "Portrait",
     "make": "Make the PDF",
     "title": "Print the map",
-    "about": "The map as it is on screen now, with what is shown on it.",
     "title-field": "Title",
     "paper": "Paper",
     "orientation": "Orientation",
@@ -802,6 +801,7 @@
     "legend": "Legend",
     "legend-more": "…and {{count}} more",
     "centre": "Centre: {{position}}",
-    "map-layers": "Map layers shown"
+    "map-layers": "Map layers shown",
+    "about-frame": "What is inside the frame on the map is printed, filling the page. Move or zoom the map to change it. The legend goes in a box over its bottom-right corner."
   }
 }

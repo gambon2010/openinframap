@@ -1,15 +1,18 @@
 // Fork: printing the map as a PDF (docs/SPECIFICATIONS.md 10.7): "print" in the
-// header opens a window (title, paper, orientation, legend); the PDF has the map as
-// on screen with a legend, the scale, north and the centre's grid reference
-// (pdf.ts). What the legend lists, modules say (ui/legend.ts).
+// header opens a window (title, paper, orientation, legend), beside the map: a frame
+// on the map shows what will be printed (frame.ts), and the map can be moved under
+// it. The PDF: the map filling the page, a box over its corner with the legend, the
+// scale, north and the centre's grid reference (pdf.ts). What the legend lists,
+// modules say (ui/legend.ts).
 import { el } from 'redom'
 import { ForkModule } from '../../types.ts'
 import { t } from '../../core/i18n.ts'
 import { author } from '../../core/author.ts'
-import { makeModal } from '../../ui/panel.ts'
+import { makePanel } from '../../ui/panel.ts'
 import { addLegend } from '../../ui/legend.ts'
 import { printMap } from './pdf.ts'
-import type { Orientation, Paper } from './layout.ts'
+import { Orientation, Paper, mapBox, pageSize, printedArea } from './layout.ts'
+import { PrintFrame } from './frame.ts'
 import './print.css'
 
 const TITLE_KEY = 'oim-print-title'
@@ -52,9 +55,16 @@ const print: ForkModule = {
     const make = el('button.oim-print-make', t('print.make', 'Make the PDF'), {
       type: 'button'
     }) as HTMLButtonElement
-    const modal = makeModal(
+    const { panel } = makePanel(
+      'oim-print-panel',
       t('print.title', 'Print the map'),
-      el('p.oim-print-note', t('print.about', 'The map as it is on screen now, with what is shown on it.')),
+      el(
+        'p.oim-print-note',
+        t(
+          'print.about-frame',
+          'What is inside the frame on the map is printed, filling the page. Move or zoom the map to change it. The legend goes in a box over its bottom-right corner.'
+        )
+      ),
       el('label.oim-print-field', el('span', t('print.title-field', 'Title')), title),
       el('label.oim-print-field', el('span', t('print.paper', 'Paper')), paper),
       el('label.oim-print-field', el('span', t('print.orientation', 'Orientation')), orientation),
@@ -62,6 +72,20 @@ const print: ForkModule = {
       make,
       status
     )
+    document.body.append(panel)
+    const frame = new PrintFrame(map, (width, height) =>
+      printedArea(width, height, mapBox(pageSize(paper.value as Paper, orientation.value as Orientation)))
+    )
+    paper.onchange = () => frame.update()
+    orientation.onchange = () => frame.update()
+    const close = () => panel.classList.remove('visible')
+    // Closed (its × or Escape): no frame.
+    new MutationObserver(() => {
+      if (!panel.classList.contains('visible')) frame.hide()
+    }).observe(panel, { attributes: true, attributeFilter: ['class'] })
+    panel.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close()
+    })
     let me = ''
     make.onclick = async () => {
       make.disabled = true
@@ -80,7 +104,7 @@ const print: ForkModule = {
           author: author() || me
         })
         status.textContent = ''
-        modal.close()
+        close()
       } catch (e) {
         console.error('Printing the map failed', e)
         status.textContent = t('print.failed', "The PDF couldn't be made: {{error}}", {
@@ -94,7 +118,8 @@ const print: ForkModule = {
     link.onclick = (event: Event) => {
       event.preventDefault()
       status.textContent = ''
-      modal.open()
+      panel.classList.add('visible')
+      frame.show()
       title.select()
       // Signed with your account's name if there's no other.
       void fetch('/auth/me')
