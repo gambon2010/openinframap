@@ -168,6 +168,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.25 | Three-point graphics square where the standard draws them so (Contain, Block, Clear, Breach, Bypass, Canalize, Penetrate, Disrupt, Ambush, Attack by fire position). | ✅ (2026-11-05) |
 | 9.26 | Plain labels on tactical graphics for untrained users: one letter only for the most common (B Block…), short words in full, longer ones shortened (CATK), several words as initials (WUP), French built the same way (RSP); the full name in the legend. | ✅ `userlayers/map/graphic-labels.ts`, plan `docs/plans/graphic-labels.md` (2026-11-05) |
 | 9.27 | One picker entry per graphic with a switch between its versions: Block/Disrupt/Fix task or obstacle effect; Main/Supporting attack, Aviation: axis of advance or direction of attack. One Engagement area. Rectangular fire areas removed (the irregular draw rectangles). | ✅ (2026-11-06); PAA: see 9.28 |
+| 9.28 | Position area for artillery (PAA) back, drawn point by point like the other areas (the standard has it only as a rectangle or a circle). | 📝 how: to decide (2026-11-06) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 
