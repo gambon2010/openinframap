@@ -1400,6 +1400,10 @@ symbol code, not the kind).
   The preview follows and the hint shows the size. Without Shift the map zooms as
   before. (`Tools.wheel`: a capturing wheel listener on the map's container, before
   MapLibre's own; Shift turns the wheel sideways in most browsers, so either axis.)
+  The same on an item selected on the map (one, which you may change): a marker,
+  symbol or picture's size, an arrow's width in metres; shown as it changes
+  (`renderer.preview`), kept as one change 0.5 s after the last notch, or at once on
+  a click, another selection or another tool (`Tools.resizeSelected`, `keepResize`).
 - **Right-click** opens only the quick-actions menu: the item isn't selected and its
   card stays closed (Rename opens it; Delete deletes that item).
 - **While placing** a marker, a symbol or a picture, it shows faint under the cursor

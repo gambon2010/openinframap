@@ -635,7 +635,8 @@
     "marker-hint": "Click the map to put a marker there. Shift + scroll: its size; right-click: stop.",
     "place-hint": "Click the map to put \"{{name}}\" there. Shift + scroll: its size; right-click: stop.",
     "axis-hint": "\"{{name}}\": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the blue handle afterwards).",
-    "image-hint": "Click the map to put the picture there. Shift + scroll: its size; right-click: stop."
+    "image-hint": "Click the map to put the picture there. Shift + scroll: its size; right-click: stop.",
+    "width-metres": "Width: {{n}} m"
   },
   "tower": {
     "unnamed-line": "a line",

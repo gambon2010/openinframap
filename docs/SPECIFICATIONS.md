@@ -160,7 +160,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.17 | Polish the list (2026-11-05): folder lock only on your layers; folder buttons off while a situation is shown; singular counts; search layers and folders by name; reorder layers by dragging (drawing order follows); names typed in place; zoom to a layer; drop zone only while dragging; long layers show 200 items first; keyboard. | ✅ |
 | 9.18 | Polish drawing on the map (2026-11-05): a line to the cursor while drawing; a faint preview while placing; the same hints for every tool; labels "Marker", "Line", "Area"...; the card's picture for every item; Lock in the right-click menu. | ✅ |
 | 9.19 | A graphic being drawn (an arrow...) previewed as it will look, faint, like a symbol being placed; right-click opens only the quick-actions menu, not the card. | ✅ (2026-11-05) |
-| 9.20 | Shift + scroll while placing: the item's size (an arrow being drawn: its width) instead of zooming. | ✅ (2026-11-05) |
+| 9.20 | Shift + scroll while placing: the item's size (an arrow being drawn: its width) instead of zooming; the same on a selected item. | ✅ (2026-11-05) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

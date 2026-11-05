@@ -141,6 +141,7 @@ export class Tools {
   }
 
   setTool(tool: Tool, message = '') {
+    this.keepResize()
     this.tool = tool
     this.message = message
     this.hint = message
@@ -169,6 +170,7 @@ export class Tools {
   others: string[] = []
 
   select(featureId: string | null) {
+    this.keepResize()
     this.selected = featureId
     this.others = []
     this.drawSelection()
@@ -433,6 +435,7 @@ export class Tools {
   }
 
   private mousedown(e: MapMouseEvent) {
+    this.keepResize()
     if (!this.enabled || this.tool.mode !== 'select' || !this.selected) return
     const layer = this.store.layerOf(this.selected)
     const feature = layer?.features.get(this.selected)
@@ -569,7 +572,8 @@ export class Tools {
     if (!e.shiftKey || !this.enabled) return
     const placing = this.tool.mode === 'place' && kindOf(this.tool.properties).sized
     const arrow = this.tool.mode === 'graphic' && this.tool.axis
-    if (!placing && !arrow) return
+    const editing = this.tool.mode === 'select' && this.resizable() !== null
+    if (!placing && !arrow && !editing) return
     e.preventDefault()
     e.stopPropagation()
     // Shift turns the wheel sideways in most browsers; lines and pages into pixels.
@@ -579,7 +583,8 @@ export class Tools {
     if (!steps) return
     this.wheelTotal -= steps * WHEEL_NOTCH
     const factor = 1.1 ** -steps // wheel up (negative): bigger
-    if (this.tool.mode === 'place') {
+    if (editing) this.resizeSelected(factor)
+    else if (this.tool.mode === 'place') {
       const size = clampSize((this.tool.properties.size ?? 1) * factor)
       this.tool.properties = { ...this.tool.properties, size }
       this.message = `${this.hint} ${t('userlayers.size-now', 'Size: {{n}} %', { n: Math.round(size * 100) })}`
@@ -590,6 +595,61 @@ export class Tools {
       this.message = `${this.hint} ${t('userlayers.width-now', 'Width: {{n}} %', { n: Math.round(widthFactor * 100) })}`
       this.drawDraft(this.cursor ?? undefined)
     }
+    this.notify()
+  }
+
+  /** The selected item, if Shift + scroll can resize it: one item, that may be
+   * changed, with a size (a marker, a symbol, a picture) or an arrow's width. */
+  private resizable(): { layerId: string; feature: UserFeature } | null {
+    if (!this.selected || this.others.length) return null
+    const layer = this.store.layerOf(this.selected)
+    const feature = layer?.features.get(this.selected)
+    if (!layer || !feature || !this.store.view.canEditItem(layer, feature)) return null
+    const p = feature.properties
+    const sized = kindOf(p).sized && feature.geometry.type === 'Point'
+    if (!sized && !(p.axis || p.axisWidth !== undefined)) return null
+    return { layerId: layer.id, feature }
+  }
+
+  // An item being resized with Shift + scroll: shown as it changes, kept as one
+  // change once the scrolling stops.
+  private resizing: { layerId: string; feature: UserFeature; timer: ReturnType<typeof setTimeout> } | null =
+    null
+
+  private resizeSelected(factor: number) {
+    const target = this.resizable()
+    if (!target) return
+    const feature = structuredClone(
+      this.resizing?.feature.id === target.feature.id ? this.resizing.feature : target.feature
+    )
+    const p = feature.properties
+    if (kindOf(p).sized && feature.geometry.type === 'Point') {
+      const size = clampSize((p.size ?? 1) * factor)
+      feature.properties = { ...p, size }
+      this.message = t('userlayers.size-now', 'Size: {{n}} %', { n: Math.round(size * 100) })
+    } else {
+      const width = Math.max(
+        10,
+        Math.round((p.axisWidth ?? axisWidth(controlPoints(feature.geometry))) * factor)
+      )
+      feature.properties = { ...p, axisWidth: width }
+      this.message = t('userlayers.width-metres', 'Width: {{n}} m', { n: width })
+    }
+    this.notify()
+    this.renderer.preview(target.layerId, feature)
+    this.renderer.select(feature)
+    if (this.resizing) clearTimeout(this.resizing.timer)
+    this.resizing = { layerId: target.layerId, feature, timer: setTimeout(() => this.keepResize(), 500) }
+  }
+
+  /** The resize so far, kept (one change). */
+  private keepResize() {
+    const resizing = this.resizing
+    if (!resizing) return
+    clearTimeout(resizing.timer)
+    this.resizing = null
+    this.message = this.hint
+    this.store.updateFeature(resizing.layerId, resizing.feature)
     this.notify()
   }
 
