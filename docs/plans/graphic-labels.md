@@ -64,9 +64,9 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 | Occupy                  | O        | **O**   | Occuper ✓                                     | **O**      |
 | Penetrate               | P        | **P**   | Percer (agreed; P is *pénétrante* in TTA 106) | PERCER     |
 | Retain                  | R        | **R**   | Tenir ✓ (TEN)                                 | TEN        |
-| Retirement              | R        | RETIRE  | Retraite (agreed)                             | RETR       |
+| Retirement              | R        | RETIRE  | Repli (agreed)                                | REPLI      |
 | Screen                  | S        | SCREEN  | Surveiller ✓                                  | SURV       |
-| Secure                  | S        | SECURE  | Sécuriser (agreed)                            | SÉCUR      |
+| Secure                  | S        | SECURE  | Contrôler une zone ✓ (CTR. Z) (agreed)        | CTR-Z      |
 | Seize                   | S        | **S**   | Saisir (agreed)                               | SAISIR     |
 | Withdraw                | W        | **W**   | (Se) replier ✓ (W on the symbol)              | **W**      |
 | Withdraw under pressure | WP       | WUP     | Repli sous la pression                        | RSP        |
