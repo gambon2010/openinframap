@@ -48,6 +48,9 @@ const BEYOND_C: Record<string, { sibling: string; entity: string }> = {
   'G*F*ACPI': { sibling: 'G*F*ACSI', entity: '240503' }
 }
 
+/** Graphics the renderer labels on every side, written once instead (the irregular PAA). */
+const ONE_LABEL = new Set(['G*F*ACPI'])
+
 /** A code with another graphic's key, its affiliation and status kept. */
 function withSiblingKey(sidc: string, key: string): string {
   const out = sidc.padEnd(15, '-').split('')
@@ -202,6 +205,8 @@ export function renderGraphic(lib: C5Ren, input: GraphicInput): GeoJSON.Feature[
     throw new Error(parsed.error || parsed.message || 'Could not draw this graphic')
   }
   const language = input.language === undefined ? labelLanguage() : input.language
+  const once = ONE_LABEL.has(graphicKey(input.sidc))
+  const written = new Set<string>()
   return (parsed.features as GeoJSON.Feature[])
     .map(normalise)
     .filter((f): f is GeoJSON.Feature => f !== null)
@@ -209,7 +214,9 @@ export function renderGraphic(lib: C5Ren, input: GraphicInput): GeoJSON.Feature[
       // The standard's text, as chosen (graphic-labels.ts); '' = not written.
       if (f.geometry.type !== 'Point' || !f.properties?.label) return [f]
       const label = plainLabel(input.sidc, String(f.properties.label), language)
-      return label.trim() ? [{ ...f, properties: { ...f.properties, label } }] : []
+      if (!label.trim() || (once && written.has(label))) return []
+      written.add(label)
+      return [{ ...f, properties: { ...f.properties, label } }]
     })
 }
 

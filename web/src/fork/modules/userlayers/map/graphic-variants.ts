@@ -37,8 +37,9 @@ export const VARIANTS: Variants[] = [
   { keys: ['G*G*OLAV', 'G*G*OLKA'], labels: axisOrDirection, arrow: true }
 ]
 
-/** The second versions: not in the picker (reached from the first's card). */
-export const NOT_IN_PICKER = new Set(VARIANTS.map((v) => v.keys[1]))
+/** Each second version's first: the picker lists a second version only when its first
+ * isn't in the same list (ui/palette.ts). */
+export const SECOND_TO_FIRST = new Map(VARIANTS.map((v) => [v.keys[1], v.keys[0]]))
 
 /** A graphic's versions, and which one it is (null: it has none). */
 export function variantsOf(sidc: string): { variants: Variants; index: 0 | 1 } | null {

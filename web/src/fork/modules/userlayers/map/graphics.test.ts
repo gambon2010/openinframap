@@ -269,6 +269,7 @@ describe('beyond 2525C', () => {
       ],
       scale: mapScale(12, 48.58)
     })
-    expect(pieces.some((p) => p.properties?.label === 'PAA')).toBe(true)
+    // Once, not on every side.
+    expect(pieces.filter((p) => p.properties?.label === 'PAA').length).toBe(1)
   })
 })

@@ -1338,7 +1338,7 @@ of ours, G*F*ACPI ("Position area for artillery (paa)"), which `toDCode`
 (`map/graphics.ts`, `BEYOND_C`) turns into 2525D's irregular PAA: the irregular fire
 support area's code (G*F*ACSI, for the affiliation and status) with its entity
 swapped. Note: G*F*ACPI isn't a real 2525C code, for anything exported to other
-systems.
+systems. The renderer writes "PAA" on every side of it: written once (`ONE_LABEL`).
 
 ## One graphic, two versions (2026-11-06)
 
@@ -1348,9 +1348,10 @@ direction of attack), with the same names. Now one entry each, and a switch on t
 card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle**,
 **Axis of advance (wide) / Direction of attack (thin)**. The two versions take the
 same points (an arrow: its path, tail to tip), so switching keeps the drawing; an
-axis gets its width back (`axisWidth`), a direction has none. The second versions
-are left out of the picker (`NOT_IN_PICKER`) and named for what they are in the
-catalogue ("Block (obstacle)", "Main attack (direction of attack)") for the
+axis gets its width back (`axisWidth`), a direction has none. The picker lists a
+second version only when its first isn't in the same list (`SECOND_TO_FIRST`):
+"block" gives Block, "obstacle" or the obstacles' category give Block (obstacle).
+The second versions are named for what they are in the catalogue ("Block (obstacle)", "Main attack (direction of attack)") for the
 legend. The obstacle effects are green: the standard's colour for friendly
 obstacles (as is neutral; the shapes differ).
 - **Directions of attack pointed backwards**: the renderer wants their tip first,

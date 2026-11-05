@@ -5,7 +5,7 @@
 import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import catalogue from '../model/symbols-2525c.json'
-import { NOT_IN_PICKER } from '../map/graphic-variants.ts'
+import { SECOND_TO_FIRST } from '../map/graphic-variants.ts'
 import { graphicKey } from '../map/graphic-labels.ts'
 import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../map/graphics.ts'
@@ -124,14 +124,19 @@ export function searchCatalogue(query: string, mode: PaletteMode, category?: str
     if (cat && !cat.groups.includes(g.name)) continue
     for (const entry of g.symbols as Entry[]) {
       if ((mode === 'graphics') !== Boolean(entry[3])) continue
-      // A graphic's second version is reached from the first's card (graphic-variants.ts).
-      if (NOT_IN_PICKER.has(graphicKey(entry[0]))) continue
       if (cat?.test && !cat.test(entry)) continue
       const name = entry[1].toLowerCase()
       if (words.every((w) => name.includes(w))) out.push(entry)
     }
   }
-  return out
+  // A graphic's second version only when its first isn't listed too (graphic-variants.ts):
+  // "block" gives Block (the card switches it to the obstacle), "obstacle" or the
+  // obstacles' category give Block (obstacle).
+  const listed = new Set(out.map((e) => graphicKey(e[0])))
+  return out.filter((e) => {
+    const first = SECOND_TO_FIRST.get(graphicKey(e[0]))
+    return !first || !listed.has(first)
+  })
 }
 
 /** The categories of a mode that have entries. */
