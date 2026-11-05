@@ -145,9 +145,12 @@ def estimate(
     }
 
 
-def detailed_estimate(outlines: list[list[Ring]], source: dict) -> dict:
-    """Tiles and bytes from zoom 14 up to 15, 16, 17 (as far as the source goes)."""
-    minzoom = TIERS["detailed"][0]
+def detailed_estimate(
+    outlines: list[list[Ring]], source: dict, start: int | None = None
+) -> dict:
+    """Tiles and bytes from zoom `start` (default 14; more detail added later: the
+    zoom after what's there) up to 15, 16, 17 (as far as the source goes)."""
+    minzoom = start or TIERS["detailed"][0]
     counts = {
         z: block_count(tile_blocks(outlines, z))
         for z in range(minzoom, source["maxzoom"] + 1)
@@ -157,5 +160,5 @@ def detailed_estimate(outlines: list[list[Ring]], source: dict) -> dict:
             "tiles": sum(counts[z] for z in range(minzoom, top + 1)),
             "bytes": sum(counts[z] for z in range(minzoom, top + 1)) * source["bytes"],
         }
-        for top in range(15, source["maxzoom"] + 1)
+        for top in range(max(15, minzoom), source["maxzoom"] + 1)
     }

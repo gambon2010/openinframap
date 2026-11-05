@@ -180,7 +180,8 @@ def command_detailed(args) -> None:
     outlines = detailed_outlines(args, source)
     maxzoom = min(args.maxzoom, source["maxzoom"])
     out = Path(args.out).resolve()
-    minzoom = TIERS["detailed"][0]
+    # More detail added later: only the zooms after what's there, in a file of its own.
+    minzoom = args.minzoom or TIERS["detailed"][0]
     blocks = {z: tile_blocks(outlines, z) for z in range(minzoom, maxzoom + 1)}
     total = sum(block_count(b) for b in blocks.values())
     print(
@@ -289,6 +290,12 @@ def main(argv: Iterable[str] | None = None) -> None:
             p.add_argument("--gdal-image", default=GDAL_IMAGE)
         if name == "detailed":
             p.add_argument("--maxzoom", type=int, choices=(15, 16, 17), default=16)
+            p.add_argument(
+                "--minzoom",
+                type=int,
+                choices=(14, 15, 16, 17),
+                help="from this zoom (more detail added to a download already done)",
+            )
         if name == "estimate":
             p.add_argument("--regional-maxzoom", type=int, default=12)
             p.add_argument("--detailed-maxzoom", type=int, default=16)

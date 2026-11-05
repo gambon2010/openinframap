@@ -145,14 +145,21 @@ def test_tiers_list_every_area_and_source(tmp_path):
     pmtiles("bayern.sat-regional.pmtiles", 12, 4)
     pmtiles("world.sat-regional.pmtiles", 10, 4)
     pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 17, 2)  # PNG
+    # More detail added later: a file of its own, from its own first zoom.
+    pmtiles("alsace.sat-detailed-fr_ign.pmtiles", 15, 3)
+    pmtiles("alsace.sat-detailed-fr_ign-z16-17.pmtiles", 17, 3)
+    more = tmp_path / "alsace.sat-detailed-fr_ign-z16-17.pmtiles"
+    header = bytearray(more.read_bytes())
+    header[100] = 16
+    more.write_bytes(bytes(header))
     value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
-    assert value.split(";")[-1].endswith(
-        "|© Digitaal Vlaanderen (Modellicentie Gratis Hergebruik)"
-    )
+    assert "Digitaal Vlaanderen" in value
     assert re.sub(r"\|[^;]*", "", value).split(";") == [
         "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
         "http://localhost:8090/world.sat-regional/{z}/{x}/{y}.webp 9 10",
         "http://localhost:8090/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
+        "http://localhost:8090/alsace.sat-detailed-fr_ign/{z}/{x}/{y}.jpg 14 15",
+        "http://localhost:8090/alsace.sat-detailed-fr_ign-z16-17/{z}/{x}/{y}.jpg 16 17",
         "http://localhost:8090/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
     ]
 

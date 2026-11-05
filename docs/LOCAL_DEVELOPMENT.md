@@ -243,6 +243,13 @@ by tile (about 10–20 a second), so a whole country to zoom 17 takes days. The
 estimates count the region's whole outline, coastal sea included, so they're upper
 bounds. A download that's stopped goes on where it stopped when run again.
 
+**Adding more detail later**: download to zoom 15 now, run `bash scripts/satellite.sh`
+again later and choose 16 or 17. What you have stays, and only the new zooms are
+downloaded, into a file of their own (`france.sat-detailed-fr_ign-z16-17.pmtiles`);
+the menu shows what you have and the size of just what's added. The menu says what
+each zoom shows (15: streets and blocks, 16: houses, 17: cars) and the free space;
+while a file is finished it needs up to twice its size on disk.
+
 Everything in `data/basemap/` is shown, whatever area it's of; past a file's last
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
 shows. Copy `data/basemap/` along with an export to take it with you. Unattended:

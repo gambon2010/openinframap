@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -118,14 +119,54 @@ def detailed_job(source_id: str, area: str, index: Index, folder: Path) -> dict 
     return outline and {"source": source_id, "outline": str(outline), "clip": str(clip)}
 
 
-def job_estimate(job: dict) -> dict:
+# What a zoom level shows, for people to whom "zoom 16" means nothing.
+ZOOM_SHOWS = {
+    14: "neighbourhoods",
+    15: "streets and blocks",
+    16: "individual houses",
+    17: "cars and small details",
+}
+
+
+def pmtiles_zooms(path: Path) -> tuple[int, int] | None:
+    """A PMTiles file's lowest and highest zoom (from its header), None if unreadable."""
+    try:
+        header = path.open("rb").read(127)
+    except OSError:
+        return None
+    return (header[100], header[101]) if header[:7] == b"PMTiles" else None
+
+
+def detailed_have(folder: Path, area: str, source: str) -> int | None:
+    """The highest zoom of a source's aerial photos already downloaded for an area
+    (the first file, and any added later: ...-z16-17.pmtiles), None if none."""
+    tops = [
+        zooms[1]
+        for f in folder.glob(f"{area}.sat-detailed-{source}*.pmtiles")
+        if (zooms := pmtiles_zooms(f))
+    ]
+    return max(tops) if tops else None
+
+
+def detailed_file(
+    folder: Path, area: str, source: str, minzoom: int, maxzoom: int
+) -> Path:
+    """Where aerial photos go: the first download from zoom 14; more detail added later
+    in a file of its own (the zooms it has in its name), so what's there stays."""
+    name = f"{area}.sat-detailed-{source}"
+    if minzoom > 14:
+        name += f"-z{minzoom}-{maxzoom}"
+    return folder / f"{name}.pmtiles"
+
+
+def job_estimate(job: dict, start: int | None = None) -> dict:
     source = detailed_source(job["source"])
     outlines = [load_rings(job["outline"])]
     if job["clip"]:
         outlines.append(load_rings(job["clip"]))
     if "bbox" in source:
         outlines.append(box_ring(source["bbox"]))
-    return detailed_estimate(outlines, source)
+    return detailed_estimate(outlines, source, start)
 
 
 def ask(prompt: str, choices: Iterable[str], default: str) -> str:
@@ -184,12 +225,16 @@ def command_choose(args) -> None:
                 else sources_for(args.area or region, index)
             ):
                 job = detailed_job(source_id, args.area or region, index, folder)
-                if job:
+                # What's there already stays: only the zooms after it.
+                have = detailed_have(folder, args.area or region, source_id)
+                top = min(int(args.detailed), detailed_source(source_id)["maxzoom"])
+                if job and not (have and have >= top):
                     plan["detailed"].append(
                         {
                             **job,
                             "area": args.area or region,
-                            "maxzoom": int(args.detailed),
+                            "maxzoom": top,
+                            **({"minzoom": have + 1} if have else {}),
                         }
                     )
         finish()
@@ -299,12 +344,18 @@ def command_choose(args) -> None:
     elif area:
         e = estimate(load_rings(str(index.outline(area, folder))), 13)
         say()
-        say(f"{index.name(area)}, up to which zoom?")
+        say(f"Satellite imagery of {index.name(area)} (Sentinel-2): up to which zoom?")
+        say("The size on disk is what's kept; the download is what's read from ESA")
         say(
-            f"  12) a town      +{human(e['regional']['bytes'] / 4):>8} kept   (reads ~{human(e['regional']['download'] / 4)} from ESA)"
+            "to make it (full-size source images, cut down), so it sets how long it takes."
         )
         say(
-            f"  13) a district  +{human(e['regional']['bytes']):>8} kept   (reads ~{human(e['regional']['download'])})"
+            f"  12) a town fills the screen      {human(e['regional']['bytes'] / 4):>8} on disk"
+            f"   (downloads ~{human(e['regional']['download'] / 4)})"
+        )
+        say(
+            f"  13) a district fills the screen  {human(e['regional']['bytes']):>8} on disk"
+            f"   (downloads ~{human(e['regional']['download'])})"
         )
         plan["regional"] = regional_for(
             area, int(ask("Up to which zoom? [12/13, default 12]:", ["12", "13"], "12"))
@@ -316,53 +367,91 @@ def command_choose(args) -> None:
     jobs = [j for j in (detailed_job(i, target, index, folder) for i in ids) if j]
     if jobs and not args.no_detailed:
         say()
-        say(
-            f"Aerial photos at 8 to 60 cm, from national mapping agencies, for {index.name(target)}"
-        )
-        say(
-            "(zoom 14 and up). Fetched tile by tile from their servers, so large areas take long:"
-        )
-        say(
-            "best for a city or a département. Sizes and times are at most: the outlines"
-        )
-        say(
-            "include some sea, which comes back empty (and quick). Working out the sizes..."
-        )
+        say(f"Aerial photos of {index.name(target)}, from national mapping agencies")
+        say()
+        say("They replace the satellite imagery when you zoom in close, with")
+        say("pixels of 8 to 60 cm instead of 10 m. They're fetched one small tile")
+        say("at a time from the agency's servers, so a whole country takes days;")
+        say("a city or a département, hours at most.")
+        say()
+        try:
+            free = shutil.disk_usage(folder).free
+            say(f"Free space on the disk for them ({folder}): {human(free)}.")
+        except OSError:
+            free = None
+        say("Working out the sizes...")
         rows = []
         for job in jobs:
             src = detailed_source(job["source"])
-            sizes = job_estimate(job)
-            rows.append((job, src, sizes))
-            cols = "  ".join(
-                f"to {z}: {human(v['bytes'])}, {duration(v['tiles'] / src['per_second'])}"
-                for z, v in sizes.items()
-            )
-            say(f"  {len(rows):>2}) {src['name']}, {src['resolution']}")
-            say(f"        {cols}")
-        print(
-            "    Which? [numbers separated by spaces, Enter: none]: ",
-            end="",
-            file=sys.stderr,
-            flush=True,
-        )
-        chosen = [
-            w
-            for w in sys.stdin.readline().split()
-            if w.isdigit() and 1 <= int(w) <= len(rows)
-        ]
-        if chosen:
-            zoom = int(
-                ask(
-                    "Up to which zoom? [15/16/17, default 16]:",
-                    ["15", "16", "17"],
-                    "16",
+            have = detailed_have(folder, target, job["source"])
+            start = have + 1 if have else None
+            if have and have >= src["maxzoom"]:
+                say()
+                say(
+                    f"{src['name']}: you already have it up to zoom {have}, its most detailed."
                 )
-            )
-            for w in dict.fromkeys(chosen):
-                job, src, _ = rows[int(w) - 1]
-                plan["detailed"].append(
-                    {**job, "area": target, "maxzoom": min(zoom, src["maxzoom"])}
+                continue
+            sizes = job_estimate(job, start)
+            rows.append((job, src, sizes, start))
+            say()
+            say(f"{len(rows)}) {src['name']}, {src['resolution']} per pixel")
+            if have:
+                say(
+                    f"   You have it up to zoom {have} ({ZOOM_SHOWS.get(have, '')}). Add:"
                 )
+            for z, v in sizes.items():
+                shows = ZOOM_SHOWS.get(int(z), "")
+                warn = (
+                    "  (more than the free space)"
+                    if free is not None and v["bytes"] * 2 > free
+                    else ""
+                )
+                say(
+                    f"   up to zoom {z:<3} {shows:<24} {human(v['bytes']):>8}   "
+                    f"about {duration(v['tiles'] / src['per_second'])}{warn}"
+                )
+        if rows:
+            say()
+            say("Sizes and times are at most: the areas include some sea, which comes")
+            say("back empty and quick. During the last step the files need up to twice")
+            say(
+                "their size on disk. You can add more detail later: what's there stays,"
+            )
+            say("and only the new zooms are downloaded.")
+            print(
+                "    Which? [their numbers, separated by spaces; Enter: none]: ",
+                end="",
+                file=sys.stderr,
+                flush=True,
+            )
+            chosen = [
+                w
+                for w in sys.stdin.readline().split()
+                if w.isdigit() and 1 <= int(w) <= len(rows)
+            ]
+            if chosen:
+                offered = sorted({int(z) for w in chosen for z in rows[int(w) - 1][2]})
+                default = "16" if 16 in offered else str(offered[0])
+                zoom = int(
+                    ask(
+                        f"Up to which zoom? [{'/'.join(map(str, offered))}, default {default}]:",
+                        [str(z) for z in offered],
+                        default,
+                    )
+                )
+                for w in dict.fromkeys(chosen):
+                    job, src, _, start = rows[int(w) - 1]
+                    top = min(zoom, src["maxzoom"])
+                    if start and top < start:
+                        continue
+                    plan["detailed"].append(
+                        {
+                            **job,
+                            "area": target,
+                            "maxzoom": top,
+                            **({"minzoom": start} if start else {}),
+                        }
+                    )
     finish()
 
 
@@ -402,7 +491,12 @@ def command_steps(args) -> None:
         clip = ["--clip", d["clip"]] if d["clip"] else []
         lines.append(
             [
-                f"{src['name']}, {src['resolution']}, {index.name(d['area'])}, to zoom {d['maxzoom']}",
+                f"{src['name']}, {src['resolution']}, {index.name(d['area'])}, "
+                + (
+                    f"zoom {d['minzoom']} to {d['maxzoom']}"
+                    if d.get("minzoom")
+                    else f"to zoom {d['maxzoom']}"
+                ),
                 "detailed",
                 "--source",
                 d["source"],
@@ -411,8 +505,17 @@ def command_steps(args) -> None:
                 *clip,
                 "--maxzoom",
                 str(d["maxzoom"]),
+                *(["--minzoom", str(d["minzoom"])] if d.get("minzoom") else []),
                 "--out",
-                str(folder / f"{d['area']}.sat-detailed-{d['source']}.pmtiles"),
+                str(
+                    detailed_file(
+                        folder,
+                        d["area"],
+                        d["source"],
+                        d.get("minzoom") or 14,
+                        d["maxzoom"],
+                    )
+                ),
             ]
         )
     for line in lines:

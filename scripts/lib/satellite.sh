@@ -56,7 +56,9 @@ satellite_tiers_value() {
         case "$file" in
             *.sat-overview.pmtiles) range="0 8"; ext=jpg ;;
             *.sat-regional.pmtiles) range="9 $(pmtiles_maxzoom "$file" 12)"; ext=webp ;;
-            *) range="14 $(pmtiles_maxzoom "$file" 16)"; ext=jpg ;;
+            # Aerial photos from their own first zoom, 14 at the lowest (more
+            # detail added later: ...-z16-17.pmtiles starts at 16).
+            *) range="$(( $(pmtiles_minzoom "$file" 14) > 14 ? $(pmtiles_minzoom "$file" 14) : 14 )) $(pmtiles_maxzoom "$file" 16)"; ext=jpg ;;
         esac
         ext=$(pmtiles_ext "$file" "$ext")
         value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range|${credits[i]:-}"

@@ -50,6 +50,15 @@ except OSError:
     print(sys.argv[2])' "$1" "$2"
 }
 
+pmtiles_minzoom() {
+    python3 -c 'import sys
+try:
+    header = open(sys.argv[1], "rb").read(127)
+    print(header[100] if header[:7] == b"PMTiles" else sys.argv[2])
+except OSError:
+    print(sys.argv[2])' "$1" "$2"
+}
+
 pmtiles_maxzoom() {
     python3 -c 'import sys
 try:

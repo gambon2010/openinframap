@@ -1341,6 +1341,25 @@ swapped. Note: G*F*ACPI isn't a real 2525C code, for anything exported to other
 systems. The renderer writes "PAA" on every side, as the standard's template does
 (readable whatever part of a large area is in view): kept.
 
+## Satellite menu easier to read; more detail added later (2026-11-06)
+
+- **The aerial photo question** (`scripts/satimagery/menu.py`) line by line: what the
+  photos are, one line per zoom with what it shows (`ZOOM_SHOWS`: 15 streets and
+  blocks, 16 houses, 17 cars), its size and time, the free space on the disk (a
+  zoom that wouldn't fit, at twice its size during the last step, is marked). The
+  Sentinel-2 zoom question too: "a town fills the screen … on disk (downloads ~…)".
+- **More detail later without downloading again**: the first download makes
+  `<area>.sat-detailed-<source>.pmtiles` (zoom 14 up); asked for more later, the menu
+  (and `--satellite-detailed`) sees what's there (`detailed_have`, from the files'
+  PMTiles headers) and offers only the zooms after it, with their own size
+  (`detailed_estimate(..., start)`), downloaded into a file of their own
+  (`detailed_file`: `...-z16-17.pmtiles`; `satellite.py detailed --minzoom`). What's
+  there stays. The tiers line takes each aerial file's own first zoom
+  (`pmtiles_minzoom`, 14 at the lowest), and the map draws each file from its
+  first zoom, coarsest first, so the added file takes over from its first zoom.
+  Before, the working file was deleted once converted, so asking for more meant
+  downloading zoom 14 up again.
+
 ## One graphic, two versions (2026-11-06)
 
 Block, Disrupt and Fix were each in the picker twice (the task and the obstacle
