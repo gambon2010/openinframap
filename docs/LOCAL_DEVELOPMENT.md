@@ -568,7 +568,7 @@ history keeps everything).
 
 **Arrows** (axis of advance, main or supporting attack...) are drawn like a line:
 click where the arrow starts, along its path, and double-click where it points to.
-Drag the **blue handle** at the arrowhead's corner to make it wider or narrower
+Drag the **handle** at the arrowhead's corner to make it wider or narrower
 (only the width changes, so it stays a proper arrow), and the points of its path to
 move or bend it. Arrows drawn the old way (four free points) are turned into paths
 the next time the map is opened, keeping their width (an unsaved change each: Save).

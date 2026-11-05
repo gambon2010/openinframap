@@ -1416,6 +1416,15 @@ symbol code, not the kind).
   words stay for sentences (`noun`).
 - **The card** shows the item's own small picture in its header (not only symbols).
 - **The right-click menu** has Lock / Unlock.
+- **The selection shows the item itself.** A graphic glows under its own lines (a
+  `_highlight` line layer first in each graphics source's layers, filtered on the
+  selected `fid`s: `Renderer.highlightGraphics`), not a line through its control
+  points; a picture, symbol or marker gets a thin box around its image
+  (`Renderer.outline`, worked out on screen like the resize handle) instead of a
+  circle. Every handle (points, size, an arrow's width) is the same yellow.
+- **Dragging moves the item**, not only its highlight: every drag (a point, an
+  item's point, a size, a width) redraws it as it goes (`renderer.preview`); it's
+  saved on mouseup as before.
 
 ## The header and the about page (2026-11-03)
 

@@ -115,10 +115,10 @@ describe('selection', () => {
     )
   })
 
-  test('a graphic: the line through its control points, and handles', () => {
+  test('a graphic: only its handles (it glows under its own lines)', () => {
     const out = selectionFeatures(feature(line, 'graphic'))
-    expect(out[0].geometry).toEqual(line)
-    expect(out).toHaveLength(4)
+    expect(out.every((f) => f.properties?.vertex)).toBe(true)
+    expect(out).toHaveLength(3)
   })
 })
 

@@ -669,18 +669,15 @@ export class Tools {
         resize.distanceAtSize1
       )
       feature.properties = { ...feature.properties, size }
-      this.renderer.preview(layerId, feature)
     } else if (index === undefined) {
       feature.geometry = { type: 'Point', coordinates: to }
     } else if (kindOf(feature.properties).drawn === 'graphic' && index === -1) {
       // An arrow's size handle: only the width changes.
       const width = axisWidthFrom(controlPoints(feature.geometry), to)
       feature.properties = { ...feature.properties, axisWidth: width }
-      this.renderer.preview(layerId, feature)
     } else if (kindOf(feature.properties).drawn === 'graphic') {
       const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))
       feature.geometry = graphicGeometry(points)
-      this.renderer.preview(layerId, feature)
     } else {
       const moved = moveVertex(feature.geometry, index, to)
       // An area's point can't go where the outline would cross itself: it stops.
@@ -688,8 +685,8 @@ export class Tools {
       if (ring && areaCrossesItself(ring)) return
       feature.geometry = moved
     }
-    // A measurement's labels and marks follow.
-    if (kindOf(feature.properties).drawn === 'measure') this.renderer.preview(layerId, feature)
+    // The item itself follows as it's dragged (saved on mouseup).
+    this.renderer.preview(layerId, feature)
     this.renderer.select(feature)
   }
 

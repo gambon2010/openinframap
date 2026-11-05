@@ -297,7 +297,7 @@ export class Toolbar {
         },
         t(
           'userlayers.axis-hint',
-          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the blue handle afterwards).',
+          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the handle at the arrowhead’s corner afterwards).',
           { name: pick.name }
         )
       )

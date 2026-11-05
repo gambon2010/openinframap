@@ -36,6 +36,9 @@ import { modifiersToDraw } from '../model/fields.ts'
 import { SUPPLY_COLOURS, supplyColours } from '../../../ui/supply.ts'
 
 const SELECTION = 'user_selection'
+// The selection's yellow, and its handles' darker yellow (points, sizes, widths).
+const HIGHLIGHT = '#ffd600'
+const HANDLE = '#b88a00'
 const DRAFT = 'user_draft'
 // What a placing tool would put down, faint under the cursor ("user_draft…": kept
 // with the draft when the map's layers are tidied).
@@ -263,7 +266,26 @@ export class Renderer {
    * fills, a casing, lines in their colour (else `colour`), labels; faint for a
    * preview (opacity). */
   private graphicSpecs(source: string, colour: string, opacity = 1): LayerSpecification[] {
+    // The selected graphics glow under their own lines (not for a preview).
+    const highlight: LayerSpecification[] =
+      opacity === 1
+        ? [
+            {
+              id: `${source}_highlight`,
+              type: 'line',
+              source,
+              filter: this.highlightFilter(),
+              layout: { 'line-join': 'round', 'line-cap': 'round' },
+              paint: {
+                'line-color': HIGHLIGHT,
+                'line-width': ['+', ['coalesce', ['get', 'width'], 2], 10],
+                'line-opacity': 0.6
+              }
+            } as LayerSpecification
+          ]
+        : []
     return [
+      ...highlight,
       {
         id: `${source}_fill`,
         type: 'fill',
@@ -676,7 +698,12 @@ export class Renderer {
         id: `${SELECTION}_line`,
         type: 'line',
         source: SELECTION,
-        paint: { 'line-color': '#ffd600', 'line-width': 8, 'line-opacity': 0.6 }
+        paint: {
+          'line-color': HIGHLIGHT,
+          // A picture, symbol or marker: a thin box around it.
+          'line-width': ['case', ['==', ['get', 'outline'], true], 3, 8],
+          'line-opacity': ['case', ['==', ['get', 'outline'], true], 1, 0.6]
+        }
       },
       {
         // The points of a selected line, area or graphic: drag one to move it.
@@ -686,10 +713,9 @@ export class Renderer {
         filter: ['all', POINT, ['==', ['get', 'vertex'], true]] as FilterSpecification,
         paint: {
           'circle-radius': 6,
-          // An arrow's size handle is blue, like the resize handle of pictures.
           'circle-color': '#fff',
-          'circle-stroke-color': ['case', ['==', ['get', 'width'], true], '#1565c0', '#b88a00'],
-          'circle-stroke-width': ['case', ['==', ['get', 'width'], true], 3, 2]
+          'circle-stroke-color': HANDLE,
+          'circle-stroke-width': 2
         }
       },
       {
@@ -701,8 +727,8 @@ export class Renderer {
         paint: {
           'circle-radius': 6,
           'circle-color': '#fff',
-          'circle-stroke-color': '#1565c0',
-          'circle-stroke-width': 3
+          'circle-stroke-color': HANDLE,
+          'circle-stroke-width': 2
         }
       },
       {
@@ -718,7 +744,7 @@ export class Renderer {
         paint: {
           'circle-radius': 22,
           'circle-color': 'rgba(255, 214, 0, 0.15)',
-          'circle-stroke-color': '#ffd600',
+          'circle-stroke-color': HIGHLIGHT,
           'circle-stroke-width': 3
         }
       },
@@ -766,6 +792,27 @@ export class Renderer {
     for (const spec of overlays) if (!map.getLayer(spec.id)) map.addLayer(spec)
   }
 
+  // The graphics highlighted: drawn from their own pieces (renderGraphics).
+  private highlighted: string[] = []
+
+  private highlightFilter(): FilterSpecification {
+    return [
+      'all',
+      LINE_OR_POLYGON,
+      ['in', ['get', 'fid'], ['literal', this.highlighted]]
+    ] as FilterSpecification
+  }
+
+  private highlightGraphics(features: UserFeature[]) {
+    const ids = features.filter(isGraphic).map((f) => f.id)
+    if (ids.join() === this.highlighted.join()) return
+    this.highlighted = ids
+    for (const layer of this.map.getStyle().layers) {
+      if (layer.id.startsWith('user_') && layer.id.endsWith('_g_highlight'))
+        this.map.setFilter(layer.id, this.highlightFilter())
+    }
+  }
+
   /** Highlight several features (no handles: they're for one item at a time). */
   selectAll(features: UserFeature[]) {
     if (features.length <= 1) {
@@ -774,17 +821,45 @@ export class Renderer {
     }
     this.selected = null
     this.ensureOverlays()
+    this.highlightGraphics(features)
     ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({
       type: 'FeatureCollection',
-      features: features.map((f) => selectionFeatures(f)[0])
+      features: features.flatMap(
+        (f) => this.outline(f) ?? selectionFeatures(f).slice(0, isGraphic(f) ? 0 : 1)
+      )
     })
+  }
+
+  /** A picture, symbol or marker's outline: the box around its image, on screen. */
+  private outline(feature: UserFeature): GeoJSON.Feature[] | null {
+    if (!resizable(feature)) return null
+    const half = this.iconHalfSize(feature)
+    if (!half) return null
+    const size = feature.properties.size ?? 1
+    const pad = 4
+    const [w, h] = [half[0] * size + pad, half[1] * size + pad]
+    const c = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
+    const ring = [
+      [-w, -h],
+      [w, -h],
+      [w, h],
+      [-w, h],
+      [-w, -h]
+    ].map(([x, y]) => {
+      const at = this.map.unproject([c.x + x, c.y + y])
+      return [at.lng, at.lat]
+    })
+    return [
+      { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: { outline: true } }
+    ]
   }
 
   /** Highlight a feature (null: none); pictures, symbols and markers get a resize handle. */
   select(feature: UserFeature | null) {
     this.selected = feature
     this.ensureOverlays()
-    const features = feature ? selectionFeatures(feature) : []
+    this.highlightGraphics(feature ? [feature] : [])
+    const features = feature ? (this.outline(feature) ?? selectionFeatures(feature)) : []
     const handle = feature ? this.resizeHandle(feature) : null
     if (handle) {
       features.push({
@@ -938,14 +1013,15 @@ export class Renderer {
   }
 }
 
-/** A selected feature as drawn: its shape (a graphic: the line through its control
- * points), and its points as handles when it has more than one. */
+/** A selected feature as drawn: its shape (not a graphic's: it glows under its own
+ * lines, Renderer.highlightGraphics), and its points as handles when it has more
+ * than one. */
 export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
   const graphic = isGraphic(feature)
   const points = graphic ? controlPoints(feature.geometry) : vertices(feature.geometry)
-  const shape: GeoJSON.Geometry =
-    graphic && points.length > 1 ? { type: 'LineString', coordinates: points } : feature.geometry
-  const out: GeoJSON.Feature[] = [{ type: 'Feature', geometry: shape, properties: {} }]
+  const out: GeoJSON.Feature[] = graphic
+    ? []
+    : [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
   // Arrows: the size handle, at the arrowhead's corner. Not part of the path (or of
   // the highlighted line): it only sets the width.
   const p = feature.properties

@@ -290,7 +290,7 @@
       "appearance": "Appearance"
     },
     "drag-hint": "Drag it on the map to move it.",
-    "drag-arrow-hint": "Drag the points of its path to move or bend it, and the blue handle to make it wider or narrower.",
+    "drag-arrow-hint": "Drag the points of its path to move or bend it, and the handle at the arrowhead’s corner to make it wider or narrower.",
     "drag-points-hint": "Drag its points on the map to change its shape.",
     "duplicate": "Duplicate",
     "delete": "Delete",
@@ -634,7 +634,7 @@
     "width-now": "Width: {{n}} %",
     "marker-hint": "Click the map to put a marker there. Shift + scroll: its size; right-click: stop.",
     "place-hint": "Click the map to put \"{{name}}\" there. Shift + scroll: its size; right-click: stop.",
-    "axis-hint": "\"{{name}}\": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the blue handle afterwards).",
+    "axis-hint": "\"{{name}}\": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the handle at the arrowhead’s corner afterwards).",
     "image-hint": "Click the map to put the picture there. Shift + scroll: its size; right-click: stop.",
     "width-metres": "Width: {{n}} m"
   },

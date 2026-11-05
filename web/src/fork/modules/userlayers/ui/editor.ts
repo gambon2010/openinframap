@@ -442,7 +442,7 @@ export async function buildEditor(
         : p.axis || p.axisWidth !== undefined
           ? t(
               'userlayers.drag-arrow-hint',
-              'Drag the points of its path to move or bend it, and the blue handle to make it wider or narrower.'
+              'Drag the points of its path to move or bend it, and the handle at the arrowhead’s corner to make it wider or narrower.'
             )
           : t('userlayers.drag-points-hint', 'Drag its points on the map to change its shape.')
   if (hint) parts.push(el('p.oim-ul-hint', hint))
