@@ -1,21 +1,21 @@
 // Fork: where the cursor is, at the bottom left next to the scale: latitude, longitude and the
 // military grid reference (MGRS, to the metre). G copies the grid reference under the
-// cursor (the pointer stays where it is); a click on the readout does too.
+// cursor (the pointer stays where it is), which the readout says.
 import { IControl, Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 
 export class CoordinatesReadout implements IControl {
-  private el = el('button.maplibregl-ctrl.oim-coords', {
-    type: 'button',
+  private el = el('div.maplibregl-ctrl.oim-coords')
+  private hint = el('span.oim-coords-hint', t('measure.copy-mgrs-hint', 'G: copy'), {
     title: t('measure.copy-mgrs-key', 'G (with the pointer on the map): copy the grid reference there')
-  }) as HTMLButtonElement
+  })
   private latLng = el('span.oim-coords-latlng')
   private mgrs = el('span.oim-coords-mgrs')
 
   onAdd(map: Map): HTMLElement {
-    this.el.append(this.latLng, this.mgrs)
+    this.el.append(this.latLng, this.mgrs, this.hint)
     const show = (lng: number, lat: number) => {
       this.latLng.textContent = formatLatLng(lng, lat)
       this.mgrs.textContent = toMgrs(lng, lat) ?? '—'
@@ -44,7 +44,6 @@ export class CoordinatesReadout implements IControl {
         setTimeout(() => this.el.classList.remove('copied'), 1200)
       })
     }
-    this.el.onclick = copy
     // G: the grid reference under the cursor, which the readout shows.
     document.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() !== 'g' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return

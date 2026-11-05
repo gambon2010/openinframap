@@ -12,11 +12,19 @@
   font:
     12px/1.4 ui-monospace,
     monospace;
-  cursor: copy;
+}
+
+/* "G: copy", always shown (a tooltip needs the pointer on it first). */
+.oim-coords-hint {
+  color: #777;
+  font: 11px/1.5 sans-serif;
 }
 
 .oim-coords.copied .oim-coords-mgrs::after {
   content: ' ✓';
+}
+.oim-coords.copied .oim-coords-hint {
+  visibility: hidden;
 }
 
 @media (max-width: 600px) {
