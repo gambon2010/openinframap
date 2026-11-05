@@ -110,26 +110,28 @@ What some lines mean:
 
 ## Areas and positions
 
-| Graphic                   | Standard     | English | French name                                | French        |
-|---------------------------|--------------|---------|--------------------------------------------|---------------|
-| Assembly area             | AA           | AA      | Zone de regroupement et d'attente ✓        | ZRA           |
-| Assault position          | ASLT         | ASLT    | Position d'assaut (ASS ✓)                  | ASS           |
-| Attack position           | ATK          | ATK     | Position d'attaque (ATK ✓)                 | ATK           |
-| Objective                 | OBJ          | OBJ     | Objectif ✓                                 | OBJ           |
-| Engagement area           | EA           | EA      | Zone d'engagement ✓                        | ZE            |
-| Area of operations        | AO           | AO      | Zone d'action ✓                            | ZA            |
-| Named area of interest    | NAI          | NAI     | Zone d'intérêt du renseignement ✓          | ZIR           |
-| Targeted area of interest | TAI          | TAI     | Zone d'intérêt des objectifs ✓             | ZIO           |
-| Limited access area       | LAA          | LAA     | Zone d'accès restreint (agreed)            | ZRES          |
-| Drop zone                 | DZ           | DZ      | Zone de saut ✓                             | ZS            |
-| Landing zone              | LZ           | LZ      | LZ, as used in French (agreed)             | LZ            |
-| Pickup zone               | PZ           | PZ      | Zone d'embarquement (open: PZ or ZEMB)     | ZEMB?         |
-| Extraction zone           | EZ           | EZ      | Zone d'exfiltration or d'extraction (open) | ZEXF? / ZEXT? |
-| Prepared but not occupied | (P)          | (P)     | Préparée, non occupée                      | (P)           |
-| Airhead                   | AIRHEAD LINE | AIRHEAD | Tête de pont aéroportée (agreed)           | TPA           |
+| Graphic                   | Standard     | English | French name                         | French |
+|---------------------------|--------------|---------|-------------------------------------|--------|
+| Assembly area             | AA           | AA      | Zone de regroupement et d'attente ✓ | ZRA    |
+| Assault position          | ASLT         | ASLT    | Position d'assaut (ASS ✓)           | ASS    |
+| Attack position           | ATK          | ATK     | Position d'attaque (ATK ✓)          | ATK    |
+| Objective                 | OBJ          | OBJ     | Objectif ✓                          | OBJ    |
+| Engagement area           | EA           | EA      | Zone d'engagement ✓                 | ZE     |
+| Area of operations        | AO           | AO      | Zone d'action ✓                     | ZA     |
+| Named area of interest    | NAI          | NAI     | Zone d'intérêt du renseignement ✓   | ZIR    |
+| Targeted area of interest | TAI          | TAI     | Zone d'intérêt des objectifs ✓      | ZIO    |
+| Limited access area       | LAA          | LAA     | Zone d'accès restreint (agreed)     | ZRES   |
+| Drop zone                 | DZ           | DZ      | Zone de saut ✓                      | ZS     |
+| Landing zone              | LZ           | LZ      | LZ, as used in French (agreed)      | LZ     |
+| Pickup zone               | PZ           | PZ      | Zone d'embarquement (agreed)        | Z-EMB  |
+| Extraction zone           | EZ           | EZ      | Zone d'exfiltration (agreed)        | Z-EXF  |
+| Prepared but not occupied | (P)          | (P)     | Préparée, non occupée               | (P)    |
+| Airhead                   | AIRHEAD LINE | AIRHEAD | Tête de pont aéroportée (agreed)    | TPA    |
 
-French: ZE is *zone d'engagement* (TTA 106). LZ is kept as French speech uses it;
-the pickup and extraction zones are open (PZ/EZ are less known in French).
+French: ZE is *zone d'engagement* (TTA 106). LZ is kept as French speech uses it.
+A zone keeps its Z like French doctrine's (ZE, ZA, ZRA…); where the rest is an
+abbreviation of its own, it's joined with a hyphen: Z-EMB (*zone d'embarquement*:
+EMB alone is *embuscade* in TTA 106), Z-EXF (*zone d'exfiltration*).
 
 ## Obstacles and mines
 
