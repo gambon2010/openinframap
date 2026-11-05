@@ -5,7 +5,7 @@
 import type { jsPDF } from 'jspdf'
 import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 import { t } from '../../core/i18n.ts'
-import type { LegendSection } from '../../ui/legend.ts'
+import type { LegendSection } from '../../services/legend.ts'
 import { Box, INFO_PADDING, fit, formatScale, infoBox, scaleBar } from './layout.ts'
 import { Picture, svgToPng } from './images.ts'
 

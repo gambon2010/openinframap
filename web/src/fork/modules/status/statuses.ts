@@ -2,7 +2,7 @@
 // and how each looks: only problems are shown on the map, as a coloured ring or
 // casing plus a badge (docs/plans/feature-status.md, look C).
 import { t } from '../../core/i18n.ts'
-import { SUPPLY_COLOURS } from '../../ui/supply.ts'
+import { SUPPLY_COLOURS } from '../../services/supply.ts'
 
 export type Status =
   | 'operational'

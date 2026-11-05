@@ -28,8 +28,8 @@ import { GEOMETRY_LABELS, entryOf } from './palette.ts'
 import { symbolSvg } from '../map/symbols.ts'
 import { MAX_SIZE, MIN_SIZE, controlPoints } from '../map/render.ts'
 import { kindOf } from '../kinds/index.ts'
-import { variantsOf, withKey } from '../map/graphic-variants.ts'
-import { axisWidth } from '../map/graphics.ts'
+import { variantsOf, withKey } from '../graphics/variants.ts'
+import { axisWidth } from '../graphics/graphics.ts'
 
 export interface EditorActions {
   update: (properties: FeatureProps) => void

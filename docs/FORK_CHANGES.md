@@ -648,7 +648,7 @@ be played back step by step. The "My layers" button (top right) opens the panel.
   obstacle lines... 212 drawable) are drawn by the US Army C5ISR renderer
   `@armyc2.c5isr.renderer/mil-sym-ts-web` (Apache-2.0, 7.4 MB / 1.4 MB gzipped,
   loaded on first use, precached) from the points the user clicks
-  (`fork/modules/userlayers/map/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
+  (`fork/modules/userlayers/graphics/graphics.ts`). It draws 2525D/E, so the stored 2525C code is
   converted with its own `C2DLookup`; it says how many points each graphic takes
   (fixed-count ones finish by themselves). Its GeoJSON (lines, polygons, label
   points) goes into a second source per layer (`user_<id>_g`), redrawn when the zoom
@@ -1028,7 +1028,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   and fuel depots; capacity (Normal, Saturated, Closed) for hospitals and clinics;
   fuel available (Yes, No, Rationed) for fuel stations and depots. Shown under the
   status ("Stock: Low · What is short: water") and in the history.
-- **Several at once** (`ui/selection.ts`, `modules/status/selection.ts`): Shift-click
+- **Several at once** (`services/selection.ts`, `modules/status/selection.ts`): Shift-click
   adds a feature to a selection (or takes it out) instead of showing its details. The
   picked features are outlined in purple (their whole shape) and listed in a panel
   in the left column; "Set status for all" sets them together, each getting only the
@@ -1090,7 +1090,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   map: slow, and the double lines showed through. A way gets one colour along its
   whole length (a tower down turns all of it red, not only from the break).
 - **Copies in My layers** of power lines, substations and plants take their original's
-  colour while the mode is on (`ui/supply.ts`, read by My layers' renderer), and their
+  colour while the mode is on (`services/supply.ts`, read by My layers' renderer), and their
   own look when it's off.
 - **Inside a substation** without supply (or with less), every power line within its
   outline (bays, connections, often not in the network) takes its colour.
@@ -1204,7 +1204,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - **No database connection held:** the stream takes one for each look; `main.py`'s
   database middleware skips it (`streaming_paths`, a one-line hook), and the login
   middleware then opens one just to check the session.
-- **The page** (`fork/ui/live.ts`, one connection, `onLive(kind, listener)`): My layers
+- **The page** (`fork/services/live.ts`, one connection, `onLive(kind, listener)`): My layers
   fetches the layers again (`store.refresh`): shown as they are if you have nothing
   unsaved, merged with your changes otherwise (phase 3; conflicts not yet resolved
   stay); a Save under way first. The statuses (map, supply, board) refresh too.
@@ -1321,7 +1321,7 @@ others, and its points are moved like a drawing's.
   landscape or portrait, legend or not. jsPDF, loaded only when used. The map as on
   screen, drawn again at twice the resolution (`setPixelRatio`), north as the map is
   turned, the scale (1:N) and a bar, the centre's position and MGRS, the map's credits,
-  the date and who printed it. The legend (`fork/ui/legend.ts`, `addLegend`): the map
+  the date and who printed it. The legend (`fork/services/legend.ts`, `addLegend`): the map
   layers on (print), the layers shown and the symbols in view (My layers), the power
   supply colours while the mode is on (status). Long legends end with "…and N more".
 - `fork/ui/panel.ts` `makeModal`: the window Settings used, shared with Print (Print's is a floating panel since 2026-11-05).
@@ -1335,11 +1335,23 @@ others, and its points are moved like a drawing's.
 tool doesn't ask for, so the rectangle was removed with the others); 2525D and E have
 it irregular too (entity 240503). It's back in the catalogue under a 2525C-style code
 of ours, G*F*ACPI ("Position area for artillery (paa)"), which `toDCode`
-(`map/graphics.ts`, `BEYOND_C`) turns into 2525D's irregular PAA: the irregular fire
+(`graphics/graphics.ts`, `BEYOND_C`) turns into 2525D's irregular PAA: the irregular fire
 support area's code (G*F*ACSI, for the affiliation and status) with its entity
 swapped. Note: G*F*ACPI isn't a real 2525C code, for anything exported to other
 systems. The renderer writes "PAA" on every side, as the standard's template does
 (readable whatever part of a large area is in view): kept.
+
+## Fork folders tidied (2026-11-06)
+
+Pure moves, nothing changed in behaviour:
+- `userlayers/graphics/`: everything about tactical graphics, out of `map/` (which
+  kept the map's own drawing and tools): `graphics.ts`, `labels.ts`, `variants.ts`,
+  `svg.ts` (were `map/graphics.ts`, `map/graphic-labels.ts`, `graphic-variants.ts`,
+  `graphic-svg.ts`), `tta106-sigles.json`.
+- `fork/services/`: the shared state and registries, out of `fork/ui/` (which kept
+  what's on screen): `legend.ts`, `live.ts`, `map-mode.ts`, `selection.ts`,
+  `supply.ts`. `structure.test.ts` checks the new area: modules and `ui/` may use
+  `services/`, `services/` never `ui/`.
 
 ## Satellite menu easier to read; more detail added later (2026-11-06)
 
@@ -1364,7 +1376,7 @@ systems. The renderer writes "PAA" on every side, as the standard's template doe
 
 Block, Disrupt and Fix were each in the picker twice (the task and the obstacle
 effect), Main attack, Supporting attack and Aviation too (an axis of advance and a
-direction of attack), with the same names. Now a switch on the card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle**,
+direction of attack), with the same names. Now a switch on the card (`userlayers/graphics/variants.ts`, `VARIANTS`): **Task / Obstacle**,
 **Axis of advance (wide) / Direction of attack (thin)**. The two versions take the
 same points (an arrow: its path, tail to tip), so switching keeps the drawing; an
 axis gets its width back (`axisWidth`), a direction has none. Both versions are in
@@ -1398,7 +1410,7 @@ The renderer writes the standard's text on 110 graphics, and several share a let
 own, in English or French, as agreed in `docs/plans/graphic-labels.md`: one letter
 only for the most common, short words in full, others shortened or initials (WUP);
 French from the French Army's terms (TTA 106).
-- `userlayers/map/graphic-labels.ts`: `GRAPHIC_LABELS` (2525C code without
+- `userlayers/graphics/labels.ts`: `GRAPHIC_LABELS` (2525C code without
   affiliation and status, `graphicKey`, now shared with `SQUARE`) → for each text the
   renderer writes, what to write instead in English and French ('' = not written:
   Contain's ENY), and the French name. `renderGraphic` replaces them (`language`:
@@ -1409,7 +1421,7 @@ French from the French Army's terms (TTA 106).
   chosen, not the browser's language, so everyone on a map can see the same.
 - The legend: "WUP: Withdraw under pressure", in the chosen language
   (`graphicSvg` returns the labels written; `graphicName`).
-- `graphic-labels.test.ts`: every catalogue graphic through the real renderer, in
+- `graphics/labels.test.ts`: every catalogue graphic through the real renderer, in
   both languages: no two different graphics share a label; every replaced text is
   one the renderer writes; no French label means something else in TTA 106
   (`tta106-sigles.json`: its abbreviations and the letters on its task symbols).
@@ -1442,7 +1454,7 @@ the map.
 - **My layers by layer** (`userlayers/map/legend.ts`): a section per layer shown, by
   its name, in the list's order, listing what of it is in the printed area, each kind
   once: a unit's symbol, a graphic drawn small by the real renderer from made-up
-  points in its usual shape (`map/graphic-svg.ts`; in its own colour, else the
+  points in its usual shape (`graphics/svg.ts`; in its own colour, else the
   renderer's, as on the map), lines, areas and markers in their colour by name.
   Copies are left to the key; pictures and measurements explain themselves.
 - Legend sources get the printed area (`addLegend((map, area) => …)`).
@@ -1465,7 +1477,7 @@ Bypass. Checked one by one (each drawn with its third point skewed):
   Search area, Dummy, Principal direction of fire, Turn, Delay, Withdraw and
   Retirement, roadblocks, fords, infiltration lane, minimum safe distance zones.
 
-`squareUp(sidc, points)` (`map/graphics.ts`, table `SQUARE` by 2525C code) moves the
+`squareUp(sidc, points)` (`graphics/graphics.ts`, table `SQUARE` by 2525C code) moves the
 free point onto the perpendicular, keeping its distance from the base. Used while
 drawing (the preview and the stored points), when a point is dragged (the free one
 stays on the perpendicular, or follows when the base moves), for the handles, and
@@ -1523,7 +1535,7 @@ GPX-size import kept across a reload; an old localStorage copy moved over.
 
 ## The map mode (2026-11-02)
 
-`fork/ui/map-mode.ts`: one tool at a time takes the map over. `mapMode.enter({name,
+`fork/services/map-mode.ts`: one tool at a time takes the map over. `mapMode.enter({name,
 cursor, doubleClickZoom, click, dblclick, contextmenu, mousemove, keydown, exit})`
 gives it the map's events (right-click without the browser's menu), the cursor and
 double-click; Escape ends it (unless its `keydown` uses the key); entering a mode

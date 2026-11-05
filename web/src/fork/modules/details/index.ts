@@ -13,7 +13,7 @@ import type InfoPopup from '../../../popup/infopopup.ts'
 import { DetailsPanel, detailsExtras } from '../../ui/details.ts'
 import { FeatureHighlight } from '../../ui/highlight.ts'
 import { leftColumn } from '../../ui/left-column.ts'
-import { selection } from '../../ui/selection.ts'
+import { selection } from '../../services/selection.ts'
 import { selectNearLines } from './near-click.ts'
 import { circuitBelowDetails } from './circuit.ts'
 

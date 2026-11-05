@@ -4,7 +4,7 @@
 import { el } from 'redom'
 import { t, tn } from '../../../core/i18n.ts'
 import { Palette, Pick, PaletteMode } from './palette.ts'
-import { graphicsLibrary, isAxis, pointCount } from '../map/graphics.ts'
+import { graphicsLibrary, isAxis, pointCount } from '../graphics/graphics.ts'
 import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
 import { prepareImage } from './images.ts'

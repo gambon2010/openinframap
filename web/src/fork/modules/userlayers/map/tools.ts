@@ -15,10 +15,10 @@ import {
   sizeFromDrag,
   translateGeometry
 } from './render.ts'
-import { axisWidth, axisWidthFrom, squareUp } from './graphics.ts'
+import { axisWidth, axisWidthFrom, squareUp } from '../graphics/graphics.ts'
 import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
-import { mapMode } from '../../../ui/map-mode.ts'
+import { mapMode } from '../../../services/map-mode.ts'
 import { kindOf } from '../kinds/index.ts'
 import { iconName } from './icons.ts'
 import { areaCrossesItself, areaPoints, pathCrossesItself } from '../model/shapes.ts'

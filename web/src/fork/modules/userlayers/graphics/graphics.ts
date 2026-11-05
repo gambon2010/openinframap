@@ -5,7 +5,7 @@
 // converted with its C2DLookup. Loaded on first use (a 1.4 MB gzipped script).
 // What it returns is GeoJSON (lines, polygons, and label points) that MapLibre draws.
 
-import { LabelLanguage, graphicKey, labelLanguage, plainLabel } from './graphic-labels.ts'
+import { LabelLanguage, graphicKey, labelLanguage, plainLabel } from './labels.ts'
 
 type C5Ren = typeof import('@armyc2.c5isr.renderer/mil-sym-ts-web')
 

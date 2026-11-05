@@ -8,7 +8,7 @@ import { Map } from 'maplibre-gl'
 import { el, setChildren } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { BACKEND_BASE_URL } from '../../config.ts'
-import { SUPPLY_COLOURS, Supply, supplyColours } from '../../ui/supply.ts'
+import { SUPPLY_COLOURS, Supply, supplyColours } from '../../services/supply.ts'
 
 const GREY = '#9e9e9e'
 

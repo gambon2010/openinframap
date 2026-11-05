@@ -9,7 +9,7 @@
 // Both versions take the same points (an arrow: its path, tail to tip), so switching
 // keeps the drawing.
 import { t } from '../../../core/i18n.ts'
-import { graphicKey } from './graphic-labels.ts'
+import { graphicKey } from './labels.ts'
 
 export interface Variants {
   /** The two versions' keys (graphicKey): the first is the one in the picker. */

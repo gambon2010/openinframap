@@ -10,7 +10,7 @@ import { measurePrefs } from '../measure/prefs.ts'
 import type { North } from '../measure/north.ts'
 import { download, importFile } from '../io/files.ts'
 import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
-import { GraphicLabelChoice, graphicLabelChoice, setGraphicLabelChoice } from '../map/graphic-labels.ts'
+import { GraphicLabelChoice, graphicLabelChoice, setGraphicLabelChoice } from '../graphics/labels.ts'
 import { LabelLevel } from '../model/fields.ts'
 import type { Workspace } from './workspace.ts'
 

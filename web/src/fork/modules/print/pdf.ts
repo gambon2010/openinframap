@@ -5,7 +5,7 @@
 // centre's position and grid reference, and the map's credits. The page's parts:
 // parts.ts; where they go: layout.ts; the pictures: images.ts.
 import type { Map } from 'maplibre-gl'
-import { legendSections } from '../../ui/legend.ts'
+import { legendSections } from '../../services/legend.ts'
 import {
   Orientation,
   Paper,

@@ -17,7 +17,7 @@ import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { getLabelLevel } from './symbols.ts'
-import { isDirection } from './graphic-variants.ts'
+import { isDirection } from '../graphics/variants.ts'
 import { ensureImage, iconName } from './icons.ts'
 import { KINDS, kindOf } from '../kinds/index.ts'
 import { Measurement, measurementFeatures, measurementOf } from '../measure/features.ts'
@@ -33,9 +33,9 @@ import {
   pathFromAxisPoints,
   renderGraphic,
   squareUp
-} from './graphics.ts'
+} from '../graphics/graphics.ts'
 import { modifiersToDraw } from '../model/fields.ts'
-import { SUPPLY_COLOURS, supplyColours } from '../../../ui/supply.ts'
+import { SUPPLY_COLOURS, supplyColours } from '../../../services/supply.ts'
 
 const SELECTION = 'user_selection'
 // The selection's yellow, and its handles' darker yellow (points, sizes, widths).

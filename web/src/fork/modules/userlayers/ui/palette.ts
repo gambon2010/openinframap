@@ -6,7 +6,7 @@ import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import catalogue from '../model/symbols-2525c.json'
 import { symbolRenderer } from '../map/symbols.ts'
-import { graphicsLibrary, pointCount } from '../map/graphics.ts'
+import { graphicsLibrary, pointCount } from '../graphics/graphics.ts'
 import type { PersonalSettings } from '../state/personal.ts'
 
 /** [code with * for identity and status, name, depth, graphic geometry (L, A, M)] */

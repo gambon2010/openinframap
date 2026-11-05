@@ -6,7 +6,7 @@ import { t } from '../../core/i18n.ts'
 import { sourceGeometry } from '../../core/map-data.ts'
 import { closeButton } from '../../ui/details.ts'
 import { LEFT_ORDER, leftColumn } from '../../ui/left-column.ts'
-import { selection } from '../../ui/selection.ts'
+import { selection } from '../../services/selection.ts'
 import { Field, canHaveStatus, fieldsOf } from './fields.ts'
 import { FeatureRef, saveStatus, statusForm } from './form.ts'
 

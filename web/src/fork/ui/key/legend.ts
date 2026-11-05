@@ -4,7 +4,7 @@
 // way unticking it hides it (feature-hider.ts specConditions): the map layers, and
 // for each the features it's about (this colour, this icon).
 import type { ExpressionSpecification, FilterSpecification, Map } from 'maplibre-gl'
-import type { LegendArea, LegendEntry, LegendSection } from '../legend.ts'
+import type { LegendArea, LegendEntry, LegendSection } from '../../services/legend.ts'
 import { HideSpec, StyleLayer, specConditions } from './feature-hider.ts'
 import { swatchSpec } from './toggles.ts'
 

@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { VARIANTS, isDirection, variantsOf, withKey } from './graphic-variants.ts'
+import { VARIANTS, isDirection, variantsOf, withKey } from './variants.ts'
 import { graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
 import { searchCatalogue } from '../ui/palette.ts'
-import { graphicKey } from './graphic-labels.ts'
+import { graphicKey } from './labels.ts'
 
 type Lib = Awaited<ReturnType<typeof graphicsLibrary>>
 let lib: Lib

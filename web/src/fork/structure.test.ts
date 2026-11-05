@@ -1,7 +1,8 @@
 // The fork's folder rules (docs/ARCHITECTURE.md):
-// - modules/<name>/ may import core/, ui/, the root files and its own files, never
-//   another module;
-// - ui/ imports only core/ and the root files (types.ts, config.ts);
+// - modules/<name>/ may import core/, ui/, services/, the root files and its own
+//   files, never another module;
+// - ui/ imports only core/, services/ and the root files (types.ts, config.ts);
+// - services/ (shared state, registries) imports only core/ and the root files;
 // - core/ imports nothing else of the fork;
 // - upstream files import only fork/index.ts, fork/types.ts and fork/config.ts.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -31,7 +32,7 @@ function forkImports(file: string): string[] {
 const area = (path: string) => {
   const [top, name] = path.split('/')
   if (top === 'modules') return `modules/${name}`
-  return ['core', 'ui', 'locales'].includes(top) ? top : 'root'
+  return ['core', 'ui', 'services', 'locales'].includes(top) ? top : 'root'
 }
 
 test('modules never import each other; ui and core stay below them', () => {
@@ -45,6 +46,7 @@ test('modules never import each other; ui and core stay below them', () => {
         target === 'core' ||
         (target === 'root' && from !== 'core') ||
         (target === 'ui' && from.startsWith('modules/')) ||
+        (target === 'services' && (from.startsWith('modules/') || from === 'ui')) ||
         (target === 'locales' && from === 'root')
       if (!allowed) broken.push(`${relative(FORK, file)} -> ${target}`)
     }

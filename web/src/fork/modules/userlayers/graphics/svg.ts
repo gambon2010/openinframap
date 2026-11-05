@@ -2,7 +2,7 @@
 // The real renderer draws it from made-up points in its usual shape (an arrow from
 // left to right, a square graphic square, an area as a box), and its lines, areas
 // and labels become an SVG fitted to them.
-import { graphicKey } from './graphic-labels.ts'
+import { graphicKey } from './labels.ts'
 import {
   SQUARE,
   axisControlPoints,

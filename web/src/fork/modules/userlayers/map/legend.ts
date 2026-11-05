@@ -1,13 +1,13 @@
 // Fork: My layers on a printed map's legend (ui/legend.ts): each layer shown, by its
 // name, with what of it is in the printed area (each kind once, with its picture).
 import { LngLatBounds } from 'maplibre-gl'
-import type { LegendEntry, LegendSection } from '../../../ui/legend.ts'
+import type { LegendEntry, LegendSection } from '../../../services/legend.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { symbolName } from '../ui/palette.ts'
 import { symbolSvg } from './symbols.ts'
 import { kindOf } from '../kinds/index.ts'
-import { graphicSvg } from './graphic-svg.ts'
-import { graphicName } from './graphic-labels.ts'
+import { graphicSvg } from '../graphics/svg.ts'
+import { graphicName } from '../graphics/labels.ts'
 
 /** Whether any of a feature's points is in view. */
 export function inView(feature: UserFeature, bounds: Pick<LngLatBounds, 'contains'>): boolean {

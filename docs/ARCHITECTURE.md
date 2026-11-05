@@ -29,10 +29,13 @@ structure", "Merging from upstream"). Upstream imports only three fork files:
 ```
 index.ts, types.ts, config.ts   the module registry and hooks, the types, the URLs
 core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
-ui/        shared building blocks: dock (right), left column, details panel,
-           highlight, panels, settings, the key's checkboxes, live updates (live.ts),
-           who has the map (map-mode.ts: measuring, drawing), a printed
-           map's legend (legend.ts), modal windows (panel.ts makeModal)
+ui/        shared building blocks you see: dock (right), left column, details
+           panel, highlight, panels (panel.ts, makeModal), settings, the tooltip,
+           the key's checkboxes and its rows on prints (key/)
+services/  shared state and registries, nothing drawn: live updates (live.ts),
+           who has the map (map-mode.ts: measuring, drawing), features picked
+           with Shift-click (selection.ts), power supply colours (supply.ts),
+           what a printed map's legend lists (legend.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
@@ -41,7 +44,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   sites        critical sites
   search       search descriptions, Photon
   coordinates  the cursor's position and MGRS; MGRS in search
-  print        the map as a PDF with a legend (ui/legend.ts: modules add to it)
+  print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   satellite    imagery as the background
   map-sources  background tiles and Photon (Settings)
   layout       the dock, the Settings link, the search box in the top bar
@@ -52,12 +55,15 @@ locales/en.json   the fork's English strings
 
 Folder rules, checked by `fork/structure.test.ts`:
 
-- a module imports `core/`, `ui/`, the root files and its own files, never another
-  module;
-- `ui/` imports only `core/` and the root files;
+- a module imports `core/`, `ui/`, `services/`, the root files and its own files,
+  never another module;
+- `ui/` imports only `core/`, `services/` and the root files;
+- `services/` imports only `core/` and the root files (never `ui/`);
 - `core/` imports nothing else of the fork.
 
-When two modules need to talk, the shared piece goes in `ui/` as a small registry.
+When two modules need to talk, the shared piece goes in `services/` as a small
+registry (shared state: who has the map, the selection), or in `ui/` when it's
+something on screen (the details panel's extras, the left column).
 Examples:
 - `addDetailsExtra`: the grid adds "Route from here" to a feature's details;
 - `addSettingsSection`;
@@ -96,9 +102,12 @@ state/   store.ts (the Store the UI uses) on top of:
 kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
          drawing, measure, copy); types.ts says what a kind defines, index.ts lists them
          and has kindOf(properties)
-map/     render.ts, graphics.ts (tactical graphics), symbols.ts (drawing the
-         images), icons.ts (adding them to the map, by the kinds' prefixes),
-         tools.ts, interactions.ts (hover, right-click, copy / paste), legend.ts
+map/     render.ts, symbols.ts (drawing the images), icons.ts (adding them to
+         the map, by the kinds' prefixes), tools.ts, interactions.ts (hover,
+         right-click, copy / paste), legend.ts
+graphics/ tactical graphics: graphics.ts (the C5ISR renderer: codes, points,
+         squaring), labels.ts (plain labels, English/French), variants.ts (two
+         versions of one graphic), svg.ts (drawn small, for the legend)
 io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
 measure/ measurements, pure: geo.ts (distances, areas, great circles), north.ts,
          ticks.ts (marks along a distance), features.ts (labels, marks), prefs.ts
@@ -217,7 +226,7 @@ Pick an order between the existing ones (`LEFT_ORDER`). To show details, use
 
 **A tool that takes the map over** (clicks, right-click, keys, the cursor):
 `mapMode.enter({ name, cursor?, doubleClickZoom?, click?, dblclick?, contextmenu?,
-mousemove?, keydown?, exit? })` from `ui/map-mode.ts`, and `mapMode.leave(name)`
+mousemove?, keydown?, exit? })` from `services/map-mode.ts`, and `mapMode.leave(name)`
 when done. Escape and other tools end it: tidy up in `exit`. Meanwhile clicks on
 map features don't open their details. Example: My layers' tools
 (`modules/userlayers/map/tools.ts`, `setTool`).

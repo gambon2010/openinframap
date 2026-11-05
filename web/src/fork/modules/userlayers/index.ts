@@ -3,16 +3,16 @@
 // They can hold military and emergency symbols (MIL-STD-2525C, as in ODINv2),
 // pictures, markers, drawings, and copies of map features, which are drawn like
 // the originals and stay visible when the originals are hidden.
-import { onLive } from '../../ui/live.ts'
+import { onLive } from '../../services/live.ts'
 import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
 import { Renderer } from './map/render.ts'
 import { Tools } from './map/tools.ts'
 import { Workspace } from './ui/workspace.ts'
 import { Interactions } from './map/interactions.ts'
-import { addLegend } from '../../ui/legend.ts'
+import { addLegend } from '../../services/legend.ts'
 import { userLegend } from './map/legend.ts'
-import { mapMode } from '../../ui/map-mode.ts'
+import { mapMode } from '../../services/map-mode.ts'
 import { layerOrder, sortLayers } from './ui/outliner.ts'
 import { LngLatBounds } from 'maplibre-gl'
 
