@@ -77,27 +77,34 @@ French notes:
 
 ## Lines
 
-| Graphic                             | Standard     | English | French name                         | French        |
-|-------------------------------------|--------------|---------|-------------------------------------|---------------|
-| Bearing line                        | B            | BL      | Ligne de relèvement                 | LRLV          |
-| Bridgehead                          | B            | BRHD    | Tête de pont ✓                      | TDP           |
-| Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)              | L BO          |
-| Line of departure                   | LD           | LD      | Ligne de débouché ✓                 | LD            |
-| Line of contact                     | LC           | LC      | Ligne de contact ✓                  | L CTC         |
-| Line of departure / line of contact | LD/LC        | LD/LC   | Débouché / contact                  | LD/L CTC      |
-| Limit of advance                    | LOA          | LOA     | Limite avant ✓ (LIMAV)              | LIMAV         |
-| Final coordination line             | FCL          | FCL     | Ligne de coordination finale        | LCF           |
-| Probable line of deployment         | PLD          | PLD     | Ligne probable de déploiement       | LPD           |
-| Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)           | LRCL          |
-| Release line                        | RL           | RL      | Ligne de libération                 | LLIB          |
-| Light line                          | LL           | LL      | Ligne de feux masqués               | LFM           |
-| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓      | FLOT          |
-| Forward edge of battle area         | FEBA         | FEBA    | Limite avant de la zone de bataille | LAZB          |
-| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête aéroportée                     | TAP           |
+| Graphic                             | Standard     | English | French name                         | French   |
+|-------------------------------------|--------------|---------|-------------------------------------|----------|
+| Bearing line                        | B            | BL      | Ligne de relèvement                 | LRLV     |
+| Bridgehead                          | B            | BRHD    | Tête de pont ✓                      | TDP      |
+| Phase line                          | PL           | PL      | Ligne de bond ✓ (L BO)              | L BO     |
+| Line of departure                   | LD           | LD      | Ligne de débouché ✓                 | LD       |
+| Line of contact                     | LC           | LC      | Ligne de contact ✓                  | L CTC    |
+| Line of departure / line of contact | LD/LC        | LD/LC   | Débouché / contact                  | LD/L CTC |
+| Limit of advance                    | LOA          | LOA     | Limite avant ✓ (LIMAV)              | LIMAV    |
+| Final coordination line             | FCL          | FCL     | Ligne de coordination finale        | LCF      |
+| Probable line of deployment         | PLD          | PLD     | Ligne probable de déploiement       | LPD      |
+| Holding line                        | HL           | HL      | Ligne de recueil ✓ (LRCL)           | LRCL     |
+| Release line                        | RL           | RL      | Ligne de libération                 | LLIB     |
+| Light line                          | LL           | LL      | Ligne de feux masqués               | LFM      |
+| Forward line of own troops          | FLOT         | FLOT    | Ligne avant des forces amies ✓      | FLOT     |
+| Forward edge of battle area         | FEBA         | FEBA    | Limite avant de la zone de bataille | LAZB     |
+| Airhead line                        | AIRHEAD LINE | AIRHEAD | Tête aéroportée                     | TAP      |
 
 French: phase line is *ligne de bond* (L BO), line of contact *ligne de contact*
 (L CTC), holding line *ligne de recueil* (LRCL), all TTA 106. Release line, light
 line, final coordination line and the others without ✓ are still to check.
+
+What some lines mean:
+- **Bearing line**: from an observer or sensor (direction finder, radar, sonar)
+  along the direction it detected something; two crossing ones locate it.
+  *Relèvement* = bearing.
+- **Light line**: beyond it, vehicles drive with blackout lights (*feux masqués*),
+  no headlights.
 
 ## Areas and positions
 
@@ -111,7 +118,7 @@ line, final coordination line and the others without ✓ are still to check.
 | Area of operations        | AO           | AO      | Zone d'action ✓                     | ZA     |
 | Named area of interest    | NAI          | NAI     | Zone d'intérêt ✓                    | ZI     |
 | Targeted area of interest | TAI          | TAI     | Zone d'intérêt ciblée               | ZIC    |
-| Limited access area       | LAA          | LAA     | Zone d'accès restreint              | ZAR    |
+| Limited access area       | LAA          | LAA     | Zone d'accès restreint (agreed)     | ZRES   |
 | Drop zone                 | DZ           | DZ      | Zone de saut ✓                      | ZS     |
 | Landing zone              | LZ           | LZ      | Zone de poser                       | ZP     |
 | Pickup zone               | PZ           | PZ      | Zone d'embarquement                 | ZEMB   |
@@ -129,7 +136,7 @@ French: ZE is *zone d'engagement* (TTA 106), so the pickup zone is ZEMB.
 | Decoy mined area (and fenced) | M        | DECOY M | Zone minée factice                 | M FACT |
 | Obstacle free area            | FREE     | FREE    | Zone à laisser libre d'obstacles ✓ | ZLO    |
 | Unexploded ordnance area      | UXO      | UXO     | Munitions non explosées            | UXO    |
-| Trip wire                     | t        | t       | Fil piège                          | t      |
+| Trip wire                     | t        | t       | Fil tendu (agreed)                 | t      |
 | Smoke / linear smoke target   | SMOKE    | SMOKE   | Fumigène                           | FUMI   |
 
 ## Support and movement
@@ -143,7 +150,7 @@ French: ZE is *zone d'engagement* (TTA 106), so the pickup zone is ZEMB.
 | Forward arming and refuelling point               | FARP           | FARP                     | Point de ravitaillement avancé          | FARP                      |
 | Brigade / division / regimental support area      | BSA, DSA, RSA  | BSA, DSA, RSA            | Zone de soutien (brigade…)              | ZSB, ZSD, ZSR             |
 | Detainee / EPW / refugee holding area             | AREA … HOLDING | DETAINEES, POW, REFUGEES | Détenus, prisonniers, réfugiés          | DÉTENUS, PRISON, RÉFUGIÉS |
-| Electro-optical intercept                         | O              | EO                       | Interception électro-optique            | EO                        |
+| Electro-optical intercept                         | O              | EO                       | Interception électro-optique (agreed)   | IEO                       |
 | Electronic / acoustic / torpedo (decoys, sensors) | E, A, T        | E, A, T                  | Électronique, acoustique, torpille      | E, A, T                   |
 
 ## Kept as they are (technical acronyms)
