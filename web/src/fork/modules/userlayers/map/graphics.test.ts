@@ -255,3 +255,20 @@ describe('filled shapes without an outline colour', () => {
     for (const head of heads) expect(head.properties?.stroke).toBe(head.properties?.fill)
   })
 })
+
+describe('beyond 2525C', () => {
+  test('the position area for artillery, drawn point by point (2525D: irregular)', () => {
+    expect(toDCode(lib, 'GFFPACPI-------')).toBe('110325000024050300000000000000')
+    const pieces = renderGraphic(lib, {
+      sidc: 'GFFPACPI-------',
+      points: [
+        [7.7, 48.58],
+        [7.74, 48.58],
+        [7.74, 48.6],
+        [7.7, 48.6]
+      ],
+      scale: mapScale(12, 48.58)
+    })
+    expect(pieces.some((p) => p.properties?.label === 'PAA')).toBe(true)
+  })
+})

@@ -28,7 +28,32 @@ export interface PointCount {
 
 /** A 2525C code as the renderer's 2525D code, or null if it has none. */
 export function toDCode(lib: C5Ren, sidc: string): string | null {
-  return lib.C2DLookup.getInstance().getDCode(sidc) || null
+  const known = lib.C2DLookup.getInstance().getDCode(sidc)
+  if (known) return known
+  // Not in 2525C, but in 2525D (BEYOND_C): a sibling's code with its entity swapped,
+  // which keeps the affiliation and status the conversion gives.
+  const beyond = BEYOND_C[graphicKey(sidc)]
+  if (!beyond) return null
+  const sibling = lib.C2DLookup.getInstance().getDCode(withSiblingKey(sidc, beyond.sibling))
+  return sibling ? sibling.slice(0, 10) + beyond.entity + sibling.slice(16) : null
+}
+
+/**
+ * Graphics 2525C doesn't have but 2525D does, under a 2525C-style code of ours:
+ * the position area for artillery (PAA) drawn point by point (2525C: only a rectangle
+ * or a circle, which need a width or radius the tool doesn't ask for).
+ */
+const BEYOND_C: Record<string, { sibling: string; entity: string }> = {
+  // As the fire support area, irregular (G*F*ACSI); 2525D entity 240503.
+  'G*F*ACPI': { sibling: 'G*F*ACSI', entity: '240503' }
+}
+
+/** A code with another graphic's key, its affiliation and status kept. */
+function withSiblingKey(sidc: string, key: string): string {
+  const out = sidc.padEnd(15, '-').split('')
+  const rest = key.slice(4)
+  for (let i = 0; i < 6; i++) out[4 + i] = rest[i] ?? '-'
+  return out.join('')
 }
 
 export function pointCount(lib: C5Ren, sidc: string): PointCount | null {

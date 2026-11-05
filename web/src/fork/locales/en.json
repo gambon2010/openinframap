@@ -642,7 +642,7 @@
     "graphic-labels": "Graphic labels",
     "variant": {
       "task": "Task",
-      "obstacle": "Obstacle effect",
+      "obstacle": "Obstacle",
       "axis": "Axis of advance (wide)",
       "direction": "Direction of attack (thin)"
     }

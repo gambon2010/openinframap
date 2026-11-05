@@ -1329,17 +1329,28 @@ others, and its points are moved like a drawing's.
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## Position area for artillery, drawn point by point (2026-11-06)
+
+2525C has the PAA only as a rectangle or a circle (both need a width or radius the
+tool doesn't ask for, so the rectangle was removed with the others); 2525D and E have
+it irregular too (entity 240503). It's back in the catalogue under a 2525C-style code
+of ours, G*F*ACPI ("Position area for artillery (paa)"), which `toDCode`
+(`map/graphics.ts`, `BEYOND_C`) turns into 2525D's irregular PAA: the irregular fire
+support area's code (G*F*ACSI, for the affiliation and status) with its entity
+swapped. Note: G*F*ACPI isn't a real 2525C code, for anything exported to other
+systems.
+
 ## One graphic, two versions (2026-11-06)
 
 Block, Disrupt and Fix were each in the picker twice (the task and the obstacle
 effect), Main attack, Supporting attack and Aviation too (an axis of advance and a
 direction of attack), with the same names. Now one entry each, and a switch on the
-card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle effect**,
+card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle**,
 **Axis of advance (wide) / Direction of attack (thin)**. The two versions take the
 same points (an arrow: its path, tail to tip), so switching keeps the drawing; an
 axis gets its width back (`axisWidth`), a direction has none. The second versions
 are left out of the picker (`NOT_IN_PICKER`) and named for what they are in the
-catalogue ("Block (obstacle effect)", "Main attack (direction of attack)") for the
+catalogue ("Block (obstacle)", "Main attack (direction of attack)") for the
 legend. The obstacle effects are green: the standard's colour for friendly
 obstacles (as is neutral; the shapes differ).
 - **Directions of attack pointed backwards**: the renderer wants their tip first,
@@ -1356,7 +1367,8 @@ boxes) need a width in metres besides their two points, which the drawing tool n
 asks for: the renderer refused them ("requires a modifiers object that has 1
 distance/AM value") and nothing was placed. Removed from `model/symbols-2525c.json`:
 the irregular versions draw a rectangle just as well (four points). The position
-area for artillery (PAA) had only the rectangular one, so it's gone.
+area for artillery (PAA) had only the rectangular one in 2525C: it's back as 2525D's
+irregular one (below).
 With no other shape left, the remaining 16 lose ", irregular" from their names
 ("Zone of responsibility (zor)").
 

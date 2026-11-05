@@ -278,7 +278,7 @@ export async function buildEditor(
       }
     }
     strip.push(statusRow)
-    // Two versions of one graphic (graphic-variants.ts): task or obstacle effect, axis
+    // Two versions of one graphic (graphic-variants.ts): task or obstacle, axis
     // of advance or direction of attack. Same points: the drawing stays.
     const versions = kind === 'graphic' ? variantsOf(sidc) : null
     if (versions) {

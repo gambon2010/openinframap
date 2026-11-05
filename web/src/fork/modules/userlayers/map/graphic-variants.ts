@@ -1,7 +1,8 @@
 // Fork: graphics that are two versions of one thing (docs/SPECIFICATIONS 9.27): one
 // entry in the picker, and a switch on the card between its versions.
-// - Block, Disrupt, Fix: the task (black: what a unit does) or the obstacle effect
-//   (green, the standard's colour for friendly obstacles: what an obstacle does).
+// - Block, Disrupt, Fix: the task (black: what a unit does) or the obstacle (green,
+//   the standard's colour for friendly obstacles: what an obstacle does; the
+//   standard's "obstacle effect").
 // - Main attack, Supporting attack, Aviation: an axis of advance (a wide arrow, path
 //   and width) or a direction of attack (a thin arrow along the same path).
 // Both versions take the same points (an arrow: its path, tail to tip), so switching
@@ -20,7 +21,7 @@ export interface Variants {
 
 const taskOrObstacle = (): [string, string] => [
   t('userlayers.variant.task', 'Task'),
-  t('userlayers.variant.obstacle', 'Obstacle effect')
+  t('userlayers.variant.obstacle', 'Obstacle')
 ]
 const axisOrDirection = (): [string, string] => [
   t('userlayers.variant.axis', 'Axis of advance (wide)'),
