@@ -1,6 +1,8 @@
 // Fork: a printed map's page, worked out (pure): paper sizes, where the map and the
 // box with the title, legend and scale go, what part of the screen is printed, the
 // scale and its bar. Millimetres on paper, CSS pixels on screen.
+import { metresPerPixel } from '../../core/geo.ts'
+
 export type Paper = 'a4' | 'a3'
 export type Orientation = 'landscape' | 'portrait'
 
@@ -78,10 +80,8 @@ export function printRatio(
   return Math.max(1, Math.min(wanted, most))
 }
 
-/** Metres per screen pixel at a latitude and zoom (512-pixel tiles). */
-export function metresPerPixel(lat: number, zoom: number): number {
-  return (40075016.686 * Math.cos((lat * Math.PI) / 180)) / (512 * 2 ** zoom)
-}
+// Metres per screen pixel at a latitude and zoom: core/geo.ts.
+export { metresPerPixel }
 
 /** The scale on paper (1:N) of a map `pixels` wide printed `mm` wide. */
 export function scaleOf(lat: number, zoom: number, pixels: number, mm: number): number {

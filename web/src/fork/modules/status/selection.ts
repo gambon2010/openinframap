@@ -9,6 +9,7 @@ import { LEFT_ORDER, leftColumn } from '../../ui/left-column.ts'
 import { selection } from '../../services/selection.ts'
 import { Field, canHaveStatus, fieldsOf } from './fields.ts'
 import { FeatureRef, saveStatus, statusForm } from './form.ts'
+import { geometryIs } from '../../core/map-style.ts'
 
 const SOURCE = 'feature_selection'
 const COLOR = '#7048e8'
@@ -56,7 +57,7 @@ export class SelectionPanel {
   private addLayers() {
     if (this.map.getSource(SOURCE)) return
     this.map.addSource(SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-    const kind = (...types: string[]) => ['in', ['geometry-type'], ['literal', types]] as never
+    const kind = (...types: string[]) => geometryIs(...types) as never
     this.map.addLayer({
       id: 'feature_selection_line',
       type: 'line',

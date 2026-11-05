@@ -4,6 +4,7 @@
 // 2030). Grid north: "up" on the UTM/MGRS grid (its convergence from true north).
 import { magvar } from 'magvar'
 import { t } from '../../../core/i18n.ts'
+import { toDegrees, toRadians } from '../../../core/geo.ts'
 
 export type North = 'true' | 'magnetic' | 'grid'
 
@@ -16,8 +17,7 @@ export function declination(lng: number, lat: number, when: Date = new Date()): 
 export function gridConvergence(lng: number, lat: number): number {
   const zone = Math.min(60, Math.floor((lng + 180) / 6) + 1)
   const central = zone * 6 - 183
-  const rad = Math.PI / 180
-  return Math.atan(Math.tan((lng - central) * rad) * Math.sin(lat * rad)) / rad
+  return toDegrees(Math.atan(Math.tan(toRadians(lng - central)) * Math.sin(toRadians(lat))))
 }
 
 /** How far a north is from true north at a place, degrees (east positive). */

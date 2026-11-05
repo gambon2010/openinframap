@@ -7,6 +7,7 @@
 import { gpx, kml } from '@tmcw/togeojson'
 import { FeatureProps, UserLayer } from '../model/model.ts'
 import { KIND_IDS, kindOf } from '../kinds/index.ts'
+import { parseHex } from '../../../core/colour.ts'
 
 export type Format = 'geojson' | 'kml' | 'gpx'
 
@@ -89,8 +90,11 @@ function kmlGeometry(g: GeoJSON.Geometry): string {
 
 /** "#d32f2f" → KML's aabbggrr. */
 function kmlColour(hex: string, alpha = 'ff'): string {
-  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
-  return m ? `${alpha}${m[3]}${m[2]}${m[1]}`.toLowerCase() : `${alpha}2f2fd3`
+  // KML writes blue, green, red; not a colour: the default red (#d32f2f).
+  const rgb = parseHex(hex)
+  if (!rgb) return `${alpha}2f2fd3`
+  const two = (n: number) => n.toString(16).padStart(2, '0')
+  return `${alpha}${two(rgb[2])}${two(rgb[1])}${two(rgb[0])}`
 }
 
 /** The text that describes an item: its notes and details. */

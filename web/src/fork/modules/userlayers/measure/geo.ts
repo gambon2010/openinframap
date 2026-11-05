@@ -1,10 +1,11 @@
+import { toDegrees, toRadians } from '../../../core/geo.ts'
 // Fork: distances, areas, bearings and circles on the Earth (a sphere of the mean
 // radius: within 0.5 % of the ellipsoid, enough to measure on a map). Pure.
 export type LngLat = [lng: number, lat: number]
 
 const R = 6371008.8
-const rad = (d: number) => (d * Math.PI) / 180
-const deg = (r: number) => (r * 180) / Math.PI
+const rad = toRadians
+const deg = toDegrees
 
 /** Metres between two points (haversine). */
 export function distance([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {

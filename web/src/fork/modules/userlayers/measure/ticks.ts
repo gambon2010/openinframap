@@ -8,6 +8,7 @@
 // Marks sit on the line as drawn: the great-circle path (geo.ts greatCirclePath),
 // straight on the flat map between its points, and across it as seen on screen.
 import { LngLat, distance, greatCirclePath } from './geo.ts'
+import { metresPerPixel, toDegrees, toRadians } from '../../../core/geo.ts'
 
 /** Where the marks are drawn: the zoom, and what's in view (none: everywhere). */
 export interface TickView {
@@ -24,10 +25,8 @@ const HALF_PX = { major: 7, minor: 4 }
 // Beyond this many candidate marks, none (a line far longer than the view).
 const MAX_CANDIDATES = 300000
 
-/** Metres per screen pixel at a latitude and zoom (512-pixel tiles). */
-export function metresPerPixel(lat: number, zoom: number): number {
-  return (40075016.686 * Math.cos((lat * Math.PI) / 180)) / (512 * 2 ** zoom)
-}
+// Metres per screen pixel at a latitude and zoom: core/geo.ts.
+export { metresPerPixel }
 
 /** The smallest of 1, 2, 5 × 10ⁿ that is at least x. */
 export function niceAtLeast(x: number): number {
@@ -99,7 +98,7 @@ export function along(segment: Segment, d: number): Along {
     segment.a[0] + (segment.b[0] - segment.a[0]) * f,
     segment.a[1] + (segment.b[1] - segment.a[1]) * f
   ]
-  const angle = (Math.atan2(segment.b[1] - segment.a[1], segment.b[0] - segment.a[0]) * 180) / Math.PI
+  const angle = toDegrees(Math.atan2(segment.b[1] - segment.a[1], segment.b[0] - segment.a[0]))
   return { point: fromMercator(merc), merc, angle }
 }
 
@@ -147,7 +146,7 @@ export function ticksAlong(
     const isMajor = Math.abs(d / major - Math.round(d / major)) < 1e-6
     // Across the line on screen, a few pixels each side.
     const half = (isMajor ? HALF_PX.major : HALF_PX.minor) / world
-    const rad = (at.angle * Math.PI) / 180
+    const rad = toRadians(at.angle)
     const [nx, ny] = [-Math.sin(rad) * half, Math.cos(rad) * half]
     out.push({
       type: 'Feature',

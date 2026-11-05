@@ -6,6 +6,7 @@ import { ExpressionSpecification, GeoJSONSource, Map } from 'maplibre-gl'
 import type { FeatureCollection, Point } from 'geojson'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { PROBLEMS, Status, statusLook } from './statuses.ts'
+import { geometryIs } from '../../core/map-style.ts'
 
 const SHAPES = 'feature_status'
 const BADGES = 'feature_status_badge'
@@ -28,7 +29,7 @@ export function statusSources() {
 }
 
 export function statusLayers(): LayerSpecificationWithZIndex[] {
-  const kind = (...types: string[]): ExpressionSpecification => ['in', ['geometry-type'], ['literal', types]]
+  const kind = geometryIs
   const lines = kind('LineString', 'MultiLineString')
   const areas = kind('Polygon', 'MultiPolygon')
   const points = kind('Point', 'MultiPoint')

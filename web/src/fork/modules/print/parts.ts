@@ -8,6 +8,8 @@ import { t } from '../../core/i18n.ts'
 import type { LegendSection } from '../../services/legend.ts'
 import { Box, INFO_PADDING, fit, formatScale, infoBox, scaleBar } from './layout.ts'
 import { Picture, svgToPng } from './images.ts'
+import { toRadians } from '../../core/geo.ts'
+import { parseHex } from '../../core/colour.ts'
 
 /** The map, filling its box, framed, with north in its top-right corner. */
 export function drawMap(pdf: jsPDF, box: Box, picture: Picture, bearing: number) {
@@ -19,7 +21,7 @@ export function drawMap(pdf: jsPDF, box: Box, picture: Picture, bearing: number)
 
 /** North, as the map is turned. */
 function drawNorth(pdf: jsPDF, x: number, y: number, bearing: number) {
-  const a = (-bearing * Math.PI) / 180
+  const a = toRadians(-bearing)
   const point = (dx: number, dy: number): [number, number] => [
     x + dx * Math.cos(a) - dy * Math.sin(a),
     y + dx * Math.sin(a) + dy * Math.cos(a)
@@ -36,9 +38,9 @@ function drawNorth(pdf: jsPDF, x: number, y: number, bearing: number) {
   pdf.text('N', nx, ny + 1, { align: 'center' })
 }
 
+/** A legend swatch's colour, grey if it isn't one. */
 function rgb(hex: string): [number, number, number] {
-  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
-  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [120, 120, 120]
+  return parseHex(hex) ?? [120, 120, 120]
 }
 
 export interface InfoContent {

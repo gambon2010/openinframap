@@ -20,6 +20,7 @@ import {
   greatCirclePath,
   pathLength
 } from './geo.ts'
+import { toRadians } from '../../../core/geo.ts'
 
 export type MeasureType = 'distance' | 'area' | 'rings'
 
@@ -119,7 +120,7 @@ type Placement = { rotate?: number; offset?: [number, number]; anchor?: string; 
 
 /** Where a label goes beyond the end of a line heading `angle` (screen degrees). */
 function beyond(angle: number): Placement {
-  const [c, s] = [Math.cos((angle * Math.PI) / 180), Math.sin((angle * Math.PI) / 180)]
+  const [c, s] = [Math.cos(toRadians(angle)), Math.sin(toRadians(angle))]
   if (c > 0.7) return { anchor: 'left', offset: [0.6, 0], priority: 0 }
   if (c < -0.7) return { anchor: 'right', offset: [-0.6, 0], priority: 0 }
   return s > 0

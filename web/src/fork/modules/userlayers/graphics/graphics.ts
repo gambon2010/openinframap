@@ -6,6 +6,7 @@
 // What it returns is GeoJSON (lines, polygons, and label points) that MapLibre draws.
 
 import { LabelLanguage, graphicKey, labelLanguage, plainLabel } from './labels.ts'
+import { metresPerPixel, toRadians } from '../../../core/geo.ts'
 
 type C5Ren = typeof import('@armyc2.c5isr.renderer/mil-sym-ts-web')
 
@@ -79,15 +80,24 @@ export function isAxis(lib: C5Ren, sidc: string): boolean {
 
 type LonLat = [number, number]
 
-/** Metres east/north of an origin (equirectangular: fine at the scale of an arrow). */
+// A flat approximation around a point (equirectangular), fine at an arrow's scale.
+// Arrows' widths are worked out with it and saved: keep it as it is (not the sphere
+// of measure/geo.ts), or saved arrows and new ones would differ.
+/** Metres in a degree of longitude at the equator (times cos(latitude) elsewhere). */
+const METRES_PER_DEGREE_LON_AT_EQUATOR = 111_320
+/** Metres in a degree of latitude (its average, near 45°). */
+const METRES_PER_DEGREE_LAT = 110_540
+
+/** Metres east/north of an origin. */
 function toMetres([lon, lat]: LonLat, origin: LonLat): [number, number] {
-  const k = 111_320 * Math.cos((origin[1] * Math.PI) / 180)
-  return [(lon - origin[0]) * k, (lat - origin[1]) * 110_540]
+  const k = METRES_PER_DEGREE_LON_AT_EQUATOR * Math.cos(toRadians(origin[1]))
+  return [(lon - origin[0]) * k, (lat - origin[1]) * METRES_PER_DEGREE_LAT]
 }
 
+/** A point `x` metres east and `y` north of an origin. */
 function fromMetres([x, y]: [number, number], origin: LonLat): LonLat {
-  const k = 111_320 * Math.cos((origin[1] * Math.PI) / 180)
-  return [origin[0] + x / k, origin[1] + y / 110_540]
+  const k = METRES_PER_DEGREE_LON_AT_EQUATOR * Math.cos(toRadians(origin[1]))
+  return [origin[0] + x / k, origin[1] + y / METRES_PER_DEGREE_LAT]
 }
 
 /** Length of a path, in metres. */
@@ -143,11 +153,13 @@ export function pathFromAxisPoints(points: LonLat[]): LonLat[] {
   return points.slice(0, -1).reverse()
 }
 
+/** A screen pixel's size in the OGC's standard (0.28 mm), metres. */
+const OGC_PIXEL_M = 0.00028
+
 /** Map scale (1:n) at a zoom and latitude, as the renderer wants it. */
 export function mapScale(zoom: number, latitude: number): number {
-  // Metres per pixel (512 px tiles) / metres per screen pixel (0.28 mm, the OGC standard).
-  const metresPerPixel = (40075016.686 * Math.cos((latitude * Math.PI) / 180)) / (512 * 2 ** zoom)
-  return metresPerPixel / 0.00028
+  // Metres per pixel / metres per screen pixel (0.28 mm, the OGC standard).
+  return metresPerPixel(latitude, zoom) / OGC_PIXEL_M
 }
 
 export interface GraphicInput {
