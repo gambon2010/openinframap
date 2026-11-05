@@ -190,7 +190,7 @@ SHORADEZ, HIDACZ, MEZ, LOMEZ, HIMEZ, WFZ. Their field texts ("MAX ALT:",
 
 - Single letters: **B** Block, **C** Clear, **D** Disrupt, **M** Mined area, **O**
   Occupy, **R** Retain, **S** Seize (the most common of those sharing them), and the
-  letters only one graphic has: F, G, I, W, and E, A, T, t (decoys, sensors, trip
+  letters only one graphic has: F, G, I, P, W, and E, A, T, t (decoys, sensors, trip
   wire). In French: B, D, M, O, F, G, I, W, E, A, T, t (French has its own words for
   Clear, Retain, Seize, Penetrate: NETT, TEN, SAISIR, PERCER).
 - Every French term above: TTA 106's (✓) or agreed with the project owner.
