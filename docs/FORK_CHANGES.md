@@ -1567,6 +1567,11 @@ the key opened over the buttons too; the Map sources panel was another button.
   its layer is switched on, as when a search result is picked (`switcherLayersFor`),
   and it opens once drawn.
 - **The coordinates** are next to the scale, bottom left.
+- **Place names when zoomed in** (`modules/map-sources/labels.ts`): upstream shows
+  town names up to zoom 12 and neighbourhood names at 13-14 only (online, the
+  OpenStreetMap layer took over), so close in nothing said where you were. Town
+  names now stay at every zoom; neighbourhood and field names (many) from zoom 17
+  (`PLACE_LABEL_ZOOMS`, set on each style load).
 
 ## Tests
 
