@@ -33,6 +33,9 @@ export interface Personal {
   /** Catalogue codes (ui/palette.ts) starred, and the last picked (most recent first). */
   favourites: string[]
   recent: string[]
+  /** The layers' order in the list, top first (also how they're drawn: the top one on
+   * top). Layers not in it (new ones) come first, newest first. */
+  order: string[]
   /** Measuring (measure/prefs.ts): bearings from which north; new rings' distances (m). */
   north?: 'true' | 'magnetic' | 'grid'
   radii?: number[]
@@ -56,7 +59,8 @@ function empty(): Personal {
     empty: [],
     active: null,
     favourites: [],
-    recent: []
+    recent: [],
+    order: []
   }
 }
 
@@ -137,6 +141,11 @@ export class PersonalSettings {
   setFolder(layerId: string, folder: string | null) {
     this.data.folders[layerId] = folder?.trim() || null
     if (folder) this.data.empty = this.data.empty.filter((f) => f !== folder)
+    this.save()
+  }
+
+  setOrder(ids: string[]) {
+    this.data.order = ids
     this.save()
   }
 

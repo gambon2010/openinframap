@@ -2,7 +2,7 @@
 // save now as one, delete) and, while one is shown, a banner over the map with
 // "Back to live". A situation is shown read-only (store.view).
 import { el } from 'redom'
-import { t } from '../../../core/i18n.ts'
+import { t, tn } from '../../../core/i18n.ts'
 import { Situation, createSituation, deleteSituation, listSituations } from '../state/api.ts'
 import { situationLabel, situationPosition } from '../model/situations.ts'
 import type { Workspace } from './workspace.ts'
@@ -78,10 +78,11 @@ export class Situations {
         const includePending =
           pending > 0 &&
           window.confirm(
-            t(
+            tn(
               'userlayers.situation-include-pending',
-              'Save your {{count}} unsaved change(s) first, so they are in the situation? (Cancel: leave them out.)',
-              { count: pending }
+              'Save your unsaved change first, so it is in the situation? (Cancel: leave it out.)',
+              'Save your {{count}} unsaved changes first, so they are in the situation? (Cancel: leave them out.)',
+              pending
             )
           )
         await this.ws.run(t('userlayers.saving', 'Saving'), async () => {

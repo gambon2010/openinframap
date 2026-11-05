@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { UserFeature, UserLayer } from '../model/model.ts'
-import { byFolder, matches } from './outliner.ts'
+import { byFolder, layerOrder, matches, placed, sortLayers, textMatches } from './outliner.ts'
+import { PersonalSettings } from '../state/personal.ts'
 import { featureLabelParts } from '../model/labels.ts'
 
 const symbol = (sidc: string, modifiers: Record<string, string> = {}, notes?: string): UserFeature => ({
@@ -53,4 +54,35 @@ test('an item in a few words', () => {
   const now = new Date(Date.UTC(2026, 9, 30, 12, 0))
   const parts = featureLabelParts(symbol('SHGAUCI--------', { T: '45th Bn', W: '301000ZOCT26' }), now)
   expect(parts).toEqual({ name: '45th Bn', what: 'Infantry', detail: 'Hostile · planned · 2 h ago' })
+})
+
+describe('the order of layers', () => {
+  const ids = (layers: UserLayer[]) => layers.map((l) => l.id)
+
+  test('the ones placed keep their place; new ones come first, newest first', () => {
+    const layers = ['a', 'b', 'c', 'd'].map((id) => layer(id))
+    expect(ids(sortLayers(layers, []))).toEqual(['d', 'c', 'b', 'a'])
+    expect(ids(sortLayers(layers, ['b', 'a']))).toEqual(['d', 'c', 'b', 'a'])
+    expect(ids(sortLayers(layers, ['a', 'c', 'b', 'd']))).toEqual(['a', 'c', 'b', 'd'])
+  })
+
+  test('a layer dropped above or below another', () => {
+    expect(placed(['a', 'b', 'c'], 'c', 'a', true)).toEqual(['c', 'a', 'b'])
+    expect(placed(['a', 'b', 'c'], 'a', 'c', false)).toEqual(['b', 'c', 'a'])
+    expect(placed(['a', 'b', 'c'], 'a', 'x', true)).toEqual(['a', 'b', 'c'])
+  })
+
+  test("the list's order is the drawing order: folders first, as shown", () => {
+    localStorage.clear()
+    const personal = new PersonalSettings()
+    personal.data.order = ['loose', 'f2', 'f1']
+    personal.setFolder('f1', 'Folder')
+    personal.setFolder('f2', 'Folder')
+    expect(layerOrder([layer('f1'), layer('f2'), layer('loose')], personal)).toEqual(['f2', 'f1', 'loose'])
+  })
+})
+
+test('layers and folders found by name: every word, anywhere', () => {
+  expect(textMatches('Enemy forces north', 'enemy NORTH')).toBe(true)
+  expect(textMatches('Enemy forces', 'enemy south')).toBe(false)
 })

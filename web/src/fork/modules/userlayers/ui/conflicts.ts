@@ -4,7 +4,7 @@
 // Next, or all at once. It folds to a bar ("3 conflicts: resolve") to go on
 // working; meanwhile the map shows your version, marked, and Save waits.
 import { el, setChildren } from 'redom'
-import { t } from '../../../core/i18n.ts'
+import { t, tn } from '../../../core/i18n.ts'
 import { FeatureState, LayerState, featureFields, layerFields } from '../state/merge.ts'
 import { Conflict } from '../state/reconcile.ts'
 import type { Workspace } from './workspace.ts'
@@ -73,7 +73,12 @@ export class ConflictWindow {
       setChildren(this.el, [
         el(
           'button.oim-ul-conflicts-bar',
-          t('userlayers.conflicts-bar', '⚠ {{count}} conflict(s): resolve', { count: conflicts.length }),
+          tn(
+            'userlayers.conflicts-bar',
+            '⚠ 1 conflict: resolve',
+            '⚠ {{count}} conflicts: resolve',
+            conflicts.length
+          ),
           { type: 'button', onclick: () => this.setMinimised(false) }
         )
       ])

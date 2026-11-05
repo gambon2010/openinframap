@@ -17,7 +17,7 @@ export class Sidebar {
   readonly el = el('.maplibregl-ctrl.oim-ul-sidebar')
   private outline = el('.oim-ul-outline')
   private message = el('div')
-  private outliner: Outliner
+  readonly outliner: Outliner
   private built = false
   private ws: Workspace
 
@@ -35,7 +35,10 @@ export class Sidebar {
       isSelected: (id) => ws.tools.selection().includes(id),
       newLayer: (folder) => ws.newLayer(folder),
       exportLayers: (layers, format) => download(layers, format),
-      importFile: () => void importFile(ws.store, ws.map)
+      importFile: () => void importFile(ws.store, ws.map),
+      zoomToLayer: (layer) => this.zoomToAll([...layer.features.values()]),
+      // The map draws the layers in the list's order.
+      reordered: () => void ws.renderer.render(ws.store.layers, ws.store.hidden)
     })
   }
 
@@ -143,13 +146,18 @@ export class Sidebar {
 
   /** Move the map to an item picked in the list. */
   private zoomTo(feature: UserFeature) {
+    this.zoomToAll([feature])
+  }
+
+  /** Move the map to show items (one point: centred on it, not too close). */
+  private zoomToAll(features: UserFeature[]) {
     const map = this.ws.map
     const coords: [number, number][] = []
     const add = (c: unknown): void => {
       if (Array.isArray(c) && typeof c[0] === 'number') coords.push(c as [number, number])
       else if (Array.isArray(c)) c.forEach(add)
     }
-    add((feature.geometry as GeoJSON.Point).coordinates)
+    for (const feature of features) add((feature.geometry as GeoJSON.Point).coordinates)
     if (!coords.length) return
     if (coords.length === 1) {
       map.easeTo({ center: coords[0], zoom: Math.max(map.getZoom(), 13) })

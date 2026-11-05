@@ -169,14 +169,16 @@ export class Workspace implements IControl {
     this.sidebar.update()
   }
 
-  /** Ask for a name and make a layer (in a folder). */
+  /** Make a layer (in a folder), its name ready to type in the list. */
   newLayer(folder?: string) {
-    const value = window.prompt(
-      t('userlayers.layer-name', 'Layer name'),
-      t('userlayers.default-name', 'My layer')
-    )
-    if (value && value.trim()) this.store.createLayer(value.trim(), folder)
-    else this.update()
+    // A name nobody uses yet, typed over in the list right away.
+    const base = t('userlayers.new-layer-name', 'New layer')
+    const taken = new Set([...this.store.layers.values()].map((l) => l.name))
+    let name = base
+    for (let n = 2; taken.has(name); n++) name = `${base} ${n}`
+    const id = this.store.createLayer(name, folder)
+    if (folder) this.store.personal.toggle('folded', folder, false)
+    this.sidebar.outliner.startEditing('layer', id)
   }
 
   private keydown(e: KeyboardEvent) {

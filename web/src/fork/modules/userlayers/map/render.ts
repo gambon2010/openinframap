@@ -142,6 +142,10 @@ export class Renderer {
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
   /** Items in conflict (store.conflicts), drawn with an orange dashed ring. */
   conflicted = new Set<string>()
+  /** The layers' order, top first (the list's, ui/outliner.ts layerOrder): the top one
+   * is drawn on top. */
+  orderOf?: () => string[]
+  private orderKey = ''
 
   private graphicsZoom = -1
   /** Called with arrows drawn the old way (four free points), to turn them into paths. */
@@ -465,6 +469,8 @@ export class Renderer {
     if (this.last?.layers !== layers) return
 
     const wanted = new Set<string>()
+    const specIds = new Map<string, string[]>()
+    let added = false
     for (const layer of layers.values()) {
       const source = sourceId(layer.id)
       const data: GeoJSON.FeatureCollection = {
@@ -482,6 +488,7 @@ export class Renderer {
         map.addSource(graphicsSourceId(layer.id), { type: 'geojson', data: empty })
       if (!map.getSource(measureSourceId(layer.id)))
         map.addSource(measureSourceId(layer.id), { type: 'geojson', data: empty })
+      const ids: string[] = []
       for (const spec of [
         ...this.copyLayers(layer),
         ...this.supplyLayers(layer),
@@ -490,9 +497,24 @@ export class Renderer {
         ...this.ownLayers(layer)
       ]) {
         wanted.add(spec.id)
-        if (!map.getLayer(spec.id))
+        ids.push(spec.id)
+        if (!map.getLayer(spec.id)) {
           map.addLayer(spec, this.map.getLayer(`${SELECTION}_line`) ? `${SELECTION}_line` : undefined)
+          added = true
+        }
         map.setLayoutProperty(spec.id, 'visibility', hidden.has(layer.id) ? 'none' : 'visible')
+      }
+      specIds.set(layer.id, ids)
+    }
+    // Stacked in the list's order, its top layer on top (again only when it or the
+    // map's layers changed): each moved, bottom first, just under the overlays.
+    const order = this.orderOf?.() ?? []
+    const key = order.join(',')
+    if (order.length && (added || key !== this.orderKey)) {
+      this.orderKey = key
+      const under = map.getLayer(`${SELECTION}_line`) ? `${SELECTION}_line` : undefined
+      for (const id of [...order].reverse()) {
+        for (const spec of specIds.get(id) ?? []) map.moveLayer(spec, under)
       }
     }
     // Remove what's no longer there (deleted layers, copies of a kind no longer in a layer).

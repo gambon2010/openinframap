@@ -507,14 +507,19 @@ those who can see all the layers it covers (the ones shown when it was made).
 The **My layers** button (top right, the stacked-layers icon with a red dot) turns
 on the My layers workspace; click it again to close it. It has two parts:
 
-- **The sidebar on the left**, under the search box: a search box and filters
-  (hostile, friend, planned, units...) for everything in your layers, then your
-  layers, optionally in **folders**: **+ New folder** under the list, then drag
-  layers onto it (or onto a layer already in it), or ⋯ → Move to folder and pick
-  one. Folders fold to one line; their ◉ and 🔒 act on all their layers, + makes a
-  new layer in it, ✎ renames it. Folders are yours: someone you share a layer with
-  puts it in their own folders. They, the layers hidden, what's folded, the layer you
-  draw into and your favourite symbols follow your account to any computer.
+- **The sidebar on the left**, under the search box: a search box (items, and
+  layers and folders by name) and filters (hostile, friend, planned, units...), then
+  your layers, optionally in **folders**: **+ New folder** under the list (type its
+  name), then drag layers onto it, or ⋯ → Move to folder. **Drag a layer above or
+  below another** to reorder them: the top one is drawn on top. Double-click a name
+  to rename it (Enter keeps it, Esc doesn't); a new layer's name is ready to type.
+  Folders fold to one line; their ◉ shows or hides all their layers, 🔒 locks those
+  that are yours, + makes a new layer in it, ✎ renames it. ⋯ → Zoom to its items
+  frames a layer. A long layer shows its first 200 items, then "Show the other…".
+  Tab moves through the list, Enter opens a layer or selects an item. Folders and
+  the order are yours: someone you share a layer with orders and files it their own
+  way. They, the layers hidden, what's folded, the layer you draw into and your
+  favourite symbols follow your account to any computer.
   **Measuring** is in My layers' toolbar: 📏 a distance (each leg's length and
   bearing, the total, marks along it like a ruler, finer as you zoom in, down to
   10 m), ⬠ an area, ◎ range rings (their distances on the ring's card). Click

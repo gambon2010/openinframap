@@ -202,3 +202,38 @@
 .oim-ul-sharing-error:empty {
   display: none;
 }
+
+/* Only while a layer is dragged: the place to drop it out of its folder. */
+.oim-ul-outliner:not(.oim-ul-dragging-layer) .oim-ul-drop-out {
+  display: none;
+}
+
+/* A layer dragged over another: a line where it will go (above or below). */
+.oim-ul-drop-before {
+  box-shadow: inset 0 3px 0 #1565c0;
+}
+.oim-ul-drop-after {
+  box-shadow: inset 0 -3px 0 #1565c0;
+}
+
+/* A name typed in place (ui/outliner.ts). */
+.oim-ul-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 4px;
+  font: inherit;
+}
+
+/* "Show the other N items" under a long layer. */
+.oim-ul-more {
+  padding: 3px 0 3px 24px;
+  list-style: none;
+}
+
+/* The row with the keyboard focus. */
+.oim-ul-layer-row:focus-visible,
+.oim-ul-folder-row:focus-visible,
+.oim-ul-item:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: -2px;
+}

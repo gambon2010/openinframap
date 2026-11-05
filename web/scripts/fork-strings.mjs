@@ -27,6 +27,17 @@ for (const file of files(root)) {
     if (!found.has(m[1])) found.set(m[1], { text, file: file.slice(root.length) })
   }
 }
+// tn('key', 'one', 'other', n): two strings, key_one and key_other (English plurals).
+const str = `(?:'((?:[^'\\\\]|\\\\.)*)'|"((?:[^"\\\\]|\\\\.)*)")`
+const plural = new RegExp(`\\btn\\(\\s*'([a-z0-9][\\w.-]*)'\\s*,\\s*${str}\\s*,\\s*${str}`, 'g')
+for (const file of files(root)) {
+  for (const m of readFileSync(file, 'utf8').matchAll(plural)) {
+    const unescape = (t) => t.replace(/\\(['"\\])/g, '$1')
+    const rel = file.slice(root.length)
+    if (!found.has(`${m[1]}_one`)) found.set(`${m[1]}_one`, { text: unescape(m[2] ?? m[3]), file: rel })
+    if (!found.has(`${m[1]}_other`)) found.set(`${m[1]}_other`, { text: unescape(m[4] ?? m[5]), file: rel })
+  }
+}
 
 const en = JSON.parse(readFileSync(localeFile, 'utf8'))
 const problems = []

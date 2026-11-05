@@ -13,6 +13,7 @@ import { Interactions } from './map/interactions.ts'
 import { addLegend } from '../../ui/legend.ts'
 import { userLegend } from './map/legend.ts'
 import { mapMode } from '../../ui/map-mode.ts'
+import { layerOrder } from './ui/outliner.ts'
 
 const userlayers: ForkModule = {
   init: ({ map, primaryLayers }) => {
@@ -26,6 +27,8 @@ const userlayers: ForkModule = {
         if (tools.selected === feature.id) tools.select(feature.id)
       })
     }
+    // The layers are drawn in the list's order (yours: state/personal.ts).
+    renderer.orderOf = () => layerOrder([...store.layers.values()], store.personal)
     const tools = new Tools(map, store, renderer, primaryLayers)
     const workspace = new Workspace(map, store, tools, renderer)
     map.addControl(workspace, 'top-right')

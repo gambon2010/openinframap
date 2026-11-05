@@ -2,7 +2,7 @@
 // the layer new things go into, undo / redo, history and Save; the symbol picker
 // opens under it, and pictures are picked from a file.
 import { el } from 'redom'
-import { t } from '../../../core/i18n.ts'
+import { t, tn } from '../../../core/i18n.ts'
 import { Palette, Pick, PaletteMode } from './palette.ts'
 import { graphicsLibrary, isAxis, pointCount } from '../map/graphics.ts'
 import { uploadImage } from '../state/api.ts'
@@ -209,9 +209,12 @@ export class Toolbar {
         primary: pending > 0,
         disabled: !pending || !!busy || inPlayback || store.conflicts.length > 0,
         title: store.conflicts.length
-          ? t('userlayers.save-conflicts', 'Resolve the {{count}} conflict(s) first', {
-              count: store.conflicts.length
-            })
+          ? tn(
+              'userlayers.save-conflicts',
+              'Resolve the conflict first',
+              'Resolve the {{count}} conflicts first',
+              store.conflicts.length
+            )
           : t('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
       }
     )
@@ -223,9 +226,12 @@ export class Toolbar {
         action(
           t('userlayers.discard', 'Discard unsaved changes'),
           () => {
-            const message = t('userlayers.discard-confirm', 'Forget the {{count}} unsaved change(s)?', {
-              count: pending
-            })
+            const message = tn(
+              'userlayers.discard-confirm',
+              'Forget the unsaved change?',
+              'Forget the {{count}} unsaved changes?',
+              pending
+            )
             if (window.confirm(message)) {
               this.ws.tools.select(null)
               void this.ws.run(t('userlayers.discarding', 'Discarding'), () => store.discard())

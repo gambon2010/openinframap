@@ -157,6 +157,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.15 | Undo (Ctrl+Z) goes on after a Save without rolling back the server: undoing a saved change is a new change, saved like any other, that puts back only the fields that change touched (others' later edits stay); undoing a change that cancels another (lock, unlock) doesn't count as unsaved. | ✅ `Store.undo`, `unsavedCount` |
 | 9.16 | Layer folders in the layer list: "+ New folder", drag a layer onto a folder or a layer, or ⋯ → Move to folder (a list of folders). | ✅ `outliner.ts` |
 | 9.11 | Resize pictures (and symbols, markers) shown on the map: a handle on the map, and a Size setting (20–800 %). | ✅ |
+| 9.17 | Polish the list (2026-11-05): folder lock only on your layers; folder buttons off while a situation is shown; singular counts; search layers and folders by name; reorder layers by dragging (drawing order follows); names typed in place; zoom to a layer; drop zone only while dragging; long layers show 200 items first; keyboard. | ✅ |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

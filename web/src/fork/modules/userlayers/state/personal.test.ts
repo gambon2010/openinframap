@@ -28,7 +28,8 @@ describe('personal settings', () => {
       empty: [],
       active: null,
       favourites: [],
-      recent: []
+      recent: [],
+      order: []
     })
     expect(complete(null).folders).toEqual({})
   })

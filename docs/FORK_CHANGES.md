@@ -1364,6 +1364,27 @@ file and two lines (recipe in `docs/ARCHITECTURE.md`). Left as they are: the
 toolbar's tools (they make items) and the card's MIL-STD fields (they depend on the
 symbol code, not the kind).
 
+## My layers' list, polished (2026-11-05)
+
+- **Fixes:** a folder's 🔒 only locks your own layers (only an owner may lock: the
+  others were refused at Save) and is greyed out when there's none; while a
+  situation is shown, a folder's + and ✎ are greyed out (they changed the live
+  layers); counts in the singular ("1 layer"): `tn()` in `fork/core/i18n.ts` (i18next
+  plurals, `key_one` / `key_other` in en.json; `scripts/fork-strings.mjs` collects
+  both forms), used wherever "(s)" was.
+- **Search** also finds layers and folders by name (then all their items).
+- **Order:** drag a layer above or below another (the row shows where); the order is
+  yours (`personal.ts` `order`; new layers first, newest first) and the map draws the
+  layers in it, the top one on top (`Renderer.orderOf`, `layerOrder` in the outliner;
+  map layers moved only when the order or the layers change).
+- **Names typed in place:** double-click a layer's or folder's name, or Rename,
+  ✎, a new layer or folder (named "New layer", "New folder 2"... ready to type); no
+  more pop-up boxes.
+- ⋯ → **Zoom to its items**; the place to drop a layer out of its folder shows only
+  while one is dragged; a layer shows its first 200 items ("Show the other N"), so a
+  big import doesn't make every change slow; rows are reached with Tab, Enter opens or
+  selects, the focus survives the list being drawn again.
+
 ## The header and the about page (2026-11-03)
 
 - **Removed from the header** (`fork/modules/layout/index.ts`, at start, so
