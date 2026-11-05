@@ -169,6 +169,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.26 | Plain labels on tactical graphics for untrained users: one letter only for the most common (B Block…), short words in full, longer ones shortened (CATK), several words as initials (WUP), French built the same way (RSP); the full name in the legend. | ✅ `userlayers/map/graphic-labels.ts`, plan `docs/plans/graphic-labels.md` (2026-11-05) |
 | 9.27 | One picker entry per graphic with a switch between its versions: Block/Disrupt/Fix task or obstacle effect; Main/Supporting attack, Aviation: axis of advance or direction of attack. One Engagement area. Rectangular fire areas removed (the irregular draw rectangles). | ✅ (2026-11-06); PAA: see 9.28 |
 | 9.28 | Position area for artillery (PAA) back, drawn point by point like the other areas. | ✅ 2525D's irregular PAA, under our code G*F*ACPI (2525C has only a rectangle or a circle) (2026-11-06) |
+| 9.29 | Rework how graphics with two versions are listed and named (backlog). Block, Disrupt, Fix exist as a task and as an obstacle ("obstacle effect"; Turn is one too); Main/Supporting attack and Aviation as an axis of advance or a direction of attack. Ideas: one "Obstacle" entry with its effect chosen on the card (Block / Disrupt / Fix / Turn), or names by effect ("Obstacle: block"…); a well-named list rather than hiding entries. Now: both versions listed, a switch on the card. | 📝 backlog (2026-11-06) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

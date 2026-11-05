@@ -1345,14 +1345,12 @@ systems. The renderer writes "PAA" on every side, as the standard's template doe
 
 Block, Disrupt and Fix were each in the picker twice (the task and the obstacle
 effect), Main attack, Supporting attack and Aviation too (an axis of advance and a
-direction of attack), with the same names. Now one entry each, and a switch on the
-card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle**,
+direction of attack), with the same names. Now a switch on the card (`userlayers/map/graphic-variants.ts`, `VARIANTS`): **Task / Obstacle**,
 **Axis of advance (wide) / Direction of attack (thin)**. The two versions take the
 same points (an arrow: its path, tail to tip), so switching keeps the drawing; an
-axis gets its width back (`axisWidth`), a direction has none. The picker lists a
-second version only when its first isn't in the same list (`SECOND_TO_FIRST`):
-"block" gives Block, "obstacle" or the obstacles' category give Block (obstacle).
-The second versions are named for what they are in the catalogue ("Block (obstacle)", "Main attack (direction of attack)") for the
+axis gets its width back (`axisWidth`), a direction has none. Both versions are in
+the picker (a filter hiding the second ones was tried and removed: how to list and
+name them is in the backlog, SPECIFICATIONS 9.29). The second versions are named for what they are in the catalogue ("Block (obstacle)", "Main attack (direction of attack)") for the
 legend. The obstacle effects are green: the standard's colour for friendly
 obstacles (as is neutral; the shapes differ).
 - **Directions of attack pointed backwards**: the renderer wants their tip first,

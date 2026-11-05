@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { SECOND_TO_FIRST, VARIANTS, isDirection, variantsOf, withKey } from './graphic-variants.ts'
+import { VARIANTS, isDirection, variantsOf, withKey } from './graphic-variants.ts'
 import { graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
 import { searchCatalogue } from '../ui/palette.ts'
 import { graphicKey } from './graphic-labels.ts'
@@ -24,20 +24,9 @@ describe('two versions of one graphic', () => {
     expect(variantsOf('GFTPJ----------')).toBeNull()
   })
 
-  test('the picker lists a second version only when its first is not there too', () => {
-    const keys = (query: string, category?: string) =>
-      new Set(searchCatalogue(query, 'graphics', category).map((e) => graphicKey(e[0])))
-    for (const v of VARIANTS) {
-      const all = keys('')
-      expect(all.has(v.keys[0]), v.keys[0]).toBe(true)
-      expect(all.has(v.keys[1]), v.keys[1]).toBe(false)
-    }
-    expect(keys('block').has('G*T*B')).toBe(true)
-    expect(keys('block').has('G*M*OEB')).toBe(false)
-    // Searched for what only the second is called: there.
-    expect(keys('obstacle').has('G*M*OEB')).toBe(true)
-    expect(keys('direction of attack').has('G*G*OLKGM')).toBe(true)
-    expect(SECOND_TO_FIRST.size).toBe(VARIANTS.length)
+  test('the picker lists both versions', () => {
+    const keys = new Set(searchCatalogue('', 'graphics').map((e) => graphicKey(e[0])))
+    for (const v of VARIANTS) for (const key of v.keys) expect(keys.has(key), key).toBe(true)
   })
 
   test('one engagement area', () => {

@@ -5,8 +5,6 @@
 import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import catalogue from '../model/symbols-2525c.json'
-import { SECOND_TO_FIRST } from '../map/graphic-variants.ts'
-import { graphicKey } from '../map/graphic-labels.ts'
 import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../map/graphics.ts'
 import type { PersonalSettings } from '../state/personal.ts'
@@ -129,14 +127,7 @@ export function searchCatalogue(query: string, mode: PaletteMode, category?: str
       if (words.every((w) => name.includes(w))) out.push(entry)
     }
   }
-  // A graphic's second version only when its first isn't listed too (graphic-variants.ts):
-  // "block" gives Block (the card switches it to the obstacle), "obstacle" or the
-  // obstacles' category give Block (obstacle).
-  const listed = new Set(out.map((e) => graphicKey(e[0])))
-  return out.filter((e) => {
-    const first = SECOND_TO_FIRST.get(graphicKey(e[0]))
-    return !first || !listed.has(first)
-  })
+  return out
 }
 
 /** The categories of a mode that have entries. */
