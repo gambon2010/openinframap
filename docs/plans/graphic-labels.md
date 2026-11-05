@@ -64,7 +64,7 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 | Occupy                  | O        | **O**   | Occuper ✓                                     | **O**      |
 | Penetrate               | P        | **P**   | Percer (agreed; P is *pénétrante* in TTA 106) | PERCER     |
 | Retain                  | R        | **R**   | Tenir ✓ (TEN)                                 | TEN        |
-| Retirement              | R        | RETIRE  | Repli (agreed)                                | REPLI      |
+| Retirement              | R        | RETIRE  | Mouvement rétrograde (agreed)                 | RETRO      |
 | Screen                  | S        | SCREEN  | Surveiller ✓                                  | SURV       |
 | Secure                  | S        | SECURE  | Contrôler une zone ✓ (CTR. Z) (agreed)        | CTR-Z      |
 | Seize                   | S        | **S**   | Saisir (agreed)                               | SAISIR     |
@@ -79,9 +79,10 @@ French notes:
 - **Relief in place**: officially *relève sur position*, marked **RIP** in French
   too; **RELÈVE** as asked (clearer, and no clash).
 - **Delay** is *retarder* (RETAR); *freiner* is a task of its own.
-- Moving back, three ways: **Delay** (in contact, giving ground to gain time),
-  **Withdraw** (breaking contact), **Retirement** (not in contact, moving rearwards
-  as a march).
+- Moving back, three ways: **Delay** (in contact, giving ground to gain time:
+  *retarder*, RETAR), **Withdraw** (breaking contact: *(se) replier*, W; under
+  pressure: *repli sous la pression*, RSP), **Retirement** (not in contact, moving
+  rearwards as a march: *mouvement rétrograde*, RETRO). No two share a word.
 - **B** is *barrer* only; *contourner* (bypass) is CTRN.
 - **G** (Guard) stays in French as the standard's letter: "FG" for *flanc-garder*
   would be a new code to learn.
