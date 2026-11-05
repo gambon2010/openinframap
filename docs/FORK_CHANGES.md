@@ -1338,6 +1338,8 @@ asks for: the renderer refused them ("requires a modifiers object that has 1
 distance/AM value") and nothing was placed. Removed from `model/symbols-2525c.json`:
 the irregular versions draw a rectangle just as well (four points). The position
 area for artillery (PAA) had only the rectangular one, so it's gone.
+With no other shape left, the remaining 16 lose ", irregular" from their names
+("Zone of responsibility (zor)").
 
 ## Plain labels on tactical graphics (2026-11-05)
 
