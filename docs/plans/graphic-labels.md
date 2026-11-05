@@ -39,32 +39,32 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 
 ## Tactical tasks (the most used)
 
-| Graphic                 | Standard | English | French name                             | French        |
-|-------------------------|----------|---------|-----------------------------------------|---------------|
-| Block                   | B        | **B**   | Barrer ✓                                | **B**         |
-| Breach                  | B        | BREACH  | Bréchage ✓                              | BRCH          |
-| Bypass                  | B        | BYPASS  | Contourner ✓                            | CTRN          |
-| Canalize                | C        | CNLZ    | Canaliser ✓                             | CNLS          |
-| Clear                   | C        | **C**   | Nettoyer (agreed)                       | NETT          |
-| Contain                 | C ENY    | CNTN    | Contenir ✓                              | CNTN          |
-| Counterattack           | CATK     | CATK    | Contre-attaquer ✓ (C.ATK)               | CATK          |
-| Counterattack by fire   | CATK     | CATK F  | Contre-attaque par le feu               | CATK F        |
-| Cover                   | C        | COVER   | Couvrir ✓ (COUV)                        | COUV          |
-| Delay                   | D        | DELAY   | Retarder ✓ (RETAR)                      | RETAR         |
-| Disrupt                 | D        | **D**   | Désorganiser ✓                          | **D**         |
-| Fix                     | F        | **F**   | Fixer ✓ (FIX)                           | **F**         |
-| Guard                   | G        | **G**   | Flanc-garder ✓ (G on the symbol)        | **G**         |
-| Isolate                 | I        | **I**   | Isoler ✓                                | **I**         |
-| Occupy                  | O        | **O**   | Occuper ✓                               | **O**         |
-| Penetrate               | P        | **P**   | Percer (agreed)                         | **P**         |
-| Retain                  | R        | **R**   | Tenir ✓ (TEN)                           | TEN           |
-| Retirement              | R        | RTMT    | Retraite or mouvement rétrograde (open) | RETR / RETRO? |
-| Screen                  | S        | SCREEN  | Surveiller ✓                            | SURV          |
-| Secure                  | S        | SECURE  | Sécuriser (agreed)                      | SÉCUR         |
-| Seize                   | S        | **S**   | Saisir (agreed)                         | SAISIR        |
-| Withdraw                | W        | **W**   | (Se) replier ✓ (W on the symbol)        | **W**         |
-| Withdraw under pressure | WP       | WUP     | Repli sous la pression                  | RSP           |
-| Relief in place         | RIP      | RIP     | Relève sur position ✓ (RIP)             | **RELÈVE**    |
+| Graphic                 | Standard | English | French name                      | French     |
+|-------------------------|----------|---------|----------------------------------|------------|
+| Block                   | B        | **B**   | Barrer ✓                         | **B**      |
+| Breach                  | B        | BREACH  | Bréchage ✓                       | BRCH       |
+| Bypass                  | B        | BYPASS  | Contourner ✓                     | CTRN       |
+| Canalize                | C        | CNLZ    | Canaliser ✓                      | CNLS       |
+| Clear                   | C        | **C**   | Nettoyer (agreed)                | NETT       |
+| Contain                 | C ENY    | CNTN    | Contenir ✓                       | CNTN       |
+| Counterattack           | CATK     | CATK    | Contre-attaquer ✓ (C.ATK)        | CATK       |
+| Counterattack by fire   | CATK     | CATK F  | Contre-attaque par le feu        | CATK F     |
+| Cover                   | C        | COVER   | Couvrir ✓ (COUV)                 | COUV       |
+| Delay                   | D        | DELAY   | Retarder ✓ (RETAR)               | RETAR      |
+| Disrupt                 | D        | **D**   | Désorganiser ✓                   | **D**      |
+| Fix                     | F        | **F**   | Fixer ✓ (FIX)                    | **F**      |
+| Guard                   | G        | **G**   | Flanc-garder ✓ (G on the symbol) | **G**      |
+| Isolate                 | I        | **I**   | Isoler ✓                         | **I**      |
+| Occupy                  | O        | **O**   | Occuper ✓                        | **O**      |
+| Penetrate               | P        | **P**   | Percer (agreed)                  | **P**      |
+| Retain                  | R        | **R**   | Tenir ✓ (TEN)                    | TEN        |
+| Retirement              | R        | RTMT    | Retraite (agreed)                | RETR       |
+| Screen                  | S        | SCREEN  | Surveiller ✓                     | SURV       |
+| Secure                  | S        | SECURE  | Sécuriser (agreed)               | SÉCUR      |
+| Seize                   | S        | **S**   | Saisir (agreed)                  | SAISIR     |
+| Withdraw                | W        | **W**   | (Se) replier ✓ (W on the symbol) | **W**      |
+| Withdraw under pressure | WP       | WUP     | Repli sous la pression           | RSP        |
+| Relief in place         | RIP      | RIP     | Relève sur position ✓ (RIP)      | **RELÈVE** |
 
 French notes:
 - **Withdraw**: the French Army's term is *(se) replier*, and its symbol is marked
@@ -110,23 +110,23 @@ What some lines mean:
 
 ## Areas and positions
 
-| Graphic                   | Standard     | English | French name                            | French |
-|---------------------------|--------------|---------|----------------------------------------|--------|
-| Assembly area             | AA           | AA      | Zone de regroupement et d'attente ✓    | ZRA    |
-| Assault position          | ASLT         | ASLT    | Position d'assaut (ASS ✓)              | ASS    |
-| Attack position           | ATK          | ATK     | Position d'attaque (ATK ✓)             | ATK    |
-| Objective                 | OBJ          | OBJ     | Objectif ✓                             | OBJ    |
-| Engagement area           | EA           | EA      | Zone d'engagement ✓                    | ZE     |
-| Area of operations        | AO           | AO      | Zone d'action ✓                        | ZA     |
-| Named area of interest    | NAI          | NAI     | Zone d'intérêt du renseignement ✓      | ZIR    |
-| Targeted area of interest | TAI          | TAI     | Zone d'intérêt des objectifs ✓         | ZIO    |
-| Limited access area       | LAA          | LAA     | Zone d'accès restreint (agreed)        | ZRES   |
-| Drop zone                 | DZ           | DZ      | Zone de saut ✓                         | ZS     |
-| Landing zone              | LZ           | LZ      | LZ, as used in French (agreed)         | LZ     |
-| Pickup zone               | PZ           | PZ      | Zone d'embarquement (open: PZ or ZEMB) | ZEMB?  |
-| Extraction zone           | EZ           | EZ      | Zone d'extraction (open: EZ or ZEXT)   | ZEXT?  |
-| Prepared but not occupied | (P)          | (P)     | Préparée, non occupée                  | (P)    |
-| Airhead                   | AIRHEAD LINE | AIRHEAD | Tête de pont aéroportée (agreed)       | TPA    |
+| Graphic                   | Standard     | English | French name                                | French        |
+|---------------------------|--------------|---------|--------------------------------------------|---------------|
+| Assembly area             | AA           | AA      | Zone de regroupement et d'attente ✓        | ZRA           |
+| Assault position          | ASLT         | ASLT    | Position d'assaut (ASS ✓)                  | ASS           |
+| Attack position           | ATK          | ATK     | Position d'attaque (ATK ✓)                 | ATK           |
+| Objective                 | OBJ          | OBJ     | Objectif ✓                                 | OBJ           |
+| Engagement area           | EA           | EA      | Zone d'engagement ✓                        | ZE            |
+| Area of operations        | AO           | AO      | Zone d'action ✓                            | ZA            |
+| Named area of interest    | NAI          | NAI     | Zone d'intérêt du renseignement ✓          | ZIR           |
+| Targeted area of interest | TAI          | TAI     | Zone d'intérêt des objectifs ✓             | ZIO           |
+| Limited access area       | LAA          | LAA     | Zone d'accès restreint (agreed)            | ZRES          |
+| Drop zone                 | DZ           | DZ      | Zone de saut ✓                             | ZS            |
+| Landing zone              | LZ           | LZ      | LZ, as used in French (agreed)             | LZ            |
+| Pickup zone               | PZ           | PZ      | Zone d'embarquement (open: PZ or ZEMB)     | ZEMB?         |
+| Extraction zone           | EZ           | EZ      | Zone d'exfiltration or d'extraction (open) | ZEXF? / ZEXT? |
+| Prepared but not occupied | (P)          | (P)     | Préparée, non occupée                      | (P)           |
+| Airhead                   | AIRHEAD LINE | AIRHEAD | Tête de pont aéroportée (agreed)           | TPA           |
 
 French: ZE is *zone d'engagement* (TTA 106). LZ is kept as French speech uses it;
 the pickup and extraction zones are open (PZ/EZ are less known in French).
@@ -140,7 +140,7 @@ the pickup and extraction zones are open (PZ/EZ are less known in French).
 | Obstacle free area            | FREE     | FREE    | Zone à laisser libre d'obstacles ✓ | ZLO    |
 | Unexploded ordnance area      | UXO      | UXO     | Munitions non explosées            | UXO    |
 | Trip wire                     | t        | t       | Fil tendu (agreed)                 | t      |
-| Smoke / linear smoke target   | SMOKE    | SMOKE   | Fumigène or aveuglement (open)     | FUMI?  |
+| Smoke / linear smoke target   | SMOKE    | SMOKE   | Fumigène (agreed)                  | FUMI   |
 
 ## Support and movement
 
