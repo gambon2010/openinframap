@@ -241,3 +241,68 @@ export function colour(value: unknown): string | null {
   if (hex.length === 6) return `#${hex.toLowerCase()}`
   return null
 }
+
+/**
+ * Three-point graphics drawn square: a base between two points and the third on the
+ * perpendicular through its middle (Block, Contain, Clear, Breach, Bypass...; Disrupt:
+ * through its first point): where
+ * the third point goes, which two make the base. 2525C codes, affiliation and status
+ * left out (positions 1 and 3). Others take their points as they are.
+ */
+const SQUARE: Record<string, { base: [number, number]; free: number; through?: number }> = {}
+for (const code of [
+  'G*T*B', // Block
+  'G*M*OEB', // Block (obstacle effect)
+  'G*T*P', // Penetrate
+  'G*T*J', // Contain
+  'G*T*X', // Clear
+  'G*T*H', // Breach
+  'G*T*Y', // Bypass
+  'G*M*BDE', // Bypass easy
+  'G*M*BDD', // Bypass difficult
+  'G*M*BDI', // Bypass impossible
+  'G*T*C' // Canalize
+])
+  SQUARE[code] = { base: [0, 1], free: 2 }
+// Disrupt: the third point is the tip of the arrow from the first, square to the base.
+for (const code of ['G*T*T', 'G*M*OED']) SQUARE[code] = { base: [0, 1], free: 2, through: 0 }
+for (const code of [
+  'G*G*SLA', // Ambush: the arc's ends, the arrow's tip
+  'G*G*OAF' // Attack by fire position: the base's ends, the arrow's tip
+])
+  SQUARE[code] = { base: [1, 2], free: 0 }
+
+/** A 2525C code's key in SQUARE: the code up to its last letter, 2nd and 4th as '*'. */
+function squareKey(sidc: string): string {
+  const code = sidc.slice(0, 10).replace(/-+$/, '')
+  return code.slice(0, 1) + '*' + code.slice(2, 3) + '*' + code.slice(4)
+}
+
+/** Whether a graphic is drawn square (see SQUARE). */
+export function isSquare(sidc: string | undefined): boolean {
+  return !!sidc && squareKey(sidc) in SQUARE
+}
+
+/**
+ * A square graphic's points with the third moved onto the perpendicular through the
+ * base's middle (or its point, see SQUARE), keeping its distance from the base;
+ * anything else as it is.
+ */
+export function squareUp(sidc: string | undefined, points: LonLat[]): LonLat[] {
+  const rule = sidc ? SQUARE[squareKey(sidc)] : undefined
+  if (!rule || points.length !== 3) return points
+  const a = points[rule.base[0]]
+  const b = points[rule.base[1]]
+  const mid: LonLat =
+    rule.through === undefined ? [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] : points[rule.through]
+  const [bx, by] = toMetres(b, a)
+  const length = Math.hypot(bx, by)
+  if (!length) return points
+  // The base's normal, and how far the free point is along it.
+  const [nx, ny] = [-by / length, bx / length]
+  const [fx, fy] = toMetres(points[rule.free], mid)
+  const along = fx * nx + fy * ny
+  const out = [...points]
+  out[rule.free] = fromMetres([nx * along, ny * along], mid)
+  return out
+}

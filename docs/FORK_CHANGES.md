@@ -1326,6 +1326,28 @@ others, and its points are moved like a drawing's.
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## Three-point graphics drawn square (2026-11-05)
+
+Of the 31 graphics in the catalogue drawn from exactly three points, the renderer
+squares none up itself: a third point off to one side drew a skewed Contain, Block or
+Bypass. Checked one by one (each drawn with its third point skewed):
+- **Square, third point on the perpendicular through the middle of points 1-2**:
+  Block (task and obstacle effect), Penetrate, Contain, Clear, Breach, Bypass (and
+  easy, difficult, impossible), Canalize.
+- **Disrupt** (task and obstacle effect): point 3 is the tip of the arrow from point
+  1, on the perpendicular through point 1.
+- **Ambush, Attack by fire position**: point 1 (the arrow's tip) on the perpendicular
+  through the middle of points 2-3.
+- Left free (their angle means something, or the renderer already fixes it):
+  Search area, Dummy, Principal direction of fire, Turn, Delay, Withdraw and
+  Retirement, roadblocks, fords, infiltration lane, minimum safe distance zones.
+
+`squareUp(sidc, points)` (`map/graphics.ts`, table `SQUARE` by 2525C code) moves the
+free point onto the perpendicular, keeping its distance from the base. Used while
+drawing (the preview and the stored points), when a point is dragged (the free one
+stays on the perpendicular, or follows when the base moves), for the handles, and
+when drawing on the map, so items drawn before are square too.
+
 ## Printing reworked: the map fills the page (2026-11-05)
 
 The map took about a third of an A4 page: it was the screen's picture (twice as wide

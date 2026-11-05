@@ -15,7 +15,7 @@ import {
   sizeFromDrag,
   translateGeometry
 } from './render.ts'
-import { axisWidth, axisWidthFrom } from './graphics.ts'
+import { axisWidth, axisWidthFrom, squareUp } from './graphics.ts'
 import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
 import { mapMode } from '../../../ui/map-mode.ts'
@@ -364,7 +364,11 @@ export class Tools {
             axisWidth: Math.max(10, Math.round(axisWidth(points) * (this.tool.widthFactor ?? 1)))
           }
         : this.tool.properties
-      const id = this.store.addFeature(this.activeLayer(), graphicGeometry(points), properties)
+      const id = this.store.addFeature(
+        this.activeLayer(),
+        graphicGeometry(squareUp(properties.sidc, points)),
+        properties
+      )
       this.setTool({ mode: 'select' })
       this.select(id)
       return
@@ -529,7 +533,7 @@ export class Tools {
         this.renderer.draft(this.tool.points, false, undefined, false)
         this.renderer.graphicDraft({
           sidc: this.tool.properties.sidc,
-          points,
+          points: squareUp(this.tool.properties.sidc, points),
           axis: this.tool.axis,
           widthFactor: this.tool.widthFactor,
           colour: this.tool.properties.color ?? active?.style.color ?? DEFAULT_COLOR
@@ -696,7 +700,7 @@ export class Tools {
       feature.properties = { ...feature.properties, axisWidth: width }
     } else if (kindOf(feature.properties).drawn === 'graphic') {
       const points = controlPoints(feature.geometry).map((c, i) => (i === index ? to : c))
-      feature.geometry = graphicGeometry(points)
+      feature.geometry = graphicGeometry(squareUp(feature.properties.sidc, points))
     } else if (index !== undefined) {
       const moved = moveVertex(feature.geometry, index, to)
       // An area's point can't go where the outline would cross itself: it stops.

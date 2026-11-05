@@ -165,6 +165,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.22 | One look app-wide for what's chosen or on (chips, tools, selected rows): a highlighted background, the border unchanged (`oim-on`). | ✅ (2026-11-05) |
 | 9.23 | A copied feature stays visible when zoomed out, even where the original thins out. | ✅ (2026-11-05) |
 | 9.24 | A click on a feature's status outline (e.g. a substation drawn as a point when zoomed out, or its layer off: switched on) selects the feature; the coordinates next to the scale. | ✅ (2026-11-05) |
+| 9.25 | Three-point graphics square where the standard draws them so (Contain, Block, Clear, Breach, Bypass, Canalize, Penetrate, Disrupt, Ambush, Attack by fire position). | ✅ (2026-11-05) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

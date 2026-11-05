@@ -30,7 +30,8 @@ import {
   isAxis,
   mapScale,
   pathFromAxisPoints,
-  renderGraphic
+  renderGraphic,
+  squareUp
 } from './graphics.ts'
 import { modifiersToDraw } from '../model/fields.ts'
 import { SUPPLY_COLOURS, supplyColours } from '../../../ui/supply.ts'
@@ -396,7 +397,7 @@ export class Renderer {
             points:
               f.properties.axis || f.properties.axisWidth !== undefined
                 ? axisControlPoints(controlPoints(f.geometry), f.properties.axisWidth)
-                : controlPoints(f.geometry),
+                : squareUp(f.properties.sidc, controlPoints(f.geometry)),
             modifiers: modifiersToDraw(f.properties.modifiers, level),
             color: f.properties.color,
             scale,
@@ -1053,7 +1054,9 @@ const glows = (f: UserFeature) => isGraphic(f) || isMeasure(f)
  * handles when it has more than one. */
 export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
   const graphic = isGraphic(feature)
-  const points = graphic ? controlPoints(feature.geometry) : vertices(feature.geometry)
+  const points = graphic
+    ? squareUp(feature.properties.sidc, controlPoints(feature.geometry))
+    : vertices(feature.geometry)
   const out: GeoJSON.Feature[] = glows(feature)
     ? []
     : [{ type: 'Feature', geometry: feature.geometry, properties: {} }]

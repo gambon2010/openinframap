@@ -14,6 +14,8 @@ import {
   pathLength,
   pointCount,
   renderGraphic,
+  isSquare,
+  squareUp,
   toDCode
 } from './graphics.ts'
 
@@ -158,5 +160,50 @@ describe('arrows (axis of advance, attacks)', () => {
       scale: mapScale(13, 48.5)
     })
     expect(features.some((f) => f.geometry.type.endsWith('LineString'))).toBe(true)
+  })
+})
+
+describe('three-point graphics drawn square', () => {
+  const metres = ([lon, lat]: number[], [lon0, lat0]: number[]) => [
+    (lon - lon0) * 111_320 * Math.cos((lat0 * Math.PI) / 180),
+    (lat - lat0) * 110_540
+  ]
+  const dot = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1]
+  const a: [number, number] = [7.7, 48.58]
+  const b: [number, number] = [7.74, 48.58]
+  const skewed: [number, number] = [7.725, 48.605]
+
+  test('Contain, Block, Clear...: the third point onto the perpendicular through the middle', () => {
+    for (const sidc of ['GFTPJ----------', 'GHTPB----------', 'GFTPX----------', 'GFMPBDE--------']) {
+      const [p1, p2, p3] = squareUp(sidc, [a, b, skewed])
+      expect(p1).toEqual(a)
+      expect(p2).toEqual(b)
+      const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+      expect(Math.abs(dot(metres(p3, mid), metres(b, a)))).toBeLessThan(1e-6)
+      // As far from the base as it was.
+      expect(metres(p3, mid)[1]).toBeCloseTo(metres(skewed, mid)[1], 3)
+    }
+  })
+
+  test('Disrupt: the arrow from the first point, square to the base', () => {
+    for (const sidc of ['GFTPT----------', 'GFMPOED--------']) {
+      const p3 = squareUp(sidc, [a, b, skewed])[2]
+      expect(Math.abs(dot(metres(p3, a), metres(b, a)))).toBeLessThan(1e-6)
+    }
+  })
+
+  test('Ambush and attack by fire position: the first point (the arrow tip) moves', () => {
+    const [p1, p2, p3] = squareUp('GFGPSLA--------', [skewed, a, b])
+    expect([p2, p3]).toEqual([a, b])
+    const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+    expect(Math.abs(dot(metres(p1, mid), metres(b, a)))).toBeLessThan(1e-6)
+    expect(isSquare('GFGPOAF--------')).toBe(true)
+  })
+
+  test('others are left as they are', () => {
+    expect(squareUp('GFGPDLP--------', [a, b, skewed])).toEqual([a, b, skewed]) // principal direction of fire
+    expect(squareUp('GFTPL----------', [a, b, skewed])).toEqual([a, b, skewed]) // delay
+    expect(squareUp('GFTPJ----------', [a, b])).toEqual([a, b]) // still being drawn
+    expect(isSquare('GFTPK----------')).toBe(false) // counterattack
   })
 })
