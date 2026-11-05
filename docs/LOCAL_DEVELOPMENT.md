@@ -513,6 +513,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   name), then drag layers onto it, or ⋯ → Move to folder. **Drag a layer above or
   below another** to reorder them: the top one is drawn on top. Double-click a name
   to rename it (Enter keeps it, Esc doesn't); a new layer's name is ready to type.
+  While placing a marker, symbol or picture, **Shift + scroll** makes it bigger or
+  smaller; while drawing an arrow, wider or narrower (plain scrolling still zooms).
   Folders fold to one line; their ◉ shows or hides all their layers, 🔒 locks those
   that are yours, + makes a new layer in it, ✎ renames it. ⋯ → Zoom to its items
   frames a layer. A long layer shows its first 200 items, then "Show the other…".

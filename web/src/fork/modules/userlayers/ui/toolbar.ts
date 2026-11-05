@@ -118,7 +118,10 @@ export class Toolbar {
       case 'marker':
         tools.setTool(
           { mode: 'place', properties: { kind: 'marker' } },
-          t('userlayers.marker-hint', 'Click the map to put a marker there. Right-click: stop.')
+          t(
+            'userlayers.marker-hint',
+            'Click the map to put a marker there. Shift + scroll: its size; right-click: stop.'
+          )
         )
         break
       case 'image':
@@ -262,9 +265,13 @@ export class Toolbar {
     if (!pick.geometry) {
       tools.setTool(
         { mode: 'place', properties: { kind: 'symbol', sidc: pick.sidc } },
-        t('userlayers.place-hint', 'Click the map to put "{{name}}" there. Right-click: stop.', {
-          name: pick.name
-        })
+        t(
+          'userlayers.place-hint',
+          'Click the map to put "{{name}}" there. Shift + scroll: its size; right-click: stop.',
+          {
+            name: pick.name
+          }
+        )
       )
       return
     }
@@ -290,7 +297,7 @@ export class Toolbar {
         },
         t(
           'userlayers.axis-hint',
-          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again. Drag the blue handle to change its width.',
+          '"{{name}}": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the blue handle afterwards).',
           { name: pick.name }
         )
       )
@@ -331,7 +338,10 @@ export class Toolbar {
       this.paletteMode = null
       this.ws.tools.setTool(
         { mode: 'place', properties: { kind: 'image', image: id, name: '' } },
-        t('userlayers.image-hint', 'Click the map to put the picture there. Right-click: stop.')
+        t(
+          'userlayers.image-hint',
+          'Click the map to put the picture there. Shift + scroll: its size; right-click: stop.'
+        )
       )
     })
   }

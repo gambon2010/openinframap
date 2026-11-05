@@ -1394,6 +1394,12 @@ symbol code, not the kind).
   done, faint, through the points so far and the cursor, once it has enough points
   for a shape (an arrow: two): the same drawing as finished graphics
   (`Renderer.graphicDraft`, `graphicSpecs` with an opacity), at most once per frame.
+- **Shift + scroll** while placing a marker, a symbol or a picture: its size (10 % a
+  notch, within the resize handle's limits); while drawing an arrow: its width (a
+  factor of the automatic one, a fifth of its length, so it keeps growing with it).
+  The preview follows and the hint shows the size. Without Shift the map zooms as
+  before. (`Tools.wheel`: a capturing wheel listener on the map's container, before
+  MapLibre's own; Shift turns the wheel sideways in most browsers, so either axis.)
 - **Right-click** opens only the quick-actions menu: the item isn't selected and its
   card stays closed (Rename opens it; Delete deletes that item).
 - **While placing** a marker, a symbol or a picture, it shows faint under the cursor

@@ -619,12 +619,8 @@
     "show-more_other": "Show the other {{count}} items",
     "draw-hint": "Click to add points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.",
     "rings-hint": "Click the centre of the rings (their distances: on its card). Right-click: stop.",
-    "marker-hint": "Click the map to put a marker there. Right-click: stop.",
-    "place-hint": "Click the map to put \"{{name}}\" there. Right-click: stop.",
-    "axis-hint": "\"{{name}}\": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again. Drag the blue handle to change its width.",
     "graphic-hint-fixed": "\"{{name}}\": click {{n}} points on the map. Backspace: take back a point.",
     "graphic-hint": "\"{{name}}\": click at least {{n}} points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.",
-    "image-hint": "Click the map to put the picture there. Right-click: stop.",
     "what": {
       "area": "Area",
       "line": "Line",
@@ -633,7 +629,13 @@
       "measure-distance": "Distance",
       "measure-area": "Measured area",
       "measure-rings": "Range rings"
-    }
+    },
+    "size-now": "Size: {{n}} %",
+    "width-now": "Width: {{n}} %",
+    "marker-hint": "Click the map to put a marker there. Shift + scroll: its size; right-click: stop.",
+    "place-hint": "Click the map to put \"{{name}}\" there. Shift + scroll: its size; right-click: stop.",
+    "axis-hint": "\"{{name}}\": click where the arrow starts, then along its path, and double-click (or Enter) where it points to. Backspace: take back a point; right-click: start again; Shift + scroll: its width (or drag the blue handle afterwards).",
+    "image-hint": "Click the map to put the picture there. Shift + scroll: its size; right-click: stop."
   },
   "tower": {
     "unnamed-line": "a line",

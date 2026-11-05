@@ -6,7 +6,7 @@ import { t } from '../../../core/i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { Store } from '../state/store.ts'
-import { Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
+import { MAX_SIZE, MIN_SIZE, Renderer, controlPoints, moveVertex, sizeFromDrag } from './render.ts'
 import { axisWidth, axisWidthFrom } from './graphics.ts'
 import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
@@ -33,6 +33,9 @@ export type Tool =
       max: number
       /** An arrow: drawn as a path from tail to tip (its width follows). */
       axis?: boolean
+      /** An arrow: its width against the automatic one (a fifth of its length):
+       * Shift + scroll while drawing. */
+      widthFactor?: number
     }
 
 /** Modes that add points one click at a time. */
@@ -61,6 +64,12 @@ const CLOSE_PX = 10
 // REPEAT_PX it's the second click of a double-click.
 const MIN_SEPARATION_PX = 12
 const REPEAT_PX = 4
+
+// Scrolled this far (pixels) makes one 10 % step of size (a mouse wheel's notch is
+// about 100; a touchpad sends many small steps).
+const WHEEL_NOTCH = 100
+
+const clampSize = (size: number) => Math.min(MAX_SIZE, Math.max(MIN_SIZE, Math.round(size * 100) / 100))
 
 const CROSSING = () => t('userlayers.area-crossing', "Not there: the area's outline would cross itself.")
 
@@ -110,6 +119,9 @@ export class Tools {
       }
     })
     map.on('mousemove', (e) => this.mousemove(e))
+    // Shift + scroll while placing or drawing an arrow: its size, not the zoom (before
+    // the map's own wheel handling, which it then doesn't reach).
+    map.getContainer().addEventListener('wheel', (e) => this.wheel(e), { capture: true, passive: false })
     // Off the map: no preview, no line to the cursor.
     map.on('mouseout', () => {
       this.drawGhost(null)
@@ -334,7 +346,11 @@ export class Tools {
         return
       }
       const properties = this.tool.axis
-        ? { ...this.tool.properties, axis: true, axisWidth: axisWidth(points) }
+        ? {
+            ...this.tool.properties,
+            axis: true,
+            axisWidth: Math.max(10, Math.round(axisWidth(points) * (this.tool.widthFactor ?? 1)))
+          }
         : this.tool.properties
       const id = this.store.addFeature(this.activeLayer(), graphicGeometry(points), properties)
       this.setTool({ mode: 'select' })
@@ -497,6 +513,7 @@ export class Tools {
           sidc: this.tool.properties.sidc,
           points,
           axis: this.tool.axis,
+          widthFactor: this.tool.widthFactor,
           colour: this.tool.properties.color ?? active?.style.color ?? DEFAULT_COLOR
         })
       } else {
@@ -542,7 +559,42 @@ export class Tools {
     } else this.setTool({ mode: 'select' })
   }
 
+  // Where the pointer was last on the map (to draw previews again after a scroll).
+  private cursor: [number, number] | null = null
+  private wheelTotal = 0
+
+  /** Shift + scroll: the item being placed bigger or smaller, the arrow being drawn
+   * wider or narrower (a notch: 10 %). */
+  private wheel(e: WheelEvent) {
+    if (!e.shiftKey || !this.enabled) return
+    const placing = this.tool.mode === 'place' && kindOf(this.tool.properties).sized
+    const arrow = this.tool.mode === 'graphic' && this.tool.axis
+    if (!placing && !arrow) return
+    e.preventDefault()
+    e.stopPropagation()
+    // Shift turns the wheel sideways in most browsers; lines and pages into pixels.
+    const raw = e.deltaY || e.deltaX
+    this.wheelTotal += raw * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 400 : 1)
+    const steps = Math.trunc(this.wheelTotal / WHEEL_NOTCH)
+    if (!steps) return
+    this.wheelTotal -= steps * WHEEL_NOTCH
+    const factor = 1.1 ** -steps // wheel up (negative): bigger
+    if (this.tool.mode === 'place') {
+      const size = clampSize((this.tool.properties.size ?? 1) * factor)
+      this.tool.properties = { ...this.tool.properties, size }
+      this.message = `${this.hint} ${t('userlayers.size-now', 'Size: {{n}} %', { n: Math.round(size * 100) })}`
+      this.drawGhost(this.cursor)
+    } else if (this.tool.mode === 'graphic') {
+      const widthFactor = Math.min(5, Math.max(0.2, (this.tool.widthFactor ?? 1) * factor))
+      this.tool.widthFactor = widthFactor
+      this.message = `${this.hint} ${t('userlayers.width-now', 'Width: {{n}} %', { n: Math.round(widthFactor * 100) })}`
+      this.drawDraft(this.cursor ?? undefined)
+    }
+    this.notify()
+  }
+
   private mousemove(e: MapMouseEvent) {
+    this.cursor = [e.lngLat.lng, e.lngLat.lat]
     if (this.tool.mode !== 'select') this.map.getCanvas().style.cursor = 'crosshair'
     if (drawing(this.tool)) this.drawDraft([e.lngLat.lng, e.lngLat.lat])
     else if (this.tool.mode === 'place') this.drawGhost([e.lngLat.lng, e.lngLat.lat])

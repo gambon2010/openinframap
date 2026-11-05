@@ -92,6 +92,8 @@ export interface GraphicDraft {
   points: [number, number][]
   /** An arrow: the points are its path (its width follows from them). */
   axis?: boolean
+  /** An arrow: its width against the automatic one. */
+  widthFactor?: number
   colour: string
 }
 
@@ -899,7 +901,9 @@ export class Renderer {
     try {
       pieces = renderGraphic(lib, {
         sidc: draft.sidc,
-        points: draft.axis ? axisControlPoints(draft.points, axisWidth(draft.points)) : draft.points,
+        points: draft.axis
+          ? axisControlPoints(draft.points, Math.max(10, axisWidth(draft.points) * (draft.widthFactor ?? 1)))
+          : draft.points,
         modifiers: {},
         scale: mapScale(map.getZoom(), map.getCenter().lat),
         bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
