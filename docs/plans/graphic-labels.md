@@ -14,51 +14,60 @@ output (`renderGraphic`, `map/graphics.ts`), so it can be replaced per graphic.
 
 1. **A single letter only for the most common graphic** among those that share it
    (Block keeps B; Breach, Bypass… don't).
-2. **Short words are written in full**: up to 6 letters (GUARD, BREACH, SECURE).
-3. **Longer single words are shortened**, keeping consonants a reader recognises:
-   CATK, CNLZ, WDRW.
-4. **Several words become their initials**: WUP (withdraw under pressure).
-5. **Each label means one thing** in its language. The legend and the item's card
+2. **A letter the standard gives to only one graphic stays** (G Guard, I Isolate,
+   P Penetrate, W Withdraw): nothing to tell it apart from. In French too when it
+   fits the French word (Isoler I, Percer P).
+3. **Short words are written in full**: up to 6 letters (BREACH, SECURE, DELAY).
+4. **Longer single words are shortened**, keeping consonants a reader recognises:
+   CATK, CNLZ, CNTN.
+5. **Several words become their initials**: WUP (withdraw under pressure).
+6. **Nothing the drawing already says**: Contain's arrow points at the enemy, so
+   CNTN, not CNTN ENEMY.
+7. **A variant adds a letter to the main label**: counterattack by fire is CATK F
+   (CATK FIRE is too long on the map).
+8. **Each label means one thing** in its language. The legend and the item's card
    give the full name next to it: "WUP: Withdraw under pressure".
-6. **French follows the same rules from the French words**: RSP (retraite sous
+9. **French follows the same rules from the French words**: RSP (retraite sous
    pression). The French terms below are my proposals: the French Army's official
    terms (APP-6 in French, *mémentos* of tactical tasks) may differ; to check.
-7. **Technical acronyms stay as they are** (fire support, airspace: FSCL, ROZ, FFA…).
+10. **Technical acronyms stay as they are** (fire support, airspace: FSCL, ROZ, FFA…).
    Whoever uses those knows them; the legend spells them out.
 
 ## Tactical tasks (the most used)
 
-| Graphic                 | Standard | English    | French name               | French           |
-|-------------------------|----------|------------|---------------------------|------------------|
-| Block                   | B        | **B**      | Bloquer                   | **B**            |
-| Breach                  | B        | BREACH     | Ouvrir une brèche         | BRÈCHE           |
-| Bypass                  | B        | BYPASS     | Contourner                | CTRN             |
-| Canalize                | C        | CNLZ       | Canaliser                 | CNLS             |
-| Clear                   | C        | **C**      | Nettoyer                  | NETTOY           |
-| Contain                 | C ENY    | CNTN ENEMY | Contenir                  | CNTN ENNEMI      |
-| Counterattack           | CATK     | CATK       | Contre-attaque            | CATQ             |
-| Counterattack by fire   | CATK     | CATK FIRE  | Contre-attaque par le feu | CAF              |
-| Cover                   | C        | COVER      | Couvrir                   | CVR              |
-| Delay                   | D        | DELAY      | Freiner                   | FREINER          |
-| Disrupt                 | D        | **D**      | Désorganiser              | D                |
-| Fix                     | F        | **F**      | Fixer                     | **F**            |
-| Guard                   | G        | GUARD      | Flanc-garder              | FG               |
-| Isolate                 | I        | ISOL       | Isoler                    | ISOLER           |
-| Occupy                  | O        | OCCUPY     | Occuper                   | OCCUPER          |
-| Penetrate               | P        | PNTR       | Percer                    | PERCER           |
-| Retain                  | R        | **R**      | Tenir                     | TENIR            |
-| Retirement              | R        | RTMT       | Repli                     | REPLI            |
-| Screen                  | S        | SCREEN     | Surveiller                | SURV             |
-| Secure                  | S        | SECURE     | Sécuriser                 | SÉCUR            |
-| Seize                   | S        | **S**      | S'emparer de              | S                |
-| Withdraw                | W        | WDRW       | Se retirer                | RETRAIT          |
-| Withdraw under pressure | WP       | WUP        | Retraite sous pression    | RSP              |
-| Relief in place         | RIP      | RIP        | Relève sur place          | RSP → **RELÈVE** |
+| Graphic                 | Standard | English | French name               | French           |
+|-------------------------|----------|---------|---------------------------|------------------|
+| Block                   | B        | **B**   | Bloquer                   | **B**            |
+| Breach                  | B        | BREACH  | Ouvrir une brèche         | BRÈCHE           |
+| Bypass                  | B        | BYPASS  | Contourner                | CTRN             |
+| Canalize                | C        | CNLZ    | Canaliser                 | CNLS             |
+| Clear                   | C        | **C**   | Nettoyer                  | NETTOY           |
+| Contain                 | C ENY    | CNTN    | Contenir                  | CNTN             |
+| Counterattack           | CATK     | CATK    | Contre-attaque            | CATQ             |
+| Counterattack by fire   | CATK     | CATK F  | Contre-attaque par le feu | CATQ F           |
+| Cover                   | C        | COVER   | Couvrir                   | CVR              |
+| Delay                   | D        | DELAY   | Freiner                   | FREINER          |
+| Disrupt                 | D        | **D**   | Désorganiser              | D                |
+| Fix                     | F        | **F**   | Fixer                     | **F**            |
+| Guard                   | G        | **G**   | Flanc-garder              | **G**            |
+| Isolate                 | I        | **I**   | Isoler                    | **I**            |
+| Occupy                  | O        | **O**   | Occuper                   | **O**            |
+| Penetrate               | P        | **P**   | Percer                    | **P**            |
+| Retain                  | R        | **R**   | Tenir                     | TENIR            |
+| Retirement              | R        | RTMT    | Repli                     | REPLI            |
+| Screen                  | S        | SCREEN  | Surveiller                | SURV             |
+| Secure                  | S        | SECURE  | Sécuriser                 | SÉCUR            |
+| Seize                   | S        | **S**   | S'emparer de              | S                |
+| Withdraw                | W        | **W**   | Se retirer                | RETRAIT          |
+| Withdraw under pressure | WP       | WUP     | Retraite sous pression    | RSP              |
+| Relief in place         | RIP      | RIP     | Relève sur place          | RSP → **RELÈVE** |
 
 Two French clashes, resolved:
 - **RSP** would be both "retraite sous pression" and "relève sur place". The relief
   gets RELÈVE (6 letters, in full).
 - **B** goes to Bloquer only. Contourner (bypass) is CTRN.
+- **G** (Guard) stays in French as the standard's letter: "FG" for *flanc-garder*
+  would be a new code to learn.
 
 ## Lines
 
@@ -115,7 +124,7 @@ French clash: ZE (engagement) vs zone d'embarquement → **ZEMB**.
 | Decoy mined area (and fenced) | M        | DECOY M | Zone minée factice      | M FACT |
 | Obstacle free area            | FREE     | FREE    | Zone libre d'obstacles  | LIBRE  |
 | Unexploded ordnance area      | UXO      | UXO     | Munitions non explosées | UXO    |
-| Trip wire                     | t        | TRIP    | Fil piège               | PIÈGE  |
+| Trip wire                     | t        | t       | Fil piège               | t      |
 | Smoke / linear smoke target   | SMOKE    | SMOKE   | Fumigène                | FUMI   |
 
 ## Support and movement
@@ -130,7 +139,7 @@ French clash: ZE (engagement) vs zone d'embarquement → **ZEMB**.
 | Brigade / division / regimental support area      | BSA, DSA, RSA  | BSA, DSA, RSA            | Zone de soutien (brigade…)              | ZSB, ZSD, ZSR             |
 | Detainee / EPW / refugee holding area             | AREA … HOLDING | DETAINEES, POW, REFUGEES | Détenus, prisonniers, réfugiés          | DÉTENUS, PRISON, RÉFUGIÉS |
 | Electro-optical intercept                         | O              | EO                       | Interception électro-optique            | EO                        |
-| Electronic / acoustic / torpedo (decoys, sensors) | E, A, T        | ELEC, ACOU, TORP         | Électronique, acoustique, torpille      | ÉLEC, ACOU, TORP          |
+| Electronic / acoustic / torpedo (decoys, sensors) | E, A, T        | E, A, T                  | Électronique, acoustique, torpille      | E, A, T                   |
 
 ## Kept as they are (technical acronyms)
 
@@ -153,8 +162,10 @@ SHORADEZ, HIDACZ, MEZ, LOMEZ, HIMEZ, WFZ. Their field texts ("MAX ALT:",
 
 ## Open questions
 
-1. Which tasks deserve a single letter: proposed **B** Block, **C** Clear, **D**
-   Disrupt, **F** Fix, **M** Mined area, **R** Retain, **S** Seize. Too many?
+1. Which of the shared letters go to the most common graphic: proposed **B**
+   Block, **C** Clear, **D** Disrupt, **M** Mined area, **O** Occupy, **R** Retain,
+   **S** Seize (the others sharing them get a word). Letters only one graphic has
+   stay: F, G, I, P, W, and E, A, T, t (decoys, sensors, trip wire).
 2. The 6-letter limit for "short words": DETAINEES and REFUGEES are longer but
    clearer in full. Allow up to 8?
 3. The French terms: check against the French Army's own (*Mémento des tâches
