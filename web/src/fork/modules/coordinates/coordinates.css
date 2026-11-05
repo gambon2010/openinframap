@@ -25,12 +25,12 @@
   }
 }
 
-/* Beside the scale, to its right, bottoms lined up (MapLibre stacks the controls
- * in a corner, and this one is added before the scale). */
-.maplibregl-ctrl-bottom-left:has(> .oim-coords) {
-  display: flex;
-  align-items: flex-end;
-}
+/* Beside the scale, in a fixed place: the scale bar grows and shrinks with the zoom
+ * (up to 100 px, MapLibre's default maxWidth, plus its 10 px margin), the readout
+ * stays put just past its widest. */
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl.oim-coords {
-  order: 1;
+  position: absolute;
+  bottom: 0;
+  left: 120px;
+  white-space: nowrap;
 }

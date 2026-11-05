@@ -1235,8 +1235,9 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 ## Measuring and grid references (SPECIFICATIONS 10.2)
 
 **Grid references** (`web/src/fork/modules/coordinates/`):
-- **Where the cursor is** (`readout.ts`), bottom left, to the right of the scale
-  (that corner laid out as a row, `coordinates.css`): latitude, longitude and the military grid reference (MGRS,
+- **Where the cursor is** (`readout.ts`), bottom left, to the right of the scale, in
+  a fixed place just past the scale bar's widest (it grows and shrinks with the
+  zoom; `coordinates.css`): latitude, longitude and the military grid reference (MGRS,
   to the metre; the `mgrs` package from proj4js, MIT, bundled: works offline;
   formatting in `fork/core/mgrs.ts`). Off the map: its centre. **G** copies the grid reference under the cursor (the
   pointer stays where it is; not while typing in a field); a click on it does too.
