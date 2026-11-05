@@ -1329,6 +1329,30 @@ others, and its points are moved like a drawing's.
 - Tested: a GeoJSON file with a symbol, a point and a line imported, exported as KML,
   printed: the PDF has the map, the legend (map layers, the layer, "Infantry"), 1:20 000.
 
+## Plain labels on tactical graphics (2026-11-05)
+
+The renderer writes the standard's text on 110 graphics, and several share a letter
+(B: Block, Breach, Bypass, Bridgehead, Bearing line). Each now gets a label of its
+own, in English or French, as agreed in `docs/plans/graphic-labels.md`: one letter
+only for the most common, short words in full, others shortened or initials (WUP);
+French from the French Army's terms (TTA 106).
+- `userlayers/map/graphic-labels.ts`: `GRAPHIC_LABELS` (2525C code without
+  affiliation and status, `graphicKey`, now shared with `SQUARE`) → for each text the
+  renderer writes, what to write instead in English and French ('' = not written:
+  Contain's ENY), and the French name. `renderGraphic` replaces them (`language`:
+  the chosen one by default, null the standard's), so the map, the preview, prints
+  and the legend's drawings all show them.
+- **Graphic labels: English / Français / Standard (MIL-STD-2525)** in My layers'
+  "Labels, bearings, name", kept in this browser (`oim-userlayers-graphic-labels`);
+  chosen, not the browser's language, so everyone on a map can see the same.
+- The legend: "WUP: Withdraw under pressure", in the chosen language
+  (`graphicSvg` returns the labels written; `graphicName`).
+- `graphic-labels.test.ts`: every catalogue graphic through the real renderer, in
+  both languages: no two different graphics share a label; every replaced text is
+  one the renderer writes; no French label means something else in TTA 106
+  (`tta106-sigles.json`: its abbreviations and the letters on its task symbols).
+  It found DA, ZOR and TBA (kept as acronyms) clashing: Z-MORT, ZR, Z-CIB in French.
+
 ## One tooltip for the page (2026-11-05)
 
 The browser's tooltips (`title`) wait for the pointer to rest, often didn't show

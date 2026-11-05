@@ -1,6 +1,6 @@
 # Plan: plain labels on tactical graphics
 
-Status: **agreed, to build** (2026-11-05).
+Status: **built** (2026-11-05): `web/src/fork/modules/userlayers/map/graphic-labels.ts`.
 
 ## Goal
 
@@ -176,14 +176,27 @@ TGMF, ATI ZONE, CFF ZONE, CENSOR ZONE, CF ZONE, SENSOR ZONE, BKB, PKB, ROZ,
 SHORADEZ, HIDACZ, MEZ, LOMEZ, HIMEZ, WFZ. Their field texts ("MAX ALT:",
 "TIME FROM:") are filled from the card's fields, unchanged.
 
+Three of them mean something else in French doctrine (found by the test against
+TTA 106), so in French they get labels of their own:
+
+| Graphic                | Standard | French name                       | French |
+|------------------------|----------|-----------------------------------|--------|
+| Dead space area        | DA       | Zone d'angle mort                 | Z-MORT |
+| Zone of responsibility | ZOR      | Zone de responsabilité ✓          | ZR     |
+| Target build-up area   | TBA      | Zone de concentration des cibles  | Z-CIB  |
+
+(TTA 106: DA is *défense aérienne*, ZOR *zone d'opérations rapprochées*, TBA *très
+basse altitude*. ZR is TTA 106's own *zone de responsabilité*.)
+
 ## How it would work (once agreed)
 
 - One table `GRAPHIC_LABELS` (2525C code → label and full name), with French in
   `fr.json` like the rest. `renderGraphic` replaces the standard's text with it
   on the map, in the preview, on prints and in the legend.
 - The legend writes "WUP: Withdraw under pressure"; the card says the same.
-- A setting **"Standard letters (MIL-STD-2525)"** for trained users and for maps
-  shared with other systems (ATAK, ODIN), off by default.
+- A setting **"Graphic labels: English / Français / Standard (MIL-STD-2525)"** in
+  My layers' settings, kept in the browser; chosen, not the browser's language, so
+  everyone on a map can see the same.
 - A test: no two graphics have the same label in one language.
 
 ## Decided

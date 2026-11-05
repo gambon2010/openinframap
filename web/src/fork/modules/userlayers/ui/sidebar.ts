@@ -10,6 +10,7 @@ import { measurePrefs } from '../measure/prefs.ts'
 import type { North } from '../measure/north.ts'
 import { download, importFile } from '../io/files.ts'
 import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
+import { GraphicLabelChoice, graphicLabelChoice, setGraphicLabelChoice } from '../map/graphic-labels.ts'
 import { LabelLevel } from '../model/fields.ts'
 import type { Workspace } from './workspace.ts'
 
@@ -64,6 +65,22 @@ export class Sidebar {
       setLabelLevel(level.value as LabelLevel)
       void renderer.render(store.layers, store.hidden)
     }
+    // The labels on tactical graphics (map/graphic-labels.ts): ours in English or
+    // French, or the standard's.
+    const graphicLabels = el(
+      'select',
+      (
+        [
+          ['en', t('userlayers.graphic-labels-en', 'English')],
+          ['fr', 'Français'],
+          ['standard', t('userlayers.graphic-labels-standard', 'Standard (MIL-STD-2525)')]
+        ] as [GraphicLabelChoice, string][]
+      ).map(([value, label]) => el('option', label, { value, selected: value === graphicLabelChoice() }))
+    ) as HTMLSelectElement
+    graphicLabels.onchange = () => {
+      setGraphicLabelChoice(graphicLabels.value as GraphicLabelChoice)
+      void renderer.render(store.layers, store.hidden)
+    }
     // Bearings of measurements (measure/north.ts): true, magnetic (compass) or grid north.
     const north = el(
       'select',
@@ -92,6 +109,7 @@ export class Sidebar {
         'details.oim-ul-settings',
         el('summary', t('userlayers.settings-more', 'Labels, bearings, name')),
         el('label.oim-ul-field', el('span', t('userlayers.labels-on-map', 'Labels on the map')), level),
+        el('label.oim-ul-field', el('span', t('userlayers.graphic-labels', 'Graphic labels')), graphicLabels),
         el('label.oim-ul-field', el('span', t('userlayers.bearings-from', 'Measured bearings from')), north),
         el('label.oim-ul-field', el('span', t('userlayers.author-label', 'Saved as')), author)
       )

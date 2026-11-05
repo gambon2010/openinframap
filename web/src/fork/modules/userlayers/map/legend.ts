@@ -7,6 +7,7 @@ import { symbolName } from '../ui/palette.ts'
 import { symbolSvg } from './symbols.ts'
 import { kindOf } from '../kinds/index.ts'
 import { graphicSvg } from './graphic-svg.ts'
+import { graphicName } from './graphic-labels.ts'
 
 /** Whether any of a feature's points is in view. */
 export function inView(feature: UserFeature, bounds: Pick<LngLatBounds, 'contains'>): boolean {
@@ -28,9 +29,13 @@ async function entryOf(f: UserFeature, layerColour: string): Promise<LegendEntry
   if (p.sidc) {
     const label = symbolName(p.sidc) ?? p.sidc
     if (kind.drawn === 'graphic') {
-      // In its own colour, else the renderer's (as on the map), not the layer's.
-      const svg = await graphicSvg(p.sidc, p.color)
-      return svg ? { label, svg } : { label, colour, shape: 'line' }
+      // In its own colour, else the renderer's (as on the map), not the layer's;
+      // its label first ("WUP: Withdraw under pressure"), in the chosen language.
+      const drawn = await graphicSvg(p.sidc, p.color)
+      const name = graphicName(p.sidc, label)
+      const written = drawn?.labels.join(' ')
+      const text = written && written !== name ? `${written}: ${name}` : name
+      return drawn ? { label: text, svg: drawn.svg } : { label: text, colour, shape: 'line' }
     }
     if (kind.military) return { label, svg: await symbolSvg(p.sidc, 40) }
   }

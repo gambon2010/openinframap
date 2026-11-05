@@ -2,6 +2,7 @@
 // The real renderer draws it from made-up points in its usual shape (an arrow from
 // left to right, a square graphic square, an area as a box), and its lines, areas
 // and labels become an SVG fitted to them.
+import { graphicKey } from './graphic-labels.ts'
 import {
   SQUARE,
   axisControlPoints,
@@ -57,14 +58,16 @@ export function samplePoints(
 
 const escape = (text: string) => text.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
 
-/** A graphic drawn small in `colour` (none: the renderer's, as on the map), as SVG
- * (null: the renderer can't draw it). */
-export async function graphicSvg(sidc: string, colour?: string): Promise<string | null> {
+/** A graphic drawn small in `colour` (none: the renderer's, as on the map), as SVG,
+ * and the labels written on it (null: the renderer can't draw it). */
+export async function graphicSvg(
+  sidc: string,
+  colour?: string
+): Promise<{ svg: string; labels: string[] } | null> {
   const lib = await graphicsLibrary()
   const count = pointCount(lib, sidc)
   if (!count) return null
-  const key = sidc.slice(0, 1) + '*' + sidc.slice(2, 3) + '*' + sidc.slice(4, 10).replace(/-+$/, '')
-  const points = samplePoints(sidc, count, isAxis(lib, sidc), SQUARE[key])
+  const points = samplePoints(sidc, count, isAxis(lib, sidc), SQUARE[graphicKey(sidc)])
   let pieces: GeoJSON.Feature[]
   try {
     pieces = renderGraphic(lib, {
@@ -121,5 +124,9 @@ export async function graphicSvg(sidc: string, colour?: string): Promise<string 
       body += `<${tag} points="${ring.map(at).join(' ')}" ${fill} stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"${p.dashed ? ' stroke-dasharray="4 3"' : ''}/>`
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width.toFixed(0)}" height="${height.toFixed(0)}" viewBox="0 0 ${width.toFixed(1)} ${height.toFixed(1)}">${body}</svg>`
+  const labels = [...new Set(pieces.map((p) => String(p.properties?.label ?? '').trim()).filter(Boolean))]
+  return {
+    labels,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${width.toFixed(0)}" height="${height.toFixed(0)}" viewBox="0 0 ${width.toFixed(1)} ${height.toFixed(1)}">${body}</svg>`
+  }
 }

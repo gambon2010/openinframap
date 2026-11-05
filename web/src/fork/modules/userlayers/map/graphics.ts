@@ -5,6 +5,8 @@
 // converted with its C2DLookup. Loaded on first use (a 1.4 MB gzipped script).
 // What it returns is GeoJSON (lines, polygons, and label points) that MapLibre draws.
 
+import { LabelLanguage, graphicKey, labelLanguage, plainLabel } from './graphic-labels.ts'
+
 type C5Ren = typeof import('@armyc2.c5isr.renderer/mil-sym-ts-web')
 
 let library: Promise<C5Ren> | undefined
@@ -135,6 +137,9 @@ export interface GraphicInput {
   scale: number
   /** [west, south, east, north] of the view. */
   bbox?: [number, number, number, number]
+  /** Whose labels (graphic-labels.ts): ours in this language, null the standard's;
+   * default: the one chosen in My layers' settings. */
+  language?: LabelLanguage | null
 }
 
 /**
@@ -171,7 +176,16 @@ export function renderGraphic(lib: C5Ren, input: GraphicInput): GeoJSON.Feature[
   if (parsed.type !== 'FeatureCollection') {
     throw new Error(parsed.error || parsed.message || 'Could not draw this graphic')
   }
-  return (parsed.features as GeoJSON.Feature[]).map(normalise).filter((f): f is GeoJSON.Feature => f !== null)
+  const language = input.language === undefined ? labelLanguage() : input.language
+  return (parsed.features as GeoJSON.Feature[])
+    .map(normalise)
+    .filter((f): f is GeoJSON.Feature => f !== null)
+    .flatMap((f) => {
+      // The standard's text, as chosen (graphic-labels.ts); '' = not written.
+      if (f.geometry.type !== 'Point' || !f.properties?.label) return [f]
+      const label = plainLabel(input.sidc, String(f.properties.label), language)
+      return label.trim() ? [{ ...f, properties: { ...f.properties, label } }] : []
+    })
 }
 
 // The renderer's modifier keys for the 2525C letters we store.
@@ -278,15 +292,9 @@ for (const code of [
 ])
   SQUARE[code] = { base: [1, 2], free: 0 }
 
-/** A 2525C code's key in SQUARE: the code up to its last letter, 2nd and 4th as '*'. */
-function squareKey(sidc: string): string {
-  const code = sidc.slice(0, 10).replace(/-+$/, '')
-  return code.slice(0, 1) + '*' + code.slice(2, 3) + '*' + code.slice(4)
-}
-
 /** Whether a graphic is drawn square (see SQUARE). */
 export function isSquare(sidc: string | undefined): boolean {
-  return !!sidc && squareKey(sidc) in SQUARE
+  return !!sidc && graphicKey(sidc) in SQUARE
 }
 
 /**
@@ -295,7 +303,7 @@ export function isSquare(sidc: string | undefined): boolean {
  * anything else as it is.
  */
 export function squareUp(sidc: string | undefined, points: LonLat[]): LonLat[] {
-  const rule = sidc ? SQUARE[squareKey(sidc)] : undefined
+  const rule = sidc ? SQUARE[graphicKey(sidc)] : undefined
   if (!rule || points.length !== 3) return points
   const a = points[rule.base[0]]
   const b = points[rule.base[1]]
