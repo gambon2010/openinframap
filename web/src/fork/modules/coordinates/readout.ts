@@ -1,5 +1,6 @@
 // Fork: where the cursor is, at the bottom left next to the scale: latitude, longitude and the
-// military grid reference (MGRS, to the metre). A click copies the grid reference.
+// military grid reference (MGRS, to the metre). G copies the grid reference under the
+// cursor (the pointer stays where it is); a click on the readout does too.
 import { IControl, Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
@@ -8,7 +9,7 @@ import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 export class CoordinatesReadout implements IControl {
   private el = el('button.maplibregl-ctrl.oim-coords', {
     type: 'button',
-    title: t('measure.copy-mgrs', 'Click to copy the grid reference')
+    title: t('measure.copy-mgrs-key', 'G (with the pointer on the map): copy the grid reference there')
   }) as HTMLButtonElement
   private latLng = el('span.oim-coords-latlng')
   private mgrs = el('span.oim-coords-mgrs')
@@ -35,17 +36,33 @@ export class CoordinatesReadout implements IControl {
       if (!map.getCanvas().matches(':hover')) centre()
     })
     centre()
-    this.el.onclick = () => {
+    const copy = () => {
       const text = this.mgrs.textContent ?? ''
+      if (!text || text === '—') return
       void navigator.clipboard?.writeText(text).then(() => {
         this.el.classList.add('copied')
         setTimeout(() => this.el.classList.remove('copied'), 1200)
       })
     }
+    this.el.onclick = copy
+    // G: the grid reference under the cursor, which the readout shows.
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() !== 'g' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return
+      if (isTyping(e.target) || !map.getCanvas().matches(':hover')) return
+      e.preventDefault()
+      copy()
+    })
     return this.el
   }
 
   onRemove() {
     this.el.remove()
   }
+}
+
+/** Whether a key goes into a text field (then it's typing, not a shortcut). */
+export function isTyping(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el || !el.tagName) return false
+  return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
 }

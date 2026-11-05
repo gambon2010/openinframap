@@ -35,3 +35,13 @@ describe('MGRS', () => {
     expect(await new MgrsSearch().search('Mulhouse')).toEqual([])
   })
 })
+
+describe('the G shortcut', () => {
+  test('not while typing in a field', async () => {
+    const { isTyping } = await import('./readout.ts')
+    expect(isTyping(document.createElement('input'))).toBe(true)
+    expect(isTyping(document.createElement('textarea'))).toBe(true)
+    expect(isTyping(document.createElement('canvas'))).toBe(false)
+    expect(isTyping(null)).toBe(false)
+  })
+})

@@ -1238,7 +1238,8 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
 - **Where the cursor is** (`readout.ts`), bottom left, to the right of the scale
   (that corner laid out as a row, `coordinates.css`): latitude, longitude and the military grid reference (MGRS,
   to the metre; the `mgrs` package from proj4js, MIT, bundled: works offline;
-  formatting in `fork/core/mgrs.ts`). Off the map: its centre. A click copies it.
+  formatting in `fork/core/mgrs.ts`). Off the map: its centre. **G** copies the grid reference under the cursor (the
+  pointer stays where it is; not while typing in a field); a click on it does too.
 - **Search** (`mgrs.ts`, `MgrsSearch`): a grid reference typed in any usual way
   ("32TLT7257789913", "32T LT 725 899") goes to the centre of the square it names.
   Search providers come from the modules (`searchProviders` hook,
