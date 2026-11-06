@@ -6,6 +6,7 @@
 // (casings, outlines, labels, click targets) get the same filter. Filters, not
 // visibility, so this works alongside the layer switcher.
 import { Map as MapLibreMap, FilterSpecification, ExpressionSpecification } from 'maplibre-gl'
+import { readJson, writeJson } from '../../core/storage.ts'
 
 export type HideSpec =
   | { colour: string; types?: string[] } // layers of these types (default: line) drawn in this colour
@@ -55,20 +56,12 @@ export class FeatureHider {
   }
 
   load(): string[] {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      return Array.isArray(saved) ? saved : []
-    } catch {
-      return []
-    }
+    const saved = readJson<unknown>(STORAGE_KEY, [])
+    return Array.isArray(saved) ? saved : []
   }
 
   save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...this.hidden]))
-    } catch {
-      // Private window or blocked storage: the choice just isn't remembered.
-    }
+    writeJson(STORAGE_KEY, [...this.hidden])
   }
 
   isHidden(spec: HideSpec): boolean {

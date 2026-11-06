@@ -23,6 +23,7 @@ export interface Tier {
 }
 
 import { throughGate } from '../../config.ts'
+import { readText, writeText } from '../../core/storage.ts'
 
 export type BackgroundMode = 'map' | 'satellite' | 'hybrid'
 
@@ -87,21 +88,12 @@ export function isHybridOverlay(layerId: string): boolean {
 }
 
 function readMode(): BackgroundMode {
-  try {
-    const value = localStorage.getItem(MODE_KEY)
-    if (value === 'satellite' || value === 'hybrid') return value
-  } catch {
-    // No storage: the default.
-  }
-  return 'map'
+  const value = readText(MODE_KEY)
+  return value === 'satellite' || value === 'hybrid' ? value : 'map'
 }
 
 function storeMode(mode: BackgroundMode) {
-  try {
-    localStorage.setItem(MODE_KEY, mode)
-  } catch {
-    // Kept for this page.
-  }
+  writeText(MODE_KEY, mode)
 }
 
 let mode: BackgroundMode = TIERS.length ? readMode() : 'map'

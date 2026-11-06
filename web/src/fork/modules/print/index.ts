@@ -14,16 +14,13 @@ import { keyLegend } from '../../ui/key/legend.ts'
 import { printMap } from './pdf.ts'
 import { Orientation, Paper, mapBox, pageSize, printedArea } from './layout.ts'
 import { PrintFrame } from './frame.ts'
+import { readText, writeText } from '../../core/storage.ts'
 import './print.css'
 
 const TITLE_KEY = 'oim-print-title'
 
 function remembered(): string {
-  try {
-    return localStorage.getItem(TITLE_KEY) || ''
-  } catch {
-    return ''
-  }
+  return readText(TITLE_KEY) || ''
 }
 
 const print: ForkModule = {
@@ -84,11 +81,7 @@ const print: ForkModule = {
     make.onclick = async () => {
       make.disabled = true
       status.textContent = t('print.making', 'Making the PDF…')
-      try {
-        localStorage.setItem(TITLE_KEY, title.value.trim())
-      } catch {
-        // Not remembered.
-      }
+      writeText(TITLE_KEY, title.value.trim())
       try {
         await printMap(map, {
           title: title.value.trim() || t('print.default-title', 'Open Infrastructure Map'),

@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '../../../core/storage.ts'
 // Fork: what's personal in My layers (docs/plans/sync.md, phase 5): each layer's
 // folder, the layers hidden from the map, those open and the folders folded in the
 // list, folders made but still empty, the layer you draw into, your favourite and
@@ -41,14 +42,7 @@ export interface Personal {
   radii?: number[]
 }
 
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const value = localStorage.getItem(key)
-    return value ? (JSON.parse(value) as T) : fallback
-  } catch {
-    return fallback
-  }
-}
+// (This browser's storage: core/storage.ts.)
 
 function empty(): Personal {
   return {
@@ -112,11 +106,7 @@ export class PersonalSettings {
   }
 
   private keep() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(this.data))
-    } catch {
-      // Not remembered in this browser.
-    }
+    writeJson(KEY, this.data)
   }
 
   /** Remember a change: in this browser at once, on the server a moment later. */

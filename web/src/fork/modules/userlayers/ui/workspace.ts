@@ -24,6 +24,7 @@ import { Situations } from './situations.ts'
 import { Timeline } from './timeline.ts'
 import { Toast } from './toast.ts'
 import { TOOLS, Toolbar } from './toolbar.ts'
+import { readText, writeText } from '../../../core/storage.ts'
 import './userlayers.css'
 
 const OPEN_KEY = 'oim-userlayers-open'
@@ -92,13 +93,8 @@ export class Workspace implements IControl {
     ).observe(toolbar)
     // In the left column, above the details panel.
     leftColumn.add(this.sidebar.el, LEFT_ORDER.sidebar)
-    let open = false
-    try {
-      open = localStorage.getItem(OPEN_KEY) === '1'
-    } catch {
-      // Closed by default.
-    }
-    this.toggle(open)
+    // Closed by default.
+    this.toggle(readText(OPEN_KEY) === '1')
     return this.container
   }
 
@@ -117,11 +113,7 @@ export class Workspace implements IControl {
 
   toggle(open = !this.isOpen) {
     this.isOpen = open
-    try {
-      localStorage.setItem(OPEN_KEY, open ? '1' : '0')
-    } catch {
-      // Not remembered.
-    }
+    writeText(OPEN_KEY, open ? '1' : '0')
     // Shift-click selects several items (and, closed, map features: modules/status),
     // so the map's Shift-drag zoom, which would swallow it, stays off.
     this.map.boxZoom.disable()

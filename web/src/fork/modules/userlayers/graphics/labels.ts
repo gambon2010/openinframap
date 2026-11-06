@@ -1,3 +1,4 @@
+import { readText, writeText } from '../../../core/storage.ts'
 // Fork: plain labels on tactical graphics (docs/plans/graphic-labels.md). The renderer
 // writes the standard's text on 110 graphics ("B", "C ENY", "CATK"...), and several
 // share a letter (B is Block, Breach, Bypass, Bridgehead, Bearing line). For readers
@@ -142,12 +143,8 @@ export type GraphicLabelChoice = LabelLanguage | 'standard'
 const KEY = 'oim-userlayers-graphic-labels'
 
 let choice: GraphicLabelChoice = (() => {
-  try {
-    const kept = localStorage.getItem(KEY)
-    return kept === 'fr' || kept === 'standard' ? kept : 'en'
-  } catch {
-    return 'en'
-  }
+  const kept = readText(KEY)
+  return kept === 'fr' || kept === 'standard' ? kept : 'en'
 })()
 
 export function graphicLabelChoice(): GraphicLabelChoice {
@@ -156,11 +153,7 @@ export function graphicLabelChoice(): GraphicLabelChoice {
 
 export function setGraphicLabelChoice(value: GraphicLabelChoice) {
   choice = value
-  try {
-    localStorage.setItem(KEY, value)
-  } catch {
-    // Kept for this page only.
-  }
+  writeText(KEY, value)
 }
 
 /** The language of our labels now (null: the standard's). */

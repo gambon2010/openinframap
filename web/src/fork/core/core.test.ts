@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { metresPerPixel, toDegrees, toRadians } from './geo.ts'
 import { clamp } from './math.ts'
 import { parseHex } from './colour.ts'
@@ -33,5 +33,38 @@ describe('core helpers', () => {
       ['geometry-type'],
       ['literal', ['Point', 'MultiPoint']]
     ])
+  })
+})
+
+describe('storage', () => {
+  test('text and JSON, with their fallbacks', async () => {
+    const { readJson, readText, writeJson, writeText } = await import('./storage.ts')
+    localStorage.clear()
+    expect(readText('a')).toBeNull()
+    writeText('a', '1')
+    expect(readText('a')).toBe('1')
+    expect(readJson('b', ['x'])).toEqual(['x'])
+    writeJson('b', { n: 2 })
+    expect(readJson('b', null)).toEqual({ n: 2 })
+    writeText('c', 'not json')
+    expect(readJson('c', 7)).toBe(7)
+  })
+
+  test('blocked storage: the fallback, and writing does nothing', async () => {
+    const { readJson, readText, writeText } = await import('./storage.ts')
+    const get = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+    const set = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+    try {
+      expect(readText('a')).toBeNull()
+      expect(readJson('a', 'fallback')).toBe('fallback')
+      expect(() => writeText('a', '1')).not.toThrow()
+    } finally {
+      get.mockRestore()
+      set.mockRestore()
+    }
   })
 })

@@ -6,6 +6,7 @@
 // - a plain pin (marker).
 import { imageUrl } from '../state/api.ts'
 import { LabelLevel } from '../model/fields.ts'
+import { readText, writeText } from '../../../core/storage.ts'
 
 type Signs = typeof import('@syncpoint/signs')
 let signs: Promise<Signs> | undefined
@@ -80,13 +81,7 @@ export function markerImage(color: string): ImageData {
 }
 
 /** How much of the symbols' labels the map shows (a map setting, per browser). */
-let labelLevel: LabelLevel = (() => {
-  try {
-    return (localStorage.getItem('oim-userlayers-labels') as LabelLevel) || 'name'
-  } catch {
-    return 'name'
-  }
-})()
+let labelLevel: LabelLevel = (readText('oim-userlayers-labels') as LabelLevel) || 'name'
 
 export function getLabelLevel(): LabelLevel {
   return labelLevel
@@ -94,11 +89,7 @@ export function getLabelLevel(): LabelLevel {
 
 export function setLabelLevel(level: LabelLevel) {
   labelLevel = level
-  try {
-    localStorage.setItem('oim-userlayers-labels', level)
-  } catch {
-    // Kept for this page only.
-  }
+  writeText('oim-userlayers-labels', level)
 }
 
 /** The image name of a symbol: its code, and the labels drawn with it (sorted). */
