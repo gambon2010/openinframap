@@ -1,6 +1,6 @@
 // Fork: a layer's items in the list, sorted into groups that fold (ui/outliner):
-// friendly units, hostile units, neutral and unknown units, friendly graphics,
-// hostile graphics, other graphics, measurements, drawings and markers, pictures,
+// by side: friendly units and graphics, hostile units and graphics, neutral and
+// unknown units and graphics; then measurements, drawings and markers, pictures,
 // copies of map features. Empty groups aren't shown. Inside a group: what's
 // present first, planned at the end; then by shape (arrows, lines, areas, points),
 // then by type (all the attack arrows one after the other), then by name. Pure.

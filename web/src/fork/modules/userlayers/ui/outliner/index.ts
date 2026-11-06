@@ -51,6 +51,10 @@ export class Outliner {
   private editing: Editing | null = null
   /** Layers showing all their items, not only the first ITEMS_SHOWN. */
   private showAll = new Set<string>()
+  /** The items in the list, in the order shown (for Shift-click ranges). */
+  private shownItems: string[] = []
+  /** The item clicked last without Shift: where a Shift-click range starts. */
+  private anchor: string | null = null
   /** The row that had the keyboard focus, to give it back after drawing again. */
   private focusKey: string | null = null
 
@@ -226,7 +230,18 @@ export class Outliner {
     return span
   }
 
+  /** The items shown from the last one clicked (else the main selected one) to `id`. */
+  private range(id: string): string[] {
+    const from =
+      this.anchor && this.shownItems.includes(this.anchor) ? this.anchor : this.actions.selection()[0]
+    const a = from ? this.shownItems.indexOf(from) : -1
+    const b = this.shownItems.indexOf(id)
+    if (a < 0 || b < 0) return [id]
+    return this.shownItems.slice(Math.min(a, b), Math.max(a, b) + 1)
+  }
+
   private item(feature: UserFeature, layer: UserLayer): HTMLElement {
+    this.shownItems.push(feature.id)
     const { name, what, detail } = featureLabelParts(feature)
     const selected = this.actions.isSelected(feature.id)
     const row = el(
@@ -236,7 +251,7 @@ export class Outliner {
         'aria-selected': String(selected),
         title: t(
           'userlayers.item-title',
-          'Click: select · Shift-click: select several · drag onto a layer: move'
+          'Click: select · Ctrl-click: add · Shift-click: all down to here · drag onto a layer: move'
         )
       },
       this.thumbnail(feature),
@@ -257,8 +272,16 @@ export class Outliner {
           })
         : ''
     )
-    // Shift or Ctrl / Cmd-click: add to the selection.
-    row.onclick = (e) => this.actions.select(feature, e.shiftKey || e.ctrlKey || e.metaKey)
+    // Click: this one. Ctrl / Cmd-click: add or take out. Shift-click: everything
+    // shown between the last item clicked and this one, added.
+    row.onclick = (e) => {
+      if (e.shiftKey) {
+        this.actions.selectMore(this.range(feature.id))
+        return
+      }
+      this.anchor = feature.id
+      this.actions.select(feature, e.ctrlKey || e.metaKey)
+    }
     row.ondragstart = (e) => {
       e.dataTransfer?.setData('application/x-oim-item', feature.id)
       if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
@@ -779,6 +802,7 @@ export class Outliner {
 
   draw(): HTMLElement {
     const store = this.store
+    this.shownItems = []
     const searching = Boolean(this.query.trim()) || this.filters.size > 0
     const tree = this.tree(searching)
     const loose = this.dropOutRow()

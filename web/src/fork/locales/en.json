@@ -329,7 +329,7 @@
     "rename": "Rename",
     "copy-of-short": "Copy: {{layer}}",
     "outline-search": "Search your layers…",
-    "item-title": "Click: select · Shift-click: select several · drag onto a layer: move",
+    "item-title": "Click: select · Ctrl-click: add · Shift-click: all down to here · drag onto a layer: move",
     "more": "More",
     "draw-here": "Draw into this layer",
     "show": "Show on the map",

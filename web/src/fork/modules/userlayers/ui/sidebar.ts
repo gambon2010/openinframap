@@ -42,7 +42,13 @@ export class Sidebar {
         }
         if (!add) this.zoomTo(feature)
       },
+      selectMore: (ids) => {
+        if (!ws.store.view.live) return
+        const current = ws.tools.selection()
+        ws.tools.selectAll([...current, ...ids.filter((id) => !current.includes(id))])
+      },
       isSelected: (id) => ws.tools.selection().includes(id),
+      selection: () => ws.tools.selection(),
       newLayer: (folder) => ws.newLayer(folder),
       exportLayers: (layers, format) => download(layers, format),
       importFile: () => void importFile(ws.store, ws.map),

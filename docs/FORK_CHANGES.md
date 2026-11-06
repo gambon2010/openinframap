@@ -1504,7 +1504,13 @@ end, then by shape (arrows, lines, areas, points), then by type (the same graphi
 one after another), then by name (numbers in order: 2 before 10). Folded groups are
 yours (`foldedGroups` in the personal settings); while searching, every group is
 open. Items were in the order they were made before. The groups have no eye: a
-layer is shown or hidden as a whole.
+layer is shown or hidden as a whole. The groups go by side (friendly units and
+graphics, then hostile ones, then the others).
+
+Selecting in the list: a click selects one item, Ctrl / Cmd-click adds or takes one
+out, Shift-click adds everything shown between the item clicked last and this one
+(across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
+one item.
 
 ## No header: settings, print and the account among the map's buttons (2026-11-06)
 

@@ -44,10 +44,19 @@ describe("a layer's items, grouped", () => {
   test('groups in their order, empty ones left out', () => {
     const groups = groupItems([
       item({ kind: 'measure', measure: 'distance' }, line),
+      item({ kind: 'graphic', sidc: 'GHGPOLAGM------' }, line),
       item({ kind: 'symbol', sidc: 'SHGPUCI--------' }),
+      item({ kind: 'graphic', sidc: 'GFGPOLAGM------' }, line),
       item({ kind: 'symbol', sidc: 'SFGPUCI--------' })
     ]).map(([g]) => g)
-    expect(groups).toEqual(['friendly-units', 'hostile-units', 'measurements'])
+    // By side: friendly units and graphics, then hostile ones.
+    expect(groups).toEqual([
+      'friendly-units',
+      'friendly-graphics',
+      'hostile-units',
+      'hostile-graphics',
+      'measurements'
+    ])
   })
 
   test('inside a group: present before planned, then arrows, lines, areas, then type, then name', () => {

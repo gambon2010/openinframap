@@ -7,8 +7,13 @@ export type Filter = 'hostile' | 'friend' | 'planned' | 'units' | 'graphics' | '
 
 export interface OutlinerActions {
   update: () => void
+  /** One item (and the map goes to it), or added to / taken out of the selection. */
   select: (feature: UserFeature, add: boolean) => void
+  /** Add these to the selection (Shift-click: a range of the list). */
+  selectMore: (ids: string[]) => void
   isSelected: (id: string) => boolean
+  /** Everything selected, the main one first. */
+  selection: () => string[]
   newLayer: (folder?: string) => void
   /** Download layers as a file (io/files.ts). */
   exportLayers: (layers: UserLayer[], format: Format) => void

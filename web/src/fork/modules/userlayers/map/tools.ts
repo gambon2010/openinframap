@@ -200,6 +200,15 @@ export class Tools {
     this.notify()
   }
 
+  /** Select these items (the first is the main one). */
+  selectAll(ids: string[]) {
+    this.keepResize()
+    this.selected = ids[0] ?? null
+    this.others = ids.slice(1)
+    this.drawSelection()
+    this.notify()
+  }
+
   /** After a change: drop what no longer exists, draw the rest again. */
   refreshSelection() {
     const ids = this.selection().filter((id) => this.store.layerOf(id))

@@ -21,13 +21,13 @@ export const FORMATS: [Format, string][] = [
   ['gpx', 'GPX (GPS)']
 ]
 
-/** The groups, in their order, with their names. */
+/** The groups, in their order (by side: friendly, hostile, others), with their names. */
 export const ITEM_GROUPS: [ItemGroup, string][] = [
   ['friendly-units', 'Friendly units'],
-  ['hostile-units', 'Hostile units'],
-  ['other-units', 'Neutral and unknown units'],
   ['friendly-graphics', 'Friendly graphics'],
+  ['hostile-units', 'Hostile units'],
   ['hostile-graphics', 'Hostile graphics'],
+  ['other-units', 'Neutral and unknown units'],
   ['other-graphics', 'Other graphics'],
   ['measurements', 'Measurements'],
   ['drawings', 'Drawings and markers'],
