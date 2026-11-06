@@ -1656,6 +1656,17 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## Aerial photos from zoom 12 (2026-11-06)
+
+Every aerial source (`TIERS["detailed"]`, IGN's départements too) now starts at
+zoom 12, a town on screen, instead of 14: scaled down, the photos are sharper and
+truer in colour than Sentinel-2's 10 m there already (about 8% more). Files made
+before get the two zooms without downloading anything: `lower-zooms` now takes any
+imagery file (`--file fr-75.sat-detailed-fr_ign`; Sentinel-2's too) and
+`--list-needed` lists aerial photo files starting above 12 as well as Sentinel-2's
+starting above their area's lowest; `catch_up_lower_zooms` (was
+`catch_up_regional`) runs it after every satellite download. Paris: 1 min 10 s.
+
 ## Refactors: the satellite menu, one rule for more detail, Background (2026-11-06)
 
 - `satimagery/menu.py`: `command_choose` was one 320-line function (presets, the

@@ -696,7 +696,7 @@ and filtered files in `data/osm/` are reused, so after freeing space just re-run
 anything (even if you choose nothing new), as does a build. By hand:
 
 ```bash
-python3 scripts/satellite.py lower-zooms --region france
+python3 scripts/satellite.py lower-zooms --file france.sat-regional
 ```
 
 Then restart the frontend. GDAL stops where the whole area fits in about one tile

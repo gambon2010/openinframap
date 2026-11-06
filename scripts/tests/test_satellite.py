@@ -583,14 +583,16 @@ def test_lower_zooms_of_a_file_that_already_has_them(tmp_path, capsys):
     header = bytearray(127)
     header[:7], header[100], header[101] = b"PMTiles", s.TIERS["regional"][0], 12
     (tmp_path / "lux.sat-regional.pmtiles").write_bytes(bytes(header))
-    s.main(["lower-zooms", "--region", "lux", "--basemap-dir", str(tmp_path)])
+    s.main(
+        ["lower-zooms", "--file", "lux.sat-regional", "--basemap-dir", str(tmp_path)]
+    )
     assert "nothing to do" in capsys.readouterr().err
 
 
 def test_lower_zooms_without_the_file(tmp_path):
     with pytest.raises(SystemExit) as stop:
-        s.main(["lower-zooms", "--region", "nowhere", "--basemap-dir", str(tmp_path)])
-    assert "No Sentinel-2 imagery" in str(stop.value)
+        s.main(["lower-zooms", "--file", "nowhere", "--basemap-dir", str(tmp_path)])
+    assert "No imagery file" in str(stop.value)
 
 
 def test_keeping_sentinel_still_offers_the_aerial_photos(tmp_path, monkeypatch, capsys):
@@ -656,7 +658,7 @@ def test_keeping_sentinel_still_offers_the_aerial_photos(tmp_path, monkeypatch, 
     ]
 
 
-def test_which_sentinel_files_need_lower_zooms(tmp_path):
+def test_which_files_need_lower_zooms(tmp_path):
     lux = {
         "type": "Polygon",
         "coordinates": [
@@ -677,4 +679,15 @@ def test_which_sentinel_files_need_lower_zooms(tmp_path):
     make("lux", lux, 8)  # Luxembourg can't go lower than 8: done
     make("old", france, 9)  # France made from 9: needs 7 and 8
     make("france", france, 5)  # made when it started at 5: more than enough
-    assert s.lower_zooms_needed(tmp_path) == ["old"]
+    # Aerial photos made when they started at 14; one already from 12.
+    for name, first in (
+        ("fr-75.sat-detailed-fr_ign", 14),
+        ("fr-67.sat-detailed-fr_ign", 12),
+    ):
+        header = bytearray(127)
+        header[:7], header[100], header[101] = b"PMTiles", first, 17
+        (tmp_path / f"{name}.pmtiles").write_bytes(bytes(header))
+    assert s.lower_zooms_needed(tmp_path) == [
+        "fr-75.sat-detailed-fr_ign",
+        "old.sat-regional",
+    ]

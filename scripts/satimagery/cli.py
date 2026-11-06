@@ -23,7 +23,13 @@ from .estimate import (
     world_overview_tiles,
     worldcover_cells,
 )
-from .gdal import docker_run, pmtiles_zooms, regional_pipeline, to_pmtiles
+from .gdal import (
+    docker_run,
+    pmtiles_header,
+    pmtiles_zooms,
+    regional_pipeline,
+    to_pmtiles,
+)
 from .menu import command_choose, command_steps
 from .sources import (
     DETAILED_SOURCES,
@@ -146,71 +152,80 @@ def command_regional(args) -> None:
     print(f"-> {out}")
 
 
-def lower_zooms_needed(folder: Path) -> list[str]:
-    """Areas whose Sentinel-2 file starts above the lowest zoom its area can have
-    (made when Sentinel-2 started at zoom 9), and has its outline to work from."""
-    needed = []
-    for file in sorted(folder.glob("*.sat-regional.pmtiles")):
+def lower_zooms_target(file: Path) -> tuple[int, list] | None:
+    """The zoom a file should start at, and the outlines of what it covers (to read
+    its tiles back), None if that can't be told. Sentinel-2: the tier's first zoom,
+    or the lowest its area's outline can have (made when it started at zoom 9).
+    Aerial photos: the tier's first zoom (made when they started at 14)."""
+    header = pmtiles_header(file)
+    if not header:
+        return None
+    if file.name.endswith(".sat-regional.pmtiles"):
         area = file.name.removesuffix(".sat-regional.pmtiles")
-        outline = folder / f".area-{area}.geojson"
-        zooms = pmtiles_zooms(file)
-        if area == "world" or not zooms or not outline.exists():
-            continue
-        if zooms[0] > lowest_zoom(load_rings(str(outline)), TIERS["regional"][0]):
-            needed.append(area)
+        outline = file.parent / f".area-{area}.geojson"
+        if area == "world" or not outline.exists():
+            return None
+        rings = load_rings(str(outline))
+        return lowest_zoom(rings, TIERS["regional"][0]), [rings]
+    if ".sat-detailed" in file.name:
+        return TIERS["detailed"][0], [box_ring(header["bounds"])]
+    return None
+
+
+def lower_zooms_needed(folder: Path) -> list[str]:
+    """The imagery files that start above the zoom they should (lower_zooms_target)."""
+    needed = []
+    for file in sorted(folder.glob("*.sat-*.pmtiles")):
+        target = lower_zooms_target(file)
+        if target and pmtiles_zooms(file)[0] > target[0]:
+            needed.append(file.stem)
     return needed
 
 
 def command_lower_zooms(args) -> None:
-    """Sentinel-2 imagery made when it started at zoom 9: its lower zooms (down to
-    TIERS' first) added, without downloading anything. Its tiles are read back from
-    the local imagery server (the basemap service), the lower zooms computed by GDAL
-    the way the download does (average), and the file replaced once the new one is
-    complete."""
+    """An imagery file made when its tier started at a higher zoom (Sentinel-2 at 9,
+    aerial photos at 14): its lower zooms added, without downloading anything. Its
+    tiles are read back from the local imagery server (the basemap service), the
+    lower zooms computed by GDAL the way the downloads do (average), and the file
+    replaced once the new one is complete."""
     folder = Path(args.basemap_dir).resolve()
     if args.list_needed:
-        for area in lower_zooms_needed(folder):
-            print(area)
+        for name in lower_zooms_needed(folder):
+            print(name)
         return
-    if not args.region:
-        sys.exit("lower-zooms needs --region (or --list-needed)")
-    out = folder / f"{args.region}.sat-regional.pmtiles"
-    zooms = pmtiles_zooms(out)
-    if not zooms:
-        sys.exit(f"No Sentinel-2 imagery of {args.region}: {out}")
-    first, last = zooms
-    # Already from the tier's first zoom, or the lowest its area can have.
-    outline = folder / f".area-{args.region}.geojson"
-    outlines = [load_rings(str(outline))] if first > TIERS["regional"][0] else []
-    minzoom = (
-        lowest_zoom(outlines[0], TIERS["regional"][0])
-        if outlines
-        else TIERS["regional"][0]
-    )
-    if first <= minzoom:
+    if not args.file:
+        sys.exit("lower-zooms needs --file (or --list-needed)")
+    out = folder / f"{args.file.removesuffix('.pmtiles')}.pmtiles"
+    header = pmtiles_header(out)
+    if not header:
+        sys.exit(f"No imagery file {out}")
+    first, last = header["minzoom"], header["maxzoom"]
+    target = lower_zooms_target(out)
+    if not target or first <= target[0]:
         print(
-            f"  {out.name} already starts at zoom {first}, the lowest for its area: nothing to do.",
+            f"  {out.name} already starts at zoom {first}: nothing to do.",
             file=sys.stderr,
         )
         return
+    minzoom, outlines = target
     blocks = {z: tile_blocks(outlines, z) for z in range(first, last + 1)}
     total = sum(block_count(b) for b in blocks.values())
-    url = f"{args.server}/{out.stem}/{{z}}/{{x}}/{{y}}.webp"
+    url = f"{args.server}/{out.stem}/{{z}}/{{x}}/{{y}}.{header['format']}"
     print(
         f"  Reading {total:,} tiles (zoom {first} to {last}) from {args.server}",
         file=sys.stderr,
     )
     with tempfile.TemporaryDirectory(dir=folder, prefix=".satellite-") as tmp:
         work = Path(tmp)
-        mbtiles = work / "regional.mbtiles"
+        mbtiles = work / "tiles.mbtiles"
         writer = MBTiles(
             mbtiles,
-            "Sentinel-2",
-            "webp",
+            out.stem,
+            header["format"],
             first,
             last,
-            TIERS["regional"][3],
-            rings_bbox(outlines[0]),
+            attribution_for(out.name),
+            header["bounds"],
         )
         try:
             download_tiles(
@@ -229,7 +244,7 @@ def command_lower_zooms(args) -> None:
         docker_run(
             args.gdal_image,
             work,
-            ["sh", "-c", f"gdaladdo -q -r average regional.mbtiles {levels}"],
+            ["sh", "-c", f"gdaladdo -q -r average tiles.mbtiles {levels}"],
         )
         to_pmtiles(mbtiles, work / out.name, args.pmtiles_image)
         (work / out.name).replace(out)
@@ -339,7 +354,10 @@ def main(argv: Iterable[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("sources")
     p = sub.add_parser("lower-zooms")
-    p.add_argument("--region", help="the area of the Sentinel-2 file (france...)")
+    p.add_argument(
+        "--file",
+        help="the imagery file (france.sat-regional, fr-67.sat-detailed-fr_ign)",
+    )
     p.add_argument(
         "--list-needed", action="store_true", help="only list the areas that need it"
     )

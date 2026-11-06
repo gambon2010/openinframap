@@ -70,7 +70,7 @@ satellite_tiers_value() {
         case "$file" in
             *.sat-overview.pmtiles) min=0; max=8; ext=jpg ;;
             *.sat-regional.pmtiles) min=$REGIONAL_FIRST_ZOOM; max=12; ext=webp ;;
-            *) min=14; max=16; ext=jpg ;;
+            *) min=12; max=16; ext=jpg ;;
         esac
         range="$(pmtiles_minzoom "$file" "$min") $(pmtiles_maxzoom "$file" "$max")"
         # Sentinel-2 from REGIONAL_FIRST_ZOOM at the earliest, whatever its file holds
@@ -168,24 +168,24 @@ download_satellite() {
         [[ "$SAT_OK" == 1 ]] || warn "What was downloaded is kept. Run it again to go on: bash scripts/satellite.sh"
         rm -f "$SATELLITE_PLAN"
     fi
-    catch_up_regional
+    catch_up_lower_zooms
     select_satellite "$region"
 }
 
-# catch_up_regional — Sentinel-2 files made when it started at zoom 9 get their
-# lower zooms, down to the lowest their area can have (satellite.py decides:
-# lower-zooms --list-needed), without downloading anything: lower-zooms reads their
-# tiles back from the imagery server. Then the server is restarted (it keeps each
-# file's index until then).
-catch_up_regional() {
-    local area areas=()
-    mapfile -t areas < <(python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --list-needed \
+# catch_up_lower_zooms — imagery files made when their tier started at a higher
+# zoom (Sentinel-2 at 9, aerial photos at 14) get their lower zooms (satellite.py
+# decides: lower-zooms --list-needed), without downloading anything: lower-zooms
+# reads their tiles back from the imagery server. Then the server is restarted (it
+# keeps each file's index until then).
+catch_up_lower_zooms() {
+    local file files=()
+    mapfile -t files < <(python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --list-needed \
         --basemap-dir "$BASEMAP_DIR" 2>/dev/null)
-    [[ ${#areas[@]} -gt 0 ]] || return 0
+    [[ ${#files[@]} -gt 0 ]] || return 0
     docker compose --progress quiet up -d basemap </dev/null
-    for area in "${areas[@]}"; do
-        run_with_timer --progress --keep-going "Sentinel-2 of $area: adding its lower zooms" \
-            python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --region "$area" \
+    for file in "${files[@]}"; do
+        run_with_timer --progress --keep-going "${file/.sat-/ }: adding its lower zooms" \
+            python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --file "$file" \
                 --basemap-dir "$BASEMAP_DIR" --pmtiles-image "$(basemap_image)" \
             || warn "Adding its lower zooms failed; it shows from a higher zoom until then."
     done

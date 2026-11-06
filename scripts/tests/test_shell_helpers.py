@@ -358,24 +358,24 @@ def test_distances_in_the_build_sql_are_real_metres():
     assert found == [], "use oim_units / oim_max_stretch (schema/distances.sql)"
 
 
-def test_older_sentinel_files_get_their_lower_zooms(tmp_path):
+def test_older_imagery_files_get_their_lower_zooms(tmp_path):
     calls = tmp_path / "calls"
     out = bash(
         f"""
 python3() {{
-    if [[ "$*" == *--list-needed* ]]; then echo old
+    if [[ "$*" == *--list-needed* ]]; then echo old.sat-regional
     elif [[ "$*" == *satellite.py* ]]; then echo "python3 $*" >> "{calls}"
     else command python3 "$@"; fi
 }}
 docker() {{ echo "docker $*" >> "{calls}"; }}
 basemap_image() {{ echo pmtiles:test; }}
-catch_up_regional 2>&1
+catch_up_lower_zooms 2>&1
 """,
         BASEMAP_DIR=str(tmp_path),
     )
     made = calls.read_text()
     # What satellite.py lists (lower_zooms_needed, tested there), and only that.
-    assert "lower-zooms --region old" in made
+    assert "lower-zooms --file old.sat-regional" in made
     assert "restart basemap" in made  # the server reads the new file
     assert "adding its lower zooms" in out
 

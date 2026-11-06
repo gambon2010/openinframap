@@ -192,7 +192,9 @@ TIERS = {
         "webp",
         "Contains modified Copernicus Sentinel data (2021), ESA WorldCover (CC BY 4.0)",
     ),
-    "detailed": (14, 16, "jpg", "IGN orthophotos (Licence Ouverte)"),
+    # Aerial photos from zoom 12 (a town on screen): sharper and truer in colour
+    # than Sentinel-2's 10 m there already.
+    "detailed": (12, 16, "jpg", "IGN orthophotos (Licence Ouverte)"),
 }
 WORLD_OVERVIEW_ZOOM = 5
 # The whole world to zoom 8 (overview --world, shared by every region): 87,381

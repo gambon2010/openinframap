@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import struct
 import subprocess
 from pathlib import Path
 
@@ -37,6 +38,23 @@ def pmtiles_zooms(path: Path) -> tuple[int, int] | None:
     except OSError:
         return None
     return (header[100], header[101]) if header[:7] == b"PMTiles" else None
+
+
+def pmtiles_header(path: Path) -> dict | None:
+    """A PMTiles file's zooms, bounds and tile format (its header), None if unreadable."""
+    try:
+        header = path.open("rb").read(127)
+    except OSError:
+        return None
+    if header[:7] != b"PMTiles":
+        return None
+    west, south, east, north = (v / 1e7 for v in struct.unpack_from("<4i", header, 102))
+    return {
+        "minzoom": header[100],
+        "maxzoom": header[101],
+        "bounds": (west, south, east, north),
+        "format": {2: "png", 3: "jpg", 4: "webp"}.get(header[99], "jpg"),
+    }
 
 
 def to_pmtiles(mbtiles: Path, out: Path, pmtiles_image: str) -> None:
