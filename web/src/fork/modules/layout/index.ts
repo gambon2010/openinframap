@@ -1,16 +1,15 @@
 // Fork: the page's layout around upstream's controls. No header: upstream's title
 // and links (about, stats, a paid export) go; "About this map" is in the map's
 // credits (© OpenStreetMap…, bottom right), Settings is a gear among the map's
-// buttons (ui/settings.ts, where modules add sections), print is in My layers'
-// toolbar. The layer list and the key open on click in the right-hand dock
-// (ui/dock.ts), with one look for all panels (ui/panel.css); the search box is at
-// the top left (search-bar.ts).
+// buttons (ui/settings.ts, where modules add sections), with print and your
+// account. Upstream's layer list and key are one panel, Data layers
+// (ui/data-layers.ts), docked on the right (ui/dock.ts), with one look for all
+// panels (ui/panel.css); the search box is at the top left (search-bar.ts).
 import { t } from '../../core/i18n.ts'
 import { Map } from 'maplibre-gl'
-import { mount } from 'redom'
 import { ForkModule } from '../../types.ts'
 import { dock } from '../../ui/dock.ts'
-import { makePanel } from '../../ui/panel.ts'
+import { buildDataLayers, Switcher } from '../../ui/data-layers.ts'
 import { addSettings } from '../../ui/settings.ts'
 import { moveSearchToTopBar } from './search-bar.ts'
 import { aboutInCredits } from './about.ts'
@@ -24,30 +23,42 @@ const ui: ForkModule = {
     document.querySelector('header')?.remove()
     aboutInCredits(map)
 
-    // Layers: upstream shows its list while the pointer is over the button, level
-    // with it and over the other buttons. Put the list in a docked panel instead.
+    // Data layers: upstream's layer list and key in one docked panel
+    // (ui/data-layers.ts), opened with the Layers button; the Key button goes. The
+    // key builds its rows after a while (key.ts populate, then forkKey): the panel is
+    // made once they're there.
     const container = map.getContainer()
     const switcherButton = container.querySelector<HTMLElement>('.layer-switcher-button')
-    // The list element is private to the layer switcher.
-    const list = (layerSwitcher as unknown as { _container: HTMLElement })._container
-    if (switcherButton && list) {
-      switcherButton.onmouseover = null
-      list.onmouseleave = null
-      const { panel, body } = makePanel('oim-layers-panel', t('layers.title', 'Layers'))
-      mount(body, list)
-      // The wheel scrolls the list, not the map's zoom.
-      panel.onwheel = (e) => e.stopPropagation()
-      switcherButton.title = t('layers.title', 'Layers')
-      dock.add(switcherButton, panel)
-    }
-
-    // Key: upstream puts it over the buttons, level with its button.
     const keyButton = container.querySelector<HTMLElement>('.oim-key-control')
     const keyPanel = document.querySelector<HTMLElement>('.oim-key-panel')
-    if (keyButton && keyPanel) {
-      keyPanel.onwheel = (e) => e.stopPropagation()
-      dock.add(keyButton, keyPanel)
+    keyButton?.closest('.maplibregl-ctrl')?.remove()
+    if (switcherButton) {
+      switcherButton.onmouseover = null
+      switcherButton.title = t('data-layers.title', 'Data layers')
+      switcherButton.setAttribute('aria-label', t('data-layers.title', 'Data layers'))
     }
+    const build = () => {
+      const pane = keyPanel?.querySelector<HTMLElement>('.oim-key-body')
+      if (!switcherButton || !pane || !map.isStyleLoaded()) return false
+      const { panel, refresh } = buildDataLayers(map, layerSwitcher as unknown as Switcher, pane)
+      // The wheel scrolls the list, not the map's zoom.
+      panel.onwheel = (e) => e.stopPropagation()
+      dock.add(switcherButton, panel, refresh)
+      return true
+    }
+    let built = false
+    const tryBuild = () => {
+      if (!built && build()) {
+        built = true
+        observer.disconnect()
+        for (const event of ['load', 'styledata', 'idle'] as const) map.off(event, tryBuild)
+      }
+    }
+    const observer = new MutationObserver(tryBuild)
+    if (keyPanel) observer.observe(keyPanel, { childList: true })
+    // The map may still be loading its style: again on its next events.
+    for (const event of ['load', 'styledata', 'idle'] as const) map.on(event, tryBuild)
+    tryBuild()
 
     addSettings(map)
     moveSearchToTopBar(map)

@@ -94,6 +94,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.14 | No header: Settings (the app's: background, map sources, accounts), print and the account (Log out) as buttons among the map's (top right); About in the map's credits; My layers' settings in their own window, opened from My layers only. | ✅ (2026-11-06) |
 | 5.15 | A debug option in Settings showing the zoom, scale, tiles, layers and what is under the pointer. | ✅ (2026-11-06) |
 | 5.16 | No Edit button (OpenStreetMap's online editors). | ✅ (2026-11-06) |
+| 5.17 | The layer list and the key merged into one panel, Data layers: each category unfolds to its key with a tick box per row; statuses only as a key (no tick boxes); background stays in Settings. | ✅ (2026-11-06) |
 
 ## 6. Grid connections (power routing)
 

@@ -144,34 +144,8 @@ html button.oim-on {
 }
 
 /* --- Layers (upstream's list, in a docked panel: fork/ui/index.ts) --- */
-.oim-layers-panel .layer-switcher-list {
-  display: block !important;
-  position: static !important;
-  max-height: none !important;
-  margin: 0;
-  padding: 0;
-  overflow: visible;
-  border: 0;
-  background: none;
-  box-shadow: none;
-}
 
 /* The list's own "Layers" title: the panel has one. */
-.oim-layers-panel .layer-switcher-list > h3 {
-  display: none;
-}
-
-.oim-layers-panel .layer-switcher-list h4 {
-  margin: 10px 0 4px;
-  padding: 0 0 2px;
-  border-bottom: 1px solid var(--oim-grey);
-  background: none;
-  font-size: 0.95rem;
-}
-
-.oim-layers-panel .layer-switcher-list li:first-child h4 {
-  margin-top: 4px;
-}
 
 /* --- Key (upstream's panel, docked) --- */
 .oim-dock .oim-key-panel {
@@ -220,19 +194,6 @@ html button.oim-on {
 
 .oim-modal .oim-panel-body {
   overflow-y: auto;
-}
-
-.oim-layers-panel .layer-switcher-list ul {
-  margin-bottom: 0;
-  font-size: 0.95rem !important;
-}
-
-.oim-layers-panel .layer-switcher-list label {
-  padding: 2px 4px;
-}
-
-.oim-layers-panel .layer-switcher-list input {
-  margin: 0;
 }
 
 /* The search box in the top bar, right of the header (search-bar.ts). */

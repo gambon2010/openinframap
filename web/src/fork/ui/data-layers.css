@@ -1,0 +1,44 @@
+/* Fork: the Data layers panel (data-layers.ts): upstream's groups as headings, an
+   entry per row with its tick box, unfolding to its key sections. */
+.oim-data-layers .oim-panel-body {
+  padding-top: 2px;
+}
+.oim-data-layers h3.oim-dl-group {
+  margin: 10px 0 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--oim-grey);
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.oim-dl-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 0;
+}
+.oim-dl-caret {
+  flex: 0 0 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--oim-text-color-light);
+  font: inherit;
+  cursor: pointer;
+}
+.oim-dl-label {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.oim-dl-sections {
+  margin: 0 0 6px 20px;
+}
+/* The key's sections inside an entry: smaller headings. */
+.oim-dl-sections h3 {
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+}

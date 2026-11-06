@@ -16,11 +16,12 @@ export interface KeyRowInfo {
   spec: HideSpec
 }
 
-/** The Key panel's rows that say what they draw (in its order). */
+/** The key's rows that say what they draw (in its order), wherever they are in the
+ * pane (the Data layers panel folds them under its entries). */
 export function keyRows(pane: ParentNode | null): KeyRowInfo[] {
   const rows: KeyRowInfo[] = []
   let section = ''
-  for (const child of pane?.children ?? []) {
+  for (const child of pane?.querySelectorAll('h3:not(.oim-dl-group), table') ?? []) {
     if (child.tagName === 'H3') section = child.textContent?.trim() ?? ''
     if (child.tagName !== 'TABLE') continue
     for (const row of child.querySelectorAll('tr')) {

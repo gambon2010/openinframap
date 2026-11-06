@@ -1549,6 +1549,23 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Data layers: the layer list and the key in one panel (2026-11-06)
+
+The Layers button opens **Data layers** (`fork/ui/data-layers.ts`); the Key button
+is gone. Upstream's groups (Overlays, Infrastructure, Critical sites...) are
+headings; each entry has its tick box and unfolds (▸) to the key sections of what
+it draws, each key row with its tick box as before. A key section goes under the
+entry of the same name, else the entry whose map layers its rows draw (by layer
+prefix), else under "Other" (`assignSections`, tested). Statuses' key stays a key:
+no tick boxes on its rows. Which entries are unfolded is kept in this browser.
+
+Upstream's list is rebuilt when the address changes, so it isn't moved: the tick
+boxes here call its switcher (`setVisibility`) and are redrawn from it (on opening,
+on `hashchange`). The key is built once, so its sections are moved into the panel,
+whose body keeps the class `oim-key-body` (the printed legend reads the rows there;
+`keyRows` now finds them at any depth). "Show all" moved to the panel's header and
+looks for the key's tick boxes anywhere on the page. Background stays in Settings.
+
 ## Satellite downloads all at once (2026-11-06)
 
 `download_satellite` ran its steps one after another (Blue Marble, then Sentinel-2,

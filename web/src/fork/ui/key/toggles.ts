@@ -104,7 +104,8 @@ function addShowAll(container: HTMLElement, hider: FeatureHider) {
   })
   button.onclick = () => {
     hider.showAll()
-    container.querySelectorAll<HTMLInputElement>('input.oim-key-toggle').forEach((box) => {
+    // Wherever the rows are (ui/data-layers.ts moves them into the Data layers panel).
+    document.querySelectorAll<HTMLInputElement>('input.oim-key-toggle').forEach((box) => {
       box.checked = true
       box.closest('tr')?.classList.remove('oim-key-row-hidden')
     })

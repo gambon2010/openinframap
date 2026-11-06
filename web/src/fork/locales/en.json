@@ -814,5 +814,9 @@
     "under": "Under the pointer",
     "title": "Debug",
     "show": "Show debug info on the map (zoom, scale, tiles, what is under the pointer)"
+  },
+  "data-layers": {
+    "title": "Data layers",
+    "other": "Other"
   }
 }
