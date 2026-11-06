@@ -598,3 +598,62 @@ def test_lower_zooms_without_the_file(tmp_path):
     with pytest.raises(SystemExit) as stop:
         s.main(["lower-zooms", "--region", "nowhere", "--basemap-dir", str(tmp_path)])
     assert "No Sentinel-2 imagery" in str(stop.value)
+
+
+def test_keeping_sentinel_still_offers_the_aerial_photos(tmp_path, monkeypatch, capsys):
+    square = {
+        "type": "Polygon",
+        "coordinates": [
+            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
+        ],
+    }
+    index = tmp_path / "index.json"
+    index.write_text(
+        json.dumps(
+            {
+                "features": [
+                    {
+                        "properties": {"id": "europe", "name": "Europe"},
+                        "geometry": square,
+                    },
+                    {
+                        "properties": {
+                            "id": "luxembourg",
+                            "name": "Luxembourg",
+                            "parent": "europe",
+                        },
+                        "geometry": square,
+                    },
+                ]
+            }
+        )
+    )
+    # Its Sentinel-2 is there already, to zoom 12.
+    header = bytearray(127)
+    header[:7], header[100], header[101] = b"PMTiles", 5, 12
+    (tmp_path / "luxembourg.sat-regional.pmtiles").write_bytes(bytes(header))
+    (tmp_path / "world.sat-overview.pmtiles").write_bytes(bytes(header))
+    plan = tmp_path / "plan.json"
+    # Enter: keep it; then aerial photos: source 1, Enter: the default zoom.
+    monkeypatch.setattr("sys.stdin", io.StringIO("\n1\n\n"))
+    s.main(
+        [
+            "choose",
+            "--plan",
+            str(plan),
+            "--basemap-dir",
+            str(tmp_path),
+            "--index",
+            str(index),
+            "--region",
+            "luxembourg",
+            "--region-name",
+            "Luxembourg",
+        ]
+    )
+    shown = capsys.readouterr().err
+    assert "Keep what you have (Luxembourg to zoom 12)" in shown
+    assert "Step 2 of 2. Aerial photos of Luxembourg" in shown
+    chosen = json.loads(plan.read_text())
+    assert chosen["regional"] is None and chosen["world_overview"] is False
+    assert [d["source"] for d in chosen["detailed"]] == ["lu_geoportail"]

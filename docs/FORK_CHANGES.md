@@ -1549,6 +1549,15 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Satellite menu: two independent steps (2026-11-06)
+
+The menu's Sentinel-2 question ended the menu when answered "None", so the aerial
+photos were never offered; and it offered the built region again ("+204 MB to zoom
+12") without saying it was already there, to zoom 13. Now: step 1 (Sentinel-2) says
+what's there and defaults to keeping it ("Keep what you have (France to zoom 13)");
+step 2 (aerial photos) always follows, for the area chosen in step 1 or else the
+region built, or says no agency's photos cover it (`regional_have`, menu.py).
+
 ## Picker: one row per graphic type (2026-11-06)
 
 A graphic with two versions (Block, Disrupt, Fix: task or obstacle; Main attack,

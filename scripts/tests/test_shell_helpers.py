@@ -316,7 +316,9 @@ echo "statuses ${JOB_STATUS[*]} in $((SECONDS - start))s"
 def test_distances_in_the_build_sql_are_real_metres():
     # Map units stretch with latitude (schema/distances.sql): a distance written as
     # a bare number means something else in Norway than in France.
-    raw = re.compile(r"ST_(DWithin|Buffer|Expand)\([^()]*(\([^()]*\)[^()]*)*,\s*[0-9.]+\s*\)")
+    raw = re.compile(
+        r"ST_(DWithin|Buffer|Expand)\([^()]*(\([^()]*\)[^()]*)*,\s*[0-9.]+\s*\)"
+    )
     found = []
     for sql in sorted((SCRIPTS.parent / "schema").glob("*.sql")):
         if sql.stem in ("functions", "views", "dev-init", "prod-init"):
@@ -329,7 +331,9 @@ def test_older_sentinel_files_get_their_lower_zooms(tmp_path):
     (tmp_path / "old.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 9))
     (tmp_path / ".area-old.geojson").write_text("{}")
     (tmp_path / "new.sat-regional.pmtiles").write_bytes(pmtiles_header(12, 5))
-    (tmp_path / "lost.sat-regional.pmtiles").write_bytes(pmtiles_header(12, 9))  # no outline
+    (tmp_path / "lost.sat-regional.pmtiles").write_bytes(
+        pmtiles_header(12, 9)
+    )  # no outline
     calls = tmp_path / "calls"
     out = bash(
         f"""

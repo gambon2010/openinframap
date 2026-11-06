@@ -128,6 +128,12 @@ ZOOM_SHOWS = {
 }
 
 
+def regional_have(folder: Path, area: str) -> int | None:
+    """The last zoom of an area's Sentinel-2 imagery already downloaded, None if none."""
+    zooms = pmtiles_zooms(folder / f"{area}.sat-regional.pmtiles")
+    return zooms[1] if zooms else None
+
+
 def pmtiles_zooms(path: Path) -> tuple[int, int] | None:
     """A PMTiles file's lowest and highest zoom (from its header), None if unreadable."""
     try:
@@ -256,26 +262,34 @@ def command_choose(args) -> None:
         )
         say("downloaded once for every region. It comes with any choice below.")
 
-    # --- Sentinel-2 ---
+    # --- Step 1: Sentinel-2 ---
     say()
-    say("Sentinel-2 photos, 10 m (2021, cloud-free), for:")
+    say("Step 1 of 2. Sentinel-2 photos, 10 m (2021, cloud-free): towns and fields,")
+    say("from zoom 5 to 12 or 13.")
     region_name = args.region_name or index.name(region)
     region_outline = index.outline(region, folder) if region else None
+    region_have = regional_have(folder, region) if region else None
     options = []
+    if region_have:
+        options.append(
+            ("keep", f"Keep what you have ({region_name} to zoom {region_have})", "")
+        )
     if region_outline:
         e = estimate(load_rings(str(region_outline)), 13)
         options.append(
             (
                 "region",
-                f"{region_name} (the region you built)",
+                f"{region_name} (the region you built)"
+                + (", again" if region_have else ""),
                 f"+{human(e['regional']['bytes'] / 4)} to zoom 12",
             )
         )
     options += [
         ("other", "Another country or region...", ""),
         ("world", "The whole world", "sizes below"),
-        ("none", "None (the world overview only)" if not world_done else "None", ""),
     ]
+    if not region_have:
+        options.append(("none", "None", ""))
     for n, (_, label, size) in enumerate(options, 1):
         say(f"  {n}) {label:<42} {size}")
     pick = options[
@@ -318,10 +332,8 @@ def command_choose(args) -> None:
     elif pick == "world":
         area = "world"
     else:
-        # The world overview only.
+        # Nothing new from Sentinel-2 (keep, or none): on to the aerial photos.
         plan["world_overview"] = True
-        finish()
-        return
 
     if area == "world":
         say()
@@ -361,13 +373,20 @@ def command_choose(args) -> None:
             area, int(ask("Up to which zoom? [12/13, default 12]:", ["12", "13"], "12"))
         )
 
-    # --- High resolution, by country ---
+    # --- Step 2: aerial photos, by country (whatever step 1 was) ---
     target = area or region
     ids = sources_for(target, index) if target else []
     jobs = [j for j in (detailed_job(i, target, index, folder) for i in ids) if j]
+    if target and not jobs and not args.no_detailed:
+        say()
+        say(
+            f"Step 2 of 2. Aerial photos: no agency's photos cover {index.name(target)}."
+        )
     if jobs and not args.no_detailed:
         say()
-        say(f"Aerial photos of {index.name(target)}, from national mapping agencies")
+        say(
+            f"Step 2 of 2. Aerial photos of {index.name(target)}, from national mapping agencies"
+        )
         say()
         say("They replace the satellite imagery when you zoom in close, with")
         say("pixels of 8 to 60 cm instead of 10 m. They're fetched one small tile")
