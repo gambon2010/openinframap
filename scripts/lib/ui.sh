@@ -172,7 +172,7 @@ run_with_timer() {
 # then each one's result (its output shown if it failed). JOB_STATUS[i] is each
 # one's exit status; returns 1 if any failed.
 run_parallel() {
-    local count="$1" label_of="$2" run="$3" i start=$SECONDS failed=0 running state
+    local count="$1" label_of="$2" run="$3" i start=$SECONDS failed=0 running state line cols
     local logs=() pids=() took=()
     JOB_STATUS=()
     for ((i = 0; i < count; i++)); do
@@ -181,6 +181,9 @@ run_parallel() {
         pids[i]=$!
     done
     if [[ -t 1 ]]; then
+        # Each live line fits the terminal: a longer one wraps, and moving back up
+        # COUNT lines would then leave copies of it behind.
+        cols=$(( $(tput cols 2>/dev/null || echo 100) - 1 ))
         for ((i = 0; i < count; i++)); do echo; done
         while true; do
             running=0
@@ -193,7 +196,8 @@ run_parallel() {
                 else
                     state="done"
                 fi
-                printf "\r\e[K    %s... %ds %s\n" "$("$label_of" "$i")" "${took[i]:-0}" "$state"
+                line=$(printf "    %s... %ds %s" "$("$label_of" "$i")" "${took[i]:-0}" "$state")
+                printf "\r\e[K%s\n" "${line:0:cols}"
             done
             [[ "$running" == 1 ]] || break
             sleep 1

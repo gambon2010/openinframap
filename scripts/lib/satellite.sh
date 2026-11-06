@@ -138,7 +138,7 @@ choose_satellite() {
 # (each from its own server: NASA, ESA, a country's aerial photos), then point the
 # frontend at it.
 download_satellite() {
-    local region="$1" line i lost=0
+    local region="$1" line i lost=0 stopped=0
     SAT_STEPS=()
     if [[ -f "${SATELLITE_PLAN:-}" ]]; then
         while IFS= read -r line; do SAT_STEPS+=("$line"); done < <(
@@ -152,8 +152,10 @@ download_satellite() {
         run_parallel "${#SAT_STEPS[@]}" satellite_step_label satellite_step || SAT_OK=0
         for i in "${!JOB_STATUS[@]}"; do
             [[ "${JOB_STATUS[i]}" == "$CONNECTION_LOST" ]] && lost=1
+            [[ "${JOB_STATUS[i]}" == "$SERVER_STOPPED" ]] && stopped=1
         done
         [[ "$lost" == 0 ]] || warn "No internet connection: some satellite downloads stopped."
+        [[ "$stopped" == 0 ]] || warn "A server stopped answering this computer (see above): try it again in a few hours."
         [[ "$SAT_OK" == 1 ]] || warn "What was downloaded is kept. Run it again to go on: bash scripts/satellite.sh"
         rm -f "$SATELLITE_PLAN"
     fi

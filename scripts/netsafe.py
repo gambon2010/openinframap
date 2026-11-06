@@ -9,6 +9,7 @@ do the same with `download` / `safely` (scripts/lib/net.sh), with the same setti
     fetch(url)              a URL's bytes (standard library), through safely()
     run_until_connected(main)  main(), exiting with CONNECTION_LOST (75) and a short
                             message instead of a traceback when the connection is lost
+                            (SERVER_STOPPED, 76: only that server stopped answering)
 
 When a request fails (no network, the server hanging up, a timeout, 429, 5xx):
 
@@ -19,7 +20,12 @@ When a request fails (no network, the server hanging up, a timeout, 429, 5xx):
 3. the server doesn't answer: the connection is down. Wait for it, checking every
    NET_CHECK_EVERY seconds for up to NET_WAIT_SECONDS (15 min), then try again.
    It doesn't come back: ConnectionLost (what's downloaded stays; the scripts go
-   on where they stopped when run again).
+   on where they stopped when run again);
+4. but if the rest of the internet answers (INTERNET_PROBES) while that server
+   doesn't, for NET_SERVER_GRACE seconds (2 min), it's that server that has stopped
+   answering this computer (an anti-bot firewall after too many requests, or the
+   server down): ServerStopped at once, not 15 min of waiting for a connection
+   that works (exit status SERVER_STOPPED).
 
 Standard library only (satellite.py runs with plain python3). httpx's errors are
 recognised by their class names, without importing httpx.
@@ -52,6 +58,16 @@ ROUNDS_UP = 3
 # The exit status when the connection is lost (EX_TEMPFAIL); the shell scripts
 # stop the remaining downloads and say to run again.
 CONNECTION_LOST = 75
+# The exit status when one server stops answering while the internet works.
+SERVER_STOPPED = 76
+# How long a server may not answer, the internet working, before ServerStopped.
+SERVER_GRACE = float(os.environ.get("NET_SERVER_GRACE", "120"))
+# Servers that tell whether the internet works (any one answering is enough).
+INTERNET_PROBES = (
+    "https://www.google.com/",
+    "https://www.wikipedia.org/",
+    "https://one.one.one.one/",
+)
 
 # Server answers worth trying again: too many requests, the server's own trouble.
 TRY_AGAIN = (408, 429, 500, 502, 503, 504)
@@ -62,6 +78,15 @@ MISSING = (400, 404)
 
 class ConnectionLost(Exception):
     """The connection didn't come back in time: stop, keeping what's downloaded."""
+
+
+class ServerStopped(ConnectionLost):
+    """One server stopped answering this computer while the internet works (its
+    anti-bot firewall, most likely): stop, keeping what's downloaded."""
+
+    def __init__(self, host: str):
+        super().__init__(host)
+        self.host = host
 
 
 # --- What went wrong --------------------------------------------------------------
@@ -116,6 +141,11 @@ def reachable(url: str) -> bool:
         return False
 
 
+def internet_up() -> bool:
+    """Whether the internet works: any of a few big sites answers."""
+    return any(reachable(probe) for probe in INTERNET_PROBES)
+
+
 class Connection:
     """Waiting for the connection, once for every thread: the first thread to find
     it down waits; the others wait for that thread, then go on (or stop) with it."""
@@ -123,27 +153,44 @@ class Connection:
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.came_back = 0.0  # time.monotonic() of the last time it came back
-        self.lost = False
+        self.lost: ConnectionLost | None = None  # why everything stops, once it does
+
+    def stop_if_lost(self) -> None:
+        """Raise what stopped the downloads, if they have stopped (every thread)."""
+        if self.lost:
+            raise self.lost
 
     def wait(self, url: str, failed_at: float) -> None:
         with self.lock:
-            if self.lost:
-                raise ConnectionLost()
+            self.stop_if_lost()
             if self.came_back > failed_at:
                 return  # another thread already waited for it
+            host = host_of(url)
             say(
-                f"No answer from {host_of(url)}: waiting for the connection "
+                f"No answer from {host}: waiting for the connection "
                 f"(up to {WAIT_LIMIT / 60:.0f} min)..."
             )
             deadline = time.monotonic() + WAIT_LIMIT
+            # Since when the internet has worked while the server hasn't answered.
+            only_server = time.monotonic() if internet_up() else None
             while time.monotonic() < deadline:
+                if (
+                    only_server is not None
+                    and time.monotonic() - only_server >= SERVER_GRACE
+                ):
+                    self.lost = ServerStopped(host)
+                    raise self.lost
                 time.sleep(WAIT_STEP)
                 if reachable(url):
                     say("Connection back: going on.")
                     self.came_back = time.monotonic()
                     return
-            self.lost = True
-            raise ConnectionLost()
+                if not internet_up():
+                    only_server = None
+                elif only_server is None:
+                    only_server = time.monotonic()
+            self.lost = ConnectionLost()
+            raise self.lost
 
 
 connection = Connection()
@@ -171,8 +218,7 @@ def safely(
     failed attempt (a few long downloads; not thousands of tiles)."""
     rounds = 0
     while True:
-        if connection.lost:
-            raise ConnectionLost()  # another thread gave up: stop at once
+        connection.stop_if_lost()  # another thread gave up: stop at once
         started = time.monotonic()
         for attempt in range(1, retries + 1):
             try:
@@ -226,6 +272,14 @@ def run_until_connected(main: Callable[[], None]) -> None:
     """main(); a lost connection ends it with a short message and CONNECTION_LOST."""
     try:
         main()
+    except ServerStopped as stopped:
+        say(
+            f"{stopped.host} has stopped answering this computer, though the internet "
+            "works: most likely its protection against bots, after too many requests "
+            "(or the server is down). What was downloaded is kept; try again in a few "
+            "hours, with a smaller area."
+        )
+        sys.exit(SERVER_STOPPED)
     except ConnectionLost:
         say(
             f"The connection didn't come back in {WAIT_LIMIT / 60:.0f} min: stopped. "

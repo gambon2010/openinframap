@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import netsafe
-from netsafe import ConnectionLost
 
 from .sources import SMALL_TILE, USER_AGENT, worldcover_url
 
@@ -131,8 +130,7 @@ def download_tiles(
 
     def one(tile: tuple[int, int, int]) -> None:
         nonlocal done, found
-        if netsafe.connection.lost:
-            raise ConnectionLost()  # the tiles still queued: stop at once
+        netsafe.connection.stop_if_lost()  # the tiles still queued: stop at once
         z, x, y = tile
         if skip and skip(z, x, y):
             with lock:

@@ -547,6 +547,7 @@ def flaky_server(monkeypatch):
     monkeypatch.setattr(netsafe, "WAIT_LIMIT", 0.5)
     monkeypatch.setattr(netsafe.time, "sleep", lambda _: None)
     monkeypatch.setattr(netsafe, "connection", netsafe.Connection())
+    monkeypatch.setattr(netsafe, "internet_up", lambda: False)  # no real probes
     yield f"http://127.0.0.1:{server.server_port}/{{z}}/{{x}}/{{y}}"
     server.shutdown()
 

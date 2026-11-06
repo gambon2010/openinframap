@@ -173,6 +173,10 @@ to 15 minutes, and then goes on where it stopped. A download that hangs is stopp
 after 2 minutes without progress and tried again. If the connection doesn't come
 back, the script stops and keeps what was downloaded: run the same command again
 to go on. (Change the wait with `NET_WAIT_SECONDS=1800 bash scripts/...`.)
+If only that server stops answering while the rest of the internet works (for 2
+minutes), it has most likely blocked this computer for asking too much (IGN's
+aerial photo server does after a while): the script says so and stops at once,
+keeping what was downloaded. Try again a few hours later, with a smaller area.
 
 ### Typical times
 

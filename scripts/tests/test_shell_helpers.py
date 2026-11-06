@@ -238,6 +238,17 @@ def test_safely_stops_when_the_connection_stays_down():
     assert out.endswith("status 75 after 1")
 
 
+def test_safely_stops_at_once_when_only_the_server_stopped_answering():
+    # The internet works (a probe answers), the server doesn't: 76, not 15 min.
+    out = bash(
+        "NET_WAIT_SECONDS=100000; NET_CHECK_EVERY=1; NET_SERVER_GRACE=2; sleep() { :; }; "
+        + 'reachable() { [[ "$1" == https://www.google.com ]]; }; '
+        + "n=0; down() { n=$((n + 1)); return 28; }; "
+        + 'safely https://tiles.example.org/x down 2>/dev/null; echo "status $? after $n"'
+    )
+    assert out.endswith("status 76 after 1")
+
+
 def test_a_download_that_hangs_is_stopped():
     out = bash(
         'run_with_timer --keep-going --stall 2 "Step" sleep 30 2>&1; echo "status $?"'
@@ -357,5 +368,5 @@ def test_sentinel_starts_at_the_same_zoom_in_the_scripts_and_satellite_py():
 
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
-    value = bash('satellite_tiers_value france', BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
     assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value

@@ -857,6 +857,7 @@ offline_background() {
             ok "Saved $(human_size "$(stat -c%s "$BASEMAP_DIR/$REGION_ID.pmtiles")") → data/basemap/$REGION_ID.pmtiles"
         else
             [[ "$status" == "$CONNECTION_LOST" ]] && warn "No internet connection."
+            [[ "$status" == "$SERVER_STOPPED" ]] && warn "The background map's server stopped answering this computer."
             warn "Downloading the background map failed, so the map will use the online one."
             warn "Re-run this script to try again."
         fi

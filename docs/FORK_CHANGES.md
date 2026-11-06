@@ -1653,6 +1653,21 @@ Buildings keep upstream's warm pinkish beige, a little darker (87% at zoom 12 to
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## A server that stops answering, the internet working (2026-11-06)
+
+IGN's aerial photo server (data.geopf.fr, behind a web firewall) stopped answering
+this computer altogether after about a thousand tiles at 20 a second: not even a
+connection, while every other site answered. IGN documents no limit for its WMTS,
+so it's the firewall's bot protection. The downloads took it for a lost connection,
+waited 15 min and said "No internet connection". Now (`netsafe.py`, `lib/net.sh`,
+the same rule): while waiting, a few big sites are checked (`INTERNET_PROBES`); if
+they answer and the server hasn't for `NET_SERVER_GRACE` seconds (2 min), the
+download stops at once with `ServerStopped`, exit status 76 (`SERVER_STOPPED`),
+saying the server stopped answering this computer and to try again later; every
+other thread stops with it, what's downloaded is kept. `run_parallel` also cuts
+each live line to the terminal's width: a longer one wrapped, and the redraw left a
+copy of it behind every second.
+
 ## Sentinel-2 from zoom 7 (2026-11-06)
 
 For every area, Sentinel-2 is made from zoom 7 and shown from 7 at the earliest

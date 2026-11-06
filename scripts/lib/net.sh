@@ -9,6 +9,10 @@
 #     NET_CHECK_EVERY seconds for up to NET_WAIT_SECONDS, then go on where it
 #     stopped. It doesn't come back: stop with status CONNECTION_LOST (75),
 #     keeping what's downloaded ("run again to go on");
+#   - but the rest of the internet answers (INTERNET_PROBES) while that server
+#     doesn't, for NET_SERVER_GRACE seconds: that server has stopped answering this
+#     computer (its anti-bot firewall, or it's down). Stop at once with status
+#     SERVER_STOPPED (76) instead of waiting for a connection that works;
 #   - a download that hangs (under 1 kB/s for NET_STALL_SECONDS) counts as failed.
 # Small files fetched while the scripts ask their questions (download --quick) are
 # tried 3 times and then given up: the questions have a fallback for offline.
@@ -17,8 +21,11 @@
 export NET_WAIT_SECONDS="${NET_WAIT_SECONDS:-900}"
 export NET_CHECK_EVERY="${NET_CHECK_EVERY:-15}"
 NET_STALL_SECONDS="${NET_STALL_SECONDS:-120}"
+export NET_SERVER_GRACE="${NET_SERVER_GRACE:-120}"
 NET_TRIES=3
 CONNECTION_LOST=75
+SERVER_STOPPED=76
+INTERNET_PROBES=(https://www.google.com https://www.wikipedia.org https://one.one.one.one)
 
 # download [--quick] URL [FILE]
 #   With FILE: saved there, through FILE.part (resumed when run again: FILE only
@@ -50,7 +57,8 @@ download() {
 
 # safely URL command... — run a downloading command until it works (see above).
 # URL is its server, to tell a lost connection from a failing download. Returns
-# CONNECTION_LOST when the connection doesn't come back, else the command's status.
+# CONNECTION_LOST when the connection doesn't come back, SERVER_STOPPED when only
+# that server stopped answering, else the command's status.
 safely() {
     local url="$1" tries=0 status
     shift
@@ -65,23 +73,43 @@ safely() {
             warn "Download interrupted: trying again (${tries}/${NET_TRIES})..." >&2
             sleep 5
         else
-            wait_for_internet "$url" || return "$CONNECTION_LOST"
+            wait_for_internet "$url" || return
         fi
     done
 }
 
 # wait_for_internet URL — wait until URL's server answers again, up to
-# NET_WAIT_SECONDS; 1 if it doesn't.
+# NET_WAIT_SECONDS: CONNECTION_LOST if it doesn't, SERVER_STOPPED as soon as the
+# internet has worked for NET_SERVER_GRACE seconds while that server didn't answer.
 wait_for_internet() {
-    local url="$1" waited=0
+    local url="$1" waited=0 only_server=-1
     warn "No answer from $(url_host "$url"): waiting for the connection (up to $(wait_limit_text))..." >&2
+    internet_up && only_server=0
     while [[ "$waited" -lt "$NET_WAIT_SECONDS" ]]; do
+        if [[ "$only_server" -ge 0 && $((waited - only_server)) -ge "$NET_SERVER_GRACE" ]]; then
+            warn "$(url_host "$url") has stopped answering this computer, though the internet works." >&2
+            return "$SERVER_STOPPED"
+        fi
         sleep "$NET_CHECK_EVERY"
         waited=$((waited + NET_CHECK_EVERY))
         if reachable "$url"; then
             ok "Connection back: going on." >&2
             return 0
         fi
+        if ! internet_up; then
+            only_server=-1
+        elif [[ "$only_server" -lt 0 ]]; then
+            only_server=$waited
+        fi
+    done
+    return "$CONNECTION_LOST"
+}
+
+# internet_up — whether the internet works: any of a few big sites answers.
+internet_up() {
+    local probe
+    for probe in "${INTERNET_PROBES[@]}"; do
+        reachable "$probe" && return 0
     done
     return 1
 }
@@ -91,6 +119,11 @@ die_download() {
     if [[ "$1" == "$CONNECTION_LOST" ]]; then
         die "No internet connection for $(wait_limit_text): stopped while downloading $2.
        What was downloaded is kept: run the script again to go on from there."
+    fi
+    if [[ "$1" == "$SERVER_STOPPED" ]]; then
+        die "The server of $2 stopped answering this computer, though the internet works
+       (its protection against bots, or it's down). What was downloaded is kept:
+       run the script again later to go on from there."
     fi
     die "Downloading $2 failed (see above). Run the script again to resume it."
 }

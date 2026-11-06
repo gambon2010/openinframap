@@ -14,6 +14,7 @@ def quick(monkeypatch):
     monkeypatch.setattr(netsafe.time, "sleep", lambda _: None)
     monkeypatch.setattr(netsafe, "WAIT_LIMIT", 0.05)
     monkeypatch.setattr(netsafe, "connection", netsafe.Connection())
+    monkeypatch.setattr(netsafe, "internet_up", lambda: False)  # no real probes
 
 
 class Flaky:
@@ -78,6 +79,39 @@ def test_a_connection_that_stays_down_ends_in_connection_lost(monkeypatch):
     # Every other download stops at once.
     with pytest.raises(netsafe.ConnectionLost):
         netsafe.safely(lambda: "never called", "https://example.org/y")
+
+
+def test_a_server_that_stops_answering_while_the_internet_works(monkeypatch):
+    # The server never answers, the probes do: not a lost connection, stop now
+    # (not after WAIT_LIMIT), and every other download with it.
+    monkeypatch.setattr(netsafe, "reachable", lambda url: False)
+    monkeypatch.setattr(netsafe, "internet_up", lambda: True)
+    monkeypatch.setattr(netsafe, "WAIT_LIMIT", 10**6)
+    monkeypatch.setattr(netsafe, "SERVER_GRACE", 0)
+    call = Flaky(10**6, TimeoutError())
+    with pytest.raises(netsafe.ServerStopped) as stopped:
+        netsafe.safely(call, "https://tiles.example.org/x")
+    assert stopped.value.host == "tiles.example.org"
+    with pytest.raises(netsafe.ServerStopped):
+        netsafe.safely(lambda: "never called", "https://example.org/y")
+
+
+def test_the_internet_going_down_too_is_a_lost_connection(monkeypatch):
+    monkeypatch.setattr(netsafe, "reachable", lambda url: False)
+    monkeypatch.setattr(netsafe, "SERVER_GRACE", 0)
+    with pytest.raises(netsafe.ConnectionLost) as lost:
+        netsafe.safely(Flaky(10**6, TimeoutError()), "https://tiles.example.org/x")
+    assert not isinstance(lost.value, netsafe.ServerStopped)
+
+
+def test_run_until_connected_exits_76_when_a_server_stopped(capsys):
+    def main():
+        raise netsafe.ServerStopped("tiles.example.org")
+
+    with pytest.raises(SystemExit) as stop:
+        netsafe.run_until_connected(main)
+    assert stop.value.code == netsafe.SERVER_STOPPED == 76
+    assert "tiles.example.org has stopped answering" in capsys.readouterr().err
 
 
 def test_other_errors_are_raised_at_once():
