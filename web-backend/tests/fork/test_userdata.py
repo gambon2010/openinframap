@@ -34,7 +34,7 @@ def test_schema_statements_split_cleanly():
 def test_schema_is_upgraded_by_its_newest_addition():
     sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
     assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
-    assert "CREATE TABLE IF NOT EXISTS userdata.status_change" in sql
+    assert "userdata.feature_status" not in sql  # statuses removed (2026-11-06)
     # ensure_schema checks for the newest addition (the last statement makes that
     # table), so older databases get everything.
     last = [s for s in sql.split(";\n") if s.strip()][-1]
@@ -92,9 +92,6 @@ def test_routes_are_where_they_were():
         "/userdata/images",
         "/userdata/images/{image_id}",
         "/userdata/layers/{layer_id}/access",
-        "/userdata/status",
-        "/userdata/status/feature",
-        "/userdata/status/history",
         "/userdata/source-feature",
     }
 
@@ -102,14 +99,11 @@ def test_routes_are_where_they_were():
 def test_the_logged_in_user_or_anyone_without_the_middleware():
     from types import SimpleNamespace
 
-    from src.fork.userdata.users import ANYONE, User, can_set_statuses, current_user
+    from src.fork.userdata.users import ANYONE, User, current_user
 
     alice = User(id="1", name="Alice")
     assert current_user(SimpleNamespace(scope={"user": alice})) is alice  # type: ignore[arg-type]
     assert current_user(SimpleNamespace(scope={})) is ANYONE  # type: ignore[arg-type]
-    assert not can_set_statuses(alice)
-    assert can_set_statuses(User(id="2", name="Bob", can_set_statuses=True))
-    assert can_set_statuses(User(id="3", name="Admin", is_admin=True))
 
 
 def test_live_events_are_server_sent_events():

@@ -192,16 +192,16 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.36 | In the list, Ctrl-click adds an item to the selection; Shift-click selects everything between what's selected and the click. | ✅ (2026-11-06) |
 | 9.34 | Situations reworked so the history of all changes is kept (no deleting; a save makes one?); layers can be hidden while going through the history. To be discussed first. | backlog |
 
-## 12. Feature status and "what if" (docs/plans/feature-status.md)
+## 12. Feature status and "what if" (docs/plans/feature-status.md): removed 2026-11-06
 
 | # | Requirement | Status |
 |---|---|---|
-| 12.1 | A status on map features (power lines, substations, transformers, hospitals, places of worship, supermarkets, convenience stores...), separate from My layers' military symbols: operational, repaired, threatened, suspected damage, damaged, destroyed, under repair, unknown. Only problems shown on the map, with a colour and/or badge next to the item. | ✅ step 1: set in a feature's details, history, on the map (`fork/modules/status/`, `userdata/status.py`) |
-| 12.2 | Extra fields by kind, e.g. how full stores are (stock level); several features at once (Shift-click); convenience stores as critical sites. | ✅ step 2 (`fork/modules/status/`; convenience stores from the next rebuild) |
-| 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | ✅ step 4: red and orange from the statuses, grey for what isn't connected in the data, copies in My layers (`grid_supply.py`, `fork/modules/status/supply.ts`); scenarios not yet |
-| 12.3b | Show the substations and lines connected to nothing (no source even with nothing lost) in a different colour. | ✅ grey in power supply mode (asked 2026-10-31) |
-| 12.4 | A status history of its own, independent of My layers' history, that can be played back. | ✅ per feature, and played back on the Status board (step 3: list, counts, filters, search by status) |
-| 12.5 | Detailed substation model (voltage levels, transformers). | ❌ dropped (2026-10-31) |
+| 12.1 | A status on map features (power lines, substations, transformers, hospitals, places of worship, supermarkets, convenience stores...), separate from My layers' military symbols: operational, repaired, threatened, suspected damage, damaged, destroyed, under repair, unknown. Only problems shown on the map, with a colour and/or badge next to the item. | ❌ removed (2026-11-06: the whole status system, to be rebuilt simpler later) |
+| 12.2 | Extra fields by kind, e.g. how full stores are (stock level); several features at once (Shift-click); convenience stores as critical sites. | ❌ removed (2026-11-06: the whole status system, to be rebuilt simpler later) |
+| 12.3 | Power supply mode (a toggle): the grid coloured green (normal), orange/yellow (less power), red (none), from the statuses; also on power lines and transformers copied into My layers (normal look when the mode is off). Lines leaving or entering the region count as sources. | ❌ removed (2026-11-06: the whole status system, to be rebuilt simpler later) |
+| 12.3b | Show the substations and lines connected to nothing (no source even with nothing lost) in a different colour. | ❌ removed (2026-11-06: the whole status system, to be rebuilt simpler later) |
+| 12.4 | A status history of its own, independent of My layers' history, that can be played back. | ❌ removed (2026-11-06: the whole status system, to be rebuilt simpler later) |
+| 12.5 | Detailed substation model (voltage levels, transformers). | ❌ removed (2026-11-06: the whole status system, to be rebuilt simpler later) |
 
 ## 10. Backlog (parked)
 
@@ -229,7 +229,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |
 | 10.9 | Buildings: show building outlines on the map (a layer to switch on); copy chosen buildings' outlines into My layers. | 🗂 (asked 2026-11-05) |
 | 10.10 | Power supply mode recolours the map layers it reads from the style (every layer drawn from the power-line and station tiles), not a hand-written list of upstream's layer names (a new or renamed upstream layer would silently keep its colour). | 🗂 (asked 2026-11-06) |
-| 10.11 | Feature statuses as layer information (a side's or team's own assessment), not one global state. Big rework. | 🗂 (asked 2026-11-06) |
+| 10.11 | Feature statuses as layer information (a side's or team's own assessment), not one global state. The old status system was removed (2026-11-06); something simpler is to be designed and rebuilt. | 🗂 (asked 2026-11-06) |
 
 ## 11. Quality
 

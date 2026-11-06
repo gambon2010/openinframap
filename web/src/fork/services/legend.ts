@@ -1,6 +1,6 @@
 // Fork: the legend of a printed map (modules/print): each module says what of its
 // own is in the printed part of the map (the key's rows of what's there: ui/key/
-// legend.ts; My layers' items by layer; the power supply colours...).
+// legend.ts; My layers' items by layer).
 import type { Map } from 'maplibre-gl'
 
 export interface LegendEntry {

@@ -5,8 +5,7 @@ it can see was saved, so it fetches it (the browser merges it with its unsaved
 changes). Every POLL seconds:
 
 - "changes": new saved changes on layers the user can see (the change log's ids);
-- "access": what the user can see changed (a layer shared with them, or not any more);
-- "status": a map feature's status changed.
+- "access": what the user can see changed (a layer shared with them, or not any more).
 
 The event id is the last change seen: a page that reconnects (the browser does it by
 itself, with Last-Event-ID) is told what it missed. The stream holds no database
@@ -51,9 +50,9 @@ def summary(changes: list[dict]) -> dict:
     }
 
 
-async def look(engine: AsyncEngine, user: User, since: int) -> tuple[int, list[dict], str, int]:
+async def look(engine: AsyncEngine, user: User, since: int) -> tuple[int, list[dict], str]:
     """What's new since change `since`: the last change id, the new changes the user
-    can see, what they can see (as a fingerprint), the last status change id."""
+    can see, what they can see (as a fingerprint)."""
     async with engine.connect() as db:
         await ensure_schema(db)
         last = (await db.execute(text("SELECT coalesce(max(id), 0) FROM userdata.change"))).scalar() or 0
@@ -80,24 +79,21 @@ async def look(engine: AsyncEngine, user: User, since: int) -> tuple[int, list[d
                 if access.at_least(levels.get(str(r.layer_id), "none"), "view")
             ]
         seen = ",".join(sorted(f"{k}={v}" for k, v in levels.items() if access.at_least(v, "view")))
-        status = (
-            await db.execute(text("SELECT coalesce(max(id), 0) FROM userdata.status_change"))
-        ).scalar() or 0
-    return last, changes, seen, status
+    return last, changes, seen
 
 
 async def stream(engine: AsyncEngine, user: User, since: int | None) -> AsyncIterator[str]:
-    last, _, seen, status = await look(engine, user, 0)
+    last, _, seen = await look(engine, user, 0)
     # A reconnection: what was missed since the last event it had.
     if since is not None and since < last:
-        last, changes, seen, status = await look(engine, user, since)
+        last, changes, seen = await look(engine, user, since)
         if changes:
             yield event("changes", summary(changes), last)
     yield event("ready", {"last": last}, last)
     quiet = 0.0
     while True:
         await asyncio.sleep(POLL)
-        new_last, changes, new_seen, new_status = await look(engine, user, last)
+        new_last, changes, new_seen = await look(engine, user, last)
         sent = False
         if changes:
             yield event("changes", summary(changes), new_last)
@@ -105,10 +101,7 @@ async def stream(engine: AsyncEngine, user: User, since: int | None) -> AsyncIte
         if new_seen != seen:
             yield event("access", {}, new_last)
             sent = True
-        if new_status != status:
-            yield event("status", {"last": new_status}, new_last)
-            sent = True
-        last, seen, status = new_last, new_seen, new_status
+        last, seen = new_last, new_seen
         quiet = 0.0 if sent else quiet + POLL
         if quiet >= KEEPALIVE:
             yield ": still here\n\n"

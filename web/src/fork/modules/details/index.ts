@@ -1,7 +1,6 @@
 // Fork: a clicked map feature's details in the left details panel (instead of
 // upstream's popup), with the feature highlighted; a second click on it closes
-// them, and a click near a line selects it (near-click.ts). Shift-click picks
-// features for acting on several at once (ui/selection.ts). Search results open
+// them, and a click near a line selects it (near-click.ts). Search results open
 // the same way. Other modules add to the details with
 // addDetailsExtra (ui/details.ts), e.g. the grid's "Route from here". A circuit
 // opened from them shows below them (circuit.ts).
@@ -13,7 +12,6 @@ import type InfoPopup from '../../../popup/infopopup.ts'
 import { DetailsPanel, detailsExtras } from '../../ui/details.ts'
 import { FeatureHighlight } from '../../ui/highlight.ts'
 import { leftColumn } from '../../ui/left-column.ts'
-import { selection } from '../../services/selection.ts'
 import { selectNearLines } from './near-click.ts'
 import { circuitBelowDetails } from './circuit.ts'
 
@@ -49,8 +47,6 @@ class Details {
     if (import.meta.env.DEV) {
       console.info('Clicked feature on layer', feature.layer.id, '\n', feature.properties)
     }
-    // Shift-click: added to (or taken out of) the selection instead (ui/selection.ts).
-    if (selection.shift && selection.toggle(feature)) return
     // A second click on the same thing (its icon or its area) deselects it.
     if (this.keyOf(feature) && this.keyOf(feature) === this.selected && this.panel.isOpen()) {
       this.panel.close()

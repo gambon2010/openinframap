@@ -114,7 +114,7 @@ export class Workspace implements IControl {
   toggle(open = !this.isOpen) {
     this.isOpen = open
     writeText(OPEN_KEY, open ? '1' : '0')
-    // Shift-click selects several items (and, closed, map features: modules/status),
+    // Shift-click selects several items,
     // so the map's Shift-drag zoom, which would swallow it, stays off.
     this.map.boxZoom.disable()
     this.button.classList.toggle('oim-dock-active', open)

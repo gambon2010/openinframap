@@ -1656,6 +1656,21 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## Statuses removed (2026-11-06)
+
+The status system (docs/plans/feature-status.md) is gone, to be rebuilt simpler
+later (SPECIFICATIONS 10.11): statuses of map features (the ⚠ status board, the
+form, the badges on the map, the per-feature history and its playback, searching
+by status), the power supply mode built on them (the grid's red, orange and "at
+risk" colours, the grey of what's connected to nothing, My layers copies coloured
+the same), Shift-click selection of map features (only used to set statuses) and
+the "Can set statuses" account right. Gone: `modules/status/`,
+`services/supply.ts`, `services/selection.ts`, the backend's `userdata/status.py`
+and `grid_supply.py` (`/userdata/status*`, `/grid/supply*`), the "status" live
+event, `search_statuses`. `userdata.sql` no longer makes `feature_status`,
+`status_change` or `app_user.can_set_statuses`; a database that already has them
+keeps them, unused (the code no longer reads or writes them).
+
 ## Aerial photos from zoom 12 (2026-11-06)
 
 Every aerial source (`TIERS["detailed"]`, IGN's départements too) now starts at

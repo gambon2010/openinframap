@@ -15,7 +15,6 @@ import './account.css'
 export interface Me {
   name: string
   is_admin: boolean
-  can_set_statuses: boolean
 }
 
 export function loginUrl(): string {

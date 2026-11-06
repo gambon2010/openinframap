@@ -72,41 +72,6 @@ CREATE TABLE IF NOT EXISTS userdata.situation (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Statuses of map features (docs/plans/feature-status.md): about the real
--- features of the map, shared by everyone, separate from My layers. A feature is
--- its table and id (status.py SOURCE_TABLES, as several tile layers show the same
--- table); its geometry is copied so it's drawn whatever the tiles, and kept
--- across rebuilds like the rest of userdata.
-CREATE TABLE IF NOT EXISTS userdata.feature_status (
-    source text NOT NULL,
-    feature_id bigint NOT NULL,
-    layer text NOT NULL,
-    status text NOT NULL,
-    evidence text,
-    note text,
-    details jsonb NOT NULL DEFAULT '{}',
-    name text,
-    author text,
-    geometry geometry(Geometry, 4326),
-    updated_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (source, feature_id)
-);
-
--- Every status change, in order: the status history.
-CREATE TABLE IF NOT EXISTS userdata.status_change (
-    id bigserial PRIMARY KEY,
-    source text NOT NULL,
-    feature_id bigint NOT NULL,
-    status text NOT NULL,
-    previous text,
-    evidence text,
-    note text,
-    details jsonb NOT NULL DEFAULT '{}',
-    author text,
-    made_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS status_change_feature ON userdata.status_change (source, feature_id, id);
-
 -- Towers' numbers along their lines (tower_numbers.py), kept so a tower keeps its
 -- number at every renumbering: a line is matched to the one it was by the towers
 -- they share, a tower already numbered keeps its number ("23"), one added between
@@ -132,7 +97,6 @@ CREATE TABLE IF NOT EXISTS userdata.app_user (
     name text NOT NULL UNIQUE,
     password_hash text NOT NULL,
     is_admin boolean NOT NULL DEFAULT false,
-    can_set_statuses boolean NOT NULL DEFAULT false,
     disabled boolean NOT NULL DEFAULT false,
     created_at timestamptz NOT NULL DEFAULT now()
 );

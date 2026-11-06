@@ -27,7 +27,6 @@ import {
   squareUp
 } from '../graphics/graphics.ts'
 import { modifiersToDraw } from '../model/fields.ts'
-import { supplyColours } from '../../../services/supply.ts'
 import { pointOf } from '../model/shapes.ts'
 import { DRAFT, GHOST, GRAPHIC_DRAFT, OUTLINE_PAD_PX, SELECTION } from './render.constants.ts'
 import { GraphicDraft, IconBox } from './render.types.ts'
@@ -51,14 +50,12 @@ import {
   measureSourceId,
   overlayLayers,
   ownLayers,
-  sourceId,
-  supplyLayers
+  sourceId
 } from './layers.ts'
 
 /** A feature as drawn: its properties plus what the map layers need. */
 function drawn(feature: UserFeature, conflict = false): GeoJSON.Feature {
   const p = feature.properties
-  const supply = p.copy ? supplyColours.of(p.copy.sourceLayer, p.osm_id) : null
   return {
     type: 'Feature',
     geometry: feature.geometry,
@@ -68,9 +65,6 @@ function drawn(feature: UserFeature, conflict = false): GeoJSON.Feature {
       fid: feature.id,
       icon: iconName(p),
       copy_key: p.copy ? `${p.copy.source}/${p.copy.sourceLayer}` : null,
-      // Power supply mode on: a copied line, substation or plant's original's colour
-      // (left out otherwise: the supply layers draw what has one).
-      ...(supply ? { supply } : {}),
       // In conflict with someone else's change (ui/conflicts.ts): marked.
       ...(conflict ? { conflict: true } : {})
     }
@@ -109,10 +103,6 @@ export class Renderer {
     // the north chosen.
     map.on('moveend', () => this.renderMeasures())
     measurePrefs.onChange(() => this.renderMeasures())
-    // Power supply mode turned on or off, or its colours changed.
-    supplyColours.onChange(() => {
-      if (this.last) void this.render(this.last.layers, this.last.hidden)
-    })
     // A new style (e.g. another background map) drops everything added here.
     map.on('style.load', () => {
       if (this.last) void this.render(this.last.layers, this.last.hidden)
@@ -243,7 +233,6 @@ export class Renderer {
       const ids: string[] = []
       for (const spec of [
         ...copyLayers(layer, this.primaryLayers),
-        ...supplyLayers(layer),
         ...graphicLayers(layer, this.highlighted),
         ...measureLayers(layer, this.highlighted),
         ...ownLayers(layer)

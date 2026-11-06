@@ -25,7 +25,7 @@ def token_hash(token: str) -> str:
 
 
 def user_from_row(row) -> User:  # type: ignore[no-untyped-def]
-    return User(id=str(row.id), name=row.name, is_admin=row.is_admin, can_set_statuses=row.can_set_statuses)
+    return User(id=str(row.id), name=row.name, is_admin=row.is_admin)
 
 
 async def user_of(database: AsyncConnection, token: str | None) -> User | None:
@@ -36,7 +36,7 @@ async def user_of(database: AsyncConnection, token: str | None) -> User | None:
     row = (
         await database.execute(
             text(
-                """SELECT u.id, u.name, u.is_admin, u.can_set_statuses, s.expires_at
+                """SELECT u.id, u.name, u.is_admin, s.expires_at
                      FROM userdata.user_session AS s JOIN userdata.app_user AS u ON u.id = s.user_id
                     WHERE s.token_hash = :hash AND s.expires_at > now() AND NOT u.disabled"""
             ),

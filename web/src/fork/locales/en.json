@@ -10,9 +10,7 @@
   },
   "layers": {
     "extra-icpe": "Classified installations (ICPE)",
-    "sites": "Critical sites",
-    "status-group": "Statuses",
-    "status": "Damage and threats"
+    "sites": "Critical sites"
   },
   "search": {
     "place": {
@@ -643,112 +641,10 @@
     "number": "Tower {{number}} of {{total}} on {{name}} ({{kv}} kV)",
     "counted-from": "counted from {{start}}"
   },
-  "status": {
-    "title": "Status",
-    "change": "Change status",
-    "set": "Set status",
-    "history": "History ({{count}})",
-    "was": "was {{status}}",
-    "note-placeholder": "What happened, what is known",
-    "save": "Save",
-    "note": "Note",
-    "cancel": "Cancel",
-    "failed": "Couldn't save: {{error}}",
-    "operational": "Operational",
-    "repaired": "Repaired",
-    "threatened": "Threatened",
-    "suspected-damage": "Suspected damage",
-    "damaged": "Damaged",
-    "destroyed": "Destroyed",
-    "under-repair": "Under repair",
-    "unknown": "Unknown",
-    "how-known": "How it is known",
-    "evidence": {
-      "seen": "Seen",
-      "reported": "Reported",
-      "imagery": "Imagery"
-    },
-    "field": {
-      "stock": "Stock",
-      "short": "What is short",
-      "capacity": "Capacity",
-      "fuel": "Fuel available"
-    },
-    "stock": {
-      "full": "Full",
-      "half": "Half",
-      "low": "Low",
-      "empty": "Empty",
-      "unknown": "Unknown"
-    },
-    "capacity": {
-      "normal": "Normal",
-      "saturated": "Saturated",
-      "closed": "Closed"
-    },
-    "fuel": {
-      "yes": "Yes",
-      "no": "No",
-      "rationed": "Rationed"
-    },
-    "search-result": "Status: {{status}}"
-  },
-  "selection": {
-    "remove": "Take out of the selection",
-    "set-status": "Set status for all",
-    "title": "{{count}} selected",
-    "hint": "Shift-click on the map to add or take out.",
-    "save": "Save for all {{count}}",
-    "saved": "Saved for {{count}} features."
-  },
-  "board": {
-    "kind": {
-      "power": "Power",
-      "sites": "Critical sites",
-      "telecoms": "Telecoms",
-      "pipelines": "Pipelines",
-      "water": "Water",
-      "extra": "Open data"
-    },
-    "title": "Status board",
-    "unavailable": "The statuses couldn't be loaded.",
-    "filter-status": "Show only these (click again: all)",
-    "all-kinds": "All kinds",
-    "search": "Name",
-    "none": "No feature with a status here.",
-    "no-history": "No status set yet.",
-    "now": "Now ({{count}} changes)",
-    "as-of": "As of {{when}} (change {{step}} of {{count}})",
-    "before": "Before the first change",
-    "first": "Before the first change",
-    "back": "One change back",
-    "play": "Play the changes",
-    "forward": "One change on",
-    "live": "Now",
-    "live-title": "Back to the statuses now"
-  },
-  "supply": {
-    "mode": "Power supply mode",
-    "nothing-lost": "No damaged or destroyed part of the grid: all supplied.",
-    "all-supplied": "Every station still supplied.",
-    "red": "Without supply: {{list}} substations or plants",
-    "orange": "{{count}} with less power",
-    "working": "Working out the power supply…",
-    "failed": "The power supply couldn't be worked out.",
-    "title": "Power supply",
-    "off": "Turn off",
-    "green": "supplied",
-    "orange-key": "less power",
-    "red-key": "none",
-    "grey": "not connected in the data",
-    "risk": "{{count}} at risk if the suspected damage is confirmed",
-    "risk-key": "at risk (suspected damage)"
-  },
   "account": {
     "title": "Accounts",
     "name": "Name",
     "admin": "Admin",
-    "statuses": "Can set statuses",
     "disabled": "Disabled",
     "you": "you",
     "new-password": "New password",

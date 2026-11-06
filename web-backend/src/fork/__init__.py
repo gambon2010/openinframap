@@ -9,7 +9,7 @@ from starlette.routing import BaseRoute, Mount
 from starlette.staticfiles import StaticFiles
 
 from ..config import IMAGES_DIR
-from . import about, auth, circuits, grid, grid_supply, map_data, search, userdata
+from . import about, auth, circuits, grid, map_data, search, userdata
 from .auth import LoginMiddleware
 from .userdata.events import STREAMING as events_streaming
 
@@ -28,7 +28,6 @@ routes: list[BaseRoute] = [
     *userdata.routes,
     *map_data.routes,
     *grid.routes,
-    *grid_supply.routes,
 ]
 
 # main.py adds these after its database middleware (they need the connection).

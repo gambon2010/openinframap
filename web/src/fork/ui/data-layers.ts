@@ -4,7 +4,7 @@
 // upstream's layer switcher) that unfolds to the key sections of what it draws, each
 // key row with its own tick box (feature-hider.ts). A key section belongs to the
 // entry of the same name, else to the entry whose map layers its rows draw (by the
-// entry's layer prefix); any other goes under "Other". Statuses' rows have no tick box: they're a key, not a filter.
+// entry's layer prefix); any other goes under "Other".
 //
 // Upstream's list is rebuilt when the map's address changes, so it isn't moved: the
 // tick boxes here ask its switcher and are drawn again from it. The key is built

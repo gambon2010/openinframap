@@ -1,5 +1,5 @@
 // Fork: the accounts, for admins (Settings → Accounts): add one, give or take the
-// rights (admin, can set statuses), set a new password, disable one. Backend:
+// admin right, set a new password, disable one. Backend:
 // /auth/users (web-backend/src/fork/auth/routes.py).
 import { el, setChildren } from 'redom'
 import { t } from '../../core/i18n.ts'
@@ -9,7 +9,6 @@ export interface Account {
   id: number
   name: string
   is_admin: boolean
-  can_set_statuses: boolean
   disabled: boolean
 }
 
@@ -26,10 +25,10 @@ async function call(url: string, method: string, body?: unknown): Promise<unknow
 /** Why a right can't be changed here (the box is disabled), or '' if it can. */
 export function lockedReason(
   account: Pick<Account, 'name' | 'is_admin'>,
-  key: 'is_admin' | 'can_set_statuses' | 'disabled',
+  key: 'is_admin' | 'disabled',
   me: string
 ): string {
-  if (account.name === me && key !== 'can_set_statuses') {
+  if (account.name === me) {
     return t('account.locked-self', 'Your own: another admin can change it')
   }
   if (key === 'disabled' && account.is_admin) {
@@ -73,7 +72,7 @@ export class AccountsSection {
   }
 
   private show(users: Account[]) {
-    const tick = (account: Account, key: 'is_admin' | 'can_set_statuses' | 'disabled', label: string) => {
+    const tick = (account: Account, key: 'is_admin' | 'disabled', label: string) => {
       const locked = lockedReason(account, key, this.me.name)
       const box = el('input', {
         type: 'checkbox',
@@ -89,7 +88,6 @@ export class AccountsSection {
         'tr',
         el('th', t('account.name', 'Name')),
         el('th', t('account.admin', 'Admin')),
-        el('th', t('account.statuses', 'Can set statuses')),
         el('th', t('account.disabled', 'Disabled')),
         el('th', '')
       ),
@@ -98,7 +96,6 @@ export class AccountsSection {
           'tr',
           el('td', u.name === this.me.name ? `${u.name} (${t('account.you', 'you')})` : u.name),
           tick(u, 'is_admin', t('account.admin', 'Admin')),
-          tick(u, 'can_set_statuses', t('account.statuses', 'Can set statuses')),
           tick(u, 'disabled', t('account.disabled', 'Disabled')),
           el(
             'td',
@@ -125,14 +122,12 @@ export class AccountsSection {
       placeholder: t('account.password', 'Password (8 characters at least)')
     }) as HTMLInputElement
     const admin = el('input', { type: 'checkbox' }) as HTMLInputElement
-    const statuses = el('input', { type: 'checkbox' }) as HTMLInputElement
     const form = el(
       'form.oim-accounts-add',
       el('h4', t('account.add', 'Add an account')),
       name,
       password,
       el('label', admin, t('account.admin', 'Admin')),
-      el('label', statuses, t('account.statuses', 'Can set statuses')),
       el('button.oim-button', t('account.create', 'Create'), { type: 'submit' })
     ) as HTMLFormElement
     form.onsubmit = async (e) => {
@@ -142,8 +137,7 @@ export class AccountsSection {
         await call('/auth/users', 'POST', {
           name: name.value,
           password: password.value,
-          is_admin: admin.checked,
-          can_set_statuses: statuses.checked
+          is_admin: admin.checked
         })
         form.reset()
       } catch (err) {

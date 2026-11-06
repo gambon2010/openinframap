@@ -1,6 +1,6 @@
 # Plan: a status on anything on the map, and power supply ("what if") on the grid
 
-Status: **agreed** (2026-10-31). Steps 1 to 4 are built; scenarios are in the backlog
+Status: **removed** (2026-11-06): the whole status system and power supply mode were taken out, to be rebuilt simpler later (SPECIFICATIONS 10.11). Kept as a record. Before: **agreed** (2026-10-31). Steps 1 to 4 were built; scenarios are in the backlog
 (SPECIFICATIONS 10.8) and step 5 (the detailed substation model) is dropped (statuses, their history
 per feature, the look on the map; extra fields, several at once, convenience stores;
 the Status board with playback and search by status; power supply mode). Answers so far are marked ✔.

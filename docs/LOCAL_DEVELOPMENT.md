@@ -74,8 +74,8 @@ gate`) to make a new one.
 
 - **The first time**, the page asks you to create the first account: it's an admin.
 - **Admins** add the other accounts in **Settings → Accounts** (nobody can sign up
-  alone), set new passwords, and give the rights: **Admin** (manage accounts) and
-  **Can set statuses** (damage and threats on the map). An account can be disabled.
+  alone), set new passwords, and give the **Admin** right (manage accounts). An
+  account can be disabled.
 - **Log out** (the person among the buttons, top right) ends the session; otherwise it lasts 30 days
   from the last visit.
 
@@ -97,8 +97,8 @@ port 8800.
 - **Bottom left** (next to the scale): where the cursor is: latitude, longitude and the
   military grid reference (MGRS); press **G** with the pointer on the map to copy the
   grid reference there. The search box also finds grid references ("32T LT 725 899").
-- **Top right, the buttons:** zoom, your location, **Data layers** (what's on the map and its key: tick a
-  category, unfold it ▸ to tick its rows), **Status board** (⚠), **My layers**. Click a button to open its panel next to the buttons; click it again
+- **Top right, the buttons:** zoom, **Data layers** (what's on the map and its key: tick a
+  category, unfold it ▸ to tick its rows), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside. At the bottom: **print** (the printer), **Settings**
   (the gear: background map and address search servers, see below; admins:

@@ -19,7 +19,6 @@ describe('rights that cannot be changed are locked', () => {
   it('your own admin right and disabling, an admin being disabled', () => {
     expect(lockedReason({ name: 'me', is_admin: true }, 'is_admin', 'me')).not.toBe('')
     expect(lockedReason({ name: 'me', is_admin: true }, 'disabled', 'me')).not.toBe('')
-    expect(lockedReason({ name: 'me', is_admin: true }, 'can_set_statuses', 'me')).toBe('')
     expect(lockedReason({ name: 'bob', is_admin: true }, 'disabled', 'me')).not.toBe('')
     expect(lockedReason({ name: 'bob', is_admin: true }, 'is_admin', 'me')).toBe('')
     expect(lockedReason({ name: 'bob', is_admin: false }, 'disabled', 'me')).toBe('')

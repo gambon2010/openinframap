@@ -3,15 +3,15 @@ Fork: logging in, and the accounts (docs/plans/sync.md, "Login for the whole app
 
     GET  /login                  the login page (the setup page when there's no user yet)
     GET  /auth/check             204 with a valid session, else 401 (the gate asks)
-    GET  /auth/me                {name, is_admin, can_set_statuses}, or 401 ({setup: true}
+    GET  /auth/me                {name, is_admin}, or 401 ({setup: true}
                                  when there's no user yet)
     POST /auth/login             {name, password}: sets the session cookie
     POST /auth/logout
     POST /auth/setup             {name, password}: the first account (an admin), only
                                  when there's none
     GET  /auth/users             admins: every account
-    POST /auth/users             admins: {name, password, is_admin?, can_set_statuses?}
-    PATCH /auth/users/{id}       admins: {password?, is_admin?, can_set_statuses?, disabled?}
+    POST /auth/users             admins: {name, password, is_admin?}
+    PATCH /auth/users/{id}       admins: {password?, is_admin?, disabled?}
 """
 
 from __future__ import annotations
@@ -74,9 +74,7 @@ async def me(request: Request) -> Response:
     if not logged_in(request):
         return JSONResponse({"setup": not await has_users(request)}, status_code=401)
     user = current_user(request)
-    return JSONResponse(
-        {"name": user.name, "is_admin": user.is_admin, "can_set_statuses": user.can_set_statuses}
-    )
+    return JSONResponse({"name": user.name, "is_admin": user.is_admin})
 
 
 async def login(request: Request) -> Response:
@@ -123,8 +121,8 @@ async def setup(request: Request) -> Response:
     user_id = (
         await db.execute(
             text(
-                """INSERT INTO userdata.app_user (name, password_hash, is_admin, can_set_statuses)
-                   VALUES (:name, :hash, true, true) RETURNING id"""
+                """INSERT INTO userdata.app_user (name, password_hash, is_admin)
+                   VALUES (:name, :hash, true) RETURNING id"""
             ),
             {"name": name, "hash": hash_password(password)},
         )
@@ -151,14 +149,13 @@ async def users(request: Request) -> Response:
         try:
             await db.execute(
                 text(
-                    """INSERT INTO userdata.app_user (name, password_hash, is_admin, can_set_statuses)
-                       VALUES (:name, :hash, :admin, :statuses)"""
+                    """INSERT INTO userdata.app_user (name, password_hash, is_admin)
+                       VALUES (:name, :hash, :admin)"""
                 ),
                 {
                     "name": name,
                     "hash": hash_password(password),
                     "admin": bool(body.get("is_admin")),
-                    "statuses": bool(body.get("can_set_statuses")),
                 },
             )
         except IntegrityError:
@@ -166,7 +163,7 @@ async def users(request: Request) -> Response:
         await db.commit()
     rows = await db.execute(
         text(
-            """SELECT id, name, is_admin, can_set_statuses, disabled, created_at
+            """SELECT id, name, is_admin, disabled, created_at
                  FROM userdata.app_user ORDER BY lower(name)"""
         )
     )
@@ -177,7 +174,6 @@ async def users(request: Request) -> Response:
                     "id": r.id,
                     "name": r.name,
                     "is_admin": r.is_admin,
-                    "can_set_statuses": r.can_set_statuses,
                     "disabled": r.disabled,
                     "created_at": r.created_at.isoformat(),
                 }
@@ -196,7 +192,7 @@ async def update_user(request: Request) -> Response:
         raise HTTPException(400, "Invalid user")
     body = await read_json(request)
     changes: dict[str, object] = {}
-    for key in ("is_admin", "can_set_statuses", "disabled"):
+    for key in ("is_admin", "disabled"):
         if key in body:
             changes[key] = bool(body[key])
     if body.get("password"):

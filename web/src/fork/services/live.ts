@@ -2,8 +2,8 @@
 // Server-Sent Events): one connection per page, opened by the first listener. The
 // browser reconnects by itself after a disconnection, and the backend then says
 // what was missed. Kinds: "changes" (My layers you can see were saved), "access"
-// (what you can see changed), "status" (a map feature's status changed).
-export type LiveKind = 'changes' | 'access' | 'status'
+// (what you can see changed).
+export type LiveKind = 'changes' | 'access'
 
 const listeners = new Map<LiveKind, (() => void)[]>()
 let source: EventSource | undefined
@@ -27,15 +27,12 @@ function emit(kind: LiveKind) {
 function connect() {
   if (source || typeof EventSource === 'undefined') return
   source = new EventSource('/userdata/events')
-  for (const kind of ['changes', 'access', 'status'] as LiveKind[]) {
+  for (const kind of ['changes', 'access'] as LiveKind[]) {
     source.addEventListener(kind, () => emit(kind))
   }
-  // Connected again after a break: what you can see, or statuses, may have changed meanwhile.
+  // Connected again after a break: what you can see may have changed meanwhile.
   source.addEventListener('ready', () => {
-    if (connectedBefore) {
-      emit('access')
-      emit('status')
-    }
+    if (connectedBefore) emit('access')
     connectedBefore = true
   })
 }

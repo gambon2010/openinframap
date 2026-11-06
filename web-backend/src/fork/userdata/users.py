@@ -15,19 +15,12 @@ class User:
     id: str | None
     name: str | None
     is_admin: bool = False
-    can_set_statuses: bool = False
 
 
-ANYONE = User(id=None, name=None, is_admin=True, can_set_statuses=True)
+ANYONE = User(id=None, name=None, is_admin=True)
 
 
 def current_user(request: Request) -> User:
     """The user making the request."""
     user = request.scope.get("user")
     return user if isinstance(user, User) else ANYONE
-
-
-def can_set_statuses(user: User) -> bool:
-    """Whether a user may set map features' statuses (docs/plans/feature-status.md:
-    a right admins give). Everyone may see them."""
-    return user.can_set_statuses or user.is_admin

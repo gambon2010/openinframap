@@ -1,12 +1,11 @@
 // Fork: My layers' map layers, as MapLibre style definitions (pure: render.ts adds
 // them): each layer's own (fills, lines, icons, labels), the tactical graphics', the
-// copies' (clones of upstream's layers), power supply colours, measurements, and the
+// copies' (clones of upstream's layers), measurements, and the
 // selection, draft and placing overlays.
 import { FilterSpecification, LayerSpecification } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserLayer } from '../model/model.ts'
-import { SUPPLY_COLOURS, supplyColours } from '../../../services/supply.ts'
 import {
   DRAFT,
   GHOST,
@@ -193,46 +192,6 @@ export function graphicSpecs(
       }
     }
   ] as LayerSpecification[]
-}
-
-/** Power supply mode: copies of power lines, substations and plants in their
- * original's colour (ui/supply.ts), over their own look; nothing while it's off. */
-export function supplyLayers(layer: UserLayer): LayerSpecification[] {
-  if (!supplyColours.active) return []
-  const source = sourceId(layer.id)
-  const colour = [
-    'match',
-    ['get', 'supply'],
-    'red',
-    SUPPLY_COLOURS.red,
-    'orange',
-    SUPPLY_COLOURS.orange,
-    'risk',
-    SUPPLY_COLOURS.risk,
-    SUPPLY_COLOURS.green
-  ] as unknown as string
-  return [
-    {
-      id: `${source}__supply_line`,
-      type: 'line',
-      source,
-      filter: ['all', ['has', 'supply'], LINE_OR_POLYGON] as FilterSpecification,
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': colour, 'line-width': 5 }
-    },
-    {
-      id: `${source}__supply_point`,
-      type: 'circle',
-      source,
-      filter: ['all', ['has', 'supply'], POINT] as FilterSpecification,
-      paint: {
-        'circle-color': colour,
-        'circle-radius': 9,
-        'circle-stroke-color': '#fff',
-        'circle-stroke-width': 2
-      }
-    }
-  ]
 }
 
 /** Upstream's layers for the data copies came from, drawing the copies instead. */

@@ -39,14 +39,12 @@ ui/        shared building blocks you see: dock (right), left column, details
            line icons (icons.ts: the eye), the key's checkboxes and its rows on
            prints (key/)
 services/  shared state and registries, nothing drawn: live updates (live.ts),
-           who has the map (map-mode.ts: measuring, drawing), features picked
-           with Shift-click (selection.ts), power supply colours (supply.ts),
+           who has the map (map-mode.ts: measuring, drawing),
            what a printed map's legend lists (legend.ts), the background map's
            background: the map's colours or imagery, chosen in Settings (background.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
-  status       statuses of map features (damage, threats): details, map
   extra        data from outside OSM
   sites        critical sites
   search       search descriptions, Photon
@@ -155,8 +153,7 @@ session):
   `_base.html` layout);
 - `search.py`;
 - `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
-- `grid.py` (routes over the power grid, `/grid/line`), `grid_supply.py` (power
-  supply mode), `line_trace.py` (following a
+- `grid.py` (routes over the power grid, `/grid/line`), `line_trace.py` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers.py`
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
