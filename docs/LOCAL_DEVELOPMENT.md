@@ -260,7 +260,7 @@ bounds. A download that's stopped goes on where it stopped when run again.
 **France (IGN's BD ORTHO)** comes as IGN's own files, one département at a time:
 IGN's tile server blocks a computer that asks for its tiles by the million. Each
 département is downloaded whole (its 20 cm photos, about 5 GB per 1,000 km²;
-Bas-Rhin 23 GB) whatever the zoom you keep, made into WebP tiles here (zoom 14 up
+Bas-Rhin 23 GB) whatever the zoom you keep, made into WebP tiles here (zoom 12 up
 to 15–19), then the download is deleted: the disk holds the tiles and one
 département's files at a time. The menu asks the last zoom, then which départements
 (their codes; Enter: all of the area's). Kept on disk, all of France: ~12 GB to

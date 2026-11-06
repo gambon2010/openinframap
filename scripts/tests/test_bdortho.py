@@ -61,7 +61,7 @@ def test_departements_in_an_area():
 def test_sizes_grow_four_times_a_zoom():
     one, two = bdortho.tiles_of("67", 17), bdortho.tiles_of("67", 18)
     # Bas-Rhin, 4,800 km² at 48.6° (a zoom 17 tile is 200 m across there): some
-    # 117,000 tiles at zoom 17, 155,000 from zoom 14.
+    # 117,000 tiles at zoom 17, 155,000 from zoom 12.
     assert 140_000 < one < 170_000
     assert 3.5 < two / one < 4.5
     e = bdortho.estimate(["67", "68"], 17)
@@ -122,13 +122,13 @@ def test_the_archive_parts_in_order(monkeypatch):
     assert md5 == f"{base}.md5"
 
 
-def test_the_pipeline_makes_webp_to_the_zoom_and_down_to_14():
+def test_the_pipeline_makes_webp_to_the_zoom_and_down_to_12():
     commands = bdortho.pipeline(17).split(" && ")
     assert commands[0].startswith("gdalwarp") and "EPSG:3857" in commands[0]
     assert "-dstalpha" in commands[0] and "--optfile images.txt" in commands[0]
     # Each zoom straight from the reprojected image, the last zoom first.
     zooms = [c.split("--min-zoom ")[1].split()[0] for c in commands[1:-1]]
-    assert zooms == ["17", "16", "15", "14"]
+    assert zooms == ["17", "16", "15", "14", "13", "12"]
     assert all("--format WEBP" in c and "QUALITY=75" in c for c in commands[1:-1])
     assert commands[-1] == "rm warped.tif"
 

@@ -1691,7 +1691,7 @@ download service (an Atom listing, `latest_edition`), its 7z archive in 4 GB par
 (3 at once, `netsafe.fetch_file`: resumed with HTTP Range, a connection closed
 early is not taken for the end; each part checked against IGN's md5, fetched again
 once if damaged), the JPEG 2000 images extracted (7-Zip, else in Docker) and the
-archive deleted, then GDAL makes WebP tiles (quality 75) from zoom 14 to the zoom
+archive deleted, then GDAL makes WebP tiles (quality 75) from zoom 12 to the zoom
 asked (15 to 19), and the images are deleted. The tiles (`pipeline`): the images
 reprojected into one image at the last zoom's resolution (`gdalwarp` on every core,
 reading each JPEG 2000 at the reduced resolution it needs; JPEG inside, a

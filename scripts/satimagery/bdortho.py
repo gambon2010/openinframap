@@ -30,7 +30,7 @@ import netsafe
 from .departements import DEPARTEMENTS
 from .download import MBTiles
 from .gdal import docker_run, pmtiles_zooms, to_pmtiles
-from .sources import DETAILED_SOURCES, EARTH_CIRCUMFERENCE_M, TIERS, USER_AGENT
+from .sources import DETAILED_SOURCES, EARTH_CIRCUMFERENCE_M, USER_AGENT
 from .tiles import tile_bounds
 
 LISTING = "https://data.geopf.fr/telechargement/resource/BDORTHO"
@@ -43,6 +43,10 @@ ATOM = "{http://www.w3.org/2005/Atom}"
 GPF = "{https://data.geopf.fr/annexes/ressources/xsd/gpf_dl.xsd}"
 # Archive parts downloaded at once (IGN's service sends each one slowly).
 PARTS_AT_ONCE = 3
+# IGN's photos from zoom 12 (a town on screen), where they're still sharper and
+# truer in colour than Sentinel-2's 10 m (which goes on below); the tile sources
+# start at 14 (TIERS). The two zooms below 14 add about 8%.
+MINZOOM = 12
 # WebP quality of the tiles: smaller than IGN's JPEG, still sharp.
 QUALITY = 75
 # GDAL 3.11 for `gdal raster tile` (every core, every zoom); Sentinel-2 stays on
@@ -75,7 +79,7 @@ def departements_in(region: str, within) -> list[str]:
     ]
 
 
-def tiles_of(code: str, maxzoom: int, minzoom: int = TIERS["detailed"][0]) -> int:
+def tiles_of(code: str, maxzoom: int, minzoom: int = MINZOOM) -> int:
     """The tiles a département's file has, its zooms minzoom to maxzoom (its
     area over a tile's at its latitude)."""
     _, km2, (_, south, _, north), _ = DEPARTEMENTS[code]
@@ -280,7 +284,7 @@ def extract(first_part: Path, into: Path, gdal_image: str) -> list[Path]:
 # --- Making the tiles -------------------------------------------------------------------
 
 
-def pipeline(maxzoom: int, minzoom: int = TIERS["detailed"][0]) -> str:
+def pipeline(maxzoom: int, minzoom: int = MINZOOM) -> str:
     """The GDAL commands (run in `work`, the images listed in images.txt) that make
     the département's tiles into tiles/z/x/y.webp. First one image of it all,
     reprojected to the web map at the last zoom's resolution (GDAL reads each JPEG
