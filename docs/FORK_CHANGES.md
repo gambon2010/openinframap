@@ -1631,6 +1631,14 @@ servers and write different files. Now they all start together (`run_parallel` i
 one's result); each still keeps its own server's speed limit and waits for a lost
 connection on its own.
 
+## Towns stand out from the fields (2026-11-06)
+
+Upstream's background style draws land and built-up areas at the same lightness
+from zoom 6 on (93%), told apart only by a faint tint: the roads were clear but not
+where a town stops. Built-up areas (`osm_landuse_urban`, `osm_landcover_urban`) are
+drawn at 88% instead, the same tint (`modules/map-sources/contrast.ts`, a paint
+override: style_base.ts unchanged).
+
 ## Sentinel-2 from zoom 7 (2026-11-06)
 
 For every area, Sentinel-2 is made from zoom 7 and shown from 7 at the earliest
