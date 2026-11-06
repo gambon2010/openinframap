@@ -28,7 +28,10 @@ structure", "Merging from upstream"). Upstream imports only three fork files:
 
 ```
 index.ts, types.ts, config.ts   the module registry and hooks, the types, the URLs
-core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
+core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references),
+           geo.ts (metres per pixel, degrees/radians), math.ts (clamp), colour.ts
+           (hex colours), map-style.ts (geometry-type filters), storage.ts (this
+           browser's storage, read and written safely), author.ts, map-data.ts
 ui/        shared building blocks you see: dock (right), left column, details
            panel, highlight, panels (panel.ts, makeModal), settings, the tooltip,
            the key's checkboxes and its rows on prints (key/)
@@ -78,6 +81,13 @@ map's icon buttons, whose open panel gets a dark ring) gets the class `oim-on`: 
 shows it as the page's own tooltip (never the browser's), for every title on the
 page, upstream's included.
 
+**Types and constants:** a file's types go in `X.types.ts` and its constants and
+tables in `X.constants.ts`, next to it (`render.ts`, `render.types.ts`,
+`render.constants.ts`; in a folder: `types.ts`, `constants.ts`), so the main file
+holds the logic. Small files with a type or two keep them. A constant that's
+worked out from the file's own functions stays with them. Helpers more than one
+place needs (distances, storage, clamping) go in `core/`, never copied.
+
 **Strings:** write `t('module.key', 'English text', values)` from `core/i18n.ts`.
 Values are never HTML-escaped, because text goes on the page as text, never through
 `innerHTML`. `npm run fork-strings` adds new keys to `en.json`, and a test fails if
@@ -102,8 +112,10 @@ state/   store.ts (the Store the UI uses) on top of:
 kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
          drawing, measure, copy); types.ts says what a kind defines, index.ts lists them
          and has kindOf(properties)
-map/     render.ts, symbols.ts (drawing the images), icons.ts (adding them to
-         the map, by the kinds' prefixes), tools.ts, interactions.ts (hover,
+map/     render.ts (the Renderer: sources, selection, handles), layers.ts (the map
+         style layers, as functions), geometry.ts (pure: control points, moving,
+         boxes), symbols.ts (drawing the images), icons.ts (adding them to the
+         map, by the kinds' prefixes), tools.ts, interactions.ts (hover,
          right-click, copy / paste), legend.ts
 graphics/ tactical graphics: graphics.ts (the C5ISR renderer: codes, points,
          squaring), labels.ts (plain labels, English/French), variants.ts (two
@@ -112,8 +124,9 @@ io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
 measure/ measurements, pure: geo.ts (distances, areas, great circles), north.ts,
          ticks.ts (marks along a distance), features.ts (labels, marks), prefs.ts
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
-         sidebar, inspector (the card), situations, timeline, toast; editor.ts
-         (the card), outliner.ts (the list), palette.ts (the picker);
+         sidebar, inspector (the card), situations, timeline, toast; editor/ (the card:
+         index.ts builds it from sections.ts, controls.ts the small inputs),
+         outliner/ (the list: index.ts, filter.ts, order.ts), palette.ts (the picker);
          userlayers.css lists the CSS files in order (order matters)
 ```
 

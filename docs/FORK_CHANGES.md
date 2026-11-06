@@ -1493,6 +1493,32 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## Code tidied (2026-11-06)
+
+A pass over the fork's frontend for repeated logic and long files. Behaviour is
+unchanged: today's exact values (arrow widths, path lengths, map scale, metres per
+pixel, size snapping) were locked in `userlayers/locked-values.test.ts` first and
+still pass.
+
+- **Folders:** tactical graphics in `userlayers/graphics/`; shared state and
+  registries (live updates, map mode, selection, supply colours, the print legend)
+  in `fork/services/`, out of `ui/`. Folder rules in `structure.test.ts`.
+- **One helper instead of copies** (`core/`): `geo.ts` (metres per pixel,
+  degrees/radians, the Earth's circumference), `math.ts` (`clamp`), `colour.ts`
+  (`parseHex`), `map-style.ts` (`geometryIs`), `storage.ts` (local storage read
+  and written with the try/catch in one place; 8 files used their own). In My
+  layers: `positionsOf` / `pointOf` (`model/shapes.ts`) for a geometry's positions,
+  one distance-unit table, the mouse wheel's numbers named (`map/tools.constants.ts`),
+  the arrows' flat-earth constants named (same formula: saved arrows depend on it).
+- **Long files split:** `map/render.ts` (1187 lines) into `render.ts` (the
+  Renderer), `layers.ts` (style layers), `geometry.ts` (pure geometry); the outliner
+  into `ui/outliner/` and the card editor into `ui/editor/`, their longest
+  functions (a 340-line `buildEditor`, a 203-line `layerRow`) broken into named
+  parts.
+- **Types and constants in small files** next to their code (`X.types.ts`,
+  `X.constants.ts`): render, tools, fields, sidc, labels, graphics, palette,
+  formats, api, measure ticks and features, supply, grid route.
+
 ## Printing reworked: the map fills the page (2026-11-05)
 
 The map took about a third of an A4 page: it was the screen's picture (twice as wide
@@ -1780,7 +1806,7 @@ is checked in the browser instead.
 
 | Where | Run | What |
 |---|---|---|
-| `web/src/fork/**/*.test.ts` (136) | `cd web && npm run test:fork` | Consistency (`consistency.test.ts`: every Tegola layer the fork adds is drawn and every style's tile layer is served, every fork layer is in the layer switcher, every aerial photo source is credited; every string is in `en.json`); My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
+| `web/src/fork/**/*.test.ts` (321) | `cd web && npm run test:fork` | Consistency (`consistency.test.ts`: every Tegola layer the fork adds is drawn and every style's tile layer is served, every fork layer is in the layer switcher, every aerial photo source is credited; every string is in `en.json`); My layers: symbol codes (identity, echelon, mobility), descriptive fields and date-time groups, the change store and moving items, history descriptions, the catalogue and its search, geometry editing; tactical graphics through the real C5ISR renderer; satellite tier parsing; search duplicates and descriptions; grid route link and route assembly; the key's feature hider; the dock |
 | `web-backend/tests/fork/` (19) | `cd web-backend && uv run pytest` | Grid routes (station parsing, graph, distinct paths, route description), search helpers, My layers' id parsing and schema, search indexes |
 | `scripts/tests/` (88, + 1 opt-in) | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` | `satellite.py` (tile maths, outlines, cells, estimates, MBTiles, downloads from a local test server), the symbol catalogue, extra data outlines and ICPE categories, the osmium filter, `scripts/lib/*.sh` helpers run in bash (including: every `schema/*.sql` is in `SCHEMA_FILES`, in `build-region.sh`'s order), and the setup scripts themselves (below) |
 
