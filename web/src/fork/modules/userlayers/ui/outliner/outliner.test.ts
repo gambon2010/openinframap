@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { UserFeature, UserLayer } from '../model/model.ts'
-import { byFolder, layerOrder, matches, placed, sortLayers, textMatches } from './outliner.ts'
-import { PersonalSettings } from '../state/personal.ts'
-import { featureLabelParts } from '../model/labels.ts'
+import { UserFeature, UserLayer } from '../../model/model.ts'
+import { byFolder, layerOrder, placed, sortLayers } from './order.ts'
+import { matches, textMatches } from './filter.ts'
+import { PersonalSettings } from '../../state/personal.ts'
+import { featureLabelParts } from '../../model/labels.ts'
 
 const symbol = (sidc: string, modifiers: Record<string, string> = {}, notes?: string): UserFeature => ({
   type: 'Feature',

@@ -8,143 +8,18 @@
 // and which folders folded are yours (state/personal.ts): others sharing a layer
 // order and file it their own way. Rows can be reached with Tab; Enter opens or
 // selects.
-import { t, tn } from '../../../core/i18n.ts'
+import { t, tn } from '../../../../core/i18n.ts'
 import { el } from 'redom'
-import { DEFAULT_COLOR, isOwner, UserFeature, UserLayer } from '../model/model.ts'
-import { Store } from '../state/store.ts'
-import type { PersonalSettings } from '../state/personal.ts'
-import { kindOf } from '../kinds/index.ts'
-import type { Format } from '../io/formats.ts'
-import { featureLabelParts } from '../model/labels.ts'
-import { identity, status } from '../model/sidc.ts'
-import { symbolRenderer } from '../map/symbols.ts'
-import { openSharing } from './sharing.ts'
-
-export type Filter = 'hostile' | 'friend' | 'planned' | 'units' | 'graphics' | 'pictures'
-
-export const FILTERS: [Filter, string][] = [
-  ['hostile', 'Hostile'],
-  ['friend', 'Friend'],
-  ['planned', 'Planned'],
-  ['units', 'Units'],
-  ['graphics', 'Graphics'],
-  ['pictures', 'Pictures']
-]
-
-// A layer shows this many items at first (a big import would make every change slow).
-const ITEMS_SHOWN = 200
-
-const words = (query: string) => query.toLowerCase().split(/\s+/).filter(Boolean)
-
-/** Whether every word of a search is in a text. */
-export function textMatches(text: string, query: string): boolean {
-  const lower = text.toLowerCase()
-  return words(query).every((w) => lower.includes(w))
-}
-
-/** Whether an item matches the search text (all words, anywhere in its name, type,
- * details or notes) and every filter chip that's on. */
-export function matches(feature: UserFeature, query: string, filters: Set<Filter>): boolean {
-  const p = feature.properties
-  const sidc = p.sidc ?? ''
-  for (const filter of filters) {
-    if (filter === 'hostile' && !(sidc && ['H', 'S', 'J', 'K'].includes(identity(sidc)))) return false
-    if (filter === 'friend' && !(sidc && ['F', 'A'].includes(identity(sidc)))) return false
-    if (filter === 'planned' && !(sidc && status(sidc) === 'A')) return false
-    if (
-      (filter === 'units' || filter === 'graphics' || filter === 'pictures') &&
-      !kindOf(p).filters?.(p).includes(filter)
-    )
-      return false
-  }
-  if (!words(query).length) return true
-  const { name, what } = featureLabelParts(feature)
-  return textMatches([name, what, p.notes, ...Object.values(p.modifiers ?? {})].join(' '), query)
-}
-
-/**
- * Layers in their order: the ones in `order` as there, the others (new) before them,
- * newest first.
- */
-export function sortLayers(layers: UserLayer[], order: string[]): UserLayer[] {
-  const rank = new Map(order.map((id, i) => [id, i]))
-  const unknown = layers.filter((l) => !rank.has(l.id)).reverse()
-  const known = layers.filter((l) => rank.has(l.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)
-  return [...unknown, ...known]
-}
-
-/**
- * Layers by folder: folders (sorted, with the empty ones given) with their
- * layers, then layers in no folder.
- */
-export function byFolder(
-  layers: UserLayer[],
-  empty: Iterable<string> = [],
-  folderOf: (layer: UserLayer) => string | null = (l) => l.style.folder?.trim() || null
-): [folder: string | null, layers: UserLayer[]][] {
-  const folders = new Map<string, UserLayer[]>([...empty].map((f): [string, UserLayer[]] => [f, []]))
-  const loose: UserLayer[] = []
-  for (const layer of layers) {
-    const folder = folderOf(layer)
-    if (folder) folders.set(folder, [...(folders.get(folder) ?? []), layer])
-    else loose.push(layer)
-  }
-  const out: [string | null, UserLayer[]][] = [...folders]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([f, l]): [string, UserLayer[]] => [f, l])
-  if (loose.length) out.push([null, loose])
-  return out
-}
-
-/** The layers as the list shows them, top first: also the order they're drawn in
- * (the top one on top). */
-export function layerOrder(layers: UserLayer[], personal: PersonalSettings): string[] {
-  const sorted = sortLayers(layers, personal.data.order)
-  return byFolder(sorted, [], (l) => personal.folderOf(l)).flatMap(([, ls]) => ls.map((l) => l.id))
-}
-
-/**
- * Move one layer just above or below another in an order (top first); the others
- * keep theirs.
- */
-export function placed(order: string[], id: string, target: string, before: boolean): string[] {
-  const rest = order.filter((x) => x !== id)
-  const at = rest.indexOf(target)
-  if (at < 0) return order
-  rest.splice(before ? at : at + 1, 0, id)
-  return rest
-}
-
-export interface OutlinerActions {
-  update: () => void
-  select: (feature: UserFeature, add: boolean) => void
-  isSelected: (id: string) => boolean
-  newLayer: (folder?: string) => void
-  /** Download layers as a file (io/files.ts). */
-  exportLayers: (layers: UserLayer[], format: Format) => void
-  /** Choose a file: a new layer with its items. */
-  importFile: () => void
-  /** Move the map to show all of a layer's items. */
-  zoomToLayer: (layer: UserLayer) => void
-  /** The layers' order changed: the map draws them again. */
-  reordered: () => void
-}
-
-const FORMATS: [Format, string][] = [
-  ['geojson', 'GeoJSON'],
-  ['kml', 'KML (Google Earth)'],
-  ['gpx', 'GPX (GPS)']
-]
-
-/** A name being typed in place. */
-interface Editing {
-  kind: 'layer' | 'folder'
-  /** The layer's id, or the folder's name. */
-  id: string
-  value: string
-  /** The text is selected the first time (typing replaces it). */
-  fresh: boolean
-}
+import { DEFAULT_COLOR, isOwner, UserFeature, UserLayer } from '../../model/model.ts'
+import { Store } from '../../state/store.ts'
+import { kindOf } from '../../kinds/index.ts'
+import { featureLabelParts } from '../../model/labels.ts'
+import { symbolRenderer } from '../../map/symbols.ts'
+import { openSharing } from '../sharing.ts'
+import { Editing, Filter, OutlinerActions } from './types.ts'
+import { FILTERS, FORMATS, ITEMS_SHOWN } from './constants.ts'
+import { matches, textMatches } from './filter.ts'
+import { byFolder, layerOrder, placed, sortLayers } from './order.ts'
 
 export class Outliner {
   el: HTMLElement = el('.oim-ul-outliner')
@@ -464,6 +339,49 @@ export class Outliner {
     const owner = isOwner(layer)
     const changeable = store.view.canChangeLayer(layer)
     const renaming = this.editing?.kind === 'layer' && this.editing.id === layer.id
+    const color = this.layerColour(layer, changeable)
+    const menu = this.layerMenu(layer, owner, changeable)
+    const label = this.layerLabel(layer, open, renaming, changeable)
+    const header = el(
+      `.oim-ul-layer-row${active ? '.active' : ''}`,
+      { draggable: this.store.view.live && !renaming, 'aria-expanded': String(open) },
+      this.button(
+        hidden ? '◌' : '◉',
+        () => store.setHidden(layer.id, !hidden),
+        hidden ? t('userlayers.show', 'Show on the map') : t('userlayers.hide', 'Hide from the map')
+      ),
+      this.lockButton(layer, locked, owner && changeable),
+      color,
+      label,
+      owner ? '' : this.sharedTag(layer),
+      active ? el('span.oim-ul-active-tag', t('userlayers.active', 'drawing here')) : '',
+      el(
+        'span.oim-ul-count-badge',
+        searching ? `${items.length}/${layer.features.size}` : String(layer.features.size)
+      ),
+      menu
+    )
+    header.onclick = () => {
+      this.personal.toggle('expanded', layer.id, !this.personal.data.expanded.includes(layer.id))
+      this.actions.update()
+    }
+    header.ondragstart = (e) => {
+      if ((e.target as HTMLElement).closest('.oim-ul-item')) return
+      e.dataTransfer?.setData('application/x-oim-layer', layer.id)
+      // While a layer is dragged, the place to drop it out of its folder shows.
+      this.el.classList.add('oim-ul-dragging-layer')
+    }
+    header.ondragend = () => this.el.classList.remove('oim-ul-dragging-layer')
+    this.layerDropTarget(header, layer)
+    if (!renaming) this.focusable(header, `layer:${layer.id}`)
+    const li = el(`li.oim-ul-layer${hidden ? '.hidden' : ''}`, header)
+    if (open) li.append(this.layerItems(layer, items, searching))
+    return li
+  }
+
+  /** A layer's colour, changed in place. */
+  private layerColour(layer: UserLayer, changeable: boolean): HTMLInputElement {
+    const store = this.store
     const color = el('input.oim-ul-color', {
       type: 'color',
       value: layer.style.color ?? DEFAULT_COLOR,
@@ -472,9 +390,13 @@ export class Outliner {
     }) as HTMLInputElement
     color.onclick = (e) => e.stopPropagation()
     color.onchange = () => store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
+    return color
+  }
+
+  /** Move a layer to a folder: the folders there are, a new one, or out of its folder. */
+  private folderMenu(layer: UserLayer): HTMLElement {
     const current = this.folderOf(layer)
-    // Move to folder: the folders there are, a new one, or out of its folder.
-    const folders = el(
+    return el(
       'details.oim-ul-submenu',
       el('summary', t('userlayers.move-to-folder-menu', 'Move to folder')),
       ...this.folderNames()
@@ -499,6 +421,12 @@ export class Outliner {
           )
         : ''
     )
+  }
+
+  /** A layer's ⋯ menu: draw into it, zoom, share, rename, folders, export, delete. */
+  private layerMenu(layer: UserLayer, owner: boolean, changeable: boolean): HTMLDetailsElement {
+    const store = this.store
+    const folders = this.folderMenu(layer)
     const exportMenu = this.exportMenu(t('userlayers.export-as', 'Export as'), () => [layer])
     const menu = el(
       'details.oim-ul-menu',
@@ -566,6 +494,11 @@ export class Outliner {
       items.style.top = below ? `${box.bottom}px` : ''
       items.style.bottom = below ? '' : `${window.innerHeight - box.top}px`
     }
+    return menu
+  }
+
+  /** A layer's name (a text box while it's renamed). */
+  private layerLabel(layer: UserLayer, open: boolean, renaming: boolean, changeable: boolean): HTMLElement {
     const label = renaming
       ? this.nameInput()
       : el('span.oim-ul-layer-label', `${open ? '▾' : '▸'} ${layer.name}`, {
@@ -576,85 +509,55 @@ export class Outliner {
         e.stopPropagation()
         this.startEditing('layer', layer.id)
       })
-    const header = el(
-      `.oim-ul-layer-row${active ? '.active' : ''}`,
-      { draggable: this.store.view.live && !renaming, 'aria-expanded': String(open) },
-      this.button(
-        hidden ? '◌' : '◉',
-        () => store.setHidden(layer.id, !hidden),
-        hidden ? t('userlayers.show', 'Show on the map') : t('userlayers.hide', 'Hide from the map')
-      ),
-      this.lockButton(layer, locked, owner && changeable),
-      color,
-      label,
-      !owner
-        ? el('span.oim-ul-shared-tag', layer.access === 'view' ? '👁' : '👥', {
-            title:
-              layer.access === 'view'
-                ? t('userlayers.shared-view', "{{owner}}'s, shared with you to view", {
-                    owner: layer.owner ?? '?'
-                  })
-                : t('userlayers.shared-modify', "{{owner}}'s, shared with you to change", {
-                    owner: layer.owner ?? '?'
-                  })
-          })
-        : '',
-      active ? el('span.oim-ul-active-tag', t('userlayers.active', 'drawing here')) : '',
+    return label
+  }
+
+  /** Someone else's layer: whose it is, and whether you may change it. */
+  private sharedTag(layer: UserLayer): HTMLElement {
+    return el('span.oim-ul-shared-tag', layer.access === 'view' ? '👁' : '👥', {
+      title:
+        layer.access === 'view'
+          ? t('userlayers.shared-view', "{{owner}}'s, shared with you to view", {
+              owner: layer.owner ?? '?'
+            })
+          : t('userlayers.shared-modify', "{{owner}}'s, shared with you to change", {
+              owner: layer.owner ?? '?'
+            })
+    })
+  }
+
+  /** A layer's items, the first ITEMS_SHOWN of a long one, then "Show the other…". */
+  private layerItems(layer: UserLayer, items: UserFeature[], searching: boolean): HTMLElement {
+    const all = this.showAll.has(layer.id)
+    const shown = all ? items : items.slice(0, ITEMS_SHOWN)
+    const more = el(
+      'li.oim-ul-more',
       el(
-        'span.oim-ul-count-badge',
-        searching ? `${items.length}/${layer.features.size}` : String(layer.features.size)
-      ),
-      menu
+        'button.oim-ul-button',
+        tn(
+          'userlayers.show-more',
+          'Show the other item',
+          'Show the other {{count}} items',
+          items.length - shown.length
+        ),
+        { type: 'button' }
+      )
     )
-    header.onclick = () => {
-      this.personal.toggle('expanded', layer.id, !this.personal.data.expanded.includes(layer.id))
+    more.onclick = () => {
+      this.showAll.add(layer.id)
       this.actions.update()
     }
-    header.ondragstart = (e) => {
-      if ((e.target as HTMLElement).closest('.oim-ul-item')) return
-      e.dataTransfer?.setData('application/x-oim-layer', layer.id)
-      // While a layer is dragged, the place to drop it out of its folder shows.
-      this.el.classList.add('oim-ul-dragging-layer')
-    }
-    header.ondragend = () => this.el.classList.remove('oim-ul-dragging-layer')
-    this.layerDropTarget(header, layer)
-    if (!renaming) this.focusable(header, `layer:${layer.id}`)
-    const li = el(`li.oim-ul-layer${hidden ? '.hidden' : ''}`, header)
-    if (open) {
-      const all = this.showAll.has(layer.id)
-      const shown = all ? items : items.slice(0, ITEMS_SHOWN)
-      const more = el(
-        'li.oim-ul-more',
-        el(
-          'button.oim-ul-button',
-          tn(
-            'userlayers.show-more',
-            'Show the other item',
-            'Show the other {{count}} items',
-            items.length - shown.length
-          ),
-          { type: 'button' }
-        )
-      )
-      more.onclick = () => {
-        this.showAll.add(layer.id)
-        this.actions.update()
-      }
-      li.append(
-        el(
-          'ul.oim-ul-items',
-          items.length
-            ? [...shown.map((f) => this.item(f, layer)), ...(shown.length < items.length ? [more] : [])]
-            : el(
-                'li.oim-ul-hint',
-                searching
-                  ? t('userlayers.no-match', 'Nothing matches.')
-                  : t('userlayers.empty-layer', 'Nothing in it yet.')
-              )
-        )
-      )
-    }
-    return li
+    return el(
+      'ul.oim-ul-items',
+      items.length
+        ? [...shown.map((f) => this.item(f, layer)), ...(shown.length < items.length ? [more] : [])]
+        : el(
+            'li.oim-ul-hint',
+            searching
+              ? t('userlayers.no-match', 'Nothing matches.')
+              : t('userlayers.empty-layer', 'Nothing in it yet.')
+          )
+    )
   }
 
   private folderRow(folder: string, layers: UserLayer[], body: HTMLElement[]): HTMLElement {
@@ -732,10 +635,9 @@ export class Outliner {
   }
 
   /** The whole list, drawn again from the store. */
-  draw(): HTMLElement {
-    const store = this.store
-    const searching = Boolean(this.query.trim()) || this.filters.size > 0
-    const chips = el(
+  /** The filter chips (enemy, friendly, planned…). */
+  private filterChips(): HTMLElement {
+    return el(
       '.oim-ul-chips.oim-ul-filters',
       FILTERS.map(([filter, label]) => {
         const on = this.filters.has(filter)
@@ -751,6 +653,11 @@ export class Outliner {
         return b
       })
     )
+  }
+
+  /** The folders and layers, each layer with its items (filtered by the search and chips). */
+  private tree(searching: boolean): HTMLElement {
+    const store = this.store
     const tree = el(`ul.oim-ul-tree${this.past ? '.oim-ul-readonly' : ''}`)
     // A new folder a layer is now in is a real one.
     const used = new Set([...store.layers.values()].map(this.folderOf))
@@ -773,6 +680,12 @@ export class Outliner {
       if (folder) tree.append(this.folderRow(folder, inFolder, rows))
       else rows.forEach((r) => tree.append(r))
     }
+    return tree
+  }
+
+  /** Where a dragged layer is dropped to take it out of its folder (only with folders). */
+  private dropOutRow(): HTMLElement | null {
+    const store = this.store
     // Drop a layer on this (it shows while one is dragged): out of its folder.
     const loose = el(
       'li.oim-ul-drop-out',
@@ -782,7 +695,12 @@ export class Outliner {
       const layer = store.layers.get(id)
       if (layer) this.moveToFolder(layer, null)
     })
-    if ([...store.layers.values()].some((l) => this.folderOf(l))) tree.append(loose)
+    return [...store.layers.values()].some((l) => this.folderOf(l)) ? loose : null
+  }
+
+  /** New layer, new folder; import, export (not while a situation is shown). */
+  private bottomButtons(): HTMLElement[] {
+    const store = this.store
     const create = el('button.oim-ul-button', `+ ${t('userlayers.new-layer', 'New layer')}`, {
       type: 'button'
     })
@@ -813,9 +731,21 @@ export class Outliner {
           )
         )
       : ''
+    return [
+      el('.oim-ul-row', create, this.past ? '' : createFolder),
+      el('.oim-ul-row', this.past ? '' : importButton, exportAll)
+    ]
+  }
+
+  draw(): HTMLElement {
+    const store = this.store
+    const searching = Boolean(this.query.trim()) || this.filters.size > 0
+    const tree = this.tree(searching)
+    const loose = this.dropOutRow()
+    if (loose) tree.append(loose)
     // The row that had the keyboard focus (drawing again replaces it).
     const hadFocus = this.body.contains(document.activeElement) ? this.focusKey : null
-    this.chipsBox.replaceChildren(chips)
+    this.chipsBox.replaceChildren(this.filterChips())
     this.body.replaceChildren(
       store.layers.size
         ? searching && !tree.childElementCount
@@ -828,9 +758,14 @@ export class Outliner {
               'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
             )
           ),
-      el('.oim-ul-row', create, this.past ? '' : createFolder),
-      el('.oim-ul-row', this.past ? '' : importButton, exportAll)
+      ...this.bottomButtons()
     )
+    this.restoreFocus(hadFocus)
+    return this.el
+  }
+
+  /** After drawing again: a name being typed keeps the focus, else the row that had it. */
+  private restoreFocus(hadFocus: string | null) {
     // A name being typed: its field keeps the focus (and the text, selected at first).
     const input = this.body.querySelector<HTMLInputElement>('input.oim-ul-rename')
     if (input && this.editing) {
@@ -841,6 +776,5 @@ export class Outliner {
     } else if (hadFocus) {
       this.body.querySelector<HTMLElement>(`[data-key="${CSS.escape(hadFocus)}"]`)?.focus()
     }
-    return this.el
   }
 }

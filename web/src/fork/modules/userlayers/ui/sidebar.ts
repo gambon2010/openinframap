@@ -5,7 +5,7 @@
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from '../model/model.ts'
-import { Outliner } from './outliner.ts'
+import { Outliner } from './outliner/index.ts'
 import { measurePrefs } from '../measure/prefs.ts'
 import type { North } from '../measure/north.ts'
 import { download, importFile } from '../io/files.ts'

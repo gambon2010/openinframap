@@ -13,7 +13,7 @@ import { Interactions } from './map/interactions.ts'
 import { addLegend } from '../../services/legend.ts'
 import { userLegend } from './map/legend.ts'
 import { mapMode } from '../../services/map-mode.ts'
-import { layerOrder, sortLayers } from './ui/outliner.ts'
+import { layerOrder, sortLayers } from './ui/outliner/order.ts'
 import { LngLatBounds } from 'maplibre-gl'
 
 const userlayers: ForkModule = {
