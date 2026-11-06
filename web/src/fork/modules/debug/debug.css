@@ -1,0 +1,31 @@
+/* Fork: the debug box (debug/index.ts), top left under the search box. */
+.oim-debug {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  z-index: 3;
+  display: none;
+  max-width: 340px;
+  padding: 6px 8px;
+  border-radius: var(--oim-radius-small, 4px);
+  background: rgba(20, 20, 30, 0.82);
+  color: #f2f2f2;
+  font-family: var(--oim-font-family-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.oim-debug.visible {
+  display: block;
+}
+.oim-debug b {
+  color: #ffd600;
+  font-weight: normal;
+}
+.oim-debug-feature {
+  overflow: hidden;
+  padding-left: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

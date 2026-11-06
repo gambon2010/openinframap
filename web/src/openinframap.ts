@@ -6,7 +6,6 @@ import { mount } from 'redom'
 import { LayerSwitcher, URLHash, Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import '@russss/maplibregl-layer-switcher/maplibregl-layer-switcher.css'
 
-import EditButton from './edit-control.js'
 import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
 import WarningBox from './warning-box/warning-box.js'
@@ -123,7 +122,6 @@ export default class OpenInfraMap {
 
     map.addControl(new KeyControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
-    map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
     const info_popup = new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),

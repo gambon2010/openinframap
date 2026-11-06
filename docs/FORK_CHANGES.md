@@ -1549,6 +1549,16 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Debug info; no Edit button (2026-11-06)
+
+- **Debug** (`modules/debug/`): Settings → Debug → "Show debug info" (kept in this
+  browser) shows a box at the top of the map: zoom, centre, scale and metres per
+  pixel, whether tiles are loading, how many style layers are drawn, the screen, and
+  under the pointer its position and each feature there (style layer, tile layer,
+  id).
+- **The Edit button** (upstream's, bottom right: OpenStreetMap's online editors) is
+  removed, with its code (see "Merging from upstream").
+
 ## No header: settings, print and the account among the map's buttons (2026-11-06)
 
 - Upstream's header (title, about, stats, a paid export) is removed by the layout
@@ -2150,6 +2160,7 @@ Upstream files the fork still changes, and how:
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
+| `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted; `remote-control.ts` stays (the validation popup uses it). |
 | `web/src/search/search.ts` | Photon instead of OpenCage (`opencage.ts` is kept, unused); `Promise.allSettled` |
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
 | `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; a few constants exported for the fork's styles |

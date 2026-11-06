@@ -92,6 +92,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/modules/layout/search-bar.ts` (narrow screens: stays on the left) |
 | 5.13 | The header's "about" and "stats" pages: do they still make sense for this app? Remove them or update what they say (about: probably keep; stats: doubtful). | ✅ "stats" and "export (online)" removed; "about" is the fork's page: this map's data, how to use it, credits (2026-11-03) |
 | 5.14 | No header: Settings (the app's: background, map sources, accounts), print and the account (Log out) as buttons among the map's (top right); About in the map's credits; My layers' settings in their own window, opened from My layers only. | ✅ (2026-11-06) |
+| 5.15 | A debug option in Settings showing the zoom, scale, tiles, layers and what is under the pointer. | ✅ (2026-11-06) |
+| 5.16 | No Edit button (OpenStreetMap's online editors). | ✅ (2026-11-06) |
 
 ## 6. Grid connections (power routing)
 

@@ -24,6 +24,7 @@ import satellite from './modules/satellite/index.ts'
 import status from './modules/status/index.ts'
 import account from './modules/account/index.ts'
 import coordinates from './modules/coordinates/index.ts'
+import debug from './modules/debug/index.ts'
 import print from './modules/print/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
@@ -43,7 +44,8 @@ const MODULES: ForkModule[] = [
   userlayers,
   // After layout: their header links go after Settings.
   print,
-  account
+  account,
+  debug
 ]
 
 let context: ForkContext | undefined

@@ -802,5 +802,17 @@
     "about-frame": "What is inside the frame on the map is printed, filling the page. Move or zoom the map to change it. The legend goes in a box over its bottom-right corner.",
     "actual-size": "Print at actual size (100 %) for this scale",
     "button": "Print the map (PDF)"
+  },
+  "debug": {
+    "zoom": "Zoom",
+    "centre": "Centre",
+    "scale": "Scale",
+    "tiles": "Tiles",
+    "layers": "Style layers",
+    "screen": "Screen",
+    "pointer": "Pointer",
+    "under": "Under the pointer",
+    "title": "Debug",
+    "show": "Show debug info on the map (zoom, scale, tiles, what is under the pointer)"
   }
 }
