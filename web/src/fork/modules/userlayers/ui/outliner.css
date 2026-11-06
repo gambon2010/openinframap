@@ -265,3 +265,10 @@
 .oim-ul-items .oim-ul-item .oim-ul-thumb {
   justify-content: flex-start;
 }
+
+/* Picker: a graphic's two versions, chosen on the card (palette.ts offeredAs). */
+.oim-ul-versions {
+  display: block;
+  color: var(--oim-text-color-light);
+  font-size: 0.72rem;
+}

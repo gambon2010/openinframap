@@ -1,8 +1,11 @@
 // Fork: the symbol and graphics picker of "My layers": MIL-STD-2525C symbols and
-// tactical graphics (catalogue: scripts/make_symbol_catalog.py). Point symbols are
+// tactical graphics (catalogue: scripts/make_symbol_catalog.py), one row per type (a
+// graphic's two versions are one row: offeredAs). Point symbols are
 // previewed by @syncpoint/signs; lines, areas and arrows are drawn on the map by the
 // C5ISR renderer (graphics.ts), so the picker shows their kind instead.
 import { standardName } from '../graphics/graphics.ts'
+import { variantsOf } from '../graphics/variants.ts'
+import { graphicKey } from '../graphics/labels.ts'
 import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import catalogue from '../model/symbols-2525c.json'
@@ -26,8 +29,13 @@ export function catalogueCode(sidc: string): string {
 }
 
 const BY_CODE = new Map<string, Entry>()
+// Graphics by their key (graphicKey), for their versions (variants.ts).
+const BY_KEY = new Map<string, Entry>()
 for (const group of catalogue.groups) {
-  for (const entry of group.symbols as Entry[]) BY_CODE.set(catalogueCode(entry[0]), entry)
+  for (const entry of group.symbols as Entry[]) {
+    BY_CODE.set(catalogueCode(entry[0]), entry)
+    if (entry[3]) BY_KEY.set(graphicKey(entry[0]), entry)
+  }
 }
 
 /** The catalogue entry of a concrete code. */
@@ -42,18 +50,35 @@ export function symbolName(sidc: string): string | undefined {
   return entryOf(sidc)?.[1] ?? standardName(sidc) ?? undefined
 }
 
-/** Entries of the mode (in a category, if given), matching every word of the query. */
+/**
+ * The entry a graphic is offered as: a graphic with two versions (graphics/
+ * variants.ts: Block as a task or an obstacle, an arrow as an axis or a direction)
+ * is one row, its first version; the card switches between them.
+ */
+export function offeredAs(entry: Entry): Entry {
+  const versions = entry[3] ? variantsOf(entry[0]) : null
+  if (!versions || versions.index === 0) return entry
+  return BY_KEY.get(versions.variants.keys[0]) ?? entry
+}
+
+/** Entries of the mode (in a category, if given), matching every word of the query;
+ * a graphic's second version is found by its name too, as its first (offeredAs). */
 export function searchCatalogue(query: string, mode: PaletteMode, category?: string): Entry[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   const cat = category ? CATEGORIES.find((c) => c.mode === mode && c.label === category) : undefined
   const out: Entry[] = []
+  const seen = new Set<string>()
   for (const g of catalogue.groups) {
     if (cat && !cat.groups.includes(g.name)) continue
     for (const entry of g.symbols as Entry[]) {
       if ((mode === 'graphics') !== Boolean(entry[3])) continue
       if (cat?.test && !cat.test(entry)) continue
       const name = entry[1].toLowerCase()
-      if (words.every((w) => name.includes(w))) out.push(entry)
+      if (!words.every((w) => name.includes(w))) continue
+      const offered = offeredAs(entry)
+      if (seen.has(offered[0])) continue
+      seen.add(offered[0])
+      out.push(offered)
     }
   }
   return out
@@ -218,7 +243,12 @@ export class Palette {
       this.personal.toggleFavourite(entry[0])
       this.update()
     }
-    return el('.oim-ul-symbol-entry', this.button(entry), el('span', entry[1]), star)
+    // A graphic with two versions: which, chosen on the card.
+    const versions = entry[3] ? variantsOf(entry[0]) : null
+    const name = versions
+      ? el('span', entry[1], el('small.oim-ul-versions', versions.variants.labels().join(' / ')))
+      : el('span', entry[1])
+    return el('.oim-ul-symbol-entry', this.button(entry), name, star)
   }
 
   private update() {
@@ -230,18 +260,26 @@ export class Palette {
     if (!query && !this.group) {
       const ofMode = (e: Entry | undefined): e is Entry =>
         Boolean(e) && (this.mode === 'graphics') === Boolean(e![3])
-      const favourites = this.personal.data.favourites
-        .map((code) => BY_CODE.get(catalogueCode(code)))
-        .filter(ofMode)
+      // Each type once (both versions of a graphic may have been starred or used).
+      const once = (entries: Entry[]) => [...new globalThis.Map(entries.map((e) => [e[0], e])).values()]
+      const favourites = once(
+        this.personal.data.favourites
+          .map((code) => BY_CODE.get(catalogueCode(code)))
+          .map((e) => e && offeredAs(e))
+          .filter(ofMode)
+      )
       if (favourites.length) {
         this.results.append(
           el('h4', t('userlayers.palette.favourites', 'Favourites')),
           el('.oim-ul-symbol-grid', ...favourites.map((e) => this.labelled(e)))
         )
       }
-      const recent = this.personal.data.recent
-        .map((code) => BY_CODE.get(catalogueCode(code)))
-        .filter((e): e is Entry => Boolean(e) && (this.mode === 'graphics') === Boolean(e![3]))
+      const recent = once(
+        this.personal.data.recent
+          .map((code) => BY_CODE.get(catalogueCode(code)))
+          .map((e) => e && offeredAs(e))
+          .filter(ofMode)
+      )
       if (recent.length) {
         this.results.append(
           el('h4', t('userlayers.palette.recent', 'Recently used')),

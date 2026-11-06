@@ -79,3 +79,20 @@ describe('search', () => {
     }
   })
 })
+
+describe('graphics with two versions: one row each', () => {
+  test("a search shows the first version once; the second version's name finds it too", () => {
+    const names = (q: string) => searchCatalogue(q, 'graphics').map((e) => e[1])
+    expect(names('block').filter((n) => n.startsWith('Block'))).toEqual(['Block'])
+    // "obstacle" (Block (obstacle)) and "direction" (Main attack (direction of attack))
+    expect(names('obstacle')).toContain('Block')
+    expect(names('direction of attack')).toContain('Main attack')
+    expect(names('main attack').filter((n) => n.startsWith('Main attack'))).toEqual(['Main attack'])
+  })
+
+  test('the whole list: every type once, no second version', () => {
+    const all = searchCatalogue('', 'graphics')
+    expect(new Set(all.map((e) => e[0])).size).toBe(all.length)
+    expect(all.some((e) => e[1] === 'Block (obstacle)')).toBe(false)
+  })
+})

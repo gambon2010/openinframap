@@ -1549,6 +1549,16 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Picker: one row per graphic type (2026-11-06)
+
+A graphic with two versions (Block, Disrupt, Fix: task or obstacle; Main attack,
+Supporting attack, Aviation: axis or direction of attack) is one row in the picker,
+its first version, with its versions noted under its name ("Task / Obstacle"); the
+card switches between them (variants.ts). Searching either name finds it ("obstacle"
+finds Block), and favourites or recent picks of a second version show as the first
+(`offeredAs`, palette.ts). Before, both versions were rows after several patches
+(hidden, then shown when the first wasn't listed). Closes 9.29.
+
 ## Distances in real metres everywhere (2026-11-06)
 
 The map's coordinates (EPSG:3857) stretch away from the equator by 1/cos(latitude):
