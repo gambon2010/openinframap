@@ -90,9 +90,33 @@ export function paletteLayers(): [
     ['osm_water', 'fill-color', colour('water')],
     ['osm_water_stream', 'line-color', colour('water')],
     ['osm_water_river', 'line-color', colour('water')],
-    ['osm_buildings', 'fill-color', BUILDINGS]
+    ['osm_buildings', 'fill-color', BUILDINGS],
+    // Roads: upstream's are light greys on a darker town (82%), lost on this
+    // palette's lighter one; white with a grey edge stands out on every area.
+    ...ROADS.map((id): [string, 'line-color', ExpressionSpecification] => [id, 'line-color', ROAD]),
+    ...ROAD_EDGES.map((id): [string, 'line-color', ExpressionSpecification] => [id, 'line-color', ROAD_EDGE]),
+    ['osm_roads_other', 'line-color', PATH]
   ]
 }
+
+const ROADS = [
+  'osm_roads_minor',
+  'osm_roads_minor_service',
+  'osm_roads_link',
+  'osm_roads_major',
+  'osm_roads_highway'
+]
+const ROAD_EDGES = [
+  'osm_roads_minor_casing',
+  'osm_roads_minor_service_casing',
+  'osm_roads_link_casing',
+  'osm_roads_major_casing_late',
+  'osm_roads_highway_casing_late'
+]
+const ROAD: ExpressionSpecification = ['to-color', 'hsl(0, 0%, 100%)']
+const ROAD_EDGE: ExpressionSpecification = ['to-color', 'hsl(240, 5%, 74%)']
+/** Footpaths and tracks (dashed, no edge): a mid grey. */
+const PATH: ExpressionSpecification = ['to-color', 'hsl(240, 4%, 66%)']
 
 /** Buildings: upstream's warm pinkish beige, a little darker than upstream's so they
  * stand out of the towns they're in (housing 89%), more so closer in. */

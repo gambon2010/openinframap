@@ -1647,7 +1647,10 @@ upstream's layers (style_base.ts unchanged); a test fails if one of them is rena
 
 Buildings keep upstream's warm pinkish beige, a little darker (87% at zoom 12 to
 81% at 16, so they stand out of the housing around them) and airports have their own pale blue-grey
-(93%), lighter than the land, so the runways stand out as upstream's do.
+(93%), lighter than the land, so the runways stand out as upstream's do. Roads
+are white with a grey edge (74%) and footpaths a mid grey: upstream's light grey
+roads (89%) stood out of its darker towns (82%) but were lost on this palette's
+lighter housing (89%).
 **Settings → Background** chooses *Map, high contrast* (this palette, the default),
 *Map, original colours* (upstream's paint, restored from what the override saved) or
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,

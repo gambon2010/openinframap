@@ -101,6 +101,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.21 | A server that stops answering while the internet works (IGN's anti-bot block) is said so and the download stops at once, instead of 15 min of "waiting for the connection"; the download lines stay one line each. | ✅ (2026-11-06) |
 | 5.22 | France's aerial photos from IGN's BD ORTHO files (per département, chosen in the menu, up to zoom 19), not IGN's tile server (which blocks bulk downloads); the tile download from IGN removed. | 🔄 (2026-11-06: code done, Bas-Rhin test running) |
 | 5.23 | No "find my location" button on the map. | ✅ (2026-11-06) |
+| 5.24 | In high contrast, roads visible over towns (white with a grey edge; footpaths grey). | ✅ (2026-11-06) |
 
 ## 6. Grid connections (power routing)
 
