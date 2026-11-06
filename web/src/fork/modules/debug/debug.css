@@ -1,11 +1,13 @@
-/* Fork: the debug box (debug/index.ts), top left under the search box. */
+/* Fork: the debug box (debug/index.ts): bottom right above the credits, a fixed size,
+   so changing values never move or resize it. */
 .oim-debug {
   position: absolute;
-  top: 52px;
-  left: 50%;
+  bottom: 44px;
+  right: 10px;
   z-index: 3;
   display: none;
-  max-width: 340px;
+  box-sizing: border-box;
+  width: 360px;
   padding: 6px 8px;
   border-radius: var(--oim-radius-small, 4px);
   background: rgba(20, 20, 30, 0.82);
@@ -14,7 +16,12 @@
   font-size: 11px;
   line-height: 1.35;
   pointer-events: none;
-  transform: translateX(-50%);
+}
+.oim-debug > div {
+  overflow: hidden;
+  min-height: 1.35em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .oim-debug.visible {
   display: block;

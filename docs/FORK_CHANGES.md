@@ -1552,7 +1552,8 @@ one item.
 ## Debug info; no Edit button (2026-11-06)
 
 - **Debug** (`modules/debug/`): Settings → Debug → "Show debug info" (kept in this
-  browser) shows a box at the top of the map: zoom, centre, scale and metres per
+  browser) shows a box at the bottom right, of a fixed size so it never moves or
+  resizes as values change: zoom, centre, scale and metres per
   pixel, whether tiles are loading, how many style layers are drawn, the screen, and
   under the pointer its position and each feature there (style layer, tile layer,
   id).

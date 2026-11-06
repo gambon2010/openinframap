@@ -22,7 +22,8 @@ export interface DebugInfo {
 export function scaleText(metresPerPx: number): string {
   const n = metresPerPx / OGC_PIXEL_M
   const rounded = Number(n.toPrecision(3))
-  return `1:${rounded.toLocaleString('fr-FR').replace(/ /g, ' ')}`
+  // Thousands grouped with plain spaces: 1:56 000.
+  return `1:${String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`
 }
 
 /** What's under the pointer: each feature's style layer (and tile layer) and id. */

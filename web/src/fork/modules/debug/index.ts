@@ -2,7 +2,8 @@
 // ("Show debug info", kept in this browser): the zoom, the centre, the scale and
 // metres per pixel, whether tiles are loading, the screen, how many style layers
 // are drawn, and under the pointer its position and the features there (style
-// layer, tile layer, id). Top left, under the search box; updated as the map moves.
+// layer, tile layer, id). Bottom right above the credits, a fixed size (what changes
+// doesn't move it); updated as the map moves.
 import type { Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
@@ -13,6 +14,9 @@ import { debugInfo } from './info.ts'
 import './debug.css'
 
 const KEY = 'oim-debug'
+
+// Rows kept for the features under the pointer (describeFeatures lists 6 and "… more").
+const UNDER_ROWS = 7
 
 function debugBox(map: Map) {
   const box = el('.oim-debug', { 'aria-live': 'off' })
@@ -34,12 +38,9 @@ function debugBox(map: Map) {
         row(t('debug.layers', 'Style layers'), info.layers),
         row(t('debug.screen', 'Screen'), info.screen),
         row(t('debug.pointer', 'Pointer'), info.pointer),
-        ...(info.under.length
-          ? [
-              el('b', t('debug.under', 'Under the pointer')),
-              ...info.under.map((line) => el('div.oim-debug-feature', line))
-            ]
-          : [])
+        // Always the same rows, so the box keeps its size as the pointer moves.
+        el('b', t('debug.under', 'Under the pointer')),
+        ...Array.from({ length: UNDER_ROWS }, (_, i) => el('div.oim-debug-feature', info.under[i] ?? ''))
       )
     })
   }
