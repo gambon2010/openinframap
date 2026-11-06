@@ -5,6 +5,7 @@ import hashlib
 import http.server
 import io
 import json
+import sqlite3
 import threading
 
 import pytest
@@ -122,11 +123,30 @@ def test_the_archive_parts_in_order(monkeypatch):
 
 
 def test_the_pipeline_makes_webp_to_the_zoom_and_down_to_14():
-    commands = bdortho.pipeline(17)
-    assert "TILE_FORMAT=WEBP" in commands and "QUALITY=75" in commands
-    assert "-dstalpha" in commands and "EPSG:3857" in commands
-    assert commands.endswith("gdaladdo -q -r average tiles.mbtiles 2 4 8")
-    assert "gdaladdo" not in bdortho.pipeline(14)
+    commands = bdortho.pipeline(17).split(" && ")
+    assert commands[0].startswith("gdalwarp") and "EPSG:3857" in commands[0]
+    assert "-dstalpha" in commands[0] and "--optfile images.txt" in commands[0]
+    # Each zoom straight from the reprojected image, the last zoom first.
+    zooms = [c.split("--min-zoom ")[1].split()[0] for c in commands[1:-1]]
+    assert zooms == ["17", "16", "15", "14"]
+    assert all("--format WEBP" in c and "QUALITY=75" in c for c in commands[1:-1])
+    assert commands[-1] == "rm warped.tif"
+
+
+def test_tiles_are_packed_with_their_bounds(tmp_path):
+    for z, x, y in ((16, 33196, 22528), (17, 66392, 45056), (17, 66393, 45057)):
+        (tmp_path / "tiles" / str(z) / str(x)).mkdir(parents=True, exist_ok=True)
+        (tmp_path / "tiles" / str(z) / str(x) / f"{y}.webp").write_bytes(b"%d" % z)
+    out = bdortho.pack(tmp_path / "tiles", tmp_path / "t.mbtiles", "75")
+    db = sqlite3.connect(out)
+    meta = dict(db.execute("SELECT name, value FROM metadata"))
+    assert (meta["minzoom"], meta["maxzoom"], meta["format"]) == ("16", "17", "webp")
+    west, south, east, north = map(float, meta["bounds"].split(","))
+    assert 2.35 < west < east < 2.37 and 48.91 < south < north < 48.93
+    # Rows in TMS order, as MBTiles wants.
+    assert (17, 66392, 2**17 - 1 - 45056) in set(
+        db.execute("SELECT zoom_level, tile_column, tile_row FROM tiles")
+    )
 
 
 class RangeServer(http.server.BaseHTTPRequestHandler):

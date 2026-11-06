@@ -13,7 +13,7 @@ from pathlib import Path
 
 import netsafe
 
-from .bdortho import command_bdortho
+from .bdortho import TILER_IMAGE, command_bdortho
 from .download import MBTiles, cell_exists, download_tiles
 from .estimate import (
     detailed_estimate,
@@ -359,7 +359,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     )
     p.add_argument("--maxzoom", type=int, choices=range(15, 20), default=17)
     p.add_argument("--basemap-dir", required=True)
-    p.add_argument("--gdal-image", default=GDAL_IMAGE)
+    p.add_argument("--gdal-image", default=GDAL_IMAGE, help="for 7-Zip, if not here")
+    p.add_argument("--tiler-image", default=TILER_IMAGE)
     p.add_argument("--pmtiles-image", default="protomaps/go-pmtiles:v1.28.0")
     for name in ("choose", "steps"):
         p = sub.add_parser(name)

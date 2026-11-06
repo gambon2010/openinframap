@@ -37,3 +37,27 @@ def test_icpe_categories():
         category({"statutSeveso": "Seveso seuil haut", "eolienne": True})
         == "seveso_high"
     )
+
+
+def test_which_sources_and_datasets_an_import_takes():
+    from types import SimpleNamespace
+
+    import pytest
+
+    from extradata import SOURCES
+    from extradata.cli import wanted_sources
+
+    covering = [(s, ["67"]) for s in SOURCES.values()]
+
+    def args(sources=(), choose=None, only=None):
+        return SimpleNamespace(sources=list(sources), choose=choose, only=only)
+
+    # Nothing asked for: every source that covers the region, every dataset.
+    assert wanted_sources(args(), covering) == (set(SOURCES), None)
+    # A choice: only its source, only its datasets.
+    assert wanted_sources(args(choose="gas"), covering) == ({"fr-agence-ore"}, ["gaz"])
+    assert wanted_sources(args(choose="gas,icpe"), covering)[0] == set(SOURCES)
+    with pytest.raises(SystemExit, match="Unknown choice"):
+        wanted_sources(args(choose="nope"), covering)
+    with pytest.raises(SystemExit, match="Unknown source"):
+        wanted_sources(args(sources=["nope"]), covering)

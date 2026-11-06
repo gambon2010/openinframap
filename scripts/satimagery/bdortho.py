@@ -28,8 +28,10 @@ from pathlib import Path
 import netsafe
 
 from .departements import DEPARTEMENTS
+from .download import MBTiles
 from .gdal import docker_run, pmtiles_zooms, to_pmtiles
-from .sources import EARTH_CIRCUMFERENCE_M, TIERS, USER_AGENT
+from .sources import DETAILED_SOURCES, EARTH_CIRCUMFERENCE_M, TIERS, USER_AGENT
+from .tiles import tile_bounds
 
 LISTING = "https://data.geopf.fr/telechargement/resource/BDORTHO"
 # The colour photos, 20 cm, JPEG 2000, Lambert 93: BDORTHO_2-0_RVB-0M20_JP2-E080_
@@ -43,6 +45,9 @@ GPF = "{https://data.geopf.fr/annexes/ressources/xsd/gpf_dl.xsd}"
 PARTS_AT_ONCE = 3
 # WebP quality of the tiles: smaller than IGN's JPEG, still sharp.
 QUALITY = 75
+# GDAL 3.11 for `gdal raster tile` (every core, every zoom); Sentinel-2 stays on
+# sources.GDAL_IMAGE.
+TILER_IMAGE = "ghcr.io/osgeo/gdal:alpine-small-3.11.4"
 # Sizes, measured on Bas-Rhin (2024): the archive per km², a WebP tile.
 ARCHIVE_BYTES_PER_KM2 = 4_800_000
 WEBP_TILE_BYTES = 12_000
@@ -277,42 +282,75 @@ def extract(first_part: Path, into: Path, gdal_image: str) -> list[Path]:
 
 def pipeline(maxzoom: int, minzoom: int = TIERS["detailed"][0]) -> str:
     """The GDAL commands (run in `work`, the images listed in images.txt) that make
-    the département's tiles: mosaic, reproject at the zoom's resolution (GDAL reads
-    each JPEG 2000 at the reduced resolution it needs: quick below 20 cm), WebP
-    tiles with transparency outside the photos, then the lower zooms."""
+    the département's tiles into tiles/z/x/y.webp. First one image of it all,
+    reprojected to the web map at the last zoom's resolution (GDAL reads each JPEG
+    2000 at the reduced resolution it needs, on every core; JPEG inside, with
+    transparency outside the photos). Then each zoom straight from that image, on
+    every core (gdal raster tile, GDAL 3.11): a lower zoom made from the tiles
+    above it would read them while they're being written.
+    Measured on Paris (13 images of 5 km, zoom 17): 1 min 18 s; the virtual mosaic
+    of the images reprojected on the fly took over 15 min (each image read whole at
+    20 cm)."""
     resolution = EARTH_CIRCUMFERENCE_M / 256 / 2**maxzoom
-    levels = " ".join(str(2**i) for i in range(1, maxzoom - minzoom + 1))
+    tile = (
+        f"gdal raster tile --format WEBP --co QUALITY={QUALITY} -r average "
+        "--skip-blank --webviewer none -j ALL_CPUS warped.tif tiles"
+    )
     return " && ".join(
         [
-            "gdalbuildvrt -q -input_file_list images.txt src.vrt",
             (
-                f"gdalwarp -q -of VRT -t_srs EPSG:3857 -tr {resolution} {resolution} "
-                "-r bilinear -dstalpha -overwrite src.vrt warped.vrt"
+                "gdalwarp -q -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:3857 "
+                f"-tr {resolution} {resolution} -r bilinear -dstalpha -co TILED=YES "
+                "-co COMPRESS=JPEG -co JPEG_QUALITY=90 -co BIGTIFF=YES "
+                "--optfile images.txt warped.tif"
             ),
-            (
-                "gdal_translate -q -of MBTILES -co TILE_FORMAT=WEBP "
-                f"-co QUALITY={QUALITY} -co ZOOM_LEVEL_STRATEGY=LOWER "
-                "warped.vrt tiles.mbtiles"
+            *(
+                f"{tile} --min-zoom {z} --max-zoom {z}"
+                for z in range(maxzoom, minzoom - 1, -1)
             ),
+            "rm warped.tif",
         ]
-        + ([f"gdaladdo -q -r average tiles.mbtiles {levels}"] if levels else [])
     )
 
 
-def make_tiles(images: list[Path], work: Path, maxzoom: int, gdal_image: str) -> Path:
+def pack(tiles: Path, out: Path, code: str) -> Path:
+    """tiles/z/x/y.webp into an MBTiles file (for pmtiles convert), with the
+    bounds of what's there."""
+    zooms = sorted(int(z.name) for z in tiles.iterdir() if z.name.isdigit())
+    top = zooms[-1]
+    xs = [int(x.name) for x in (tiles / str(top)).iterdir()]
+    ys = [int(y.stem) for x in (tiles / str(top)).iterdir() for y in x.iterdir()]
+    west, _, _, north = tile_bounds(min(xs), min(ys), top)
+    _, south, east, _ = tile_bounds(max(xs), max(ys), top)
+    writer = MBTiles(
+        out,
+        f"IGN BD ORTHO, {DEPARTEMENTS[code][0]}",
+        "webp",
+        zooms[0],
+        top,
+        DETAILED_SOURCES["fr_ign"]["attribution"],
+        (west, south, east, north),
+    )
+    for path in tiles.rglob("*.webp"):
+        z, x = int(path.parent.parent.name), int(path.parent.name)
+        writer.put(z, x, int(path.stem), path.read_bytes())
+    writer.close()
+    return out
+
+
+def make_tiles(
+    images: list[Path], work: Path, maxzoom: int, image: str, code: str
+) -> Path:
+    """The département's tiles, in work/tiles.mbtiles."""
+    # One image per line, as gdalwarp's --optfile reads them (no command too long).
     (work / "images.txt").write_text(
-        "".join(f"/w/{p.relative_to(work)}\n" for p in images)
+        "".join(f"{p.relative_to(work)}\n" for p in images)
     )
-    docker_run(
-        gdal_image,
-        work,
-        ["sh", "-c", pipeline(maxzoom)],
-        {
-            "GDAL_NUM_THREADS": "ALL_CPUS",
-            "GDAL_CACHEMAX": "2048",
-        },
-    )
-    return work / "tiles.mbtiles"
+    shutil.rmtree(work / "tiles", ignore_errors=True)
+    docker_run(image, work, ["sh", "-c", pipeline(maxzoom)], {"GDAL_CACHEMAX": "4096"})
+    mbtiles = pack(work / "tiles", work / "tiles.mbtiles", code)
+    shutil.rmtree(work / "tiles")
+    return mbtiles
 
 
 # --- The command --------------------------------------------------------------------------
@@ -335,14 +373,14 @@ def command_bdortho(args) -> None:
         if have is not None and have >= args.maxzoom:
             print(f"{label}: already there to zoom {have}.", file=sys.stderr)
             continue
-        print(f"{label}: looking for IGN's latest photos...", file=sys.stderr)
-        resource = latest_edition(code)
         # Kept between runs: a stopped download goes on from there.
         work = folder / f".bdortho-{code}"
         work.mkdir(exist_ok=True)
         images_dir = work / "images"
         images = sorted(images_dir.rglob("*.jp2")) if images_dir.exists() else []
         if not images:
+            print(f"{label}: looking for IGN's latest photos...", file=sys.stderr)
+            resource = latest_edition(code)
             print(f"{label}: downloading {resource}", file=sys.stderr)
             first = download_archive(resource, work)
             print(f"{label}: extracting...", file=sys.stderr)
@@ -352,7 +390,7 @@ def command_bdortho(args) -> None:
             file=sys.stderr,
         )
         (work / "tiles.mbtiles").unlink(missing_ok=True)
-        mbtiles = make_tiles(images, work, args.maxzoom, args.gdal_image)
+        mbtiles = make_tiles(images, work, args.maxzoom, args.tiler_image, code)
         to_pmtiles(mbtiles, out, args.pmtiles_image)
         shutil.rmtree(work)
         print(f"{label}: done -> {out.name}", file=sys.stderr)

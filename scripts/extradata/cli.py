@@ -45,7 +45,7 @@ def applicable(cur) -> list[tuple[Source, list[str]]]:
     return result
 
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Import infrastructure data from outside OpenStreetMap."
     )
@@ -86,95 +86,100 @@ def main() -> None:
         " Exit 0: some, 1: none, 2: unknown region",
     )
     off.add_argument("--region-id", required=True)
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    if args.command == "offer":
-        region = region_geometry(args.region_id)
-        if region is None:
-            sys.exit(2)
-        # One line per choice: key <tab> label <tab> cost (build-region.sh reads them).
-        found = False
-        for source in SOURCES.values():
-            for key, label, cost in source.offer(region):
-                print(f"{key}\t{label}\t{cost}")
-                found = True
-        sys.exit(0 if found else 1)
 
-    conn = psycopg2.connect(args.db_url)
-    cur = conn.cursor()
-    ensure_schema(cur)
-    conn.commit()
+def command_offer(args) -> None:
+    """One line per choice: key <tab> label <tab> cost (build-region.sh reads them)."""
+    region = region_geometry(args.region_id)
+    if region is None:
+        sys.exit(2)
+    found = False
+    for source in SOURCES.values():
+        for key, label, cost in source.offer(region):
+            print(f"{key}\t{label}\t{cost}")
+            found = True
+    sys.exit(0 if found else 1)
 
-    def refresh_search() -> None:
-        """The search box searches the extra data too (schema/search.sql)."""
-        cur.execute("SELECT to_regclass('search_feature') IS NOT NULL")
-        if cur.fetchone()[0]:
-            started = time.monotonic()
-            cur.execute("REFRESH MATERIALIZED VIEW search_feature")
-            conn.commit()
-            print(f"Search updated ({time.monotonic() - started:.0f} s).", flush=True)
 
-    if args.command == "dedupe":
-        cur.execute("SELECT source FROM extra.source ORDER BY source")
-        for (source_id,) in cur.fetchall():
-            total = 0
-            cur.execute(
-                "SELECT DISTINCT location, voltage_class FROM extra.power_line WHERE source = %s ORDER BY 1, 2",
-                (source_id,),
-            )
-            parts = [("line", location, cls) for location, cls in cur.fetchall()] + [
-                ("substation", None, None),
-                ("pipeline", None, None),
-                ("icpe", None, None),
-            ]
-            for table, location, cls in parts:
-                started = time.monotonic()
-                removed = remove_osm_duplicates(cur, source_id, table, location, cls)
-                conn.commit()
-                total += removed
-                what = f"{location} {cls} lines" if table == "line" else table + "s"
-                print(
-                    f"{source_id}: {what}: removed {removed} already in OpenStreetMap ({time.monotonic() - started:.0f} s)",
-                    flush=True,
-                )
-            cur.execute(
-                f"""UPDATE extra.source
-                       SET duplicates = coalesce(duplicates, '{{}}') || jsonb_build_object('dedupe ' || to_char(now(), 'YYYY-MM-DD HH24:MI'), %s),
-                           features = {FEATURE_COUNT}
-                     WHERE source = %s""",
-                (total, source_id),
-            )
-            cur.execute(
-                """UPDATE extra.source
-                      SET osm_duplicates = (SELECT coalesce(sum(value::int), 0) FROM jsonb_each_text(duplicates))
-                    WHERE source = %s""",
-                (source_id,),
-            )
-            conn.commit()
-            print(f"{source_id}: {total} removed in all.")
-        refresh_search()
-        print("Refresh the tile server: docker compose up -d --force-recreate tegola")
-        return
-
-    if args.command == "remove":
-        cur.execute("DELETE FROM extra.source WHERE source = %s", (args.source,))
+def refresh_search(conn, cur) -> None:
+    """The search box searches the extra data too (schema/search.sql)."""
+    cur.execute("SELECT to_regclass('search_feature') IS NOT NULL")
+    if cur.fetchone()[0]:
+        started = time.monotonic()
+        cur.execute("REFRESH MATERIALIZED VIEW search_feature")
         conn.commit()
-        print(f"Removed {args.source} ({cur.rowcount} source).")
-        refresh_search()
-        return
+        print(f"Search updated ({time.monotonic() - started:.0f} s).", flush=True)
 
-    _, region_name = region_geojson(cur)
-    sources = applicable(cur)
-    if args.command == "list":
-        if not sources:
-            print(f"No extra data sources cover {region_name}.")
-        for source, areas in sources:
+
+def total_duplicates(cur, source_id: str) -> None:
+    """A source's features found in OpenStreetMap, in all (from its per-dataset counts)."""
+    cur.execute(
+        """UPDATE extra.source
+              SET osm_duplicates = (SELECT coalesce(sum(value::int), 0) FROM jsonb_each_text(duplicates))
+            WHERE source = %s""",
+        (source_id,),
+    )
+
+
+def command_dedupe(conn, cur) -> None:
+    cur.execute("SELECT source FROM extra.source ORDER BY source")
+    for (source_id,) in cur.fetchall():
+        total = 0
+        cur.execute(
+            "SELECT DISTINCT location, voltage_class FROM extra.power_line WHERE source = %s ORDER BY 1, 2",
+            (source_id,),
+        )
+        parts = [("line", location, cls) for location, cls in cur.fetchall()] + [
+            ("substation", None, None),
+            ("pipeline", None, None),
+            ("icpe", None, None),
+        ]
+        for table, location, cls in parts:
+            started = time.monotonic()
+            removed = remove_osm_duplicates(cur, source_id, table, location, cls)
+            conn.commit()
+            total += removed
+            what = f"{location} {cls} lines" if table == "line" else table + "s"
             print(
-                f"{source.id}\t{source.name}\t{len(areas)} area(s): {', '.join(areas)}\t~{source.estimate(areas)} features before clipping to the region"
+                f"{source_id}: {what}: removed {removed} already in OpenStreetMap ({time.monotonic() - started:.0f} s)",
+                flush=True,
             )
-        return
+        cur.execute(
+            f"""UPDATE extra.source
+                   SET duplicates = coalesce(duplicates, '{{}}') || jsonb_build_object('dedupe ' || to_char(now(), 'YYYY-MM-DD HH24:MI'), %s),
+                       features = {FEATURE_COUNT}
+                 WHERE source = %s""",
+            (total, source_id),
+        )
+        total_duplicates(cur, source_id)
+        conn.commit()
+        print(f"{source_id}: {total} removed in all.")
+    refresh_search(conn, cur)
+    print("Refresh the tile server: docker compose up -d --force-recreate tegola")
 
+
+def command_remove(conn, cur, source_id: str) -> None:
+    cur.execute("DELETE FROM extra.source WHERE source = %s", (source_id,))
+    conn.commit()
+    print(f"Removed {source_id} ({cur.rowcount} source).")
+    refresh_search(conn, cur)
+
+
+def command_list(sources, region_name: str) -> None:
+    if not sources:
+        print(f"No extra data sources cover {region_name}.")
+    for source, areas in sources:
+        print(
+            f"{source.id}\t{source.name}\t{len(areas)} area(s): {', '.join(areas)}\t~{source.estimate(areas)} features before clipping to the region"
+        )
+
+
+def wanted_sources(args, sources) -> tuple[set[str], list[str] | None]:
+    """The sources to import (asked for, else all that cover the region) and the
+    words their datasets' names must have (--only; --choose sets them)."""
     wanted = set(args.sources) or {s.id for s, _ in sources}
+    only = args.only
     if args.choose:
         # Choices name datasets of one or more sources: import those sources, only
         # their chosen datasets.
@@ -185,7 +190,7 @@ def main() -> None:
                 f"Unknown choice(s): {', '.join(sorted(chosen - known))}. Known: {', '.join(sorted(known))}"
             )
         wanted &= {s.id for s in SOURCES.values() if chosen & set(s.CHOICES)}
-        args.only = [
+        only = [
             w
             for s in SOURCES.values()
             for key, (_, words) in s.CHOICES.items()
@@ -197,52 +202,80 @@ def main() -> None:
         sys.exit(
             f"Unknown source(s): {', '.join(sorted(unknown))}. Known: {', '.join(SOURCES)}"
         )
+    return wanted, only
+
+
+def import_source(
+    conn, cur, source: Source, areas: list[str], refresh: bool, only: list[str] | None
+) -> int:
+    """A source's description, then its data, replaced dataset by dataset (run())."""
+    cur.execute(
+        """INSERT INTO extra.source (source, name, country, licence, attribution, url, area)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)
+           ON CONFLICT (source) DO UPDATE SET name = EXCLUDED.name, country = EXCLUDED.country,
+               licence = EXCLUDED.licence, attribution = EXCLUDED.attribution, url = EXCLUDED.url,
+               area = EXCLUDED.area, features = NULL""",
+        (
+            source.id,
+            source.name,
+            source.country,
+            source.licence,
+            source.attribution,
+            source.url,
+            ", ".join(areas),
+        ),
+    )
+    source.refresh = refresh
+    source.duplicates, source.duplicates_by = 0, {}
+    count = source.run(conn, cur, areas, only)
+    # All of the source's features, also those of datasets not re-imported (--only).
+    cur.execute(
+        f"""UPDATE extra.source SET features = {FEATURE_COUNT},
+               duplicates = CASE WHEN %s THEN coalesce(duplicates, '{{}}') ELSE '{{}}' END || %s::jsonb,
+               imported_at = now()
+            WHERE source = %s""",
+        (bool(only), json.dumps(source.duplicates_by), source.id),
+    )
+    total_duplicates(cur, source.id)
+    conn.commit()
+    return count
+
+
+def command_import(conn, cur, args, sources, region_name: str) -> None:
+    wanted, only = wanted_sources(args, sources)
     for source, areas in sources:
         if source.id not in wanted:
             continue
         print(
             f"Importing {source.name} for {region_name} ({len(areas)} area(s): {', '.join(areas)})"
         )
-        # The source's description; its data is replaced dataset by dataset (see run()).
-        cur.execute(
-            """INSERT INTO extra.source (source, name, country, licence, attribution, url, area)
-               VALUES (%s, %s, %s, %s, %s, %s, %s)
-               ON CONFLICT (source) DO UPDATE SET name = EXCLUDED.name, country = EXCLUDED.country,
-                   licence = EXCLUDED.licence, attribution = EXCLUDED.attribution, url = EXCLUDED.url,
-                   area = EXCLUDED.area, features = NULL""",
-            (
-                source.id,
-                source.name,
-                source.country,
-                source.licence,
-                source.attribution,
-                source.url,
-                ", ".join(areas),
-            ),
-        )
-        source.refresh = args.refresh
-        source.duplicates, source.duplicates_by = 0, {}
-        count = source.run(conn, cur, areas, args.only)
-        # All of the source's features, also those of datasets not re-imported (--only).
-        cur.execute(
-            f"""UPDATE extra.source SET features = {FEATURE_COUNT},
-                   duplicates = CASE WHEN %s THEN coalesce(duplicates, '{{}}') ELSE '{{}}' END || %s::jsonb,
-                   imported_at = now()
-                WHERE source = %s""",
-            (bool(args.only), json.dumps(source.duplicates_by), source.id),
-        )
-        cur.execute(
-            """UPDATE extra.source
-                  SET osm_duplicates = (SELECT coalesce(sum(value::int), 0) FROM jsonb_each_text(duplicates))
-                WHERE source = %s""",
-            (source.id,),
-        )
-        conn.commit()
+        count = import_source(conn, cur, source, areas, args.refresh, only)
         print(f"  {count} features imported.")
     for name in wanted - {s.id for s, _ in sources}:
         print(f"{name} doesn't cover {region_name}; nothing imported.")
-    refresh_search()
+    refresh_search(conn, cur)
     # Tegola caches tiles up to zoom 13; recreating it drops the cache.
     print(
         "If the tile server is running, refresh it with: docker compose up -d --force-recreate tegola"
     )
+
+
+def main() -> None:
+    args = parse_args()
+    if args.command == "offer":
+        command_offer(args)
+    conn = psycopg2.connect(args.db_url)
+    cur = conn.cursor()
+    ensure_schema(cur)
+    conn.commit()
+    if args.command == "dedupe":
+        command_dedupe(conn, cur)
+    elif args.command == "remove":
+        command_remove(conn, cur, args.source)
+    else:
+        _, region_name = region_geojson(cur)
+        sources = applicable(cur)
+        if args.command == "list":
+            command_list(sources, region_name)
+        else:
+            command_import(conn, cur, args, sources, region_name)

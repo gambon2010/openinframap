@@ -1668,6 +1668,11 @@ satellite imagery; the choice is kept in this browser (`services/map-colours.ts`
   estimate "from zoom N"); now, like IGN's départements, the file is made again up
   to the new zoom and replaces the old one when finished (the zooms below are
   about a third more work). `detailed_file(folder, area, source)` is the one file.
+- `fetch_images.py` and `extradata/cli.py`: each `main()` was 200 lines. Now a
+  function per step (`wikidata_ids`, `step_entities`, `step_thumbnail_urls`,
+  `step_images`) and per command (`command_offer`, `command_dedupe`,
+  `command_remove`, `command_list`, `command_import` with `wanted_sources` and
+  `import_source`; the duplicates total in one place, `total_duplicates`).
 - Settings → Background is its own module (`modules/background/`): it chose the
   map's colours too but lived in `modules/satellite`. The choice is kept in
   `services/background.ts` (replacing `services/map-colours.ts`; what browsers kept
@@ -1687,7 +1692,15 @@ download service (an Atom listing, `latest_edition`), its 7z archive in 4 GB par
 early is not taken for the end; each part checked against IGN's md5, fetched again
 once if damaged), the JPEG 2000 images extracted (7-Zip, else in Docker) and the
 archive deleted, then GDAL makes WebP tiles (quality 75) from zoom 14 to the zoom
-asked (15 to 19), and the images are deleted. One file per département
+asked (15 to 19), and the images are deleted. The tiles (`pipeline`): the images
+reprojected into one image at the last zoom's resolution (`gdalwarp` on every core,
+reading each JPEG 2000 at the reduced resolution it needs; JPEG inside, a
+transparency band outside the photos), then each zoom straight from it with GDAL
+3.11's `gdal raster tile` on every core (`TILER_IMAGE`), packed into MBTiles
+(`pack`, with the tiles' bounds) for `pmtiles convert`. Paris to zoom 17: 1 min 30 s
+in all. A virtual mosaic reprojected on the fly took over 15 min (every image read
+whole at 20 cm), and tiles made from the zoom above failed (read while being
+written). One file per département
 (`fr-67.sat-detailed-fr_ign.pmtiles`): no copy of a whole country's file to make
 at the end (which would need twice its size), a département already there is
 skipped, and the work folder (`data/basemap/.bdortho-67/`) is kept between runs so
