@@ -1493,14 +1493,18 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
-## Measurement marks: smaller steps before none (2026-11-06)
+## Measurement marks: one rule, like a ruler (2026-11-06)
 
-Zoomed out a little, a measurement could lose all its marks: labels are spaced about
-80 px apart, and just under the zoom where 2 km steps fit (79 px), the step jumped
-to 5 km; a 17 km measurement holds fewer than four of those, so none were drawn. Now
-a measurement too short for four labelled steps of the usual size gets smaller ones
-(5 → 2 → 1 km…, `stepsFor` in `measure/ticks.ts`) while their labels stay at least
-45 px apart; only then are there none.
+The marks had two rules that fought: labels about 80 px apart, and "at least four
+labelled steps along the measurement, else none". On a short measurement, or just
+under a zoom where the step jumps (2 km labels 79 px apart: 5 km steps), they
+couldn't both hold and every mark went; a first fix (smaller steps down to 45 px)
+only moved the gap. Now one rule (`tickSteps`, `measure/ticks.ts`): the step is the
+smallest round distance (1, 2 or 5 × 10ⁿ m, at least 10 m) whose labelled marks are
+at least 60 px apart, so they're always 60 to 150 px apart; a measurement shorter
+than two steps (tiny on screen) has none. A test checks it at every zoom from 6 to
+18. Labels that would overlap the legs' own labels give way (MapLibre); the marks
+stay.
 
 ## A layer's items, in groups (2026-11-06)
 

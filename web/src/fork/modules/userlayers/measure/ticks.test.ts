@@ -7,8 +7,6 @@ import {
   niceAtLeast,
   readableAngle,
   tickSteps,
-  smallerStep,
-  stepsFor,
   ticksAlong,
   toMercator
 } from './ticks.ts'
@@ -21,11 +19,11 @@ describe('the steps between marks', () => {
   })
 
   test('one plain mark halfway, on a full value; none for a step of 5', () => {
-    expect(tickSteps(2.5)).toEqual({ major: 200, minor: 100 })
-    expect(tickSteps(10)).toEqual({ major: 1000, minor: 500 })
-    expect(tickSteps(5)).toEqual({ major: 500, minor: null })
+    expect(tickSteps(2.5)).toEqual({ major: 200, minor: 100 }) // 150 m at 60 px: 200
+    expect(tickSteps(10)).toEqual({ major: 1000, minor: 500 }) // 600 m: 1 km
+    expect(tickSteps(5)).toEqual({ major: 500, minor: null }) // 300 m: 500
     // Zoomed in a lot: never under 10 m.
-    expect(tickSteps(0.01)).toEqual({ major: 20, minor: 10 })
+    expect(tickSteps(0.01)).toEqual({ major: 10, minor: 5 })
   })
 
   test('labels: km and m when zoomed in, whole km when not', () => {
@@ -122,33 +120,35 @@ describe('marks along a path', () => {
   })
 })
 
-describe('marks worth showing', () => {
-  test('at least four labelled steps: smaller steps for a short line, none when even those crowd', () => {
-    const line: [number, number][] = [
-      [7, 47.0],
-      [7, 47.56]
-    ]
-    // About 62 km. At zoom 8.5 the usual step is 20 km (3 along it): 10 km steps
-    // instead (labels ~68 px apart). At 7.5, 10 km labels would be ~34 px apart: none.
-    const labels = (zoom: number) =>
-      ticksAlong(line, { zoom })
-        .filter((f) => f.properties?.tickLabel)
-        .map((f) => f.properties!.tickLabel)
-    expect(labels(8.5)).toEqual(['10 km', '20 km', '30 km', '40 km', '50 km', '60 km'])
-    expect(labels(7.5)).toEqual([])
-    expect(labels(10).length).toBeGreaterThanOrEqual(4)
+describe('the rule: marks 60 to 150 px apart at every zoom; none only for a tiny line', () => {
+  // About 17.6 km, two legs (the measurement that lost its marks).
+  const route: [number, number][] = [
+    [7.255, 48.632],
+    [7.396, 48.7],
+    [7.43, 48.665]
+  ]
+  const length = distance(route[0], route[1]) + distance(route[1], route[2])
+
+  test('at every zoom from 6 to 18', () => {
+    for (let zoom = 6; zoom <= 18; zoom += 0.1) {
+      const mpp = metresPerPixel(48.66, zoom)
+      const { major } = tickSteps(mpp)
+      const spacing = major / mpp
+      if (major > 10) {
+        expect(spacing).toBeGreaterThanOrEqual(60)
+        expect(spacing).toBeLessThan(150)
+      }
+      const labels = ticksAlong(route, { zoom }).filter((f) => f.properties?.tickLabel).length
+      // Two steps or more: marks (labels at each step after the start).
+      if (length >= 2 * major) expect(labels, `zoom ${zoom.toFixed(1)}`).toBeGreaterThanOrEqual(2)
+      else expect(labels, `zoom ${zoom.toFixed(1)}`).toBe(0)
+    }
   })
 
-  test('smaller steps: 5 → 2 → 1 → 0.5', () => {
-    expect(smallerStep(5000)).toBe(2000)
-    expect(smallerStep(2000)).toBe(1000)
-    expect(smallerStep(1000)).toBe(500)
-  })
-
-  test('a measurement just too short for the usual step keeps its marks (17 km at ~25 m/px)', () => {
-    // The usual step: 5 km (2 km labels would be 79 px apart, under 80): 3 along
-    // 17 km. 2 km steps instead, not none.
-    expect(stepsFor(17400, 25.2)).toEqual({ major: 2000, minor: 1000 })
-    expect(stepsFor(17400, 60)).toBeNull() // zoomed out: 2 km labels 33 px apart
+  test('the zooms where it lost its marks now have them', () => {
+    for (const zoom of [10.0, 10.5, 11.0, 11.3])
+      expect(
+        ticksAlong(route, { zoom }).filter((f) => f.properties?.tickLabel).length
+      ).toBeGreaterThanOrEqual(2)
   })
 })
