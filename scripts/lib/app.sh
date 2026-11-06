@@ -35,13 +35,13 @@ offer_image_cache() {
     info "  2) Text only        — about 10 seconds; popups work offline, without photos"
     info "  3) Skip for now"
     echo ""
-    read -r -p "    Choose [1-3, default 3]: " choice || choice=3
-    case "${choice:-3}" in
-        1) uv run "$REPO_ROOT/scripts/fetch_images.py" ;;
-        2) uv run "$REPO_ROOT/scripts/fetch_images.py" --json-only ;;
+    choice=$(choose_number 3 3)
+    case "$choice" in
+        1) uv run "$REPO_ROOT/scripts/fetch_images.py" || warn "Caching stopped before the end." ;;
+        2) uv run "$REPO_ROOT/scripts/fetch_images.py" --json-only || warn "Caching stopped before the end." ;;
         *) info "Skipped." ;;
     esac
-    [[ "${choice:-3}" == 1 ]] || {
+    [[ "$choice" == 1 ]] || {
         info "To cache them later (safe to stop and re-run; cached items are skipped):"
         info "  uv run scripts/fetch_images.py              # text and images (slow)"
         info "  uv run scripts/fetch_images.py --json-only  # text only (fast)"

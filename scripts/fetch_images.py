@@ -31,10 +31,11 @@ import sys
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Optional
 
 import httpx
 import psycopg2
+
+import netsafe
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 IMAGES_DIR = REPO_ROOT / "data" / "images"
@@ -97,7 +98,7 @@ def get_wikidata_ids(conn) -> set[str]:
 # ---------------------------------------------------------------------------
 
 
-def local_path(wikidata_id: str) -> Optional[Path]:
+def local_path(wikidata_id: str) -> Path | None:
     """Return the cached file path if it exists, otherwise None."""
     matches = list(IMAGES_DIR.glob(f"{wikidata_id}.*"))
     return matches[0] if matches else None
@@ -119,17 +120,22 @@ def fetch_entity_data(client: httpx.Client, ids: list[str]) -> dict[str, dict]:
     Saves each entity to data/wikidata_json/<id>.json for offline use.
     Returns {wikidata_id: entity_dict}.
     """
-    resp = client.get(
-        "https://www.wikidata.org/w/api.php",
-        params={
-            "action": "wbgetentities",
-            "ids": "|".join(ids),
-            # sitelinks/urls includes the full Wikipedia URL in each sitelink entry
-            "props": "claims|labels|sitelinks/urls",
-            "format": "json",
-        },
+    url = "https://www.wikidata.org/w/api.php"
+    resp = netsafe.safely(
+        lambda: netsafe.checked(
+            client.get(
+                url,
+                params={
+                    "action": "wbgetentities",
+                    "ids": "|".join(ids),
+                    # sitelinks/urls includes the full Wikipedia URL in each sitelink entry
+                    "props": "claims|labels|sitelinks/urls",
+                    "format": "json",
+                },
+            )
+        ),
+        url,
     )
-    resp.raise_for_status()
     result: dict[str, dict] = {}
     for entity_id, entity in resp.json().get("entities", {}).items():
         if "missing" in entity:
@@ -147,18 +153,23 @@ def fetch_thumbnail_urls(client: httpx.Client, filenames: list[str]) -> dict[str
     Batch-fetch thumbnail URLs from Wikimedia Commons for up to 50 filenames.
     Returns {commons_filename: thumb_url}.
     """
-    resp = client.get(
-        "https://commons.wikimedia.org/w/api.php",
-        params={
-            "action": "query",
-            "titles": "|".join(f"File:{f}" for f in filenames),
-            "prop": "imageinfo",
-            "iiprop": "url",
-            "iiurlwidth": str(THUMBNAIL_WIDTH),
-            "format": "json",
-        },
+    url = "https://commons.wikimedia.org/w/api.php"
+    resp = netsafe.safely(
+        lambda: netsafe.checked(
+            client.get(
+                url,
+                params={
+                    "action": "query",
+                    "titles": "|".join(f"File:{f}" for f in filenames),
+                    "prop": "imageinfo",
+                    "iiprop": "url",
+                    "iiurlwidth": str(THUMBNAIL_WIDTH),
+                    "format": "json",
+                },
+            )
+        ),
+        url,
     )
-    resp.raise_for_status()
     result: dict[str, str] = {}
     for page in resp.json()["query"]["pages"].values():
         if "imageinfo" not in page:
@@ -169,8 +180,9 @@ def fetch_thumbnail_urls(client: httpx.Client, filenames: list[str]) -> dict[str
 
 
 def download_image(client: httpx.Client, url: str, wikidata_id: str) -> Path:
-    resp = client.get(url, follow_redirects=True)
-    resp.raise_for_status()
+    resp = netsafe.safely(
+        lambda: netsafe.checked(client.get(url, follow_redirects=True)), url
+    )
     ext = Path(urllib.parse.urlparse(url).path).suffix.lower() or ".jpg"
     dest = IMAGES_DIR / f"{wikidata_id}{ext}"
     dest.write_bytes(resp.content)
@@ -414,4 +426,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    netsafe.run_until_connected(main)

@@ -9,6 +9,8 @@ from typing import ClassVar
 
 import httpx
 
+import netsafe
+
 from .base import EXTRA_DIR, downloaded_on, remove_osm_duplicates
 from .france import FrenchSource
 
@@ -100,10 +102,16 @@ class FranceAgenceORE(FrenchSource):
         for dataset, (table, _, _) in self.DATASETS.items():
             # Sites are a small national file (and use another département field).
             where = {} if table == "facility" else {"where": self.where(areas)}
-            response = self.http.get(
-                f"{self.API}/{dataset}/records", params={**where, "limit": 0}
+            url = f"{self.API}/{dataset}/records"
+            query = {**where, "limit": 0}
+            # Asked for before a build: retried, no waiting for the connection.
+            response = netsafe.safely(
+                lambda url=url, query=query: netsafe.checked(
+                    self.http.get(url, params=query)
+                ),
+                url,
+                wait=False,
             )
-            response.raise_for_status()
             total += response.json()["total_count"]
         return total
 
@@ -135,28 +143,25 @@ class FranceAgenceORE(FrenchSource):
             params["where"] = where
         path.parent.mkdir(parents=True, exist_ok=True)
         partial = path.with_suffix(".part")
-        for attempt in range(1, attempts + 1):
-            try:
-                with (
-                    self.http.stream(
-                        "GET", f"{self.API}/{dataset}/exports/csv", params=params
-                    ) as response,
-                    gzip.open(partial, "wb", compresslevel=5) as out,
-                ):
-                    response.raise_for_status()
-                    for chunk in response.iter_bytes():
-                        out.write(chunk)
-                partial.rename(path)
-                self.fetched += 1
-                return True
-            except httpx.HTTPError as error:
-                print(
-                    f"      attempt {attempt} failed ({str(error).splitlines()[0][:120]})",
-                    flush=True,
-                )
-                time.sleep(10 * attempt)
-        partial.unlink(missing_ok=True)
-        return False
+        url = f"{self.API}/{dataset}/exports/csv"
+
+        def download() -> None:
+            with (
+                self.http.stream("GET", url, params=params) as response,
+                gzip.open(partial, "wb", compresslevel=5) as out,
+            ):
+                response.raise_for_status()
+                for chunk in response.iter_bytes():
+                    out.write(chunk)
+
+        try:
+            netsafe.safely(download, url, retries=attempts, pause=10, report=True)
+        except httpx.HTTPError:
+            partial.unlink(missing_ok=True)
+            return False
+        partial.rename(path)
+        self.fetched += 1
+        return True
 
     def files(
         self, dataset: str, select: str, areas: list[str], national: bool

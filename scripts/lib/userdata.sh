@@ -5,9 +5,6 @@
 # import-db.sh.
 # Sourced by common.sh.
 
-# "My layers" (the userdata schema, made by the backend: web-backend/src/fork/)
-# belong to this computer, not to a region: saved before the database is wiped
-# and put back afterwards, by build-region.sh and import-db.sh.
 USERDATA_DUMP="$DATA_DIR/userdata/userdata.dump"
 
 # user_data_saves — how many times "My layers" were saved, plus the map features'

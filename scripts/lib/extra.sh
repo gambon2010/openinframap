@@ -3,8 +3,6 @@
 # its region.
 # Sourced by common.sh.
 
-# Fingerprint of everything that decides what the database looks like. An
-# export built with a different fingerprint may not match this checkout.
 # How many extra-data features the database holds (0 if none or no extra schema).
 extra_feature_count() {
     local n
@@ -29,10 +27,8 @@ save_extra_data() {
     description=$(extra_description)
     docker compose exec -T db pg_dump -U "$DB_USER" -Fc -Z zstd:3 -n extra "$DB_NAME" > "$file.part" || return 1
     mv "$file.part" "$file"
-    python3 -c 'import json, sys
-json.dump({"region_id": sys.argv[2], "description": sys.argv[3], "saved_at": sys.argv[4]},
-          open(sys.argv[1], "w"), indent=2)' \
-        "$EXTRA_DIR/$region.extra.json" "$region" "$description" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    json_write "$EXTRA_DIR/$region.extra.json" region_id="$region" description="$description" \
+        saved_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 
 # restore_extra_data REGION — put saved extra data back into a fresh database,

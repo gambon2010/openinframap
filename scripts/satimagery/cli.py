@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import tempfile
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from .download import WAIT_LIMIT, ConnectionLost, MBTiles, cell_exists, download_tiles
+import netsafe
+
+from .download import MBTiles, cell_exists, download_tiles
 from .estimate import (
     detailed_estimate,
     estimate,
@@ -122,11 +125,19 @@ def command_regional(args) -> None:
             "VSI_CACHE": "TRUE",
             "GDAL_CACHEMAX": "1024",
         }
-        docker_run(
-            args.gdal_image,
-            work,
-            ["sh", "-c", regional_pipeline(args.maxzoom, cut=not args.world)],
-            env,
+        # GDAL reads the cells over the network: a lost connection fails the
+        # pipeline, run again once it's back (netsafe).
+        netsafe.safely(
+            lambda: docker_run(
+                args.gdal_image,
+                work,
+                ["sh", "-c", regional_pipeline(args.maxzoom, cut=not args.world)],
+                env,
+            ),
+            worldcover_url(cells[0]),
+            retries=1,
+            also_retry=(subprocess.CalledProcessError,),
+            rounds_up=0,  # the server answers: GDAL's own failure
         )
         to_pmtiles(work / "regional.mbtiles", work / out.name, args.pmtiles_image)
         (work / out.name).replace(out)
@@ -229,11 +240,6 @@ def command_detailed(args) -> None:
     print(f"{found:,} tiles -> {out}")
 
 
-# The exit status when the connection is lost (EX_TEMPFAIL): the scripts stop the
-# remaining downloads and say to run again; what's downloaded is kept.
-CONNECTION_LOST = 75
-
-
 def main(argv: Iterable[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -309,15 +315,7 @@ def main(argv: Iterable[str] | None = None) -> None:
             p.add_argument("--regional-maxzoom", type=int, default=12)
             p.add_argument("--detailed-maxzoom", type=int, default=16)
     args = parser.parse_args(list(argv) if argv is not None else None)
-    try:
-        run_command(args)
-    except ConnectionLost:
-        print(
-            f"\n  The connection didn't come back in {WAIT_LIMIT / 60:.0f} min: stopped. "
-            "What was downloaded is kept; run again to go on from there.",
-            file=sys.stderr,
-        )
-        sys.exit(CONNECTION_LOST)
+    netsafe.run_until_connected(lambda: run_command(args))
 
 
 def run_command(args) -> None:

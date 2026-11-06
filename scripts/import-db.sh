@@ -32,16 +32,14 @@ MANIFEST="${DUMP%.oimdb}.json"
 [[ -f "$DUMP" ]] || die "Export not found: $DUMP"
 [[ -f "$MANIFEST" ]] || die "The export's description is missing: $MANIFEST"
 
-REGION_ID=$(manifest_get "$MANIFEST" region_id)
-REGION_NAME=$(manifest_get "$MANIFEST" region_name)
-OSM_TIMESTAMP=$(manifest_get "$MANIFEST" osm_timestamp)
+REGION_ID=$(json_get "$MANIFEST" region_id)
+REGION_NAME=$(json_get "$MANIFEST" region_name)
+OSM_TIMESTAMP=$(json_get "$MANIFEST" osm_timestamp)
 
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Open Infrastructure Map — import a ready-made database${RESET}"
-echo "${BOLD}======================================================${RESET}"
+banner "import a ready-made database"
 section "Importing $REGION_NAME"
-info "OSM data as of $OSM_TIMESTAMP, exported $(manifest_get "$MANIFEST" exported_at)"
-EXTRA_DESC=$(manifest_get "$MANIFEST" extra_data)
+info "OSM data as of $OSM_TIMESTAMP, exported $(json_get "$MANIFEST" exported_at)"
+EXTRA_DESC=$(json_get "$MANIFEST" extra_data)
 [[ -n "$EXTRA_DESC" ]] && info "With extra data (not from OSM): $EXTRA_DESC"
 info "$(human_size "$(stat -c%s "$DUMP")") — $DUMP"
 
@@ -65,10 +63,10 @@ fi
 
 
 # A different import mapping or views means the export doesn't match this code.
-EXPORT_HASH=$(manifest_get "$MANIFEST" schema_hash)
+EXPORT_HASH=$(json_get "$MANIFEST" schema_hash)
 if [[ -n "$EXPORT_HASH" && "$EXPORT_HASH" != "$(schema_hash)" ]]; then
     warn "This export was made with a different version of the project (commit"
-    warn "$(manifest_get "$MANIFEST" git_commit)). It will probably work, but some map layers may be"
+    warn "$(json_get "$MANIFEST" git_commit)). It will probably work, but some map layers may be"
     warn "missing or broken. Rebuilding the region from scratch avoids that."
     ask_yes_no "Import it anyway?" y || die "Aborted — nothing was changed."
 fi
@@ -86,7 +84,7 @@ START=$SECONDS
 # Verify, then restore into a fresh database
 # ---------------------------------------------------------------------------
 verify() {
-    [[ "$(sha256sum "$DUMP" | cut -d' ' -f1)" == "$(manifest_get "$MANIFEST" sha256)" ]] \
+    [[ "$(sha256sum "$DUMP" | cut -d' ' -f1)" == "$(json_get "$MANIFEST" sha256)" ]] \
         || { echo "The export file is damaged (checksum mismatch) — copy it again." >&2; return 1; }
 }
 run_with_timer "Checking the export isn't damaged" verify
@@ -94,20 +92,8 @@ run_with_timer "Checking the export isn't damaged" verify
 section "Restoring..."
 log_build "$REGION_ID  import started from $(basename "$DUMP")"
 trap 'status=$?; [[ "$status" == 0 ]] || log_build "$REGION_ID  import FAILED (exit $status)"' EXIT
-# The backend container goes down with everything else; bring it back afterwards.
-BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
-# Keep "My layers" (made on the map): they belong to this computer, so they replace
-# any the export has. The database must be running to read them.
-if db_volume_exists; then
-    start_db
-    if [[ "$(user_data_saves)" -gt 0 ]]; then
-        run_with_timer "Saving My layers" save_user_data \
-            || die "Saving My layers failed, so the database was left as it was."
-    fi
-fi
-docker compose --progress quiet down -v --remove-orphans
-start_db
-ok "Fresh database ready."
+# My layers are kept (the export brings its own extra data).
+fresh_database
 
 restore() {
     # Extensions aren't part of the export (it only has the data schemas), but
@@ -138,41 +124,21 @@ run_with_timer "Restoring the database" restore
 run_with_timer "Checking search indexes" create_search_indexes
 # Exports made before extra data existed don't have its tables (Tegola needs them).
 run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
-# Exports made before everything was searchable don't have the search view.
+# Exports made before these steps existed don't have their tables.
 if [[ "$(db_query "SELECT to_regclass('search_feature') IS NULL")" == "t" ]]; then
-    run_with_timer "Preparing search" run_sql_file schema/search.sql
+    run_schema search
 fi
-# Exports made before grid routing don't have the power grid network (Route from/to here).
 if [[ "$(db_query "SELECT to_regclass('grid_edge') IS NULL")" == "t" ]]; then
-    run_with_timer "Building the power grid network" run_sql_file schema/grid.sql
+    run_schema grid
 fi
-# Exports made before towers were numbered don't have the table (Tegola needs it).
-run_with_timer "Preparing tower numbers" run_sql_file schema/tower-numbers.sql
-if [[ -f "$USERDATA_DUMP" ]]; then
-    run_with_timer "Putting back My layers" restore_user_data \
-        || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
-fi
-# Numbered again with this computer's register of tower numbers (in My layers'
-# data, which replaced the export's), so each tower keeps the number it had here.
-run_with_timer "Numbering towers along their lines" number_towers \
-    || warn "Numbering towers failed; towers have no numbers. Retry: bash scripts/number-towers.sh"
-
-# Recreate Tegola so it doesn't serve tiles cached from the old data.
-docker compose --progress quiet up -d --force-recreate tegola </dev/null
-ok "Tile server running on http://localhost:7800"
-if [[ -n "$BACKEND_WAS_RUNNING" ]]; then
-    up_services backend
-    ok "Backend restarted on http://localhost:$BACKEND_PORT"
-fi
-# Use this region's offline background map if it was copied along (data/basemap/).
+run_schema tower-numbers
+put_back_my_layers
+restart_map_services
 select_basemap "$REGION_ID"
 select_satellite "$REGION_ID"
 
-ELAPSED=$((SECONDS - START))
-log_build "$REGION_ID  imported in $((ELAPSED / 60))m $((ELAPSED % 60))s (OSM data as of $OSM_TIMESTAMP)"
-echo ""
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} ${GREEN}✓${RESET}${BOLD} $REGION_NAME is imported${RESET}"
-echo "${BOLD}======================================================${RESET}"
-info "Took $((ELAPSED / 60))m $((ELAPSED % 60))s."
+TOOK=$(duration $((SECONDS - START)))
+log_build "$REGION_ID  imported in $TOOK (OSM data as of $OSM_TIMESTAMP)"
+done_banner "$REGION_NAME is imported"
+info "Took $TOOK."
 info "Start the app with: bash scripts/start.sh"

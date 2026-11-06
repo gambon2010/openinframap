@@ -167,18 +167,36 @@ The backend runs in Docker from its image: after changing it, run
 OSM extract → osmium filter → imposm (`imposm/*.py` mappings) → PostGIS → the SQL
 steps → Tegola (vector tiles) → the frontend.
 
-- **`build-region.sh`:** each step is a function. The last lines run them in order,
-  all the questions first. A step must not end with a test that can be false: under
-  `set -e` that stops the build silently, and a test checks for it.
+- **`build-region.sh`:** at the top, "what the build will do": every variable the
+  steps share, with what it means (choices are `yes` / `no` / `ask`). Then the
+  helpers for its menus, then the steps, one function each; the last lines run them
+  in order, all the questions first. A step does what its name says. A step must
+  not end with a test that can be false: under `set -e` that stops the build
+  silently, and a test checks for it.
 - **`lib/common.sh`:** the paths. It sources the helpers in `lib/*.sh` by theme:
-  - `ui`: prompts, timed steps;
-  - `db`: `SCHEMA_FILES`, the SQL steps in order, and `schema_hash`, the
-    fingerprint that exports carry;
-  - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap`, `geofabrik`,
-    `satellite`.
+  - `ui`: titles (`banner`, `done_banner`), messages, questions (`ask_yes_no`,
+    `choose_number` for every numbered menu), `room_for` (disk space), timed steps
+    (`run_with_timer`, which can show progress and stop a hung command), `duration`;
+  - `net`: **every download** goes through `download` (curl) or `safely` (another
+    downloading command): tried again, waits up to 15 minutes for a lost connection,
+    stops a download that hangs, ends with status 75 ("run again") when the
+    connection doesn't come back. Never call curl for a download directly;
+  - `json`: `json_get`, `json_write` (manifests);
+  - `db`: `SCHEMA_FILES`, the SQL steps in order, `run_schema` (with each step's
+    label), `schema_hash` (the fingerprint exports carry), and what building and
+    importing share: `fresh_database` (My layers and extra data kept),
+    `put_back_my_layers`, `restart_map_services`;
+  - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap` (also cutting the
+    background map: `download_basemap`), `geofabrik` (the index, region lookups,
+    extracts), `satellite`.
+- **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
+  data, the Wikidata cache): `safely(call, url)`, `fetch(url)`,
+  `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,
+  `NET_CHECK_EVERY`).
 - **`satellite.py`** is the command line for `satimagery/`:
   - `sources.py`: Blue Marble, Sentinel-2, `DETAILED_SOURCES`, credits;
-  - `tiles.py`, `estimate.py`, `download.py`, `gdal.py`;
+  - `tiles.py`, `estimate.py`, `download.py` (tiles into MBTiles, through
+    `netsafe`), `gdal.py`;
   - `menu.py`: the questions and the plan;
   - `cli.py`.
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
@@ -191,8 +209,8 @@ steps → Tegola (vector tiles) → the frontend.
 **A map layer from OSM** (e.g. airports):
 1. Add the mapping in `imposm/` (a new `*.py`, like `sites.py`). This changes the
    osmium filter and the fingerprint.
-2. SQL views in a `schema/*.sql`. A new file goes in `SCHEMA_FILES` (`lib/db.sh`)
-   and in `build-region.sh`'s `import_osm`.
+2. SQL views in a `schema/*.sql`. A new file goes in `SCHEMA_FILES` and
+   `SCHEMA_LABELS` (`lib/db.sh`) and in a `run_schema` line of `build-region.sh`.
 3. The tile layer in `tegola/layers.fork.yml`, then regenerate `config.toml`.
 4. A module in `fork/modules/<name>/`: its `layers()` (style),
    `switcherGroups()`, `key()`, popup rules. Add it to `MODULES`.

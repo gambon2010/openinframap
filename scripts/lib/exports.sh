@@ -3,11 +3,6 @@
 # manifests, and exporting again when out of date.
 # Sourced by common.sh.
 
-# manifest_get FILE.json KEY — read one field of an export manifest.
-manifest_get() {
-    python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get(sys.argv[2], ""))' "$1" "$2"
-}
-
 # export_outdated — true when data/exports/ has an export of the database's region
 # that doesn't match it any more (rebuilt, another schema, other extra data).
 # "My layers" don't count: they're kept per computer (see save_user_data).
@@ -17,9 +12,9 @@ export_outdated() {
     [[ -n "$region" ]] || return 1
     manifest="$EXPORTS_DIR/$region.json"
     [[ -f "$manifest" && -f "$EXPORTS_DIR/$region.oimdb" ]] || return 1
-    [[ "$(manifest_get "$manifest" built_at)" != "$(build_info built_at)" \
-        || "$(manifest_get "$manifest" schema_hash)" != "$(build_info schema_hash)" \
-        || "$(manifest_get "$manifest" extra_data)" != "$(extra_description)" ]]
+    [[ "$(json_get "$manifest" built_at)" != "$(build_info built_at)" \
+        || "$(json_get "$manifest" schema_hash)" != "$(build_info schema_hash)" \
+        || "$(json_get "$manifest" extra_data)" != "$(extra_description)" ]]
 }
 
 # reexport_if_outdated — export the database again, without asking, when its

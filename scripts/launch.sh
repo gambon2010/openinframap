@@ -16,9 +16,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Open Infrastructure Map — local dev setup${RESET}"
-echo "${BOLD}======================================================${RESET}"
+banner "local dev setup"
 
 # ---------------------------------------------------------------------------
 # 1. Prerequisites — report, never install
@@ -121,10 +119,7 @@ offer_image_cache
 # ---------------------------------------------------------------------------
 # 8. Done
 # ---------------------------------------------------------------------------
-echo ""
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Setup complete!${RESET}"
-echo "${BOLD}======================================================${RESET}"
+done_banner "Setup complete!"
 echo ""
 if [[ "$STARTED" == 1 ]]; then
     echo "The app is running at: $APP_URL"

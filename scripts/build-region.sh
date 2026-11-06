@@ -11,30 +11,26 @@ set -euo pipefail
 #   bash scripts/build-region.sh --region europe --yes
 #   bash scripts/build-region.sh --pbf ~/planet.osm.pbf --yes
 #
-# Steps: pick a Geofabrik region → download it (resumable, checksum-verified)
-# → filter it down to infrastructure with osmium → wipe the local database
-# → import with imposm → create views → import EEZ country boundaries →
-# restart Tegola → optionally cache Wikidata images.
+# All the questions come first (the region, a ready-made export to import
+# instead, replacing the database, extra data, the background map, satellite
+# imagery); then it runs on its own: download the region (resumable, checksum-
+# verified) → keep only the infrastructure (osmium) → a fresh database (My layers
+# and extra data kept) → import (imposm) → the SQL steps (schema/) → country
+# boundaries → extra data → Tegola → background map and satellite imagery →
+# Wikidata images → export again if the ready-made one is out of date.
 #
-# All questions are asked up front; after that it runs unattended.
-# Downloads and filtered extracts are kept in data/osm/ and reused.
+# Downloads and filtered extracts are kept in data/osm/ and reused. Downloads
+# wait for a lost connection (scripts/lib/net.sh). The steps are the functions
+# below, run in order at the end of the file.
 # ---------------------------------------------------------------------------
 
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-# Full index: includes each region's outline, used to cut its background map.
-GEOFABRIK_INDEX_URL="https://download.geofabrik.de/index-v1.json"
-# Offline background map: cut from Protomaps' daily world build.
-PROTOMAPS_BUILDS_URL="https://build-metadata.protomaps.dev/builds.json"
-PROTOMAPS_BASE="https://build.protomaps.com"
-REDUCED_MAXZOOM=13
+# The regions offered first (Geofabrik ids), and the one for a quick test.
 CONTINENTS=(africa antarctica asia australia-oceania central-america europe north-america russia south-america)
 TEST_REGION=luxembourg
-# The whole world isn't a Geofabrik region; it comes from openstreetmap.org (weekly).
-PLANET_ID=planet
-PLANET_URL="https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf"
 
 usage() {
     cat <<EOF
@@ -63,39 +59,73 @@ Usage: bash scripts/build-region.sh [options]
   --rebuild       Build from scratch even if data/exports/ has a ready-made export
   --no-export     Don't export the region again when its ready-made export in
                   data/exports/ is out of date (by default it is, at the end)
-  --refresh      Download a newer Geofabrik extract if there is one (by default
+  --refresh       Download a newer Geofabrik extract if there is one (by default
                   an extract you already downloaded is reused, and you're asked)
   --yes, -y       Don't ask questions; accept the defaults (wipes the database!)
   -h, --help      Show this help
 EOF
 }
 
-REGION_ID=""
-NO_EXPORT=""
-PBF_SOURCE=""
-FETCH_IMAGES=""
-EXTRA_DATA=""
-SKIP_EXTRA=0
-EXTRA_CHOOSE=""
-USE_FILTER=1
-REFRESH=""
-REBUILD=0
-BASEMAP_MODE=""
-SATELLITE_MODE=""
-SATELLITE_DETAILED=""
+# ---------------------------------------------------------------------------
+# What the build will do. The options set some of it; the questions (the ask_*
+# steps) the rest. Choices are yes / no, or ask (not decided yet).
+# ---------------------------------------------------------------------------
+
+# The region
+REGION_ID=""          # Geofabrik id, or the local file's name (--pbf)
+REGION_NAME=""        # shown, and stored in oim_build_info
+PBF_SOURCE=""         # the .osm.pbf read: data/osm/<id>-latest.osm.pbf, or --pbf
+PBF_URL=""            # where it's downloaded from ("" for a local file)
+DOWNLOAD_SIZE=0       # bytes to download (0: nothing to download)
+DOWNLOAD=no           # yes: download the extract (missing, or a newer one)
+REMOTE_MD5=""         # Geofabrik's checksum of the extract, to verify it
+REFRESH=no            # --refresh: a newer extract is downloaded without asking
+REBUILD=no            # --rebuild: ignore a ready-made export
+FILTER=yes            # --no-filter: import the whole extract
+IMPORT_PBF=""         # what imposm reads: the filtered extract, or the whole one
+OSM_TIMESTAMP=""      # how recent the OSM data is (the extract's header)
+
+# The database being replaced
+EXISTING_REGION_ID="" # its region, whose extra data is saved before the wipe
+EXISTING_EXTRA=0      # its extra data features
+
+# What else goes in
+HAVE_EEZ=0            # 1: the country boundaries (EEZ) zip is there
+IMAGES=ask            # Wikidata images at the end (--images / --no-images)
+EXTRA_KEEP=yes        # put back extra data kept from before (--no-extra: no)
+EXTRA_KEPT=""         # what is kept, described ("" if nothing)
+EXTRA_NEW=ask         # download extra data (--extra, --extra-only: yes; --no-extra: no)
+EXTRA_CHOOSE=""       # which datasets (e.g. gas,icpe; "" = all that cover the region)
+EXTRA_RESTORED=0      # 1: the kept extra data went back in
+BASEMAP_MODE=""       # background map: full, reduced, none, keep ("" = ask)
+SATELLITE_MODE=""     # satellite imagery (lib/satellite.sh; "" = ask)
+SATELLITE_DETAILED="" # aerial photos to this zoom, or none ("" = ask)
+REEXPORT=yes          # --no-export: don't export again when out of date
+
+# The background map (ask_background_map)
+PROTOMAPS_BUILD=""    # Protomaps' world build to cut it from ("" if unreachable)
+BASEMAP_AREA=()       # pmtiles' --region=FILE or --bbox=...: the region's area
+BASEMAP_SIZE=0        # bytes to download
+
+# Disk space
+DOCKER_ROOT=""        # where Docker keeps the database (checked twice)
+
+# ---------------------------------------------------------------------------
+# Options
+# ---------------------------------------------------------------------------
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --region)    REGION_ID="${2:?--region needs a value}"; shift 2 ;;
         --pbf)       PBF_SOURCE="${2:?--pbf needs a value}"; shift 2 ;;
-        --images)    FETCH_IMAGES=1; shift ;;
-        --no-images) FETCH_IMAGES=0; shift ;;
-        --extra)     EXTRA_DATA=1; shift ;;
-        --no-extra)  EXTRA_DATA=0; SKIP_EXTRA=1; shift ;;
-        --extra-only) EXTRA_CHOOSE="${2:?--extra-only needs a list, e.g. gas,icpe}"; EXTRA_DATA=1; shift 2 ;;
-        --no-filter) USE_FILTER=0; shift ;;
-        --refresh)   REFRESH=1; shift ;;
-        --rebuild)   REBUILD=1; shift ;;
-        --no-export) NO_EXPORT=1; shift ;;
+        --images)    IMAGES=yes; shift ;;
+        --no-images) IMAGES=no; shift ;;
+        --extra)     EXTRA_NEW=yes; shift ;;
+        --no-extra)  EXTRA_NEW=no; EXTRA_KEEP=no; shift ;;
+        --extra-only) EXTRA_CHOOSE="${2:?--extra-only needs a list, e.g. gas,icpe}"; EXTRA_NEW=yes; shift 2 ;;
+        --no-filter) FILTER=no; shift ;;
+        --refresh)   REFRESH=yes; shift ;;
+        --rebuild)   REBUILD=yes; shift ;;
+        --no-export) REEXPORT=no; shift ;;
         --basemap)   BASEMAP_MODE="${2:?--basemap needs full, reduced or none}"; shift 2 ;;
         --satellite) SATELLITE_MODE="${2:?--satellite needs none, overview, regional or regional13}"; shift 2 ;;
         --satellite-detailed) SATELLITE_DETAILED="${2:?--satellite-detailed needs 15, 16, 17 or none}"; shift 2 ;;
@@ -119,10 +149,10 @@ case "$SATELLITE_DETAILED" in
     *) die "--satellite-detailed must be 15, 16, 17 or none." ;;
 esac
 
+# Unfinished builds are noted in data/osm/build-history.log.
 BUILD_STARTED=0
 BUILD_DONE=0
 trap 'echo; warn "Interrupted. Re-run the script to continue — downloads resume where they stopped."; exit 130' INT
-# Record unfinished builds in data/osm/build-history.log.
 trap 'status=$?
       if [[ "$status" != 0 && "$BUILD_STARTED" == 1 && "$BUILD_DONE" == 0 ]]; then
           [[ "$status" == 130 ]] && log_build "$REGION_ID  interrupted during: ${CURRENT_STEP:-?}" \
@@ -130,60 +160,30 @@ trap 'status=$?
       fi' EXIT
 
 # ---------------------------------------------------------------------------
-# Geofabrik helpers
+# Helpers for the steps
 # ---------------------------------------------------------------------------
 
-fetch_geofabrik_index() {
-    mkdir -p "$OSM_DIR"
-    # Refresh once a day; fall back to a stale copy when offline.
-    if [[ -z "$(find "$GEOFABRIK_INDEX" -mmin -1440 2>/dev/null)" ]]; then
-        curl -sfL --max-time 30 "$GEOFABRIK_INDEX_URL" -o "$GEOFABRIK_INDEX.tmp" \
-            && mv "$GEOFABRIK_INDEX.tmp" "$GEOFABRIK_INDEX" \
-            || rm -f "$GEOFABRIK_INDEX.tmp"
-    fi
-    [[ -f "$GEOFABRIK_INDEX" ]]
+# Run osmium (Docker) with the source extract at /src.osm.pbf and data/osm at /osm.
+osmium() {
+    docker compose --progress quiet --profile tools run --rm -T --user "$(id -u):$(id -g)" \
+        -v "$PBF_SOURCE:/src.osm.pbf:ro,z" -v "$OSM_DIR:/osm:z" osmium "$@"
 }
 
-# geofabrik_query lookup ID  → "name<TAB>pbf url" (nothing if unknown)
-# geofabrik_query search TEXT → "id<TAB>name<TAB>parent name" per match
-geofabrik_query() {
-    python3 - "$GEOFABRIK_INDEX" "$1" "$2" "$PLANET_URL" <<'PY'
-import json, sys
-index, mode, term, planet_url = sys.argv[1], sys.argv[2], sys.argv[3].lower(), sys.argv[4]
-regions = {f["properties"]["id"]: f["properties"] for f in json.load(open(index))["features"]}
-regions["planet"] = {"id": "planet", "name": "Whole world (planet)", "urls": {"pbf": planet_url}}
-if mode == "lookup":
-    r = regions.get(term)
-    if r:
-        print(f'{r["name"]}\t{r["urls"]["pbf"]}')
-else:
-    hits = [r for r in regions.values() if term in r["id"].lower() or term in r["name"].lower()]
-    hits.sort(key=lambda r: (r["name"].lower() != term, r["name"]))
-    for r in hits[:20]:
-        parent = regions.get(r.get("parent", ""), {}).get("name", "")
-        print(f'{r["id"]}\t{r["name"]}\t{parent}')
-PY
+# docker_need BYTES FILTERED — room Docker needs for the database built from an
+# extract of BYTES (FILTERED: yes if it's the filtered one). The filtered extract
+# is ~1-2% of the raw one, and the database ends up ~17× the filtered extract
+# (Russia: 53 MB filtered → 1 GB database); the extra 2 GB covers Postgres itself
+# and the EEZ boundaries.
+docker_need() {
+    local bytes="$1"
+    [[ "$2" == yes ]] || bytes=$(( bytes / 50 ))
+    echo $(( bytes * 20 + 2 * 1024 * 1024 * 1024 ))
 }
 
-# pmtiles CLI from the basemap service's image, with data/basemap/ at /out.
-pmtiles() {
-    docker run --rm --user "$(id -u):$(id -g)" -v "$BASEMAP_DIR:/out:z" "$(basemap_image)" "$@"
-}
-
-# Size in bytes of the background map for BASEMAP_AREA, up to zoom $1 (empty = all).
-basemap_size() {
-    local args=("${BASEMAP_AREA[@]}")
-    [[ -n "${1:-}" ]] && args+=("--maxzoom=$1")
-    pmtiles extract "$PROTOMAPS_BASE/$PROTOMAPS_BUILD" /out/.dry-run.pmtiles "${args[@]}" --dry-run 2>&1 \
-        | sed -n 's/.*archive size of \([0-9.]*\) \([kMGT]*B\).*/\1 \2/p' | tail -1 \
-        | python3 -c 'import sys
-parts = sys.stdin.read().split()
-units = {"B": 1, "kB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12}
-print(int(float(parts[0]) * units[parts[1]]) if len(parts) == 2 else 0)'
-}
-
-remote_size() {
-    curl -sIL --connect-timeout 3 --max-time 10 "$1" | tr -d '\r' | awk 'tolower($1)=="content-length:" {n=$2} END {print n+0}'
+# The ready-made export of region $1 (its manifest), if there is one.
+export_manifest() {
+    local manifest="$EXPORTS_DIR/$1.json"
+    [[ -f "$manifest" && -f "$EXPORTS_DIR/$1.oimdb" ]] && echo "$manifest"
 }
 
 # Ids of regions with a ready-made export in data/exports/.
@@ -194,53 +194,45 @@ exported_regions() {
     done
 }
 
-# Ids of regions already downloaded to data/osm/.
-downloaded_regions() {
-    local f
-    for f in "$OSM_DIR"/*-latest.osm.pbf; do
-        [[ -f "$f" ]] && basename "$f" -latest.osm.pbf
-    done
-}
-
-file_date() {
-    date -r "$1" '+%Y-%m-%d'
+# export_note MANIFEST — "OSM data as of 2026-10-01, with extra data".
+export_note() {
+    local note
+    note="OSM data as of $(json_get "$1" osm_timestamp | cut -c1-10)"
+    [[ -n "$(json_get "$1" extra_data)" ]] && note+=", with extra data"
+    echo "$note"
 }
 
 # Show what earlier runs left on disk, so nobody re-downloads by accident.
 show_local_files() {
-    local id f found=0
+    local id f found=0 cached
     section "Already on this machine"
     for f in $(list_exports); do
         found=1
-        ok "$(printf '%-22s %7s  ready-made export, OSM data as of %s%s' "$(basename "$f" .json)" \
-            "$(human_size "$(manifest_get "$f" size)")" "$(manifest_get "$f" osm_timestamp | cut -c1-10)" \
-            "$([[ -n "$(manifest_get "$f" extra_data)" ]] && echo ', with extra data')")"
+        ok "$(printf '%-22s %7s  ready-made export, %s' "$(basename "$f" .json)" \
+            "$(human_size "$(json_get "$f" size)")" "$(export_note "$f")")"
     done
     for id in $(downloaded_regions); do
-        f="$OSM_DIR/$id-latest.osm.pbf"
         found=1
-        if [[ -f "$OSM_DIR/$id-filtered.osm.pbf" ]]; then
-            ok "$(printf '%-22s %7s  extract from %s, filtered' "$id" "$(human_size "$(stat -c%s "$f")")" "$(file_date "$f")")"
-        else
-            ok "$(printf '%-22s %7s  extract from %s' "$id" "$(human_size "$(stat -c%s "$f")")" "$(file_date "$f")")"
-        fi
+        f=$(extract_file "$id")
+        ok "$(printf '%-22s %7s  extract from %s%s' "$id" "$(human_size "$(stat -c%s "$f")")" "$(file_date "$f")" \
+            "$([[ -f "$OSM_DIR/$id-filtered.osm.pbf" ]] && echo ', filtered')")"
     done
     [[ "$found" == 1 ]] || info "No region downloads yet (they're kept in data/osm/)."
     for f in "$BASEMAP_DIR"/*.pmtiles; do
         [[ -f "$f" ]] || continue
-        found=1
         ok "$(printf '%-22s %7s  offline background map, %s detail' "$(basename "$f" .pmtiles)" \
-            "$(human_size "$(stat -c%s "$f")")" "$(manifest_get "${f%.pmtiles}.json" detail 2>/dev/null || echo unknown)")"
+            "$(human_size "$(stat -c%s "$f")")" "$(json_get "${f%.pmtiles}.json" detail 2>/dev/null || echo unknown)")"
     done
     if [[ -f "$EEZ_ZIP" ]]; then
         ok "EEZ country boundaries"
     else
         info "EEZ country boundaries: not downloaded yet"
     fi
-    local cached
     # No cache folder on a fresh checkout: find fails, which mustn't stop the script.
     cached=$({ find "$DATA_DIR/wikidata_json" -name '*.json' 2>/dev/null || true; } | wc -l)
-    [[ "$cached" -gt 0 ]] && ok "Wikidata cache: $cached entries, $(find "$DATA_DIR/images" -type f 2>/dev/null | wc -l) images"
+    if [[ "$cached" -gt 0 ]]; then
+        ok "Wikidata cache: $cached entries, $(find "$DATA_DIR/images" -type f 2>/dev/null | wc -l) images"
+    fi
     if [[ -s "$BUILD_LOG" ]]; then
         info ""
         info "Recent builds (data/osm/build-history.log):"
@@ -248,11 +240,38 @@ show_local_files() {
     fi
 }
 
+# --- The region menu (choose_region) ------------------------------------------------
+
+# region_menu_line N ID ONLINE — one line of the region menu: its name, its size
+# and what's already here (a ready-made export, a download).
+region_menu_line() {
+    local n="$1" id="$2" online="$3" name="" url="" size=0 note="" manifest extract
+    [[ "$online" == 1 ]] && { IFS=$'\t' read -r name url < <(geofabrik_query lookup "$id") || true; }
+    extract=$(extract_file "$id")
+    if manifest=$(export_manifest "$id"); then
+        [[ -n "$name" ]] || name=$(json_get "$manifest" region_name)
+        size=$(json_get "$manifest" size)
+        note="${GREEN}✓ ready-made export ($(export_note "$manifest")) — imports in minutes${RESET}${DIM}"
+    else
+        if [[ -n "$url" ]]; then
+            size=$(remote_size "$url")
+        elif [[ -f "$extract" ]]; then
+            size=$(stat -c%s "$extract")
+        fi
+        [[ "$id" == "$TEST_REGION" ]] && note="tiny — good for a quick test"
+        [[ "$id" == "$PLANET_ID" ]] && note="${YELLOW}slow — takes hours, see the warning${RESET}${DIM}"
+        [[ -f "$extract" ]] && note="${GREEN}✓ downloaded $(file_date "$extract")${RESET}${DIM} ${note}"
+    fi
+    printf "    %3d) %-24s %7s  %s\n" "$n" "${name:-$id}" "$(human_size "$size")" "${DIM}$note${RESET}"
+}
+
+# pick_region — the region menu: the continents, the world and the test region
+# (online), what's already here, a search, or a file. Sets REGION_ID or PBF_SOURCE.
 pick_region() {
-    local online=1 choices=() i=1 id name url size note manifest
+    local online=1 choices=() id i=0 search_choice=0 file_choice answer
     fetch_geofabrik_index || online=0
     [[ "$online" == 1 ]] && choices=("${CONTINENTS[@]}" "$PLANET_ID" "$TEST_REGION")
-    # Also offer regions exported or downloaded earlier that aren't in the standard list.
+    # Also regions exported or downloaded earlier that aren't in the standard list.
     for id in $(exported_regions) $(downloaded_regions); do
         [[ " ${choices[*]} " == *" $id "* ]] || choices+=("$id")
     done
@@ -261,46 +280,25 @@ pick_region() {
     echo "    Which region do you want to build?"
     echo ""
     for id in "${choices[@]}"; do
-        name="" url="" size=0 note=""
-        [[ "$online" == 1 ]] && { IFS=$'\t' read -r name url < <(geofabrik_query lookup "$id") || true; }
-        manifest="$EXPORTS_DIR/$id.json"
-        if [[ -f "$manifest" && -f "$EXPORTS_DIR/$id.oimdb" ]]; then
-            [[ -n "$name" ]] || name=$(manifest_get "$manifest" region_name)
-            size=$(manifest_get "$manifest" size)
-            note="${GREEN}✓ ready-made export (OSM data as of $(manifest_get "$manifest" osm_timestamp | cut -c1-10)$([[ -n "$(manifest_get "$manifest" extra_data)" ]] && echo ', with extra data')) — imports in minutes${RESET}${DIM}"
-        else
-            if [[ -n "$url" ]]; then
-                size=$(remote_size "$url")
-            elif [[ -f "$OSM_DIR/$id-latest.osm.pbf" ]]; then
-                size=$(stat -c%s "$OSM_DIR/$id-latest.osm.pbf")
-            fi
-            [[ "$id" == "$TEST_REGION" ]] && note="tiny — good for a quick test"
-            [[ "$id" == "$PLANET_ID" ]] && note="${YELLOW}slow — takes hours, see the warning${RESET}${DIM}"
-            [[ -f "$OSM_DIR/$id-latest.osm.pbf" ]] && note="${GREEN}✓ downloaded $(file_date "$OSM_DIR/$id-latest.osm.pbf")${RESET}${DIM} ${note}"
-        fi
-        [[ -n "$name" ]] || name="$id"
-        printf "    %3d) %-24s %7s  %s\n" "$i" "$name" "$(human_size "$size")" "${DIM}$note${RESET}"
         i=$((i + 1))
+        region_menu_line "$i" "$id" "$online"
     done
-    local search_choice=0 file_choice
     if [[ "$online" == 1 ]]; then
-        search_choice=$i
-        printf "    %3d) %s\n" "$search_choice" "Search for a country, state or province..."
         i=$((i + 1))
+        search_choice=$i
+        printf "    %3d) %s\n" "$i" "Search for a country, state or province..."
     fi
-    file_choice=$i
+    file_choice=$((i + 1))
     printf "    %3d) %s\n" "$file_choice" "Use an .osm.pbf file I already have"
     echo ""
-
-    local answer
     while true; do
-        read -r -p "    Choose [1-$file_choice]: " answer || die "Aborted."
-        if [[ "$answer" =~ ^[0-9]+$ && "$answer" -ge 1 && "$answer" -le ${#choices[@]} ]]; then
+        answer=$(choose_number "$file_choice")
+        if [[ "$answer" -le ${#choices[@]} ]]; then
             REGION_ID="${choices[$((answer - 1))]}"
             return
         elif [[ "$answer" == "$search_choice" ]]; then
             search_region && return
-        elif [[ "$answer" == "$file_choice" ]]; then
+        else
             read -r -e -p "    Path to the .osm.pbf file: " PBF_SOURCE || die "Aborted."
             PBF_SOURCE="${PBF_SOURCE/#\~/$HOME}"
             [[ -f "$PBF_SOURCE" ]] && return
@@ -310,12 +308,11 @@ pick_region() {
     done
 }
 
+# search_region — search Geofabrik's regions by name; sets REGION_ID (1: none chosen).
 search_region() {
-    local term answer
+    local term id name parent answer ids=()
     read -r -p "    Search for: " term || die "Aborted."
     [[ -n "$term" ]] || return 1
-    local -a ids=()
-    local id name parent
     while IFS=$'\t' read -r id name parent; do
         ids+=("$id")
         printf "    %3d) %s %s\n" "${#ids[@]}" "$name" "${DIM}${parent:+(in $parent)}${RESET}"
@@ -324,62 +321,136 @@ search_region() {
         warn "No region matches \"$term\"."
         return 1
     fi
-    read -r -p "    Choose [1-${#ids[@]}, Enter to go back]: " answer || die "Aborted."
-    if [[ "$answer" =~ ^[0-9]+$ && "$answer" -ge 1 && "$answer" -le ${#ids[@]} ]]; then
-        REGION_ID="${ids[$((answer - 1))]}"
-        return 0
+    answer=$(choose_number --or-enter "${#ids[@]}") || return 1
+    REGION_ID="${ids[$((answer - 1))]}"
+}
+
+# --- Extra data (ask_extra_data) ---------------------------------------------------
+
+# find_kept_extra_data — EXTRA_KEPT: the extra data that will be put back, from
+# the database being replaced (saved before it's wiped) or an earlier rebuild.
+find_kept_extra_data() {
+    local saved="$EXTRA_DIR/$REGION_ID.extra.json"
+    EXTRA_KEPT=""
+    if [[ "$EXTRA_KEEP" == no ]]; then
+        return 0  # --no-extra: none at all (a saved copy stays in data/extra/)
     fi
-    return 1
+    if [[ "$EXISTING_REGION_ID" == "$REGION_ID" && "$EXISTING_EXTRA" -gt 0 ]]; then
+        EXTRA_KEPT="$(printf "%'d" "$EXISTING_EXTRA") features in the current database"
+    elif [[ -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
+        EXTRA_KEPT="$(json_get "$saved" description 2>/dev/null), saved $(json_get "$saved" saved_at 2>/dev/null | cut -c1-10)"
+    fi
 }
 
-# Run osmium with the source extract mounted at /src.osm.pbf and data/osm at /osm.
-osmium() {
-    docker compose --progress quiet --profile tools run --rm -T --user "$(id -u):$(id -g)" \
-        -v "$PBF_SOURCE:/src.osm.pbf:ro,z" -v "$OSM_DIR:/osm:z" osmium "$@"
+# find_extra_offer — which extra datasets cover the region (extra_data.py offer:
+# key <tab> label <tab> cost per line). EXTRA_COVERAGE: covered, none, or unknown
+# (a local file, offline, or no uv); the datasets in EXTRA_KEYS / _LABELS / _COSTS.
+find_extra_offer() {
+    local offer="" status=2 key label cost
+    EXTRA_COVERAGE=unknown
+    EXTRA_KEYS=() EXTRA_LABELS=() EXTRA_COSTS=()
+    if command -v uv &>/dev/null; then
+        offer=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
+            && status=0 || status=$?
+    fi
+    case "$status" in
+        0) EXTRA_COVERAGE=covered ;;
+        1) EXTRA_COVERAGE=none ;;
+    esac
+    if [[ "$EXTRA_COVERAGE" == covered ]]; then
+        while IFS=$'\t' read -r key label cost; do
+            EXTRA_KEYS+=("$key") EXTRA_LABELS+=("$label") EXTRA_COSTS+=("$cost")
+        done <<<"$offer"
+    fi
 }
 
-# Docker needs room for the database. The filtered extract is ~1-2% of the
-# raw one, and the database ends up ~17× the filtered extract (Russia: 53 MB
-# filtered → 1 GB database); the extra 2 GB covers Postgres itself and the EEZ
-# boundaries.
-docker_need() {
-    local input_bytes="$1" filtered="$2"
-    [[ "$filtered" == 1 ]] || input_bytes=$(( input_bytes / 50 ))
-    echo $(( input_bytes * 20 + 2 * 1024 * 1024 * 1024 ))
+# choose_extra_datasets — the datasets offered, picked by number ("1,3", "all",
+# Enter = none); sets EXTRA_CHOOSE.
+choose_extra_datasets() {
+    local i answer n valid
+    for i in "${!EXTRA_KEYS[@]}"; do
+        printf '      %d) %s\n         %s\n' "$((i + 1))" "${EXTRA_LABELS[$i]}" "${EXTRA_COSTS[$i]}"
+    done
+    info "You can also do it later with: uv run scripts/extra_data.py import --choose KEY,..."
+    EXTRA_CHOOSE=""
+    while true; do
+        read -r -p "    Choose (e.g. 1,3 or all; Enter = none): " answer || answer=""
+        answer="${answer//[[:space:]]/}"
+        [[ -z "$answer" ]] && return 0
+        if [[ "$answer" == all ]]; then
+            EXTRA_CHOOSE=$(IFS=,; echo "${EXTRA_KEYS[*]}")
+            return 0
+        fi
+        EXTRA_CHOOSE="" valid=1
+        for n in ${answer//,/ }; do
+            if [[ "$n" =~ ^[0-9]+$ && "$n" -ge 1 && "$n" -le "${#EXTRA_KEYS[@]}" ]]; then
+                EXTRA_CHOOSE="${EXTRA_CHOOSE:+$EXTRA_CHOOSE,}${EXTRA_KEYS[$((n - 1))]}"
+            else
+                valid=0
+            fi
+        done
+        [[ "$valid" == 1 ]] && return 0
+        warn "Type numbers from the list, separated by commas, or all."
+    done
+}
+
+# --- The background map (ask_background_map) -----------------------------------------
+
+# find_basemap_area — BASEMAP_AREA: what to cut out of the world map: the
+# Geofabrik outline, else the file's bounding box (the world: everything).
+find_basemap_area() {
+    local outline="$BASEMAP_DIR/.area-$REGION_ID.geojson" bbox
+    BASEMAP_AREA=()
+    [[ "$REGION_ID" == "$PLANET_ID" ]] && return 0
+    if [[ -n "$PBF_URL" ]] && geofabrik_outline "$REGION_ID" "$outline"; then
+        BASEMAP_AREA=("--region=/out/$(basename "$outline")")
+    elif [[ -f "$PBF_SOURCE" ]]; then
+        bbox=$(osmium fileinfo -g header.boxes /src.osm.pbf 2>/dev/null | tr -d '() ' | head -1 || true)
+        [[ "$bbox" =~ ^-?[0-9.]+,-?[0-9.]+,-?[0-9.]+,-?[0-9.]+$ ]] && BASEMAP_AREA=("--bbox=$bbox")
+    fi
+    return 0
+}
+
+# choose_basemap_detail FULL_SIZE REDUCED_SIZE — the menu: full, reduced or none
+# (reduced first for a map over 10 GB).
+choose_basemap_detail() {
+    local default=1
+    [[ "$1" -gt $((10 * 1000 * 1000 * 1000)) ]] && default=2
+    echo ""
+    printf "      1) Full detail     %8s  streets and individual buildings at every zoom\n" "$(human_size "$1")"
+    printf "      2) Reduced detail  %8s  streets and places; blurry when zoomed in close\n" "$(human_size "$2")"
+    printf "      3) Skip            %8s  keep using the online background map\n" "—"
+    echo ""
+    case "$(choose_number 3 "$default")" in
+        1) BASEMAP_MODE=full ;;
+        2) BASEMAP_MODE=reduced ;;
+        *) BASEMAP_MODE=none ;;
+    esac
 }
 
 # ---------------------------------------------------------------------------
 # The steps (each a function; the build runs them in order at the end)
 # ---------------------------------------------------------------------------
 
-# Docker, curl, python3, unzip (uv optional).
+# Docker, curl, python3, unzip (uv optional), and the osmium image.
 check_prerequisites() {
-    echo "${BOLD}======================================================${RESET}"
-    echo "${BOLD} Open Infrastructure Map — build the map database${RESET}"
-    echo "${BOLD}======================================================${RESET}"
-
+    banner "build the map database"
     section "Checking prerequisites..."
-    MISSING=0
-    check_cmd docker  "https://docs.docker.com/get-docker/"       || MISSING=1
-    check_cmd curl    "dnf install curl  /  apt install curl"     || MISSING=1
-    check_cmd python3 "dnf install python3  /  apt install python3" || MISSING=1
-    check_cmd unzip   "dnf install unzip  /  apt install unzip"   || MISSING=1
+    local missing=0
+    check_cmd docker  "https://docs.docker.com/get-docker/"       || missing=1
+    check_cmd curl    "dnf install curl  /  apt install curl"     || missing=1
+    check_cmd python3 "dnf install python3  /  apt install python3" || missing=1
+    check_cmd unzip   "dnf install unzip  /  apt install unzip"   || missing=1
     check_cmd uv      "optional — https://docs.astral.sh/uv/ (for extra data like the French networks)" || true
-    [[ "$MISSING" == 0 ]] || die "Install the missing tools above, then re-run this script."
+    [[ "$missing" == 0 ]] || die "Install the missing tools above, then re-run this script."
     docker info >/dev/null 2>&1 || die "Docker is installed but not running (or your user can't access it)."
     docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required ('docker compose', not 'docker-compose')."
-
-    # ---------------------------------------------------------------------------
-    # 2. Questions — everything interactive happens here
-    # ---------------------------------------------------------------------------
+    docker compose --progress quiet --profile tools build osmium </dev/null
 }
 
-# The region to build (menu or --region / --pbf).
+# The region to build (menu, or --region / --pbf).
 choose_region() {
-    docker compose --progress quiet --profile tools build osmium </dev/null
-
     show_local_files
-
     section "Choosing a region..."
     if [[ -z "$REGION_ID" && -z "$PBF_SOURCE" ]]; then
         [[ "$ASSUME_YES" == 1 ]] && die "--yes needs --region or --pbf."
@@ -389,45 +460,42 @@ choose_region() {
 
 # A ready-made export of the region: import it instead (and stop here).
 offer_ready_made() {
-    # A ready-made export of this region? Importing it takes minutes, no downloading.
-    if [[ -n "$REGION_ID" && -z "$PBF_SOURCE" && "$REBUILD" == 0 \
-          && -f "$EXPORTS_DIR/$REGION_ID.json" && -f "$EXPORTS_DIR/$REGION_ID.oimdb" ]]; then
-        EXPORT_DATE=$(manifest_get "$EXPORTS_DIR/$REGION_ID.json" osm_timestamp | cut -c1-10)
-        info "There's a ready-made export of this region (OSM data as of $EXPORT_DATE)."
-        EXPORT_EXTRA=$(manifest_get "$EXPORTS_DIR/$REGION_ID.json" extra_data)
-        [[ -n "$EXPORT_EXTRA" ]] && info "It includes extra data: $EXPORT_EXTRA"
+    local manifest args
+    if [[ -n "$REGION_ID" && -z "$PBF_SOURCE" && "$REBUILD" == no ]] \
+        && manifest=$(export_manifest "$REGION_ID"); then
+        info "There's a ready-made export of this region ($(export_note "$manifest"))."
+        [[ -n "$(json_get "$manifest" extra_data)" ]] && info "Its extra data: $(json_get "$manifest" extra_data)"
         if ask_yes_no "Import it? (No = download and rebuild from scratch)" y; then
-            IMPORT_ARGS=("$EXPORTS_DIR/$REGION_ID.oimdb")
-            [[ "$ASSUME_YES" == 1 ]] && IMPORT_ARGS+=(--yes)
-            exec bash "$REPO_ROOT/scripts/import-db.sh" "${IMPORT_ARGS[@]}"
+            args=("$EXPORTS_DIR/$REGION_ID.oimdb")
+            [[ "$ASSUME_YES" == 1 ]] && args+=(--yes)
+            exec bash "$REPO_ROOT/scripts/import-db.sh" "${args[@]}"
         fi
     fi
+}
 
-    PBF_URL=""
+# The region's name, where it comes from and its size (a local file, Geofabrik,
+# or an earlier download when offline).
+find_region_source() {
     if [[ -n "$PBF_SOURCE" ]]; then
         [[ -f "$PBF_SOURCE" ]] || die "File not found: $PBF_SOURCE"
         PBF_SOURCE="$(cd "$(dirname "$PBF_SOURCE")" && pwd)/$(basename "$PBF_SOURCE")"
         REGION_ID="$(basename "$PBF_SOURCE" .osm.pbf | tr -c 'A-Za-z0-9_.\n-' '-')"
         REGION_NAME="$REGION_ID (local file)"
-        DOWNLOAD_SIZE=0
     else
-        REGION_NAME="" PBF_URL=""
         if fetch_geofabrik_index; then
             IFS=$'\t' read -r REGION_NAME PBF_URL < <(geofabrik_query lookup "$REGION_ID") || true
         fi
-        PBF_SOURCE="$OSM_DIR/$REGION_ID-latest.osm.pbf"
+        PBF_SOURCE=$(extract_file "$REGION_ID")
         if [[ -n "$PBF_URL" ]]; then
             DOWNLOAD_SIZE=$(remote_size "$PBF_URL")
         elif [[ -f "$PBF_SOURCE" ]]; then
             # Offline (or not a Geofabrik region): rebuild from the earlier download.
             REGION_NAME="${REGION_NAME:-$REGION_ID}"
-            DOWNLOAD_SIZE=0
         else
             die "Unknown region '$REGION_ID', or no internet connection to download it."
         fi
     fi
     ok "$REGION_NAME"
-
     if [[ "$REGION_ID" == "$PLANET_ID" ]]; then
         section "Building the whole world takes a while"
         warn "Download: ~$(human_size "$DOWNLOAD_SIZE") from openstreetmap.org — about 30 min on a fast"
@@ -441,258 +509,184 @@ offer_ready_made() {
     fi
 }
 
-# Whether to download, and room for it and for the database.
-check_download_and_space() {
-    # Decide now whether to download, so nothing is asked later on.
-    DO_DOWNLOAD=0
-    REMOTE_MD5=""
-    if [[ -n "$PBF_URL" ]]; then
-        REMOTE_MD5=$(curl -sfL --max-time 30 "$PBF_URL.md5" | cut -d' ' -f1 || true)
-        if [[ ! -f "$PBF_SOURCE" ]]; then
-            DO_DOWNLOAD=1
-            [[ -f "$PBF_SOURCE.part" ]] && info "Resuming an earlier, unfinished download."
-        elif [[ -z "$REMOTE_MD5" ]]; then
-            info "Using the extract downloaded on $(file_date "$PBF_SOURCE") (can't reach Geofabrik to check for a newer one)."
-        elif [[ "$(cat "$PBF_SOURCE.md5" 2>/dev/null)" == "$REMOTE_MD5" ]]; then
-            ok "Already downloaded, and it's the latest extract — no download needed."
+# Whether to download (missing, or a newer extract), decided now so nothing is
+# asked later.
+decide_download() {
+    [[ -n "$PBF_URL" ]] || return 0
+    REMOTE_MD5=$(download --quick "$PBF_URL.md5" | cut -d' ' -f1 || true)
+    if [[ ! -f "$PBF_SOURCE" ]]; then
+        DOWNLOAD=yes
+        [[ -f "$PBF_SOURCE.new.part" ]] && info "Resuming an earlier, unfinished download."
+    elif [[ -z "$REMOTE_MD5" ]]; then
+        info "Using the extract downloaded on $(file_date "$PBF_SOURCE") (can't reach Geofabrik to check for a newer one)."
+    elif [[ "$(cat "$PBF_SOURCE.md5" 2>/dev/null)" == "$REMOTE_MD5" ]]; then
+        ok "Already downloaded, and it's the latest extract — no download needed."
+    else
+        info "You already have this region, downloaded on $(file_date "$PBF_SOURCE")."
+        info "Geofabrik has a newer extract ($(human_size "$DOWNLOAD_SIZE"))."
+        if [[ "$REFRESH" == yes ]]; then
+            DOWNLOAD=yes
+        elif [[ "$ASSUME_YES" != 1 ]] && ask_yes_no "Download the newer one? (No = use the one you have)" n; then
+            DOWNLOAD=yes
         else
-            info "You already have this region, downloaded on $(file_date "$PBF_SOURCE")."
-            info "Geofabrik has a newer extract ($(human_size "$DOWNLOAD_SIZE"))."
-            if [[ "$REFRESH" == 1 ]]; then
-                DO_DOWNLOAD=1
-            elif [[ "$ASSUME_YES" != 1 ]] && ask_yes_no "Download the newer one? (No = use the one you have)" n; then
-                DO_DOWNLOAD=1
-            else
-                ok "Using the extract you already have."
-            fi
+            ok "Using the extract you already have."
         fi
     fi
+}
 
-    # Disk space: the raw extract plus the (much smaller) filtered copy.
+# Room for the download (the raw extract plus the much smaller filtered copy) and,
+# roughly, for the database.
+check_space() {
+    local need raw
     mkdir -p "$OSM_DIR"
-    NEED=$(( DOWNLOAD_SIZE * 115 / 100 ))
-    [[ "$DO_DOWNLOAD" == 0 && -f "$PBF_SOURCE" ]] && NEED=$(( $(stat -c%s "$PBF_SOURCE") * 15 / 100 ))
-    FREE=$(free_bytes "$OSM_DIR")
-    info "Needs about $(human_size "$NEED") in data/osm/ — $(human_size "$FREE") free."
-    if [[ "$NEED" -gt "$FREE" ]]; then
-        ask_yes_no "That probably won't fit. Continue anyway?" n || die "Not enough disk space in $OSM_DIR."
-    fi
-
+    need=$(( DOWNLOAD_SIZE * 115 / 100 ))
+    [[ "$DOWNLOAD" == no && -f "$PBF_SOURCE" ]] && need=$(( $(stat -c%s "$PBF_SOURCE") * 15 / 100 ))
+    room_for "$need" "$OSM_DIR" "data/osm/" || die "Not enough disk space in $OSM_DIR."
     DOCKER_ROOT=$(docker info -f '{{.DockerRootDir}}' 2>/dev/null || true)
-    if [[ -n "$DOCKER_ROOT" ]] && DOCKER_FREE=$(free_bytes "$DOCKER_ROOT" 2>/dev/null); then
-        RAW_SIZE=$DOWNLOAD_SIZE
-        [[ -f "$PBF_SOURCE" ]] && RAW_SIZE=$(stat -c%s "$PBF_SOURCE")
-        DOCKER_NEED=$(docker_need $(( RAW_SIZE / 50 )) 1)
-        info "Needs roughly $(human_size "$DOCKER_NEED") for Docker ($DOCKER_ROOT) — $(human_size "$DOCKER_FREE") free."
-        if [[ "$DOCKER_NEED" -gt "$DOCKER_FREE" ]]; then
-            ask_yes_no "That probably won't fit. Continue anyway?" n || die "Not enough disk space for Docker."
-        fi
+    if [[ -n "$DOCKER_ROOT" ]] && free_bytes "$DOCKER_ROOT" >/dev/null 2>&1; then
+        raw=$DOWNLOAD_SIZE
+        [[ -f "$PBF_SOURCE" ]] && raw=$(stat -c%s "$PBF_SOURCE")
+        room_for "$(docker_need "$raw" no)" "$DOCKER_ROOT" "Docker ($DOCKER_ROOT)" \
+            || die "Not enough disk space for Docker."
     fi
 }
 
 # The database there is replaced: say so, and note its extra data.
 confirm_replacing_database() {
-    if db_volume_exists; then
-        section "Existing database"
-        start_db
-        EXISTING_REGION=$(build_info region_name)
-        if [[ -n "$EXISTING_REGION" ]]; then
-            info "Your local database currently contains: ${BOLD}$EXISTING_REGION${RESET}"
-        else
-            info "There is an existing local database (possibly an unfinished build)."
-        fi
-        info "Building a new region ${BOLD}deletes it${RESET} and starts from scratch."
-        ask_yes_no "Delete the existing database and continue?" y || die "Aborted — nothing was changed."
-        # Its extra data (not from OSM) is saved first and kept for its region.
-        EXISTING_REGION_ID=$(build_info region_id)
-        EXISTING_EXTRA=$(extra_feature_count)
+    db_volume_exists || return 0
+    section "Existing database"
+    start_db
+    local existing
+    existing=$(build_info region_name)
+    if [[ -n "$existing" ]]; then
+        info "Your local database currently contains: ${BOLD}$existing${RESET}"
+    else
+        info "There is an existing local database (possibly an unfinished build)."
     fi
+    info "Building a new region ${BOLD}deletes it${RESET} and starts from scratch."
+    ask_yes_no "Delete the existing database and continue?" y || die "Aborted — nothing was changed."
+    # Its extra data (not from OSM) is saved first and kept for its region.
+    EXISTING_REGION_ID=$(build_info region_id)
+    EXISTING_EXTRA=$(extra_feature_count)
 }
 
 # Country boundaries (EEZ), and caching Wikidata images at the end.
 ask_boundaries_and_images() {
     section "Country boundaries"
-    HAVE_EEZ=0
-    ensure_eez_zip && HAVE_EEZ=1 && ok "EEZ boundaries found."
-
-    if [[ -z "$FETCH_IMAGES" && "$ASSUME_YES" == 1 ]]; then
-        FETCH_IMAGES=0
-    elif [[ -z "$FETCH_IMAGES" ]]; then
+    if ensure_eez_zip; then
+        HAVE_EEZ=1
+        ok "EEZ boundaries found."
+    fi
+    [[ "$IMAGES" == ask && "$ASSUME_YES" == 1 ]] && IMAGES=no
+    if [[ "$IMAGES" == ask ]]; then
         section "Wikidata images"
         info "Info popups can show photos and details from Wikidata. Caching them for"
         info "offline use makes ~2 requests per second, so it can take hours for a"
         info "continent. You can always do it later with: uv run scripts/fetch_images.py"
-        FETCH_IMAGES=0
-        if command -v uv &>/dev/null; then
-            ask_yes_no "Cache Wikidata images at the end of the build?" n && FETCH_IMAGES=1
-        else
+        IMAGES=no
+        if ! command -v uv &>/dev/null; then
             warn "uv isn't installed, so this step will be skipped."
+        elif ask_yes_no "Cache Wikidata images at the end of the build?" n; then
+            IMAGES=yes
         fi
     fi
 }
 
-# Extra data (not from OSM): kept from before, and what to add.
+# Extra data (not from OSM): what's kept from before, and what to add.
 ask_extra_data() {
-    # Extra data kept from before: in the database being replaced (saved before it's
-    # wiped) or saved by an earlier rebuild of this region.
-    EXTRA_KEPT=""
-    if [[ "$SKIP_EXTRA" == 1 ]]; then
-        :  # --no-extra: none at all (a saved copy stays in data/extra/)
-    elif [[ "${EXISTING_REGION_ID:-}" == "$REGION_ID" && "${EXISTING_EXTRA:-0}" -gt 0 ]]; then
-        EXTRA_KEPT="$(printf "%'d" "$EXISTING_EXTRA") features in the current database"
-    elif [[ -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
-        EXTRA_KEPT="$(manifest_get "$EXTRA_DIR/$REGION_ID.extra.json" description 2>/dev/null), saved $(manifest_get "$EXTRA_DIR/$REGION_ID.extra.json" saved_at 2>/dev/null | cut -c1-10)"
+    find_kept_extra_data
+    EXTRA_COVERAGE=unknown
+    if [[ "$EXTRA_NEW" != no ]]; then
+        find_extra_offer
     fi
-
-    # Extra data: offered only when a source covers the region (checked against the
-    # region's outline in the Geofabrik index; for a local file, we can't tell), one
-    # choice per dataset (`extra_data.py offer`: key <tab> label <tab> cost).
-    EXTRA_OFFER=""
-    EXTRA_STATUS=2
-    if [[ "$SKIP_EXTRA" != 1 ]] && command -v uv &>/dev/null; then
-        EXTRA_OFFER=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
-            && EXTRA_STATUS=0 || EXTRA_STATUS=$?
-    fi
-    EXTRA_KEYS=() EXTRA_LABELS=() EXTRA_COSTS=()
-    if [[ "$EXTRA_STATUS" == 0 ]]; then
-        while IFS=$'\t' read -r key label cost; do
-            EXTRA_KEYS+=("$key") EXTRA_LABELS+=("$label") EXTRA_COSTS+=("$cost")
-        done <<< "$EXTRA_OFFER"
-    fi
-    if [[ "$SKIP_EXTRA" == 1 ]]; then
-        EXTRA_DATA=0
-    elif [[ "$EXTRA_DATA" == 1 && "$EXTRA_STATUS" == 1 ]]; then
-        info "No extra data covers $REGION_NAME, so --extra does nothing."
-        EXTRA_DATA=0
-    elif [[ "$EXTRA_DATA" == 1 && -z "$EXTRA_CHOOSE" && "$EXTRA_STATUS" == 0 ]]; then
-        EXTRA_CHOOSE=$(IFS=,; echo "${EXTRA_KEYS[*]}")  # --extra: all of it
-    elif [[ -z "$EXTRA_DATA" ]]; then
-        EXTRA_DATA=0
-        if [[ -n "$EXTRA_KEPT" ]]; then
-            section "Extra data (not from OpenStreetMap)"
-            ok "The extra data for this region is kept: $EXTRA_KEPT"
-            info "It's put back without downloading it again, minus anything the new OSM data has."
-        fi
-        if [[ "$ASSUME_YES" == 1 || "$EXTRA_STATUS" == 1 ]]; then
-            :  # nothing more (kept data still goes back)
-        elif ! command -v uv &>/dev/null; then
-            warn "uv isn't installed, so extra data can't be imported."
-        elif [[ "$EXTRA_STATUS" != 0 ]]; then
-            [[ -n "$EXTRA_KEPT" ]] || section "Extra data (not from OpenStreetMap)"
-            info "Couldn't check which extra data covers this region (a local file, or no internet)."
-            ask_yes_no "Import any that covers it at the end of the build?" n && EXTRA_DATA=1
-        else
-            if [[ -n "$EXTRA_KEPT" ]]; then
-                info "Choose any to download again (a fresh copy replaces the kept one):"
-            else
-                section "Extra data (not from OpenStreetMap)"
-                info "Open data published outside OpenStreetMap covers this region. It's drawn like"
-                info "the OSM data, and its popups say where it comes from. Choose what to import"
-                info "at the end of the build:"
+    case "$EXTRA_NEW" in
+        yes)
+            if [[ "$EXTRA_COVERAGE" == none ]]; then
+                info "No extra data covers $REGION_NAME, so --extra does nothing."
+                EXTRA_NEW=no
+            elif [[ "$EXTRA_COVERAGE" == covered && -z "$EXTRA_CHOOSE" ]]; then
+                EXTRA_CHOOSE=$(IFS=,; echo "${EXTRA_KEYS[*]}")  # --extra: all of it
             fi
-            for i in "${!EXTRA_KEYS[@]}"; do
-                printf '      %d) %s\n         %s\n' "$((i + 1))" "${EXTRA_LABELS[$i]}" "${EXTRA_COSTS[$i]}"
-            done
-            info "You can also do it later with: uv run scripts/extra_data.py import --choose KEY,..."
-            while true; do
-                read -r -p "    Choose (e.g. 1,3 or all; Enter = none): " answer || answer=""
-                answer="${answer//[[:space:]]/}"
-                [[ -z "$answer" ]] && break
-                if [[ "$answer" == all ]]; then
-                    EXTRA_CHOOSE=$(IFS=,; echo "${EXTRA_KEYS[*]}")
-                    break
+            ;;
+        ask)
+            EXTRA_NEW=no
+            if [[ -n "$EXTRA_KEPT" ]]; then
+                section "Extra data (not from OpenStreetMap)"
+                ok "The extra data for this region is kept: $EXTRA_KEPT"
+                info "It's put back without downloading it again, minus anything the new OSM data has."
+            fi
+            if [[ "$ASSUME_YES" == 1 || "$EXTRA_COVERAGE" == none ]]; then
+                :  # nothing more (kept data still goes back)
+            elif ! command -v uv &>/dev/null; then
+                warn "uv isn't installed, so extra data can't be imported."
+            elif [[ "$EXTRA_COVERAGE" == unknown ]]; then
+                [[ -n "$EXTRA_KEPT" ]] || section "Extra data (not from OpenStreetMap)"
+                info "Couldn't check which extra data covers this region (a local file, or no internet)."
+                if ask_yes_no "Import any that covers it at the end of the build?" n; then
+                    EXTRA_NEW=yes
                 fi
-                EXTRA_CHOOSE="" valid=1
-                for n in ${answer//,/ }; do
-                    if [[ "$n" =~ ^[0-9]+$ && "$n" -ge 1 && "$n" -le "${#EXTRA_KEYS[@]}" ]]; then
-                        EXTRA_CHOOSE="${EXTRA_CHOOSE:+$EXTRA_CHOOSE,}${EXTRA_KEYS[$((n - 1))]}"
-                    else
-                        valid=0
-                    fi
-                done
-                [[ "$valid" == 1 ]] && break
-                warn "Type numbers from the list, separated by commas, or all."
-            done
-            [[ -n "$EXTRA_CHOOSE" ]] && EXTRA_DATA=1
-        fi
+            else
+                if [[ -n "$EXTRA_KEPT" ]]; then
+                    info "Choose any to download again (a fresh copy replaces the kept one):"
+                else
+                    section "Extra data (not from OpenStreetMap)"
+                    info "Open data published outside OpenStreetMap covers this region. It's drawn like"
+                    info "the OSM data, and its popups say where it comes from. Choose what to import"
+                    info "at the end of the build:"
+                fi
+                choose_extra_datasets
+                if [[ -n "$EXTRA_CHOOSE" ]]; then
+                    EXTRA_NEW=yes
+                fi
+            fi
+            ;;
+    esac
+    if [[ -n "$EXTRA_CHOOSE" ]]; then
+        info "Extra data to import: $EXTRA_CHOOSE"
     fi
-    if [[ -n "$EXTRA_CHOOSE" ]]; then info "Extra data to import: $EXTRA_CHOOSE"; fi
 }
 
-# The offline background map: full, reduced or none.
+# The offline background map: full, reduced, none, or keep the one there.
 ask_background_map() {
-    BASEMAP_FILE="$BASEMAP_DIR/$REGION_ID.pmtiles"
-    BASEMAP_MANIFEST="${BASEMAP_FILE%.pmtiles}.json"
-    BASEMAP_AREA=()
-    PROTOMAPS_BUILD=""
-    BASEMAP_SIZE=0
+    local file="$BASEMAP_DIR/$REGION_ID.pmtiles" manifest="$BASEMAP_DIR/$REGION_ID.json"
+    local planet_size=0 full_size reduced_size
     [[ -z "$BASEMAP_MODE" && "$ASSUME_YES" == 1 ]] && BASEMAP_MODE=none
-    if [[ "$BASEMAP_MODE" != none ]]; then
-        section "Background map"
-        mkdir -p "$BASEMAP_DIR"
-        read -r PROTOMAPS_BUILD PLANET_BASEMAP_SIZE < <(curl -sf --max-time 20 "$PROTOMAPS_BUILDS_URL" \
-            | python3 -c 'import json,sys; b=json.load(sys.stdin)[-1]; print(b["key"], b.get("size", 0))' 2>/dev/null) || true
-        # Which area to cut out: the Geofabrik outline, the file's bounding box, or everything.
-        if [[ "$REGION_ID" != "$PLANET_ID" ]]; then
-            if [[ -n "$PBF_URL" ]] && geofabrik_outline "$REGION_ID" "$BASEMAP_DIR/.area-$REGION_ID.geojson"; then
-                BASEMAP_AREA=("--region=/out/.area-$REGION_ID.geojson")
-            elif [[ -f "$PBF_SOURCE" ]]; then
-                BBOX=$(osmium fileinfo -g header.boxes /src.osm.pbf 2>/dev/null | tr -d '() ' | head -1 || true)
-                [[ "$BBOX" =~ ^-?[0-9.]+,-?[0-9.]+,-?[0-9.]+,-?[0-9.]+$ ]] && BASEMAP_AREA=("--bbox=$BBOX")
-            fi
-        fi
-        if [[ -f "$BASEMAP_FILE" && -z "$BASEMAP_MODE" ]]; then
-            ok "Already downloaded: $(manifest_get "$BASEMAP_MANIFEST" detail) detail, $(human_size "$(stat -c%s "$BASEMAP_FILE")"), map data from $(manifest_get "$BASEMAP_MANIFEST" build | cut -c1-8)."
-            if [[ -z "$PROTOMAPS_BUILD" ]] || ! ask_yes_no "Download it again with the latest map data?" n; then
-                BASEMAP_MODE=keep
-            fi
-        fi
-        if [[ "$BASEMAP_MODE" == keep ]]; then
-            :
-        elif [[ -z "$PROTOMAPS_BUILD" ]]; then
-            warn "Can't reach Protomaps — the background map will come from openinframap.org (online)."
-            BASEMAP_MODE=none
-        elif [[ "$REGION_ID" != "$PLANET_ID" && ${#BASEMAP_AREA[@]} -eq 0 ]]; then
-            warn "Can't tell which area this region covers, so there's no offline background map for it."
-            BASEMAP_MODE=none
-        else
-            info "The background map (streets, buildings, place names) normally comes from"
-            info "openinframap.org over the internet. Download it for this region to use the"
-            info "map fully offline. Checking sizes..."
-            if [[ "$REGION_ID" == "$PLANET_ID" ]]; then
-                FULL_SIZE=$PLANET_BASEMAP_SIZE
-            else
-                FULL_SIZE=$(basemap_size)
-            fi
-            REDUCED_SIZE=$(basemap_size "$REDUCED_MAXZOOM")
-            if [[ -z "$BASEMAP_MODE" ]]; then
-                DEFAULT_CHOICE=1
-                [[ "$FULL_SIZE" -gt $((10 * 1000 * 1000 * 1000)) ]] && DEFAULT_CHOICE=2
-                echo ""
-                printf "      1) Full detail     %8s  streets and individual buildings at every zoom\n" "$(human_size "$FULL_SIZE")"
-                printf "      2) Reduced detail  %8s  streets and places; blurry when zoomed in close\n" "$(human_size "$REDUCED_SIZE")"
-                printf "      3) Skip            %8s  keep using the online background map\n" "—"
-                echo ""
-                while true; do
-                    read -r -p "    Choose [1-3, default $DEFAULT_CHOICE]: " CHOICE || die "Aborted."
-                    case "${CHOICE:-$DEFAULT_CHOICE}" in
-                        1) BASEMAP_MODE=full; break ;;
-                        2) BASEMAP_MODE=reduced; break ;;
-                        3) BASEMAP_MODE=none; break ;;
-                    esac
-                done
-            fi
-            if [[ "$BASEMAP_MODE" == full || "$BASEMAP_MODE" == reduced ]]; then
-                BASEMAP_SIZE=$FULL_SIZE
-                [[ "$BASEMAP_MODE" == reduced ]] && BASEMAP_SIZE=$REDUCED_SIZE
-                BASEMAP_FREE=$(free_bytes "$BASEMAP_DIR")
-                if [[ "$BASEMAP_SIZE" -gt "$BASEMAP_FREE" ]]; then
-                    ask_yes_no "It needs $(human_size "$BASEMAP_SIZE") but only $(human_size "$BASEMAP_FREE") is free in data/basemap/. Continue anyway?" n \
-                        || BASEMAP_MODE=none
-                fi
-            fi
+    [[ "$BASEMAP_MODE" == none ]] && return 0
+    section "Background map"
+    mkdir -p "$BASEMAP_DIR"
+    read -r PROTOMAPS_BUILD planet_size < <(latest_protomaps_build) || true
+    find_basemap_area
+    if [[ -f "$file" && -z "$BASEMAP_MODE" ]]; then
+        ok "Already downloaded: $(json_get "$manifest" detail) detail, $(human_size "$(stat -c%s "$file")"), map data from $(json_get "$manifest" build | cut -c1-8)."
+        if [[ -z "$PROTOMAPS_BUILD" ]] || ! ask_yes_no "Download it again with the latest map data?" n; then
+            BASEMAP_MODE=keep
+            return 0
         fi
     fi
+    if [[ -z "$PROTOMAPS_BUILD" ]]; then
+        warn "Can't reach Protomaps — the background map will come from openinframap.org (online)."
+        BASEMAP_MODE=none
+        return 0
+    fi
+    if [[ "$REGION_ID" != "$PLANET_ID" && ${#BASEMAP_AREA[@]} -eq 0 ]]; then
+        warn "Can't tell which area this region covers, so there's no offline background map for it."
+        BASEMAP_MODE=none
+        return 0
+    fi
+    info "The background map (streets, buildings, place names) normally comes from"
+    info "openinframap.org over the internet. Download it for this region to use the"
+    info "map fully offline. Checking sizes..."
+    if [[ "$REGION_ID" == "$PLANET_ID" ]]; then
+        full_size=$planet_size
+    else
+        full_size=$(basemap_size "$PROTOMAPS_BUILD" "" "${BASEMAP_AREA[@]}")
+    fi
+    reduced_size=$(basemap_size "$PROTOMAPS_BUILD" "$REDUCED_MAXZOOM" "${BASEMAP_AREA[@]}")
+    [[ -n "$BASEMAP_MODE" ]] || choose_basemap_detail "$full_size" "$reduced_size"
+    [[ "$BASEMAP_MODE" == none ]] && return 0
+    BASEMAP_SIZE=$full_size
+    [[ "$BASEMAP_MODE" == reduced ]] && BASEMAP_SIZE=$reduced_size
+    room_for "$BASEMAP_SIZE" "$BASEMAP_DIR" "data/basemap/" || BASEMAP_MODE=none
 }
 
 # Satellite imagery (lib/satellite.sh).
@@ -710,84 +704,65 @@ start_building() {
     log_build "$REGION_ID  started ($REGION_NAME)"
 }
 
-# Download the extract (if needed).
+# Download the extract (if needed), verify it, and only then replace the old one.
 download_extract() {
-    if [[ "$DO_DOWNLOAD" == 1 ]]; then
+    if [[ "$DOWNLOAD" == yes ]]; then
         section "Downloading $REGION_NAME from Geofabrik ($(human_size "$DOWNLOAD_SIZE"))..."
-        # -C - resumes a partial download from an earlier interrupted run;
-        # -R keeps Geofabrik's date on the file, so it shows when the data is from.
-        curl -L --fail --progress-bar -R -C - -o "$PBF_SOURCE.part" "$PBF_URL" \
-            || [[ "$(stat -c%s "$PBF_SOURCE.part" 2>/dev/null || echo 0)" == "$DOWNLOAD_SIZE" ]] \
-            || die "Download failed. Re-run the script to resume it."
+        local status=0
+        download "$PBF_URL" "$PBF_SOURCE.new" || status=$?
+        [[ "$status" == 0 ]] || die_download "$status" "$REGION_NAME"
         if [[ -n "$REMOTE_MD5" ]]; then
             info "Verifying checksum..."
-            if [[ "$(md5sum "$PBF_SOURCE.part" | cut -d' ' -f1)" != "$REMOTE_MD5" ]]; then
-                rm -f "$PBF_SOURCE.part"
+            if [[ "$(md5sum "$PBF_SOURCE.new" | cut -d' ' -f1)" != "$REMOTE_MD5" ]]; then
+                rm -f "$PBF_SOURCE.new"
                 die "The download is corrupt (Geofabrik may have published a new extract mid-download). Re-run the script."
             fi
         fi
-        # Only replace the old extract once the new one is complete and verified.
         rm -f "$PBF_SOURCE.md5"
-        mv "$PBF_SOURCE.part" "$PBF_SOURCE"
+        mv "$PBF_SOURCE.new" "$PBF_SOURCE"
         [[ -n "$REMOTE_MD5" ]] && echo "$REMOTE_MD5" > "$PBF_SOURCE.md5"
         ok "Downloaded $(human_size "$(stat -c%s "$PBF_SOURCE")")."
     fi
-
     OSM_TIMESTAMP=$(osmium fileinfo -g header.option.osmosis_replication_timestamp /src.osm.pbf 2>/dev/null || true)
 }
 
-# Keep only what the map uses (osmium), and check Docker has room.
+# Keep only what the map uses (osmium); an earlier result is reused when neither
+# the extract nor the imposm mapping changed. Sets IMPORT_PBF.
 filter_extract() {
     IMPORT_PBF="$PBF_SOURCE"
-    if [[ "$USE_FILTER" == 1 ]]; then
-        section "Filtering the extract down to infrastructure..."
-        FILTERED="$OSM_DIR/$REGION_ID-filtered.osm.pbf"
-        python3 "$REPO_ROOT/scripts/osm_filter.py" > "$OSM_DIR/filter.txt"
-        # Reuse an earlier result when neither the extract nor the mapping changed.
-        STAMP="$(stat -c '%s %Y' "$PBF_SOURCE") $(md5sum < "$OSM_DIR/filter.txt" | cut -d' ' -f1)"
-        if [[ -f "$FILTERED" && "$(cat "$FILTERED.stamp" 2>/dev/null)" == "$STAMP" ]]; then
-            ok "Already filtered."
-        else
-            osmium tags-filter --progress /src.osm.pbf -e /osm/filter.txt \
-                -o "/osm/$(basename "$FILTERED")" --overwrite
-            echo "$STAMP" > "$FILTERED.stamp"
-            ok "$(human_size "$(stat -c%s "$PBF_SOURCE")") → $(human_size "$(stat -c%s "$FILTERED")")"
-        fi
-        IMPORT_PBF="$FILTERED"
+    [[ "$FILTER" == yes ]] || return 0
+    section "Filtering the extract down to infrastructure..."
+    local filtered="$OSM_DIR/$REGION_ID-filtered.osm.pbf" stamp
+    python3 "$REPO_ROOT/scripts/osm_filter.py" > "$OSM_DIR/filter.txt"
+    stamp="$(stat -c '%s %Y' "$PBF_SOURCE") $(md5sum < "$OSM_DIR/filter.txt" | cut -d' ' -f1)"
+    if [[ -f "$filtered" && "$(cat "$filtered.stamp" 2>/dev/null)" == "$stamp" ]]; then
+        ok "Already filtered."
+    else
+        osmium tags-filter --progress /src.osm.pbf -e /osm/filter.txt \
+            -o "/osm/$(basename "$filtered")" --overwrite
+        echo "$stamp" > "$filtered.stamp"
+        ok "$(human_size "$(stat -c%s "$PBF_SOURCE")") → $(human_size "$(stat -c%s "$filtered")")"
     fi
+    IMPORT_PBF="$filtered"
+}
 
-    # Now that the real input size is known, check Docker has room for the database.
-    if [[ -n "$DOCKER_ROOT" ]] && DOCKER_FREE=$(free_bytes "$DOCKER_ROOT" 2>/dev/null); then
-        DOCKER_NEED=$(docker_need "$(stat -c%s "$IMPORT_PBF")" "$USE_FILTER")
-        if [[ "$DOCKER_NEED" -gt "$DOCKER_FREE" ]]; then
-            die "The database needs about $(human_size "$DOCKER_NEED") in $DOCKER_ROOT but only $(human_size "$DOCKER_FREE") is free.
+# Now that the real input size is known: room in Docker for the database.
+check_docker_space() {
+    local need free
+    [[ -n "$DOCKER_ROOT" ]] || return 0
+    free=$(free_bytes "$DOCKER_ROOT" 2>/dev/null) || return 0
+    need=$(docker_need "$(stat -c%s "$IMPORT_PBF")" "$FILTER")
+    if [[ "$need" -gt "$free" ]]; then
+        die "The database needs about $(human_size "$need") in $DOCKER_ROOT but only $(human_size "$free") is free.
            Free up some space and re-run — the download and filtering won't be repeated."
-        fi
     fi
 }
 
-# A fresh database, the imposm import and the SQL steps (SCHEMA_FILES).
+# A fresh database (My layers and extra data kept), the imposm import and the SQL
+# steps (in SCHEMA_FILES' order).
 import_osm() {
     section "Creating a fresh database..."
-    # The backend container goes down with everything else; bring it back afterwards.
-    BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
-    # Keep the extra data (not from OSM): it's slow to download again.
-    if [[ "${EXISTING_EXTRA:-0}" -gt 0 && -n "${EXISTING_REGION_ID:-}" ]]; then
-        run_with_timer "Saving the extra data ($(printf "%'d" "$EXISTING_EXTRA") features)" save_extra_data "$EXISTING_REGION_ID" \
-            || die "Saving the extra data failed, so the database was left as it was."
-        ok "Saved to data/extra/$EXISTING_REGION_ID.extra.dump"
-    fi
-    # Keep "My layers" (made on the map): they belong to this computer.
-    USER_SAVES=$(user_data_saves)
-    if [[ "${USER_SAVES:-0}" -gt 0 ]]; then
-        run_with_timer "Saving My layers" save_user_data \
-            || die "Saving My layers failed, so the database was left as it was."
-        ok "Saved to data/userdata/userdata.dump"
-    fi
-    # -v removes this project's volumes only (database, imposm cache).
-    docker compose --progress quiet down -v --remove-orphans
-    start_db
-    ok "Postgres is ready."
+    fresh_database "$EXISTING_REGION_ID"
 
     section "Importing with imposm (the longest step)..."
     docker compose --progress quiet run --rm --build \
@@ -802,50 +777,35 @@ import_osm() {
         -overwritecache
 
     section "Creating views..."
-    run_with_timer "Creating map views" run_sql_file schema/views.sql
-    run_with_timer "Creating stats tables" run_sql_file schema/stats.sql
-    run_with_timer "Preparing place search" run_sql_file schema/places.sql
-    run_with_timer "Sorting critical sites" run_sql_file schema/sites.sql
-    run_with_timer "Building the power grid network" run_sql_file schema/grid.sql
-    run_with_timer "Preparing tower numbers" run_sql_file schema/tower-numbers.sql
+    run_schema views stats places sites grid tower-numbers
     run_with_timer "Creating search indexes" create_search_indexes
     # Extra data kept for this region goes back first; then the extra data tables
     # (which always exist, as Tegola serves them) get whatever is new.
-    EXTRA_RESTORED=0
     if [[ -n "$EXTRA_KEPT" && -f "$EXTRA_DIR/$REGION_ID.extra.dump" ]]; then
-        if run_with_timer "Putting back the extra data" restore_extra_data "$REGION_ID"; then
+        if run_with_timer --keep-going "Putting back the extra data" restore_extra_data "$REGION_ID"; then
             EXTRA_RESTORED=1
         else
             warn "Putting back the extra data failed; re-import it with: uv run scripts/extra_data.py import"
             db_psql -c "DROP SCHEMA IF EXISTS extra CASCADE;"
         fi
     fi
-    run_with_timer "Creating extra data tables" run_sql_file schema/extra.sql
-    # Everything with a name, for the search box (extra_data.py refreshes it when the
-    # extra data changes below).
-    run_with_timer "Preparing search" run_sql_file schema/search.sql
-    # My layers, saved before the database was wiped (or by an earlier run).
-    if [[ -f "$USERDATA_DUMP" ]]; then
-        run_with_timer "Putting back My layers" restore_user_data \
-            || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
-    fi
-    # After My layers' data is back: it holds the register that keeps each tower's number.
-    run_with_timer "Numbering towers along their lines" number_towers \
-        || warn "Numbering towers failed; towers have no numbers. Retry: bash scripts/number-towers.sh"
+    # Then everything with a name, for the search box (extra_data.py refreshes it
+    # when the extra data changes).
+    run_schema extra search
+    put_back_my_layers
 }
 
 # Country boundaries and the per-country stats.
 import_boundaries() {
-    if [[ "$HAVE_EEZ" == 1 ]]; then
-        section "Importing country boundaries..."
-        run_with_timer "Importing EEZ boundaries" import_eez
-        # Per-country stats pages read from the stats schema; production refreshes
-        # it on a schedule, here one snapshot of the freshly imported data is enough.
-        run_with_timer "Computing per-country stats" run_sql_file schema/local-stats.sql
-    fi
+    [[ "$HAVE_EEZ" == 1 ]] || return 0
+    section "Importing country boundaries..."
+    run_with_timer "Importing EEZ boundaries" import_eez
+    # Per-country stats pages read from the stats schema; production refreshes it
+    # on a schedule, here one snapshot of the freshly imported data is enough.
+    run_schema local-stats
 }
 
-# What was built (oim_build_info), then the extra data.
+# What was built (oim_build_info: read by the scripts, the exports and the backend).
 record_build() {
     db_psql <<SQL
 CREATE TABLE oim_build_info (key text PRIMARY KEY, value text NOT NULL);
@@ -859,96 +819,78 @@ INSERT INTO oim_build_info VALUES
     ('schema_hash',   '$(schema_hash)'),
     ('built_at',      '$(date -u +%Y-%m-%dT%H:%M:%SZ)');
 SQL
+}
 
-    # Extra data: after the build info, which says which region to cover. Kept data
-    # is checked against the new OSM data (which may now have some of it).
-    if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_DATA" != 1 ]] && command -v uv &>/dev/null; then
+# Extra data: after the build info, which says which region to cover. Kept data
+# is checked against the new OSM data (which may now have some of it).
+import_extra_data() {
+    local db_url="postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" args=()
+    if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_NEW" != yes ]] && command -v uv &>/dev/null; then
         section "Checking the kept extra data against the new OSM data..."
-        uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" dedupe \
+        uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" dedupe \
             || warn "Checking failed; the extra data is there but may overlap OSM. Retry with: uv run scripts/extra_data.py dedupe"
     fi
-    if [[ "$EXTRA_DATA" == 1 ]]; then
+    if [[ "$EXTRA_NEW" == yes ]]; then
         section "Importing extra data (outside OpenStreetMap)..."
-        # A fresh copy (asked for when there's kept data) means not reusing earlier downloads.
-        EXTRA_ARGS=()
-        [[ -n "$EXTRA_CHOOSE" ]] && EXTRA_ARGS+=(--choose "$EXTRA_CHOOSE")
-        [[ -n "$EXTRA_KEPT" ]] && EXTRA_ARGS+=(--refresh)
-        uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" import "${EXTRA_ARGS[@]}" \
+        [[ -n "$EXTRA_CHOOSE" ]] && args+=(--choose "$EXTRA_CHOOSE")
+        # A fresh copy (asked for when there's kept data): not reusing earlier downloads.
+        [[ -n "$EXTRA_KEPT" ]] && args+=(--refresh)
+        uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" import "${args[@]}" \
             || warn "Importing extra data failed; the map works without it. Retry with: uv run scripts/extra_data.py import"
     fi
 }
 
-# Tegola, recreated so it serves no tiles cached from the old data.
+# Tegola (recreated: no tiles cached from the old data), and the backend.
 start_tile_server() {
     section "Starting the Tegola tile server..."
-    docker compose --progress quiet up -d --build --force-recreate tegola
-    ok "Running on http://localhost:7800"
-    if [[ -n "$BACKEND_WAS_RUNNING" ]]; then
-        up_services backend
-        ok "Backend restarted on http://localhost:$BACKEND_PORT"
-    fi
+    restart_map_services
 }
 
-# The offline background map and satellite imagery, after everything else.
+# The offline background map and satellite imagery, after everything else: a
+# failure here doesn't lose the build.
 offline_background() {
-    download_basemap() {
-        local partial="$BASEMAP_DIR/.$REGION_ID.partial.pmtiles" args=("${BASEMAP_AREA[@]}")
-        if [[ "$REGION_ID" == "$PLANET_ID" && "$BASEMAP_MODE" == full ]]; then
-            # The whole world is just the build file itself: download it (resumable).
-            curl -L --fail --progress-bar -C - -o "$partial" "$PROTOMAPS_BASE/$PROTOMAPS_BUILD" || return 1
-        else
-            [[ "$BASEMAP_MODE" == reduced ]] && args+=("--maxzoom=$REDUCED_MAXZOOM")
-            rm -f "$partial"
-            pmtiles extract "$PROTOMAPS_BASE/$PROTOMAPS_BUILD" "/out/$(basename "$partial")" "${args[@]}" || return 1
-        fi
-        mv "$partial" "$BASEMAP_FILE"
-        python3 -c 'import json, sys
-    json.dump({"region_id": sys.argv[2], "build": sys.argv[3], "detail": sys.argv[4],
-               "downloaded_at": sys.argv[5]}, open(sys.argv[1], "w"), indent=2)' \
-            "$BASEMAP_MANIFEST" "$REGION_ID" "$PROTOMAPS_BUILD" "$BASEMAP_MODE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    }
+    local status=0
     if [[ "$BASEMAP_MODE" == full || "$BASEMAP_MODE" == reduced ]]; then
         section "Downloading the background map ($BASEMAP_MODE detail, $(human_size "$BASEMAP_SIZE"))..."
-        if download_basemap; then
-            ok "Saved $(human_size "$(stat -c%s "$BASEMAP_FILE")") → data/basemap/$REGION_ID.pmtiles"
+        download_basemap "$REGION_ID" "$PROTOMAPS_BUILD" "$BASEMAP_MODE" "${BASEMAP_AREA[@]}" || status=$?
+        if [[ "$status" == 0 ]]; then
+            ok "Saved $(human_size "$(stat -c%s "$BASEMAP_DIR/$REGION_ID.pmtiles")") → data/basemap/$REGION_ID.pmtiles"
         else
+            [[ "$status" == "$CONNECTION_LOST" ]] && warn "No internet connection."
             warn "Downloading the background map failed, so the map will use the online one."
             warn "Re-run this script to try again."
         fi
     fi
     section "Background map"
     select_basemap "$REGION_ID"
-    [[ -f "$BASEMAP_FILE" ]] || info "Using the online background map (openinframap.org)."
-
-    # Satellite imagery, after everything else: a failure here doesn't lose the build.
+    [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]] || info "Using the online background map (openinframap.org)."
     download_satellite "$REGION_ID"
 }
 
 # The Wikidata cache for the info popups (if asked).
 cache_wikidata() {
-    if [[ "$FETCH_IMAGES" == 1 ]]; then
-        section "Caching Wikidata data and images (already-cached ones are skipped)..."
-        uv run "$REPO_ROOT/scripts/fetch_images.py"
-    fi
+    [[ "$IMAGES" == yes ]] || return 0
+    section "Caching Wikidata data and images (already-cached ones are skipped)..."
+    uv run "$REPO_ROOT/scripts/fetch_images.py" \
+        || warn "Caching Wikidata images stopped; run it again to go on: uv run scripts/fetch_images.py"
 }
 
 # What was built, and an out-of-date export made again.
 finish() {
-    ELAPSED=$((SECONDS - START))
+    local took
+    took=$(duration $((SECONDS - START)))
     BUILD_DONE=1
-    log_build "$REGION_ID  completed in $((ELAPSED / 3600))h $((ELAPSED % 3600 / 60))m (OSM data as of ${OSM_TIMESTAMP:-unknown})"
-    DB_SIZE=$(db_query "SELECT pg_size_pretty(pg_database_size('$DB_NAME'))")
-    echo ""
-    echo "${BOLD}======================================================${RESET}"
-    echo "${BOLD} ${GREEN}✓${RESET}${BOLD} $REGION_NAME is built${RESET}"
-    echo "${BOLD}======================================================${RESET}"
+    log_build "$REGION_ID  completed in $took (OSM data as of ${OSM_TIMESTAMP:-unknown})"
+    done_banner "$REGION_NAME is built"
     info "OSM data as of: ${OSM_TIMESTAMP:-unknown}"
-    info "Database size:  $DB_SIZE"
-    info "Took:           $((ELAPSED / 3600))h $((ELAPSED % 3600 / 60))m $((ELAPSED % 60))s"
+    info "Database size:  $(db_query "SELECT pg_size_pretty(pg_database_size('$DB_NAME'))")"
+    info "Took:           $took"
     [[ "$HAVE_EEZ" == 1 ]] || warn "No EEZ boundaries — search and area/stats pages won't work. Re-run to add them."
     echo ""
     # A ready-made export of the region made before this build is out of date now.
-    [[ -n "$NO_EXPORT" ]] || reexport_if_outdated
+    if [[ "$REEXPORT" == yes ]]; then
+        reexport_if_outdated
+    fi
     echo ""
     info "Start the app with: bash scripts/start.sh"
 }
@@ -959,7 +901,9 @@ finish() {
 check_prerequisites
 choose_region
 offer_ready_made
-check_download_and_space
+find_region_source
+decide_download
+check_space
 confirm_replacing_database
 ask_boundaries_and_images
 ask_extra_data
@@ -968,9 +912,11 @@ ask_satellite
 start_building
 download_extract
 filter_extract
+check_docker_space
 import_osm
 import_boundaries
 record_build
+import_extra_data
 start_tile_server
 offline_background
 cache_wikidata

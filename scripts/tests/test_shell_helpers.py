@@ -170,14 +170,16 @@ def test_every_schema_file_is_built_and_fingerprinted():
     on_disk = {p.stem for p in (SCRIPTS.parent / "schema").glob("*.sql")}
     assert on_disk == set(built) | set(skipped), "add new schema/*.sql to SCHEMA_FILES"
     # build-region.sh runs them in the listed order (functions.sql and eez.sql run
-    # elsewhere: at database creation, and in import_eez).
+    # elsewhere: at database creation, and in import_eez), with run_schema.
     script = (SCRIPTS / "build-region.sh").read_text()
-    positions = [
-        script.index(f"run_sql_file schema/{name}.sql")
-        for name in built
-        if name not in ("functions", "eez")
+    ran = [
+        name
+        for line in re.findall(r"^\s*run_schema ([a-z -]+)$", script, re.MULTILINE)
+        for name in line.split()
     ]
-    assert positions == sorted(positions)
+    assert ran == [name for name in built if name not in ("functions", "eez")]
+    labels = bash('echo "${!SCHEMA_LABELS[@]}"').split()
+    assert set(ran) <= set(labels), "give each schema step a label in SCHEMA_LABELS"
     # Changing any of them changes the fingerprint.
     before = bash("schema_hash")
     assert len(before) == 12
@@ -203,3 +205,106 @@ def test_latest_line_shows_a_counter_rewriting_its_line(tmp_path):
     log = tmp_path / "log"
     log.write_text("  first\n  1,000/9,000 tiles\r  2,000/9,000 tiles\r\n\n")
     assert bash(f'latest_line "{log}"') == "2,000/9,000 tiles"
+
+
+# --- Downloading safely (lib/net.sh) ----------------------------------------------
+
+NET = "NET_WAIT_SECONDS=2; NET_CHECK_EVERY=1; sleep() { :; }; "
+
+
+def test_safely_retries_while_the_server_answers():
+    out = bash(
+        NET
+        + "reachable() { return 0; }; n=0; "
+        + "flaky() { n=$((n + 1)); [[ $n -ge 3 ]]; }; "
+        + 'safely https://example.org/x flaky 2>/dev/null; echo "status $? after $n"'
+    )
+    assert out.endswith("status 0 after 3")
+
+
+def test_safely_gives_up_on_a_failing_download_when_the_server_answers():
+    out = bash(
+        NET
+        + "reachable() { return 0; }; n=0; broken() { n=$((n + 1)); return 22; }; "
+        + 'safely https://example.org/x broken 2>/dev/null; echo "status $? after $n"'
+    )
+    assert out.endswith("status 22 after 3")
+
+
+def test_safely_waits_for_the_connection_then_goes_on():
+    out = bash(
+        NET
+        + "checks=0; reachable() { checks=$((checks + 1)); [[ $checks -ge 2 ]]; }; "
+        + "n=0; flaky() { n=$((n + 1)); [[ $n -ge 2 ]]; }; "
+        + 'safely https://example.org/x flaky 2>/dev/null; echo "status $? after $n"'
+    )
+    assert out.endswith("status 0 after 2")
+
+
+def test_safely_stops_when_the_connection_stays_down():
+    out = bash(
+        NET
+        + "reachable() { return 1; }; n=0; down() { n=$((n + 1)); return 6; }; "
+        + 'safely https://example.org/x down 2>/dev/null; echo "status $? after $n"'
+    )
+    assert out.endswith("status 75 after 1")
+
+
+def test_a_download_that_hangs_is_stopped():
+    out = bash(
+        'run_with_timer --keep-going --stall 2 "Step" sleep 30 2>&1; echo "status $?"'
+    )
+    assert "No progress for 2s" in out and out.endswith("status 124")
+
+
+def test_url_parts():
+    assert (
+        bash("url_origin https://example.org:8080/a/b?c") == "https://example.org:8080"
+    )
+    assert bash("url_host https://example.org/a") == "example.org"
+
+
+# --- Other helpers ------------------------------------------------------------------
+
+
+def test_choose_number_asks_again_until_valid():
+    out = subprocess.run(
+        ["bash", "-c", f'source "{COMMON}"\nchoose_number 3'],
+        input="x\n5\n2\n",
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert out.stdout.strip() == "2"
+    # Enter or no input: the default; --or-enter without one: nothing, status 1.
+    assert bash("choose_number 3 2 </dev/null") == "2"
+    assert bash("choose_number --or-enter 3 <<<'' || echo back") == "back"
+
+
+def test_duration():
+    assert bash("duration 5") == "5s"
+    assert bash("duration 125") == "2m 5s"
+    assert bash("duration 3725") == "1h 2m 5s"
+
+
+def test_json_write_and_get(tmp_path):
+    f = tmp_path / "m.json"
+    bash(f'json_write "{f}" name="Île-de-France" size:=12 empty=')
+    assert json.loads(f.read_text()) == {
+        "name": "Île-de-France",
+        "size": 12,
+        "empty": "",
+    }
+    assert bash(f'json_get "{f}" name') == "Île-de-France"
+    assert bash(f'json_get "{f}" missing') == ""
+
+
+def test_room_for(tmp_path):
+    assert bash(f'room_for 1 "{tmp_path}" here >/dev/null && echo fits') == "fits"
+    # Too big: asks (--yes keeps the "no" default).
+    assert (
+        bash(
+            f'ASSUME_YES=1; room_for 999999999999999 "{tmp_path}" here >/dev/null || echo no'
+        )
+        == "no"
+    )

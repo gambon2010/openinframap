@@ -1493,6 +1493,56 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## Setup scripts tidied; safe downloads (2026-11-06)
+
+**Every download goes through one safe function.** Shell: `download URL FILE`
+(`lib/net.sh`, curl, through `FILE.part`, resumed) and `safely URL command...` for
+another downloading command (`pmtiles extract`). Python: `scripts/netsafe.py`
+(`safely(call, url)`, `fetch(url)`), used by the satellite tiles and Sentinel-2's
+GDAL pipeline, the extra data (Agence ORE, Géorisques, the départements) and the
+Wikidata cache. What they do when a download fails:
+
+- the server still answers (a drop, a busy server): tried again a few times;
+- it doesn't: wait for the connection (checked every 15 s, `NET_CHECK_EVERY`) for
+  up to 15 minutes (`NET_WAIT_SECONDS`), then go on where it stopped;
+- a download that hangs (curl: under 1 kB/s for 2 minutes; pmtiles: its progress
+  stops for 2 minutes, `run_with_timer --stall`) counts as failed;
+- the connection doesn't come back: stop, keeping what's downloaded, with exit
+  status 75 and "run again to go on". The build stops on the OSM extract; the
+  background map, satellite imagery, extra data and Wikidata cache are skipped
+  with a warning (the map works without them).
+
+Small files fetched while asking the questions (`download --quick`: the Geofabrik
+index, checksums, Protomaps' build list; extra data's estimates) are retried but
+never waited for: the questions have an offline fallback.
+
+The crash this fixes: the server hanging up mid-download (`RemoteDisconnected`)
+wasn't caught, and the world's Blue Marble download stopped with a traceback.
+
+**The scripts, easier to read** (behaviour, options and questions unchanged; the
+real Luxembourg build, export and import pass):
+
+- `build-region.sh` (977 lines, now ~900 with more comments): "what the build will
+  do" at the top, every variable the steps share with its meaning; choices as
+  `yes` / `no` / `ask` (one variable each: `--no-extra` was two flags); each step
+  does one thing (`find_region_source`, `decide_download`, `check_space`,
+  `check_docker_space`, `import_extra_data` split out of the steps that hid them);
+  the long question steps split (`find_kept_extra_data`, `find_extra_offer`,
+  `choose_extra_datasets`, `find_basemap_area`, `choose_basemap_detail`,
+  `region_menu_line`).
+- Shared helpers instead of copies: `choose_number` (every numbered menu),
+  `room_for` (disk space), `banner` / `done_banner` / `duration`, `json_get` /
+  `json_write` (manifests; 6 inline Python snippets gone), `pmtiles_header_byte`
+  (3 copies), `run_schema` with each step's label (`SCHEMA_LABELS`).
+- Building and importing share `fresh_database` (My layers and extra data saved,
+  the wipe), `put_back_my_layers` and `restart_map_services` (`lib/db.sh`).
+- Helpers moved out of `build-region.sh`: the Geofabrik index and lookups to
+  `lib/geofabrik.sh`, the background map's download to `lib/basemap.sh`.
+- Fixed on the way: a failing "Putting back the extra data" or "Numbering towers"
+  stopped the build instead of warning (the warning was unreachable).
+- Note: an extract download left unfinished by the old script (`.osm.pbf.part`)
+  starts again; new ones resume from `.osm.pbf.new.part`.
+
 ## Code tidied (2026-11-06)
 
 A pass over the fork's frontend for repeated logic and long files. Behaviour is
@@ -1734,16 +1784,8 @@ shown by `web/src/fork/modules/satellite/`.
   when no imagery covers the map ("No satellite imagery here"). The bounds come from
   the background map server's TileJSON (`/<name>.json`), which needs its
   `--public-url` (`docker-compose.override.yml`).
-- **A lost connection doesn't crash the download** (2026-11-06): a tile request
-  that fails (the server hanging up, no network, a 5xx or 429) is tried again 4
-  times, then `satimagery/download.py` waits for the connection (one thread checks
-  the server every 15 s, the others wait with it) for up to 15 minutes, and goes on
-  where it stopped. If it doesn't come back, the tiles so far are saved and
-  `satellite.py` exits with status 75 and a short message; `download_satellite`
-  then skips the remaining steps ("run again to go on"). `run_with_timer` gained
-  `--progress` (the command's latest line next to the counter: the tile count, the
-  wait) and `--keep-going` (return the status instead of stopping the script).
-  Sentinel-2 (GDAL in Docker) still relies on GDAL's own retries.
+- **A lost connection doesn't crash a download** (2026-11-06): see "Setup scripts
+  tidied; safe downloads" below.
 
 ## One look for the panels; Settings
 

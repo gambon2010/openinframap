@@ -165,6 +165,13 @@ bash scripts/build-region.sh --help                          # all options
 **Build history:** `data/osm/build-history.log` records every build, export and
 import, and whether it finished, failed (and at which step) or was interrupted.
 
+**Losing the internet:** every download (the region, the background map, satellite
+imagery, extra data, the Wikidata cache) waits for the connection to come back, up
+to 15 minutes, and then goes on where it stopped. A download that hangs is stopped
+after 2 minutes without progress and tried again. If the connection doesn't come
+back, the script stops and keeps what was downloaded: run the same command again
+to go on. (Change the wait with `NET_WAIT_SECONDS=1800 bash scripts/...`.)
+
 ### Typical times
 
 Measured on this project's dev machine; your download speed dominates.

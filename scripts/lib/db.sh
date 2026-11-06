@@ -71,6 +71,27 @@ SCHEMA_FILES=(functions views stats places sites grid tower-numbers extra search
 # Not part of a build: database creation (dev-init, prod-init) and production jobs.
 SCHEMA_NOT_BUILT=(dev-init prod-init refresh_matviews)
 
+# What each step says while it runs (run_schema).
+declare -A SCHEMA_LABELS=(
+    [views]="Creating map views"
+    [stats]="Creating stats tables"
+    [places]="Preparing place search"
+    [sites]="Sorting critical sites"
+    [grid]="Building the power grid network"
+    [tower-numbers]="Preparing tower numbers"
+    [extra]="Creating extra data tables"
+    [search]="Preparing search"
+    [local-stats]="Computing per-country stats"
+)
+
+# run_schema NAME... — run schema/NAME.sql, each a timed step.
+run_schema() {
+    local name
+    for name in "$@"; do
+        run_with_timer "${SCHEMA_LABELS[$name]:-Running $name.sql}" run_sql_file "schema/$name.sql"
+    done
+}
+
 # A fingerprint of what shapes the database: the imposm mapping and SCHEMA_FILES.
 # Stored in builds and exports; import-db.sh warns when an export's differs.
 schema_hash() {
@@ -86,4 +107,57 @@ number_towers() {
     local run=(--rm --no-deps --entrypoint /app/.venv/bin/python backend -m src.fork.tower_numbers)
     docker compose --progress quiet run --build "${run[@]}" </dev/null >/dev/null 2>&1 \
         || docker compose --progress quiet run "${run[@]}" </dev/null >/dev/null
+}
+
+# --- Replacing the database (build-region.sh, import-db.sh) ------------------------
+
+# fresh_database [EXTRA_REGION] — an empty database, keeping what isn't the map's:
+# My layers (always), and the extra data of EXTRA_REGION (if it has any; slow to
+# download again). Sets BACKEND_WAS_RUNNING (restart_map_services brings it back).
+fresh_database() {
+    local extra_region="${1:-}" count
+    BACKEND_WAS_RUNNING=$(docker compose ps -q backend 2>/dev/null </dev/null || true)
+    if db_volume_exists; then
+        start_db
+        count=$(extra_feature_count)
+        if [[ -n "$extra_region" && "$count" -gt 0 ]]; then
+            run_with_timer --keep-going "Saving the extra data ($(printf "%'d" "$count") features)" \
+                save_extra_data "$extra_region" \
+                || die "Saving the extra data failed, so the database was left as it was."
+            ok "Saved to data/extra/$extra_region.extra.dump"
+        fi
+        if [[ "$(user_data_saves)" -gt 0 ]]; then
+            run_with_timer --keep-going "Saving My layers" save_user_data \
+                || die "Saving My layers failed, so the database was left as it was."
+            ok "Saved to data/userdata/userdata.dump"
+        fi
+    fi
+    # -v removes this project's volumes only (database, imposm cache).
+    docker compose --progress quiet down -v --remove-orphans </dev/null
+    start_db
+    ok "Fresh database ready."
+}
+
+# put_back_my_layers — My layers saved by fresh_database (or an earlier run) go
+# back, then the towers are numbered (My layers hold the register that keeps each
+# tower's number). After tower-numbers.sql.
+put_back_my_layers() {
+    if [[ -f "$USERDATA_DUMP" ]]; then
+        run_with_timer --keep-going "Putting back My layers" restore_user_data \
+            || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
+    fi
+    run_with_timer --keep-going "Numbering towers along their lines" number_towers \
+        || warn "Numbering towers failed; towers have no numbers. Retry: bash scripts/number-towers.sh"
+}
+
+# restart_map_services — Tegola recreated (no tiles cached from the old data), and
+# the backend if it was running before fresh_database.
+restart_map_services() {
+    docker compose --progress quiet up -d --build --force-recreate tegola </dev/null 2>/dev/null \
+        || docker compose --progress quiet up -d --force-recreate tegola </dev/null
+    ok "Tile server running on http://localhost:7800"
+    if [[ -n "${BACKEND_WAS_RUNNING:-}" ]]; then
+        up_services backend
+        ok "Backend restarted on http://localhost:$BACKEND_PORT"
+    fi
 }

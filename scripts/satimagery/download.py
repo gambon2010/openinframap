@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import hashlib
-import http.client
 import sqlite3
-import sys
 import threading
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+import netsafe
+from netsafe import ConnectionLost
 
 from .sources import SMALL_TILE, USER_AGENT, worldcover_url
 
@@ -91,109 +91,14 @@ class MBTiles:
         self.db.close()
 
 
-# --- The connection ------------------------------------------------------------
-
-# A failed request is tried again RETRIES times (waiting 1, 2, 4... s). If it still
-# fails, the connection is probably down: wait for it, checking every WAIT_STEP
-# seconds, for up to WAIT_LIMIT, then go on where it stopped, or stop cleanly.
-RETRIES = 4
-WAIT_STEP = 15.0
-WAIT_LIMIT = 15 * 60.0
-
-# What a dropped or refused connection raises (URLError and TimeoutError are
-# OSErrors; a server hanging up mid-answer raises RemoteDisconnected, which is one too).
-NETWORK_ERRORS = (OSError, http.client.HTTPException)
-
-# Server answers worth trying again: too many requests, the server's own trouble.
-TRY_AGAIN = (408, 429, 500, 502, 503, 504)
-
-
-class ConnectionLost(Exception):
-    """The connection didn't come back in time: stop, keeping what's downloaded."""
-
-
-class Connection:
-    """Waiting for the connection, once for every thread: the first thread to find
-    it down waits; the others wait for that thread, then go on (or stop) with it."""
-
-    def __init__(self) -> None:
-        self.lock = threading.Lock()
-        self.came_back = 0.0  # time.monotonic() of the last time it came back
-        self.lost = False
-
-    def wait(self, url: str, failed_at: float) -> None:
-        with self.lock:
-            if self.lost:
-                raise ConnectionLost()
-            if self.came_back > failed_at:
-                return  # another thread already waited for it
-            say(
-                f"No answer from {host_of(url)}: waiting for the connection "
-                f"(up to {WAIT_LIMIT / 60:.0f} min)..."
-            )
-            deadline = time.monotonic() + WAIT_LIMIT
-            while time.monotonic() < deadline:
-                time.sleep(WAIT_STEP)
-                if reachable(url):
-                    say("Connection back: going on.")
-                    self.came_back = time.monotonic()
-                    return
-            self.lost = True
-            raise ConnectionLost()
-
-
-connection = Connection()
-
-
-def say(message: str) -> None:
-    """A message on its own line (the progress counter rewrites its line)."""
-    print(f"\n  {message}", file=sys.stderr, flush=True)
-
-
-def host_of(url: str) -> str:
-    return urllib.parse.urlsplit(url).netloc or url
-
-
-def reachable(url: str) -> bool:
-    """Whether the server answers at all (any answer, even an error, will do)."""
-    parts = urllib.parse.urlsplit(url)
-    request = urllib.request.Request(
-        f"{parts.scheme}://{parts.netloc}/",
-        method="HEAD",
-        headers={"User-Agent": USER_AGENT},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=20):
-            return True
-    except urllib.error.HTTPError:
-        return True
-    except NETWORK_ERRORS:
-        return False
+# --- Fetching --------------------------------------------------------------------
+# Retries, waiting for a lost connection and stopping cleanly: scripts/netsafe.py,
+# shared by every download.
 
 
 def fetch(url: str) -> bytes | None:
-    """A tile, or None if the server has none there (404). Tried again when the
-    server or the connection fails; when the connection is down, waits for it
-    (Connection.wait), and raises ConnectionLost if it doesn't come back."""
-    while True:
-        started = time.monotonic()
-        for attempt in range(RETRIES):
-            try:
-                request = urllib.request.Request(
-                    url, headers={"User-Agent": USER_AGENT}
-                )
-                with urllib.request.urlopen(request, timeout=60) as response:
-                    return response.read()
-            except urllib.error.HTTPError as e:
-                if e.code in (400, 404):
-                    return None
-                if e.code not in TRY_AGAIN:
-                    raise
-            except NETWORK_ERRORS:
-                pass
-            if attempt < RETRIES - 1:
-                time.sleep(2**attempt)
-        connection.wait(url, failed_at=started)
+    """A tile, or None if the server has none there (404)."""
+    return netsafe.fetch(url, user_agent=USER_AGENT)
 
 
 def download_tiles(
@@ -226,7 +131,7 @@ def download_tiles(
 
     def one(tile: tuple[int, int, int]) -> None:
         nonlocal done, found
-        if connection.lost:
+        if netsafe.connection.lost:
             raise ConnectionLost()  # the tiles still queued: stop at once
         z, x, y = tile
         if skip and skip(z, x, y):
@@ -277,16 +182,17 @@ def download_tiles(
 def cell_exists(cell: str) -> bool:
     """The composite has no cells over open sea."""
     url = worldcover_url(cell)
-    while True:
+
+    def head() -> bool:
         request = urllib.request.Request(
             url, method="HEAD", headers={"User-Agent": USER_AGENT}
         )
         try:
             with urllib.request.urlopen(request, timeout=30):
                 return True
-        except urllib.error.HTTPError as e:
-            if e.code not in TRY_AGAIN:
-                return False
-        except NETWORK_ERRORS:
-            pass
-        connection.wait(url, failed_at=time.monotonic())
+        except urllib.error.HTTPError as error:
+            if error.code in netsafe.TRY_AGAIN:
+                raise
+            return False
+
+    return netsafe.safely(head, url)

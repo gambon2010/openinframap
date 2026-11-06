@@ -67,6 +67,9 @@ class Sandbox:
             "FAKE_LOG": str(self.log),
             "TERM": "dumb",
             "LANG": "C.UTF-8",
+            # The fake curl has no internet: don't wait long for it to come back.
+            "NET_WAIT_SECONDS": "1",
+            "NET_CHECK_EVERY": "1",
         }
 
     def run(

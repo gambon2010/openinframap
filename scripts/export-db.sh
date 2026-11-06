@@ -34,9 +34,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Open Infrastructure Map — export the map database${RESET}"
-echo "${BOLD}======================================================${RESET}"
+banner "export the map database"
 
 docker info >/dev/null 2>&1 || die "Docker isn't running."
 section "Checking the database..."
@@ -53,13 +51,10 @@ DUMP="$EXPORTS_DIR/$REGION_ID.oimdb"
 MANIFEST="$EXPORTS_DIR/$REGION_ID.json"
 mkdir -p "$EXPORTS_DIR"
 if [[ -f "$MANIFEST" ]]; then
-    info "Replaces the existing export from $(manifest_get "$MANIFEST" exported_at)."
+    info "Replaces the existing export from $(json_get "$MANIFEST" exported_at)."
 fi
 # The compressed export is usually well under half the database size.
-FREE=$(free_bytes "$EXPORTS_DIR")
-if [[ $(( DB_SIZE / 2 )) -gt "$FREE" ]]; then
-    ask_yes_no "Only $(human_size "$FREE") free in data/exports/ — that may not be enough. Continue?" n || die "Aborted."
-fi
+room_for $(( DB_SIZE / 2 )) "$EXPORTS_DIR" "data/exports/" || die "Aborted."
 
 IMAGES=()
 while read -r image; do IMAGES+=("$image"); done < <(project_images)
@@ -92,22 +87,18 @@ checksum() {
 }
 run_with_timer "Computing a checksum" checksum
 
-python3 - "$MANIFEST" <<PY
-import json, sys
-json.dump({
-    "region_id": "$REGION_ID",
-    "region_name": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$REGION_NAME"),
-    "osm_timestamp": "$OSM_TIMESTAMP",
-    "built_at": "$(build_info built_at)",
-    "exported_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-    "git_commit": "$(build_info git_commit)",
-    "schema_hash": "$(build_info schema_hash)",
-    "eez": "$(build_info eez)",
-    "extra_data": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$EXTRA_DESC"),
-    "size": $(stat -c%s "$DUMP"),
-    "sha256": "$(cat "$DUMP.sha256.tmp")",
-}, open(sys.argv[1], "w"), indent=2)
-PY
+json_write "$MANIFEST" \
+    region_id="$REGION_ID" \
+    region_name="$REGION_NAME" \
+    osm_timestamp="$OSM_TIMESTAMP" \
+    built_at="$(build_info built_at)" \
+    exported_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    git_commit="$(build_info git_commit)" \
+    schema_hash="$(build_info schema_hash)" \
+    eez="$(build_info eez)" \
+    extra_data="$EXTRA_DESC" \
+    size:="$(stat -c%s "$DUMP")" \
+    sha256="$(cat "$DUMP.sha256.tmp")"
 rm -f "$DUMP.sha256.tmp"
 ok "$(human_size "$(stat -c%s "$DUMP")") → data/exports/$REGION_ID.oimdb"
 
@@ -127,10 +118,7 @@ log_build "$REGION_ID  exported to data/exports/$REGION_ID.oimdb"
 # ---------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------
-echo ""
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} ${GREEN}✓${RESET}${BOLD} Exported $REGION_NAME${RESET}"
-echo "${BOLD}======================================================${RESET}"
+done_banner "Exported $REGION_NAME"
 echo ""
 echo "To use it on another computer, copy this project folder (e.g. to a USB drive)"
 echo "and run bash scripts/launch.sh there — it will offer \"Import ready-made\" for"

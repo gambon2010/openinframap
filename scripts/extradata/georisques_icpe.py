@@ -5,9 +5,10 @@ import json
 import time
 from typing import ClassVar
 
-import httpx
 import psycopg2
 import psycopg2.extras
+
+import netsafe
 
 from .base import EXTRA_DIR, downloaded_on, remove_osm_duplicates
 from .france import FrenchSource
@@ -63,19 +64,16 @@ class GeorisquesICPE(FrenchSource):
         rows: list[dict] = []
         page, pages = 1, 1
         while page <= pages:
-            for attempt in range(1, 4):
-                try:
-                    response = self.http.get(self.API, params={**params, "page": page})
-                    response.raise_for_status()
-                    break
-                except httpx.HTTPError as error:
-                    print(
-                        f"      page {page}: attempt {attempt} failed ({str(error).splitlines()[0][:100]})",
-                        flush=True,
-                    )
-                    if attempt == 3:
-                        raise
-                    time.sleep(10 * attempt)
+            query = {**params, "page": page}
+            response = netsafe.safely(
+                lambda query=query: netsafe.checked(
+                    self.http.get(self.API, params=query)
+                ),
+                self.API,
+                retries=3,
+                pause=10,
+                report=True,
+            )
             body = response.json()
             rows += body.get("data") or []
             pages = body.get("total_pages") or 0

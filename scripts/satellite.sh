@@ -60,9 +60,7 @@ case "$SATELLITE_DETAILED" in
 esac
 [[ "${ASSUME_YES:-0}" == 1 && -z "$SATELLITE_MODE" ]] && die "With --yes, say which tiers: --satellite regional (or overview, regional13)."
 
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Open Infrastructure Map — offline satellite imagery${RESET}"
-echo "${BOLD}======================================================${RESET}"
+banner "offline satellite imagery"
 
 docker info >/dev/null 2>&1 || die "Docker isn't running."
 db_volume_exists || die "There's no map database yet. Build a region first: bash scripts/build-region.sh"
@@ -71,12 +69,8 @@ REGION_ID=$(build_info region_id)
 [[ -n "$REGION_ID" ]] || die "The map database was never finished. Build it with: bash scripts/build-region.sh"
 REGION_NAME=$(build_info region_name)
 ok "Region: $REGION_NAME"
-# Outlines come from Geofabrik's index (kept from the build; fetched if missing).
-if [[ ! -f "$GEOFABRIK_INDEX" ]]; then
-    mkdir -p "$OSM_DIR"
-    curl -sfL --max-time 60 https://download.geofabrik.de/index-v1.json -o "$GEOFABRIK_INDEX" \
-        || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
-fi
+# Outlines come from Geofabrik's index (kept from the build; refreshed daily).
+fetch_geofabrik_index || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
 
 choose_satellite "$REGION_ID"
 if [[ ! -f "$SATELLITE_PLAN" ]]; then

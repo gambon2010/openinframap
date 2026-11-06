@@ -30,6 +30,7 @@ from extradata import *
 from extradata.base import *
 from extradata.cli import *
 from extradata.cli import main
+from netsafe import run_until_connected
 
 if __name__ == "__main__":
-    main()
+    run_until_connected(main)

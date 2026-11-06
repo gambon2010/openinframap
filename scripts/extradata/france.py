@@ -5,6 +5,8 @@ from pathlib import Path
 
 import httpx
 
+import netsafe
+
 from .base import EXTRA_DIR, USER_AGENT, Source, inside, outer_rings
 
 
@@ -27,8 +29,15 @@ class FrenchSource(Source):
         path = EXTRA_DIR / "fr-departements.geojson"
         if not path.exists():
             EXTRA_DIR.mkdir(parents=True, exist_ok=True)
-            response = self.http.get(self.DEPARTMENTS_URL, follow_redirects=True)
-            response.raise_for_status()
+            # Also asked for before a build (which extra data covers the region):
+            # retried, but no waiting for a lost connection.
+            response = netsafe.safely(
+                lambda: netsafe.checked(
+                    self.http.get(self.DEPARTMENTS_URL, follow_redirects=True)
+                ),
+                self.DEPARTMENTS_URL,
+                wait=False,
+            )
             path.write_bytes(response.content)
         return path
 
