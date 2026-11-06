@@ -2,6 +2,7 @@
 // tactical graphics (catalogue: scripts/make_symbol_catalog.py). Point symbols are
 // previewed by @syncpoint/signs; lines, areas and arrows are drawn on the map by the
 // C5ISR renderer (graphics.ts), so the picker shows their kind instead.
+import { standardName } from '../graphics/graphics.ts'
 import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import catalogue from '../model/symbols-2525c.json'
@@ -35,8 +36,10 @@ export function entryOf(sidc: string): Entry | undefined {
 }
 
 /** The catalogue name of a concrete code. */
+/** A symbol's or graphic's name: the catalogue's, else the standard's (a type the
+ * picker no longer offers, an imported code). */
 export function symbolName(sidc: string): string | undefined {
-  return entryOf(sidc)?.[1]
+  return entryOf(sidc)?.[1] ?? standardName(sidc) ?? undefined
 }
 
 /** Entries of the mode (in a category, if given), matching every word of the query. */

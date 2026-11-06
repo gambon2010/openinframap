@@ -272,3 +272,12 @@ describe('beyond 2525C', () => {
     expect(pieces.filter((p) => p.properties?.label === 'PAA').length).toBe(4)
   })
 })
+
+describe('names of graphics the catalogue no longer lists', () => {
+  test('a saved item of a removed type is named by the standard, not its code', async () => {
+    const { symbolName } = await import('../ui/palette.ts')
+    await graphicsLibrary()
+    // G*G*DAE, a second Engagement area, was taken out of the picker.
+    expect(symbolName('GFGPDAE--------')?.toLowerCase()).toContain('engagement')
+  })
+})

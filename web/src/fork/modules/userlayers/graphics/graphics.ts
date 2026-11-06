@@ -18,13 +18,33 @@ import {
 
 let library: Promise<C5Ren> | undefined
 
+/** The renderer once loaded (null before): for what has to be answered at once. */
+let ready: C5Ren | null = null
+
 /** The renderer, loaded once. */
 export function graphicsLibrary(): Promise<C5Ren> {
   library ??= import('@armyc2.c5isr.renderer/mil-sym-ts-web').then(async (lib) => {
     await lib.initialize()
+    ready = lib
     return lib
   })
   return library
+}
+
+/** Whether the renderer has loaded. */
+export function graphicsReady(): boolean {
+  return ready !== null
+}
+
+/**
+ * A graphic's name in the standard (the renderer's), for codes our catalogue doesn't
+ * list: a saved item of a type the picker no longer offers keeps a name. Null until
+ * the renderer has loaded (it loads with the first graphic drawn).
+ */
+export function standardName(sidc: string): string | null {
+  if (!ready) return null
+  const code = toDCode(ready, sidc)
+  return (code && ready.MSLookup.getInstance().getMSLInfo(code)?.getName()) || null
 }
 
 /** A 2525C code as the renderer's 2525D code, or null if it has none. */

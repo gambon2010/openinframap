@@ -17,6 +17,7 @@ import { Store } from '../../state/store.ts'
 import { kindOf } from '../../kinds/index.ts'
 import { featureLabelParts } from '../../model/labels.ts'
 import { symbolRenderer } from '../../map/symbols.ts'
+import { graphicsLibrary, graphicsReady } from '../../graphics/graphics.ts'
 import { openSharing } from '../sharing.ts'
 import { eyeIcon } from '../../../../ui/icons.ts'
 import { MenuEntry, MenuItem, openContextMenuFor, withContextMenu } from '../../../../ui/context-menu.ts'
@@ -242,6 +243,10 @@ export class Outliner {
 
   private item(feature: UserFeature, layer: UserLayer): HTMLElement {
     this.shownItems.push(feature.id)
+    // A graphic's name may come from the renderer (a type the catalogue no longer
+    // lists): once it has loaded, the list is drawn again.
+    if (kindOf(feature.properties).id === 'graphic' && !graphicsReady())
+      void graphicsLibrary().then(() => this.actions.update())
     const { name, what, detail } = featureLabelParts(feature)
     const selected = this.actions.isSelected(feature.id)
     const row = el(
