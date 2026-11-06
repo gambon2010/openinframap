@@ -1,188 +1,34 @@
-// Fork: the card of a selected My layers item, in the left details panel (the
-// sidebar's inspector, docs/plans/my-layers-v3.md). Read first, edit in place:
-// - a header with the symbol (large, live) and its designation;
-// - identity, status, echelon, HQ / task force / dummy as clickable shapes and marks
-//   (they're part of the code: sidc.ts);
-// - the details that matter for its kind, plus any filled in, in plain words
-//   (fields.ts); "+ Add detail" for the rest, by question (who, what, when...);
-// - notes, appearance, layer, duplicate / delete.
-// Each change is a change of the feature (undoable, saved with Save, in the history).
-import { t } from '../../../core/i18n.ts'
+// Fork: an item's card (editor/index.ts): its parts, in order: header, identity,
+// details, notes, what its kind adds, appearance, footer.
+import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
-import { FeatureProps, UserFeature, UserLayer, DEFAULT_COLOR } from '../model/model.ts'
-import { Field, GROUPS, addableFields, cardFields, displayValue, fromDtg, toDtg } from '../model/fields.ts'
+import { DEFAULT_COLOR } from '../../model/model.ts'
+import { GROUPS, addableFields, cardFields, toDtg } from '../../model/fields.ts'
 import {
   IDENTITIES,
   MOBILITIES,
   identity,
   mobility,
   status,
-  symbolKind,
   unitModifiers,
   withIdentity,
   withMobility,
   withStatus,
   withUnitModifiers
-} from '../model/sidc.ts'
-import { GEOMETRY_LABELS, entryOf } from './palette.ts'
-import { symbolSvg } from '../map/symbols.ts'
-import { MAX_SIZE, MIN_SIZE } from '../map/render.constants.ts'
-import { controlPoints } from '../map/geometry.ts'
-import { kindOf } from '../kinds/index.ts'
-import { variantsOf, withKey } from '../graphics/variants.ts'
-import { axisWidth } from '../graphics/graphics.ts'
+} from '../../model/sidc.ts'
+import { GEOMETRY_LABELS, entryOf } from '../palette.ts'
+import { symbolSvg } from '../../map/symbols.ts'
+import { MAX_SIZE, MIN_SIZE } from '../../map/render.constants.ts'
+import { controlPoints } from '../../map/geometry.ts'
+import { variantsOf, withKey } from '../../graphics/variants.ts'
+import { axisWidth } from '../../graphics/graphics.ts'
+import { Card, CardPart } from './types.ts'
+import { CONDITIONS, ECHELON_MARKS, MAIN_IDENTITIES } from './constants.ts'
+import { chip, detailRow, select } from './controls.ts'
 
-export interface EditorActions {
-  update: (properties: FeatureProps) => void
-  /** Change its shape (a measurement's leg lengths). */
-  setGeometry: (geometry: GeoJSON.Geometry) => void
-  moveTo: (layerId: string) => void
-  duplicate: () => void
-  remove: () => void
-  done: () => void
-  /** Whether a layer's items may be changed now (state/view.ts). */
-  canEdit: (layer: UserLayer) => boolean
-}
-
-// Echelons as their marks above the frame.
-export const ECHELON_MARKS: [string, string, string][] = [
-  ['-', '–', 'None'],
-  ['A', 'ø', 'Team / crew'],
-  ['B', '•', 'Squad'],
-  ['C', '••', 'Section'],
-  ['D', '•••', 'Platoon'],
-  ['E', '|', 'Company'],
-  ['F', '||', 'Battalion'],
-  ['G', '|||', 'Regiment'],
-  ['H', 'X', 'Brigade'],
-  ['I', 'XX', 'Division'],
-  ['J', 'XXX', 'Corps'],
-  ['K', 'XXXX', 'Army']
-]
-const MAIN_IDENTITIES = ['F', 'H', 'N', 'U']
-const CONDITIONS: [string, string][] = [
-  ['C', 'Fully capable'],
-  ['D', 'Damaged'],
-  ['X', 'Destroyed'],
-  ['F', 'Full to capacity']
-]
-
-function chip(label: string, active: boolean, onclick: () => void, title = '') {
-  const b = el(`button.oim-ul-chip${active ? '.oim-on' : ''}`, label, {
-    type: 'button',
-    title,
-    'aria-pressed': String(active)
-  }) as HTMLButtonElement
-  b.onclick = onclick
-  return b
-}
-
-function select(
-  options: [string, string][],
-  value: string,
-  onchange: (value: string) => void,
-  field: string
-) {
-  const s = el(
-    'select',
-    { 'data-field': field },
-    options.map(([v, label]) => el('option', label, { value: v, selected: v === value }))
-  ) as HTMLSelectElement
-  s.onchange = () => onchange(s.value)
-  return s
-}
-
-/** A datetime-local input value (local time) for a DTG. */
-function dtgToInput(dtg: string | undefined): string {
-  const date = dtg ? fromDtg(dtg) : null
-  if (!date) return ''
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 16)
-}
-
-/** One detail: its name, and its value; text is edited in place, the rest is shown
- * in words and turns into its controls when clicked. */
-function detailRow(field: Field, value: string, set: (value: string) => void): HTMLElement {
-  const name = `${field.key}:${field.label}`
-  const label = t(`userlayers.f.${field.key}`, field.label)
-  const trimmed = value.trim()
-  let editor: HTMLElement
-  if (field.input === 'datetime') {
-    const input = el('input', {
-      type: 'datetime-local',
-      value: dtgToInput(trimmed),
-      'data-field': name
-    }) as HTMLInputElement
-    input.onchange = () => set(input.value ? toDtg(new Date(input.value)) : '')
-    const now = el('button.oim-ul-button', t('userlayers.now', 'Now'), { type: 'button' })
-    now.onclick = () => set(toDtg(new Date()))
-    editor = el('span.oim-ul-unit', input, now)
-  } else if (field.input === 'rating') {
-    const letters: [string, string][] = [
-      ['', '–'],
-      ...'ABCDEF'.split('').map((c): [string, string] => [c, c])
-    ]
-    const digits: [string, string][] = [['', '–'], ...'123456'.split('').map((c): [string, string] => [c, c])]
-    editor = el(
-      'span.oim-ul-rating',
-      select(letters, trimmed[0] ?? '', (v) => set(v ? v + (trimmed[1] ?? '') : ''), name + ':r'),
-      select(digits, trimmed[1] ?? '', (v) => set((trimmed[0] ?? 'F') + v), name + ':c')
-    )
-  } else if (field.input === 'textarea') {
-    const area = el('textarea.oim-ul-inline-input', trimmed, {
-      rows: 2,
-      'data-field': name,
-      placeholder: '—'
-    }) as HTMLTextAreaElement
-    area.onchange = () => set(area.value.trim())
-    editor = area
-  } else {
-    const input = el('input.oim-ul-inline-input', {
-      type: field.input === 'number' ? 'number' : 'text',
-      value: trimmed,
-      placeholder: '—',
-      'data-field': name
-    }) as HTMLInputElement
-    input.onchange = () => set(input.value.trim())
-    editor = field.unit ? el('span.oim-ul-unit', input, el('small', field.unit)) : input
-  }
-  const inPlace =
-    field.input === 'text' ||
-    field.input === 'textarea' ||
-    (field.input === 'number' && field.key !== 'Q' && field.key !== 'Z')
-  const row = el('.oim-ul-detail', { title: field.help ?? '' }, el('span.oim-ul-detail-name', label))
-  if (inPlace || !trimmed) {
-    row.append(editor)
-    return row
-  }
-  const shown = el('button.oim-ul-detail-value', displayValue(field.key, trimmed), {
-    type: 'button',
-    title: t('userlayers.edit', 'Change')
-  })
-  shown.onclick = () => {
-    shown.replaceWith(editor)
-    editor.querySelector<HTMLElement>('input, select')?.focus()
-  }
-  row.append(shown)
-  return row
-}
-
-/** The card for a feature. */
-export async function buildEditor(
-  feature: UserFeature,
-  layer: UserLayer,
-  layers: UserLayer[],
-  actions: EditorActions
-): Promise<HTMLElement> {
-  const p = feature.properties
-  const update = (changes: Partial<FeatureProps>) => actions.update({ ...p, ...changes })
-  const itemKind = kindOf(p)
-  const military = Boolean(itemKind.military && p.sidc)
-  const sidc = p.sidc ?? ''
-  const kind = military ? symbolKind(sidc) : null
-  const parts: (HTMLElement | string)[] = []
-
-  // --- Header: the symbol, large, and the designation (rename in place) ---
+/** The card's header: the symbol, large, and the designation (rename in place). */
+export async function headerSection(c: Card, parts: CardPart[]): Promise<void> {
+  const { feature, layer, p, update, itemKind, military, sidc, modifiers, setModifier } = c
   const preview = el('span.oim-ul-card-symbol')
   let what = itemKind.what(feature)
   if (military) {
@@ -204,9 +50,6 @@ export async function buildEditor(
     const picture = itemKind.thumbnail(feature)
     if (picture) preview.append(picture)
   }
-  const modifiers = { ...(p.modifiers ?? {}) }
-  // Items made before the fields existed had a name: it's the designation.
-  if (military && !modifiers['T'] && p.name) modifiers['T'] = p.name
   const title = el('input.oim-ul-card-title', {
     type: 'text',
     value: ((military ? modifiers['T'] : p.name) ?? '').trim(),
@@ -214,11 +57,6 @@ export async function buildEditor(
     'data-field': 'title',
     'aria-label': t('userlayers.name', 'Name')
   }) as HTMLInputElement
-  const setModifier = (key: string, value: string) => {
-    const next = { ...modifiers, [key]: value }
-    if (!value) delete next[key]
-    update({ modifiers: next, name: undefined })
-  }
   title.onchange = () =>
     military ? setModifier('T', title.value.trim()) : update({ name: title.value.trim() || undefined })
   parts.push(
@@ -228,8 +66,11 @@ export async function buildEditor(
       el('div.oim-ul-card-titles', title, el('span.oim-ul-what', `${what} · ${layer.name}`))
     )
   )
+}
 
-  // --- Identity strip (military symbols and graphics) ---
+/** The card's identity strip (military symbols and graphics). */
+export async function identitySection(c: Card, parts: CardPart[]): Promise<void> {
+  const { feature, update, itemKind, military, sidc, kind } = c
   if (military && kind) {
     const setSidc = (next: string) => update({ sidc: next })
     const strip: HTMLElement[] = []
@@ -349,8 +190,11 @@ export async function buildEditor(
     }
     parts.push(el('.oim-ul-identity', ...strip))
   }
+}
 
-  // --- Details: the ones for its kind and any filled in; the rest one click away ---
+/** The card's details: the ones for its kind and any filled in; the rest one click away. */
+export function detailsSection(c: Card, parts: CardPart[]) {
+  const { update, military, kind, modifiers, setModifier } = c
   if (military && kind) {
     const details = el('.oim-ul-details')
     for (const field of cardFields(kind, modifiers)) {
@@ -392,8 +236,11 @@ export async function buildEditor(
       )
     }
   }
+}
 
-  // --- Notes, always there ---
+/** The card's notes, always there. */
+export function notesSection(c: Card, parts: CardPart[]) {
+  const { p, update } = c
   const notes = el('textarea.oim-ul-inline-input.oim-ul-notes', p.notes ?? '', {
     rows: 2,
     'data-field': 'notes',
@@ -401,11 +248,17 @@ export async function buildEditor(
   }) as HTMLTextAreaElement
   notes.onchange = () => update({ notes: notes.value.trim() || undefined })
   parts.push(notes)
+}
 
-  // --- What its kind adds (a measurement's ring distances...) ---
+/** The card's what its kind adds (a measurement's ring distances...). */
+export function kindSection(c: Card, parts: CardPart[]) {
+  const { feature, actions, update, itemKind } = c
   parts.push(...(itemKind.card?.(feature, update, actions.setGeometry) ?? []))
+}
 
-  // --- Appearance ---
+/** The card's appearance. */
+export function appearanceSection(c: Card, parts: CardPart[]) {
+  const { feature, layer, p, update, itemKind } = c
   const look: HTMLElement[] = []
   const lookRow = (label: string, control: HTMLElement) =>
     el('.oim-ul-detail', el('span.oim-ul-detail-name', label), control)
@@ -460,8 +313,11 @@ export async function buildEditor(
       )
     )
   }
+}
 
-  // --- Hint, then the footer: layer, duplicate, delete, done ---
+/** The card's hint, then the footer: layer, duplicate, delete, done. */
+export function footerSection(c: Card, parts: CardPart[]) {
+  const { feature, layer, layers, actions, p, itemKind } = c
   const hint =
     feature.geometry.type === 'Point'
       ? t('userlayers.drag-hint', 'Drag it on the map to move it.')
@@ -503,113 +359,4 @@ export async function buildEditor(
       button(t('userlayers.deselect', 'Done'), actions.done, true)
     )
   )
-  return el('div.oim-popup-content.oim-ul-editor', ...parts)
-}
-
-export interface BulkActions {
-  /** Apply a change to the properties of each selected item (one undo step). */
-  updateEach: (change: (properties: FeatureProps) => FeatureProps | null) => void
-  moveTo: (layerId: string) => void
-  remove: () => void
-  clear: () => void
-  /** Whether a layer's items may be changed now (state/view.ts). */
-  canEdit: (layer: UserLayer) => boolean
-}
-
-/** The card for several selected items: what they are, and changes for all of them. */
-export function buildBulkCard(
-  items: { feature: UserFeature; layer: UserLayer }[],
-  layers: UserLayer[],
-  actions: BulkActions
-): HTMLElement {
-  const unlocked = items.filter((i) => actions.canEdit(i.layer))
-  const military = unlocked.filter((i) => i.feature.properties.sidc)
-  const parts: (HTMLElement | string)[] = []
-  parts.push(
-    el(
-      'div.oim-popup-header.oim-ul-card-header',
-      el('span.oim-ul-card-symbol', '▣'),
-      el(
-        'div.oim-ul-card-titles',
-        el('h3', t('userlayers.n-selected', '{{count}} items selected', { count: items.length })),
-        el('span.oim-ul-what', t('userlayers.bulk-hint', 'Changes below apply to all of them'))
-      )
-    )
-  )
-  const names = items.map(({ feature }) => {
-    const p = feature.properties
-    const name = (p.modifiers?.['T'] || p.name || '').trim()
-    const what = kindOf(p).what(feature)
-    return el('li', name ? `${name} · ${what}` : what)
-  })
-  parts.push(el('ul.oim-ul-bulk-list', names))
-  if (unlocked.length < items.length) {
-    parts.push(
-      el(
-        'p.oim-ul-locked-note',
-        t('userlayers.bulk-locked', '🔒 {{count}} in locked layers are left as they are.', {
-          count: items.length - unlocked.length
-        })
-      )
-    )
-  }
-  if (military.length) {
-    const setSidc = (change: (sidc: string) => string) =>
-      actions.updateEach((p) => (p.sidc ? { ...p, sidc: change(p.sidc) } : null))
-    parts.push(
-      el(
-        '.oim-ul-identity',
-        el(
-          '.oim-ul-chips',
-          ...MAIN_IDENTITIES.map((id) =>
-            chip(
-              IDENTITIES.find(([c]) => c === id)?.[1] ?? id,
-              military.every((i) => identity(i.feature.properties.sidc!) === id),
-              () => setSidc((s) => withIdentity(s, id))
-            )
-          )
-        ),
-        el(
-          '.oim-ul-chips',
-          chip(
-            t('userlayers.status.P', 'Present'),
-            military.every((i) => status(i.feature.properties.sidc!) !== 'A'),
-            () => setSidc((s) => withStatus(s, 'P'))
-          ),
-          chip(
-            t('userlayers.status.A', 'Planned'),
-            military.every((i) => status(i.feature.properties.sidc!) === 'A'),
-            () => setSidc((s) => withStatus(s, 'A'))
-          )
-        )
-      )
-    )
-  }
-  const move = select(
-    [
-      ['', t('userlayers.move-to', 'Move to layer…')],
-      ...layers.filter((l) => actions.canEdit(l)).map((l): [string, string] => [l.id, l.name])
-    ],
-    '',
-    (v) => v && actions.moveTo(v),
-    'bulk-layer'
-  )
-  const button = (label: string, onclick: () => void, primary = false) => {
-    const b = el(`button.oim-ul-button${primary ? '.primary' : ''}`, label, { type: 'button' })
-    b.onclick = onclick
-    return b
-  }
-  parts.push(
-    el(
-      '.oim-ul-card-footer',
-      move,
-      button(t('userlayers.delete-all', 'Delete all'), actions.remove),
-      button(t('userlayers.clear-selection', 'Done'), actions.clear, true)
-    ),
-    el(
-      'p.oim-ul-hint',
-      t('userlayers.bulk-help', 'Shift-click on the map or in the list to add or remove items.')
-    )
-  )
-  return el('div.oim-popup-content.oim-ul-editor', ...parts)
 }
