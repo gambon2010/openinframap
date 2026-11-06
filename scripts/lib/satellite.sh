@@ -125,37 +125,42 @@ choose_satellite() {
         || { warn "Couldn't work out the satellite imagery; skipping it."; rm -f "$SATELLITE_PLAN"; }
 }
 
-# download_satellite REGION — download what choose_satellite planned, one timed
-# step each, then point the frontend at it.
+# download_satellite REGION — download what choose_satellite planned, all at once
+# (each from its own server: NASA, ESA, a country's aerial photos), then point the
+# frontend at it.
 download_satellite() {
-    local region="$1" label line status steps=()
+    local region="$1" line i lost=0
+    SAT_STEPS=()
     if [[ -f "${SATELLITE_PLAN:-}" ]]; then
-        while IFS= read -r line; do steps+=("$line"); done < <(
+        while IFS= read -r line; do SAT_STEPS+=("$line"); done < <(
             python3 -I "$REPO_ROOT/scripts/satellite.py" steps --plan "$SATELLITE_PLAN" \
                 --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX")
     fi
-    if [[ ${#steps[@]} -gt 0 ]]; then
-        section "Downloading satellite imagery..."
+    if [[ ${#SAT_STEPS[@]} -gt 0 ]]; then
+        section "Downloading satellite imagery (${#SAT_STEPS[@]} at once)..."
+        SAT_PMTILES_IMAGE=$(basemap_image)
         SAT_OK=1
-        for line in "${steps[@]}"; do
-            IFS=$'\t' read -r -a SAT_STEP <<<"$line"
-            label="${SAT_STEP[0]}"
-            satellite_step() {
-                python3 -I "$REPO_ROOT/scripts/satellite.py" "${SAT_STEP[@]:1}" \
-                    --pmtiles-image "$(basemap_image)" </dev/null
-            }
-            status=0
-            run_with_timer --progress --keep-going "$label" satellite_step || status=$?
-            if [[ "$status" == 75 ]]; then
-                # No connection (satellite.py waited for it): the next steps would too.
-                SAT_OK=0
-                warn "No internet connection: the satellite downloads stopped."
-                break
-            fi
-            [[ "$status" == 0 ]] || { SAT_OK=0; warn "$label failed (see above)."; }
+        run_parallel "${#SAT_STEPS[@]}" satellite_step_label satellite_step || SAT_OK=0
+        for i in "${!JOB_STATUS[@]}"; do
+            [[ "${JOB_STATUS[i]}" == "$CONNECTION_LOST" ]] && lost=1
         done
+        [[ "$lost" == 0 ]] || warn "No internet connection: some satellite downloads stopped."
         [[ "$SAT_OK" == 1 ]] || warn "What was downloaded is kept. Run it again to go on: bash scripts/satellite.sh"
         rm -f "$SATELLITE_PLAN"
     fi
     select_satellite "$region"
+}
+
+# A planned step (SAT_STEPS: label <tab> satellite.py's arguments): its label, and
+# running it.
+satellite_step_label() {
+    local step
+    IFS=$'\t' read -r -a step <<<"${SAT_STEPS[$1]}"
+    echo "${step[0]}"
+}
+
+satellite_step() {
+    local step
+    IFS=$'\t' read -r -a step <<<"${SAT_STEPS[$1]}"
+    python3 -I "$REPO_ROOT/scripts/satellite.py" "${step[@]:1}" --pmtiles-image "$SAT_PMTILES_IMAGE" </dev/null
 }

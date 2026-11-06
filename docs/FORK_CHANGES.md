@@ -1549,6 +1549,15 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Satellite downloads all at once (2026-11-06)
+
+`download_satellite` ran its steps one after another (Blue Marble, then Sentinel-2,
+then the aerial photos), each waiting for the last though they come from different
+servers and write different files. Now they all start together (`run_parallel` in
+`lib/ui.sh`: one live line per step with its time and latest progress, then each
+one's result); each still keeps its own server's speed limit and waits for a lost
+connection on its own.
+
 ## Sentinel-2 from zoom 5 (2026-11-06)
 
 Sentinel-2 imagery started at zoom 9, under Blue Marble's 500 m pixels until then.

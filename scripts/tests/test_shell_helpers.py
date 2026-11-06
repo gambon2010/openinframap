@@ -296,3 +296,18 @@ def test_room_for(tmp_path):
         )
         == "no"
     )
+
+
+def test_run_parallel_runs_steps_at_the_same_time():
+    script = """
+label() { echo "step $1"; }
+step() { sleep 1; [[ $1 != 1 ]] || { echo "why it failed"; return 75; }; echo fine; }
+start=$SECONDS
+run_parallel 3 label step 2>&1 || echo "some failed"
+echo "statuses ${JOB_STATUS[*]} in $((SECONDS - start))s"
+"""
+    out = bash(script)
+    # Three one-second steps together: about one second, not three.
+    assert out.endswith(("statuses 0 75 0 in 1s", "statuses 0 75 0 in 2s"))
+    assert "why it failed" in out and "step 1 failed" in out and "some failed" in out
+    assert "step 0" in out and "step 2" in out

@@ -166,6 +166,60 @@ run_with_timer() {
     ok "$label ($(duration $((SECONDS - start))))"
 }
 
+# run_parallel COUNT LABEL_FUNCTION COMMAND_FUNCTION — run COMMAND_FUNCTION 0 to
+# COUNT-1 at the same time (each step's own command, e.g. downloads from different
+# servers), with one line each showing its label, its time and its latest output;
+# then each one's result (its output shown if it failed). JOB_STATUS[i] is each
+# one's exit status; returns 1 if any failed.
+run_parallel() {
+    local count="$1" label_of="$2" run="$3" i start=$SECONDS failed=0 running state
+    local logs=() pids=() took=()
+    JOB_STATUS=()
+    for ((i = 0; i < count; i++)); do
+        logs[i]=$(mktemp)
+        "$run" "$i" >"${logs[i]}" 2>&1 &
+        pids[i]=$!
+    done
+    if [[ -t 1 ]]; then
+        for ((i = 0; i < count; i++)); do echo; done
+        while true; do
+            running=0
+            printf "\e[%dA" "$count"
+            for ((i = 0; i < count; i++)); do
+                if kill -0 "${pids[i]}" 2>/dev/null; then
+                    running=1
+                    state=$(latest_line "${logs[i]}")
+                    took[i]=$((SECONDS - start))
+                else
+                    state="done"
+                fi
+                printf "\r\e[K    %s... %ds %s\n" "$("$label_of" "$i")" "${took[i]:-0}" "$state"
+            done
+            [[ "$running" == 1 ]] || break
+            sleep 1
+        done
+        # The live lines make way for the results.
+        printf "\e[%dA" "$count"
+        for ((i = 0; i < count; i++)); do printf "\r\e[K\n"; done
+        printf "\e[%dA" "$count"
+    else
+        for ((i = 0; i < count; i++)); do info "$("$label_of" "$i")..."; done
+    fi
+    for ((i = 0; i < count; i++)); do
+        JOB_STATUS[i]=0
+        wait "${pids[i]}" || JOB_STATUS[i]=$?
+        if [[ "${JOB_STATUS[i]}" == 0 ]]; then
+            ok "$("$label_of" "$i") ($(duration "${took[i]:-$((SECONDS - start))}"))"
+        else
+            failed=1
+            cat "${logs[i]}" >&2
+            warn "$("$label_of" "$i") failed (see above)."
+        fi
+        rm -f "${logs[i]}"
+    done
+    return "$failed"
+}
+
 # kill_tree PID — stop a process and everything it started (a function running
 # docker, whose client passes the signal on to the container).
 kill_tree() {
