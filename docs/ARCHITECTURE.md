@@ -41,7 +41,8 @@ ui/        shared building blocks you see: dock (right), left column, details
 services/  shared state and registries, nothing drawn: live updates (live.ts),
            who has the map (map-mode.ts: measuring, drawing), features picked
            with Shift-click (selection.ts), power supply colours (supply.ts),
-           what a printed map's legend lists (legend.ts)
+           what a printed map's legend lists (legend.ts), the background map's
+           colours, high contrast or original (map-colours.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers

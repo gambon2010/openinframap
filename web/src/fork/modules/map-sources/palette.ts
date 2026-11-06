@@ -5,7 +5,12 @@
 // washed out (low saturation, light), so where a town, a wood or a field stops
 // shows: one palette, set on upstream's layers (a paint override; its file
 // unchanged). Zoomed out (zoom 2 to 6) each is a little darker, as upstream's are.
+// Buildings are darker than the towns around them; airports light, so their
+// runways (drawn in the major roads' grey) stand out. It's the "high contrast"
+// choice in Settings → Background (services/map-colours.ts); "original colours"
+// puts upstream's back as they were.
 import type { ExpressionSpecification, Map } from 'maplibre-gl'
+import { MapColours, mapColours } from '../../services/map-colours.ts'
 
 /** Each kind of area: [hue, saturation %, lightness % from zoom 6]. */
 export const PALETTE = {
@@ -14,7 +19,8 @@ export const PALETTE = {
   green: [95, 25, 88], // grass, meadows, parks, orchards, cemeteries
   wood: [110, 22, 84], // woods and forests
   housing: [240, 6, 89], // residential: cool grey
-  industry: [260, 9, 87], // industrial, commercial, airports: mauve-grey
+  industry: [260, 9, 87], // industrial, commercial: mauve-grey
+  airport: [220, 8, 93], // airports: light, their runways grey on it
   care: [345, 14, 90], // hospitals, universities: pale rose
   farmyard: [35, 18, 88], // farm buildings: pale tan
   water: [207, 30, 82],
@@ -61,7 +67,7 @@ export function paletteLayers(): [
       residential: 'housing',
       commercial: 'industry',
       industrial: 'industry',
-      aerodrome: 'industry',
+      aerodrome: 'airport',
       hospital: 'care',
       university: 'care',
       farmyard: 'farmyard',
@@ -83,15 +89,44 @@ export function paletteLayers(): [
     ['osm_landcover_urban', 'fill-color', builtUp],
     ['osm_water', 'fill-color', colour('water')],
     ['osm_water_stream', 'line-color', colour('water')],
-    ['osm_water_river', 'line-color', colour('water')]
+    ['osm_water_river', 'line-color', colour('water')],
+    ['osm_buildings', 'fill-color', BUILDINGS]
   ]
 }
 
+/** Buildings: darker than the towns they're in (housing 89%), more so closer in. */
+export const BUILDINGS: ExpressionSpecification = [
+  'interpolate-lab',
+  ['linear'],
+  ['zoom'],
+  12,
+  'hsl(240, 5%, 86%)',
+  16,
+  'hsl(240, 6%, 80%)'
+]
+
 export function backgroundPalette(map: Map) {
-  const apply = () => {
-    for (const [id, property, value] of paletteLayers())
-      if (map.getLayer(id)) map.setPaintProperty(id, property, value)
+  // Upstream's values, kept when the palette replaces them (each style load).
+  let original: [string, 'fill-color' | 'line-color' | 'background-color', ExpressionSpecification][] = []
+  const apply = (colours: MapColours) => {
+    if (colours === 'contrast') {
+      original = []
+      for (const [id, property, value] of paletteLayers()) {
+        if (!map.getLayer(id)) continue
+        original.push([id, property, map.getPaintProperty(id, property) as ExpressionSpecification])
+        map.setPaintProperty(id, property, value)
+      }
+    } else {
+      for (const [id, property, value] of original)
+        if (map.getLayer(id)) map.setPaintProperty(id, property, value)
+      original = []
+    }
   }
-  map.on('style.load', apply)
-  if (map.isStyleLoaded()) apply()
+  // A new style has upstream's colours again.
+  map.on('style.load', () => {
+    original = []
+    if (mapColours.get() === 'contrast') apply('contrast')
+  })
+  if (map.isStyleLoaded() && mapColours.get() === 'contrast') apply('contrast')
+  mapColours.onChange(apply)
 }

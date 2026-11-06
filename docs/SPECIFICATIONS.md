@@ -97,6 +97,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.17 | The layer list and the key merged into one panel, Data layers: each category unfolds to its key with a tick box per row; statuses only as a key (no tick boxes); background stays in Settings. | ✅ (2026-11-06) |
 | 5.18 | Open data not split from OSM data in Data layers: the distribution network with Power, the gas network with Oil & gas, ICPE under Critical sites. | ✅ (2026-11-06) |
 | 5.19 | The background map's colours: still pale and washed out, but each kind of area (fields, grass, woods, housing, industry, hospitals, water) its own shade, so where each stops shows. | ✅ (2026-11-06) |
+| 5.20 | Buildings a little darker and airports their own shade; Settings → Background offers the map in high contrast (default) or in its original colours, or satellite imagery. | ✅ (2026-11-06) |
 
 ## 6. Grid connections (power routing)
 

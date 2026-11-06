@@ -221,8 +221,6 @@
     "title": "Settings"
   },
   "satellite": {
-    "map": "Map",
-    "map-help": "The usual background map",
     "satellite": "Satellite",
     "satellite-help": "Imagery, with place names",
     "hybrid": "Satellite with roads",
@@ -230,7 +228,11 @@
     "title": "Background",
     "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.",
     "zooms": "Imagery up to zoom {{zoom}}.",
-    "not-here": "No satellite imagery here: move the map to where you have some."
+    "not-here": "No satellite imagery here: move the map to where you have some.",
+    "map-contrast": "Map, high contrast",
+    "map-contrast-help": "Each kind of area its own shade: towns, fields, woods, water",
+    "map-original": "Map, original colours",
+    "map-original-help": "Open Infrastructure Map's own, paler"
   },
   "userlayers": {
     "now": "Now",

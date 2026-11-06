@@ -24,6 +24,7 @@ export interface Tier {
 
 import { throughGate } from '../../config.ts'
 import { readText, writeText } from '../../core/storage.ts'
+import { MapColours, mapColours } from '../../services/map-colours.ts'
 
 export type BackgroundMode = 'map' | 'satellite' | 'hybrid'
 
@@ -154,8 +155,21 @@ const satellite: ForkModule = {
     if (map.isStyleLoaded()) apply(map)
     else map.once('load', () => apply(map))
 
-    const choices: [BackgroundMode, string, string][] = [
-      ['map', t('satellite.map', 'Map'), t('satellite.map-help', 'The usual background map')],
+    // The map in its two colourings (services/map-colours.ts), then the imagery.
+    type Choice = 'original' | 'contrast' | 'satellite' | 'hybrid'
+    const mapChoices: [Choice, string, string][] = [
+      [
+        'contrast',
+        t('satellite.map-contrast', 'Map, high contrast'),
+        t('satellite.map-contrast-help', 'Each kind of area its own shade: towns, fields, woods, water')
+      ],
+      [
+        'original',
+        t('satellite.map-original', 'Map, original colours'),
+        t('satellite.map-original-help', "Open Infrastructure Map's own, paler")
+      ]
+    ]
+    const imageryChoices: [Choice, string, string][] = [
       [
         'satellite',
         t('satellite.satellite', 'Satellite'),
@@ -167,11 +181,14 @@ const satellite: ForkModule = {
         t('satellite.hybrid-help', 'Imagery with roads, railways and borders')
       ]
     ]
+    const isMap = (value: string) => value === 'original' || value === 'contrast'
+    const choices = [...mapChoices, ...(TIERS.length ? imageryChoices : [])]
     const radios = choices.map(([value, label, help]) => {
       const input = el('input', { type: 'radio', name: 'oim-background', value }) as HTMLInputElement
       input.onchange = () => {
-        mode = value
-        storeMode(value)
+        if (isMap(value)) mapColours.set(value as MapColours)
+        mode = isMap(value) ? 'map' : (value as BackgroundMode)
+        storeMode(mode)
         apply(map)
       }
       return {
@@ -182,8 +199,9 @@ const satellite: ForkModule = {
     const section = el(
       'section.oim-background',
       el('h3', t('satellite.title', 'Background')),
+      el('.oim-background-choices', ...radios.map((r) => r.row)),
       TIERS.length
-        ? el('.oim-background-choices', ...radios.map((r) => r.row))
+        ? ''
         : el(
             'p.oim-map-sources-note',
             t(
@@ -212,7 +230,7 @@ const satellite: ForkModule = {
       const b = map.getBounds()
       const here = !imagery || covers(imagery, [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()])
       for (const r of radios) {
-        if (r.input.value === 'map') continue
+        if (isMap(r.input.value)) continue
         r.input.disabled = !here
         r.row.classList.toggle('disabled', !here)
       }
@@ -224,7 +242,8 @@ const satellite: ForkModule = {
     addSettingsSection({
       el: section,
       refresh: () => {
-        radios.forEach((r) => (r.input.checked = r.input.value === mode))
+        const chosen = mode === 'map' ? mapColours.get() : mode
+        radios.forEach((r) => (r.input.checked = r.input.value === chosen))
         void checkCoverage()
       }
     })

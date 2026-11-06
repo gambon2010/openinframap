@@ -219,7 +219,8 @@ bash scripts/satellite.sh      # the same questions; then restart the frontend
 
 It's shown with
 **Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
-roads* (also roads, railways and borders); *Map* is the usual background.
+roads* (also roads, railways and borders); *Map, high contrast* is the usual
+background (each kind of area its own pale shade), *Map, original colours* upstream's.
 
 Three kinds, each adding detail to the one below (sizes are what's kept on disk):
 
