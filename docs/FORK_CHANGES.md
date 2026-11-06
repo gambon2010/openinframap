@@ -1699,6 +1699,12 @@ starting above their area's lowest; `catch_up_lower_zooms` (was
   `step_images`) and per command (`command_offer`, `command_dedupe`,
   `command_remove`, `command_list`, `command_import` with `wanted_sources` and
   `import_source`; the duplicates total in one place, `total_duplicates`).
+- `userdata/changes.py`: `apply_change` (117 lines) is now who may
+  (`check_layer_access`, `check_feature_access`), what changes (`change_layer`,
+  `change_feature`) and the history entry (`log_change`); the SQL is unchanged.
+  Checked through the API (create, change, rename, delete, a missing geometry, an
+  unknown change, changing a deleted layer) and in the change log. The other half
+  of refactor 6, splitting `grid_supply.supply`, went with the statuses.
 - Settings → Background is its own module (`modules/background/`): it chose the
   map's colours too but lived in `modules/satellite`. The choice is kept in
   `services/background.ts` (replacing `services/map-colours.ts`; what browsers kept
