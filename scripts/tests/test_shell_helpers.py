@@ -35,17 +35,17 @@ def test_set_env_line(tmp_path):
     assert env.read_text() == "B=3\nC=4\n"
 
 
-def pmtiles_header(maxzoom: int) -> bytes:
+def pmtiles_header(maxzoom: int, minzoom: int = 0) -> bytes:
     header = bytearray(127)
     header[:7] = b"PMTiles"
     header[7] = 3
-    header[100], header[101] = 0, maxzoom
+    header[100], header[101] = minzoom, maxzoom
     return bytes(header)
 
 
 def test_satellite_tiers_value(tmp_path):
     (tmp_path / "lux.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
-    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(13))
+    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 9))
     value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
     assert "|NASA Blue Marble;" in value
     value = re.sub(r"\|[^;]*", "", value)
@@ -104,7 +104,7 @@ export_outdated && echo outdated || echo current
 
 def test_world_overview_is_shared_by_every_region(tmp_path):
     (tmp_path / "world.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
-    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(12))
+    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(12, 9))
     value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
     assert "|NASA Blue Marble;" in value
     value = re.sub(r"\|[^;]*", "", value)
@@ -123,18 +123,19 @@ def test_world_overview_is_shared_by_every_region(tmp_path):
 
 
 def test_tiers_list_every_area_and_source(tmp_path):
-    def pmtiles(name, maxzoom, tile_type):
-        header = bytearray(pmtiles_header(maxzoom))
+    # Each file as satellite.py writes it: its own first and last zoom in its header.
+    def pmtiles(name, maxzoom, tile_type, minzoom):
+        header = bytearray(pmtiles_header(maxzoom, minzoom))
         header[99] = tile_type
         (tmp_path / name).write_bytes(bytes(header))
 
-    pmtiles("world.sat-overview.pmtiles", 8, 3)
-    pmtiles("bayern.sat-regional.pmtiles", 12, 4)
-    pmtiles("world.sat-regional.pmtiles", 10, 4)
-    pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 17, 2)  # PNG
+    pmtiles("world.sat-overview.pmtiles", 8, 3, 0)
+    pmtiles("bayern.sat-regional.pmtiles", 12, 4, 9)
+    pmtiles("world.sat-regional.pmtiles", 10, 4, 9)
+    pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 17, 2, 14)  # PNG
     # More detail added later: a file of its own, from its own first zoom.
-    pmtiles("alsace.sat-detailed-fr_ign.pmtiles", 15, 3)
-    pmtiles("alsace.sat-detailed-fr_ign-z16-17.pmtiles", 17, 3)
+    pmtiles("alsace.sat-detailed-fr_ign.pmtiles", 15, 3, 14)
+    pmtiles("alsace.sat-detailed-fr_ign-z16-17.pmtiles", 17, 3, 14)
     more = tmp_path / "alsace.sat-detailed-fr_ign-z16-17.pmtiles"
     header = bytearray(more.read_bytes())
     header[100] = 16

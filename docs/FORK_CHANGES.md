@@ -1493,6 +1493,18 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## Place names and satellite zooms: rules instead of numbers (2026-11-06)
+
+- **Place names** (`map-sources/labels.ts`): one rule read from the style: a
+  place-name layer that ends after zoom 10 (towns, neighbourhoods: the name of where
+  you are) is kept to the closest zoom, from where the style starts it; countries and
+  regions (ending at 8) keep upstream's end. Before: each layer's zooms copied in
+  by hand (5.5 and 13), after three tweaks.
+- **Satellite zooms** (`select_satellite`, `scripts/lib/satellite.sh`): each imagery
+  file is shown over the zooms its own header gives (satellite.py writes them); the
+  tier's usual zooms are only a fallback when a header can't be read. Before: fixed
+  0–8 and 9–… per tier, and aerial photos forced to start at 14 at least.
+
 ## Printed text: one font with every character (2026-11-06)
 
 The PDF used jsPDF's built-in Helvetica, which only knows Latin-1; characters it

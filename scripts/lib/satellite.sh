@@ -41,7 +41,7 @@ satellite_summary() {
 # is shown, whatever area it's of: the overview (the world's, else region $1's),
 # then Sentinel-2 (the world's first, then each area's), then the aerial photos.
 satellite_tiers_value() {
-    local region="$1" value="" file range ext
+    local region="$1" value="" file range ext min max
     local files=()
     file=$(overview_file "$region")
     [[ -f "$file" ]] && files+=("$file")
@@ -53,13 +53,14 @@ satellite_tiers_value() {
     local credits=() i=0
     mapfile -t credits < <(python3 -I "$REPO_ROOT/scripts/satellite.py" attribution "${files[@]}")
     for file in "${files[@]}"; do
+        # Each file is shown over the zooms its header says it has; the tier's usual
+        # ones only if it can't be read (scripts/satimagery/sources.py TIERS).
         case "$file" in
-            *.sat-overview.pmtiles) range="0 8"; ext=jpg ;;
-            *.sat-regional.pmtiles) range="9 $(pmtiles_maxzoom "$file" 12)"; ext=webp ;;
-            # Aerial photos from their own first zoom, 14 at the lowest (more
-            # detail added later: ...-z16-17.pmtiles starts at 16).
-            *) range="$(( $(pmtiles_minzoom "$file" 14) > 14 ? $(pmtiles_minzoom "$file" 14) : 14 )) $(pmtiles_maxzoom "$file" 16)"; ext=jpg ;;
+            *.sat-overview.pmtiles) min=0; max=8; ext=jpg ;;
+            *.sat-regional.pmtiles) min=9; max=12; ext=webp ;;
+            *) min=14; max=16; ext=jpg ;;
         esac
+        range="$(pmtiles_minzoom "$file" "$min") $(pmtiles_maxzoom "$file" "$max")"
         ext=$(pmtiles_ext "$file" "$ext")
         value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range|${credits[i]:-}"
         i=$((i + 1))
