@@ -221,6 +221,8 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.7d | The printed legend explains what's on the page: the key's rows for the infrastructure there; My layers by layer name, each item with its own picture (graphics drawn small). | ✅ (2026-11-05) |
 | 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |
 | 10.9 | Buildings: show building outlines on the map (a layer to switch on); copy chosen buildings' outlines into My layers. | 🗂 (asked 2026-11-05) |
+| 10.10 | Power supply mode recolours the map layers it reads from the style (every layer drawn from the power-line and station tiles), not a hand-written list of upstream's layer names (a new or renamed upstream layer would silently keep its colour). | 🗂 (asked 2026-11-06) |
+| 10.11 | Feature statuses as layer information (a side's or team's own assessment), not one global state. Big rework. | 🗂 (asked 2026-11-06) |
 
 ## 11. Quality
 
