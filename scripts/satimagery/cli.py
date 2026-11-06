@@ -41,6 +41,7 @@ from .tiles import (
     block_tiles,
     box_ring,
     load_rings,
+    lowest_zoom,
     rings_bbox,
     tile_blocks,
 )
@@ -144,6 +145,21 @@ def command_regional(args) -> None:
     print(f"-> {out}")
 
 
+def lower_zooms_needed(folder: Path) -> list[str]:
+    """Areas whose Sentinel-2 file starts above the lowest zoom its area can have
+    (made when Sentinel-2 started at zoom 9), and has its outline to work from."""
+    needed = []
+    for file in sorted(folder.glob("*.sat-regional.pmtiles")):
+        area = file.name.removesuffix(".sat-regional.pmtiles")
+        outline = folder / f".area-{area}.geojson"
+        zooms = pmtiles_zooms(file)
+        if area == "world" or not zooms or not outline.exists():
+            continue
+        if zooms[0] > lowest_zoom(load_rings(str(outline)), TIERS["regional"][0]):
+            needed.append(area)
+    return needed
+
+
 def command_lower_zooms(args) -> None:
     """Sentinel-2 imagery made when it started at zoom 9: its lower zooms (down to
     TIERS' first) added, without downloading anything. Its tiles are read back from
@@ -151,19 +167,31 @@ def command_lower_zooms(args) -> None:
     the way the download does (average), and the file replaced once the new one is
     complete."""
     folder = Path(args.basemap_dir).resolve()
+    if args.list_needed:
+        for area in lower_zooms_needed(folder):
+            print(area)
+        return
+    if not args.region:
+        sys.exit("lower-zooms needs --region (or --list-needed)")
     out = folder / f"{args.region}.sat-regional.pmtiles"
     zooms = pmtiles_zooms(out)
     if not zooms:
         sys.exit(f"No Sentinel-2 imagery of {args.region}: {out}")
     first, last = zooms
-    minzoom = TIERS["regional"][0]
+    # Already from the tier's first zoom, or the lowest its area can have.
+    outline = folder / f".area-{args.region}.geojson"
+    outlines = [load_rings(str(outline))] if first > TIERS["regional"][0] else []
+    minzoom = (
+        lowest_zoom(outlines[0], TIERS["regional"][0])
+        if outlines
+        else TIERS["regional"][0]
+    )
     if first <= minzoom:
         print(
-            f"  {out.name} already starts at zoom {first}: nothing to do.",
+            f"  {out.name} already starts at zoom {first}, the lowest for its area: nothing to do.",
             file=sys.stderr,
         )
         return
-    outlines = [load_rings(str(folder / f".area-{args.region}.geojson"))]
     blocks = {z: tile_blocks(outlines, z) for z in range(first, last + 1)}
     total = sum(block_count(b) for b in blocks.values())
     url = f"{args.server}/{out.stem}/{{z}}/{{x}}/{{y}}.webp"
@@ -310,8 +338,9 @@ def main(argv: Iterable[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("sources")
     p = sub.add_parser("lower-zooms")
+    p.add_argument("--region", help="the area of the Sentinel-2 file (france...)")
     p.add_argument(
-        "--region", required=True, help="the area of the Sentinel-2 file (france...)"
+        "--list-needed", action="store_true", help="only list the areas that need it"
     )
     p.add_argument(
         "--basemap-dir",

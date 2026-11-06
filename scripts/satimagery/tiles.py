@@ -237,3 +237,23 @@ def load_rings(path: str) -> list[Ring]:
     if not rings:
         sys.exit(f"No polygon in {path}")
     return rings
+
+
+def lowest_zoom(rings: list[Ring], floor: int) -> int:
+    """The lowest zoom (from `floor`) at which an area still spans half a tile (128
+    pixels) or more: GDAL makes no lower zooms for it (Luxembourg: 8)."""
+    west, south, east, north = rings_bbox(rings)
+
+    def y(lat: float) -> float:
+        lat = max(-85.0511, min(85.0511, lat))
+        return (
+            1
+            - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat)))
+            / math.pi
+        ) / 2
+
+    span = max((east - west) / 360, abs(y(south) - y(north)))
+    zoom = floor
+    while zoom < 20 and span * 256 * 2**zoom < 128:
+        zoom += 1
+    return zoom

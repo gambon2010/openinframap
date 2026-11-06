@@ -1558,6 +1558,16 @@ what's there and defaults to keeping it ("Keep what you have (France to zoom 13)
 step 2 (aerial photos) always follows, for the area chosen in step 1 or else the
 region built, or says no agency's photos cover it (`regional_have`, menu.py).
 
+With one aerial source, step 2 asks the zoom straight away ("Download France (IGN)
+up to which zoom? [15/16/17, Enter: none]"); with several, which ones, then the
+zoom. An answer that doesn't fit is said so and asked again (`ask`, `ask_numbers`),
+never dropped: a zoom typed where a source number was asked used to vanish.
+
+The catch-up only touches files that start above the lowest zoom their area can
+have (`lowest_zoom`, tiles.py: where it spans half a tile; Luxembourg 8, France 5):
+`lower-zooms --list-needed` says which. Before, Luxembourg (which GDAL can't take
+below 8) was redone on every run.
+
 ## Picker: one row per graphic type (2026-11-06)
 
 A graphic with two versions (Block, Disrupt, Fix: task or obstacle; Main attack,

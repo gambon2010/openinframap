@@ -185,6 +185,26 @@ def ask(prompt: str, choices: Iterable[str], default: str) -> str:
         answer = line.strip() or default
         if answer in choices:
             return answer
+        shown = [c for c in choices if c != "none"]
+        say(
+            f"Type one of: {', '.join(shown)}"
+            + (" (or Enter)" if default else "")
+            + "."
+        )
+
+
+def ask_numbers(prompt: str, count: int) -> list[str]:
+    """Some of the numbers 1 to count (Enter: none); asks again, saying why, if an
+    answer isn't one of them."""
+    while True:
+        print(f"    {prompt} ", end="", file=sys.stderr, flush=True)
+        line = sys.stdin.readline()
+        if not line:
+            sys.exit("Aborted.")
+        words = line.split()
+        if all(w.isdigit() and 1 <= int(w) <= count for w in words):
+            return list(dict.fromkeys(words))
+        say(f"Type numbers from 1 to {count}: the sources listed above, not zooms.")
 
 
 def say(text: str = "") -> None:
@@ -437,27 +457,38 @@ def command_choose(args) -> None:
                 "their size on disk. You can add more detail later: what's there stays,"
             )
             say("and only the new zooms are downloaded.")
-            print(
-                "    Which? [their numbers, separated by spaces; Enter: none]: ",
-                end="",
-                file=sys.stderr,
-                flush=True,
-            )
-            chosen = [
-                w
-                for w in sys.stdin.readline().split()
-                if w.isdigit() and 1 <= int(w) <= len(rows)
-            ]
-            if chosen:
-                offered = sorted({int(z) for w in chosen for z in rows[int(w) - 1][2]})
-                default = "16" if 16 in offered else str(offered[0])
-                zoom = int(
-                    ask(
-                        f"Up to which zoom? [{'/'.join(map(str, offered))}, default {default}]:",
-                        [str(z) for z in offered],
-                        default,
-                    )
+            if len(rows) == 1:
+                # One source: just how far (Enter: none).
+                chosen = ["1"]
+                offered = sorted(int(z) for z in rows[0][2])
+                answer = ask(
+                    f"Download {rows[0][1]['name']} up to which zoom? "
+                    f"[{'/'.join(map(str, offered))}, Enter: none]:",
+                    [str(z) for z in offered] + ["none"],
+                    "none",
                 )
+                if answer == "none":
+                    chosen = []
+                else:
+                    zoom = int(answer)
+            else:
+                chosen = ask_numbers(
+                    f"Which sources? [their numbers 1-{len(rows)}, separated by spaces; Enter: none]:",
+                    len(rows),
+                )
+                if chosen:
+                    offered = sorted(
+                        {int(z) for w in chosen for z in rows[int(w) - 1][2]}
+                    )
+                    default = "16" if 16 in offered else str(offered[0])
+                    zoom = int(
+                        ask(
+                            f"Up to which zoom? [{'/'.join(map(str, offered))}, default {default}]:",
+                            [str(z) for z in offered],
+                            default,
+                        )
+                    )
+            if chosen:
                 for w in dict.fromkeys(chosen):
                     job, src, _, start = rows[int(w) - 1]
                     top = min(zoom, src["maxzoom"])

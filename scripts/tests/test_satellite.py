@@ -634,8 +634,9 @@ def test_keeping_sentinel_still_offers_the_aerial_photos(tmp_path, monkeypatch, 
     (tmp_path / "luxembourg.sat-regional.pmtiles").write_bytes(bytes(header))
     (tmp_path / "world.sat-overview.pmtiles").write_bytes(bytes(header))
     plan = tmp_path / "plan.json"
-    # Enter: keep it; then aerial photos: source 1, Enter: the default zoom.
-    monkeypatch.setattr("sys.stdin", io.StringIO("\n1\n\n"))
+    # Enter: keep it; then the aerial photos (one source: the zoom straight away):
+    # "1" isn't a zoom (said so, asked again), then 15.
+    monkeypatch.setattr("sys.stdin", io.StringIO("\n1\n15\n"))
     s.main(
         [
             "choose",
@@ -656,4 +657,31 @@ def test_keeping_sentinel_still_offers_the_aerial_photos(tmp_path, monkeypatch, 
     assert "Step 2 of 2. Aerial photos of Luxembourg" in shown
     chosen = json.loads(plan.read_text())
     assert chosen["regional"] is None and chosen["world_overview"] is False
-    assert [d["source"] for d in chosen["detailed"]] == ["lu_geoportail"]
+    assert "up to which zoom?" in shown and "Type one of: 15" in shown
+    assert [(d["source"], d["maxzoom"]) for d in chosen["detailed"]] == [
+        ("lu_geoportail", 15)
+    ]
+
+
+def test_which_sentinel_files_need_lower_zooms(tmp_path):
+    lux = {
+        "type": "Polygon",
+        "coordinates": [
+            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
+        ],
+    }
+    france = {
+        "type": "Polygon",
+        "coordinates": [[[-5, 42], [9.6, 42], [9.6, 51.1], [-5, 51.1], [-5, 42]]],
+    }
+
+    def make(area, outline, first):
+        header = bytearray(127)
+        header[:7], header[100], header[101] = b"PMTiles", first, 13
+        (tmp_path / f"{area}.sat-regional.pmtiles").write_bytes(bytes(header))
+        (tmp_path / f".area-{area}.geojson").write_text(json.dumps(outline))
+
+    make("lux", lux, 8)  # Luxembourg can't go lower than 8: done
+    make("old", france, 9)  # France made from 9: needs 5 to 8
+    make("france", france, 5)
+    assert s.lower_zooms_needed(tmp_path) == ["old"]
