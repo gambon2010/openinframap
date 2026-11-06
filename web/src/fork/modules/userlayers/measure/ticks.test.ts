@@ -7,6 +7,8 @@ import {
   niceAtLeast,
   readableAngle,
   tickSteps,
+  smallerStep,
+  stepsFor,
   ticksAlong,
   toMercator
 } from './ticks.ts'
@@ -121,14 +123,32 @@ describe('marks along a path', () => {
 })
 
 describe('marks worth showing', () => {
-  test('at least four labelled steps along the line, else none', () => {
+  test('at least four labelled steps: smaller steps for a short line, none when even those crowd', () => {
     const line: [number, number][] = [
       [7, 47.0],
       [7, 47.56]
     ]
-    // About 62 km: 20 km steps zoomed out (3), 10 km steps one zoom in (6).
-    const majors = (zoom: number) => ticksAlong(line, { zoom }).filter((f) => f.properties?.tickLabel).length
-    expect(majors(8.5)).toBe(0)
-    expect(majors(10)).toBeGreaterThanOrEqual(4)
+    // About 62 km. At zoom 8.5 the usual step is 20 km (3 along it): 10 km steps
+    // instead (labels ~68 px apart). At 7.5, 10 km labels would be ~34 px apart: none.
+    const labels = (zoom: number) =>
+      ticksAlong(line, { zoom })
+        .filter((f) => f.properties?.tickLabel)
+        .map((f) => f.properties!.tickLabel)
+    expect(labels(8.5)).toEqual(['10 km', '20 km', '30 km', '40 km', '50 km', '60 km'])
+    expect(labels(7.5)).toEqual([])
+    expect(labels(10).length).toBeGreaterThanOrEqual(4)
+  })
+
+  test('smaller steps: 5 → 2 → 1 → 0.5', () => {
+    expect(smallerStep(5000)).toBe(2000)
+    expect(smallerStep(2000)).toBe(1000)
+    expect(smallerStep(1000)).toBe(500)
+  })
+
+  test('a measurement just too short for the usual step keeps its marks (17 km at ~25 m/px)', () => {
+    // The usual step: 5 km (2 km labels would be 79 px apart, under 80): 3 along
+    // 17 km. 2 km steps instead, not none.
+    expect(stepsFor(17400, 25.2)).toEqual({ major: 2000, minor: 1000 })
+    expect(stepsFor(17400, 60)).toBeNull() // zoomed out: 2 km labels 33 px apart
   })
 })

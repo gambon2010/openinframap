@@ -2,8 +2,10 @@
 // `major` ("18 km", "18 km 200 m") from the start (marked too), with one plain mark
 // halfway between (on a full value: majors are 1 or 2 × 10ⁿ; a 5 × 10ⁿ step has
 // none, its half isn't one). How far apart depends on the zoom: labels about 80 px
-// apart, never under 10 m; fewer than four labelled steps along the whole
-// measurement (zoomed out): none at all. Only the marks in view are made. Pure.
+// apart, never under 20 m. A measurement too short for four labelled steps of that
+// size gets smaller steps (5 → 2 → 1 km...), down to labels 45 px apart; only when
+// even those don't fit (zoomed far out) are there no marks. Only the marks in view
+// are made. Pure.
 //
 // Marks sit on the line as drawn: the great-circle path (geo.ts greatCirclePath),
 // straight on the flat map between its points, and across it as seen on screen.
@@ -16,9 +18,13 @@ const MAJOR_PX = 80
 
 const MIN_MAJOR = 20
 
-// Fewer labelled steps than this along the whole measurement: no marks (one or two
-// lone marks say little).
+// Fewer labelled steps than this along the whole measurement: smaller steps, or no
+// marks (one or two lone marks say little).
 const MIN_MAJORS = 4
+
+// Labels closer than this on screen (smaller steps for a short measurement): too
+// crowded, no marks.
+const MIN_LABEL_PX = 45
 
 const HALF_PX = { major: 7, minor: 4 }
 
@@ -37,9 +43,34 @@ export function niceAtLeast(x: number): number {
 
 /** The labelled step for a scale, and the plain mark halfway (null: none). */
 export function tickSteps(metresPerPx: number): { major: number; minor: number | null } {
-  const major = Math.max(MIN_MAJOR, niceAtLeast(metresPerPx * MAJOR_PX))
-  const lead = Math.round(major / 10 ** Math.floor(Math.log10(major)))
-  return { major, minor: lead === 5 ? null : major / 2 }
+  return withMinor(Math.max(MIN_MAJOR, niceAtLeast(metresPerPx * MAJOR_PX)))
+}
+
+/** A labelled step and its plain mark halfway (none for 5 × 10ⁿ: its half isn't a
+ * full value). */
+function withMinor(major: number): { major: number; minor: number | null } {
+  return { major, minor: leadDigit(major) === 5 ? null : major / 2 }
+}
+
+function leadDigit(step: number): number {
+  return Math.round(step / 10 ** Math.floor(Math.log10(step)))
+}
+
+/** The next smaller step of 1, 2, 5 × 10ⁿ: 5 → 2, 2 → 1, 1 → 0.5. */
+export function smallerStep(step: number): number {
+  return leadDigit(step) === 5 ? (step * 2) / 5 : step / 2
+}
+
+/** The steps for a measurement `total` metres long: the usual ones, or smaller
+ * ones so at least MIN_MAJORS fit, while labels stay MIN_LABEL_PX apart; null: none. */
+export function stepsFor(total: number, metresPerPx: number): { major: number; minor: number | null } | null {
+  let steps = tickSteps(metresPerPx)
+  while (total < MIN_MAJORS * steps.major) {
+    const smaller = smallerStep(steps.major)
+    if (smaller < MIN_MAJOR || smaller / metresPerPx < MIN_LABEL_PX) return null
+    steps = withMinor(smaller)
+  }
+  return steps
 }
 
 /** A mark's label: whole km when the step is ("18 km"), else km and m ("18 km 450 m"). */
@@ -122,8 +153,9 @@ export function ticksAlong(
   const b = view.bounds
   const lat = b ? (b.south + b.north) / 2 : points.reduce((s, p) => s + p[1], 0) / points.length
   const mpp = metresPerPixel(lat, view.zoom)
-  const { major, minor } = tickSteps(mpp)
-  if (total < MIN_MAJORS * major) return []
+  const steps = stepsFor(total, mpp)
+  if (!steps) return []
+  const { major, minor } = steps
   const step = minor ?? major
   if (total / step > MAX_CANDIDATES) return []
   const world = 512 * 2 ** view.zoom

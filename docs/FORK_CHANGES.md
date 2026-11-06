@@ -1493,6 +1493,15 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## Measurement marks: smaller steps before none (2026-11-06)
+
+Zoomed out a little, a measurement could lose all its marks: labels are spaced about
+80 px apart, and just under the zoom where 2 km steps fit (79 px), the step jumped
+to 5 km; a 17 km measurement holds fewer than four of those, so none were drawn. Now
+a measurement too short for four labelled steps of the usual size gets smaller ones
+(5 → 2 → 1 km…, `stepsFor` in `measure/ticks.ts`) while their labels stay at least
+45 px apart; only then are there none.
+
 ## A layer's items, in groups (2026-11-06)
 
 An open layer lists its items under small headings that fold (`ui/outliner/groups.ts`,
