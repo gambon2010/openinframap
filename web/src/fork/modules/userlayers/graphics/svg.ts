@@ -3,8 +3,8 @@
 // left to right, a square graphic square, an area as a box), and its lines, areas
 // and labels become an SVG fitted to them.
 import { graphicKey } from './labels.ts'
+import { SQUARE } from './graphics.constants.ts'
 import {
-  SQUARE,
   axisControlPoints,
   graphicsLibrary,
   isAxis,

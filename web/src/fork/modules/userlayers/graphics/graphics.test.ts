@@ -15,10 +15,10 @@ import {
   pointCount,
   renderGraphic,
   isSquare,
-  SQUARE,
   squareUp,
   toDCode
 } from './graphics.ts'
+import { SQUARE } from './graphics.constants.ts'
 
 type Lib = Awaited<ReturnType<typeof graphicsLibrary>>
 let lib: Lib

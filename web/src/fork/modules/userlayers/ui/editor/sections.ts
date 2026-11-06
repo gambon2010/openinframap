@@ -3,9 +3,10 @@
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR } from '../../model/model.ts'
-import { GROUPS, addableFields, cardFields, toDtg } from '../../model/fields.ts'
+import { GROUPS } from '../../model/fields.constants.ts'
+import { addableFields, cardFields, toDtg } from '../../model/fields.ts'
+import { IDENTITIES } from '../../model/sidc.constants.ts'
 import {
-  IDENTITIES,
   MOBILITIES,
   identity,
   mobility,
@@ -16,7 +17,8 @@ import {
   withStatus,
   withUnitModifiers
 } from '../../model/sidc.ts'
-import { GEOMETRY_LABELS, entryOf } from '../palette.ts'
+import { GEOMETRY_LABELS } from '../palette.constants.ts'
+import { entryOf } from '../palette.ts'
 import { symbolSvg } from '../../map/symbols.ts'
 import { MAX_SIZE, MIN_SIZE } from '../../map/render.constants.ts'
 import { controlPoints } from '../../map/geometry.ts'

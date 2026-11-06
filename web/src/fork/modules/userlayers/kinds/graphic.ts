@@ -1,7 +1,8 @@
 // Fork: a tactical graphic (a boundary, an axis of advance...): control points,
 // drawn by the C5ISR renderer (map/graphics.ts).
 import { t } from '../../../core/i18n.ts'
-import { GEOMETRY_LABELS, entryOf, symbolName } from '../ui/palette.ts'
+import { GEOMETRY_LABELS } from '../ui/palette.constants.ts'
+import { entryOf, symbolName } from '../ui/palette.ts'
 import { ItemKind } from './types.ts'
 
 export const graphic: ItemKind = {

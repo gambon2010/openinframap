@@ -3,7 +3,8 @@
 // "Back to live". A situation is shown read-only (store.view).
 import { el } from 'redom'
 import { t, tn } from '../../../core/i18n.ts'
-import { Situation, createSituation, deleteSituation, listSituations } from '../state/api.ts'
+import { Situation } from '../state/api.types.ts'
+import { createSituation, deleteSituation, listSituations } from '../state/api.ts'
 import { situationLabel, situationPosition } from '../model/situations.ts'
 import type { Workspace } from './workspace.ts'
 

@@ -7,7 +7,7 @@ import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { BACKEND_BASE_URL } from '../../config.ts'
 import { FeatureHighlight } from '../../ui/highlight.ts'
-import { Station } from './grid-route.ts'
+import { Station } from './grid-route.types.ts'
 
 type LineResponse = {
   /** Each way, with which of its voltages is this line's (drawn side by side). */

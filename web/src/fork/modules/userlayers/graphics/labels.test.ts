@@ -1,9 +1,12 @@
 // Plain labels on tactical graphics (graphic-labels.ts), through the real renderer:
 // every graphic in the catalogue, in English and French.
 import { beforeAll, describe, expect, test } from 'vitest'
-import { SQUARE, graphicsLibrary, isAxis, mapScale, pointCount, renderGraphic } from './graphics.ts'
+import { SQUARE } from './graphics.constants.ts'
+import { graphicsLibrary, isAxis, mapScale, pointCount, renderGraphic } from './graphics.ts'
 import { samplePoints } from './svg.ts'
-import { GRAPHIC_LABELS, LabelLanguage, graphicKey, graphicName, labelOf, plainLabel } from './labels.ts'
+import { GRAPHIC_LABELS } from './labels.constants.ts'
+import { LabelLanguage } from './labels.types.ts'
+import { graphicKey, graphicName, labelOf, plainLabel } from './labels.ts'
 import catalogue from '../model/symbols-2525c.json'
 import tta from './tta106-sigles.json'
 

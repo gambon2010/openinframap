@@ -1,7 +1,8 @@
 // Fork: "My layers" backend calls (web-backend/src/fork/userdata/). Relative
 // URLs: the dev server proxies /userdata to the backend (vite.config.ts), which
 // keeps the requests same-origin (the backend only allows GET across origins).
-import { Change, LayerAccess, SavedChange, UserFeature } from '../model/model.ts'
+import { Change, SavedChange } from '../model/model.ts'
+import type { LoadedLayer, Situation, LayerSharing } from './api.types.ts'
 
 const BASE = '/userdata'
 
@@ -12,19 +13,6 @@ async function json<T>(response: Response): Promise<T> {
     throw new Error(detail)
   }
   return response.json() as Promise<T>
-}
-
-export interface LoadedLayer {
-  id: string
-  name: string
-  style: { color?: string }
-  access: LayerAccess
-  owner: string | null
-  version: number
-  updated_by: string | null
-  updated_at: string
-  /** With their version, updated_by and updated_at too. */
-  features: UserFeature[]
 }
 
 export async function loadAll(): Promise<{ last_save: number | null; layers: LoadedLayer[] }> {
@@ -72,17 +60,6 @@ export function imageUrl(id: string): string {
   return `${BASE}/images/${id}`
 }
 
-/** A named moment: the layers as they were after a saved change (userdata.situation). */
-export interface Situation {
-  id: number
-  name: string
-  change_id: number
-  author: string | null
-  created_at: string
-  /** When that change was made. */
-  at: string | null
-}
-
 export async function listSituations(): Promise<Situation[]> {
   return (await json<{ situations: Situation[] }>(await fetch(`${BASE}/situations`))).situations
 }
@@ -96,14 +73,6 @@ export async function createSituation(name: string, layers: string[], author?: s
       body: JSON.stringify({ name, layers, author: author || null })
     })
   )
-}
-
-/** Who a layer is shared with (its owner only). */
-export interface LayerSharing {
-  owner: string | null
-  /** From before accounts: everyone may change it. */
-  open_to_all: boolean
-  people: { id: number; name: string; level: 'view' | 'modify' | null }[]
 }
 
 export async function layerSharing(layerId: string): Promise<LayerSharing> {

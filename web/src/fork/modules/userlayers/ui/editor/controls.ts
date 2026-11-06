@@ -2,7 +2,8 @@
 // from (chips, selects, a detail's row).
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
-import { Field, displayValue, fromDtg, toDtg } from '../../model/fields.ts'
+import { Field } from '../../model/fields.types.ts'
+import { displayValue, fromDtg, toDtg } from '../../model/fields.ts'
 
 export function chip(label: string, active: boolean, onclick: () => void, title = '') {
   const b = el(`button.oim-ul-chip${active ? '.oim-on' : ''}`, label, {

@@ -10,19 +10,18 @@
 import { LngLat, distance, greatCirclePath } from './geo.ts'
 import { metresPerPixel, toDegrees, toRadians } from '../../../core/geo.ts'
 import { clamp } from '../../../core/math.ts'
-
-/** Where the marks are drawn: the zoom, and what's in view (none: everywhere). */
-export interface TickView {
-  zoom: number
-  bounds?: { west: number; south: number; east: number; north: number }
-}
+import type { TickView, XY, Segment } from './ticks.types.ts'
 
 const MAJOR_PX = 80
+
 const MIN_MAJOR = 20
+
 // Fewer labelled steps than this along the whole measurement: no marks (one or two
 // lone marks say little).
 const MIN_MAJORS = 4
+
 const HALF_PX = { major: 7, minor: 4 }
+
 // Beyond this many candidate marks, none (a line far longer than the view).
 const MAX_CANDIDATES = 300000
 
@@ -54,8 +53,6 @@ export function formatTick(metres: number, major: number): string {
 
 // --- The drawn line, in Web Mercator (0–1), where screen directions are true ---
 
-type XY = [number, number]
-
 export function toMercator([lng, lat]: LngLat): XY {
   const y = (1 - Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / Math.PI) / 2
   return [(lng + 180) / 360, y]
@@ -63,13 +60,6 @@ export function toMercator([lng, lat]: LngLat): XY {
 
 export function fromMercator([x, y]: XY): LngLat {
   return [x * 360 - 180, (360 / Math.PI) * Math.atan(Math.exp(Math.PI * (1 - 2 * y))) - 90]
-}
-
-interface Segment {
-  a: XY
-  b: XY
-  start: number
-  length: number
 }
 
 /** A path's segments with their lengths (metres) and where each starts along it. */

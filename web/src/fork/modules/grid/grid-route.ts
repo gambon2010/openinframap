@@ -8,54 +8,17 @@
  * (route=s123_p-456), so a view can be shared.
  */
 import { IControl, Map, GeoJSONSource, LngLatBounds } from 'maplibre-gl'
-import type { Feature, MultiLineString } from 'geojson'
+import type { Feature } from 'geojson'
 import { URLHash } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { el, mount, setChildren } from 'redom'
 import { BACKEND_BASE_URL } from '../../config.ts'
 import './grid-route.css'
 import { closeButton, minimiseButton, updateMinimiseButton } from '../../ui/details.ts'
-
-export type StationKind = 'substation' | 'plant'
-
-export type Station = {
-  kind: StationKind
-  osm_id: number
-  name?: string | null
-}
-
-// A stretch between two consecutive stations; null = a junction between lines.
-export type Segment = {
-  from: Station | null
-  to: Station | null
-  length_km: number
-  voltages_kv: number[]
-}
-
-export type RoutePath = {
-  length_km: number
-  voltages_kv: number[]
-  stations: Station[]
-  segments: Segment[]
-  geometry: MultiLineString
-}
-
-// A station not on the ≥110 kV grid is first connected to it over lower
-// voltages (e.g. a wind farm's 65 kV line to the nearest 220 kV substation).
-export type AccessLeg = RoutePath & { end: 'from' | 'to' }
-
-// What's drawn and listed: a whole route (connection legs included).
-type Route = RoutePath
-
-export type RouteResponse = {
-  from: Station
-  to: Station
-  notices: string[]
-  access: AccessLeg[]
-  paths: RoutePath[]
-}
+import type { Station, RoutePath, Route, RouteResponse } from './grid-route.types.ts'
 
 const SOURCE = 'grid_route'
+
 export const PATH_COLOURS = ['#e6007e', '#0072ce', '#ff8c00', '#2e9e44', '#8e44ad']
 
 // Hash format: s<osm_id> for substations, p<osm_id> for plants, joined by "_".

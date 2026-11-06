@@ -13,7 +13,8 @@ import { Renderer } from './render.ts'
 import { geometryCentre, translateGeometry } from './geometry.ts'
 import { UserFeature } from '../model/model.ts'
 import { featureLabelParts } from '../model/labels.ts'
-import { IDENTITIES, status, withIdentity, withStatus } from '../model/sidc.ts'
+import { IDENTITIES } from '../model/sidc.constants.ts'
+import { status, withIdentity, withStatus } from '../model/sidc.ts'
 
 export class Interactions {
   private map: Map

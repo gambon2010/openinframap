@@ -8,51 +8,9 @@ import { Map } from 'maplibre-gl'
 import { el, setChildren } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { BACKEND_BASE_URL } from '../../config.ts'
-import { SUPPLY_COLOURS, Supply, supplyColours } from '../../services/supply.ts'
-
-const GREY = '#9e9e9e'
-
-/** Per id: a line's circuits ({s1: "red"}) or a station ("red"). */
-interface States {
-  lines: Record<string, Record<string, string>>
-  stations: Record<string, string>
-}
-
-interface SupplyResult extends States {
-  /** The grid build (for GET /grid/supply/unconnected). */
-  grid: string
-  lost: number
-  /** How many features have Suspected damage. */
-  suspected: number
-  counts: Record<'red' | 'orange' | 'risk', Record<string, number>>
-  features: Record<string, Supply>
-}
-
-// Upstream's layers recoloured while the mode is on, by the feature state their
-// features get (the backend says which ids aren't green): a line's circuit k
-// (power_line_k draws a way's k-th voltage) from "sk", a station from "station".
-// Lines below 10 kV aren't in the grid network: grey.
-const LINE_LAYERS = [1, 2, 3].flatMap((k) =>
-  [`power_line_${k}`, `power_line_underground_${k}`].map((id) => ({
-    id,
-    property: 'line-color' as const,
-    state: `s${k}`,
-    voltage: k === 1 ? 'voltage' : `voltage_${k}`
-  }))
-)
-const STATION_LAYERS = [
-  { id: 'power_substation', property: 'fill-color' as const },
-  { id: 'power_substation_point', property: 'circle-color' as const },
-  { id: 'power_plant', property: 'fill-color' as const }
-]
-// The tile layers whose features get states (a station's area and point have the same id).
-const STATE_LAYERS = [
-  'power_line',
-  'power_substation',
-  'power_substation_point',
-  'power_plant',
-  'power_plant_point'
-]
+import { SUPPLY_COLOURS, supplyColours } from '../../services/supply.ts'
+import type { States, SupplyResult } from './supply.types.ts'
+import { GREY, LINE_LAYERS, STATION_LAYERS, STATE_LAYERS } from './supply.constants.ts'
 
 function isStates(value: unknown): value is States {
   const v = value as States | null

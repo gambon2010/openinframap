@@ -8,25 +8,8 @@ import catalogue from '../model/symbols-2525c.json'
 import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../graphics/graphics.ts'
 import type { PersonalSettings } from '../state/personal.ts'
-
-/** [code with * for identity and status, name, depth, graphic geometry (L, A, M)] */
-export type Entry = [code: string, name: string, depth: number, geometry?: 'L' | 'A' | 'M']
-
-export type PaletteMode = 'symbols' | 'graphics'
-
-const AFFILIATIONS: [string, string][] = [
-  ['F', 'Friend'],
-  ['H', 'Hostile'],
-  ['N', 'Neutral'],
-  ['U', 'Unknown']
-]
-const MAX_RESULTS = 150
-
-export const GEOMETRY_LABELS: Record<string, [string, string]> = {
-  L: ['╱', 'Line'],
-  A: ['▱', 'Area'],
-  M: ['➚', 'Shape from points']
-}
+import type { Entry, PaletteMode, Pick } from './palette.types.ts'
+import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_LABELS, CATEGORIES } from './palette.constants.ts'
 
 /** A catalogue code (with * for identity and status) made concrete. */
 export function concreteSidc(code: string, affiliation: string, status: string): string {
@@ -56,63 +39,6 @@ export function symbolName(sidc: string): string | undefined {
   return entryOf(sidc)?.[1]
 }
 
-/**
- * Categories in plain words, rather than the standard's sections: which catalogue
- * groups they take entries from, and which of those entries.
- */
-export interface Category {
-  mode: PaletteMode
-  label: string
-  groups: string[]
-  test?: (entry: Entry) => boolean
-}
-
-const GRAPHIC_GROUPS = [
-  'Tasks',
-  'Command, control and manoeuvre',
-  'Mobility and survivability',
-  'Fire support',
-  'Combat service support',
-  'Other graphics'
-]
-const ARROW = /attack|axis|direction|advance|counterattack/i
-
-export const CATEGORIES: Category[] = [
-  { mode: 'symbols', label: 'Units', groups: ['Ground units', 'Special operations forces'] },
-  { mode: 'symbols', label: 'Equipment and vehicles', groups: ['Ground equipment'] },
-  { mode: 'symbols', label: 'Installations', groups: ['Installations'] },
-  { mode: 'symbols', label: 'Incidents and emergencies', groups: ['Emergency management'] },
-  { mode: 'symbols', label: 'Points on the map', groups: GRAPHIC_GROUPS },
-  { mode: 'symbols', label: 'Air', groups: ['Air'] },
-  { mode: 'symbols', label: 'Sea', groups: ['Sea surface', 'Subsurface'] },
-  { mode: 'symbols', label: 'Space', groups: ['Space'] },
-  { mode: 'symbols', label: 'Intelligence', groups: ['Signals intelligence'] },
-  { mode: 'symbols', label: 'Civil and stability', groups: ['Stability operations'] },
-  { mode: 'graphics', label: 'Arrows', groups: GRAPHIC_GROUPS, test: (e) => ARROW.test(e[1]) },
-  { mode: 'graphics', label: 'Tasks', groups: ['Tasks'] },
-  {
-    mode: 'graphics',
-    label: 'Lines',
-    groups: ['Command, control and manoeuvre', 'Other graphics'],
-    test: (e) => e[3] === 'L' && !ARROW.test(e[1])
-  },
-  {
-    mode: 'graphics',
-    label: 'Areas',
-    groups: ['Command, control and manoeuvre', 'Other graphics'],
-    test: (e) => e[3] === 'A'
-  },
-  {
-    mode: 'graphics',
-    label: 'Shapes',
-    groups: ['Command, control and manoeuvre', 'Other graphics'],
-    test: (e) => e[3] === 'M' && !ARROW.test(e[1])
-  },
-  { mode: 'graphics', label: 'Obstacles', groups: ['Mobility and survivability'] },
-  { mode: 'graphics', label: 'Fire support', groups: ['Fire support'] },
-  { mode: 'graphics', label: 'Logistics', groups: ['Combat service support'] }
-]
-
 /** Entries of the mode (in a category, if given), matching every word of the query. */
 export function searchCatalogue(query: string, mode: PaletteMode, category?: string): Entry[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
@@ -135,12 +61,6 @@ export function categoriesFor(mode: PaletteMode): string[] {
   return CATEGORIES.filter((c) => c.mode === mode && searchCatalogue('', mode, c.label).length).map(
     (c) => c.label
   )
-}
-
-export interface Pick {
-  sidc: string
-  name: string
-  geometry?: 'L' | 'A' | 'M'
 }
 
 export class Palette {

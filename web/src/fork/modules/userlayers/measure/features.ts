@@ -6,7 +6,7 @@
 import { t } from '../../../core/i18n.ts'
 import { FeatureProps } from '../model/model.ts'
 import { North, fromNorth, northLetter } from './north.ts'
-import { TickView, along, metresPerPixel, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
+import { along, metresPerPixel, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
 import {
   LngLat,
   area,
@@ -21,15 +21,7 @@ import {
   pathLength
 } from './geo.ts'
 import { toRadians } from '../../../core/geo.ts'
-
-export type MeasureType = 'distance' | 'area' | 'rings'
-
-export interface Measurement {
-  type: MeasureType
-  points: LngLat[]
-  /** Range rings: their radii in metres. */
-  radii?: number[]
-}
+import type { Measurement, DrawOptions, Placement } from './features.types.ts'
 
 /** Range rings' radii when none are set (metres). */
 export const DEFAULT_RADII = [1000, 5000, 10000]
@@ -97,26 +89,12 @@ const point = (coordinates: LngLat, properties: Record<string, unknown> = {}): G
 
 // About how wide a character of a 12 px label is (to tell whether one fits).
 const LABEL_CHAR_PX = 6.6
+
 // A ring smaller than this on screen (radius, px) isn't labelled; when the largest is
 // smaller than ONE_LABEL_RING_PX, it gets one label (its diameter) instead of four.
 const MIN_RING_PX = 25
+
 const ONE_LABEL_RING_PX = 60
-
-export interface DrawOptions {
-  /** The one being drawn (to the cursor): dashed, no marks. */
-  draft?: boolean
-  north?: North
-  /** Where marks go along distances (none: no marks). */
-  ticks?: TickView
-  /** The map's zoom (labels too long for their leg on screen get shorter). */
-  zoom?: number
-  /** Copied onto every feature (the item's id, its colour). */
-  properties?: Record<string, unknown>
-}
-
-// Labels: turned along the line (rotate), beside it (offset in ems, anchor), and
-// which one wins when two would overlap (priority: lower first).
-type Placement = { rotate?: number; offset?: [number, number]; anchor?: string; priority: number }
 
 /** Where a label goes beyond the end of a line heading `angle` (screen degrees). */
 function beyond(angle: number): Placement {

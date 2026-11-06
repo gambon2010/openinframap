@@ -3,11 +3,11 @@ import {
   catalogueCode,
   concreteSidc,
   entryOf,
-  CATEGORIES,
   categoriesFor,
   searchCatalogue,
   symbolName
 } from './palette.ts'
+import { CATEGORIES } from './palette.constants.ts'
 import catalogue from '../model/symbols-2525c.json'
 
 describe('codes', () => {

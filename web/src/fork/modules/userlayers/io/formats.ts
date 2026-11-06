@@ -8,10 +8,12 @@ import { gpx, kml } from '@tmcw/togeojson'
 import { FeatureProps, UserLayer } from '../model/model.ts'
 import { KIND_IDS, kindOf } from '../kinds/index.ts'
 import { parseHex } from '../../../core/colour.ts'
+import { OWN, NAME_KEYS, NOTE_KEYS, STYLE_KEYS } from './formats.constants.ts'
 
 export type Format = 'geojson' | 'kml' | 'gpx'
 
 export const EXTENSIONS: Record<Format, string> = { geojson: 'geojson', kml: 'kml', gpx: 'gpx' }
+
 export const MIME: Record<Format, string> = {
   geojson: 'application/geo+json',
   kml: 'application/vnd.google-earth.kml+xml',
@@ -23,26 +25,6 @@ export interface Imported {
   geometry: GeoJSON.Geometry
   properties: FeatureProps
 }
-
-// What says what an item is in My layers (kept on export, read back on import).
-const OWN = [
-  'kind',
-  'sidc',
-  'modifiers',
-  'axis',
-  'axisWidth',
-  'size',
-  'color',
-  'width',
-  'image',
-  'copy',
-  'measure',
-  'radii',
-  'locked'
-]
-
-// ---------------------------------------------------------------------------------
-// Export
 
 /** One GeoJSON file of the layers: each item with its layer's name. */
 export function toGeoJSON(layers: UserLayer[]): string {
@@ -213,12 +195,6 @@ function flat<T extends GeoJSON.Point | GeoJSON.LineString | GeoJSON.Polygon>(g:
   if (g.type === 'LineString') return { ...g, coordinates: g.coordinates.map(p2) }
   return { ...g, coordinates: (g as GeoJSON.Polygon).coordinates.map((r) => r.map(p2)) } as T
 }
-
-const NAME_KEYS = ['name', 'Name', 'NAME', 'title', 'Title', 'label']
-const NOTE_KEYS = ['description', 'desc', 'notes', 'Description', 'cmt']
-// What KML and GPX readers add about the look: not worth keeping as notes.
-const STYLE_KEYS =
-  /^(stroke|fill|marker|icon|label|styleUrl|styleHash|styleMapHash|visibility|_gpxType|times|coordinateProperties)/
 
 /** A file's feature as an item of My layers. */
 export function toItem(geometry: GeoJSON.Geometry, raw: Record<string, unknown>): Imported {

@@ -5,10 +5,16 @@
 // converted with its C2DLookup. Loaded on first use (a 1.4 MB gzipped script).
 // What it returns is GeoJSON (lines, polygons, and label points) that MapLibre draws.
 
-import { LabelLanguage, graphicKey, labelLanguage, plainLabel } from './labels.ts'
+import { graphicKey, labelLanguage, plainLabel } from './labels.ts'
 import { metresPerPixel, toRadians } from '../../../core/geo.ts'
-
-type C5Ren = typeof import('@armyc2.c5isr.renderer/mil-sym-ts-web')
+import type { C5Ren, PointCount, LonLat, GraphicInput } from './graphics.types.ts'
+import {
+  BEYOND_C,
+  METRES_PER_DEGREE_LON_AT_EQUATOR,
+  METRES_PER_DEGREE_LAT,
+  OGC_PIXEL_M,
+  SQUARE
+} from './graphics.constants.ts'
 
 let library: Promise<C5Ren> | undefined
 
@@ -21,12 +27,6 @@ export function graphicsLibrary(): Promise<C5Ren> {
   return library
 }
 
-/** How many control points a graphic takes. */
-export interface PointCount {
-  min: number
-  max: number
-}
-
 /** A 2525C code as the renderer's 2525D code, or null if it has none. */
 export function toDCode(lib: C5Ren, sidc: string): string | null {
   const known = lib.C2DLookup.getInstance().getDCode(sidc)
@@ -37,16 +37,6 @@ export function toDCode(lib: C5Ren, sidc: string): string | null {
   if (!beyond) return null
   const sibling = lib.C2DLookup.getInstance().getDCode(withSiblingKey(sidc, beyond.sibling))
   return sibling ? sibling.slice(0, 10) + beyond.entity + sibling.slice(16) : null
-}
-
-/**
- * Graphics 2525C doesn't have but 2525D does, under a 2525C-style code of ours:
- * the position area for artillery (PAA) drawn point by point (2525C: only a rectangle
- * or a circle, which need a width or radius the tool doesn't ask for).
- */
-const BEYOND_C: Record<string, { sibling: string; entity: string }> = {
-  // As the fire support area, irregular (G*F*ACSI); 2525D entity 240503.
-  'G*F*ACPI': { sibling: 'G*F*ACSI', entity: '240503' }
 }
 
 /** A code with another graphic's key, its affiliation and status kept. */
@@ -77,16 +67,6 @@ export function isAxis(lib: C5Ren, sidc: string): boolean {
   const rule = code ? lib.MSLookup.getInstance().getMSLInfo(code)?.getDrawRule() : undefined
   return rule === lib.DrawRules.AXIS1 || rule === lib.DrawRules.AXIS2
 }
-
-type LonLat = [number, number]
-
-// A flat approximation around a point (equirectangular), fine at an arrow's scale.
-// Arrows' widths are worked out with it and saved: keep it as it is (not the sphere
-// of measure/geo.ts), or saved arrows and new ones would differ.
-/** Metres in a degree of longitude at the equator (times cos(latitude) elsewhere). */
-const METRES_PER_DEGREE_LON_AT_EQUATOR = 111_320
-/** Metres in a degree of latitude (its average, near 45°). */
-const METRES_PER_DEGREE_LAT = 110_540
 
 /** Metres east/north of an origin. */
 function toMetres([lon, lat]: LonLat, origin: LonLat): [number, number] {
@@ -153,30 +133,10 @@ export function pathFromAxisPoints(points: LonLat[]): LonLat[] {
   return points.slice(0, -1).reverse()
 }
 
-/** A screen pixel's size in the OGC's standard (0.28 mm), metres. */
-const OGC_PIXEL_M = 0.00028
-
 /** Map scale (1:n) at a zoom and latitude, as the renderer wants it. */
 export function mapScale(zoom: number, latitude: number): number {
   // Metres per pixel / metres per screen pixel (0.28 mm, the OGC standard).
   return metresPerPixel(latitude, zoom) / OGC_PIXEL_M
-}
-
-export interface GraphicInput {
-  /** 2525C code, 15 characters. */
-  sidc: string
-  /** Control points, [lon, lat]. */
-  points: [number, number][]
-  /** Text modifiers, keyed by 2525 letter (T, T1, H, W, W1...). */
-  modifiers?: Record<string, string>
-  color?: string
-  /** 1:n */
-  scale: number
-  /** [west, south, east, north] of the view. */
-  bbox?: [number, number, number, number]
-  /** Whose labels (graphic-labels.ts): ours in this language, null the standard's;
-   * default: the one chosen in My layers' settings. */
-  language?: LabelLanguage | null
 }
 
 /**
@@ -296,38 +256,6 @@ export function colour(value: unknown): string | null {
   if (hex.length === 6) return `#${hex.toLowerCase()}`
   return null
 }
-
-/**
- * Three-point graphics drawn square: a base between two points and the third on the
- * perpendicular through its middle (Block, Contain, Clear, Breach, Bypass...; Disrupt:
- * through one end): where
- * the third point goes, which two make the base. 2525C codes, affiliation and status
- * left out (positions 1 and 3). Others take their points as they are.
- */
-export const SQUARE: Record<string, { base: [number, number]; free: number; through?: number }> = {}
-for (const code of [
-  'G*T*B', // Block
-  'G*M*OEB', // Block (obstacle effect)
-  'G*T*P', // Penetrate
-  'G*T*J', // Contain
-  'G*T*X', // Clear
-  'G*T*H', // Breach
-  'G*T*Y', // Bypass
-  'G*M*BDE', // Bypass easy
-  'G*M*BDD', // Bypass difficult
-  'G*M*BDI', // Bypass impossible
-  'G*T*C' // Canalize
-])
-  SQUARE[code] = { base: [0, 1], free: 2 }
-// Disrupt: its arrows run along the line from one of the base's ends to the third
-// point (the task: from the second; the obstacle effect: from the first).
-SQUARE['G*T*T'] = { base: [0, 1], free: 2, through: 1 }
-SQUARE['G*M*OED'] = { base: [0, 1], free: 2, through: 0 }
-for (const code of [
-  'G*G*SLA', // Ambush: the arc's ends, the arrow's tip
-  'G*G*OAF' // Attack by fire position: the base's ends, the arrow's tip
-])
-  SQUARE[code] = { base: [1, 2], free: 0 }
 
 /** Whether a graphic is drawn square (see SQUARE). */
 export function isSquare(sidc: string | undefined): boolean {

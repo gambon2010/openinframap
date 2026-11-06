@@ -5,7 +5,8 @@ import { el, setChildren } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { makePanel } from '../../../ui/panel.ts'
 import { UserLayer } from '../model/model.ts'
-import { LayerSharing, layerSharing, shareLayer } from '../state/api.ts'
+import { LayerSharing } from '../state/api.types.ts'
+import { layerSharing, shareLayer } from '../state/api.ts'
 
 type Level = 'view' | 'modify' | null
 

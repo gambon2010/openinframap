@@ -5,7 +5,7 @@
 // - a picture uploaded to the backend;
 // - a plain pin (marker).
 import { imageUrl } from '../state/api.ts'
-import { LabelLevel } from '../model/fields.ts'
+import { LabelLevel } from '../model/fields.types.ts'
 import { readText, writeText } from '../../../core/storage.ts'
 
 type Signs = typeof import('@syncpoint/signs')

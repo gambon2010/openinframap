@@ -4,6 +4,7 @@
 //   0 coding scheme, 1 standard identity, 2 dimension, 3 status, 4-9 function,
 //   10-11 symbol modifiers (echelon, HQ...; mobility for equipment), 12-13 country,
 //   14 order of battle.
+import { ECHELONS, UNIT_MODIFIERS } from './sidc.constants.ts'
 
 export type SymbolKind = 'unit' | 'equipment' | 'installation' | 'activity' | 'graphic' | 'other'
 
@@ -35,62 +36,13 @@ function setChar(sidc: string, index: number, char: string): string {
   return chars.join('')
 }
 
-export const IDENTITIES: [string, string][] = [
-  ['P', 'Pending'],
-  ['U', 'Unknown'],
-  ['A', 'Assumed friend'],
-  ['F', 'Friend'],
-  ['N', 'Neutral'],
-  ['S', 'Suspect'],
-  ['H', 'Hostile'],
-  ['J', 'Joker'],
-  ['K', 'Faker']
-]
-
 export const identity = (sidc: string) => sidc[1]
+
 export const withIdentity = (sidc: string, value: string) => setChar(sidc, 1, value)
 
-/** Status, position 4: present / planned, or the operational condition. */
-export const STATUSES: [string, string][] = [
-  ['P', 'Present'],
-  ['A', 'Planned'],
-  ['C', 'Present: fully capable'],
-  ['D', 'Present: damaged'],
-  ['X', 'Present: destroyed'],
-  ['F', 'Present: full to capacity']
-]
-
 export const status = (sidc: string) => sidc[3]
+
 export const withStatus = (sidc: string, value: string) => setChar(sidc, 3, value)
-
-export const ECHELONS: [string, string][] = [
-  ['-', 'None'],
-  ['A', 'Team / crew'],
-  ['B', 'Squad'],
-  ['C', 'Section'],
-  ['D', 'Platoon / detachment'],
-  ['E', 'Company / battery / troop'],
-  ['F', 'Battalion / squadron'],
-  ['G', 'Regiment / group'],
-  ['H', 'Brigade'],
-  ['I', 'Division'],
-  ['J', 'Corps'],
-  ['K', 'Army'],
-  ['L', 'Army group / front'],
-  ['M', 'Region']
-]
-
-// Position 11 for units: headquarters, task force and feint/dummy, combined.
-const UNIT_MODIFIERS: Record<string, { hq: boolean; taskForce: boolean; feint: boolean }> = {
-  '-': { hq: false, taskForce: false, feint: false },
-  A: { hq: true, taskForce: false, feint: false },
-  B: { hq: true, taskForce: true, feint: false },
-  C: { hq: true, taskForce: false, feint: true },
-  D: { hq: true, taskForce: true, feint: true },
-  E: { hq: false, taskForce: true, feint: false },
-  F: { hq: false, taskForce: false, feint: true },
-  G: { hq: false, taskForce: true, feint: true }
-}
 
 export interface UnitModifiers {
   echelon: string

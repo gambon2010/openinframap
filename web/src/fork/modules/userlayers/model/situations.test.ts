@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { SavedChange } from './model.ts'
 import { situationPosition } from './situations.ts'
-import { Situation } from '../state/api.ts'
+import { Situation } from '../state/api.types.ts'
 
 const change = (id: number): SavedChange => ({
   id,

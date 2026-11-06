@@ -2,7 +2,8 @@
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from './model.ts'
 import { kindOf } from '../kinds/index.ts'
-import { IDENTITIES, status } from './sidc.ts'
+import { IDENTITIES } from './sidc.constants.ts'
+import { status } from './sidc.ts'
 import { fromDtg, relativeTime } from './fields.ts'
 
 /** name: its designation or name; what: its type; detail: identity, planned, when seen. */

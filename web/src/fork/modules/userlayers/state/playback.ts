@@ -7,8 +7,8 @@ import { Change, SavedChange, UserFeature, UserLayer } from '../model/model.ts'
 import { applyChange } from './changes.ts'
 import { loadHistory } from './api.ts'
 import { kindOf } from '../kinds/index.ts'
-import { FIELDS } from '../model/fields.ts'
-import { ECHELONS, IDENTITIES, STATUSES } from '../model/sidc.ts'
+import { FIELDS } from '../model/fields.constants.ts'
+import { ECHELONS, IDENTITIES, STATUSES } from '../model/sidc.constants.ts'
 import { positionsOf } from '../model/shapes.ts'
 
 function asChange(saved: SavedChange): Change {

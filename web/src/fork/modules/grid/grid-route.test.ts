@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { RoutePath, RouteResponse, combineRoutes, decodeStation, encodeStation } from './grid-route.ts'
+import { RoutePath, RouteResponse } from './grid-route.types.ts'
+import { combineRoutes, decodeStation, encodeStation } from './grid-route.ts'
 
 describe('stations in the map link', () => {
   test('substations and plants, negative ids (relations) too', () => {

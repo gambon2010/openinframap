@@ -18,6 +18,18 @@ import { iconName } from './icons.ts'
 import { areaCrossesItself, areaPoints, pathCrossesItself } from '../model/shapes.ts'
 import { pointOf } from '../model/shapes.ts'
 import { clamp } from '../../../core/math.ts'
+import {
+  MODE,
+  CLOSE_PX,
+  MIN_SEPARATION_PX,
+  REPEAT_PX,
+  WHEEL_NOTCH,
+  WHEEL_STEP_FACTOR,
+  WIDTH_FACTOR_MIN,
+  WIDTH_FACTOR_MAX,
+  WHEEL_LINE_PX,
+  WHEEL_PAGE_PX
+} from './tools.constants.ts'
 
 export type Tool =
   | { mode: 'select' }
@@ -59,30 +71,8 @@ export function dropRepeats(points: [number, number][]): [number, number][] {
   return points.filter((p, i, all) => i === 0 || p[0] !== all[i - 1][0] || p[1] !== all[i - 1][1])
 }
 
-// Its name while a drawing or placing tool has the map (ui/map-mode.ts).
-const MODE = 'userlayers-draw'
-
-// How near (pixels) a click must be to an area's first point to close it there.
-const CLOSE_PX = 10
-// A new point of an area: at least this far (pixels) from the others; closer than
-// REPEAT_PX it's the second click of a double-click.
-const MIN_SEPARATION_PX = 12
-const REPEAT_PX = 4
-
-// Scrolled this far (pixels) makes one 10 % step of size (a mouse wheel's notch is
-// about 100; a touchpad sends many small steps).
-const WHEEL_NOTCH = 100
-
 // Shift + scroll: a size in fine steps (0.01), unlike the handle's drag (0.05).
 const clampSize = (size: number) => clamp(Math.round(size * 100) / 100, MIN_SIZE, MAX_SIZE)
-/** Each notch of Shift + scroll changes a size or width by 10 %. */
-const WHEEL_STEP_FACTOR = 1.1
-/** How narrow or wide an arrow being drawn can be, against its automatic width. */
-const WIDTH_FACTOR_MIN = 0.2
-const WIDTH_FACTOR_MAX = 5
-/** Pixels in a wheel "line" and a "page" (browsers report one of the three). */
-const WHEEL_LINE_PX = 40
-const WHEEL_PAGE_PX = 400
 
 /** How far a wheel event scrolled, in pixels (Shift turns it sideways in most
  * browsers, so either axis). */

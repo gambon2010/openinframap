@@ -5,7 +5,7 @@
 // Every "can I change this?" asks canEdit: a locked layer, or one shared with you
 // to view only (docs/plans/sync.md), can't be changed.
 import { UserFeature, UserLayer } from '../model/model.ts'
-import { Situation } from './api.ts'
+import { Situation } from './api.types.ts'
 
 export type ViewMode = 'live' | 'situation' | 'playback'
 
