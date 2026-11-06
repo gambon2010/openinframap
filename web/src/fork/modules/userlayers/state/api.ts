@@ -29,13 +29,12 @@ export class StaleError extends Error {
 /** Send changes with the versions they started from (bases: "feature:<id>" -> version). */
 export async function saveChanges(
   changes: Change[],
-  bases: Record<string, number>,
-  author?: string
+  bases: Record<string, number>
 ): Promise<{ save_id: number }> {
   const response = await fetch(`${BASE}/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ changes, bases, author: author || null })
+    body: JSON.stringify({ changes, bases })
   })
   if (response.status === 409) throw new StaleError((await response.json()).conflicts ?? [])
   return json(response)
@@ -65,12 +64,12 @@ export async function listSituations(): Promise<Situation[]> {
 }
 
 /** A situation covering these layers (only those who can see them all see it). */
-export async function createSituation(name: string, layers: string[], author?: string): Promise<Situation> {
+export async function createSituation(name: string, layers: string[]): Promise<Situation> {
   return json(
     await fetch(`${BASE}/situations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, layers, author: author || null })
+      body: JSON.stringify({ name, layers })
     })
   )
 }

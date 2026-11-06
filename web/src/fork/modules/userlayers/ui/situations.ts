@@ -93,7 +93,7 @@ export class Situations {
           const shown = [...store.layers.values()]
             .filter((l) => !store.hidden.has(l.id) && l.access !== undefined)
             .map((l) => l.id)
-          await createSituation(name.trim(), shown, store.author)
+          await createSituation(name.trim(), shown)
           await this.load()
         })
       } else this.ws.update()

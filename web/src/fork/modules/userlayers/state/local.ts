@@ -1,6 +1,6 @@
 // Fork: what My layers keeps in this browser: the unsaved changes (so a reload or
-// crash doesn't lose them) and what they started from, and the author's name (the
-// hidden layers and folders are personal.ts).
+// crash doesn't lose them) and what they started from (the hidden layers and
+// folders are personal.ts).
 //
 // The unsaved changes go in IndexedDB, which has room for big imported files
 // (localStorage, used before, holds about 5 MB per site); the first time, what
@@ -9,7 +9,6 @@
 // why and the page warns: they last only until the page closes, so Save.
 import { Change } from '../model/model.ts'
 import type { Bases } from './reconcile.ts'
-import { author, setAuthor } from '../../../core/author.ts'
 
 const PENDING_KEY = 'oim-userlayers-pending'
 const BASES_KEY = 'oim-userlayers-bases'
@@ -186,8 +185,5 @@ export const local = {
   trouble: null as string | null,
   onTrouble(listener: () => void) {
     troubleListeners.push(listener)
-  },
-  // Shared with the statuses (core/author.ts).
-  author,
-  setAuthor
+  }
 }

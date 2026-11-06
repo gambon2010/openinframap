@@ -638,7 +638,9 @@
     "unit-labels": "Unit labels",
     "unit-labels-title": "The text written around unit symbols",
     "graphic-labels-title": "The text written on tactical graphics (CATK, WUP…)",
-    "bearings-title": "The north bearings of measurements are given from"
+    "bearings-title": "The north bearings of measurements are given from",
+    "new-colour": "Colour of new items",
+    "new-colour-title": "New drawings, markers, measurements and graphics get it (change one on its card)"
   },
   "tower": {
     "unnamed-line": "a line",
@@ -652,10 +654,8 @@
     "history": "History ({{count}})",
     "was": "was {{status}}",
     "note-placeholder": "What happened, what is known",
-    "author-placeholder": "Your name",
     "save": "Save",
     "note": "Note",
-    "author": "Set by",
     "cancel": "Cancel",
     "failed": "Couldn't save: {{error}}",
     "operational": "Operational",
@@ -770,11 +770,6 @@
     "north-true": "True north",
     "north-magnetic": "Magnetic north (compass)",
     "north-grid": "Grid north (MGRS)",
-    "north-true-note": "Bearings from true north (the direction of the pole).",
-    "east": "east",
-    "west": "west",
-    "north-magnetic-note": "Magnetic north here: {{angle}} {{side}} of true north (WMM2025, today).",
-    "north-grid-note": "Grid north here: {{angle}} {{side}} of true north (UTM/MGRS).",
     "copy-grid-tip": "G: copy grid at pointer"
   },
   "print": {

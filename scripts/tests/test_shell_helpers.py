@@ -83,19 +83,6 @@ def test_pmtiles_maxzoom_falls_back(tmp_path):
     assert bash(f'pmtiles_maxzoom "{tmp_path}/missing" 16') == "16"
 
 
-def test_region_in(tmp_path):
-    index = tmp_path / "index.json"
-    features = [
-        {"properties": {"id": "europe"}},
-        {"properties": {"id": "france", "parent": "europe"}},
-        {"properties": {"id": "alsace", "parent": "france"}},
-        {"properties": {"id": "luxembourg", "parent": "europe"}},
-    ]
-    index.write_text(json.dumps({"features": features}))
-    check = "for r in alsace france luxembourg europe nowhere; do region_in $r france && echo $r; done; true"
-    assert bash(check, GEOFABRIK_INDEX=str(index)).split() == ["alsace", "france"]
-
-
 def test_export_outdated(tmp_path):
     (tmp_path / "lux.oimdb").write_bytes(b"")
     manifest = {"built_at": "B1", "schema_hash": "S1", "extra_data": ""}

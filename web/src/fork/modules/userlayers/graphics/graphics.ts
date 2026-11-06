@@ -257,11 +257,6 @@ export function colour(value: unknown): string | null {
   return null
 }
 
-/** Whether a graphic is drawn square (see SQUARE). */
-export function isSquare(sidc: string | undefined): boolean {
-  return !!sidc && graphicKey(sidc) in SQUARE
-}
-
 /**
  * A square graphic's points with the third moved onto the perpendicular through the
  * base's middle (or its point, see SQUARE), keeping its distance from the base;

@@ -117,7 +117,7 @@ async def save(request: Request) -> Response:
             ),
             {
                 # The account's name when logged in.
-                "author": user.name or body.get("author"),
+                "author": user.name or None,
                 "note": body.get("note"),
                 "user": int(user.id) if user.id is not None else None,
             },

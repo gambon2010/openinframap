@@ -1,6 +1,6 @@
 # shellcheck shell=bash
-# Geofabrik's regions: its index (names, download links, outlines), which region
-# contains which, and the extracts already downloaded to data/osm/.
+# Geofabrik's regions: its index (names, download links, outlines), and the
+# extracts already downloaded to data/osm/.
 # Sourced by common.sh.
 
 # Full index: includes each region's outline, used to cut its background map.
@@ -41,19 +41,6 @@ else:
         parent = regions.get(r.get("parent", ""), {}).get("name", "")
         print(f'{r["id"]}\t{r["name"]}\t{parent}')
 PY
-}
-
-# Whether Geofabrik region $1 is $2 or inside it, following the parents in
-# Geofabrik's index.
-region_in() {
-    python3 -c 'import json, sys
-index, region, wanted = sys.argv[1:]
-parents = {f["properties"]["id"]: f["properties"].get("parent") for f in json.load(open(index))["features"]}
-while region:
-    if region == wanted:
-        sys.exit(0)
-    region = parents.get(region)
-sys.exit(1)' "${GEOFABRIK_INDEX:-$OSM_DIR/geofabrik-index-v1.json}" "$1" "$2" 2>/dev/null
 }
 
 # Write region $1's outline from the Geofabrik index to file $2 (GeoJSON).

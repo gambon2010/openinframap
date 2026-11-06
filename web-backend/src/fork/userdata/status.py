@@ -7,7 +7,7 @@ line damaged, a substation destroyed... Shared by everyone, with their own histo
     GET  /userdata/status/feature?layer=&id=    one feature's status and history
     GET  /userdata/status/history               every change, oldest first
     POST /userdata/status                       {layer, id, status, evidence?, note?,
-                                                 details?, name?, author?}: set it
+                                                 details?, name?}: set it
                                                 (details: the extra fields, FIELDS)
 """
 
@@ -226,7 +226,7 @@ async def set_status(request: Request) -> Response:
     note = str(body.get("note") or "").strip() or None
     details = clean_details(body.get("details"))
     name = str(body.get("name") or "").strip() or None
-    author = current_user(request).name or str(body.get("author") or "").strip() or None
+    author = current_user(request).name or None
 
     the_geometry = f"(SELECT ST_Transform(geometry, 4326) FROM {table} WHERE {id_column} = :id LIMIT 1)"
     exists = (await db.execute(text(f"SELECT {the_geometry} IS NOT NULL"), {"id": feature_id})).scalar()

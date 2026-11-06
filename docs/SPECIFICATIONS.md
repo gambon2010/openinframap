@@ -172,6 +172,9 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.29 | Rework how graphics with two versions are listed and named (backlog). Block, Disrupt, Fix exist as a task and as an obstacle ("obstacle effect"; Turn is one too); Main/Supporting attack and Aviation as an axis of advance or a direction of attack. Ideas: one "Obstacle" entry with its effect chosen on the card (Block / Disrupt / Fix / Turn), or names by effect ("Obstacle: block"…); a well-named list rather than hiding entries. Now: both versions listed, a switch on the card. | 📝 backlog (2026-11-06) |
 | 9.30 | Satellite download menu easy to read (what each zoom shows, sizes, free space); aerial photos made more detailed later without downloading again what's there. | ✅ (2026-11-06) |
 | 9.31 | Downloads survive losing the internet: wait for the connection, go on when it's back, stop cleanly (keeping what's downloaded) if it doesn't come back or the download hangs. Every download (OSM extract, background map, satellite imagery, extra data, Wikidata cache) through one safe function. | ✅ (2026-11-06) `lib/net.sh`, `netsafe.py` |
+| 9.32 | My layers' panel cleaner: as tall as its content (scrolls only when the column is full); situation, ⚙ and × in the header; one Filter button instead of the chips; new layer, folder, import, export in a footer; a layer's and a folder's actions in a right-click menu; an eye to show / hide. | ✅ (2026-11-06) |
+| 9.33 | No colour per layer: what has no colour of its own is black; the colour new items get is chosen in Settings (My layers). | ✅ (2026-11-06) |
+| 9.34 | Situations reworked so the history of all changes is kept (no deleting; a save makes one?). To be discussed first. | backlog |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 
@@ -216,6 +219,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 |---|---|---|
 | 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | ✅ 321 frontend (`npm run test:fork`), 19 backend (`tests/fork/`), 77 scripts (`scripts/tests/`) |
 | 11.2 | Tests for the setup scripts. | ✅ the scripts run in a sandbox with fake Docker/network (options, refusals, safety rules); a real Luxembourg build, export and import in a separate test database (opt-in) |
+| 11.6 | Dead code removed: features replaced or dropped (the typed author name, layer colours, ⋯ menus, unused strings, styles and helpers). | ✅ (2026-11-06) |
 | 11.5 | The setup scripts easier to read: repeated code made into shared functions (menus, disk space, titles, JSON files, replacing the database), the build script's steps each doing one thing, its shared variables listed and explained at the top. | ✅ (2026-11-06) |
 | 11.4 | The code tidied: no repeated logic (shared helpers in one place), long files and functions split, each file's types and constants in small files of their own (`X.types.ts`, `X.constants.ts`); exact values locked by tests first so nothing changes. | ✅ (2026-11-06) |
 | 11.3 | Easy to extend without changing the structure ("modding"): a map mode interface, My layers' item kinds as a registry, the measure and print files split. | ✅ `services/map-mode.ts`, `userlayers/kinds/`, recipes in `docs/ARCHITECTURE.md` (2026-11-02) |

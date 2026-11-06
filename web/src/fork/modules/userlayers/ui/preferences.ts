@@ -1,6 +1,6 @@
 // Fork: My layers' preferences, in the Settings window (fork/ui/settings.ts; the
-// sidebar's ⚙ opens it there): the labels of units and of tactical graphics, and
-// which north measured bearings are from. Kept in this browser (bearings: your
+// sidebar's ⚙ opens it there): the colour of new items, the labels of units and of
+// tactical graphics, and which north measured bearings are from. Kept in this browser (bearings: your
 // account, measure/prefs.ts).
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
@@ -11,6 +11,7 @@ import { graphicLabelChoice, setGraphicLabelChoice } from '../graphics/labels.ts
 import { LabelLevel } from '../model/fields.types.ts'
 import { measurePrefs } from '../measure/prefs.ts'
 import type { North } from '../measure/north.ts'
+import { newItemColour, setNewItemColour } from '../map/new-colour.ts'
 
 /** A dropdown of [value, label] choices. */
 function choice<T extends string>(choices: [T, string][], current: () => T, set: (value: T) => void) {
@@ -61,11 +62,22 @@ export function preferencesSection(redraw: () => void): SettingsSection {
     () => measurePrefs.north,
     (value) => measurePrefs.set({ north: value })
   )
+  // The colour new drawings, markers, measurements and graphics get.
+  const colour = el('input', { type: 'color', value: newItemColour() }) as HTMLInputElement
+  colour.onchange = () => setNewItemColour(colour.value)
   const field = (label: string, title: string, control: HTMLElement) =>
     el('label.oim-ul-field', { title }, el('span', label), control)
   const section = el(
     'section.oim-ul-preferences',
     el('h3', t('userlayers.title', 'My layers')),
+    field(
+      t('userlayers.new-colour', 'Colour of new items'),
+      t(
+        'userlayers.new-colour-title',
+        'New drawings, markers, measurements and graphics get it (change one on its card)'
+      ),
+      colour
+    ),
     field(
       t('userlayers.unit-labels', 'Unit labels'),
       t('userlayers.unit-labels-title', 'The text written around unit symbols'),
@@ -90,6 +102,7 @@ export function preferencesSection(redraw: () => void): SettingsSection {
       units.value = getLabelLevel()
       graphics.value = graphicLabelChoice()
       north.value = measurePrefs.north
+      colour.value = newItemColour()
     }
   }
 }

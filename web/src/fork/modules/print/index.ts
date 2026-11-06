@@ -7,7 +7,6 @@
 import { el } from 'redom'
 import { ForkModule } from '../../types.ts'
 import { t } from '../../core/i18n.ts'
-import { author } from '../../core/author.ts'
 import { makePanel } from '../../ui/panel.ts'
 import { addLegend } from '../../services/legend.ts'
 import { keyLegend } from '../../ui/key/legend.ts'
@@ -88,7 +87,7 @@ const print: ForkModule = {
           paper: paper.value as Paper,
           orientation: orientation.value as Orientation,
           legend: legend.checked,
-          author: author() || me
+          author: me
         })
         status.textContent = ''
         close()

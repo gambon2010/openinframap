@@ -14,7 +14,6 @@ import {
   pathLength,
   pointCount,
   renderGraphic,
-  isSquare,
   squareUp,
   toDCode
 } from './graphics.ts'
@@ -231,14 +230,14 @@ describe('three-point graphics drawn square', () => {
     expect([p2, p3]).toEqual([a, b])
     const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
     expect(Math.abs(dot(metres(p1, mid), metres(b, a)))).toBeLessThan(1e-6)
-    expect(isSquare('GFGPOAF--------')).toBe(true)
+    expect('G*G*OAF' in SQUARE).toBe(true)
   })
 
   test('others are left as they are', () => {
     expect(squareUp('GFGPDLP--------', [a, b, skewed])).toEqual([a, b, skewed]) // principal direction of fire
     expect(squareUp('GFTPL----------', [a, b, skewed])).toEqual([a, b, skewed]) // delay
     expect(squareUp('GFTPJ----------', [a, b])).toEqual([a, b]) // still being drawn
-    expect(isSquare('GFTPK----------')).toBe(false) // counterattack
+    expect('G*T*K' in SQUARE).toBe(false) // counterattack
   })
 })
 

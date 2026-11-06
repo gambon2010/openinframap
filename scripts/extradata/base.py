@@ -1,10 +1,8 @@
 """Fork: extra data (scripts/extra_data.py): what every source shares: paths, streaming downloads into COPY, the region's outline, removing what OpenStreetMap already has, and the Source class."""
 
-import io
 import json
 import sys
 import time
-from collections.abc import Iterator
 from pathlib import Path
 from typing import ClassVar
 
@@ -12,29 +10,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 EXTRA_DIR = REPO_ROOT / "data" / "extra"
 GEOFABRIK_INDEX = REPO_ROOT / "data" / "osm" / "geofabrik-index-v1.json"
 USER_AGENT = "OpenInfraMap-LocalDev/1.0 (https://github.com/gambon2010/openinframap)"
-
-
-class StreamReader(io.RawIOBase):
-    """A file-like object over an HTTP response, for psycopg2's COPY."""
-
-    def __init__(self, chunks: Iterator[bytes]):
-        self._chunks = chunks
-        self._buffer = b""
-
-    def readable(self) -> bool:
-        return True
-
-    def read(self, size: int = -1) -> bytes:
-        while size < 0 or len(self._buffer) < size:
-            try:
-                self._buffer += next(self._chunks)
-            except StopIteration:
-                break
-        if size < 0:
-            data, self._buffer = self._buffer, b""
-        else:
-            data, self._buffer = self._buffer[:size], self._buffer[size:]
-        return data
 
 
 def region_geojson(cur) -> tuple[str, str]:

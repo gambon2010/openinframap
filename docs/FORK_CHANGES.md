@@ -1493,6 +1493,38 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## My layers' panel, cleaner; dead code removed (2026-11-06)
+
+- **The panel:** as tall as its content, down to the bottom of the left column
+  (it was capped at 45% of the window); only the list scrolls. The header holds the
+  title, the situation, ⚙ and ×. Search and a **Filter** button share a line (the
+  chips show only when it's open; it says how many are on). A footer that doesn't
+  scroll: + Layer, + Folder, import ⤓, export (the same arrow turned round).
+- **Right-click menus** (`fork/ui/context-menu.ts`, `withContextMenu`; also the
+  Menu key / Shift+F10, arrows to move, Escape to close): a layer's (draw into it,
+  zoom, rename, lock, share, move to folder, export, delete) and a folder's (new
+  layer in it, rename, lock its layers, export, remove the folder: its layers stay).
+  The ⋯ menu is gone (clicking it also opened the layer, which redrew the list and
+  closed the menu), and so are the row's lock, colour and folder buttons. Rows: an
+  eye (`fork/ui/icons.ts`, crossed out when hidden), the name, 🔒 when locked, ✎
+  where you draw, the count.
+- **Settings:** My layers' preferences moved to the Settings window
+  (`ui/preferences.ts`; ⚙ opens it there, `openSettings`): the colour of new items,
+  unit labels ("Labels on the map" before), graphic labels, bearings.
+- **No layer colour:** a layer no longer has a colour. What has no colour of its own
+  is black (`DEFAULT_COLOR`); new drawings, markers, measurements and graphics get
+  the colour chosen in Settings (`map/new-colour.ts`, kept in this browser). Layers
+  saved with a colour keep it in their data, unused.
+- **The typed author name, removed:** "Saved as" in My layers and "Set by" on a
+  status (and `core/author.ts`). Every request comes from a logged-in account and
+  the backend signed saves, situations and statuses with its name anyway; its
+  fallback to a typed name is gone too.
+- **Dead code removed:** unused helpers (`isSquare`, `labelOf`, `describeNorth`,
+  `SECTIONS` and every field's `section`, `region_in`, `StreamReader`), styles of
+  removed elements (the old menus' `menus.css`, the colour input, old panel classes),
+  50 unused strings. Found by scans of exports nobody imports, CSS classes no code
+  names, strings no code uses, Python (vulture) and shell functions never called.
+
 ## Setup scripts tidied; safe downloads (2026-11-06)
 
 **Every download goes through one safe function.** Shell: `download URL FILE`

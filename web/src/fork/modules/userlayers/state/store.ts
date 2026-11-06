@@ -107,14 +107,6 @@ export class Store {
     for (const listener of this.listeners) listener()
   }
 
-  get author(): string {
-    return local.author()
-  }
-
-  set author(name: string) {
-    local.setAuthor(name)
-  }
-
   /** The saved layers, with the unsaved changes on top (merged with what others
    * saved meanwhile, if there are any: reconcile.ts). */
   async load() {
@@ -436,7 +428,7 @@ export class Store {
     try {
       if (changed) {
         try {
-          await send(this.pending, this.bases, this.author)
+          await send(this.pending, this.bases)
         } catch (e) {
           if (e instanceof StaleError) this.bringUpToDate(await loadSaved())
           throw e

@@ -30,12 +30,12 @@ export async function loadSaved(): Promise<Map<string, UserLayer>> {
  * Send changes, in order, with the versions they started from; the server applies
  * all of them or none (StaleError: someone else saved some of them meanwhile).
  */
-export async function send(changes: Change[], bases: Bases, author: string): Promise<void> {
+export async function send(changes: Change[], bases: Bases): Promise<void> {
   const keys = new Set(changes.map(changeKey))
   const versions = Object.fromEntries(
     Object.entries(bases)
       .filter(([key]) => keys.has(key))
       .map(([key, b]) => [key, b.version])
   )
-  await saveChanges(changes, versions, author)
+  await saveChanges(changes, versions)
 }

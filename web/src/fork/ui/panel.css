@@ -56,7 +56,6 @@ html button.oim-on {
 /* --- Shared title bar --- */
 .oim-panel-header,
 .oim-key-header,
-.oim-ul-header,
 .oim-route-header {
   flex: 0 0 auto;
   display: flex;
@@ -70,7 +69,6 @@ html button.oim-on {
 
 .oim-panel-header h2,
 .oim-key-header h2,
-.oim-ul-header h2,
 .oim-route-header h2 {
   flex: 1;
   margin: 0;
@@ -81,7 +79,6 @@ html button.oim-on {
 /* Square buttons at the end of a title bar (close, minimise). */
 .oim-panel-button,
 .oim-key-close,
-.oim-ul-close,
 .oim-side-panel-button {
   position: static;
   flex: 0 0 auto;
@@ -100,15 +97,13 @@ html button.oim-on {
 
 .oim-panel-button:hover,
 .oim-key-close:hover,
-.oim-ul-close:hover,
 .oim-side-panel-button:hover {
   background-color: var(--oim-grey);
 }
 
 /* Bodies scroll inside the panel. */
 .oim-dock .oim-panel-body,
-.oim-dock .oim-key-body,
-.oim-dock .oim-ul-body {
+.oim-dock .oim-key-body {
   flex: 1 1 auto;
   min-height: 0;
   height: auto;
@@ -121,8 +116,7 @@ html button.oim-on {
 
 /* Section titles inside panels. */
 .oim-panel-body h3,
-.oim-key-body h3,
-.oim-ul-section h3 {
+.oim-key-body h3 {
   margin: 10px 0 4px;
   padding-bottom: 2px;
   border-bottom: 1px solid var(--oim-grey);

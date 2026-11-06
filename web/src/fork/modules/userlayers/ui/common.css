@@ -5,12 +5,6 @@
     center / 20px 20px no-repeat;
 }
 
-.oim-ul-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
 .oim-ul-button {
   border: 1px solid #c8c8c8;
   border-radius: 4px;
@@ -49,7 +43,6 @@
   background: rgba(211, 47, 47, 0.08);
   font-size: 0.85rem;
 }
-.oim-ul-author,
 .oim-ul-palette-search {
   box-sizing: border-box;
   width: 100%;
@@ -149,8 +142,7 @@
   opacity: 0.5;
   cursor: default;
 }
-.oim-ul-icon,
-.oim-ul-count {
+.oim-ul-icon {
   border-color: transparent;
   background: none;
 }
@@ -206,9 +198,6 @@
   background: var(--oim-light-grey);
 }
 
-.oim-ul-tool {
-  text-align: left;
-}
 .oim-ul-field {
   display: flex;
   flex-direction: column;

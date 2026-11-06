@@ -33,8 +33,10 @@ core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
            (hex colours), map-style.ts (geometry-type filters), storage.ts (this
            browser's storage, read and written safely), author.ts, map-data.ts
 ui/        shared building blocks you see: dock (right), left column, details
-           panel, highlight, panels (panel.ts, makeModal), settings, the tooltip,
-           the key's checkboxes and its rows on prints (key/)
+           panel, highlight, panels (panel.ts, makeModal), settings (openSettings),
+           the tooltip, the right-click menu (context-menu.ts: withContextMenu),
+           line icons (icons.ts: the eye), the key's checkboxes and its rows on
+           prints (key/)
 services/  shared state and registries, nothing drawn: live updates (live.ts),
            who has the map (map-mode.ts: measuring, drawing), features picked
            with Shift-click (selection.ts), power supply colours (supply.ts),
@@ -77,7 +79,9 @@ Examples:
 chosen, switched on or selected (a chip, an option, a tool, a list row; not the
 map's icon buttons, whose open panel gets a dark ring) gets the class `oim-on`: a highlighted background
 (`--oim-on-background`), its border and text unchanged. Don't give a module its own
-`.active` or `.selected` look. Tooltips: give the element a `title`; `ui/tooltip.ts`
+`.active` or `.selected` look. A row's actions go in a right-click menu
+(`withContextMenu`, which also opens with the Menu key / Shift+F10), not in buttons
+on the row; preferences go in Settings (`addSettingsSection`), not in panels. Tooltips: give the element a `title`; `ui/tooltip.ts`
 shows it as the page's own tooltip (never the browser's), for every title on the
 page, upstream's included.
 
@@ -124,7 +128,8 @@ io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
 measure/ measurements, pure: geo.ts (distances, areas, great circles), north.ts,
          ticks.ts (marks along a distance), features.ts (labels, marks), prefs.ts
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
-         sidebar, inspector (the card), situations, timeline, toast; editor/ (the card:
+         sidebar, inspector (the card), situations, timeline, toast,
+         preferences.ts (My layers' part of Settings); editor/ (the card:
          index.ts builds it from sections.ts, controls.ts the small inputs),
          outliner/ (the list: index.ts, filter.ts, order.ts), palette.ts (the picker);
          userlayers.css lists the CSS files in order (order matters)

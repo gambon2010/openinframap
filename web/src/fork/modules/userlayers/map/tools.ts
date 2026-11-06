@@ -10,7 +10,8 @@ import { MAX_SIZE, MIN_SIZE } from './render.constants.ts'
 import { Renderer } from './render.ts'
 import { controlPoints, moveVertex, sizeFromDrag, translateGeometry } from './geometry.ts'
 import { axisWidth, axisWidthFrom, squareUp } from '../graphics/graphics.ts'
-import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
+import { FeatureProps, UserFeature } from '../model/model.ts'
+import { newItemColour, withNewColour } from './new-colour.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
 import { mapMode } from '../../../services/map-mode.ts'
 import { kindOf } from '../kinds/index.ts'
@@ -265,7 +266,7 @@ export class Tools {
           this.activeLayer(),
           { type: 'Point', coordinates: lngLat },
           {
-            ...this.tool.properties
+            ...withNewColour(this.tool.properties)
           }
         )
         this.setTool({ mode: 'select' })
@@ -369,7 +370,7 @@ export class Tools {
       const id = this.store.addFeature(
         this.activeLayer(),
         graphicGeometry(squareUp(properties.sidc, points)),
-        properties
+        withNewColour(properties)
       )
       this.setTool({ mode: 'select' })
       this.select(id)
@@ -392,7 +393,7 @@ export class Tools {
       const id = this.store.addFeature(
         this.activeLayer(),
         geometry,
-        this.tool.properties ?? { kind: 'drawing' }
+        withNewColour(this.tool.properties ?? { kind: 'drawing' })
       )
       this.setTool({ mode: 'select' })
       this.select(id)
@@ -537,7 +538,7 @@ export class Tools {
           points: squareUp(this.tool.properties.sidc, points),
           axis: this.tool.axis,
           widthFactor: this.tool.widthFactor,
-          colour: this.tool.properties.color ?? DEFAULT_COLOR
+          colour: this.tool.properties.color ?? newItemColour()
         })
       } else {
         this.renderer.graphicDraft(null)
@@ -568,7 +569,7 @@ export class Tools {
       this.renderer.measureDraft({ type: 'rings', points: [cursor], radii: p.radii as number[] })
       return
     }
-    void this.renderer.ghost(iconName(p), cursor, p.size ?? 1)
+    void this.renderer.ghost(iconName(withNewColour(p)), cursor, p.size ?? 1)
   }
 
   /** Right-click while drawing: what's drawn so far is dropped; again: the tool stops. */

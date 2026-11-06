@@ -7,7 +7,6 @@ export interface Field {
   /** The modifier letter(s) of the standard. */
   key: string
   label: string
-  section: 'labels' | 'assessment' | 'time' | 'movement' | 'geometry'
   input: FieldInput
   kinds: SymbolKind[]
   /** For number fields. */

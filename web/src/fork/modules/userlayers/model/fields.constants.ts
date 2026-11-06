@@ -9,26 +9,23 @@ export const FIELDS: Field[] = [
   {
     key: 'T',
     label: 'Unique designation',
-    section: 'labels',
     input: 'text',
     kinds: [...ALL_SYMBOLS, 'graphic'],
     help: 'The name that identifies it ("2nd Bn", "OBJ LION")'
   },
-  { key: 'T1', label: 'Second designation', section: 'labels', input: 'text', kinds: ['graphic'] },
-  { key: 'M', label: 'Higher formation', section: 'labels', input: 'text', kinds: ['unit', 'installation'] },
-  { key: 'V', label: 'Type', section: 'labels', input: 'text', kinds: ['equipment'] },
-  { key: 'C', label: 'Quantity', section: 'labels', input: 'number', kinds: ['equipment'] },
+  { key: 'T1', label: 'Second designation', input: 'text', kinds: ['graphic'] },
+  { key: 'M', label: 'Higher formation', input: 'text', kinds: ['unit', 'installation'] },
+  { key: 'V', label: 'Type', input: 'text', kinds: ['equipment'] },
+  { key: 'C', label: 'Quantity', input: 'number', kinds: ['equipment'] },
   {
     key: 'H',
     label: 'Additional information',
-    section: 'labels',
     input: 'text',
     kinds: [...ALL_SYMBOLS, 'graphic']
   },
   {
     key: 'G',
     label: 'Staff comments',
-    section: 'labels',
     input: 'textarea',
     kinds: [...ALL_SYMBOLS, 'graphic']
   },
@@ -36,7 +33,6 @@ export const FIELDS: Field[] = [
   {
     key: 'F',
     label: 'Reinforced / reduced',
-    section: 'assessment',
     input: 'text',
     kinds: ['unit'],
     help: '+ reinforced, − reduced, ± both'
@@ -44,7 +40,6 @@ export const FIELDS: Field[] = [
   {
     key: 'J',
     label: 'Evaluation rating',
-    section: 'assessment',
     input: 'rating',
     kinds: ALL_SYMBOLS,
     help: 'Reliability of the source (A–F) and credibility of the information (1–6)'
@@ -52,19 +47,17 @@ export const FIELDS: Field[] = [
   {
     key: 'K',
     label: 'Combat effectiveness',
-    section: 'assessment',
     input: 'text',
     kinds: ['unit', 'equipment', 'installation', 'activity']
   },
   // Time
-  { key: 'W', label: 'Date-time group', section: 'time', input: 'datetime', kinds: ALL_SYMBOLS },
-  { key: 'W', label: 'Effective from', section: 'time', input: 'datetime', kinds: ['graphic'] },
-  { key: 'W1', label: 'Effective to', section: 'time', input: 'datetime', kinds: ['graphic'] },
+  { key: 'W', label: 'Date-time group', input: 'datetime', kinds: ALL_SYMBOLS },
+  { key: 'W', label: 'Effective from', input: 'datetime', kinds: ['graphic'] },
+  { key: 'W1', label: 'Effective to', input: 'datetime', kinds: ['graphic'] },
   // Movement
   {
     key: 'Q',
     label: 'Direction of movement',
-    section: 'movement',
     input: 'number',
     unit: '°',
     kinds: ['unit', 'equipment', 'activity']
@@ -72,7 +65,6 @@ export const FIELDS: Field[] = [
   {
     key: 'Z',
     label: 'Speed',
-    section: 'movement',
     input: 'number',
     unit: 'km/h',
     kinds: ['unit', 'equipment', 'activity']
@@ -81,7 +73,6 @@ export const FIELDS: Field[] = [
   {
     key: 'X',
     label: 'Altitude / depth',
-    section: 'geometry',
     input: 'text',
     kinds: ['graphic'],
     help: 'One value, or "min,max" for airspace'
@@ -89,21 +80,12 @@ export const FIELDS: Field[] = [
   {
     key: 'AM',
     label: 'Width / radius / length',
-    section: 'geometry',
     input: 'text',
     unit: 'm',
     kinds: ['graphic'],
     help: 'For corridors, circles and rectangles'
   },
-  { key: 'AN', label: 'Attitude', section: 'geometry', input: 'number', unit: '°', kinds: ['graphic'] }
-]
-
-export const SECTIONS: [Field['section'], string][] = [
-  ['labels', 'Labels'],
-  ['assessment', 'Assessment'],
-  ['time', 'Time'],
-  ['movement', 'Movement'],
-  ['geometry', 'Geometry']
+  { key: 'AN', label: 'Attitude', input: 'number', unit: '°', kinds: ['graphic'] }
 ]
 
 export const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']

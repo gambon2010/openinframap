@@ -6,9 +6,15 @@ import { graphicsLibrary, isAxis, mapScale, pointCount, renderGraphic } from './
 import { samplePoints } from './svg.ts'
 import { GRAPHIC_LABELS } from './labels.constants.ts'
 import { LabelLanguage } from './labels.types.ts'
-import { graphicKey, graphicName, labelOf, plainLabel } from './labels.ts'
+import { graphicKey, graphicName, plainLabel } from './labels.ts'
 import catalogue from '../model/symbols-2525c.json'
 import tta from './tta106-sigles.json'
+
+/** A graphic's label as written: its texts, replaced (null if it has none). */
+function labelOf(sidc: string, texts: string[], language: LabelLanguage): string | null {
+  const written = [...new Set(texts.map((text) => plainLabel(sidc, text, language).trim()).filter(Boolean))]
+  return written.length ? written.join(' ') : null
+}
 
 type Lib = Awaited<ReturnType<typeof graphicsLibrary>>
 let lib: Lib

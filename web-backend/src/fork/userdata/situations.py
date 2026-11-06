@@ -67,7 +67,7 @@ async def situations(request: Request) -> Response:
                 {
                     "name": name[:200],
                     "change_id": last,
-                    "author": user.name or body.get("author") or None,
+                    "author": user.name or None,
                     "layers": [str(layer) for layer in layers],
                 },
             )

@@ -44,12 +44,6 @@ export function plainLabel(sidc: string, text: string, language = labelLanguage(
   return replace && key in replace ? replace[key] : text
 }
 
-/** A graphic's own label (its texts, replaced), for the legend; null if it has none. */
-export function labelOf(sidc: string, texts: string[], language = labelLanguage()): string | null {
-  const written = [...new Set(texts.map((text) => plainLabel(sidc, text, language).trim()).filter(Boolean))]
-  return written.length ? written.join(' ') : null
-}
-
 /** A graphic's name in the chosen language (French: GRAPHIC_LABELS; else `english`). */
 export function graphicName(sidc: string, english: string, language = labelLanguage()): string {
   return (language === 'fr' && GRAPHIC_LABELS[graphicKey(sidc)]?.name) || english

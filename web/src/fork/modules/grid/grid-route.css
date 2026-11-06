@@ -92,11 +92,6 @@
   border-radius: 3px;
 }
 
-.oim-route-via {
-  color: var(--oim-text-color-light);
-  font-size: 0.8rem;
-}
-
 .oim-route-buttons {
   display: flex;
   flex-wrap: wrap;
