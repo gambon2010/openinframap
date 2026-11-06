@@ -4,6 +4,10 @@ import { toDegrees, toRadians } from '../../../core/geo.ts'
 export type LngLat = [lng: number, lat: number]
 
 const R = 6371008.8
+
+/** Metres in each distance unit people type (nautical miles: 1852 m). */
+const UNIT_METRES = { m: 1, km: 1000, nm: 1852 } as const
+type DistanceUnit = keyof typeof UNIT_METRES
 const rad = toRadians
 const deg = toDegrees
 
@@ -129,7 +133,7 @@ export function parseLength(text: string): number | null {
   for (const [, number, unit] of text.matchAll(/(\d+(?:[.,]\d+)?)\s*(km|nm|m)?/gi)) {
     const value = parseFloat(number.replace(',', '.'))
     if (!Number.isFinite(value)) continue
-    total += value * ({ km: 1000, nm: 1852, m: 1 }[(unit ?? 'm').toLowerCase() as 'km' | 'nm' | 'm'] ?? 1)
+    total += value * (UNIT_METRES[(unit ?? 'm').toLowerCase() as DistanceUnit] ?? 1)
     found = true
   }
   return found && total > 0 ? total : null
@@ -160,7 +164,7 @@ export function parseDistances(text: string): number[] {
     if (!(value > 0)) continue
     waiting.push(value)
     if (unit) {
-      const factor = { km: 1000, m: 1, nm: 1852 }[unit.toLowerCase() as 'km' | 'm' | 'nm']
+      const factor = UNIT_METRES[unit.toLowerCase() as DistanceUnit]
       out.push(...waiting.map((v) => v * factor))
       waiting = []
     }

@@ -22,6 +22,8 @@ import { mapMode } from '../../../services/map-mode.ts'
 import { kindOf } from '../kinds/index.ts'
 import { iconName } from './icons.ts'
 import { areaCrossesItself, areaPoints, pathCrossesItself } from '../model/shapes.ts'
+import { pointOf } from '../model/shapes.ts'
+import { clamp } from '../../../core/math.ts'
 
 export type Tool =
   | { mode: 'select' }
@@ -77,7 +79,23 @@ const REPEAT_PX = 4
 // about 100; a touchpad sends many small steps).
 const WHEEL_NOTCH = 100
 
-const clampSize = (size: number) => Math.min(MAX_SIZE, Math.max(MIN_SIZE, Math.round(size * 100) / 100))
+// Shift + scroll: a size in fine steps (0.01), unlike the handle's drag (0.05).
+const clampSize = (size: number) => clamp(Math.round(size * 100) / 100, MIN_SIZE, MAX_SIZE)
+/** Each notch of Shift + scroll changes a size or width by 10 %. */
+const WHEEL_STEP_FACTOR = 1.1
+/** How narrow or wide an arrow being drawn can be, against its automatic width. */
+const WIDTH_FACTOR_MIN = 0.2
+const WIDTH_FACTOR_MAX = 5
+/** Pixels in a wheel "line" and a "page" (browsers report one of the three). */
+const WHEEL_LINE_PX = 40
+const WHEEL_PAGE_PX = 400
+
+/** How far a wheel event scrolled, in pixels (Shift turns it sideways in most
+ * browsers, so either axis). */
+export function wheelPixels(e: Pick<WheelEvent, 'deltaX' | 'deltaY' | 'deltaMode'>): number {
+  const raw = e.deltaY || e.deltaX
+  return raw * (e.deltaMode === 1 ? WHEEL_LINE_PX : e.deltaMode === 2 ? WHEEL_PAGE_PX : 1)
+}
 
 const CROSSING = () => t('userlayers.area-crossing', "Not there: the area's outline would cross itself.")
 
@@ -466,7 +484,7 @@ export class Tools {
       if (box) {
         e.preventDefault()
         this.map.dragPan.disable()
-        const centre = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
+        const centre = this.map.project(pointOf(feature))
         this.dragging = {
           feature: structuredClone(feature),
           layerId: layer.id,
@@ -595,13 +613,11 @@ export class Tools {
     if (!placing && !arrow && !editing) return
     e.preventDefault()
     e.stopPropagation()
-    // Shift turns the wheel sideways in most browsers; lines and pages into pixels.
-    const raw = e.deltaY || e.deltaX
-    this.wheelTotal += raw * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 400 : 1)
+    this.wheelTotal += wheelPixels(e)
     const steps = Math.trunc(this.wheelTotal / WHEEL_NOTCH)
     if (!steps) return
     this.wheelTotal -= steps * WHEEL_NOTCH
-    const factor = 1.1 ** -steps // wheel up (negative): bigger
+    const factor = WHEEL_STEP_FACTOR ** -steps // wheel up (negative): bigger
     if (editing) this.resizeSelected(factor)
     else if (this.tool.mode === 'place') {
       const size = clampSize((this.tool.properties.size ?? 1) * factor)
@@ -609,7 +625,7 @@ export class Tools {
       this.message = `${this.hint} ${t('userlayers.size-now', 'Size: {{n}} %', { n: Math.round(size * 100) })}`
       this.drawGhost(this.cursor)
     } else if (this.tool.mode === 'graphic') {
-      const widthFactor = Math.min(5, Math.max(0.2, (this.tool.widthFactor ?? 1) * factor))
+      const widthFactor = clamp((this.tool.widthFactor ?? 1) * factor, WIDTH_FACTOR_MIN, WIDTH_FACTOR_MAX)
       this.tool.widthFactor = widthFactor
       this.message = `${this.hint} ${t('userlayers.width-now', 'Width: {{n}} %', { n: Math.round(widthFactor * 100) })}`
       this.drawDraft(this.cursor ?? undefined)

@@ -4,6 +4,7 @@ import { t } from '../../../core/i18n.ts'
 import { UserLayer } from '../model/model.ts'
 import type { Store } from '../state/store.ts'
 import { EXTENSIONS, Format, MIME, exportLayers, readFile } from './formats.ts'
+import { positionsOf } from '../model/shapes.ts'
 
 // Above this, ask first: the list and the map get slow.
 const MANY = 5000
@@ -63,15 +64,12 @@ export async function importFile(store: Store, map: MapLibreMap) {
   store.importLayer(file.name.replace(/\.[^.]+$/, ''), items)
   // Show what came in.
   let [west, south, east, north] = [180, 90, -180, -90]
-  const add = (c: unknown): void => {
-    if (Array.isArray(c) && typeof c[0] === 'number') {
-      west = Math.min(west, c[0])
-      east = Math.max(east, c[0])
-      south = Math.min(south, c[1] as number)
-      north = Math.max(north, c[1] as number)
-    } else if (Array.isArray(c)) c.forEach(add)
+  for (const [x, y] of items.flatMap((item) => positionsOf(item.geometry))) {
+    west = Math.min(west, x)
+    east = Math.max(east, x)
+    south = Math.min(south, y)
+    north = Math.max(north, y)
   }
-  for (const item of items) add((item.geometry as GeoJSON.Point).coordinates)
   map.fitBounds(
     [
       [west, south],

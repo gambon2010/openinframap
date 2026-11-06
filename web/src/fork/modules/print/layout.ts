@@ -2,6 +2,7 @@
 // box with the title, legend and scale go, what part of the screen is printed, the
 // scale and its bar. Millimetres on paper, CSS pixels on screen.
 import { metresPerPixel } from '../../core/geo.ts'
+import { clamp } from '../../core/math.ts'
 
 export type Paper = 'a4' | 'a3'
 export type Orientation = 'landscape' | 'portrait'
@@ -39,7 +40,7 @@ export function mapBox(page: { w: number; h: number }): Box {
 
 /** The width of the box over the map's corner: about a fifth of the page, 55-75 mm. */
 export function infoWidth(page: { w: number; h: number }): number {
-  return Math.round(Math.min(75, Math.max(55, page.w * 0.2)))
+  return Math.round(clamp(page.w * 0.2, 55, 75))
 }
 
 /** The box over the map's bottom-right corner, `height` tall. */
@@ -77,7 +78,7 @@ export function printRatio(
 ): number {
   const wanted = ((map.w / 25.4) * dpi) / area.w
   const most = maxSide / Math.max(screen.w, screen.h)
-  return Math.max(1, Math.min(wanted, most))
+  return Math.max(1, Math.min(wanted, most)) // at least 1, even if a card draws less
 }
 
 // Metres per screen pixel at a latitude and zoom: core/geo.ts.

@@ -36,6 +36,8 @@ import {
 } from '../graphics/graphics.ts'
 import { modifiersToDraw } from '../model/fields.ts'
 import { SUPPLY_COLOURS, supplyColours } from '../../../services/supply.ts'
+import { pointOf } from '../model/shapes.ts'
+import { clamp } from '../../../core/math.ts'
 
 const SELECTION = 'user_selection'
 // The selection's yellow, and its handles' darker yellow (points, sizes, widths).
@@ -154,7 +156,7 @@ export function resizable(feature: UserFeature | null): boolean {
 export function sizeFromDrag(distance: number, distanceAtSize1: number): number {
   if (!(distanceAtSize1 > 0)) return 1
   const size = Math.round((distance / distanceAtSize1) * 20) / 20
-  return Math.min(MAX_SIZE, Math.max(MIN_SIZE, size))
+  return clamp(size, MIN_SIZE, MAX_SIZE)
 }
 
 export class Renderer {
@@ -865,7 +867,7 @@ export class Renderer {
       box.right * size + pad,
       box.bottom * size + pad
     ]
-    const c = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
+    const c = this.map.project(pointOf(feature))
     const ring = [
       [l, t],
       [r, t],
@@ -923,7 +925,7 @@ export class Renderer {
     const box = this.iconBox(feature)
     if (!box) return null
     const size = feature.properties.size ?? 1
-    const centre = this.map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number])
+    const centre = this.map.project(pointOf(feature))
     const corner = this.map.unproject([centre.x + box.right * size, centre.y + box.bottom * size])
     return [corner.lng, corner.lat]
   }

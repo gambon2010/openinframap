@@ -9,6 +9,7 @@
 // straight on the flat map between its points, and across it as seen on screen.
 import { LngLat, distance, greatCirclePath } from './geo.ts'
 import { metresPerPixel, toDegrees, toRadians } from '../../../core/geo.ts'
+import { clamp } from '../../../core/math.ts'
 
 /** Where the marks are drawn: the zoom, and what's in view (none: everywhere). */
 export interface TickView {
@@ -93,7 +94,7 @@ export interface Along {
 }
 
 export function along(segment: Segment, d: number): Along {
-  const f = Math.min(1, Math.max(0, (d - segment.start) / segment.length))
+  const f = clamp((d - segment.start) / segment.length, 0, 1)
   const merc: XY = [
     segment.a[0] + (segment.b[0] - segment.a[0]) * f,
     segment.a[1] + (segment.b[1] - segment.a[1]) * f

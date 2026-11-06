@@ -15,7 +15,7 @@ import {
   translateGeometry,
   vertices
 } from './render.ts'
-import { dropRepeats, graphicGeometry } from './tools.ts'
+import { dropRepeats, graphicGeometry, wheelPixels } from './tools.ts'
 import { UserFeature } from '../model/model.ts'
 
 const line: GeoJSON.LineString = {
@@ -210,5 +210,14 @@ describe('copies at every zoom', () => {
       ['all', ['<', ['get', 'area'], 100], ['<', ['zoom'], 16]],
       true
     ])
+  })
+})
+
+describe('Shift + scroll', () => {
+  test('wheel steps in pixels: lines and pages turned into pixels, either axis', () => {
+    expect(wheelPixels({ deltaX: 0, deltaY: -100, deltaMode: 0 })).toBe(-100)
+    expect(wheelPixels({ deltaX: 0, deltaY: 3, deltaMode: 1 })).toBe(120)
+    expect(wheelPixels({ deltaX: 0, deltaY: 1, deltaMode: 2 })).toBe(400)
+    expect(wheelPixels({ deltaX: 50, deltaY: 0, deltaMode: 0 })).toBe(50)
   })
 })

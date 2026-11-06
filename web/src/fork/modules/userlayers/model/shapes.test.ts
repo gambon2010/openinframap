@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { areaCrossesItself, pathCrossesItself, segmentsMeet } from './shapes.ts'
+import { areaCrossesItself, pathCrossesItself, segmentsMeet, pointOf, positionsOf } from './shapes.ts'
 
 describe('impossible areas', () => {
   const square: [number, number][] = [
@@ -55,5 +55,30 @@ describe('impossible areas', () => {
 
   test('three points can always make an area', () => {
     expect(areaCrossesItself(square.slice(0, 3))).toBe(false)
+  })
+})
+
+describe('positions', () => {
+  test('every position of a geometry, a collection too', () => {
+    const square: GeoJSON.Polygon = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 0]
+        ]
+      ]
+    }
+    expect(positionsOf(square)).toHaveLength(4)
+    expect(positionsOf({ type: 'Point', coordinates: [5, 6] })).toEqual([[5, 6]])
+    expect(
+      positionsOf({
+        type: 'GeometryCollection',
+        geometries: [square, { type: 'Point', coordinates: [5, 6] }]
+      })
+    ).toHaveLength(5)
+    expect(pointOf({ geometry: { type: 'Point', coordinates: [5, 6] } })).toEqual([5, 6])
   })
 })

@@ -13,6 +13,7 @@ import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
 import { GraphicLabelChoice, graphicLabelChoice, setGraphicLabelChoice } from '../graphics/labels.ts'
 import { LabelLevel } from '../model/fields.ts'
 import type { Workspace } from './workspace.ts'
+import { positionsOf } from '../model/shapes.ts'
 
 export class Sidebar {
   readonly el = el('.maplibregl-ctrl.oim-ul-sidebar')
@@ -170,12 +171,7 @@ export class Sidebar {
   /** Move the map to show items (one point: centred on it, not too close). */
   private zoomToAll(features: UserFeature[]) {
     const map = this.ws.map
-    const coords: [number, number][] = []
-    const add = (c: unknown): void => {
-      if (Array.isArray(c) && typeof c[0] === 'number') coords.push(c as [number, number])
-      else if (Array.isArray(c)) c.forEach(add)
-    }
-    for (const feature of features) add((feature.geometry as GeoJSON.Point).coordinates)
+    const coords = features.flatMap((feature) => positionsOf(feature.geometry))
     if (!coords.length) return
     if (coords.length === 1) {
       map.easeTo({ center: coords[0], zoom: Math.max(map.getZoom(), 13) })

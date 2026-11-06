@@ -1,3 +1,4 @@
+import { clamp } from '../core/math.ts'
 // Fork: one tooltip for the whole page, instead of the browser's (a `title` waits for
 // the pointer to rest, often doesn't show, and looks like nothing else here). Any
 // element with a title, the fork's, upstream's or MapLibre's, gets it: the title
@@ -21,7 +22,7 @@ export function placeTip(
   viewport: { width: number; height: number }
 ): { left: number; top: number } {
   const centre = (target.left + target.right) / 2
-  const left = Math.min(Math.max(EDGE, centre - tip.width / 2), viewport.width - EDGE - tip.width)
+  const left = clamp(centre - tip.width / 2, EDGE, viewport.width - EDGE - tip.width)
   const below = target.bottom + GAP
   const top =
     below + tip.height <= viewport.height - EDGE ? below : Math.max(EDGE, target.top - GAP - tip.height)

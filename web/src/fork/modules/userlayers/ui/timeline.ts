@@ -5,6 +5,7 @@ import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { action } from './buttons.ts'
 import type { Workspace } from './workspace.ts'
+import { clamp } from '../../../core/math.ts'
 
 export class Timeline {
   readonly el = el('.oim-ul-timeline')
@@ -64,7 +65,7 @@ export class Timeline {
     const total = pb.changes.length
     const go = (position: number) => () => {
       pb.stop()
-      pb.position = Math.max(0, Math.min(total, position))
+      pb.position = clamp(position, 0, total)
       void this.showStep()
     }
     const slider = el('input.oim-ul-slider', {

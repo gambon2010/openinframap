@@ -5,6 +5,7 @@
 // their clicks first). The pointer also turns into a hand near a line.
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { ClickRouter } from '../../../click-router.ts'
+import { clamp } from '../../core/math.ts'
 
 const NEAR_PIXELS = 8
 
@@ -15,7 +16,7 @@ export function segmentDistance(p: Point, a: Point, b: Point): number {
   const dx = b[0] - a[0]
   const dy = b[1] - a[1]
   const length2 = dx * dx + dy * dy
-  const t = length2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / length2)) : 0
+  const t = length2 ? clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / length2, 0, 1) : 0
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy))
 }
 

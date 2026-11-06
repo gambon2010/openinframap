@@ -64,3 +64,20 @@ export function areaPoints(geometry: GeoJSON.Geometry): Pt[] | null {
   if (geometry.type !== 'Polygon' || !geometry.coordinates[0]) return null
   return geometry.coordinates[0].slice(0, -1) as Pt[]
 }
+
+/** Every position of a geometry (a collection's too), as [lon, lat]. */
+export function positionsOf(geometry: GeoJSON.Geometry): Pt[] {
+  if (geometry.type === 'GeometryCollection') return geometry.geometries.flatMap(positionsOf)
+  const out: Pt[] = []
+  const visit = (c: unknown): void => {
+    if (Array.isArray(c) && typeof c[0] === 'number') out.push([c[0], c[1] as number])
+    else if (Array.isArray(c)) c.forEach(visit)
+  }
+  visit(geometry.coordinates)
+  return out
+}
+
+/** A point feature's position, [lon, lat]. */
+export function pointOf(feature: { geometry: GeoJSON.Geometry }): Pt {
+  return (feature.geometry as GeoJSON.Point).coordinates as Pt
+}

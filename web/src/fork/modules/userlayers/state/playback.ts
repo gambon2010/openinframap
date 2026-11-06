@@ -9,6 +9,7 @@ import { loadHistory } from './api.ts'
 import { kindOf } from '../kinds/index.ts'
 import { FIELDS } from '../model/fields.ts'
 import { ECHELONS, IDENTITIES, STATUSES } from '../model/sidc.ts'
+import { positionsOf } from '../model/shapes.ts'
 
 function asChange(saved: SavedChange): Change {
   const after = saved.after
@@ -184,11 +185,7 @@ export class Playback {
     const feature = this.feature()
     if (!feature) return
     const bounds = new LngLatBounds()
-    const add = (c: unknown): void => {
-      if (Array.isArray(c) && typeof c[0] === 'number') bounds.extend(c as [number, number])
-      else if (Array.isArray(c)) c.forEach(add)
-    }
-    add((feature.geometry as GeoJSON.Point).coordinates)
+    for (const position of positionsOf(feature.geometry)) bounds.extend(position)
     if (bounds.isEmpty()) return
     const view = this.map.getBounds()
     if (!view.contains(bounds.getNorthEast()) || !view.contains(bounds.getSouthWest())) {

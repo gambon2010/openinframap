@@ -8,17 +8,11 @@ import { symbolSvg } from './symbols.ts'
 import { kindOf } from '../kinds/index.ts'
 import { graphicSvg } from '../graphics/svg.ts'
 import { graphicName } from '../graphics/labels.ts'
+import { positionsOf } from '../model/shapes.ts'
 
 /** Whether any of a feature's points is in view. */
 export function inView(feature: UserFeature, bounds: Pick<LngLatBounds, 'contains'>): boolean {
-  let found = false
-  const visit = (c: unknown): void => {
-    if (found || !Array.isArray(c)) return
-    if (typeof c[0] === 'number') found = bounds.contains(c as [number, number])
-    else c.forEach(visit)
-  }
-  visit((feature.geometry as GeoJSON.Point).coordinates)
-  return found
+  return positionsOf(feature.geometry).some((position) => bounds.contains(position))
 }
 
 /** What an item puts in the legend: its name and picture (one per kind in a layer). */
