@@ -129,14 +129,14 @@ def test_regional_pipeline():
     assert "-input_file_list cells.txt" in script
     assert "-cutline area.geojson" in script
     assert "ZOOM_LEVEL_STRATEGY=LOWER" in script
-    # Lower zooms down to the tier's first (5): zooms 11 to 5.
-    assert script.endswith("gdaladdo -q -r average regional.mbtiles 2 4 8 16 32 64 128")
+    # Lower zooms down to the tier's first (7): zooms 11 to 7.
+    assert script.endswith("gdaladdo -q -r average regional.mbtiles 2 4 8 16 32")
     assert "38.218514" in script  # metres per pixel at zoom 12
-    assert s.regional_pipeline(13).endswith("2 4 8 16 32 64 128 256")
+    assert s.regional_pipeline(13).endswith("2 4 8 16 32 64")
     # The whole world: not cut.
     world = s.regional_pipeline(9, cut=False)
     assert "-cutline" not in world and "-te -20037508.34" in world
-    assert world.endswith("2 4 8 16")
+    assert world.endswith("2 4")
 
 
 def test_mbtiles_rows_are_tms(tmp_path):
@@ -682,6 +682,6 @@ def test_which_sentinel_files_need_lower_zooms(tmp_path):
         (tmp_path / f".area-{area}.geojson").write_text(json.dumps(outline))
 
     make("lux", lux, 8)  # Luxembourg can't go lower than 8: done
-    make("old", france, 9)  # France made from 9: needs 5 to 8
-    make("france", france, 5)
+    make("old", france, 9)  # France made from 9: needs 7 and 8
+    make("france", france, 5)  # made when it started at 5: more than enough
     assert s.lower_zooms_needed(tmp_path) == ["old"]

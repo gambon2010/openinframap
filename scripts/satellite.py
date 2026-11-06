@@ -7,7 +7,7 @@ background map). Run by scripts/build-region.sh; see docs/plans/satellite-imager
   overview   zoom 0-8   NASA Blue Marble Next Generation (NASA GIBS, 500 m):
                         the whole world to zoom 8 (--world, one file for every
                         region), or the world to zoom 5 and a region's box to 8.
-  regional   zoom 5-12  Sentinel-2 10 m yearly composite (ESA WorldCover 2021,
+  regional   zoom 7-12  Sentinel-2 10 m yearly composite (ESA WorldCover 2021,
              (or 13)    CC BY 4.0), read straight from the public COGs with GDAL
                         (only the needed parts are downloaded), cut to the region.
   detailed   zoom 14-17 IGN orthophotos, 20 cm (France only, Licence Ouverte),
@@ -19,7 +19,7 @@ background map). Run by scripts/build-region.sh; see docs/plans/satellite-imager
     python3 scripts/satellite.py regional --outline AREA.geojson --out FILE.pmtiles [--maxzoom 13]
     python3 scripts/satellite.py detailed --outline AREA.geojson --out FILE.pmtiles [--maxzoom 16]
     python3 scripts/satellite.py lower-zooms --region france   (Sentinel-2 made before it
-                        started at zoom 5: its lower zooms added, nothing downloaded)
+                        started at zoom 7: its lower zooms added, nothing downloaded)
 
 The outline is the region's GeoJSON (Geofabrik's, as for the background map). GDAL
 and pmtiles run in Docker (GDAL_IMAGE, and the basemap service's image).

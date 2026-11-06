@@ -1631,7 +1631,16 @@ servers and write different files. Now they all start together (`run_parallel` i
 one's result); each still keeps its own server's speed limit and waits for a lost
 connection on its own.
 
-## Sentinel-2 from zoom 5 (2026-11-06)
+## Sentinel-2 from zoom 7 (2026-11-06)
+
+For every area, Sentinel-2 is made from zoom 7 and shown from 7 at the earliest
+(`TIERS["regional"]` in sources.py; `REGIONAL_FIRST_ZOOM` in lib/satellite.sh, which
+clamps any file's range, a test keeping the two equal); further out, Blue Marble.
+At zoom 5 or 6 a country is a patch of a few dozen pixels: not worth it. France's
+file, made when it started at 5, keeps its zooms 5 and 6 unused (a few MB). Below:
+how it got lower zooms at all.
+
+## Sentinel-2 from zoom 5, at first (2026-11-06)
 
 Sentinel-2 imagery started at zoom 9, under Blue Marble's 500 m pixels until then.
 It now starts at zoom 5 (`TIERS["regional"]`): the download adds the lower zooms

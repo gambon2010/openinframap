@@ -4,6 +4,10 @@
 # presets) and writes a plan, download_satellite runs it. The questions, sizes and
 # outlines are satellite.py's (choose, steps), from Geofabrik's index.
 
+# Sentinel-2's first zoom, for every area (scripts/satimagery/sources.py TIERS: the
+# same number, checked by a test).
+REGIONAL_FIRST_ZOOM=7
+
 # Satellite imagery of region $1 (scripts/satellite.py): data/basemap/<region>.sat-<tier>.pmtiles.
 has_satellite() {
     compgen -G "$BASEMAP_DIR/*.sat-*.pmtiles" >/dev/null
@@ -57,10 +61,15 @@ satellite_tiers_value() {
         # ones only if it can't be read (scripts/satimagery/sources.py TIERS).
         case "$file" in
             *.sat-overview.pmtiles) min=0; max=8; ext=jpg ;;
-            *.sat-regional.pmtiles) min=5; max=12; ext=webp ;;
+            *.sat-regional.pmtiles) min=$REGIONAL_FIRST_ZOOM; max=12; ext=webp ;;
             *) min=14; max=16; ext=jpg ;;
         esac
         range="$(pmtiles_minzoom "$file" "$min") $(pmtiles_maxzoom "$file" "$max")"
+        # Sentinel-2 from REGIONAL_FIRST_ZOOM at the earliest, whatever its file holds
+        # (files made before could start at 5).
+        if [[ "$file" == *.sat-regional.pmtiles && "${range%% *}" -lt "$REGIONAL_FIRST_ZOOM" ]]; then
+            range="$REGIONAL_FIRST_ZOOM ${range#* }"
+        fi
         ext=$(pmtiles_ext "$file" "$ext")
         value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range|${credits[i]:-}"
         i=$((i + 1))

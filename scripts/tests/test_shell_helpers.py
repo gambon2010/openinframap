@@ -347,3 +347,15 @@ catch_up_regional 2>&1
     assert "lower-zooms --region old" in made
     assert "restart basemap" in made  # the server reads the new file
     assert "adding its lower zooms" in out
+
+
+def test_sentinel_starts_at_the_same_zoom_in_the_scripts_and_satellite_py():
+    import satellite
+
+    assert bash("echo $REGIONAL_FIRST_ZOOM") == str(satellite.TIERS["regional"][0])
+
+
+def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
+    (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
+    value = bash('satellite_tiers_value france', BASEMAP_DIR=str(tmp_path))
+    assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value

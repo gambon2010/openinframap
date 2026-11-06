@@ -285,7 +285,7 @@ def command_choose(args) -> None:
     # --- Step 1: Sentinel-2 ---
     say()
     say("Step 1 of 2. Sentinel-2 photos, 10 m (2021, cloud-free): towns and fields,")
-    say("from zoom 5 to 12 or 13.")
+    say("from zoom 7 to 12 or 13.")
     region_name = args.region_name or index.name(region)
     region_outline = index.outline(region, folder) if region else None
     region_have = regional_have(folder, region) if region else None
