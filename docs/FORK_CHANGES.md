@@ -1631,13 +1631,19 @@ servers and write different files. Now they all start together (`run_parallel` i
 one's result); each still keeps its own server's speed limit and waits for a lost
 connection on its own.
 
-## Towns stand out from the fields (2026-11-06)
+## The background map's colours (2026-11-06)
 
-Upstream's background style draws land and built-up areas at the same lightness
-from zoom 6 on (93%), told apart only by a faint tint: the roads were clear but not
-where a town stops. Built-up areas (`osm_landuse_urban`, `osm_landcover_urban`) are
-drawn at 88% instead, the same tint (`modules/map-sources/contrast.ts`, a paint
-override: style_base.ts unchanged).
+Upstream's background style draws most areas at the same lightness from zoom 6 on
+(93%), told apart only by a faint tint: fields (farmland) were the very colour of
+parks and grass, and towns, industry and hospitals another single one, so it was
+hard to see where a town or a field stops. One palette now (`modules/map-sources/
+palette.ts`, `PALETTE`), still pale and washed out (saturation 35% at most,
+lightness 82–94%), a shade per kind of area: unmapped land 94% warm off-white,
+fields 91% pale straw, grass and parks 88% soft green, woods 84% deeper green,
+housing 89% cool grey, industry, shops and airports 87% mauve-grey, hospitals and
+universities 90% pale rose, farmyards 88% tan, water 82% blue, sand, glaciers.
+Zoomed out (zoom 2 to 6) each is 8% darker, as upstream's are. A paint override of
+upstream's layers (style_base.ts unchanged); a test fails if one of them is renamed.
 
 ## Sentinel-2 from zoom 7 (2026-11-06)
 

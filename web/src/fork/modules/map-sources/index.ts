@@ -1,16 +1,16 @@
 // Fork: the map sources (background map tiles, Photon) as a section of the
 // Settings window, at its end (map-sources.ts); place names when zoomed in
-// (labels.ts); towns a little darker than the fields (contrast.ts).
+// (labels.ts); the background map's colours (palette.ts).
 import { ForkModule } from '../../types.ts'
 import { addSettingsSection } from '../../ui/settings.ts'
 import { MapSourcesSection } from './map-sources.ts'
 import { placeLabelZooms } from './labels.ts'
-import { townContrast } from './contrast.ts'
+import { backgroundPalette } from './palette.ts'
 
 const mapSources: ForkModule = {
   init: ({ map }) => {
     placeLabelZooms(map)
-    townContrast(map)
+    backgroundPalette(map)
     const section = new MapSourcesSection(map)
     addSettingsSection({
       el: section.el,
