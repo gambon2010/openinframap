@@ -236,3 +236,32 @@
 .oim-ul-layer.hidden > .oim-ul-layer-row .oim-icon {
   opacity: 0.5;
 }
+
+/* A group of a layer's items (outliner/groups.ts): a small heading that folds; its
+   items right under it, at the same indent. */
+.oim-ul-item-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--oim-text-color-light);
+  font-size: 0.78rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+.oim-ul-item-group:hover {
+  background: var(--oim-light-grey);
+}
+.oim-ul-item-group-label {
+  flex: 1;
+}
+.oim-ul-item-group:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: -2px;
+}
+/* Under a group's heading, the items' pictures start where the heading does. */
+.oim-ul-items .oim-ul-item .oim-ul-thumb {
+  justify-content: flex-start;
+}

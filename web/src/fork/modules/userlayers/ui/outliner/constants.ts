@@ -1,7 +1,7 @@
 // Fork: My layers' list (outliner/index.ts): its filter chips, how many items a long
-// layer shows first, the export formats.
+// layer shows first, the export formats, the groups of a layer's items.
 import type { Format } from '../../io/formats.ts'
-import type { Filter } from './types.ts'
+import type { Filter, ItemGroup } from './types.ts'
 
 export const FILTERS: [Filter, string][] = [
   ['hostile', 'Hostile'],
@@ -19,4 +19,18 @@ export const FORMATS: [Format, string][] = [
   ['geojson', 'GeoJSON'],
   ['kml', 'KML (Google Earth)'],
   ['gpx', 'GPX (GPS)']
+]
+
+/** The groups, in their order, with their names. */
+export const ITEM_GROUPS: [ItemGroup, string][] = [
+  ['friendly-units', 'Friendly units'],
+  ['hostile-units', 'Hostile units'],
+  ['other-units', 'Neutral and unknown units'],
+  ['friendly-graphics', 'Friendly graphics'],
+  ['hostile-graphics', 'Hostile graphics'],
+  ['other-graphics', 'Other graphics'],
+  ['measurements', 'Measurements'],
+  ['drawings', 'Drawings and markers'],
+  ['pictures', 'Pictures'],
+  ['copies', 'Copies of map features']
 ]

@@ -29,3 +29,16 @@ export interface Editing {
   /** The text is selected the first time (typing replaces it). */
   fresh: boolean
 }
+
+/** The groups a layer's items are shown in (groups.ts). */
+export type ItemGroup =
+  | 'friendly-units'
+  | 'hostile-units'
+  | 'other-units'
+  | 'friendly-graphics'
+  | 'hostile-graphics'
+  | 'other-graphics'
+  | 'measurements'
+  | 'drawings'
+  | 'pictures'
+  | 'copies'

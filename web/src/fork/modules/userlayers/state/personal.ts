@@ -1,7 +1,7 @@
 import { readJson, writeJson } from '../../../core/storage.ts'
 // Fork: what's personal in My layers (docs/plans/sync.md, phase 5): each layer's
-// folder, the layers hidden from the map, those open and the folders folded in the
-// list, folders made but still empty, the layer you draw into, your favourite and
+// folder, the layers hidden from the map, those open and the folders and groups of
+// items folded in the list, folders made but still empty, the layer you draw into, your favourite and
 // recently used symbols. Kept for the account on the server (GET / PUT
 // /userdata/settings/userlayers), so it follows you to any computer, and in this
 // browser (to show it at once, and when the server can't be reached). What the
@@ -27,6 +27,8 @@ export interface Personal {
   expanded: string[]
   /** Folders folded to one line. */
   folded: string[]
+  /** Groups of a layer's items folded in the list ("<layer id>/<group>", ui/outliner/groups.ts). */
+  foldedGroups: string[]
   /** Folders made with "New folder" that no layer is in yet. */
   empty: string[]
   /** The layer new items go into ("Draw into this layer"). */
@@ -50,6 +52,7 @@ function empty(): Personal {
     hidden: [],
     expanded: [],
     folded: [],
+    foldedGroups: [],
     empty: [],
     active: null,
     favourites: [],
@@ -157,7 +160,11 @@ export class PersonalSettings {
   }
 
   /** Add or take out a value of one of the lists. */
-  toggle(list: 'hidden' | 'expanded' | 'folded' | 'empty' | 'favourites', value: string, on: boolean) {
+  toggle(
+    list: 'hidden' | 'expanded' | 'folded' | 'foldedGroups' | 'empty' | 'favourites',
+    value: string,
+    on: boolean
+  ) {
     const set = new Set(this.data[list])
     if (on) set.add(value)
     else set.delete(value)

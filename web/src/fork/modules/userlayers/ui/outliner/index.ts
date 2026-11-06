@@ -20,8 +20,9 @@ import { symbolRenderer } from '../../map/symbols.ts'
 import { openSharing } from '../sharing.ts'
 import { eyeIcon } from '../../../../ui/icons.ts'
 import { MenuEntry, MenuItem, openContextMenuFor, withContextMenu } from '../../../../ui/context-menu.ts'
-import { Editing, Filter, OutlinerActions } from './types.ts'
-import { FILTERS, FORMATS, ITEMS_SHOWN } from './constants.ts'
+import { Editing, Filter, ItemGroup, OutlinerActions } from './types.ts'
+import { FILTERS, FORMATS, ITEM_GROUPS, ITEMS_SHOWN } from './constants.ts'
+import { groupItems } from './groups.ts'
 import { matches, textMatches } from './filter.ts'
 import { byFolder, layerOrder, placed, sortLayers } from './order.ts'
 
@@ -495,38 +496,69 @@ export class Outliner {
     })
   }
 
-  /** A layer's items, the first ITEMS_SHOWN of a long one, then "Show the other…". */
+  /** A layer's items by group (groups.ts), each group folding; the first
+   * ITEMS_SHOWN of a long layer, then "Show the other…". */
   private layerItems(layer: UserLayer, items: UserFeature[], searching: boolean): HTMLElement {
-    const all = this.showAll.has(layer.id)
-    const shown = all ? items : items.slice(0, ITEMS_SHOWN)
-    const more = el(
-      'li.oim-ul-more',
-      el(
-        'button.oim-ul-button',
-        tn(
-          'userlayers.show-more',
-          'Show the other item',
-          'Show the other {{count}} items',
-          items.length - shown.length
-        ),
-        { type: 'button' }
+    if (!items.length)
+      return el(
+        'ul.oim-ul-items',
+        el(
+          'li.oim-ul-hint',
+          searching
+            ? t('userlayers.no-match', 'Nothing matches.')
+            : t('userlayers.empty-layer', 'Nothing in it yet.')
+        )
       )
+    let room = this.showAll.has(layer.id) ? Infinity : ITEMS_SHOWN
+    let notShown = 0
+    const rows: HTMLElement[] = []
+    for (const [group, inGroup] of groupItems(items)) {
+      const key = `${layer.id}/${group}`
+      // Searching: every group open, to show what matches.
+      const folded = !searching && this.personal.data.foldedGroups.includes(key)
+      rows.push(this.groupRow(key, group, inGroup.length, folded))
+      if (folded) continue
+      const shown = inGroup.slice(0, room)
+      room -= shown.length
+      notShown += inGroup.length - shown.length
+      rows.push(...shown.map((f) => this.item(f, layer)))
+    }
+    if (notShown) {
+      const more = el(
+        'li.oim-ul-more',
+        el(
+          'button.oim-ul-button',
+          tn('userlayers.show-more', 'Show the other item', 'Show the other {{count}} items', notShown),
+          { type: 'button' }
+        )
+      )
+      more.onclick = () => {
+        this.showAll.add(layer.id)
+        this.actions.update()
+      }
+      rows.push(more)
+    }
+    return el('ul.oim-ul-items', rows)
+  }
+
+  /** A group's heading in a layer: its name and count; a click folds it (yours). */
+  private groupRow(key: string, group: ItemGroup, count: number, folded: boolean): HTMLElement {
+    const label = ITEM_GROUPS.find(([g]) => g === group)?.[1] ?? group
+    const row = el(
+      'li.oim-ul-item-group',
+      { 'aria-expanded': String(!folded) },
+      el(
+        'span.oim-ul-item-group-label',
+        `${folded ? '▸' : '▾'} ${t(`userlayers.item-group.${group}`, label)}`
+      ),
+      el('span.oim-ul-count-badge', String(count))
     )
-    more.onclick = () => {
-      this.showAll.add(layer.id)
+    row.onclick = () => {
+      this.personal.toggle('foldedGroups', key, !folded)
       this.actions.update()
     }
-    return el(
-      'ul.oim-ul-items',
-      items.length
-        ? [...shown.map((f) => this.item(f, layer)), ...(shown.length < items.length ? [more] : [])]
-        : el(
-            'li.oim-ul-hint',
-            searching
-              ? t('userlayers.no-match', 'Nothing matches.')
-              : t('userlayers.empty-layer', 'Nothing in it yet.')
-          )
-    )
+    this.focusable(row, `group:${key}`)
+    return row
   }
 
   /** A folder's right-click menu: a new layer in it, rename, lock, export, remove. */

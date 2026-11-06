@@ -640,7 +640,19 @@
     "bearings-title": "The north bearings of measurements are given from",
     "new-colour": "Colour of new items",
     "new-colour-title": "New drawings, markers, measurements and graphics get it (change one on its card)",
-    "settings-title": "My layers settings"
+    "settings-title": "My layers settings",
+    "item-group": {
+      "friendly-units": "Friendly units",
+      "hostile-units": "Hostile units",
+      "other-units": "Neutral and unknown units",
+      "friendly-graphics": "Friendly graphics",
+      "hostile-graphics": "Hostile graphics",
+      "other-graphics": "Other graphics",
+      "measurements": "Measurements",
+      "drawings": "Drawings and markers",
+      "pictures": "Pictures",
+      "copies": "Copies of map features"
+    }
   },
   "tower": {
     "unnamed-line": "a line",

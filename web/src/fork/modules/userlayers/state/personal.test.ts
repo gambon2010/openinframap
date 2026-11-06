@@ -25,6 +25,7 @@ describe('personal settings', () => {
       hidden: ['a'],
       expanded: [],
       folded: [],
+      foldedGroups: [],
       empty: [],
       active: null,
       favourites: [],

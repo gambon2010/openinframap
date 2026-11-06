@@ -1493,6 +1493,19 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## A layer's items, in groups (2026-11-06)
+
+An open layer lists its items under small headings that fold (`ui/outliner/groups.ts`,
+`ITEM_GROUPS`): friendly units, hostile units, neutral and unknown units, friendly
+graphics, hostile graphics, other graphics, measurements, drawings and markers,
+pictures, copies of map features (empty groups not shown; friendly includes assumed
+friend, hostile includes suspect). Inside a group: present first and planned at the
+end, then by shape (arrows, lines, areas, points), then by type (the same graphics
+one after another), then by name (numbers in order: 2 before 10). Folded groups are
+yours (`foldedGroups` in the personal settings); while searching, every group is
+open. Items were in the order they were made before. The groups have no eye: a
+layer is shown or hidden as a whole.
+
 ## No header: settings, print and the account among the map's buttons (2026-11-06)
 
 - Upstream's header (title, about, stats, a paid export) is removed by the layout
