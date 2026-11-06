@@ -6,7 +6,7 @@ function layer(name: string, features: Omit<UserFeature, 'type'>[]): UserLayer {
   return {
     id: name,
     name,
-    style: { color: '#1976d2' },
+    style: {},
     features: new Map(features.map((f) => [f.id, { type: 'Feature', ...f }]))
   }
 }

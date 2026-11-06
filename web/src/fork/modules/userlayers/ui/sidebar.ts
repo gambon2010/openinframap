@@ -1,18 +1,15 @@
-// Fork: My layers' sidebar in the left column: the situation selector, the list of
-// layers and items (outliner.ts) and the settings (labels on the map, the name
-// changes are saved under). Built once, so the list's search box keeps its focus;
-// each update refreshes the message and the list.
+// Fork: My layers' sidebar in the left column: a header (the situation selector, ⚙:
+// My layers' preferences in Settings, ×), the list of layers and items
+// (outliner/), the only part that scrolls, and its buttons under it. Built once, so
+// the list's search box keeps its focus; each update refreshes the message and the
+// list. It's as tall as its content, up to the bottom of the left column.
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from '../model/model.ts'
 import { Outliner } from './outliner/index.ts'
-import { measurePrefs } from '../measure/prefs.ts'
-import type { North } from '../measure/north.ts'
+import { addSettingsSection, openSettings, SettingsSection } from '../../../ui/settings.ts'
+import { preferencesSection } from './preferences.ts'
 import { download, importFile } from '../io/files.ts'
-import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
-import { GraphicLabelChoice } from '../graphics/labels.types.ts'
-import { graphicLabelChoice, setGraphicLabelChoice } from '../graphics/labels.ts'
-import { LabelLevel } from '../model/fields.types.ts'
 import type { Workspace } from './workspace.ts'
 import { positionsOf } from '../model/shapes.ts'
 
@@ -23,9 +20,12 @@ export class Sidebar {
   readonly outliner: Outliner
   private built = false
   private ws: Workspace
+  private preferences: SettingsSection
 
   constructor(ws: Workspace) {
     this.ws = ws
+    this.preferences = preferencesSection(() => void ws.renderer.render(ws.store.layers, ws.store.hidden))
+    addSettingsSection(this.preferences)
     this.outliner = new Outliner(ws.store, {
       update: () => ws.update(),
       select: (feature, add) => {
@@ -46,79 +46,30 @@ export class Sidebar {
   }
 
   private build() {
-    const { store, renderer } = this.ws
     const close = el('button.oim-panel-button', '×', {
       type: 'button',
       title: t('userlayers.close', 'Close My layers'),
       'aria-label': t('userlayers.close', 'Close My layers')
     })
     close.onclick = () => this.ws.toggle(false)
-    const level = el(
-      'select',
-      (
-        [
-          ['none', t('userlayers.labels.none', 'None')],
-          ['name', t('userlayers.labels.name', 'Designation only')],
-          ['all', t('userlayers.labels.all', 'All fields')]
-        ] as [LabelLevel, string][]
-      ).map(([value, label]) => el('option', label, { value, selected: value === getLabelLevel() }))
-    ) as HTMLSelectElement
-    level.onchange = () => {
-      setLabelLevel(level.value as LabelLevel)
-      void renderer.render(store.layers, store.hidden)
-    }
-    // The labels on tactical graphics (map/graphic-labels.ts): ours in English or
-    // French, or the standard's.
-    const graphicLabels = el(
-      'select',
-      (
-        [
-          ['en', t('userlayers.graphic-labels-en', 'English')],
-          ['fr', 'Français'],
-          ['standard', t('userlayers.graphic-labels-standard', 'Standard (MIL-STD-2525)')]
-        ] as [GraphicLabelChoice, string][]
-      ).map(([value, label]) => el('option', label, { value, selected: value === graphicLabelChoice() }))
-    ) as HTMLSelectElement
-    graphicLabels.onchange = () => {
-      setGraphicLabelChoice(graphicLabels.value as GraphicLabelChoice)
-      void renderer.render(store.layers, store.hidden)
-    }
-    // Bearings of measurements (measure/north.ts): true, magnetic (compass) or grid north.
-    const north = el(
-      'select',
-      (
-        [
-          ['true', t('measure.north-true', 'True north')],
-          ['magnetic', t('measure.north-magnetic', 'Magnetic north (compass)')],
-          ['grid', t('measure.north-grid', 'Grid north (MGRS)')]
-        ] as [North, string][]
-      ).map(([value, label]) => el('option', label, { value, selected: value === measurePrefs.north }))
-    ) as HTMLSelectElement
-    north.onchange = () => measurePrefs.set({ north: north.value as North })
-    // Loaded from your account later, or changed elsewhere.
-    measurePrefs.onChange(() => (north.value = measurePrefs.north))
-    const author = el('input.oim-ul-author', {
-      type: 'text',
-      value: store.author,
-      placeholder: t('userlayers.author', 'Your name')
-    }) as HTMLInputElement
-    author.onchange = () => (store.author = author.value.trim())
-    this.outline.append(
-      this.ws.situations.line,
-      this.message,
-      this.outliner.el,
-      el(
-        'details.oim-ul-settings',
-        el('summary', t('userlayers.settings-more', 'Labels, bearings, name')),
-        el('label.oim-ul-field', el('span', t('userlayers.labels-on-map', 'Labels on the map')), level),
-        el('label.oim-ul-field', el('span', t('userlayers.graphic-labels', 'Graphic labels')), graphicLabels),
-        el('label.oim-ul-field', el('span', t('userlayers.bearings-from', 'Measured bearings from')), north),
-        el('label.oim-ul-field', el('span', t('userlayers.author-label', 'Saved as')), author)
-      )
-    )
+    const settings = el('button.oim-panel-button.oim-ul-settings-button', '⚙', {
+      type: 'button',
+      title: t('userlayers.settings', 'Labels and bearings (Settings)'),
+      'aria-label': t('userlayers.settings', 'Labels and bearings (Settings)')
+    })
+    settings.onclick = () => openSettings(this.preferences)
+    // The header, the list (the only part that scrolls) and the buttons under it.
+    this.outline.append(this.message, this.outliner.el)
     this.el.append(
-      el('.oim-panel-header', el('h2', t('userlayers.title', 'My layers')), close),
+      el(
+        '.oim-panel-header',
+        el('h2', t('userlayers.title', 'My layers')),
+        this.ws.situations.line,
+        settings,
+        close
+      ),
       this.outline,
+      this.outliner.footer,
       this.ws.toolbar.fileInput
     )
     this.built = true

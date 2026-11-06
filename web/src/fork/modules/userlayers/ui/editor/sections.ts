@@ -260,7 +260,7 @@ export function kindSection(c: Card, parts: CardPart[]) {
 
 /** The card's appearance. */
 export function appearanceSection(c: Card, parts: CardPart[]) {
-  const { feature, layer, p, update, itemKind } = c
+  const { feature, p, update, itemKind } = c
   const look: HTMLElement[] = []
   const lookRow = (label: string, control: HTMLElement) =>
     el('.oim-ul-detail', el('span.oim-ul-detail-name', label), control)
@@ -287,7 +287,7 @@ export function appearanceSection(c: Card, parts: CardPart[]) {
   if (itemKind.coloured) {
     const color = el('input', {
       type: 'color',
-      value: p.color ?? layer.style.color ?? DEFAULT_COLOR,
+      value: p.color ?? DEFAULT_COLOR,
       'data-field': 'color'
     }) as HTMLInputElement
     color.onchange = () => update({ color: color.value })

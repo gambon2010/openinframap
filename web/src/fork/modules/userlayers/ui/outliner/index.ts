@@ -1,21 +1,25 @@
 // Fork: the outliner of My layers (the sidebar's list, docs/plans/my-layers-v3.md):
 // folders (optional, one level) holding layers, layers holding items. Items show
 // their symbol and what matters at a glance; a search box (items, and layers and
-// folders by name) and filter chips narrow the list; layers can be locked; items are
+// folders by name) and filters (Filter: chips) narrow the list. A layer's and a
+// folder's actions are in their right-click menu (ui/context-menu.ts); items are
 // dragged onto another layer to move them, layers above or below another to reorder
 // them (the top one is drawn on top) and onto a folder to put them in it. Names are
 // typed in place (double-click, or Rename). Folders, the order, which layers are open
 // and which folders folded are yours (state/personal.ts): others sharing a layer
 // order and file it their own way. Rows can be reached with Tab; Enter opens or
-// selects.
+// selects; the Menu key or Shift+F10 opens a row's menu. The buttons under the list
+// (new layer, folder, import, export) are in `footer`, which doesn't scroll.
 import { t, tn } from '../../../../core/i18n.ts'
 import { el } from 'redom'
-import { DEFAULT_COLOR, isOwner, UserFeature, UserLayer } from '../../model/model.ts'
+import { isOwner, UserFeature, UserLayer } from '../../model/model.ts'
 import { Store } from '../../state/store.ts'
 import { kindOf } from '../../kinds/index.ts'
 import { featureLabelParts } from '../../model/labels.ts'
 import { symbolRenderer } from '../../map/symbols.ts'
 import { openSharing } from '../sharing.ts'
+import { eyeIcon } from '../../../../ui/icons.ts'
+import { MenuEntry, MenuItem, openContextMenuFor, withContextMenu } from '../../../../ui/context-menu.ts'
 import { Editing, Filter, OutlinerActions } from './types.ts'
 import { FILTERS, FORMATS, ITEMS_SHOWN } from './constants.ts'
 import { matches, textMatches } from './filter.ts'
@@ -23,8 +27,15 @@ import { byFolder, layerOrder, placed, sortLayers } from './order.ts'
 
 export class Outliner {
   el: HTMLElement = el('.oim-ul-outliner')
+  /** New layer, new folder, import, export: under the list, not scrolled with it. */
+  readonly footer: HTMLElement = el('.oim-ul-footer')
   query = ''
   filters = new Set<Filter>()
+  /** The filter chips are showing (Filter). */
+  private filtersOpen = false
+  private filterButton = el('button.oim-ul-button.oim-ul-filter-button', {
+    type: 'button'
+  }) as HTMLButtonElement
   /** A situation's layers, shown read-only instead of the live ones (state/view.ts). */
   private get past(): Map<string, UserLayer> | null {
     return this.store.view.past
@@ -54,7 +65,11 @@ export class Outliner {
       this.query = this.search.value
       this.actions.update()
     }
-    this.el.append(this.search, this.chipsBox, this.body)
+    this.filterButton.onclick = () => {
+      this.filtersOpen = !this.filtersOpen
+      this.actions.update()
+    }
+    this.el.append(el('.oim-ul-search-row', this.search, this.filterButton), this.chipsBox, this.body)
   }
 
   // Folders, the order, open layers, folded folders: yours (state/personal.ts).
@@ -93,15 +108,12 @@ export class Outliner {
     this.actions.reordered()
   }
 
-  /** A submenu of the file formats, downloading the layers given. */
-  private exportMenu(title: string, layers: () => UserLayer[]): HTMLElement {
-    return el(
-      'details.oim-ul-submenu',
-      el('summary', title),
-      ...FORMATS.map(([format, label]) =>
-        this.button(label, () => this.actions.exportLayers(layers(), format), '', 'oim-ul-menu-text')
-      )
-    )
+  /** The file formats, each downloading the layers given. */
+  private exportEntries(layers: () => UserLayer[]): MenuEntry[] {
+    return FORMATS.map(([format, label]) => ({
+      label,
+      run: () => this.actions.exportLayers(layers(), format)
+    }))
   }
 
   /** Start typing a layer's or folder's name in place. */
@@ -169,11 +181,11 @@ export class Outliner {
     return input
   }
 
-  private button(label: string, onclick: () => void, title = '', className = '') {
+  private button(label: string | Element, onclick: () => void, title = '', className = '') {
     const b = el(`button.oim-ul-button.oim-ul-icon${className ? '.' + className : ''}`, label, {
       type: 'button',
       title,
-      'aria-label': title || label
+      'aria-label': title || (typeof label === 'string' ? label : '')
     }) as HTMLButtonElement
     b.onclick = (e) => {
       e.stopPropagation()
@@ -313,22 +325,6 @@ export class Outliner {
     }
   }
 
-  /** The lock: only the layer's owner can lock or unlock it. */
-  private lockButton(layer: UserLayer, locked: boolean, mayLock: boolean): HTMLElement {
-    const button = this.button(
-      locked ? '🔒' : '🔓',
-      () => this.store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } }),
-      !mayLock
-        ? t('userlayers.lock-owner', 'Only its owner can lock or unlock it')
-        : locked
-          ? t('userlayers.unlock', 'Locked: click to allow changes')
-          : t('userlayers.lock', 'Lock: no changes to its items'),
-      locked ? 'oim-ul-locked' : 'oim-ul-unlocked'
-    ) as HTMLButtonElement
-    button.disabled = !mayLock
-    return button
-  }
-
   private layerRow(layer: UserLayer, items: UserFeature[], searching: boolean): HTMLElement {
     const store = this.store
     const hidden = store.hidden.has(layer.id)
@@ -339,28 +335,37 @@ export class Outliner {
     const owner = isOwner(layer)
     const changeable = store.view.canChangeLayer(layer)
     const renaming = this.editing?.kind === 'layer' && this.editing.id === layer.id
-    const color = this.layerColour(layer, changeable)
-    const menu = this.layerMenu(layer, owner, changeable)
     const label = this.layerLabel(layer, open, renaming, changeable)
     const header = el(
       `.oim-ul-layer-row${active ? '.active' : ''}`,
-      { draggable: this.store.view.live && !renaming, 'aria-expanded': String(open) },
+      {
+        draggable: this.store.view.live && !renaming,
+        'aria-expanded': String(open),
+        title: t('userlayers.layer-row-title', 'Click: open · right-click: more')
+      },
       this.button(
-        hidden ? '◌' : '◉',
+        eyeIcon(!hidden),
         () => store.setHidden(layer.id, !hidden),
         hidden ? t('userlayers.show', 'Show on the map') : t('userlayers.hide', 'Hide from the map')
       ),
-      this.lockButton(layer, locked, owner && changeable),
-      color,
       label,
       owner ? '' : this.sharedTag(layer),
-      active ? el('span.oim-ul-active-tag', t('userlayers.active', 'drawing here')) : '',
+      locked
+        ? el('span.oim-ul-row-icon', '🔒', {
+            title: t('userlayers.locked-layer', 'Locked: no changes to its items')
+          })
+        : '',
+      active
+        ? el('span.oim-ul-row-icon.oim-ul-active-tag', '✎', {
+            title: t('userlayers.active', 'You draw into this layer')
+          })
+        : '',
       el(
         'span.oim-ul-count-badge',
         searching ? `${items.length}/${layer.features.size}` : String(layer.features.size)
-      ),
-      menu
+      )
     )
+    withContextMenu(header, () => this.layerMenu(layer, owner, changeable))
     header.onclick = () => {
       this.personal.toggle('expanded', layer.id, !this.personal.data.expanded.includes(layer.id))
       this.actions.update()
@@ -379,122 +384,86 @@ export class Outliner {
     return li
   }
 
-  /** A layer's colour, changed in place. */
-  private layerColour(layer: UserLayer, changeable: boolean): HTMLInputElement {
-    const store = this.store
-    const color = el('input.oim-ul-color', {
-      type: 'color',
-      value: layer.style.color ?? DEFAULT_COLOR,
-      disabled: !changeable,
-      title: t('userlayers.layer-color', 'Colour of its drawings and markers')
-    }) as HTMLInputElement
-    color.onclick = (e) => e.stopPropagation()
-    color.onchange = () => store.updateLayer(layer.id, { style: { ...layer.style, color: color.value } })
-    return color
-  }
-
-  /** Move a layer to a folder: the folders there are, a new one, or out of its folder. */
-  private folderMenu(layer: UserLayer): HTMLElement {
+  /** "Move to folder": the folders there are, a new one, or out of its folder. */
+  private folderEntries(layer: UserLayer): MenuEntry[] {
     const current = this.folderOf(layer)
-    return el(
-      'details.oim-ul-submenu',
-      el('summary', t('userlayers.move-to-folder-menu', 'Move to folder')),
+    return [
       ...this.folderNames()
         .filter((f) => f !== current)
-        .map((f) => this.button(`📁 ${f}`, () => this.moveToFolder(layer, f), '', 'oim-ul-menu-text')),
-      this.button(
-        `+ ${t('userlayers.new-folder-dots', 'New folder…')}`,
-        () => {
+        .map((f) => ({ label: `📁 ${f}`, run: () => this.moveToFolder(layer, f) })),
+      {
+        label: `+ ${t('userlayers.new-folder-dots', 'New folder…')}`,
+        run: () => {
           const name = this.freeName(t('userlayers.new-folder-name', 'New folder'), this.folderNames())
           this.moveToFolder(layer, name)
           this.startEditing('folder', name)
-        },
-        '',
-        'oim-ul-menu-text'
-      ),
-      current
-        ? this.button(
-            t('userlayers.out-of-folder', 'Out of the folder'),
-            () => this.moveToFolder(layer, null),
-            '',
-            'oim-ul-menu-text'
-          )
-        : ''
-    )
+        }
+      },
+      ...(current
+        ? [
+            {
+              label: t('userlayers.out-of-folder', 'Out of the folder'),
+              run: () => this.moveToFolder(layer, null)
+            }
+          ]
+        : [])
+    ]
   }
 
-  /** A layer's ⋯ menu: draw into it, zoom, share, rename, folders, export, delete. */
-  private layerMenu(layer: UserLayer, owner: boolean, changeable: boolean): HTMLDetailsElement {
+  /** A layer's right-click menu: draw into it, zoom, rename, lock, share, folder,
+   * export, delete. */
+  private layerMenu(layer: UserLayer, owner: boolean, changeable: boolean): MenuItem[] {
     const store = this.store
-    const folders = this.folderMenu(layer)
-    const exportMenu = this.exportMenu(t('userlayers.export-as', 'Export as'), () => [layer])
-    const menu = el(
-      'details.oim-ul-menu',
-      el('summary', '⋯', { title: t('userlayers.more', 'More') }),
-      el(
-        '.oim-ul-menu-items',
-        changeable
-          ? this.button(
-              t('userlayers.draw-here', 'Draw into this layer'),
-              () => store.setActive(layer.id),
-              '',
-              'oim-ul-menu-text'
-            )
-          : el('p.oim-ul-menu-note', t('userlayers.view-only', 'Shared with you to view only')),
-        layer.features.size
-          ? this.button(
-              t('userlayers.zoom-to-layer', 'Zoom to its items'),
-              () => this.actions.zoomToLayer(layer),
-              '',
-              'oim-ul-menu-text'
-            )
-          : '',
-        owner && layer.access !== undefined
-          ? this.button(t('userlayers.share', 'Share…'), () => openSharing(layer), '', 'oim-ul-menu-text')
-          : '',
-        changeable
-          ? this.button(
-              t('userlayers.rename', 'Rename'),
-              () => this.startEditing('layer', layer.id),
-              '',
-              'oim-ul-menu-text'
-            )
-          : '',
-        // Your own folders: even a layer you may only view goes in one.
-        store.view.live ? folders : '',
-        exportMenu,
-        owner
-          ? this.button(
-              t('userlayers.delete', 'Delete'),
-              () => {
-                const message = tn(
-                  'userlayers.delete-layer',
-                  'Delete the layer "{{name}}" and its item?',
-                  'Delete the layer "{{name}}" and its {{count}} items?',
-                  layer.features.size,
-                  { name: layer.name }
-                )
-                if (window.confirm(message)) store.deleteLayer(layer.id)
-              },
-              '',
-              'oim-ul-menu-text'
-            )
-          : ''
-      )
-    ) as HTMLDetailsElement
-    // The list scrolls (and would cut the menu off): it floats beside its button,
-    // above it when there's no room below.
-    menu.ontoggle = () => {
-      const items = menu.querySelector<HTMLElement>('.oim-ul-menu-items')
-      if (!menu.open || !items) return
-      const box = menu.getBoundingClientRect()
-      items.classList.add('oim-ul-floating')
-      items.style.right = `${window.innerWidth - box.right}px`
-      const below = window.innerHeight - box.bottom > 220
-      items.style.top = below ? `${box.bottom}px` : ''
-      items.style.bottom = below ? '' : `${window.innerHeight - box.top}px`
+    const locked = Boolean(layer.style.locked)
+    const items: MenuItem[] = [{ heading: layer.name }]
+    if (changeable) {
+      items.push({
+        label: t('userlayers.draw-here', 'Draw into this layer'),
+        run: () => store.setActive(layer.id),
+        disabled: layer.id === store.activeLayer
+      })
+    } else items.push({ heading: t('userlayers.view-only', 'Shared with you to view only') })
+    if (layer.features.size)
+      items.push({
+        label: t('userlayers.zoom-to-layer', 'Zoom to its items'),
+        run: () => this.actions.zoomToLayer(layer)
+      })
+    if (changeable)
+      items.push({ label: t('userlayers.rename', 'Rename'), run: () => this.startEditing('layer', layer.id) })
+    // Only its owner locks or unlocks it.
+    if (owner && changeable)
+      items.push({
+        label: locked
+          ? t('userlayers.unlock', '🔓 Unlock')
+          : t('userlayers.lock', '🔒 Lock (no changes to its items)'),
+        run: () => store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } })
+      })
+    if (owner && layer.access !== undefined)
+      items.push({ label: t('userlayers.share', 'Share…'), run: () => openSharing(layer) })
+    // Your own folders: even a layer you may only view goes in one.
+    if (store.view.live)
+      items.push({
+        label: t('userlayers.move-to-folder-menu', 'Move to folder'),
+        entries: this.folderEntries(layer)
+      })
+    items.push({ label: t('userlayers.export-as', 'Export as'), entries: this.exportEntries(() => [layer]) })
+    if (owner) {
+      items.push('separator', {
+        label: t('userlayers.delete', 'Delete'),
+        danger: true,
+        run: () => {
+          const message = tn(
+            'userlayers.delete-layer',
+            'Delete the layer "{{name}}" and its item?',
+            'Delete the layer "{{name}}" and its {{count}} items?',
+            layer.features.size,
+            { name: layer.name }
+          )
+          if (window.confirm(message)) store.deleteLayer(layer.id)
+        }
+      })
     }
-    return menu
+    return items
   }
 
   /** A layer's name (a text box while it's renamed). */
@@ -560,6 +529,51 @@ export class Outliner {
     )
   }
 
+  /** A folder's right-click menu: a new layer in it, rename, lock, export, remove. */
+  private folderMenu(
+    folder: string,
+    layers: UserLayer[],
+    lockable: UserLayer[],
+    allLocked: boolean
+  ): MenuItem[] {
+    const store = this.store
+    const live = store.view.live
+    const items: MenuItem[] = [{ heading: `📁 ${folder}` }]
+    if (live) {
+      items.push(
+        {
+          label: t('userlayers.folder-new-layer', 'New layer in this folder'),
+          run: () => this.actions.newLayer(folder)
+        },
+        { label: t('userlayers.rename', 'Rename'), run: () => this.startEditing('folder', folder) }
+      )
+    }
+    // Only a layer's owner locks it: the folder's lock acts on those.
+    if (lockable.length)
+      items.push({
+        label: allLocked
+          ? t('userlayers.folder-unlock', '🔓 Unlock its layers')
+          : t('userlayers.folder-lock', '🔒 Lock its layers (yours)'),
+        run: () =>
+          lockable.forEach((l) =>
+            store.updateLayer(l.id, { style: { ...l.style, locked: !allLocked || undefined } })
+          )
+      })
+    if (layers.length)
+      items.push({ label: t('userlayers.export-as', 'Export as'), entries: this.exportEntries(() => layers) })
+    if (live)
+      items.push('separator', {
+        label: t('userlayers.remove-folder', 'Remove the folder (its layers stay)'),
+        run: () => {
+          this.personal.toggle('empty', folder, false)
+          for (const l of layers) this.personal.setFolder(l.id, null)
+          this.actions.update()
+          this.actions.reordered()
+        }
+      })
+    return items
+  }
+
   private folderRow(folder: string, layers: UserLayer[], body: HTMLElement[]): HTMLElement {
     const store = this.store
     const live = store.view.live
@@ -569,30 +583,6 @@ export class Outliner {
     // Only a layer's owner locks it: the folder's lock acts on those.
     const lockable = layers.filter((l) => isOwner(l) && store.view.canChangeLayer(l))
     const allLocked = lockable.length > 0 && lockable.every((l) => l.style.locked)
-    const lock = this.button(
-      allLocked ? '🔒' : '🔓',
-      () =>
-        lockable.forEach((l) =>
-          store.updateLayer(l.id, { style: { ...l.style, locked: !allLocked || undefined } })
-        ),
-      lockable.length
-        ? t('userlayers.folder-lock', 'Lock or unlock all its layers (yours)')
-        : t('userlayers.folder-lock-none', 'None of its layers is yours to lock'),
-      allLocked ? 'oim-ul-locked' : 'oim-ul-unlocked'
-    )
-    lock.disabled = !lockable.length
-    const add = this.button(
-      '+',
-      () => this.actions.newLayer(folder),
-      t('userlayers.folder-new-layer', 'New layer in this folder')
-    )
-    add.disabled = !live
-    const rename = this.button(
-      '✎',
-      () => this.startEditing('folder', folder),
-      t('userlayers.rename-folder-title', 'Rename the folder (empty: take its layers out)')
-    )
-    rename.disabled = !live
     const label = renaming
       ? this.nameInput()
       : el('span.oim-ul-folder-label', `${folded ? '▸' : '▾'} 📁 ${folder}`)
@@ -603,21 +593,27 @@ export class Outliner {
       })
     const header = el(
       '.oim-ul-folder-row',
-      { 'aria-expanded': String(!folded) },
+      {
+        'aria-expanded': String(!folded),
+        title: t('userlayers.layer-row-title', 'Click: open · right-click: more')
+      },
       this.button(
-        allHidden ? '◌' : '◉',
+        eyeIcon(!allHidden),
         () => layers.forEach((l) => store.setHidden(l.id, !allHidden)),
         t('userlayers.folder-eye', 'Show or hide all its layers')
       ),
-      lock,
       label,
+      allLocked
+        ? el('span.oim-ul-row-icon', '🔒', {
+            title: t('userlayers.folder-locked', 'All its layers are locked')
+          })
+        : '',
       el(
         'span.oim-ul-count-badge',
         tn('userlayers.n-layers', '{{count}} layer', '{{count}} layers', layers.length)
-      ),
-      add,
-      rename
+      )
     )
+    withContextMenu(header, () => this.folderMenu(folder, layers, lockable, allLocked))
     header.onclick = () => {
       this.personal.toggle('folded', folder, !folded)
       this.actions.update()
@@ -634,9 +630,15 @@ export class Outliner {
     return el('li.oim-ul-folder', header, folded ? '' : el('ul.oim-ul-layers', inside))
   }
 
-  /** The whole list, drawn again from the store. */
-  /** The filter chips (enemy, friendly, planned…). */
-  private filterChips(): HTMLElement {
+  /** The filter chips (enemy, friendly, planned…), shown with Filter (or when on). */
+  private filterChips(): HTMLElement | string {
+    const on = this.filters.size
+    this.filterButton.textContent = on
+      ? t('userlayers.filter-on', 'Filter ({{count}})', { count: on })
+      : t('userlayers.filter-button', 'Filter')
+    this.filterButton.classList.toggle('oim-on', this.filtersOpen || on > 0)
+    this.filterButton.setAttribute('aria-expanded', String(this.filtersOpen))
+    if (!this.filtersOpen) return ''
     return el(
       '.oim-ul-chips.oim-ul-filters',
       FILTERS.map(([filter, label]) => {
@@ -699,41 +701,47 @@ export class Outliner {
   }
 
   /** New layer, new folder; import, export (not while a situation is shown). */
-  private bottomButtons(): HTMLElement[] {
+  private footerButtons(): (HTMLElement | string)[] {
     const store = this.store
-    const create = el('button.oim-ul-button', `+ ${t('userlayers.new-layer', 'New layer')}`, {
-      type: 'button'
-    })
-    create.onclick = () => this.actions.newLayer()
-    const createFolder = el('button.oim-ul-button', `+ ${t('userlayers.new-folder', 'New folder')}`, {
-      type: 'button',
-      title: t('userlayers.new-folder-title', 'A folder to drag layers into')
-    })
-    createFolder.onclick = () => this.newFolder()
-    const importButton = el('button.oim-ul-button', `⤓ ${t('userlayers.import', 'Import a file…')}`, {
-      type: 'button',
-      title: t('userlayers.import-title', 'GeoJSON, KML or GPX: a new layer with what it has')
-    })
-    importButton.onclick = () => this.actions.importFile()
+    const button = (label: string | HTMLElement, title: string, onclick: (b: HTMLButtonElement) => void) => {
+      const b = el('button.oim-ul-button', label, { type: 'button', title }) as HTMLButtonElement
+      b.onclick = () => onclick(b)
+      return b
+    }
     // The layers shown (a situation's, while one is shown).
     const shown = () =>
       [...(this.past ?? store.layers).values()].filter((l) => this.past || !store.hidden.has(l.id))
-    const exportAll = shown().length
-      ? el(
-          'details.oim-ul-menu.oim-ul-export',
-          el('summary.oim-ul-button', `⤒ ${t('userlayers.export', 'Export…')}`),
-          el(
-            '.oim-ul-menu-items',
-            el('p.oim-ul-menu-note', t('userlayers.export-shown', 'The layers shown, as')),
-            ...FORMATS.map(([format, label]) =>
-              this.button(label, () => this.actions.exportLayers(shown(), format), '', 'oim-ul-menu-text')
-            )
-          )
-        )
-      : ''
     return [
-      el('.oim-ul-row', create, this.past ? '' : createFolder),
-      el('.oim-ul-row', this.past ? '' : importButton, exportAll)
+      this.past
+        ? ''
+        : button(
+            `+ ${t('userlayers.new-layer-short', 'Layer')}`,
+            t('userlayers.new-layer', 'New layer'),
+            () => this.actions.newLayer()
+          ),
+      this.past
+        ? ''
+        : button(
+            `+ ${t('userlayers.new-folder-short', 'Folder')}`,
+            t('userlayers.new-folder-title', 'A folder to drag layers into'),
+            () => this.newFolder()
+          ),
+      el('span.oim-ul-footer-gap'),
+      this.past
+        ? ''
+        : button(
+            '⤓',
+            t('userlayers.import-title', 'Import a file: GeoJSON, KML or GPX (a new layer with what it has)'),
+            () => this.actions.importFile()
+          ),
+      shown().length
+        ? button(el('span.oim-ul-flip', '⤓'), t('userlayers.export-title', 'Export the layers shown'), (b) =>
+            openContextMenuFor(b, [
+              { heading: t('userlayers.export-shown', 'The layers shown, as') },
+              ...this.exportEntries(shown)
+            ])
+          )
+        : ''
     ]
   }
 
@@ -757,9 +765,9 @@ export class Outliner {
               'userlayers.no-layers',
               'No layer yet: pick a tool in the toolbar above the map, a layer is made for you.'
             )
-          ),
-      ...this.bottomButtons()
+          )
     )
+    this.footer.replaceChildren(...this.footerButtons())
     this.restoreFocus(hadFocus)
     return this.el
   }

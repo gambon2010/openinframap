@@ -5,7 +5,7 @@
 // areas), with their name, and their other fields in the notes. Pure, except for
 // DOMParser (KML, GPX).
 import { gpx, kml } from '@tmcw/togeojson'
-import { FeatureProps, UserLayer } from '../model/model.ts'
+import { DEFAULT_COLOR, FeatureProps, UserLayer } from '../model/model.ts'
 import { KIND_IDS, kindOf } from '../kinds/index.ts'
 import { parseHex } from '../../../core/colour.ts'
 import { OWN, NAME_KEYS, NOTE_KEYS, STYLE_KEYS } from './formats.constants.ts'
@@ -91,7 +91,7 @@ export function toKML(layers: UserLayer[], title = 'My layers'): string {
   const folders = layers.map((layer) => {
     const placemarks = [...layer.features.values()].map((f) => {
       const p = f.properties
-      const colour = p.color ?? layer.style.color ?? '#d32f2f'
+      const colour = p.color ?? DEFAULT_COLOR
       const own = [...OWN, 'notes']
         .filter((k) => p[k] !== undefined)
         .map((k) => {

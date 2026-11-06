@@ -48,7 +48,7 @@ export function highlightFilter(of: 'graphic' | 'measure', highlighted: string[]
 
 export function ownLayers(layer: UserLayer): LayerSpecification[] {
   const source = sourceId(layer.id)
-  const color = ['coalesce', ['get', 'color'], layer.style.color ?? DEFAULT_COLOR]
+  const color = ['coalesce', ['get', 'color'], DEFAULT_COLOR]
   return [
     // Items in conflict: an orange dashed ring or outline, under the item.
     {
@@ -108,7 +108,7 @@ export function ownLayers(layer: UserLayer): LayerSpecification[] {
 }
 
 export function graphicLayers(layer: UserLayer, highlighted: string[]): LayerSpecification[] {
-  return graphicSpecs(graphicsSourceId(layer.id), layer.style.color ?? DEFAULT_COLOR, 1, highlighted)
+  return graphicSpecs(graphicsSourceId(layer.id), DEFAULT_COLOR, 1, highlighted)
 }
 
 /** The map layers a graphic's pieces are drawn with (graphics.ts renderGraphic):

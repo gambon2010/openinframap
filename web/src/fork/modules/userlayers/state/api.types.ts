@@ -1,10 +1,10 @@
 // Fork: My layers' backend calls (api.ts): its types.
-import { LayerAccess, UserFeature } from '../model/model.ts'
+import { LayerAccess, UserFeature, UserLayer } from '../model/model.ts'
 
 export interface LoadedLayer {
   id: string
   name: string
-  style: { color?: string }
+  style: UserLayer['style']
   access: LayerAccess
   owner: string | null
   version: number

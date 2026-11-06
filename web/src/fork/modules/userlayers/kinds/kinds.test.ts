@@ -25,11 +25,13 @@ describe('the kinds', () => {
   })
 
   test('icons: named by the kind, drawn by the kind with that prefix', () => {
-    const name = iconName({ kind: 'marker' }, '#123456')!
+    const name = iconName({ kind: 'marker', color: '#123456' })!
     expect(name).toBe('user-marker:#123456')
+    // No colour of its own: black.
+    expect(iconName({ kind: 'marker' })).toBe('user-marker:#000000')
     expect(kindOfImage(name.split(':')[0])?.id).toBe('marker')
-    expect(iconName({ kind: 'drawing' }, '#123456')).toBeNull()
-    expect(iconName({ kind: 'image', image: 'abc' }, '#000')).toBe('userimg:abc')
+    expect(iconName({ kind: 'drawing' })).toBeNull()
+    expect(iconName({ kind: 'image', image: 'abc' })).toBe('userimg:abc')
   })
 
   test('in words: lines and areas, copies, symbols', () => {

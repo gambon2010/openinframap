@@ -36,12 +36,13 @@
   color: var(--oim-text-color);
   font-size: 0.95rem;
 }
+/* As tall as its content; when the left column is full it shrinks, and only its
+   list scrolls (the header and the buttons under it stay). */
 .oim-ul-sidebar.visible {
   display: flex;
   flex-direction: column;
   flex: 0 1 auto !important;
-  min-height: 120px;
-  max-height: 45vh;
+  min-height: 160px;
 }
 .oim-ul-sidebar .oim-panel-header {
   flex: 0 0 auto;
@@ -62,18 +63,68 @@
   text-align: center;
 }
 
-.oim-ul-settings {
-  margin-top: 8px;
-  padding-top: 4px;
-  border-top: 1px solid var(--oim-grey);
+/* The header: title, situation, ⚙, ×. */
+.oim-ul-sidebar .oim-panel-header {
+  gap: 6px;
 }
-.oim-ul-settings .oim-ul-field {
+.oim-ul-sidebar .oim-panel-header h2 {
+  flex: 0 0 auto;
+}
+.oim-ul-situation {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.oim-ul-situation select {
+  width: 100%;
+  padding: 2px;
+  font-size: 0.85rem;
+}
+
+/* Search and Filter on one line. */
+.oim-ul-search-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.oim-ul-search-row .oim-ul-outline-search {
+  flex: 1;
+  min-width: 0;
+}
+.oim-ul-filter-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* The buttons under the list: new layer, new folder, then import and export. */
+.oim-ul-footer {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 10px;
+  border-top: 1px solid var(--oim-light-grey);
+}
+.oim-ul-footer:empty {
+  display: none;
+}
+.oim-ul-footer-gap {
+  flex: 1;
+}
+/* Export: the import arrow turned round. */
+.oim-ul-flip {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+
+/* My layers' part of Settings (preferences.ts). */
+.oim-ul-preferences .oim-ul-field {
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin: 4px 0;
 }
-.oim-ul-settings .oim-ul-field select,
-.oim-ul-settings .oim-ul-field input {
+.oim-ul-preferences select {
   width: 55%;
 }

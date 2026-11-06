@@ -33,7 +33,7 @@ export interface ItemKind {
    * (measure/features.ts). */
   drawn: 'standard' | 'graphic' | 'copy' | 'measure'
   /** Points: the name of the image they're drawn with ("<prefix>:<value>"). */
-  icon?(p: FeatureProps, layerColour: string): string | null
+  icon?(p: FeatureProps): string | null
   /** The images named by icon(): their prefix, and how one is drawn. */
   images?: { prefix: string; make(value: string): Promise<IconImage> }
   /** A small picture for the list: an element, text, or null while the symbol

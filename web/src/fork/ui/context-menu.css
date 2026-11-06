@@ -1,0 +1,84 @@
+/* Fork: the right-click menu (context-menu.ts). */
+.oim-context-menu {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  max-width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--oim-grey, #ccc);
+  border-radius: var(--oim-radius-small, 4px);
+  background: var(--oim-content-background, #fff);
+  box-shadow: var(--oim-drop-shadow, 0 2px 8px rgba(0, 0, 0, 0.25));
+  color: var(--oim-text-color, #222);
+  font-size: 0.9rem;
+}
+.oim-context-menu h4 {
+  margin: 2px 6px 4px;
+  overflow: hidden;
+  color: var(--oim-text-color-light, #666);
+  font-size: 0.78rem;
+  font-weight: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.oim-context-menu hr {
+  width: 100%;
+  margin: 3px 0;
+  border: 0;
+  border-top: 1px solid var(--oim-light-grey, #eee);
+}
+.oim-context-menu button,
+.oim-context-menu summary {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.oim-context-menu button:hover:not([disabled]),
+.oim-context-menu summary:hover,
+.oim-context-menu button:focus-visible,
+.oim-context-menu summary:focus-visible {
+  outline: none;
+  background: var(--oim-light-grey, #eee);
+}
+.oim-context-menu button[disabled] {
+  color: var(--oim-text-color-light, #999);
+  cursor: default;
+}
+.oim-context-menu .oim-menu-danger {
+  color: #c62828;
+}
+.oim-menu-sub[open] {
+  border-radius: 3px;
+  background: #f7f7f7;
+}
+.oim-menu-sub > button {
+  padding-left: 18px;
+}
+/* A submenu: an arrow, turned down while it's open. */
+.oim-menu-sub > summary {
+  list-style: none;
+}
+.oim-menu-sub > summary::-webkit-details-marker {
+  display: none;
+}
+.oim-menu-sub > summary::after {
+  content: '▸';
+  float: right;
+  margin-left: 12px;
+  color: var(--oim-text-color-light, #666);
+}
+.oim-menu-sub[open] > summary::after {
+  content: '▾';
+}

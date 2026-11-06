@@ -3,15 +3,7 @@
 // (transport.ts). The backend logs each one, which is the history that can be
 // played back (history.ts). Undo and redo: undo.ts; the changes themselves:
 // changes.ts.
-import {
-  Change,
-  ChangeOp,
-  FeatureProps,
-  UserFeature,
-  UserLayer,
-  uuid,
-  DEFAULT_COLOR
-} from '../model/model.ts'
+import { Change, ChangeOp, FeatureProps, UserFeature, UserLayer, uuid } from '../model/model.ts'
 import { applyChange, cloneLayers, differences } from './changes.ts'
 import { local } from './local.ts'
 import { loadSaved, send } from './transport.ts'
@@ -299,7 +291,7 @@ export class Store {
   createLayer(name: string, folder?: string): string {
     const id = uuid()
     if (folder) this.personal.setFolder(id, folder)
-    this.record('layer_create', id, undefined, { name, style: { color: DEFAULT_COLOR } })
+    this.record('layer_create', id, undefined, { name, style: {} })
     this.activeLayer = id
     this.notify()
     return id
@@ -327,7 +319,7 @@ export class Store {
     const batch = uuid()
     this.quiet = true
     try {
-      this.record('layer_create', id, undefined, { name, style: { color: DEFAULT_COLOR } }, batch)
+      this.record('layer_create', id, undefined, { name, style: {} }, batch)
       for (const item of items) this.record('feature_create', id, uuid(), item, batch)
     } finally {
       this.quiet = false

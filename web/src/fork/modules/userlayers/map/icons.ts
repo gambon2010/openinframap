@@ -9,8 +9,8 @@ import { kindOf, kindOfImage } from '../kinds/index.ts'
 const loading = new globalThis.Map<string, Promise<void>>()
 
 /** The image name a point feature is drawn with (null: none). */
-export function iconName(p: FeatureProps, layerColor: string): string | null {
-  return kindOf(p).icon?.(p, layerColor) ?? null
+export function iconName(p: FeatureProps): string | null {
+  return kindOf(p).icon?.(p) ?? null
 }
 
 /** Add an image to the map if it isn't there yet (once, however often it's asked for). */

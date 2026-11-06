@@ -46,7 +46,7 @@ export interface UserLayer {
   name: string
   /** color: of its drawings and markers; folder: its folder before folders were personal (state/personal.ts: the fallback);
    * locked: its items can't be changed or moved. */
-  style: { color?: string; folder?: string; locked?: boolean }
+  style: { folder?: string; locked?: boolean }
   features: Map<string, UserFeature>
   /** Your access (docs/plans/sync.md): its owner (one you just made: none said),
    * shared with you to modify, or to view (read-only). */
@@ -101,4 +101,5 @@ export function uuid(): string {
   return crypto.randomUUID()
 }
 
-export const DEFAULT_COLOR = '#d32f2f'
+/** The colour of what has no colour of its own: drawings, markers, measurements, graphics. */
+export const DEFAULT_COLOR = '#000000'

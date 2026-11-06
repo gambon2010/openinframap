@@ -56,7 +56,7 @@ import {
 } from './layers.ts'
 
 /** A feature as drawn: its properties plus what the map layers need. */
-function drawn(feature: UserFeature, layerColor: string, conflict = false): GeoJSON.Feature {
+function drawn(feature: UserFeature, conflict = false): GeoJSON.Feature {
   const p = feature.properties
   const supply = p.copy ? supplyColours.of(p.copy.sourceLayer, p.osm_id) : null
   return {
@@ -66,7 +66,7 @@ function drawn(feature: UserFeature, layerColor: string, conflict = false): GeoJ
       ...p,
       copy: undefined,
       fid: feature.id,
-      icon: iconName(p, layerColor),
+      icon: iconName(p),
       copy_key: p.copy ? `${p.copy.source}/${p.copy.sourceLayer}` : null,
       // Power supply mode on: a copied line, substation or plant's original's colour
       // (left out otherwise: the supply layers draw what has one).
@@ -210,7 +210,7 @@ export class Renderer {
       const icons = new Set<string>()
       for (const layer of layers.values()) {
         for (const f of layer.features.values()) {
-          const icon = iconName(f.properties, layer.style.color ?? DEFAULT_COLOR)
+          const icon = iconName(f.properties)
           if (icon && !map.hasImage(icon)) icons.add(icon)
         }
       }
@@ -229,9 +229,7 @@ export class Renderer {
       const source = sourceId(layer.id)
       const data: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
-        features: [...layer.features.values()].map((f) =>
-          drawn(f, layer.style.color ?? DEFAULT_COLOR, this.conflicted.has(f.id))
-        )
+        features: [...layer.features.values()].map((f) => drawn(f, this.conflicted.has(f.id)))
       }
       const existing = map.getSource(source) as GeoJSONSource | undefined
       if (existing) existing.setData(data)
@@ -326,7 +324,7 @@ export class Renderer {
             ticks,
             properties: {
               fid: f.id,
-              color: f.properties.color ?? layer.style.color ?? DEFAULT_COLOR,
+              color: f.properties.color ?? DEFAULT_COLOR,
               ...(this.conflicted.has(f.id) ? { conflict: true } : {})
             }
           })
@@ -426,8 +424,7 @@ export class Renderer {
   /** Where a point feature's image is drawn, its empty margins left out: px from
    * its centre at size 1. */
   iconBox(feature: UserFeature): IconBox | null {
-    const layer = [...(this.last?.layers.values() ?? [])].find((l) => l.features.has(feature.id))
-    const name = iconName(feature.properties, layer?.style.color ?? DEFAULT_COLOR)
+    const name = iconName(feature.properties)
     const image = name ? this.map.getImage(name) : null
     if (!name || !image) return null
     const key = `${name}@${image.data.width}x${image.data.height}`
@@ -468,10 +465,9 @@ export class Renderer {
       this.renderMeasures(feature)
       return
     }
-    const color = layer.style.color ?? DEFAULT_COLOR
     source.setData({
       type: 'FeatureCollection',
-      features: [...layer.features.values()].map((f) => drawn(f.id === feature.id ? feature : f, color))
+      features: [...layer.features.values()].map((f) => drawn(f.id === feature.id ? feature : f))
     })
   }
 

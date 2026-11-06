@@ -531,14 +531,13 @@ export class Tools {
       const points = cursor ? [...this.tool.points, cursor] : this.tool.points
       const needed = this.tool.axis ? 2 : Math.max(2, this.tool.min)
       if (points.length >= needed && this.tool.properties.sidc) {
-        const active = this.store.activeLayer ? this.store.layers.get(this.store.activeLayer) : undefined
         this.renderer.draft(this.tool.points, false, undefined, false)
         this.renderer.graphicDraft({
           sidc: this.tool.properties.sidc,
           points: squareUp(this.tool.properties.sidc, points),
           axis: this.tool.axis,
           widthFactor: this.tool.widthFactor,
-          colour: this.tool.properties.color ?? active?.style.color ?? DEFAULT_COLOR
+          colour: this.tool.properties.color ?? DEFAULT_COLOR
         })
       } else {
         this.renderer.graphicDraft(null)
@@ -569,8 +568,7 @@ export class Tools {
       this.renderer.measureDraft({ type: 'rings', points: [cursor], radii: p.radii as number[] })
       return
     }
-    const active = this.store.activeLayer ? this.store.layers.get(this.store.activeLayer) : undefined
-    void this.renderer.ghost(iconName(p, active?.style.color ?? DEFAULT_COLOR), cursor, p.size ?? 1)
+    void this.renderer.ghost(iconName(p), cursor, p.size ?? 1)
   }
 
   /** Right-click while drawing: what's drawn so far is dropped; again: the tool stops. */

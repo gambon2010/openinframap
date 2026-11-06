@@ -3,7 +3,6 @@
 /* --- Version 3: the outliner (outliner.ts) --- */
 .oim-ul-outline-search {
   box-sizing: border-box;
-  width: 100%;
   margin: 4px 0;
   padding: 4px 6px;
 }
@@ -56,11 +55,15 @@
   color: var(--oim-text-color-light);
   text-decoration: line-through;
 }
-.oim-ul-unlocked {
-  opacity: 0.35;
+/* Small signs on a row: locked, drawing into it (their meaning in the tooltip). */
+.oim-ul-row-icon {
+  flex: 0 0 auto;
+  font-size: 0.85em;
+  cursor: help;
 }
-.oim-ul-unlocked:hover {
-  opacity: 1;
+.oim-ul-active-tag {
+  color: #1565c0;
+  font-weight: bold;
 }
 .oim-ul-drop {
   outline: 2px dashed #1565c0;
@@ -120,17 +123,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.oim-ul-menu-text {
-  width: 100%;
-  justify-content: flex-start;
-  text-align: left;
-  white-space: nowrap;
-}
-.oim-ul-settings > summary {
-  color: var(--oim-text-color-light);
-  font-size: 0.8rem;
-  cursor: pointer;
-}
 .oim-ul-locked-note {
   margin: 4px 0;
   padding: 4px 6px;
@@ -166,12 +158,6 @@
 .oim-ul-shared-tag {
   font-size: 0.85em;
   cursor: help;
-}
-
-.oim-ul-menu-note {
-  margin: 0.2em 0.5em;
-  font-size: 0.85em;
-  color: var(--oim-text-color-light, #666);
 }
 
 /* The sharing dialog (sharing.ts). */
@@ -235,4 +221,18 @@
 .oim-ul-item:focus-visible {
   outline: 2px solid #1565c0;
   outline-offset: -2px;
+}
+
+/* An empty folder's hint. */
+.oim-ul-folder .oim-ul-hint {
+  padding: 2px 6px;
+  font-size: 0.8rem;
+}
+
+/* Shown / hidden: the eye (fork/ui/icons.ts); a hidden layer's is greyed. */
+.oim-ul-tree .oim-icon {
+  display: block;
+}
+.oim-ul-layer.hidden > .oim-ul-layer-row .oim-icon {
+  opacity: 0.5;
 }

@@ -16,14 +16,14 @@ export function inView(feature: UserFeature, bounds: Pick<LngLatBounds, 'contain
 }
 
 /** What an item puts in the legend: its name and picture (one per kind in a layer). */
-async function entryOf(f: UserFeature, layerColour: string): Promise<LegendEntry | null> {
+async function entryOf(f: UserFeature): Promise<LegendEntry | null> {
   const p = f.properties
   const kind = kindOf(p)
-  const colour = p.color ?? layerColour
+  const colour = p.color ?? DEFAULT_COLOR
   if (p.sidc) {
     const label = symbolName(p.sidc) ?? p.sidc
     if (kind.drawn === 'graphic') {
-      // In its own colour, else the renderer's (as on the map), not the layer's;
+      // In its own colour, else the renderer's (as on the map), black by default;
       // its label first ("WUP: Withdraw under pressure"), in the chosen language.
       const drawn = await graphicSvg(p.sidc, p.color)
       const name = graphicName(p.sidc, label)
@@ -53,11 +53,10 @@ export async function userLegend(
 ): Promise<LegendSection[]> {
   const sections: LegendSection[] = []
   for (const [i, layer] of layers.entries()) {
-    const colour = layer.style.color ?? DEFAULT_COLOR
     const entries = new globalThis.Map<string, LegendEntry>()
     for (const f of layer.features.values()) {
       if (!inView(f, bounds)) continue
-      const entry = await entryOf(f, colour)
+      const entry = await entryOf(f)
       if (!entry) continue
       const key = `${entry.label}\n${entry.svg ?? ''}\n${entry.colour ?? ''}\n${entry.shape ?? ''}`
       if (!entries.has(key)) entries.set(key, entry)

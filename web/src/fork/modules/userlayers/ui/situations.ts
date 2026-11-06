@@ -9,7 +9,7 @@ import { situationLabel, situationPosition } from '../model/situations.ts'
 import type { Workspace } from './workspace.ts'
 
 export class Situations {
-  /** The selector, in the sidebar. */
+  /** The selector, in the sidebar's header. */
   readonly line = el('.oim-ul-situation')
   /** "Viewing … · read-only · Back to live", over the map. */
   readonly banner = el('.oim-ul-banner', { role: 'status' })
@@ -59,7 +59,8 @@ export class Situations {
       title: t('userlayers.situation-title', 'A situation is a named moment: your layers as they were then')
     }) as HTMLSelectElement
     choice.onchange = () => void this.choose(choice.value)
-    this.line.replaceChildren(el('label', el('span', t('userlayers.situation', 'Situation')), choice))
+    choice.setAttribute('aria-label', t('userlayers.situation', 'Situation'))
+    this.line.replaceChildren(choice)
   }
 
   private async choose(value: string) {

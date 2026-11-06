@@ -17,6 +17,7 @@ export interface SettingsSection {
 
 const sections: SettingsSection[] = []
 let body: HTMLElement | undefined
+let openWindow: ((section?: SettingsSection) => void) | undefined
 
 /** Add a section to the Settings window. */
 export function addSettingsSection(section: SettingsSection) {
@@ -29,16 +30,27 @@ export function addSettings() {
   const made = makeModal(t('settings.title', 'Settings'), ...sections.map((s) => s.el))
   body = made.body
 
-  const open = (event: Event) => {
-    event.preventDefault()
+  openWindow = (shown) => {
     for (const section of sections) section.refresh?.()
     made.open()
+    if (shown) {
+      shown.el.scrollIntoView({ block: 'start' })
+      return
+    }
     ;[...sections]
       .reverse()
       .find((s) => s.focus)
       ?.focus?.()
   }
   const link = el('a', t('nav.settings', 'settings'), { href: '#settings' })
-  link.onclick = open
+  link.onclick = (event) => {
+    event.preventDefault()
+    openWindow?.()
+  }
   document.querySelector('header nav ul')?.append(el('li', link))
+}
+
+/** Open the Settings window (at a section: My layers' ⚙ opens its own). */
+export function openSettings(section?: SettingsSection) {
+  openWindow?.(section)
 }

@@ -10,7 +10,7 @@ describe('applyChange', () => {
   test('layers and features, in order', () => {
     const layers = new Map<string, UserLayer>()
     const changes: Change[] = [
-      { op: 'layer_create', layer_id: 'a', data: { name: 'Grid', style: { color: '#ff0000' } }, made_at: at },
+      { op: 'layer_create', layer_id: 'a', data: { name: 'Grid', style: { locked: true } }, made_at: at },
       {
         op: 'feature_create',
         layer_id: 'a',
@@ -30,7 +30,7 @@ describe('applyChange', () => {
     for (const change of changes) applyChange(layers, change)
     const layer = layers.get('a')!
     expect(layer.name).toBe('Grid 2')
-    expect(layer.style).toEqual({ color: '#ff0000' }) // a rename keeps the style
+    expect(layer.style).toEqual({ locked: true }) // a rename keeps the style
     expect(layer.features.get('f1')?.properties.name).toBe('Here')
 
     applyChange(layers, { op: 'feature_delete', layer_id: 'a', feature_id: 'f1', made_at: at })
