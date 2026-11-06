@@ -39,8 +39,8 @@ from .line_trace import GridIndex, load_index
 
 # Plants this big (W) are sources; smaller ones count as consumers' neighbours.
 SOURCE_OUTPUT = 10e6
-# A big plant's substation: within this distance (EPSG:3857 units).
-PLANT_SUBSTATION = 1000
+# A big plant's substation: within this distance (metres; schema/distances.sql).
+PLANT_SUBSTATION = 650
 LOST = ("destroyed", "damaged")
 # A source's own "voltage" on its best path (higher than any line).
 UNLIMITED = 10**9
@@ -135,7 +135,9 @@ async def load_graph(database: AsyncConnection) -> SupplyGraph:
         text(
             """SELECT p.osm_id AS plant,
                       (SELECT n.node_id FROM grid_node AS n
-                        WHERE n.kind = 'substation' AND ST_DWithin(n.geom, p.geometry, :near)
+                        WHERE n.kind = 'substation'
+                          AND ST_DWithin(n.geom, p.geometry, :near * oim_max_stretch())
+                          AND ST_DWithin(n.geom, p.geometry, oim_units(:near, p.geometry))
                         ORDER BY n.geom <-> p.geometry LIMIT 1) AS substation
                  FROM power_plant AS p
                 WHERE convert_power(p.output) >= :output"""
@@ -155,15 +157,14 @@ async def load_graph(database: AsyncConnection) -> SupplyGraph:
         ]
         rows = await database.execute(
             text(
-                # Metres from the edge: EPSG:3857 units scaled by the latitude (as
-                # grid_check.py); only the line ends are measured.
+                # Metres from the edge (schema/distances.sql); only the line ends
+                # are measured.
                 """WITH region AS (
                        SELECT ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(:outline), 4326), 3857) AS g)
                    SELECT n.node_id FROM grid_node AS n, region AS r
                     WHERE n.node_id = ANY(:ids)
                       AND (NOT ST_Contains(r.g, n.geom)
-                           OR ST_Distance(ST_Boundary(r.g), n.geom)
-                              * cos(radians(ST_Y(ST_Transform(n.geom, 4326)))) < :edge)"""
+                           OR oim_metres(ST_Distance(ST_Boundary(r.g), n.geom), n.geom) < :edge)"""
             ),
             {"outline": outline, "ids": ends, "edge": REGION_EDGE},
         )

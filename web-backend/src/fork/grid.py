@@ -31,13 +31,14 @@ CANDIDATES = 200
 MAX_OVERLAP = 0.7
 # Routes run over lines of this voltage and more. A station that isn't on that
 # grid is first connected to it over lower-voltage lines (an "access" leg) of at
-# most ACCESS_MAX metres, searched within ACCESS_RADIUS (EPSG:3857 units).
+# most ACCESS_MAX metres, searched within ACCESS_RADIUS metres. (Distances here are
+# real metres; schema/distances.sql turns them into map units.)
 BACKBONE_VOLTAGE = 110000
 ACCESS_MAX = 50000
-ACCESS_RADIUS = 60000
+ACCESS_RADIUS = 40000
 # A station with no line of known voltage at all may use the nearest station
-# with one, this close (EPSG:3857 units, roughly 4-7 km in Europe).
-NEAREST_STATION = 7500
+# with one, this close (metres).
+NEAREST_STATION = 5000
 # A grid station closer than this (metres) is the same station mapped twice in
 # OpenStreetMap (e.g. a substation's outline and its site relation): no notice.
 SAME_STATION = 300
@@ -85,7 +86,9 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
                           ST_Distance(ST_Transform(n.geom, 4326)::geography,
                                       ST_Transform(ST_PointOnSurface(s.geom), 4326)::geography) AS distance
                      FROM grid_node AS n, (SELECT CAST(:geom AS geometry) AS geom) AS s
-                    WHERE n.kind <> 'junction' AND ST_DWithin(n.geom, s.geom, :radius)
+                    WHERE n.kind <> 'junction'
+                      AND ST_DWithin(n.geom, s.geom, :radius * oim_max_stretch())
+                      AND ST_DWithin(n.geom, s.geom, oim_units(:radius, s.geom))
                     ORDER BY n.geom <-> s.geom
                     LIMIT 1"""
             ),
@@ -162,7 +165,8 @@ async def load_backbone(
                 WHERE e.voltage >= :min_voltage
                   AND e.geom && ST_Expand(
                           ST_MakeLine(CAST(:a AS geometry), CAST(:b AS geometry)),
-                          GREATEST(100000, ST_Distance(CAST(:a AS geometry), CAST(:b AS geometry)) / 2))"""
+                          GREATEST(oim_units(65000, CAST(:a AS geometry)),
+                                   ST_Distance(CAST(:a AS geometry), CAST(:b AS geometry)) / 2))"""
         ),
         {"a": a["geom"], "b": b["geom"], "min_voltage": BACKBONE_VOLTAGE},
     )
@@ -182,7 +186,8 @@ async def access_leg(
         text(
             f"""SELECT {EDGE_COLUMNS}
                  FROM {EDGE_FROM}
-                WHERE e.geom && ST_Expand(CAST(:geom AS geometry), :radius)"""
+                WHERE e.geom && ST_Expand(CAST(:geom AS geometry),
+                                          oim_units(:radius, CAST(:geom AS geometry)))"""
         ),
         {"geom": node["geom"], "radius": ACCESS_RADIUS},
     )

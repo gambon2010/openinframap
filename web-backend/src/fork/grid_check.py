@@ -90,18 +90,19 @@ async def main(min_kv: int, csv_path: Path) -> None:
                        SELECT n.node_id, ST_Y(ST_Transform(n.geom, 4326)), ST_X(ST_Transform(n.geom, 4326)),
                               -- metres from the region's edge, 0 outside it (the way crosses it)
                               (SELECT CASE WHEN ST_Contains(r.geom, n.geom)
-                                      THEN ST_Distance(ST_Boundary(r.geom), n.geom) ELSE 0 END
-                                 FROM region AS r) * scale,
+                                      THEN oim_metres(ST_Distance(ST_Boundary(r.geom), n.geom), n.geom)
+                                      ELSE 0 END
+                                 FROM region AS r),
                               -- the nearest station and line it isn't joined to
-                              (SELECT ST_Distance(s.geom, n.geom) FROM grid_node AS s
-                                WHERE s.kind <> 'junction' AND ST_DWithin(s.geom, n.geom, :near * 2)
-                                ORDER BY s.geom <-> n.geom LIMIT 1) * scale,
-                              (SELECT ST_Distance(e.geom, n.geom) FROM grid_edge AS e
-                                WHERE ST_DWithin(e.geom, n.geom, :near * 2)
+                              (SELECT oim_metres(ST_Distance(s.geom, n.geom), n.geom) FROM grid_node AS s
+                                WHERE s.kind <> 'junction'
+                                  AND ST_DWithin(s.geom, n.geom, :near * oim_max_stretch())
+                                ORDER BY s.geom <-> n.geom LIMIT 1),
+                              (SELECT oim_metres(ST_Distance(e.geom, n.geom), n.geom) FROM grid_edge AS e
+                                WHERE ST_DWithin(e.geom, n.geom, :near * oim_max_stretch())
                                   AND n.node_id NOT IN (e.source, e.target)
-                                ORDER BY e.geom <-> n.geom LIMIT 1) * scale
-                         FROM (SELECT *, cos(radians(ST_Y(ST_Transform(geom, 4326)))) AS scale
-                                 FROM grid_node WHERE node_id = ANY(:ids)) AS n"""
+                                ORDER BY e.geom <-> n.geom LIMIT 1)
+                         FROM grid_node AS n WHERE n.node_id = ANY(:ids)"""
                 ),
                 {"ids": list(found), "outline": outline, "near": NEAR},
             )

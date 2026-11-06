@@ -127,7 +127,7 @@ Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that 
 - `data/` is gitignored: downloads (`osm/`), exports (`exports/`), EEZ zip, Wikidata cache.
 - The PostGIS alpine image's `shp2pgsql` needs `libintl` installed at run time (`import_eez` does it).
 - Upstream files changed by the fork are listed in `docs/FORK_CHANGES.md` ("Merging from upstream").
-- Build SQL must scale to a country like France (millions of rows): `ANALYZE` temp tables after creating them, join instead of `IN`/`NOT IN (subquery)`, never join on `ST_Equals`, and give `ST_DWithin` a constant distance (a per-row one can't use the spatial index). Test new build steps on more than Luxembourg.
+- Build SQL must scale to a country like France (millions of rows): `ANALYZE` temp tables after creating them, join instead of `IN`/`NOT IN (subquery)`, never join on `ST_Equals`, and give `ST_DWithin` a constant distance (a per-row one can't use the spatial index). Distances and areas are written in real metres and converted with `schema/distances.sql` (`ST_DWithin(a, b, D * oim_max_stretch()) AND ST_DWithin(a, b, oim_units(D, b))`; `oim_metres`, `oim_ground_area`): map units stretch with latitude (a test fails on a bare number). Test new build steps on more than Luxembourg.
 
 ## CI/CD
 

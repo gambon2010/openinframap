@@ -92,17 +92,17 @@ CREATE OR REPLACE FUNCTION site_importance(kind text, tags hstore, area float) R
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
         WHEN kind IN ('national', 'prefecture', 'hospital', 'prison', 'border', 'dam')
-          OR (kind = 'military_area' AND area > 500000)
+          OR (kind = 'military_area' AND area > 220000)
           OR (kind = 'airport' AND (tags ? 'iata' OR tags ? 'icao'))
           OR (kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship')
               AND tags->'building' IN ('cathedral', 'basilica'))
-          OR (kind IN ('port', 'landfill', 'fuel_depot') AND area > 200000) THEN 0
+          OR (kind IN ('port', 'landfill', 'fuel_depot') AND area > 90000) THEN 0
         -- Churches and town halls: most French ones have a Wikidata entry, so that
         -- doesn't make them stand out (58,000 and 37,000).
         WHEN kind IN ('christian', 'townhall') THEN 2
-        -- Supermarkets: hypermarkets (a building over ~5,000 m², in mercator
-        -- units at French latitudes) from zoom 12, the rest from zoom 14.
-        WHEN kind = 'supermarket' THEN CASE WHEN area > 10000 THEN 1 ELSE 2 END
+        -- Supermarkets: hypermarkets (a building over 5,000 m²) from zoom 12, the
+        -- rest from zoom 14.
+        WHEN kind = 'supermarket' THEN CASE WHEN area > 5000 THEN 1 ELSE 2 END
         -- Convenience stores: many small ones, from zoom 14.
         WHEN kind = 'convenience' THEN 2
         WHEN kind IN ('pharmacy', 'worship', 'silo', 'military_disused', 'fuel', 'weapons')
@@ -119,7 +119,7 @@ SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(k
        site_importance(kind, tags, area) AS importance, tags, area
   FROM (SELECT osm_id, geometry, name, tags, site_kind(key, type, tags) AS kind,
                CASE WHEN ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon')
-                    THEN ST_Area(geometry) ELSE 0 END AS area
+                    THEN oim_ground_area(geometry) ELSE 0 END AS area
           FROM osm_site) s
  WHERE kind IS NOT NULL;
 CREATE INDEX site_feature_geometry ON site_feature USING gist (geometry);

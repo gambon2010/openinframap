@@ -14,11 +14,10 @@
 DROP TABLE IF EXISTS grid_edge;
 DROP TABLE IF EXISTS grid_node;
 
--- How close a line end must be to a station to count as connected (metres in
--- EPSG:3857, which is larger than real metres away from the equator: at 50°N
--- 100 units are about 65 m).
-\set station_polygon_snap 100
-\set station_point_snap 250
+-- How close a line end must be to a station to count as connected (real metres:
+-- schema/distances.sql turns them into map units at each station).
+\set station_polygon_snap 65
+\set station_point_snap 170
 
 -- 1. Lines: in service, 10 kV and more.
 CREATE TEMP TABLE grid_line AS
@@ -50,14 +49,14 @@ ANALYZE grid_vertex;
 --    where no substation claims the junction.
 CREATE TEMP TABLE grid_station AS
 SELECT 'substation' AS kind, osm_id, name, voltage AS voltage_tag, geometry AS geom,
-       CASE WHEN GeometryType(geometry) = 'POINT' THEN :station_point_snap
-            ELSE :station_polygon_snap END AS snap,
+       oim_units(CASE WHEN GeometryType(geometry) = 'POINT' THEN :station_point_snap
+                      ELSE :station_polygon_snap END, geometry) AS snap,
        0 AS priority
   FROM substation
 UNION ALL
 SELECT 'plant', osm_id, name, NULL, geometry,
-       CASE WHEN GeometryType(geometry) = 'POINT' THEN :station_point_snap
-            ELSE :station_polygon_snap END,
+       oim_units(CASE WHEN GeometryType(geometry) = 'POINT' THEN :station_point_snap
+                      ELSE :station_polygon_snap END, geometry),
        1
   FROM power_plant;
 CREATE INDEX ON grid_station USING gist (geom);
@@ -121,7 +120,7 @@ SELECT DISTINCT ON (j.key) j.key, s.kind, s.osm_id
   FROM (SELECT DISTINCT key, geom FROM grid_junction) AS j
   JOIN grid_key_lines AS kl ON kl.key = j.key
   -- The constant reach lets the spatial index be used (the per-station one alone can't).
-  JOIN grid_station AS s ON ST_DWithin(s.geom, j.geom, greatest(:station_point_snap, :station_polygon_snap))
+  JOIN grid_station AS s ON ST_DWithin(s.geom, j.geom, greatest(:station_point_snap, :station_polygon_snap) * oim_max_stretch())
                         AND ST_DWithin(s.geom, j.geom, s.snap)
  WHERE GeometryType(s.geom) <> 'POINT'
     OR kl.lines = 1

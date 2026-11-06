@@ -311,3 +311,15 @@ echo "statuses ${JOB_STATUS[*]} in $((SECONDS - start))s"
     assert out.endswith(("statuses 0 75 0 in 1s", "statuses 0 75 0 in 2s"))
     assert "why it failed" in out and "step 1 failed" in out and "some failed" in out
     assert "step 0" in out and "step 2" in out
+
+
+def test_distances_in_the_build_sql_are_real_metres():
+    # Map units stretch with latitude (schema/distances.sql): a distance written as
+    # a bare number means something else in Norway than in France.
+    raw = re.compile(r"ST_(DWithin|Buffer|Expand)\([^()]*(\([^()]*\)[^()]*)*,\s*[0-9.]+\s*\)")
+    found = []
+    for sql in sorted((SCRIPTS.parent / "schema").glob("*.sql")):
+        if sql.stem in ("functions", "views", "dev-init", "prod-init"):
+            continue  # upstream's
+        found += [f"{sql.name}: {m.group(0)}" for m in raw.finditer(sql.read_text())]
+    assert found == [], "use oim_units / oim_max_stretch (schema/distances.sql)"

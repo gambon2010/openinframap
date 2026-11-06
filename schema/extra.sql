@@ -82,12 +82,11 @@ ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS osm_duplicates integer;
 ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS duplicates jsonb;
 
 -- Duplicates of OpenStreetMap: the OSM data is kept as it is, and extra features it
--- already has are deleted. Distances are in EPSG:3857 metres (15 ≈ 10 m on the
--- ground in France). Measured on a sample around Pontivy: matches are clear-cut
+-- already has are deleted. Distances in real metres (schema/distances.sql). Measured on a sample around Pontivy: matches are clear-cut
 -- (overhead HTA lines are mostly 0% or 100% covered, substations are within a few
 -- metres or more than 50 m away).
 
--- Lines: deleted when at least 80% of their length is within 15 m of OSM lines of
+-- Lines: deleted when at least 80% of their length is within 10 m of OSM lines of
 -- the same voltage class (or no voltage) and the same placement: an underground
 -- cable next to an OSM overhead line is usually a different line (the overhead
 -- one was buried, or both run along the same road).
@@ -112,15 +111,17 @@ BEGIN
     DELETE FROM extra.power_line e
      WHERE e.source = src AND e.location = loc AND e.voltage_class = cls
        AND ST_Length(e.geometry) > 0
-       AND EXISTS (SELECT 1 FROM extra_osm_line o WHERE ST_DWithin(o.geometry, e.geometry, 15))
-       AND (SELECT ST_Length(ST_Intersection(e.geometry, ST_Union(ST_Buffer(o.geometry, 15))))
-              FROM extra_osm_line o WHERE ST_DWithin(o.geometry, e.geometry, 15))
+       AND EXISTS (SELECT 1 FROM extra_osm_line o WHERE ST_DWithin(o.geometry, e.geometry, 10 * oim_max_stretch())
+         AND ST_DWithin(o.geometry, e.geometry, oim_units(10, e.geometry)))
+       AND (SELECT ST_Length(ST_Intersection(e.geometry, ST_Union(ST_Buffer(o.geometry, oim_units(10, e.geometry)))))
+              FROM extra_osm_line o WHERE ST_DWithin(o.geometry, e.geometry, 10 * oim_max_stretch())
+                AND ST_DWithin(o.geometry, e.geometry, oim_units(10, e.geometry)))
            >= 0.8 * ST_Length(e.geometry);
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
 END $$;
 
--- Substations (street-level HTA/BT): deleted when within 25 m of an OSM small
+-- Substations (street-level HTA/BT): deleted when within 17 m of an OSM small
 -- substation (not a big one, which can contain a street transformer without
 -- being it), a transformer, or a pole carrying a transformer.
 CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_substations(src text)
@@ -130,19 +131,22 @@ BEGIN
     DELETE FROM extra.power_substation e
      WHERE e.source = src
        AND (EXISTS (SELECT 1 FROM osm_power_substation s
-                     WHERE ST_DWithin(s.geometry, e.geometry, 25)
+                     WHERE ST_DWithin(s.geometry, e.geometry, 17 * oim_max_stretch())
+                       AND ST_DWithin(s.geometry, e.geometry, oim_units(17, e.geometry))
                        AND coalesce(s.substation, '') IN ('minor_distribution', '', 'yes', 'transformer')
-                       AND ST_Area(s.geometry) < 2000)
+                       AND oim_ground_area(s.geometry) < 900)
             OR EXISTS (SELECT 1 FROM osm_power_switchgear t
-                        WHERE t.type = 'transformer' AND ST_DWithin(t.geometry, e.geometry, 25))
+                        WHERE t.type = 'transformer' AND ST_DWithin(t.geometry, e.geometry, 17 * oim_max_stretch())
+                          AND ST_DWithin(t.geometry, e.geometry, oim_units(17, e.geometry)))
             OR EXISTS (SELECT 1 FROM osm_power_tower p
-                        WHERE ST_DWithin(p.geometry, e.geometry, 25)
+                        WHERE ST_DWithin(p.geometry, e.geometry, 17 * oim_max_stretch())
+                          AND ST_DWithin(p.geometry, e.geometry, oim_units(17, e.geometry))
                           AND p.tags ? 'transformer' AND p.tags -> 'transformer' <> 'no'));
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
 END $$;
 
--- Pipelines: deleted when at least 80% of their length is within 15 m of OSM
+-- Pipelines: deleted when at least 80% of their length is within 10 m of OSM
 -- pipelines of the same substance (or none).
 CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_pipelines(src text, subst text)
 RETURNS bigint LANGUAGE plpgsql AS $$
@@ -160,9 +164,11 @@ BEGIN
     DELETE FROM extra.pipeline e
      WHERE e.source = src AND e.substance = subst
        AND ST_Length(e.geometry) > 0
-       AND EXISTS (SELECT 1 FROM extra_osm_pipeline o WHERE ST_DWithin(o.geometry, e.geometry, 15))
-       AND (SELECT ST_Length(ST_Intersection(e.geometry, ST_Union(ST_Buffer(o.geometry, 15))))
-              FROM extra_osm_pipeline o WHERE ST_DWithin(o.geometry, e.geometry, 15))
+       AND EXISTS (SELECT 1 FROM extra_osm_pipeline o WHERE ST_DWithin(o.geometry, e.geometry, 10 * oim_max_stretch())
+         AND ST_DWithin(o.geometry, e.geometry, oim_units(10, e.geometry)))
+       AND (SELECT ST_Length(ST_Intersection(e.geometry, ST_Union(ST_Buffer(o.geometry, oim_units(10, e.geometry)))))
+              FROM extra_osm_pipeline o WHERE ST_DWithin(o.geometry, e.geometry, 10 * oim_max_stretch())
+                AND ST_DWithin(o.geometry, e.geometry, oim_units(10, e.geometry)))
            >= 0.8 * ST_Length(e.geometry);
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
@@ -175,8 +181,7 @@ END $$;
 -- ~100 m of an OSM combustion or waste power plant (an incinerator, a biomass or gas
 -- plant: the same installation). Not solar, hydro, nuclear or battery plants: a
 -- solar farm on a quarry, landfill or warehouse roof isn't the ICPE site under it
--- (165 of the first ~625 matches were solar). Seveso sites are always kept. (EPSG:3857 metres:
--- 725 ≈ 500 m and 145 ≈ 100 m on the ground in France.)
+-- (165 of the first ~625 matches were solar). Seveso sites are always kept.
 CREATE OR REPLACE FUNCTION extra.remove_osm_duplicate_icpe(src text)
 RETURNS bigint LANGUAGE plpgsql AS $$
 DECLARE removed bigint;
@@ -185,12 +190,15 @@ BEGIN
      WHERE f.source = src AND f.kind = 'icpe'
        AND ((f.details->>'category' = 'wind'
              AND (EXISTS (SELECT 1 FROM osm_power_generator g
-                           WHERE g.tags->'generator:source' = 'wind' AND ST_DWithin(g.geometry, f.geometry, 725))
+                           WHERE g.tags->'generator:source' = 'wind' AND ST_DWithin(g.geometry, f.geometry, 500 * oim_max_stretch())
+                             AND ST_DWithin(g.geometry, f.geometry, oim_units(500, f.geometry)))
                   OR EXISTS (SELECT 1 FROM osm_power_plant p
-                              WHERE p.tags->'plant:source' = 'wind' AND ST_DWithin(p.geometry, f.geometry, 725))))
+                              WHERE p.tags->'plant:source' = 'wind' AND ST_DWithin(p.geometry, f.geometry, 500 * oim_max_stretch())
+                                AND ST_DWithin(p.geometry, f.geometry, oim_units(500, f.geometry)))))
             OR (f.details->>'category' NOT IN ('seveso_high', 'seveso_low')
                 AND EXISTS (SELECT 1 FROM osm_power_plant p
-                             WHERE ST_DWithin(p.geometry, f.geometry, 145)
+                             WHERE ST_DWithin(p.geometry, f.geometry, 100 * oim_max_stretch())
+                               AND ST_DWithin(p.geometry, f.geometry, oim_units(100, f.geometry))
                                AND p.tags->'plant:source' ~ '(^|;)(waste|biomass|biogas|gas|oil|coal|biofuel)(;|$)')));
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;

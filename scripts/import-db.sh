@@ -123,6 +123,8 @@ run_with_timer "Restoring the database" restore
 # Exports made before search indexes were part of the build don't have them.
 run_with_timer "Checking search indexes" create_search_indexes
 # Exports made before extra data existed don't have its tables (Tegola needs them).
+# Exports made before distances were in real metres don't have their helpers.
+run_schema distances
 run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
 # Exports made before these steps existed don't have their tables.
 if [[ "$(db_query "SELECT to_regclass('search_feature') IS NULL")" == "t" ]]; then

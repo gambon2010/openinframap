@@ -1,6 +1,7 @@
 // Fork: search additions. The backend also finds places (imposm/places.py) and
 // everything else with a name (schema/search.sql); these say what each result is,
 // and picking one switches on the layer that shows it.
+import { groundDistance } from '../../core/geo.ts'
 import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
 import type { SearchResult } from '../../../search/search.ts'
@@ -65,8 +66,8 @@ const search: ForkModule = {
 
 // The same place can come from more than one provider (local database and
 // Photon), or twice from one (mapped as a point and an area). Keep the
-// best-scored result for each name within about 5 km.
-const DUPLICATE_DISTANCE = 0.05
+// best-scored result for each name within 5 km on the ground.
+const DUPLICATE_METRES = 5000
 
 /** search/search.ts: results sorted best first, without duplicates. */
 export function dropDuplicates(results: SearchResult[]): SearchResult[] {
@@ -75,8 +76,7 @@ export function dropDuplicates(results: SearchResult[]): SearchResult[] {
     const duplicate = kept.some(
       (k) =>
         k.name.toLowerCase() === result.name.toLowerCase() &&
-        Math.abs(k.latitude - result.latitude) < DUPLICATE_DISTANCE &&
-        Math.abs(k.longitude - result.longitude) < DUPLICATE_DISTANCE
+        groundDistance([k.longitude, k.latitude], [result.longitude, result.latitude]) < DUPLICATE_METRES
     )
     if (!duplicate) kept.push(result)
   }

@@ -777,7 +777,7 @@ import_osm() {
         -overwritecache
 
     section "Creating views..."
-    run_schema views stats places sites grid tower-numbers
+    run_schema views distances stats places sites grid tower-numbers
     run_with_timer "Creating search indexes" create_search_indexes
     # Extra data kept for this region goes back first; then the extra data tables
     # (which always exist, as Tegola serves them) get whatever is new.

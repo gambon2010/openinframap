@@ -228,6 +228,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 |---|---|---|
 | 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | ✅ 321 frontend (`npm run test:fork`), 19 backend (`tests/fork/`), 77 scripts (`scripts/tests/`) |
 | 11.2 | Tests for the setup scripts. | ✅ the scripts run in a sandbox with fake Docker/network (options, refusals, safety rules); a real Luxembourg build, export and import in a separate test database (opt-in) |
+| 11.7 | Distances and areas mean the same anywhere in the world: written in real metres, not map units tuned for France. | ✅ (2026-11-06) |
 | 11.6 | Dead code removed: features replaced or dropped (the typed author name, layer colours, ⋯ menus, unused strings, styles and helpers). | ✅ (2026-11-06) |
 | 11.5 | The setup scripts easier to read: repeated code made into shared functions (menus, disk space, titles, JSON files, replacing the database), the build script's steps each doing one thing, its shared variables listed and explained at the top. | ✅ (2026-11-06) |
 | 11.4 | The code tidied: no repeated logic (shared helpers in one place), long files and functions split, each file's types and constants in small files of their own (`X.types.ts`, `X.constants.ts`); exact values locked by tests first so nothing changes. | ✅ (2026-11-06) |

@@ -1549,6 +1549,26 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Distances in real metres everywhere (2026-11-06)
+
+The map's coordinates (EPSG:3857) stretch away from the equator by 1/cos(latitude):
+10 map units are 10 m at the equator, 6.9 m in France, 5 m in Oslo. Distances and
+areas had been written in those units, tuned for France ("15 ≈ 10 m", "725 ≈ 500 m",
+"roughly 4–7 km in Europe"), or scaled by hand in one place (grid_check.py). Now one
+rule: every distance and area is written in real metres, converted by
+`schema/distances.sql` (`oim_units`, `oim_metres`, `oim_ground_area`, and
+`oim_max_stretch()`, the region's largest stretch from the table statistics: the
+constant radius that lets an indexed search find candidates before the exact check
+at the point). France keeps the same results: the values are the ones they meant
+there (grid snapping 65 / 170 m, open-data duplicates 10 / 17 / 100 / 500 m and
+900 m², search's town 10 km, sites' sizes 220,000 / 90,000 / 5,000 m², grid routing
+5 / 40 / 65 km, a plant's substation 650 m). Checked on France in a rolled-back run:
+the grid 272,670 lines (272,357 before), sites' importance within a few dozen.
+The frontend's search merges the same name within 5 km on the ground
+(`groundDistance`, core/geo.ts), not 0.05°. `distances.sql` is in `SCHEMA_FILES`,
+run by builds and imports; a test fails if a build SQL file measures with a bare
+number.
+
 ## Data layers: the layer list and the key in one panel (2026-11-06)
 
 The Layers button opens **Data layers** (`fork/ui/data-layers.ts`); the Key button

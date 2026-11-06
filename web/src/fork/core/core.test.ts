@@ -68,3 +68,13 @@ describe('storage', () => {
     }
   })
 })
+
+describe('distance on the ground', () => {
+  test('Strasbourg to Kehl, and the same everywhere (not stretched by latitude)', async () => {
+    const { groundDistance } = await import('./geo.ts')
+    expect(groundDistance([7.75, 48.58], [7.81, 48.58]) / 1000).toBeCloseTo(4.42, 1)
+    // 0.05° of longitude: 5.6 km at the equator, 2.8 km at 60°N.
+    expect(groundDistance([0, 0], [0.05, 0]) / 1000).toBeCloseTo(5.56, 1)
+    expect(groundDistance([0, 60], [0.05, 60]) / 1000).toBeCloseTo(2.78, 1)
+  })
+})

@@ -136,11 +136,12 @@ SELECT row_number() OVER () AS id, n.source, n.kind, n.subtype, n.name,
        -- Names in other languages (name:en...), for showing them in that language.
        (SELECT hstore(array_agg(key), array_agg(value)) FROM each(n.tags) WHERE key LIKE 'name:%') AS names,
        n.detail, n.importance, n.layer,
-       -- The nearest city, town or village (a commune in France; ~10 km at most),
+       -- The nearest city, town or village (a commune in France; 10 km at most),
        -- where the data has none.
        COALESCE(n.town, (SELECT p.name FROM osm_place p
                           WHERE p.type IN ('city', 'town', 'village')
-                            AND ST_DWithin(p.geometry, n.geom, 15000)
+                            AND ST_DWithin(p.geometry, n.geom, 10000 * oim_max_stretch())
+                            AND ST_DWithin(p.geometry, n.geom, oim_units(10000, n.geom))
                           ORDER BY p.geometry <-> n.geom LIMIT 1)) AS town,
        ST_Transform(n.geom, 4326) AS geometry
   FROM named n
