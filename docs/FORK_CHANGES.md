@@ -1645,8 +1645,8 @@ universities 90% pale rose, farmyards 88% tan, water 82% blue, sand, glaciers.
 Zoomed out (zoom 2 to 6) each is 8% darker, as upstream's are. A paint override of
 upstream's layers (style_base.ts unchanged); a test fails if one of them is renamed.
 
-Buildings are darker than upstream's (cool grey, 86% at zoom 12 to 80% at 16, so
-they stand out of the housing around them) and airports have their own pale blue-grey
+Buildings keep upstream's warm pinkish beige, a little darker (87% at zoom 12 to
+81% at 16, so they stand out of the housing around them) and airports have their own pale blue-grey
 (93%), lighter than the land, so the runways stand out as upstream's do.
 **Settings → Background** chooses *Map, high contrast* (this palette, the default),
 *Map, original colours* (upstream's paint, restored from what the override saved) or

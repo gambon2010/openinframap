@@ -94,15 +94,16 @@ export function paletteLayers(): [
   ]
 }
 
-/** Buildings: darker than the towns they're in (housing 89%), more so closer in. */
+/** Buildings: upstream's warm pinkish beige, a little darker than upstream's so they
+ * stand out of the towns they're in (housing 89%), more so closer in. */
 export const BUILDINGS: ExpressionSpecification = [
   'interpolate-lab',
   ['linear'],
   ['zoom'],
   12,
-  'hsl(240, 5%, 86%)',
+  'hsl(32, 14%, 87%)',
   16,
-  'hsl(240, 6%, 80%)'
+  'hsl(32, 15%, 81%)'
 ]
 
 export function backgroundPalette(map: Map) {
