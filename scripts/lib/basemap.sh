@@ -56,6 +56,20 @@ except OSError:
     print(sys.argv[3])' "$1" "$2" "$3"
 }
 
+# pmtiles_bounds FILE — what a PMTiles v3 file covers, "west,south,east,north" in
+# degrees (its header), or nothing if it can't be read or doesn't say.
+pmtiles_bounds() {
+    python3 -c 'import struct, sys
+try:
+    header = open(sys.argv[1], "rb").read(127)
+except OSError:
+    sys.exit()
+if header[:7] == b"PMTiles":
+    bounds = struct.unpack_from("<4i", header, 102)
+    if any(bounds):
+        print(",".join(f"{v / 1e7:.5f}" for v in bounds))' "$1"
+}
+
 pmtiles_minzoom() { pmtiles_header_byte "$1" 100 "$2"; }
 pmtiles_maxzoom() { pmtiles_header_byte "$1" 101 "$2"; }
 

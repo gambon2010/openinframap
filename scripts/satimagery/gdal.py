@@ -30,6 +30,15 @@ def docker_run(
     subprocess.run(command + [image] + args, check=True, stdin=subprocess.DEVNULL)
 
 
+def pmtiles_zooms(path: Path) -> tuple[int, int] | None:
+    """A PMTiles file's lowest and highest zoom (from its header), None if unreadable."""
+    try:
+        header = path.open("rb").read(127)
+    except OSError:
+        return None
+    return (header[100], header[101]) if header[:7] == b"PMTiles" else None
+
+
 def to_pmtiles(mbtiles: Path, out: Path, pmtiles_image: str) -> None:
     """MBTiles -> PMTiles, with the basemap service's pmtiles CLI."""
     workdir = mbtiles.parent

@@ -2,6 +2,7 @@
 
 import json
 import re
+import struct
 import subprocess
 
 from conftest import SCRIPTS
@@ -150,6 +151,25 @@ def test_tiers_list_every_area_and_source(tmp_path):
         "http://localhost:8090/alsace.sat-detailed-fr_ign-z16-17/{z}/{x}/{y}.jpg 16 17",
         "http://localhost:8090/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
     ]
+
+
+def test_departement_files_carry_their_bounds_and_are_summed_up(tmp_path):
+    # IGN's photos: one file per département, each with what it covers (header).
+    for code, box in (
+        ("67", (6.94, 48.12, 8.23, 49.08)),
+        ("68", (6.84, 47.42, 7.62, 48.31)),
+    ):
+        header = bytearray(pmtiles_header(17, 14))
+        header[99] = 4  # WebP
+        struct.pack_into("<4i", header, 102, *(round(v * 1e7) for v in box))
+        (tmp_path / f"fr-{code}.sat-detailed-fr_ign.pmtiles").write_bytes(bytes(header))
+    value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
+    assert (
+        "http://localhost:8090/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
+        "6.94000,48.12000,8.23000,49.08000|© IGN (Licence Ouverte)"
+    ) in value
+    summary = bash("satellite_summary france", BASEMAP_DIR=str(tmp_path))
+    assert summary.startswith("IGN photos of 2 départements (")
 
 
 def test_every_schema_file_is_built_and_fingerprinted():

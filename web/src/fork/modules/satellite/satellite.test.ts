@@ -47,6 +47,13 @@ test('in "satellite with roads", roads, railways and borders stay above the imag
 })
 
 describe('imagery coverage', () => {
+  it('reads the bounds a tier may have', () => {
+    const [tier] = parseTiers('http://x/fr-67/{z}/{x}/{y}.webp 14 17 6.9,48.1,8.3,49.1|© IGN')
+    expect(tier.bounds).toEqual([6.9, 48.1, 8.3, 49.1])
+    expect(tier.attribution).toBe('© IGN')
+    expect(parseTiers('http://x/{z}/{x}/{y}.jpg 0 8')[0].bounds).toBeUndefined()
+  })
+
   it('reads the bounds from the TileJSON next to the tiles', () => {
     expect(tileJsonUrl('http://h:8800/basemap/luxembourg.sat-regional/{z}/{x}/{y}.webp')).toBe(
       'http://h:8800/basemap/luxembourg.sat-regional.json'

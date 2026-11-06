@@ -21,7 +21,6 @@ export interface SettingsSection {
 
 const sections: SettingsSection[] = []
 let body: HTMLElement | undefined
-let openWindow: (() => void) | undefined
 
 /** Add a section to the Settings window. */
 export function addSettingsSection(section: SettingsSection) {
@@ -34,7 +33,7 @@ export function addSettings(map: Map) {
   const made = makeModal(t('settings.title', 'Settings'), ...sections.map((s) => s.el))
   body = made.body
 
-  openWindow = () => {
+  const openWindow = () => {
     for (const section of sections) section.refresh?.()
     made.open()
     ;[...sections]
@@ -46,11 +45,6 @@ export function addSettings(map: Map) {
     content: gearIcon(),
     title: t('settings.title', 'Settings'),
     className: 'oim-settings-button',
-    onclick: () => openWindow?.()
+    onclick: openWindow
   })
-}
-
-/** Open the Settings window. */
-export function openSettings() {
-  openWindow?.()
 }

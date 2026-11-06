@@ -17,27 +17,25 @@ WORLDCOVER_URL = (
     "https://esa-worldcover-s2.s3.eu-central-1.amazonaws.com/rgbnir/2021/"
     "{lat_name}/ESA_WorldCover_10m_2021_v200_{cell}_S2RGBNIR.tif"
 )
-IGN_URL = (
-    "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0"
-    "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM"
-    "&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg"
-)
 
 # High-resolution aerial photos, by country (the "detailed" tier, zoom 14 and up):
 # open data from national or regional mapping agencies, each checked to answer
 # tile requests and to allow reuse. "regions": the Geofabrik regions they cover
 # (downloads are cut to them); "bbox": a tighter limit (Belgium's two regions);
-# "wms": a WMS GetMap URL with {bbox} (EPSG:3857) instead of a tile template.
+# "wms": a WMS GetMap URL with {bbox} (EPSG:3857) instead of a tile template;
+# "files": downloaded as the agency's files instead of tiles (bdortho.py: IGN's
+# tile server blocks a computer asking for tiles by the million).
 # Left out: Switzerland (offline copies must come from its file download service,
 # not the tile server), Denmark (needs a key), Norway (no open imagery tiles).
 DETAILED_SOURCES: dict[str, dict] = {
     "fr_ign": {
-        "name": "France (IGN)",
+        "name": "France (IGN, BD ORTHO)",
         "regions": ["france"],
-        "url": IGN_URL,
+        "files": "bdortho",
+        "format": "webp",
+        "maxzoom": 19,
         "resolution": "20 cm",
         "attribution": "© IGN (Licence Ouverte)",
-        "per_second": 20,
     },
     "es_pnoa": {
         "name": "Spain (IGN, PNOA)",

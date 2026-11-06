@@ -7,6 +7,7 @@ do the same with `download` / `safely` (scripts/lib/net.sh), with the same setti
                             whole download that can be run again)
     checked(response)       an httpx response, its HTTP error raised (inside call)
     fetch(url)              a URL's bytes (standard library), through safely()
+    fetch_file(url, path)   a big file to path, resumed where it stopped (HTTP Range)
     run_until_connected(main)  main(), exiting with CONNECTION_LOST (75) and a short
                             message instead of a traceback when the connection is lost
                             (SERVER_STOPPED, 76: only that server stopped answering)
@@ -42,6 +43,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable
+from pathlib import Path
 from typing import TypeVar
 
 T = TypeVar("T")
@@ -260,6 +262,47 @@ def fetch(url: str, timeout: float = 60, user_agent: str = USER_AGENT) -> bytes 
             raise
 
     return safely(get, url)
+
+
+def fetch_file(
+    url: str,
+    path: Path,
+    timeout: float = 60,
+    user_agent: str = USER_AGENT,
+    progress: Callable[[int], None] | None = None,
+) -> None:
+    """A big file saved to `path`, through path.part: a dropped download goes on
+    from where it stopped (HTTP Range), here or when run again; `path` only appears
+    once complete. A read stalled for `timeout` seconds counts as dropped.
+    progress(n): n more bytes arrived."""
+    part = path.with_name(path.name + ".part")
+
+    def get() -> None:
+        have = part.stat().st_size if part.exists() else 0
+        headers = {"User-Agent": user_agent}
+        if have:
+            headers["Range"] = f"bytes={have}-"
+        request = urllib.request.Request(url, headers=headers)
+        try:
+            response = urllib.request.urlopen(request, timeout=timeout)
+        except urllib.error.HTTPError as error:
+            if error.code == 416 and have:  # nothing after what's there: complete
+                return
+            raise
+        # 200 to a Range: the server sends it all again.
+        with response, part.open("ab" if response.status == 206 else "wb") as out:
+            while chunk := response.read(1 << 20):
+                out.write(chunk)
+                if progress:
+                    progress(len(chunk))
+            # A connection closed before the end reads as the end: say it isn't.
+            if response.length:
+                raise http.client.IncompleteRead(b"", response.length)
+
+    if path.exists():
+        return
+    safely(get, url, rounds_up=10)
+    part.replace(path)
 
 
 def checked(response: T) -> T:

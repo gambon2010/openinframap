@@ -109,15 +109,6 @@ export default class OpenInfraMap {
 
     url_hash.enable(map)
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-    map.addControl(
-      new maplibregl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true
-      })
-    )
-
     map.addControl(new maplibregl.ScaleControl({}), 'bottom-left')
 
     map.addControl(new KeyControl(), 'top-right')

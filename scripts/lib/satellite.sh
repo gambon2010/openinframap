@@ -27,25 +27,33 @@ overview_file() {
     if [[ -f "$(world_overview)" ]]; then world_overview; else echo "$BASEMAP_DIR/$1.sat-overview.pmtiles"; fi
 }
 
-# "overview, regional (12 MB)": the tiers region $1 has, and their total size.
+# "world overview, france regional, IGN photos of 2 départements (12 MB)": the
+# tiers region $1 has, and their total size.
 satellite_summary() {
-    local value file total=0 names=()
+    local value file total=0 names=() departements=0
     value=$(satellite_tiers_value "$1")
     [[ -n "$value" ]] || { echo "none"; return; }
     for file in $(tr ';' '\n' <<<"$value" | cut -d' ' -f1 | sed -E 's|.*/([^/]+)/\{z\}.*|\1|'); do
-        names+=("${file/.sat-/ }")
+        if [[ "$file" == fr-*.sat-detailed-fr_ign ]]; then
+            departements=$((departements + 1))
+        else
+            names+=("${file/.sat-/ }")
+        fi
         total=$((total + $(stat -c%s "$BASEMAP_DIR/$file.pmtiles")))
     done
+    [[ "$departements" == 0 ]] || names+=("IGN photos of $departements département$([[ "$departements" == 1 ]] || echo s)")
     echo "$(IFS=,; echo "${names[*]}" | sed 's/,/, /g') ($(human_size "$total"))"
 }
 
 # The satellite tiers as the frontend reads them (VITE_SATELLITE_TIERS,
-# fork/modules/satellite): "URL MINZOOM MAXZOOM|CREDIT;..." (empty: none); the
+# fork/modules/satellite): "URL MINZOOM MAXZOOM [W,S,E,N]|CREDIT;..." (empty:
+# none; the bounds from the file's header, so the map only asks the files that
+# cover what's on screen: one per French département); the
 # credit lines come from satellite.py (attribution_for). Everything downloaded
 # is shown, whatever area it's of: the overview (the world's, else region $1's),
 # then Sentinel-2 (the world's first, then each area's), then the aerial photos.
 satellite_tiers_value() {
-    local region="$1" value="" file range ext min max
+    local region="$1" value="" file range ext min max bounds
     local files=()
     file=$(overview_file "$region")
     [[ -f "$file" ]] && files+=("$file")
@@ -71,7 +79,8 @@ satellite_tiers_value() {
             range="$REGIONAL_FIRST_ZOOM ${range#* }"
         fi
         ext=$(pmtiles_ext "$file" "$ext")
-        value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range|${credits[i]:-}"
+        bounds=$(pmtiles_bounds "$file")
+        value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range${bounds:+ $bounds}|${credits[i]:-}"
         i=$((i + 1))
     done
     echo "$value"

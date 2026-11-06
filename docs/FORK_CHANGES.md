@@ -1653,6 +1653,29 @@ Buildings keep upstream's warm pinkish beige, a little darker (87% at zoom 12 to
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## France's aerial photos from IGN's files (2026-11-06)
+
+IGN's tile server blocked this computer after a thousand tiles (below), so France's
+photos no longer come from it: `DETAILED_SOURCES["fr_ign"]` is `"files": "bdortho"`
+and `satimagery/bdortho.py` downloads IGN's BD ORTHO, the files IGN publishes for
+bulk use, one département at a time: the latest colour 20 cm edition from IGN's
+download service (an Atom listing, `latest_edition`), its 7z archive in 4 GB parts
+(3 at once, `netsafe.fetch_file`: resumed with HTTP Range, a connection closed
+early is not taken for the end; each part checked against IGN's md5, fetched again
+once if damaged), the JPEG 2000 images extracted (7-Zip, else in Docker) and the
+archive deleted, then GDAL makes WebP tiles (quality 75) from zoom 14 to the zoom
+asked (15 to 19), and the images are deleted. One file per département
+(`fr-67.sat-detailed-fr_ign.pmtiles`): no copy of a whole country's file to make
+at the end (which would need twice its size), a département already there is
+skipped, and the work folder (`data/basemap/.bdortho-67/`) is kept between runs so
+a stopped download goes on. The menu asks the zoom, then which départements of the
+area (`departements.py`: the 96 of metropolitan France with their area, bounds and
+Geofabrik region, made once from france-geojson's outlines). The tiers in
+`VITE_SATELLITE_TIERS` now carry each file's bounds (from its header) and the
+frontend gives them to its sources, so the map only asks the files that cover
+what's on screen; the scripts sum the départements up as "IGN photos of N
+départements". The partial download from IGN's tile server was deleted.
+
 ## A server that stops answering, the internet working (2026-11-06)
 
 IGN's aerial photo server (data.geopf.fr, behind a web firewall) stopped answering
@@ -2305,6 +2328,7 @@ Upstream files the fork still changes, and how:
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
 | `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
+| `openinframap.ts` (the `GeolocateControl` removed) | The "find my location" button removed (2026-11-06, asked for). On a merge, keep it out. |
 | `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted; `remote-control.ts` stays (the validation popup uses it). |
 | `web/src/search/search.ts` | Photon instead of OpenCage (`opencage.ts` is kept, unused); `Promise.allSettled` |
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |

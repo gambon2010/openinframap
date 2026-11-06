@@ -232,7 +232,7 @@ Three kinds, each adding detail to the one below (sizes are what's kept on disk)
 |---|---|---|
 | NASA Blue Marble, 500 m, to zoom 8 | the whole world, one file for every region (`world.sat-overview.pmtiles`), downloaded once | ~330 MB, about an hour |
 | Sentinel-2 10 m, cloud-free composite (2021), zoom 7 to 12 or 13 (Blue Marble further out) | the region you built, **another country or region** (searched by name), or **the whole world** | France to 12: ~200 MB (reads ~13 GB from ESA); to 13: ~800 MB (reads ~51 GB) |
-| Aerial photos, 8 to 60 cm, zoom 14 to 15/16/17 | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
+| Aerial photos, 8 to 60 cm, zoom 14 to 15/16/17 (France: to 19) | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
 
 The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
 
@@ -244,8 +244,8 @@ The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
 | 12 | ~47 GB | ~2.4 TB |
 | 13 | ~190 GB | ~9.4 TB |
 
-Aerial photo sources (`python3 scripts/satellite.py sources`): France (IGN, 20 cm),
-Spain (PNOA, 25 cm), the Netherlands (PDOK, 8 cm), Luxembourg (20 cm), Austria
+Aerial photo sources (`python3 scripts/satellite.py sources`): France (IGN, 20 cm,
+see below), Spain (PNOA, 25 cm), the Netherlands (PDOK, 8 cm), Luxembourg (20 cm), Austria
 (basemap.at, 30 cm), Belgium (Flanders and Wallonia, 25 cm), Germany (North
 Rhine-Westphalia 10 cm, Bavaria 40 cm, Berlin 20 cm), Czechia (ČÚZK, 20 cm), Poland
 (Geoportal, 25 cm), Estonia (25 cm) and the United States (USGS/NAIP, 60 cm–1 m, to
@@ -257,9 +257,20 @@ by tile (about 10–20 a second), so a whole country to zoom 17 takes days. The
 estimates count the region's whole outline, coastal sea included, so they're upper
 bounds. A download that's stopped goes on where it stopped when run again.
 
-**Adding more detail later**: download to zoom 15 now, run `bash scripts/satellite.sh`
+**France (IGN's BD ORTHO)** comes as IGN's own files, one département at a time:
+IGN's tile server blocks a computer that asks for its tiles by the million. Each
+département is downloaded whole (its 20 cm photos, about 5 GB per 1,000 km²;
+Bas-Rhin 23 GB) whatever the zoom you keep, made into WebP tiles here (zoom 14 up
+to 15–19), then the download is deleted: the disk holds the tiles and one
+département's files at a time. The menu asks the last zoom, then which départements
+(their codes; Enter: all of the area's). Kept on disk, all of France: ~12 GB to
+zoom 15, ~190 GB to 17, ~3 TB to 19 (one département to 19: ~25–35 GB). Each
+département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
+there to the zoom asked is skipped, a higher zoom makes it again.
+
+**Adding more detail later** (the tile sources): download to zoom 15 now, run `bash scripts/satellite.sh`
 again later and choose 16 or 17. What you have stays, and only the new zooms are
-downloaded, into a file of their own (`france.sat-detailed-fr_ign-z16-17.pmtiles`);
+downloaded, into a file of their own (`spain.sat-detailed-es_pnoa-z16-17.pmtiles`);
 the menu shows what you have and the size of just what's added. The menu says what
 each zoom shows (15: streets and blocks, 16: houses, 17: cars) and the free space;
 while a file is finished it needs up to twice its size on disk.

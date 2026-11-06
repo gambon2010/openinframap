@@ -197,13 +197,15 @@ steps → Tegola (vector tiles) → the frontend.
     background map: `download_basemap`), `geofabrik` (the index, region lookups,
     extracts), `satellite`.
 - **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
-  data, the Wikidata cache): `safely(call, url)`, `fetch(url)`,
+  data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,
   `NET_CHECK_EVERY`).
 - **`satellite.py`** is the command line for `satimagery/`:
   - `sources.py`: Blue Marble, Sentinel-2, `DETAILED_SOURCES`, credits;
   - `tiles.py`, `estimate.py`, `download.py` (tiles into MBTiles, through
     `netsafe`), `gdal.py`;
+  - `bdortho.py`: France's photos as IGN's files, one département at a time
+    (`departements.py`: their codes, names, areas, bounds and regions);
   - `menu.py`: the questions and the plan;
   - `cli.py`.
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per

@@ -13,6 +13,7 @@ from pathlib import Path
 
 import netsafe
 
+from .bdortho import command_bdortho
 from .download import MBTiles, cell_exists, download_tiles
 from .estimate import (
     detailed_estimate,
@@ -22,8 +23,8 @@ from .estimate import (
     world_overview_tiles,
     worldcover_cells,
 )
-from .gdal import docker_run, regional_pipeline, to_pmtiles
-from .menu import command_choose, command_steps, pmtiles_zooms
+from .gdal import docker_run, pmtiles_zooms, regional_pipeline, to_pmtiles
+from .menu import command_choose, command_steps
 from .sources import (
     DETAILED_SOURCES,
     GDAL_IMAGE,
@@ -352,6 +353,14 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--gdal-image", default=GDAL_IMAGE)
     p.add_argument("--pmtiles-image", default="protomaps/go-pmtiles:v1.28.0")
     sub.add_parser("attribution").add_argument("names", nargs="*")
+    p = sub.add_parser("bdortho", help="IGN's aerial photos of French départements")
+    p.add_argument(
+        "--dept", nargs="+", required=True, help="département codes (67 2A...)"
+    )
+    p.add_argument("--maxzoom", type=int, choices=range(15, 20), default=17)
+    p.add_argument("--basemap-dir", required=True)
+    p.add_argument("--gdal-image", default=GDAL_IMAGE)
+    p.add_argument("--pmtiles-image", default="protomaps/go-pmtiles:v1.28.0")
     for name in ("choose", "steps"):
         p = sub.add_parser(name)
         p.add_argument("--plan", required=True, help="the plan file (JSON)")
@@ -395,7 +404,11 @@ def main(argv: Iterable[str] | None = None) -> None:
             p.add_argument("--world", action="store_true", help="the whole world")
         if name in ("detailed", "estimate-detailed"):
             p.add_argument(
-                "--source", choices=sorted(DETAILED_SOURCES), default="fr_ign"
+                "--source",
+                choices=sorted(
+                    i for i, s in DETAILED_SOURCES.items() if "files" not in s
+                ),
+                required=True,
             )
             p.add_argument(
                 "--clip", help="also inside this outline (the source's country)"
@@ -435,4 +448,5 @@ def run_command(args) -> None:
         "choose": command_choose,
         "steps": command_steps,
         "lower-zooms": command_lower_zooms,
+        "bdortho": command_bdortho,
     }[args.command](args)

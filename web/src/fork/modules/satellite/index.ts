@@ -20,6 +20,8 @@ export interface Tier {
   maxzoom: number
   /** Its credit line (from scripts/satellite.py, written with the tier). */
   attribution: string
+  /** What its file covers (from its header): the map asks it for nothing outside. */
+  bounds?: Bounds
 }
 
 import { throughGate } from '../../config.ts'
@@ -30,13 +32,13 @@ export type BackgroundMode = 'map' | 'satellite' | 'hybrid'
 
 const MODE_KEY = 'oim-background-mode'
 
-/** "URL MIN MAX|CREDIT;..." (VITE_SATELLITE_TIERS) -> tiers, coarsest first. */
+/** "URL MIN MAX [W,S,E,N]|CREDIT;..." (VITE_SATELLITE_TIERS) -> tiers, coarsest first. */
 export function parseTiers(value: string | undefined): Tier[] {
   if (!value) return []
   const tiers: Tier[] = []
   for (const part of value.split(';')) {
     const [tier, attribution = ''] = part.split('|')
-    const [url, min, max] = tier.trim().split(/\s+/)
+    const [url, min, max, box] = tier.trim().split(/\s+/)
     const minzoom = Number(min)
     const maxzoom = Number(max)
     if (
@@ -46,15 +48,22 @@ export function parseTiers(value: string | undefined): Tier[] {
       Number.isInteger(maxzoom) &&
       minzoom <= maxzoom
     ) {
-      tiers.push({ url: throughGate(url), minzoom, maxzoom, attribution: attribution.trim() })
+      const bounds = box?.split(',').map(Number)
+      tiers.push({
+        url: throughGate(url),
+        minzoom,
+        maxzoom,
+        attribution: attribution.trim(),
+        ...(bounds?.length === 4 && bounds.every(Number.isFinite) ? { bounds: bounds as Bounds } : {})
+      })
     }
   }
   return tiers.sort((a, b) => a.minzoom - b.minzoom)
 }
 
-const TIERS = parseTiers(import.meta.env.VITE_SATELLITE_TIERS)
-
 type Bounds = [west: number, south: number, east: number, north: number]
+
+const TIERS = parseTiers(import.meta.env.VITE_SATELLITE_TIERS)
 
 /** The address of a tier's TileJSON (the background map server's /<name>.json), with its bounds. */
 export function tileJsonUrl(tileUrl: string): string {
@@ -71,9 +80,11 @@ let coverage: Promise<Bounds[] | null> | undefined
 function imageryBounds(): Promise<Bounds[] | null> {
   coverage ??= Promise.all(
     TIERS.map((tier) =>
-      fetch(tileJsonUrl(tier.url))
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => (Array.isArray(json?.bounds) ? (json.bounds as Bounds) : null))
+      tier.bounds
+        ? Promise.resolve(tier.bounds)
+        : fetch(tileJsonUrl(tier.url))
+            .then((r) => (r.ok ? r.json() : null))
+            .then((json) => (Array.isArray(json?.bounds) ? (json.bounds as Bounds) : null))
     )
   )
     .then((bounds) => (bounds.every((b) => b) ? (bounds as Bounds[]) : null))
@@ -132,7 +143,8 @@ const satellite: ForkModule = {
           tileSize: 256,
           minzoom: tier.minzoom,
           maxzoom: tier.maxzoom,
-          attribution: tier.attribution
+          attribution: tier.attribution,
+          ...(tier.bounds ? { bounds: tier.bounds } : {})
         }
       ])
     ),

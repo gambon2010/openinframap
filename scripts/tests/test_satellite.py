@@ -303,6 +303,10 @@ def test_every_source_is_complete():
     for source_id in s.DETAILED_SOURCES:
         src = s.detailed_source(source_id)
         assert src["regions"] and src["attribution"] and src["resolution"]
+        if "files" in src:  # the agency's files, not tiles (bdortho.py)
+            assert "url" not in src and "wms" not in src
+            assert src["format"] == "webp" and src["maxzoom"] == 19
+            continue
         assert ("url" in src) != ("wms" in src)
         assert src["format"] in ("jpg", "png") and 15 <= src["maxzoom"] <= 17
 
@@ -425,7 +429,8 @@ def fake_pmtiles(path, minzoom, maxzoom):
 
 
 def test_aerial_photos_already_there_and_where_more_goes(tmp_path):
-    from satimagery.menu import detailed_file, detailed_have, pmtiles_zooms
+    from satimagery.gdal import pmtiles_zooms
+    from satimagery.menu import detailed_file, detailed_have
 
     first = tmp_path / "alsace.sat-detailed-fr_ign.pmtiles"
     fake_pmtiles(first, 14, 15)

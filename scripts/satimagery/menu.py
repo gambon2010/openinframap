@@ -8,7 +8,10 @@ import sys
 from collections.abc import Iterable
 from pathlib import Path
 
+from . import bdortho
+from .departements import DEPARTEMENTS
 from .estimate import detailed_estimate, estimate
+from .gdal import pmtiles_zooms
 from .sources import (
     DETAILED_SOURCES,
     REGIONAL_BYTES_PER_KM2,
@@ -125,22 +128,17 @@ ZOOM_SHOWS = {
     15: "streets and blocks",
     16: "individual houses",
     17: "cars and small details",
+    18: "road markings",
+    19: "the photos' full detail",
 }
+# How fast IGN's download service sends its files (several at once), for the times.
+BDORTHO_BYTES_PER_SECOND = 3_000_000
 
 
 def regional_have(folder: Path, area: str) -> int | None:
     """The last zoom of an area's Sentinel-2 imagery already downloaded, None if none."""
     zooms = pmtiles_zooms(folder / f"{area}.sat-regional.pmtiles")
     return zooms[1] if zooms else None
-
-
-def pmtiles_zooms(path: Path) -> tuple[int, int] | None:
-    """A PMTiles file's lowest and highest zoom (from its header), None if unreadable."""
-    try:
-        header = path.open("rb").read(127)
-    except OSError:
-        return None
-    return (header[100], header[101]) if header[:7] == b"PMTiles" else None
 
 
 def detailed_have(folder: Path, area: str, source: str) -> int | None:
@@ -211,13 +209,86 @@ def say(text: str = "") -> None:
     print(f"    {text}" if text else "", file=sys.stderr)
 
 
+def choose_bdortho(codes: list[str], folder: Path, free: int | None) -> dict | None:
+    """IGN's photos (BD ORTHO): up to which zoom, which départements (Enter: all)."""
+    have = {c: bdortho.have_zoom(bdortho.file_of(folder, c)) for c in codes}
+    read = bdortho.estimate(codes, 19)["download"]
+    say()
+    say("France: IGN's aerial photos (BD ORTHO, 20 cm per pixel), downloaded as")
+    say("IGN's files, one département at a time: each is read whole (about 5 GB")
+    say("per 1,000 km²) whatever the zoom, made into tiles here, then deleted, so")
+    say("the disk only holds the tiles and one département at a time.")
+    say()
+    say(
+        f"{len(codes)} département{'s' if len(codes) > 1 else ''}: downloads ~{human(read)}"
+        f" from IGN in all (about {duration(read / BDORTHO_BYTES_PER_SECOND)}),"
+    )
+    say("then kept on disk:")
+    for z in range(15, 20):
+        kept = bdortho.estimate(codes, z)["bytes"]
+        warn = (
+            "  (more than the free space)" if free is not None and kept > free else ""
+        )
+        say(f"   up to zoom {z:<3} {ZOOM_SHOWS[z]:<24} {human(kept):>8}{warn}")
+    done = [c for c in codes if have[c]]
+    if done:
+        say(
+            "Already here (made again only to a higher zoom): "
+            + ", ".join(f"{c} to {have[c]}" for c in done)
+            + "."
+        )
+    answer = ask(
+        "Download IGN's photos up to which zoom? [15-19, Enter: none]:",
+        [str(z) for z in range(15, 20)] + ["none"],
+        "none",
+    )
+    if answer == "none":
+        return None
+    if len(codes) > 1:
+        say()
+        width = max(len(DEPARTEMENTS[c][0]) for c in codes) + 5
+        per_line = max(1, 76 // width)
+        for i in range(0, len(codes), per_line):
+            say(
+                "  "
+                + "".join(
+                    f"{c:>3} {DEPARTEMENTS[c][0]:<{width - 4}}"
+                    for c in codes[i : i + per_line]
+                )
+            )
+        while True:
+            print(
+                f"    Which départements? [their codes, e.g. {codes[0]} {codes[-1]}; "
+                f"Enter: all {len(codes)}]: ",
+                end="",
+                file=sys.stderr,
+                flush=True,
+            )
+            line = sys.stdin.readline()
+            if not line:
+                sys.exit("Aborted.")
+            words = [
+                w.upper() if w[-1:].isalpha() else w.zfill(2) for w in line.split()
+            ]
+            if all(w in codes for w in words):
+                break
+            say("Type codes from the list above (or Enter for all of them).")
+        codes = list(dict.fromkeys(words)) or codes
+    return {"codes": codes, "maxzoom": int(answer)}
+
+
 def command_choose(args) -> None:
     """Ask what to download (or take the presets) and write the plan (JSON)."""
     folder = Path(args.basemap_dir)
     folder.mkdir(parents=True, exist_ok=True)
     index = Index(args.index)
     region = args.region
-    plan: dict = {"world_overview": False, "regional": None, "detailed": []}
+    plan: dict = {
+        "world_overview": False,
+        "regional": None,
+        "detailed": [],
+        "bdortho": None,
+    }
 
     def regional_for(area: str, zoom: int) -> dict | None:
         if area == "world":
@@ -231,6 +302,7 @@ def command_choose(args) -> None:
                 plan["world_overview"]
                 or plan["regional"]
                 or plan["detailed"]
+                or plan["bdortho"]
                 or args.mode == "overview"
             )
             and not (folder / "world.sat-overview.pmtiles").exists()
@@ -250,6 +322,14 @@ def command_choose(args) -> None:
                 if args.sources
                 else sources_for(args.area or region, index)
             ):
+                if "files" in DETAILED_SOURCES[source_id]:
+                    codes = bdortho.departements_in(args.area or region, index.within)
+                    if codes:
+                        plan["bdortho"] = {
+                            "codes": codes,
+                            "maxzoom": int(args.detailed),
+                        }
+                    continue
                 job = detailed_job(source_id, args.area or region, index, folder)
                 # What's there already stays: only the zooms after it.
                 have = detailed_have(folder, args.area or region, source_id)
@@ -396,28 +476,44 @@ def command_choose(args) -> None:
     # --- Step 2: aerial photos, by country (whatever step 1 was) ---
     target = area or region
     ids = sources_for(target, index) if target else []
-    jobs = [j for j in (detailed_job(i, target, index, folder) for i in ids) if j]
-    if target and not jobs and not args.no_detailed:
+    codes = (
+        bdortho.departements_in(target, index.within)
+        if any("files" in DETAILED_SOURCES[i] for i in ids)
+        else []
+    )
+    jobs = [
+        j
+        for j in (
+            detailed_job(i, target, index, folder)
+            for i in ids
+            if "files" not in DETAILED_SOURCES[i]
+        )
+        if j
+    ]
+    if target and not jobs and not codes and not args.no_detailed:
         say()
         say(
             f"Step 2 of 2. Aerial photos: no agency's photos cover {index.name(target)}."
         )
-    if jobs and not args.no_detailed:
+    if (jobs or codes) and not args.no_detailed:
         say()
         say(
             f"Step 2 of 2. Aerial photos of {index.name(target)}, from national mapping agencies"
         )
         say()
         say("They replace the satellite imagery when you zoom in close, with")
-        say("pixels of 8 to 60 cm instead of 10 m. They're fetched one small tile")
-        say("at a time from the agency's servers, so a whole country takes days;")
-        say("a city or a département, hours at most.")
-        say()
+        say("pixels of 8 to 60 cm instead of 10 m.")
         try:
             free = shutil.disk_usage(folder).free
             say(f"Free space on the disk for them ({folder}): {human(free)}.")
         except OSError:
             free = None
+    if codes and not args.no_detailed:
+        plan["bdortho"] = choose_bdortho(codes, folder, free)
+    if jobs and not args.no_detailed:
+        say()
+        say("The others are fetched one small tile at a time from the agency's")
+        say("servers, so a whole country takes days; a city, hours at most.")
         say("Working out the sizes...")
         rows = []
         for job in jobs:
@@ -566,6 +662,27 @@ def command_steps(args) -> None:
                         d["maxzoom"],
                     )
                 ),
+            ]
+        )
+    b = plan.get("bdortho")
+    if b:
+        count = len(b["codes"])
+        lines.append(
+            [
+                "IGN aerial photos (BD ORTHO), "
+                + (
+                    DEPARTEMENTS[b["codes"][0]][0]
+                    if count == 1
+                    else f"{count} départements"
+                )
+                + f", to zoom {b['maxzoom']}",
+                "bdortho",
+                "--dept",
+                *b["codes"],
+                "--maxzoom",
+                str(b["maxzoom"]),
+                "--basemap-dir",
+                str(folder),
             ]
         )
     for line in lines:
