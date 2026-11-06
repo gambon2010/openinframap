@@ -73,10 +73,8 @@ ok "Region: $REGION_NAME"
 fetch_geofabrik_index || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
 
 choose_satellite "$REGION_ID"
-if [[ ! -f "$SATELLITE_PLAN" ]]; then
-    info "Nothing to download."
-    exit 0
-fi
+# Nothing new chosen: older imagery is still brought up to date (download_satellite).
+[[ -f "$SATELLITE_PLAN" ]] || info "Nothing new to download."
 download_satellite "$REGION_ID"
 echo ""
 ok "Done. Restart the frontend (Ctrl+C in its window, then bash scripts/start.sh) and"

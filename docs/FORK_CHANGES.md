@@ -1613,6 +1613,11 @@ the same way, the file replaced once the new one is complete; nothing downloaded
 The imagery server (basemap service) caches each file's index: restart it after a
 file is replaced.
 
+The scripts do it themselves: `download_satellite` (satellite.sh, build-region.sh)
+ends with `catch_up_regional`, which runs `lower-zooms` on any Sentinel-2 file still
+starting above zoom 5 (with its outline), then restarts the imagery server.
+satellite.sh runs it even when nothing new is chosen.
+
 ## Debug info; no Edit button (2026-11-06)
 
 - **Debug** (`modules/debug/`): Settings → Debug → "Show debug info" (kept in this

@@ -148,7 +148,36 @@ download_satellite() {
         [[ "$SAT_OK" == 1 ]] || warn "What was downloaded is kept. Run it again to go on: bash scripts/satellite.sh"
         rm -f "$SATELLITE_PLAN"
     fi
+    catch_up_regional
     select_satellite "$region"
+}
+
+# catch_up_regional — Sentinel-2 files made when it started at zoom 9 get their
+# lower zooms (from TIERS' first, 5) without downloading anything: satellite.py
+# lower-zooms reads their tiles back from the imagery server. Then the server is
+# restarted (it keeps each file's index until then).
+catch_up_regional() {
+    local file area first done_any=0
+    for file in "$BASEMAP_DIR"/*.sat-regional.pmtiles; do
+        [[ -f "$file" ]] || continue
+        first=$(pmtiles_minzoom "$file" 5)
+        [[ "$first" -gt 5 ]] || continue
+        area=$(basename "$file" .sat-regional.pmtiles)
+        if [[ ! -f "$BASEMAP_DIR/.area-$area.geojson" ]]; then
+            warn "Sentinel-2 of $area starts at zoom $first; its outline is missing, so its lower zooms can't be added."
+            continue
+        fi
+        [[ "$done_any" == 1 ]] || docker compose --progress quiet up -d basemap </dev/null
+        done_any=1
+        run_with_timer --progress --keep-going "Sentinel-2 of $area: adding zooms 5 to $((first - 1))" \
+            python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --region "$area" \
+                --basemap-dir "$BASEMAP_DIR" --pmtiles-image "$(basemap_image)" \
+            || warn "Adding its lower zooms failed; it still shows from zoom $first."
+    done
+    if [[ "$done_any" == 1 ]]; then
+        docker compose --progress quiet restart basemap </dev/null >/dev/null
+    fi
+    return 0
 }
 
 # A planned step (SAT_STEPS: label <tab> satellite.py's arguments): its label, and

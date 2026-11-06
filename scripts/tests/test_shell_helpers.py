@@ -323,3 +323,25 @@ def test_distances_in_the_build_sql_are_real_metres():
             continue  # upstream's
         found += [f"{sql.name}: {m.group(0)}" for m in raw.finditer(sql.read_text())]
     assert found == [], "use oim_units / oim_max_stretch (schema/distances.sql)"
+
+
+def test_older_sentinel_files_get_their_lower_zooms(tmp_path):
+    (tmp_path / "old.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 9))
+    (tmp_path / ".area-old.geojson").write_text("{}")
+    (tmp_path / "new.sat-regional.pmtiles").write_bytes(pmtiles_header(12, 5))
+    (tmp_path / "lost.sat-regional.pmtiles").write_bytes(pmtiles_header(12, 9))  # no outline
+    calls = tmp_path / "calls"
+    out = bash(
+        f"""
+python3() {{ if [[ "$*" == *satellite.py* ]]; then echo "python3 $*" >> "{calls}"; else command python3 "$@"; fi; }}
+docker() {{ echo "docker $*" >> "{calls}"; }}
+basemap_image() {{ echo pmtiles:test; }}
+catch_up_regional 2>&1
+""",
+        BASEMAP_DIR=str(tmp_path),
+    )
+    made = calls.read_text()
+    assert "lower-zooms --region old" in made
+    assert "--region new" not in made and "--region lost" not in made
+    assert "restart basemap" in made  # the server reads the new file
+    assert "lost starts at zoom 9" in out

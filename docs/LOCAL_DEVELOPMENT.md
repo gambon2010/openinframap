@@ -675,9 +675,9 @@ If you add your own mounts, add `:z` too.
 often on the system disk. The script shows the estimate before starting. Downloads
 and filtered files in `data/osm/` are reused, so after freeing space just re-run.
 
-**Sentinel-2 downloaded before it started at zoom 5** (it used to start at 9): add the
-lower zooms without downloading anything, while the app runs (it reads the tiles
-back from the local imagery server):
+**Sentinel-2 downloaded before it started at zoom 5** (it used to start at 9):
+`bash scripts/satellite.sh` adds the lower zooms by itself, without downloading
+anything (even if you choose nothing new), as does a build. By hand:
 
 ```bash
 python3 scripts/satellite.py lower-zooms --region france
