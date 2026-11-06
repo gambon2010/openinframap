@@ -268,10 +268,10 @@ zoom 15, ~190 GB to 17, ~3 TB to 19 (one département to 19: ~25–35 GB). Each
 département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
 there to the zoom asked is skipped, a higher zoom makes it again.
 
-**Adding more detail later** (the tile sources): download to zoom 15 now, run `bash scripts/satellite.sh`
-again later and choose 16 or 17. What you have stays, and only the new zooms are
-downloaded, into a file of their own (`spain.sat-detailed-es_pnoa-z16-17.pmtiles`);
-the menu shows what you have and the size of just what's added. The menu says what
+**Adding more detail later**: download to zoom 15 now, run `bash scripts/satellite.sh`
+again later and choose a higher zoom. The file is made again up to it (the zooms
+below are about a third more work), and what you have stays until the new one is
+finished; the menu shows what you have and offers only more. The menu says what
 each zoom shows (15: streets and blocks, 16: houses, 17: cars) and the free space;
 while a file is finished it needs up to twice its size on disk.
 

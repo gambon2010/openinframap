@@ -1653,6 +1653,26 @@ Buildings keep upstream's warm pinkish beige, a little darker (87% at zoom 12 to
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## Refactors: the satellite menu, one rule for more detail, Background (2026-11-06)
+
+- `satimagery/menu.py`: `command_choose` was one 320-line function (presets, the
+  Sentinel-2 step, the tile sources, IGN's départements), where the menu's bugs
+  came from. Now a `Planner` with a method per step (`presets`, `step_sentinel`,
+  `search_area`, `world_zoom`, `area_zoom`, `step_aerial`, `choose_tile_sources`)
+  and the prompts in `read_answer` / `ask` / `ask_numbers`.
+- More detail later: one rule for every aerial source. A tile source's file used
+  to get its new zooms in a second file (`…-z16-17.pmtiles`, `--minzoom`, an
+  estimate "from zoom N"); now, like IGN's départements, the file is made again up
+  to the new zoom and replaces the old one when finished (the zooms below are
+  about a third more work). `detailed_file(folder, area, source)` is the one file.
+- Settings → Background is its own module (`modules/background/`): it chose the
+  map's colours too but lived in `modules/satellite`. The choice is kept in
+  `services/background.ts` (replacing `services/map-colours.ts`; what browsers kept
+  is read the same), which `map-sources/palette.ts` and `modules/satellite` follow;
+  the satellite module only draws the imagery and says what there is
+  (`offerImagery`: its last zoom, where it covers). Strings `satellite.*` of the
+  section became `background.*`.
+
 ## France's aerial photos from IGN's files (2026-11-06)
 
 IGN's tile server blocked this computer after a thousand tiles (below), so France's

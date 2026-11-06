@@ -141,46 +141,49 @@ def regional_have(folder: Path, area: str) -> int | None:
     return zooms[1] if zooms else None
 
 
+def detailed_file(folder: Path, area: str, source: str) -> Path:
+    """Where a source's aerial photos of an area go. More detail later makes the
+    file again up to the new zoom (replaced once it's finished), as IGN's
+    départements are: one file, one rule."""
+    return folder / f"{area}.sat-detailed-{source}.pmtiles"
+
+
 def detailed_have(folder: Path, area: str, source: str) -> int | None:
-    """The highest zoom of a source's aerial photos already downloaded for an area
-    (the first file, and any added later: ...-z16-17.pmtiles), None if none."""
-    tops = [
-        zooms[1]
-        for f in folder.glob(f"{area}.sat-detailed-{source}*.pmtiles")
-        if (zooms := pmtiles_zooms(f))
-    ]
-    return max(tops) if tops else None
+    """The last zoom of a source's aerial photos of an area, None if none."""
+    zooms = pmtiles_zooms(detailed_file(folder, area, source))
+    return zooms[1] if zooms else None
 
 
-def detailed_file(
-    folder: Path, area: str, source: str, minzoom: int, maxzoom: int
-) -> Path:
-    """Where aerial photos go: the first download from zoom 14; more detail added later
-    in a file of its own (the zooms it has in its name), so what's there stays."""
-    name = f"{area}.sat-detailed-{source}"
-    if minzoom > 14:
-        name += f"-z{minzoom}-{maxzoom}"
-    return folder / f"{name}.pmtiles"
-
-
-def job_estimate(job: dict, start: int | None = None) -> dict:
+def job_estimate(job: dict) -> dict:
     source = detailed_source(job["source"])
     outlines = [load_rings(job["outline"])]
     if job["clip"]:
         outlines.append(load_rings(job["clip"]))
     if "bbox" in source:
         outlines.append(box_ring(source["bbox"]))
-    return detailed_estimate(outlines, source, start)
+    return detailed_estimate(outlines, source)
+
+
+# --- Asking -----------------------------------------------------------------------
+
+
+def say(text: str = "") -> None:
+    print(f"    {text}" if text else "", file=sys.stderr)
+
+
+def read_answer(prompt: str) -> str:
+    print(f"    {prompt} ", end="", file=sys.stderr, flush=True)
+    line = sys.stdin.readline()
+    if not line:
+        sys.exit("Aborted.")
+    return line.strip()
 
 
 def ask(prompt: str, choices: Iterable[str], default: str) -> str:
+    """One of the choices (Enter: the default); asks again, saying why, if not."""
     choices = list(choices)
     while True:
-        print(f"    {prompt} ", end="", file=sys.stderr, flush=True)
-        line = sys.stdin.readline()
-        if not line:
-            sys.exit("Aborted.")
-        answer = line.strip() or default
+        answer = read_answer(prompt) or default
         if answer in choices:
             return answer
         shown = [c for c in choices if c != "none"]
@@ -195,18 +198,336 @@ def ask_numbers(prompt: str, count: int) -> list[str]:
     """Some of the numbers 1 to count (Enter: none); asks again, saying why, if an
     answer isn't one of them."""
     while True:
-        print(f"    {prompt} ", end="", file=sys.stderr, flush=True)
-        line = sys.stdin.readline()
-        if not line:
-            sys.exit("Aborted.")
-        words = line.split()
+        words = read_answer(prompt).split()
         if all(w.isdigit() and 1 <= int(w) <= count for w in words):
             return list(dict.fromkeys(words))
         say(f"Type numbers from 1 to {count}: the sources listed above, not zooms.")
 
 
-def say(text: str = "") -> None:
-    print(f"    {text}" if text else "", file=sys.stderr)
+def free_space(folder: Path) -> int | None:
+    try:
+        return shutil.disk_usage(folder).free
+    except OSError:
+        return None
+
+
+# --- The plan -------------------------------------------------------------------------
+
+
+class Planner:
+    """What to download, asked (or taken from the presets), written as the plan."""
+
+    def __init__(self, args):
+        self.args = args
+        self.folder = Path(args.basemap_dir)
+        self.folder.mkdir(parents=True, exist_ok=True)
+        self.index = Index(args.index)
+        self.plan: dict = {
+            "world_overview": False,
+            "regional": None,
+            "detailed": [],
+            "bdortho": None,
+        }
+
+    def regional_for(self, area: str, zoom: int) -> dict | None:
+        if area == "world":
+            return {"area": "world", "outline": None, "maxzoom": zoom}
+        outline = self.index.outline(area, self.folder)
+        return outline and {"area": area, "outline": str(outline), "maxzoom": zoom}
+
+    def detailed_for(self, job: dict, area: str, zoom: int) -> dict | None:
+        """A tile source to a zoom (as far as it goes), unless that's there already."""
+        top = min(zoom, detailed_source(job["source"])["maxzoom"])
+        have = detailed_have(self.folder, area, job["source"])
+        return None if have and have >= top else {**job, "area": area, "maxzoom": top}
+
+    def aerial_sources(self, area: str) -> tuple[list[dict], list[str]]:
+        """What covers an area: the tile sources' jobs, and IGN's départements."""
+        ids = sources_for(area, self.index)
+        jobs = [
+            j
+            for i in ids
+            if "files" not in DETAILED_SOURCES[i]
+            and (j := detailed_job(i, area, self.index, self.folder))
+        ]
+        files = any("files" in DETAILED_SOURCES[i] for i in ids)
+        codes = bdortho.departements_in(area, self.index.within) if files else []
+        return jobs, codes
+
+    def write(self) -> None:
+        plan = self.plan
+        plan["world_overview"] = (
+            bool(
+                plan["world_overview"]
+                or plan["regional"]
+                or plan["detailed"]
+                or plan["bdortho"]
+                or self.args.mode == "overview"
+            )
+            and not (self.folder / "world.sat-overview.pmtiles").exists()
+        )
+        Path(self.args.plan).write_text(json.dumps(plan, indent=1))
+
+    # --- Presets (build-region.sh --satellite / --satellite-detailed, satellite.sh --yes)
+
+    def presets(self) -> None:
+        args = self.args
+        area = args.area or args.region
+        if args.mode in ("regional", "regional13"):
+            default = 10 if area == "world" else 12
+            zoom = args.zoom or (13 if args.mode == "regional13" else default)
+            self.plan["regional"] = self.regional_for(area, zoom)
+        if not args.detailed or args.detailed == "none":
+            return
+        jobs, codes = self.aerial_sources(area)
+        if args.sources:
+            wanted = args.sources.split()
+            jobs = [j for j in jobs if j["source"] in wanted]
+            codes = codes if any("files" in DETAILED_SOURCES[i] for i in wanted) else []
+        self.plan["detailed"] = [
+            d for j in jobs if (d := self.detailed_for(j, area, int(args.detailed)))
+        ]
+        if codes:
+            self.plan["bdortho"] = {"codes": codes, "maxzoom": int(args.detailed)}
+
+    # --- The questions ---------------------------------------------------------------
+
+    def ask_all(self) -> None:
+        self.introduction()
+        area = self.step_sentinel()
+        if not self.args.no_detailed:
+            self.step_aerial(area or self.args.region)
+
+    def introduction(self) -> None:
+        say(
+            "Satellite imagery: photos of the ground as the map's background (Settings →"
+        )
+        say("Background → Satellite), kept on this computer so they work offline.")
+        say(
+            "Zoom 8 shows a whole region on screen, 12 a town, 13 a neighbourhood, 16 a street."
+        )
+        say("Closer in than its last zoom, imagery is shown stretched (blurry).")
+        say()
+        if (self.folder / "world.sat-overview.pmtiles").exists():
+            say("The world (NASA Blue Marble, 500 m, to zoom 8): already downloaded.")
+        else:
+            say(
+                f"The world (NASA Blue Marble, 500 m, to zoom 8): {human(WORLD_OVERVIEW_BYTES)}, about an hour,"
+            )
+            say("downloaded once for every region. It comes with any choice below.")
+
+    def step_sentinel(self) -> str | None:
+        """Step 1: Sentinel-2, of which area (None: nothing new) and to which zoom."""
+        region, index = self.args.region, self.index
+        say()
+        say(
+            "Step 1 of 2. Sentinel-2 photos, 10 m (2021, cloud-free): towns and fields,"
+        )
+        say("from zoom 7 to 12 or 13.")
+        region_name = self.args.region_name or index.name(region)
+        region_outline = index.outline(region, self.folder) if region else None
+        region_have = regional_have(self.folder, region) if region else None
+        options = []
+        if region_have:
+            options.append(
+                (
+                    "keep",
+                    f"Keep what you have ({region_name} to zoom {region_have})",
+                    "",
+                )
+            )
+        if region_outline:
+            e = estimate(load_rings(str(region_outline)), 13)
+            options.append(
+                (
+                    "region",
+                    f"{region_name} (the region you built)"
+                    + (", again" if region_have else ""),
+                    f"+{human(e['regional']['bytes'] / 4)} to zoom 12",
+                )
+            )
+        options += [
+            ("other", "Another country or region...", ""),
+            ("world", "The whole world", "sizes below"),
+        ]
+        if not region_have:
+            options.append(("none", "None", ""))
+        for n, (_, label, size) in enumerate(options, 1):
+            say(f"  {n}) {label:<42} {size}")
+        numbers = [str(n) for n in range(1, len(options) + 1)]
+        pick = options[
+            int(ask(f"Choose [1-{len(options)}, default 1]:", numbers, "1")) - 1
+        ][0]
+        area = {"region": region, "other": None, "world": "world"}.get(pick)
+        if pick == "other":
+            area = self.search_area()
+        if pick in ("keep", "none"):
+            # Nothing new from Sentinel-2: on to the aerial photos.
+            self.plan["world_overview"] = True
+        if area == "world":
+            self.plan["regional"] = self.regional_for("world", self.world_zoom())
+        elif area:
+            self.plan["regional"] = self.regional_for(area, self.area_zoom(area))
+        return area
+
+    def search_area(self) -> str | None:
+        """A country or region found by name (Enter: none)."""
+        while True:
+            text = read_answer("Country or region name (e.g. spain, bayern, japan):")
+            if not text:
+                return None
+            hits = self.index.search(text)
+            if not hits:
+                say("Nothing by that name; try another.")
+                continue
+            for n, (_, name, parent) in enumerate(hits, 1):
+                say(f"  {n:>2}) {name}" + (f" ({parent})" if parent else ""))
+            answer = ask(
+                "Which one? [number, Enter: search again]:",
+                [str(n) for n in range(len(hits) + 1)],
+                "0",
+            )
+            if answer != "0":
+                return hits[int(answer) - 1][0]
+
+    def world_zoom(self) -> int:
+        say()
+        say(
+            "The whole world (land only), up to which zoom? Made from imagery read from ESA;"
+        )
+        say("the higher zooms take days to read and process, and need the disk space:")
+        for z in range(9, 14):
+            kept = WORLD_LAND_KM2 * REGIONAL_BYTES_PER_KM2[z]
+            read = WORLD_LAND_KM2 * WORLDCOVER_BYTES_PER_KM2[z]
+            say(f"  {z:>2}) zoom {z:<3} {human(kept):>8} kept   (reads ~{human(read)})")
+        return int(
+            ask(
+                "Up to which zoom? [9-13, default 10]:",
+                [str(z) for z in range(9, 14)],
+                "10",
+            )
+        )
+
+    def area_zoom(self, area: str) -> int:
+        e = estimate(load_rings(str(self.index.outline(area, self.folder))), 13)
+        say()
+        say(
+            f"Satellite imagery of {self.index.name(area)} (Sentinel-2): up to which zoom?"
+        )
+        say("The size on disk is what's kept; the download is what's read from ESA")
+        say(
+            "to make it (full-size source images, cut down), so it sets how long it takes."
+        )
+        say(
+            f"  12) a town fills the screen      {human(e['regional']['bytes'] / 4):>8} on disk"
+            f"   (downloads ~{human(e['regional']['download'] / 4)})"
+        )
+        say(
+            f"  13) a district fills the screen  {human(e['regional']['bytes']):>8} on disk"
+            f"   (downloads ~{human(e['regional']['download'])})"
+        )
+        return int(ask("Up to which zoom? [12/13, default 12]:", ["12", "13"], "12"))
+
+    def step_aerial(self, area: str | None) -> None:
+        """Step 2: aerial photos, by country (whatever step 1 was)."""
+        if not area:
+            return
+        jobs, codes = self.aerial_sources(area)
+        say()
+        if not jobs and not codes:
+            say(
+                f"Step 2 of 2. Aerial photos: no agency's photos cover {self.index.name(area)}."
+            )
+            return
+        say(
+            f"Step 2 of 2. Aerial photos of {self.index.name(area)}, from national mapping agencies"
+        )
+        say()
+        say("They replace the satellite imagery when you zoom in close, with")
+        say("pixels of 8 to 60 cm instead of 10 m.")
+        free = free_space(self.folder)
+        if free is not None:
+            say(f"Free space on the disk for them ({self.folder}): {human(free)}.")
+        if codes:
+            self.plan["bdortho"] = choose_bdortho(codes, self.folder, free)
+        if jobs:
+            self.plan["detailed"] = self.choose_tile_sources(jobs, area, free)
+
+    def choose_tile_sources(
+        self, jobs: list[dict], area: str, free: int | None
+    ) -> list[dict]:
+        """The sources fetched tile by tile: which, up to which zoom."""
+        say()
+        say("These are fetched one small tile at a time from the agency's servers,")
+        say("so a whole country takes days; a city, hours at most.")
+        say("Working out the sizes...")
+        rows = []
+        for job in jobs:
+            src = detailed_source(job["source"])
+            have = detailed_have(self.folder, area, job["source"])
+            if have and have >= src["maxzoom"]:
+                say()
+                say(
+                    f"{src['name']}: you already have it up to zoom {have}, its most detailed."
+                )
+                continue
+            # Only more than what's there (the file is made again to the new zoom).
+            sizes = {
+                z: v for z, v in job_estimate(job).items() if not have or int(z) > have
+            }
+            rows.append((job, src, sizes))
+            say()
+            say(f"{len(rows)}) {src['name']}, {src['resolution']} per pixel")
+            if have:
+                say(
+                    f"   You have it up to zoom {have} ({ZOOM_SHOWS.get(have, '')}); more makes it again:"
+                )
+            for z, v in sizes.items():
+                warn = (
+                    "  (more than the free space)"
+                    if free is not None and v["bytes"] * 2 > free
+                    else ""
+                )
+                say(
+                    f"   up to zoom {z:<3} {ZOOM_SHOWS.get(int(z), ''):<24} {human(v['bytes']):>8}   "
+                    f"about {duration(v['tiles'] / src['per_second'])}{warn}"
+                )
+        if not rows:
+            return []
+        say()
+        say("Sizes and times are at most: the areas include some sea, which comes")
+        say("back empty and quick. During the last step the files need up to twice")
+        say("their size on disk. More detail later makes a file again to the new zoom")
+        say("(what's there stays until then; the zooms below are a third more work).")
+        if len(rows) == 1:
+            # One source: just how far (Enter: none).
+            offered = list(rows[0][2])
+            answer = ask(
+                f"Download {rows[0][1]['name']} up to which zoom? [{'/'.join(offered)}, Enter: none]:",
+                [*offered, "none"],
+                "none",
+            )
+            if answer == "none":
+                return []
+            chosen, zoom = [rows[0]], int(answer)
+        else:
+            picked = ask_numbers(
+                f"Which sources? [their numbers 1-{len(rows)}, separated by spaces; Enter: none]:",
+                len(rows),
+            )
+            if not picked:
+                return []
+            chosen = [rows[int(w) - 1] for w in picked]
+            offered = sorted({z for row in chosen for z in row[2]}, key=int)
+            default = "16" if "16" in offered else offered[0]
+            zoom = int(
+                ask(
+                    f"Up to which zoom? [{'/'.join(offered)}, default {default}]:",
+                    offered,
+                    default,
+                )
+            )
+        return [d for job, _, _ in chosen if (d := self.detailed_for(job, area, zoom))]
 
 
 def choose_bdortho(codes: list[str], folder: Path, free: int | None) -> dict | None:
@@ -257,16 +578,10 @@ def choose_bdortho(codes: list[str], folder: Path, free: int | None) -> dict | N
                 )
             )
         while True:
-            print(
-                f"    Which départements? [their codes, e.g. {codes[0]} {codes[-1]}; "
-                f"Enter: all {len(codes)}]: ",
-                end="",
-                file=sys.stderr,
-                flush=True,
+            line = read_answer(
+                f"Which départements? [their codes, e.g. {codes[0]} {codes[-1]}; "
+                f"Enter: all {len(codes)}]:"
             )
-            line = sys.stdin.readline()
-            if not line:
-                sys.exit("Aborted.")
             words = [
                 w.upper() if w[-1:].isalpha() else w.zfill(2) for w in line.split()
             ]
@@ -279,326 +594,12 @@ def choose_bdortho(codes: list[str], folder: Path, free: int | None) -> dict | N
 
 def command_choose(args) -> None:
     """Ask what to download (or take the presets) and write the plan (JSON)."""
-    folder = Path(args.basemap_dir)
-    folder.mkdir(parents=True, exist_ok=True)
-    index = Index(args.index)
-    region = args.region
-    plan: dict = {
-        "world_overview": False,
-        "regional": None,
-        "detailed": [],
-        "bdortho": None,
-    }
-
-    def regional_for(area: str, zoom: int) -> dict | None:
-        if area == "world":
-            return {"area": "world", "outline": None, "maxzoom": zoom}
-        outline = index.outline(area, folder)
-        return outline and {"area": area, "outline": str(outline), "maxzoom": zoom}
-
-    def finish() -> None:
-        plan["world_overview"] = (
-            bool(
-                plan["world_overview"]
-                or plan["regional"]
-                or plan["detailed"]
-                or plan["bdortho"]
-                or args.mode == "overview"
-            )
-            and not (folder / "world.sat-overview.pmtiles").exists()
-        )
-        Path(args.plan).write_text(json.dumps(plan, indent=1))
-
-    # Presets (build-region.sh --satellite / --satellite-detailed, satellite.sh --yes).
+    planner = Planner(args)
     if args.mode:
-        if args.mode in ("regional", "regional13"):
-            area = args.area or region
-            default = 10 if area == "world" else 12
-            zoom = args.zoom or (13 if args.mode == "regional13" else default)
-            plan["regional"] = regional_for(area, zoom)
-        if args.detailed and args.detailed != "none":
-            for source_id in (
-                args.sources.split()
-                if args.sources
-                else sources_for(args.area or region, index)
-            ):
-                if "files" in DETAILED_SOURCES[source_id]:
-                    codes = bdortho.departements_in(args.area or region, index.within)
-                    if codes:
-                        plan["bdortho"] = {
-                            "codes": codes,
-                            "maxzoom": int(args.detailed),
-                        }
-                    continue
-                job = detailed_job(source_id, args.area or region, index, folder)
-                # What's there already stays: only the zooms after it.
-                have = detailed_have(folder, args.area or region, source_id)
-                top = min(int(args.detailed), detailed_source(source_id)["maxzoom"])
-                if job and not (have and have >= top):
-                    plan["detailed"].append(
-                        {
-                            **job,
-                            "area": args.area or region,
-                            "maxzoom": top,
-                            **({"minzoom": have + 1} if have else {}),
-                        }
-                    )
-        finish()
-        return
-
-    world_done = (folder / "world.sat-overview.pmtiles").exists()
-    say("Satellite imagery: photos of the ground as the map's background (Settings →")
-    say("Background → Satellite), kept on this computer so they work offline.")
-    say(
-        "Zoom 8 shows a whole region on screen, 12 a town, 13 a neighbourhood, 16 a street."
-    )
-    say("Closer in than its last zoom, imagery is shown stretched (blurry).")
-    say()
-    if world_done:
-        say("The world (NASA Blue Marble, 500 m, to zoom 8): already downloaded.")
+        planner.presets()
     else:
-        say(
-            f"The world (NASA Blue Marble, 500 m, to zoom 8): {human(WORLD_OVERVIEW_BYTES)}, about an hour,"
-        )
-        say("downloaded once for every region. It comes with any choice below.")
-
-    # --- Step 1: Sentinel-2 ---
-    say()
-    say("Step 1 of 2. Sentinel-2 photos, 10 m (2021, cloud-free): towns and fields,")
-    say("from zoom 7 to 12 or 13.")
-    region_name = args.region_name or index.name(region)
-    region_outline = index.outline(region, folder) if region else None
-    region_have = regional_have(folder, region) if region else None
-    options = []
-    if region_have:
-        options.append(
-            ("keep", f"Keep what you have ({region_name} to zoom {region_have})", "")
-        )
-    if region_outline:
-        e = estimate(load_rings(str(region_outline)), 13)
-        options.append(
-            (
-                "region",
-                f"{region_name} (the region you built)"
-                + (", again" if region_have else ""),
-                f"+{human(e['regional']['bytes'] / 4)} to zoom 12",
-            )
-        )
-    options += [
-        ("other", "Another country or region...", ""),
-        ("world", "The whole world", "sizes below"),
-    ]
-    if not region_have:
-        options.append(("none", "None", ""))
-    for n, (_, label, size) in enumerate(options, 1):
-        say(f"  {n}) {label:<42} {size}")
-    pick = options[
-        int(
-            ask(
-                f"Choose [1-{len(options)}, default 1]:",
-                [str(n) for n in range(1, len(options) + 1)],
-                "1",
-            )
-        )
-        - 1
-    ][0]
-    area = None
-    if pick == "region":
-        area = region
-    elif pick == "other":
-        while area is None:
-            print(
-                "    Country or region name (e.g. spain, bayern, japan): ",
-                end="",
-                file=sys.stderr,
-                flush=True,
-            )
-            text = sys.stdin.readline().strip()
-            if not text:
-                break
-            hits = index.search(text)
-            if not hits:
-                say("Nothing by that name; try another.")
-                continue
-            for n, (_, name, parent) in enumerate(hits, 1):
-                say(f"  {n:>2}) {name}" + (f" ({parent})" if parent else ""))
-            answer = ask(
-                "Which one? [number, Enter: search again]:",
-                [str(n) for n in range(len(hits) + 1)],
-                "0",
-            )
-            if answer != "0":
-                area = hits[int(answer) - 1][0]
-    elif pick == "world":
-        area = "world"
-    else:
-        # Nothing new from Sentinel-2 (keep, or none): on to the aerial photos.
-        plan["world_overview"] = True
-
-    if area == "world":
-        say()
-        say(
-            "The whole world (land only), up to which zoom? Made from imagery read from ESA;"
-        )
-        say("the higher zooms take days to read and process, and need the disk space:")
-        for z in range(9, 14):
-            kept = WORLD_LAND_KM2 * REGIONAL_BYTES_PER_KM2[z]
-            read = WORLD_LAND_KM2 * WORLDCOVER_BYTES_PER_KM2[z]
-            say(f"  {z:>2}) zoom {z:<3} {human(kept):>8} kept   (reads ~{human(read)})")
-        zoom = int(
-            ask(
-                "Up to which zoom? [9-13, default 10]:",
-                [str(z) for z in range(9, 14)],
-                "10",
-            )
-        )
-        plan["regional"] = regional_for("world", zoom)
-    elif area:
-        e = estimate(load_rings(str(index.outline(area, folder))), 13)
-        say()
-        say(f"Satellite imagery of {index.name(area)} (Sentinel-2): up to which zoom?")
-        say("The size on disk is what's kept; the download is what's read from ESA")
-        say(
-            "to make it (full-size source images, cut down), so it sets how long it takes."
-        )
-        say(
-            f"  12) a town fills the screen      {human(e['regional']['bytes'] / 4):>8} on disk"
-            f"   (downloads ~{human(e['regional']['download'] / 4)})"
-        )
-        say(
-            f"  13) a district fills the screen  {human(e['regional']['bytes']):>8} on disk"
-            f"   (downloads ~{human(e['regional']['download'])})"
-        )
-        plan["regional"] = regional_for(
-            area, int(ask("Up to which zoom? [12/13, default 12]:", ["12", "13"], "12"))
-        )
-
-    # --- Step 2: aerial photos, by country (whatever step 1 was) ---
-    target = area or region
-    ids = sources_for(target, index) if target else []
-    codes = (
-        bdortho.departements_in(target, index.within)
-        if any("files" in DETAILED_SOURCES[i] for i in ids)
-        else []
-    )
-    jobs = [
-        j
-        for j in (
-            detailed_job(i, target, index, folder)
-            for i in ids
-            if "files" not in DETAILED_SOURCES[i]
-        )
-        if j
-    ]
-    if target and not jobs and not codes and not args.no_detailed:
-        say()
-        say(
-            f"Step 2 of 2. Aerial photos: no agency's photos cover {index.name(target)}."
-        )
-    if (jobs or codes) and not args.no_detailed:
-        say()
-        say(
-            f"Step 2 of 2. Aerial photos of {index.name(target)}, from national mapping agencies"
-        )
-        say()
-        say("They replace the satellite imagery when you zoom in close, with")
-        say("pixels of 8 to 60 cm instead of 10 m.")
-        try:
-            free = shutil.disk_usage(folder).free
-            say(f"Free space on the disk for them ({folder}): {human(free)}.")
-        except OSError:
-            free = None
-    if codes and not args.no_detailed:
-        plan["bdortho"] = choose_bdortho(codes, folder, free)
-    if jobs and not args.no_detailed:
-        say()
-        say("The others are fetched one small tile at a time from the agency's")
-        say("servers, so a whole country takes days; a city, hours at most.")
-        say("Working out the sizes...")
-        rows = []
-        for job in jobs:
-            src = detailed_source(job["source"])
-            have = detailed_have(folder, target, job["source"])
-            start = have + 1 if have else None
-            if have and have >= src["maxzoom"]:
-                say()
-                say(
-                    f"{src['name']}: you already have it up to zoom {have}, its most detailed."
-                )
-                continue
-            sizes = job_estimate(job, start)
-            rows.append((job, src, sizes, start))
-            say()
-            say(f"{len(rows)}) {src['name']}, {src['resolution']} per pixel")
-            if have:
-                say(
-                    f"   You have it up to zoom {have} ({ZOOM_SHOWS.get(have, '')}). Add:"
-                )
-            for z, v in sizes.items():
-                shows = ZOOM_SHOWS.get(int(z), "")
-                warn = (
-                    "  (more than the free space)"
-                    if free is not None and v["bytes"] * 2 > free
-                    else ""
-                )
-                say(
-                    f"   up to zoom {z:<3} {shows:<24} {human(v['bytes']):>8}   "
-                    f"about {duration(v['tiles'] / src['per_second'])}{warn}"
-                )
-        if rows:
-            say()
-            say("Sizes and times are at most: the areas include some sea, which comes")
-            say("back empty and quick. During the last step the files need up to twice")
-            say(
-                "their size on disk. You can add more detail later: what's there stays,"
-            )
-            say("and only the new zooms are downloaded.")
-            if len(rows) == 1:
-                # One source: just how far (Enter: none).
-                chosen = ["1"]
-                offered = sorted(int(z) for z in rows[0][2])
-                answer = ask(
-                    f"Download {rows[0][1]['name']} up to which zoom? "
-                    f"[{'/'.join(map(str, offered))}, Enter: none]:",
-                    [str(z) for z in offered] + ["none"],
-                    "none",
-                )
-                if answer == "none":
-                    chosen = []
-                else:
-                    zoom = int(answer)
-            else:
-                chosen = ask_numbers(
-                    f"Which sources? [their numbers 1-{len(rows)}, separated by spaces; Enter: none]:",
-                    len(rows),
-                )
-                if chosen:
-                    offered = sorted(
-                        {int(z) for w in chosen for z in rows[int(w) - 1][2]}
-                    )
-                    default = "16" if 16 in offered else str(offered[0])
-                    zoom = int(
-                        ask(
-                            f"Up to which zoom? [{'/'.join(map(str, offered))}, default {default}]:",
-                            [str(z) for z in offered],
-                            default,
-                        )
-                    )
-            if chosen:
-                for w in dict.fromkeys(chosen):
-                    job, src, _, start = rows[int(w) - 1]
-                    top = min(zoom, src["maxzoom"])
-                    if start and top < start:
-                        continue
-                    plan["detailed"].append(
-                        {
-                            **job,
-                            "area": target,
-                            "maxzoom": top,
-                            **({"minzoom": start} if start else {}),
-                        }
-                    )
-    finish()
+        planner.ask_all()
+    planner.write()
 
 
 def command_steps(args) -> None:
@@ -637,12 +638,7 @@ def command_steps(args) -> None:
         clip = ["--clip", d["clip"]] if d["clip"] else []
         lines.append(
             [
-                f"{src['name']}, {src['resolution']}, {index.name(d['area'])}, "
-                + (
-                    f"zoom {d['minzoom']} to {d['maxzoom']}"
-                    if d.get("minzoom")
-                    else f"to zoom {d['maxzoom']}"
-                ),
+                f"{src['name']}, {src['resolution']}, {index.name(d['area'])}, to zoom {d['maxzoom']}",
                 "detailed",
                 "--source",
                 d["source"],
@@ -651,34 +647,25 @@ def command_steps(args) -> None:
                 *clip,
                 "--maxzoom",
                 str(d["maxzoom"]),
-                *(["--minzoom", str(d["minzoom"])] if d.get("minzoom") else []),
                 "--out",
-                str(
-                    detailed_file(
-                        folder,
-                        d["area"],
-                        d["source"],
-                        d.get("minzoom") or 14,
-                        d["maxzoom"],
-                    )
-                ),
+                str(detailed_file(folder, d["area"], d["source"])),
             ]
         )
     b = plan.get("bdortho")
     if b:
-        count = len(b["codes"])
+        codes = b["codes"]
         lines.append(
             [
                 "IGN aerial photos (BD ORTHO), "
                 + (
-                    DEPARTEMENTS[b["codes"][0]][0]
-                    if count == 1
-                    else f"{count} départements"
+                    DEPARTEMENTS[codes[0]][0]
+                    if len(codes) == 1
+                    else f"{len(codes)} départements"
                 )
                 + f", to zoom {b['maxzoom']}",
                 "bdortho",
                 "--dept",
-                *b["codes"],
+                *codes,
                 "--maxzoom",
                 str(b["maxzoom"]),
                 "--basemap-dir",

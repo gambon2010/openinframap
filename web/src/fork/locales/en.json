@@ -220,20 +220,6 @@
   "settings": {
     "title": "Settings"
   },
-  "satellite": {
-    "satellite": "Satellite",
-    "satellite-help": "Imagery, with place names",
-    "hybrid": "Satellite with roads",
-    "hybrid-help": "Imagery with roads, railways and borders",
-    "title": "Background",
-    "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.",
-    "zooms": "Imagery up to zoom {{zoom}}.",
-    "not-here": "No satellite imagery here: move the map to where you have some.",
-    "map-contrast": "Map, high contrast",
-    "map-contrast-help": "Each kind of area its own shade: towns, fields, woods, water",
-    "map-original": "Map, original colours",
-    "map-original-help": "Open Infrastructure Map's own, paler"
-  },
   "userlayers": {
     "now": "Now",
     "edit": "Change",
@@ -816,5 +802,19 @@
   "data-layers": {
     "title": "Data layers",
     "other": "Other"
+  },
+  "background": {
+    "map-contrast": "Map, high contrast",
+    "map-contrast-help": "Each kind of area its own shade: towns, fields, woods, water",
+    "map-original": "Map, original colours",
+    "map-original-help": "Open Infrastructure Map's own, paler",
+    "satellite": "Satellite",
+    "satellite-help": "Imagery, with place names",
+    "hybrid": "Satellite with roads",
+    "hybrid-help": "Imagery with roads, railways and borders",
+    "not-here": "No satellite imagery here: move the map to where you have some.",
+    "title": "Background",
+    "zooms": "Imagery up to zoom {{zoom}}.",
+    "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos."
   }
 }

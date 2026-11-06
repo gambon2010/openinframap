@@ -7,10 +7,10 @@
 // unchanged). Zoomed out (zoom 2 to 6) each is a little darker, as upstream's are.
 // Buildings are darker than the towns around them; airports light, so their
 // runways (drawn in the major roads' grey) stand out. It's the "high contrast"
-// choice in Settings → Background (services/map-colours.ts); "original colours"
+// choice in Settings → Background (services/background.ts); "original colours"
 // puts upstream's back as they were.
 import type { ExpressionSpecification, Map } from 'maplibre-gl'
-import { MapColours, mapColours } from '../../services/map-colours.ts'
+import { MapColours, background } from '../../services/background.ts'
 
 /** Each kind of area: [hue, saturation %, lightness % from zoom 6]. */
 export const PALETTE = {
@@ -126,8 +126,14 @@ export function backgroundPalette(map: Map) {
   // A new style has upstream's colours again.
   map.on('style.load', () => {
     original = []
-    if (mapColours.get() === 'contrast') apply('contrast')
+    if (background.colours() === 'contrast') apply('contrast')
   })
-  if (map.isStyleLoaded() && mapColours.get() === 'contrast') apply('contrast')
-  mapColours.onChange(apply)
+  if (map.isStyleLoaded() && background.colours() === 'contrast') apply('contrast')
+  // Each choice in Settings → Background: the colours, when they changed.
+  let shown = background.colours()
+  background.onChange(() => {
+    if (background.colours() === shown) return
+    shown = background.colours()
+    apply(shown)
+  })
 }

@@ -1,4 +1,4 @@
-/* Fork: the Background section of Settings (fork/satellite). */
+/* Fork: the Background section of Settings (modules/background). */
 .oim-background h3,
 .oim-map-sources h3 {
   margin: 4px 0 6px;
@@ -32,7 +32,7 @@
   border-top: 1px solid var(--oim-grey);
 }
 
-/* No imagery where the map is (index.ts checkCoverage). */
+/* No imagery where the map is (checkCoverage). */
 .oim-background-choice.disabled {
   opacity: 0.45;
   cursor: not-allowed;

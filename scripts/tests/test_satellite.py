@@ -428,34 +428,20 @@ def fake_pmtiles(path, minzoom, maxzoom):
     path.write_bytes(bytes(header))
 
 
-def test_aerial_photos_already_there_and_where_more_goes(tmp_path):
+def test_aerial_photos_already_there(tmp_path):
     from satimagery.gdal import pmtiles_zooms
     from satimagery.menu import detailed_file, detailed_have
 
-    first = tmp_path / "alsace.sat-detailed-fr_ign.pmtiles"
+    first = detailed_file(tmp_path, "spain", "es_pnoa")
+    assert first.name == "spain.sat-detailed-es_pnoa.pmtiles"
     fake_pmtiles(first, 14, 15)
     assert pmtiles_zooms(first) == (14, 15)
     assert pmtiles_zooms(tmp_path / "none.pmtiles") is None
-    assert detailed_have(tmp_path, "alsace", "fr_ign") == 15
-    assert detailed_have(tmp_path, "lorraine", "fr_ign") is None
-    # The first download, then more detail in a file of its own.
-    assert detailed_file(tmp_path, "alsace", "fr_ign", 14, 15) == first
-    more = detailed_file(tmp_path, "alsace", "fr_ign", 16, 17)
-    assert more.name == "alsace.sat-detailed-fr_ign-z16-17.pmtiles"
-    fake_pmtiles(more, 16, 17)
-    assert detailed_have(tmp_path, "alsace", "fr_ign") == 17
+    assert detailed_have(tmp_path, "spain", "es_pnoa") == 15
+    assert detailed_have(tmp_path, "portugal", "es_pnoa") is None
 
 
-def test_estimate_of_more_detail_counts_only_the_new_zooms():
-    source = s.detailed_source("lu_geoportail")
-    all_of_it = s.detailed_estimate([LUXEMBOURG], source)
-    more = s.detailed_estimate([LUXEMBOURG], source, 16)
-    assert list(more) == [str(z) for z in range(16, source["maxzoom"] + 1)]
-    top = str(source["maxzoom"])
-    assert more[top]["tiles"] == all_of_it[top]["tiles"] - all_of_it["15"]["tiles"]
-
-
-def test_more_detail_later_downloads_only_the_new_zooms(tmp_path):
+def test_more_detail_later_makes_the_file_again(tmp_path):
     index = tmp_path / "index.json"
     square = {
         "type": "Polygon",
@@ -499,13 +485,14 @@ def test_more_detail_later_downloads_only_the_new_zooms(tmp_path):
         ]
     )
     (job,) = json.loads(plan.read_text())["detailed"]
-    assert (job["minzoom"], job["maxzoom"]) == (16, top)
+    assert job["maxzoom"] == top and "minzoom" not in job
     lines = io.StringIO()
     with contextlib.redirect_stdout(lines):
         s.main(["steps", *common])
     step = lines.getvalue().splitlines()[-1].split("\t")
-    assert step[step.index("--minzoom") + 1] == "16"
-    assert step[-1].endswith(f"luxembourg.sat-detailed-lu_geoportail-z16-{top}.pmtiles")
+    # The same file, made again from zoom 14 (replaced once it's finished).
+    assert "--minzoom" not in step
+    assert step[-1].endswith("luxembourg.sat-detailed-lu_geoportail.pmtiles")
     # Already as detailed as asked: nothing to download.
     s.main(
         [
