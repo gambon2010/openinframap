@@ -9,12 +9,8 @@
     "gas": "Gas"
   },
   "layers": {
-    "extra-data": "Not from OpenStreetMap",
-    "extra-distribution": "Power distribution (open data)",
-    "extra-gas": "Gas distribution (open data)",
     "extra-icpe": "Classified installations (ICPE)",
     "sites": "Critical sites",
-    "title": "Layers",
     "status-group": "Statuses",
     "status": "Damage and threats"
   },

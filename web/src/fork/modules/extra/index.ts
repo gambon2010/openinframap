@@ -10,6 +10,7 @@ import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
 import layers, { icpe_colours, icpe_category_label } from './style.ts'
 import './extra.css'
+import { followCategories } from './follow.ts'
 
 // The sources extra_data.py can import, for the popup's attribution.
 const extra_sources: { [id: string]: { name: string; url: string; licence: string } } = {
@@ -42,12 +43,15 @@ const extra: ForkModule = {
   layers,
 
   switcherGroups: () => [
-    new LayerGroup(t('layers.extra-data', 'Not from OpenStreetMap'), [
-      new Layer('X', t('layers.extra-distribution', 'Power distribution (open data)'), 'extra_power', false),
-      new Layer('Y', t('layers.extra-gas', 'Gas distribution (open data)'), 'extra_gas', false),
+    // With the critical sites (groups of the same name are one: fork/index.ts). The
+    // distribution and gas networks have no entry: they follow Power and Oil & gas
+    // (follow.ts).
+    new LayerGroup(t('layers.sites', 'Critical sites'), [
       new Layer('Z', t('layers.extra-icpe', 'Classified installations (ICPE)'), 'extra_icpe', false)
     ])
   ],
+
+  init: ({ map }) => followCategories(map),
 
   key: async () => [
     // Shown with the gas network.

@@ -67,7 +67,19 @@ export function forkLayers(): LayerSpecificationWithZIndex[] {
 
 /** openinframap.ts: layer switcher groups. */
 export function forkSwitcherGroups(): LayerGroup[] {
-  return MODULES.flatMap((m) => m.switcherGroups?.() ?? [])
+  return mergeGroups(MODULES.flatMap((m) => m.switcherGroups?.() ?? []))
+}
+
+/** Groups of the same title (from several modules: the critical sites and ICPE)
+ * are one, where the first was, with their entries in module order. */
+export function mergeGroups(groups: LayerGroup[]): LayerGroup[] {
+  const out: LayerGroup[] = []
+  for (const group of groups) {
+    const same = out.find((g) => g.title === group.title)
+    if (same) same.layers.push(...group.layers)
+    else out.push(group)
+  }
+  return out
 }
 
 /** openinframap.ts: once the map and its controls exist, before clicks are routed. */

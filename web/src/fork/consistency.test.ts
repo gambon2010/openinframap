@@ -1,5 +1,6 @@
 // Checks that catch a feature added only half-way: a tile layer nothing draws, a
 // map layer the layer switcher can't turn off.
+import { FOLLOWS } from './modules/extra/follow.ts'
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
@@ -10,7 +11,7 @@ import grid from './modules/grid/index.ts'
 
 const MODULES = [extra, sites, satellite, grid]
 // Upstream's layer switcher entries that fork layers join (openinframap.ts).
-const UPSTREAM_PREFIXES = ['power_']
+const UPSTREAM_PREFIXES = ['power_', 'petroleum_']
 
 /** Layer names defined in a Tegola layers file (the "  - name:" entries). */
 function tegolaLayers(file: string): string[] {
@@ -36,9 +37,13 @@ test('every fork map layer can be turned off in the layer switcher', () => {
   )
   expect(prefixes.length).toBeGreaterThan(5)
   prefixes.push(...UPSTREAM_PREFIXES)
-  // Background imagery is chosen in Settings, not in the layer switcher.
+  // Background imagery is chosen in Settings, not in the layer switcher. Open data
+  // completing a category follows that category's entry (modules/extra/follow.ts),
+  // which must itself be switchable.
+  for (const [, category] of FOLLOWS) expect(prefixes).toContain(category)
   const unswitched = forkStyleLayers
     .filter((l) => !l.id.startsWith('satellite'))
+    .filter((l) => !FOLLOWS.some(([own]) => l.id.startsWith(own)))
     .filter((l) => !prefixes.some((prefix) => l.id.startsWith(prefix)))
     .map((l) => l.id)
   expect(unswitched).toEqual([])

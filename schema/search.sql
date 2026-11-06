@@ -118,15 +118,15 @@ WITH named AS (
     UNION ALL
     SELECT 'osm', 'water_well', NULL, tags -> 'name', tags, tags -> 'operator', NULL, 2, 'W', ST_Centroid(geometry)
       FROM osm_water_well WHERE tags -> 'name' <> ''
-    -- Extra data (schema/extra.sql): ICPE sites, biomethane injection points (gas
-    -- layer), distribution substations
+    -- Extra data (schema/extra.sql): ICPE sites, biomethane injection points (shown
+    -- with Oil & Natural Gas, O), distribution substations (with Power, P)
     UNION ALL
     SELECT 'extra', kind, details ->> 'category', name, NULL, details ->> 'operator', details ->> 'commune',
            CASE WHEN details ->> 'category' IN ('seveso_high', 'seveso_low') THEN 0 ELSE 1 END,
-           CASE kind WHEN 'icpe' THEN 'Z' ELSE 'Y' END, ST_Centroid(geometry)
+           CASE kind WHEN 'icpe' THEN 'Z' ELSE 'O' END, ST_Centroid(geometry)
       FROM extra.facility WHERE name <> ''
     UNION ALL
-    SELECT 'extra', 'distribution_substation', kind, name, NULL, NULL, NULL, 2, 'X', ST_Centroid(geometry)
+    SELECT 'extra', 'distribution_substation', kind, name, NULL, NULL, NULL, 2, 'P', ST_Centroid(geometry)
       FROM extra.power_substation WHERE name <> ''
 )
 -- Searched in lower case without accents ("hopital" finds "Hôpital"), also as the

@@ -1566,6 +1566,13 @@ whose body keeps the class `oim-key-body` (the printed legend reads the rows the
 `keyRows` now finds them at any depth). "Show all" moved to the panel's header and
 looks for the key's tick boxes anywhere on the page. Background stays in Settings.
 
+Open data isn't a group of its own: the distribution and gas networks have no entry
+and follow Power and Oil & Natural Gas (`modules/extra/follow.ts`: their map layers
+take the category's visibility whenever the style changes); ICPE is under Critical
+sites (groups of the same title from several modules are one: `mergeGroups` in
+`fork/index.ts`). Search results of open data switch on Power (P) or Oil & gas (O)
+instead of their old entries (X, Y; `schema/search.sql`).
+
 ## Satellite downloads all at once (2026-11-06)
 
 `download_satellite` ran its steps one after another (Blue Marble, then Sentinel-2,
