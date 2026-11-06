@@ -91,6 +91,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.11 | Photos never make the details panel scroll (shrink them); vertical scroll only for long details. | ✅ |
 | 5.12 | The map search box in the top bar, right of the header (title, about, stats...), not above the panels on the left. | ✅ `fork/modules/layout/search-bar.ts` (narrow screens: stays on the left) |
 | 5.13 | The header's "about" and "stats" pages: do they still make sense for this app? Remove them or update what they say (about: probably keep; stats: doubtful). | ✅ "stats" and "export (online)" removed; "about" is the fork's page: this map's data, how to use it, credits (2026-11-03) |
+| 5.14 | No header: Settings (the app's: background, map sources, accounts), print and the account (Log out) as buttons among the map's (top right); About in the map's credits; My layers' settings in their own window, opened from My layers only. | ✅ (2026-11-06) |
 
 ## 6. Grid connections (power routing)
 
@@ -174,7 +175,6 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.31 | Downloads survive losing the internet: wait for the connection, go on when it's back, stop cleanly (keeping what's downloaded) if it doesn't come back or the download hangs. Every download (OSM extract, background map, satellite imagery, extra data, Wikidata cache) through one safe function. | ✅ (2026-11-06) `lib/net.sh`, `netsafe.py` |
 | 9.32 | My layers' panel cleaner: as tall as its content (scrolls only when the column is full); situation, ⚙ and × in the header; one Filter button instead of the chips; new layer, folder, import, export in a footer; a layer's and a folder's actions in a right-click menu; an eye to show / hide. | ✅ (2026-11-06) |
 | 9.33 | No colour per layer: what has no colour of its own is black; the colour new items get is chosen in My layers' settings. | ✅ (2026-11-06) |
-| 5.12 | No header: Settings (the app's: background, map sources, accounts), print and the account (Log out) as buttons among the map's (top right); About in the map's credits; My layers' settings in their own window, opened from My layers only. | ✅ (2026-11-06) |
 | 9.34 | Situations reworked so the history of all changes is kept (no deleting; a save makes one?); layers can be hidden while going through the history. To be discussed first. | backlog |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
