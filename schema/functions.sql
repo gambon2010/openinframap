@@ -140,8 +140,9 @@ BEGIN
         int_voltages[1] = convert_integer(voltage);
     END IF;
 
-    -- Remove NULLs and sort the array
-    int_voltages = sort(array_remove(int_voltages, NULL));
+    -- Remove NULLs and sort the array (fork: and 0, no voltage: antenna wires, an
+    -- unenergised circuit)
+    int_voltages = sort(array_remove(array_remove(int_voltages, NULL), 0));
     array_size = array_upper(int_voltages, 1);
     IF array_size = 0 OR array_size IS NULL THEN
         RETURN NULL;
