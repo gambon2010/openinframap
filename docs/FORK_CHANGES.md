@@ -1493,6 +1493,18 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## Printed text: one font with every character (2026-11-06)
+
+The PDF used jsPDF's built-in Helvetica, which only knows Latin-1; characters it
+lacked were swapped one by one (`printable`: ≥ → >=, ≤, −, thin spaces), and the
+next one (œ, Cyrillic, →) would have printed wrong. Now the PDF embeds DejaVu Sans
+(`print/fonts/`, its free licence beside it; fetched only when printing, from the
+app, so offline too): one font because jsPDF can't switch fonts inside a text.
+Noto Sans (the map's) was tried first: it has no ≥ ≤ →. The rule is tested
+(`fonts.test.ts`): the font must have every character of the app's strings
+(`locales/en.json`), the symbol catalogue and the key's ≥ ≤ → (emoji excepted: on
+screen only). `printable` is gone.
+
 ## Measurement marks: one rule, like a ruler (2026-11-06)
 
 The marks had two rules that fought: labels about 80 px apart, and "at least four

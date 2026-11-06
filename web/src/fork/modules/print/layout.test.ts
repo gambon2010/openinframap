@@ -87,11 +87,3 @@ describe('the scale', () => {
     expect(scaleBar(100000, 40).metres).toBe(2000)
   })
 })
-
-describe('text on the PDF', () => {
-  test('what its fonts have no letter for', async () => {
-    const { printable } = await import('./parts.ts')
-    expect(printable('≥ 220 kV')).toBe('>= 220 kV')
-    expect(printable('≤ 10 kV, −5')).toBe('<= 10 kV, -5')
-  })
-})

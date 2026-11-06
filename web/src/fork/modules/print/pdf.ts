@@ -18,6 +18,7 @@ import {
 } from './layout.ts'
 import { capture, maxCanvasSide } from './images.ts'
 import { drawInfo, drawMap } from './parts.ts'
+import { addFonts } from './fonts.ts'
 
 export interface PrintOptions {
   title: string
@@ -41,6 +42,7 @@ export async function printMap(map: Map, options: PrintOptions) {
     options.legend ? legendSections(map, area) : Promise.resolve([])
   ])
   const pdf = new jsPDF({ orientation: options.orientation, unit: 'mm', format: options.paper })
+  await addFonts(pdf)
   const now = new Date()
 
   drawMap(pdf, box, picture, map.getBearing())

@@ -3,6 +3,7 @@
 // when and by whom, the legend, the scale and its bar, the centre and the credits.
 // Millimetres; where things go: layout.ts.
 import type { jsPDF } from 'jspdf'
+import { FONT } from './fonts.ts'
 import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
 import { t } from '../../core/i18n.ts'
 import type { LegendSection } from '../../services/legend.ts'
@@ -33,7 +34,7 @@ function drawNorth(pdf: jsPDF, x: number, y: number, bearing: number) {
   pdf.circle(x, y, 6.5, 'FD')
   pdf.setFillColor(0, 0, 0).triangle(tx, ty, lx, ly, x, y, 'F')
   pdf.setFillColor(255, 255, 255).triangle(tx, ty, rx, ry, x, y, 'FD')
-  pdf.setFont('helvetica', 'bold').setFontSize(7).setTextColor(0)
+  pdf.setFont(FONT, 'bold').setFontSize(7).setTextColor(0)
   const [nx, ny] = point(0, -7.8)
   pdf.text('N', nx, ny + 1, { align: 'center' })
 }
@@ -51,15 +52,6 @@ export interface InfoContent {
   scale: number
   centre: { lng: number; lat: number }
   credits: string
-}
-
-/** Text the PDF's built-in fonts can write (they have no ≥, ≤, −...). */
-export function printable(text: string): string {
-  return text
-    .replace(/≥/g, '>=')
-    .replace(/≤/g, '<=')
-    .replace(/−/g, '-')
-    .replace(/[\u2009\u202f]/g, ' ')
 }
 
 /** Points to millimetres, for line heights. */
@@ -96,8 +88,7 @@ function layOutInfo(
   const w = box.w - 2 * INFO_PADDING
   let y = box.y + INFO_PADDING
   const text = (lines: string[], size: number, style: string, colour: number, at = x) => {
-    pdf.setFont('helvetica', style).setFontSize(size).setTextColor(colour)
-    lines = lines.map(printable)
+    pdf.setFont(FONT, style).setFontSize(size).setTextColor(colour)
     if (draw) pdf.text(lines, at, y + size * PT * 0.8)
     y += lines.length * size * PT * 1.2
   }
@@ -112,9 +103,9 @@ function layOutInfo(
   }
 
   // The title, and when and by whom.
-  pdf.setFont('helvetica', 'bold').setFontSize(11)
+  pdf.setFont(FONT, 'bold').setFontSize(11)
   text(pdf.splitTextToSize(content.title, w), 11, 'bold', 0)
-  pdf.setFont('helvetica', 'normal').setFontSize(7)
+  pdf.setFont(FONT, 'normal').setFontSize(7)
   text(pdf.splitTextToSize(content.byline, w), 7, 'normal', 80)
 
   // What's at the bottom, measured first: the legend gets the room that's left.
@@ -131,12 +122,12 @@ function layOutInfo(
       break
     }
     text([section.title], 8, 'bold', 0)
-    pdf.setFont('helvetica', 'normal').setFontSize(7)
+    pdf.setFont(FONT, 'normal').setFontSize(7)
     let cut = false
     for (const [i, entry] of section.entries.entries()) {
       // No swatch (a layer's name): the text from the left.
       const indent = (entry.svg && pictures.get(entry.svg)) || entry.colour ? 9 : 0
-      const lines: string[] = pdf.splitTextToSize(printable(entry.label), w - indent)
+      const lines: string[] = pdf.splitTextToSize(entry.label, w - indent)
       const h = Math.max(4.2, lines.length * 7 * PT * 1.2 + 1)
       if (y + h > legendBottom) {
         const left = rowsLeft() - i
@@ -157,7 +148,7 @@ function layOutInfo(
           else if (entry.shape === 'dot') pdf.circle(x + 3.5, mid, 1.4, 'F')
           else pdf.setLineWidth(0.4).rect(x, mid - 1.8, 7, 3.6, 'FD')
         }
-        pdf.setFont('helvetica', 'normal').setFontSize(7).setTextColor(30)
+        pdf.setFont(FONT, 'normal').setFontSize(7).setTextColor(30)
         pdf.text(lines, x + indent, mid - ((lines.length - 1) * 7 * PT * 1.2) / 2 + 7 * PT * 0.35)
       }
       y += h
@@ -169,7 +160,7 @@ function layOutInfo(
   // The scale and its bar, the centre, the credits.
   rule()
   const bar = scaleBar(content.scale, Math.min(30, w - 22))
-  pdf.setFont('helvetica', 'bold').setFontSize(8)
+  pdf.setFont(FONT, 'bold').setFontSize(8)
   if (draw) {
     pdf.setTextColor(0).text(formatScale(content.scale), x, y + 2.6)
     const barX = x + 21
@@ -178,7 +169,7 @@ function layOutInfo(
       const shade = i % 2 ? 255 : 0
       pdf.setFillColor(shade, shade, shade).rect(barX + (i * bar.mm) / 4, y + 0.6, bar.mm / 4, 1.4, 'FD')
     }
-    pdf.setFont('helvetica', 'normal').setFontSize(6)
+    pdf.setFont(FONT, 'normal').setFontSize(6)
     pdf.text('0', barX, y + 4.6, { align: 'center' })
     const label = bar.metres >= 1000 ? `${bar.metres / 1000} km` : `${bar.metres} m`
     pdf.text(label, barX + bar.mm, y + 4.6, { align: 'center' })
@@ -200,7 +191,7 @@ function layOutInfo(
     0
   )
   if (content.credits) {
-    pdf.setFont('helvetica', 'normal').setFontSize(6)
+    pdf.setFont(FONT, 'normal').setFontSize(6)
     text(pdf.splitTextToSize(content.credits, w), 6, 'normal', 90)
   }
   return y - box.y + INFO_PADDING
