@@ -24,9 +24,12 @@ describe('two versions of one graphic', () => {
     expect(variantsOf('GFTPJ----------')).toBeNull()
   })
 
-  test('the picker lists both versions', () => {
+  test('the picker lists each graphic once, as its first version (both are in the catalogue)', () => {
     const keys = new Set(searchCatalogue('', 'graphics').map((e) => graphicKey(e[0])))
-    for (const v of VARIANTS) for (const key of v.keys) expect(keys.has(key), key).toBe(true)
+    for (const v of VARIANTS) {
+      expect(keys.has(v.keys[0]), v.keys[0]).toBe(true)
+      expect(keys.has(v.keys[1]), v.keys[1]).toBe(false)
+    }
   })
 
   test('one engagement area', () => {
