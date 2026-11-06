@@ -184,10 +184,11 @@ def tile_url(source: dict, z: int, x: int, y: int) -> str:
 
 
 TIERS = {
-    # name: (minzoom, maxzoom, tile format, attribution)
+    # name: (minzoom, maxzoom, tile format, attribution). Sentinel-2 from zoom 5:
+    # better than Blue Marble from there over its area (its lower zooms are few tiles).
     "overview": (0, 8, "jpg", "NASA Blue Marble"),
     "regional": (
-        9,
+        5,
         12,
         "webp",
         "Contains modified Copernicus Sentinel data (2021), ESA WorldCover (CC BY 4.0)",

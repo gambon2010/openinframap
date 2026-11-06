@@ -129,15 +129,14 @@ def test_regional_pipeline():
     assert "-input_file_list cells.txt" in script
     assert "-cutline area.geojson" in script
     assert "ZOOM_LEVEL_STRATEGY=LOWER" in script
-    assert script.endswith(
-        "gdaladdo -q -r average regional.mbtiles 2 4 8"
-    )  # zooms 11, 10, 9
+    # Lower zooms down to the tier's first (5): zooms 11 to 5.
+    assert script.endswith("gdaladdo -q -r average regional.mbtiles 2 4 8 16 32 64 128")
     assert "38.218514" in script  # metres per pixel at zoom 12
-    assert s.regional_pipeline(13).endswith("2 4 8 16")
-    # The whole world: not cut, and zoom 9 alone has no lower zooms to add.
+    assert s.regional_pipeline(13).endswith("2 4 8 16 32 64 128 256")
+    # The whole world: not cut.
     world = s.regional_pipeline(9, cut=False)
     assert "-cutline" not in world and "-te -20037508.34" in world
-    assert "gdaladdo" not in world
+    assert world.endswith("2 4 8 16")
 
 
 def test_mbtiles_rows_are_tms(tmp_path):
@@ -584,3 +583,18 @@ def test_the_command_line_says_so_and_exits_75(tmp_path, monkeypatch, capsys):
         s.main(["overview", "--world", "--out", str(tmp_path / "w.pmtiles")])
     assert stop.value.code == 75
     assert "run again" in capsys.readouterr().err
+
+
+def test_lower_zooms_of_a_file_that_already_has_them(tmp_path, capsys):
+    # A Sentinel-2 file starting at the tier's first zoom: nothing to do.
+    header = bytearray(127)
+    header[:7], header[100], header[101] = b"PMTiles", s.TIERS["regional"][0], 12
+    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(bytes(header))
+    s.main(["lower-zooms", "--region", "lux", "--basemap-dir", str(tmp_path)])
+    assert "nothing to do" in capsys.readouterr().err
+
+
+def test_lower_zooms_without_the_file(tmp_path):
+    with pytest.raises(SystemExit) as stop:
+        s.main(["lower-zooms", "--region", "nowhere", "--basemap-dir", str(tmp_path)])
+    assert "No Sentinel-2 imagery" in str(stop.value)

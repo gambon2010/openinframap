@@ -57,7 +57,7 @@ satellite_tiers_value() {
         # ones only if it can't be read (scripts/satimagery/sources.py TIERS).
         case "$file" in
             *.sat-overview.pmtiles) min=0; max=8; ext=jpg ;;
-            *.sat-regional.pmtiles) min=9; max=12; ext=webp ;;
+            *.sat-regional.pmtiles) min=5; max=12; ext=webp ;;
             *) min=14; max=16; ext=jpg ;;
         esac
         range="$(pmtiles_minzoom "$file" "$min") $(pmtiles_maxzoom "$file" "$max")"

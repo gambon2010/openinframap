@@ -226,7 +226,7 @@ Three kinds, each adding detail to the one below (sizes are what's kept on disk)
 | What | Covers | Size |
 |---|---|---|
 | NASA Blue Marble, 500 m, to zoom 8 | the whole world, one file for every region (`world.sat-overview.pmtiles`), downloaded once | ~330 MB, about an hour |
-| Sentinel-2 10 m, cloud-free composite (2021), zoom 9 to 12 or 13 | the region you built, **another country or region** (searched by name), or **the whole world** | France to 12: ~200 MB (reads ~13 GB from ESA); to 13: ~800 MB (reads ~51 GB) |
+| Sentinel-2 10 m, cloud-free composite (2021), zoom 5 to 12 or 13 (better than Blue Marble from zoom 5 over its area) | the region you built, **another country or region** (searched by name), or **the whole world** | France to 12: ~200 MB (reads ~13 GB from ESA); to 13: ~800 MB (reads ~51 GB) |
 | Aerial photos, 8 to 60 cm, zoom 14 to 15/16/17 | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
 
 The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
@@ -263,7 +263,7 @@ Everything in `data/basemap/` is shown, whatever area it's of; past a file's las
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
 shows. Copy `data/basemap/` along with an export to take it with you. Unattended:
 `--satellite none|overview|regional|regional13` and `--satellite-detailed 15|16|17|none`
-(both scripts); `satellite.sh` also takes `--area ID|world`, `--zoom 9-13` and
+(both scripts); `satellite.sh` also takes `--area ID|world`, `--zoom 9-13` (the last zoom) and
 `--sources "ID ..."` (and `--yes` needs `--satellite`).
 
 ## Sharing a built database (export / import)
@@ -674,3 +674,14 @@ If you add your own mounts, add `:z` too.
 **Not enough disk space.** Docker keeps its data in `/var/lib/docker` by default,
 often on the system disk. The script shows the estimate before starting. Downloads
 and filtered files in `data/osm/` are reused, so after freeing space just re-run.
+
+**Sentinel-2 downloaded before it started at zoom 5** (it used to start at 9): add the
+lower zooms without downloading anything, while the app runs (it reads the tiles
+back from the local imagery server):
+
+```bash
+python3 scripts/satellite.py lower-zooms --region france
+```
+
+Then restart the frontend. GDAL stops where the whole area fits in about one tile
+(Luxembourg: zoom 8; France: about 5).

@@ -1549,6 +1549,17 @@ out, Shift-click adds everything shown between the item clicked last and this on
 (across groups and layers; `tools.selectAll`). On the map, Shift-click still adds
 one item.
 
+## Sentinel-2 from zoom 5 (2026-11-06)
+
+Sentinel-2 imagery started at zoom 9, under Blue Marble's 500 m pixels until then.
+It now starts at zoom 5 (`TIERS["regional"]`): the download adds the lower zooms
+(GDAL's overviews, a few hundred tiles more); GDAL stops where the whole area fits in
+about one tile. Files made before get them with `satellite.py lower-zooms --region
+ID`: their tiles read back from the local imagery server, the lower zooms computed
+the same way, the file replaced once the new one is complete; nothing downloaded.
+The imagery server (basemap service) caches each file's index: restart it after a
+file is replaced.
+
 ## Debug info; no Edit button (2026-11-06)
 
 - **Debug** (`modules/debug/`): Settings → Debug → "Show debug info" (kept in this

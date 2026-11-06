@@ -23,7 +23,7 @@ from .estimate import (
     worldcover_cells,
 )
 from .gdal import docker_run, regional_pipeline, to_pmtiles
-from .menu import command_choose, command_steps
+from .menu import command_choose, command_steps, pmtiles_zooms
 from .sources import (
     DETAILED_SOURCES,
     GDAL_IMAGE,
@@ -144,6 +144,69 @@ def command_regional(args) -> None:
     print(f"-> {out}")
 
 
+def command_lower_zooms(args) -> None:
+    """Sentinel-2 imagery made when it started at zoom 9: its lower zooms (down to
+    TIERS' first) added, without downloading anything. Its tiles are read back from
+    the local imagery server (the basemap service), the lower zooms computed by GDAL
+    the way the download does (average), and the file replaced once the new one is
+    complete."""
+    folder = Path(args.basemap_dir).resolve()
+    out = folder / f"{args.region}.sat-regional.pmtiles"
+    zooms = pmtiles_zooms(out)
+    if not zooms:
+        sys.exit(f"No Sentinel-2 imagery of {args.region}: {out}")
+    first, last = zooms
+    minzoom = TIERS["regional"][0]
+    if first <= minzoom:
+        print(
+            f"  {out.name} already starts at zoom {first}: nothing to do.",
+            file=sys.stderr,
+        )
+        return
+    outlines = [load_rings(str(folder / f".area-{args.region}.geojson"))]
+    blocks = {z: tile_blocks(outlines, z) for z in range(first, last + 1)}
+    total = sum(block_count(b) for b in blocks.values())
+    url = f"{args.server}/{out.stem}/{{z}}/{{x}}/{{y}}.webp"
+    print(
+        f"  Reading {total:,} tiles (zoom {first} to {last}) from {args.server}",
+        file=sys.stderr,
+    )
+    with tempfile.TemporaryDirectory(dir=folder, prefix=".satellite-") as tmp:
+        work = Path(tmp)
+        mbtiles = work / "regional.mbtiles"
+        writer = MBTiles(
+            mbtiles,
+            "Sentinel-2",
+            "webp",
+            first,
+            last,
+            TIERS["regional"][3],
+            rings_bbox(outlines[0]),
+        )
+        try:
+            download_tiles(
+                (t for z in range(first, last + 1) for t in block_tiles(blocks[z], z)),
+                url,
+                writer,
+                threads=8,
+                progress=print_progress,
+                total=total,
+            )
+        finally:
+            writer.close()
+        # GDAL's overviews of an MBTiles file are its lower zooms: from the last one
+        # down to minzoom (the zooms there are made again the same way).
+        levels = " ".join(str(2**i) for i in range(1, last - minzoom + 1))
+        docker_run(
+            args.gdal_image,
+            work,
+            ["sh", "-c", f"gdaladdo -q -r average regional.mbtiles {levels}"],
+        )
+        to_pmtiles(mbtiles, work / out.name, args.pmtiles_image)
+        (work / out.name).replace(out)
+    print(f"-> {out} (zoom {minzoom} to {last})")
+
+
 def detailed_outlines(args, source: dict) -> list[list[Ring]]:
     """What to cover: the area asked for, the region the source covers (--clip),
     and the source's own limit."""
@@ -246,6 +309,19 @@ def main(argv: Iterable[str] | None = None) -> None:
     )
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("sources")
+    p = sub.add_parser("lower-zooms")
+    p.add_argument(
+        "--region", required=True, help="the area of the Sentinel-2 file (france...)"
+    )
+    p.add_argument(
+        "--basemap-dir",
+        default=str(Path(__file__).resolve().parents[2] / "data" / "basemap"),
+    )
+    p.add_argument(
+        "--server", default="http://localhost:8090", help="the local imagery server"
+    )
+    p.add_argument("--gdal-image", default=GDAL_IMAGE)
+    p.add_argument("--pmtiles-image", default="protomaps/go-pmtiles:v1.28.0")
     sub.add_parser("attribution").add_argument("names", nargs="*")
     for name in ("choose", "steps"):
         p = sub.add_parser(name)
@@ -329,4 +405,5 @@ def run_command(args) -> None:
         "estimate-detailed": command_estimate_detailed,
         "choose": command_choose,
         "steps": command_steps,
+        "lower-zooms": command_lower_zooms,
     }[args.command](args)
