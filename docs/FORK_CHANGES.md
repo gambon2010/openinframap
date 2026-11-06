@@ -1734,6 +1734,16 @@ shown by `web/src/fork/modules/satellite/`.
   when no imagery covers the map ("No satellite imagery here"). The bounds come from
   the background map server's TileJSON (`/<name>.json`), which needs its
   `--public-url` (`docker-compose.override.yml`).
+- **A lost connection doesn't crash the download** (2026-11-06): a tile request
+  that fails (the server hanging up, no network, a 5xx or 429) is tried again 4
+  times, then `satimagery/download.py` waits for the connection (one thread checks
+  the server every 15 s, the others wait with it) for up to 15 minutes, and goes on
+  where it stopped. If it doesn't come back, the tiles so far are saved and
+  `satellite.py` exits with status 75 and a short message; `download_satellite`
+  then skips the remaining steps ("run again to go on"). `run_with_timer` gained
+  `--progress` (the command's latest line next to the counter: the tile count, the
+  wait) and `--keep-going` (return the status instead of stopping the script).
+  Sentinel-2 (GDAL in Docker) still relies on GDAL's own retries.
 
 ## One look for the panels; Settings
 

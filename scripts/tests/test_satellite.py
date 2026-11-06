@@ -9,6 +9,7 @@ import threading
 from typing import ClassVar
 
 import pytest
+
 import satellite as s
 
 LUXEMBOURG = [
@@ -514,3 +515,72 @@ def test_more_detail_later_downloads_only_the_new_zooms(tmp_path):
         ]
     )
     assert json.loads(plan.read_text())["detailed"] == []
+
+
+class FlakyServer(http.server.BaseHTTPRequestHandler):
+    """Hangs up without answering the first `drops` requests, then serves tiles."""
+
+    drops = 0
+
+    def do_GET(self):
+        if FlakyServer.drops > 0:
+            FlakyServer.drops -= 1
+            self.close_connection = True
+            self.connection.close()  # RemoteDisconnected on the client
+            return
+        body = self.path.encode()
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    do_HEAD = do_GET
+
+    def log_message(self, *args):
+        pass
+
+
+@pytest.fixture
+def flaky_server(monkeypatch):
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), FlakyServer)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    monkeypatch.setattr(s.download, "WAIT_STEP", 0.05)
+    monkeypatch.setattr(s.download, "WAIT_LIMIT", 0.5)
+    monkeypatch.setattr(s.download.time, "sleep", lambda _: None)
+    monkeypatch.setattr(s.download, "connection", s.download.Connection())
+    yield f"http://127.0.0.1:{server.server_port}/{{z}}/{{x}}/{{y}}"
+    server.shutdown()
+
+
+def test_a_dropped_connection_is_waited_for(tmp_path, flaky_server):
+    # More failures than the quick retries: it waits for the server, then goes on.
+    FlakyServer.drops = s.download.RETRIES + 2
+    out = s.MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 1, "", (0, 0, 1, 1))
+    found = s.download_tiles([(1, 0, 0), (1, 1, 0)], flaky_server, out, threads=1)
+    out.close()
+    assert found == 2
+
+
+def test_a_connection_that_stays_down_stops_cleanly(tmp_path, flaky_server):
+    FlakyServer.drops = 10**6
+    path = tmp_path / "t.mbtiles"
+    out = s.MBTiles(path, "t", "jpg", 0, 1, "", (0, 0, 1, 1))
+    out.put(1, 0, 0, b"before")
+    with pytest.raises(s.ConnectionLost):
+        s.download_tiles([(1, 1, 0), (1, 1, 1)], flaky_server, out, threads=2)
+    out.close()
+    # What was there is kept for the next run.
+    assert sqlite3.connect(path).execute("SELECT tile_data FROM tiles").fetchall() == [
+        (b"before",)
+    ]
+
+
+def test_the_command_line_says_so_and_exits_75(tmp_path, monkeypatch, capsys):
+    def lost(args):
+        raise s.ConnectionLost()
+
+    monkeypatch.setattr(s.cli, "command_overview", lost)
+    with pytest.raises(SystemExit) as stop:
+        s.main(["overview", "--world", "--out", str(tmp_path / "w.pmtiles")])
+    assert stop.value.code == 75
+    assert "run again" in capsys.readouterr().err

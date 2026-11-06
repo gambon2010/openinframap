@@ -10,7 +10,7 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from .download import MBTiles, cell_exists, download_tiles
+from .download import WAIT_LIMIT, ConnectionLost, MBTiles, cell_exists, download_tiles
 from .estimate import (
     detailed_estimate,
     estimate,
@@ -77,15 +77,17 @@ def command_overview(args) -> None:
         mbtiles, "Blue Marble", "jpg", minzoom, maxzoom, attribution, bbox, resume=True
     )
     done = {z: writer.has(z) for z in range(minzoom, maxzoom + 1)}
-    found = download_tiles(
-        tiles,
-        GIBS_URL,
-        writer,
-        threads=8,
-        progress=print_progress,
-        skip=lambda z, x, y: (x, y) in done[z],
-    )
-    writer.close()
+    try:
+        found = download_tiles(
+            tiles,
+            GIBS_URL,
+            writer,
+            threads=8,
+            progress=print_progress,
+            skip=lambda z, x, y: (x, y) in done[z],
+        )
+    finally:
+        writer.close()  # kept for the next run, even when stopped
     to_pmtiles(mbtiles, out, args.pmtiles_image)
     mbtiles.unlink()
     print(f"{found:,} tiles -> {out}")
@@ -208,21 +210,28 @@ def command_detailed(args) -> None:
             done[z] = writer.has(z)
         return (x, y) in done[z]
 
-    found = download_tiles(
-        (t for z in range(minzoom, maxzoom + 1) for t in block_tiles(blocks[z], z)),
-        lambda z, x, y: tile_url(source, z, x, y),
-        writer,
-        threads=4,
-        per_second=source["per_second"],
-        progress=print_progress,
-        total=total,
-        skip=skip,
-        drop_repeated=True,
-    )
-    writer.close()
+    try:
+        found = download_tiles(
+            (t for z in range(minzoom, maxzoom + 1) for t in block_tiles(blocks[z], z)),
+            lambda z, x, y: tile_url(source, z, x, y),
+            writer,
+            threads=4,
+            per_second=source["per_second"],
+            progress=print_progress,
+            total=total,
+            skip=skip,
+            drop_repeated=True,
+        )
+    finally:
+        writer.close()  # kept for the next run, even when stopped
     to_pmtiles(mbtiles, out, args.pmtiles_image)
     mbtiles.unlink()
     print(f"{found:,} tiles -> {out}")
+
+
+# The exit status when the connection is lost (EX_TEMPFAIL): the scripts stop the
+# remaining downloads and say to run again; what's downloaded is kept.
+CONNECTION_LOST = 75
 
 
 def main(argv: Iterable[str] | None = None) -> None:
@@ -300,6 +309,18 @@ def main(argv: Iterable[str] | None = None) -> None:
             p.add_argument("--regional-maxzoom", type=int, default=12)
             p.add_argument("--detailed-maxzoom", type=int, default=16)
     args = parser.parse_args(list(argv) if argv is not None else None)
+    try:
+        run_command(args)
+    except ConnectionLost:
+        print(
+            f"\n  The connection didn't come back in {WAIT_LIMIT / 60:.0f} min: stopped. "
+            "What was downloaded is kept; run again to go on from there.",
+            file=sys.stderr,
+        )
+        sys.exit(CONNECTION_LOST)
+
+
+def run_command(args) -> None:
     {
         "estimate": command_estimate,
         "overview": command_overview,

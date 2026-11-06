@@ -127,7 +127,7 @@ choose_satellite() {
 # download_satellite REGION — download what choose_satellite planned, one timed
 # step each, then point the frontend at it.
 download_satellite() {
-    local region="$1" label line steps=()
+    local region="$1" label line status steps=()
     if [[ -f "${SATELLITE_PLAN:-}" ]]; then
         while IFS= read -r line; do steps+=("$line"); done < <(
             python3 -I "$REPO_ROOT/scripts/satellite.py" steps --plan "$SATELLITE_PLAN" \
@@ -143,9 +143,17 @@ download_satellite() {
                 python3 -I "$REPO_ROOT/scripts/satellite.py" "${SAT_STEP[@]:1}" \
                     --pmtiles-image "$(basemap_image)" </dev/null
             }
-            run_with_timer "$label" satellite_step || SAT_OK=0
+            status=0
+            run_with_timer --progress --keep-going "$label" satellite_step || status=$?
+            if [[ "$status" == 75 ]]; then
+                # No connection (satellite.py waited for it): the next steps would too.
+                SAT_OK=0
+                warn "No internet connection: the satellite downloads stopped."
+                break
+            fi
+            [[ "$status" == 0 ]] || { SAT_OK=0; warn "$label failed (see above)."; }
         done
-        [[ "$SAT_OK" == 1 ]] || warn "Part of the satellite imagery failed. Run it again to go on: bash scripts/satellite.sh"
+        [[ "$SAT_OK" == 1 ]] || warn "What was downloaded is kept. Run it again to go on: bash scripts/satellite.sh"
         rm -f "$SATELLITE_PLAN"
     fi
     select_satellite "$region"

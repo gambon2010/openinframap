@@ -607,9 +607,9 @@ def test_build_steps_never_end_in_a_failing_test():
     # without a word. (It happened with --no-extra.) End steps with `if` instead.
     script = (SCRIPTS / "build-region.sh").read_text()
     flow = script[script.rindex("# The build: all the questions first") :]
-    steps = re.findall(r"^([a-z_]+)$", flow, re.M)
+    steps = re.findall(r"^([a-z_]+)$", flow, re.MULTILINE)
     assert len(steps) > 10
     for step in steps:
-        body = re.search(rf"\n{step}\(\) \{{\n(.*?)\n\}}\n", script, re.S).group(1)
+        body = re.search(rf"\n{step}\(\) \{{\n(.*?)\n\}}\n", script, re.DOTALL).group(1)
         last = [line.strip() for line in body.split("\n") if line.strip()][-1]
         assert "&&" not in last and not last.startswith("["), f"{step}: {last}"

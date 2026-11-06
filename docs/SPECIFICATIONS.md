@@ -171,6 +171,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 9.28 | Position area for artillery (PAA) back, drawn point by point like the other areas. | ✅ 2525D's irregular PAA, under our code G*F*ACPI (2525C has only a rectangle or a circle) (2026-11-06) |
 | 9.29 | Rework how graphics with two versions are listed and named (backlog). Block, Disrupt, Fix exist as a task and as an obstacle ("obstacle effect"; Turn is one too); Main/Supporting attack and Aviation as an axis of advance or a direction of attack. Ideas: one "Obstacle" entry with its effect chosen on the card (Block / Disrupt / Fix / Turn), or names by effect ("Obstacle: block"…); a well-named list rather than hiding entries. Now: both versions listed, a switch on the card. | 📝 backlog (2026-11-06) |
 | 9.30 | Satellite download menu easy to read (what each zoom shows, sizes, free space); aerial photos made more detailed later without downloading again what's there. | ✅ (2026-11-06) |
+| 9.31 | Satellite downloads survive losing the internet: wait for the connection, go on when it's back, stop cleanly (keeping what's downloaded) if it doesn't come back. | ✅ (2026-11-06) |
 
 ## 12. Feature status and "what if" (docs/plans/feature-status.md)
 

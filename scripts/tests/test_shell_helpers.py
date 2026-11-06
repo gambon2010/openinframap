@@ -182,3 +182,24 @@ def test_every_schema_file_is_built_and_fingerprinted():
     before = bash("schema_hash")
     assert len(before) == 12
     assert "local-stats" in built and "grid" in built and "search" in built
+
+
+def test_run_with_timer_keep_going_returns_the_status():
+    out = bash(
+        'run_with_timer --keep-going "Step" bash -c "echo why; exit 75" 2>&1 || echo "status $?"'
+    )
+    assert "why" in out and out.endswith("status 75")
+    # Without it, a failure stops the script.
+    failed = subprocess.run(
+        ["bash", "-c", f'source "{COMMON}"\nrun_with_timer "Step" false; echo after'],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert failed.returncode == 1 and "after" not in failed.stdout
+
+
+def test_latest_line_shows_a_counter_rewriting_its_line(tmp_path):
+    log = tmp_path / "log"
+    log.write_text("  first\n  1,000/9,000 tiles\r  2,000/9,000 tiles\r\n\n")
+    assert bash(f'latest_line "{log}"') == "2,000/9,000 tiles"
