@@ -1,7 +1,6 @@
 {
   "nav": {
-    "settings": "settings",
-    "print": "print"
+    "about-map": "About this map"
   },
   "key": {
     "show-all": "Show all",
@@ -383,7 +382,7 @@
       "name": "Designation only",
       "all": "All fields"
     },
-    "settings": "Labels and bearings (Settings)",
+    "settings": "My layers settings: colour, labels, bearings",
     "loading": "Loading...",
     "error": "The backend can't be reached, so layers can't be loaded or saved: {{error}}",
     "live": "Live (now)",
@@ -640,7 +639,8 @@
     "graphic-labels-title": "The text written on tactical graphics (CATK, WUP…)",
     "bearings-title": "The north bearings of measurements are given from",
     "new-colour": "Colour of new items",
-    "new-colour-title": "New drawings, markers, measurements and graphics get it (change one on its card)"
+    "new-colour-title": "New drawings, markers, measurements and graphics get it (change one on its card)",
+    "settings-title": "My layers settings"
   },
   "tower": {
     "unnamed-line": "a line",
@@ -760,9 +760,10 @@
     "password": "Password (8 characters at least)",
     "add": "Add an account",
     "create": "Create",
-    "logout": "log out ({{name}})",
+    "logout": "Log out",
     "locked-self": "Your own: another admin can change it",
-    "locked-admin": "An admin: take away the admin right first"
+    "locked-admin": "An admin: take away the admin right first",
+    "button": "Logged in as {{name}}"
   },
   "measure": {
     "mgrs-result": "Military grid reference (MGRS)",
@@ -787,6 +788,7 @@
     "legend-more": "…and {{count}} more",
     "centre": "Centre: {{position}}",
     "about-frame": "What is inside the frame on the map is printed, filling the page. Move or zoom the map to change it. The legend goes in a box over its bottom-right corner.",
-    "actual-size": "Print at actual size (100 %) for this scale"
+    "actual-size": "Print at actual size (100 %) for this scale",
+    "button": "Print the map (PDF)"
   }
 }

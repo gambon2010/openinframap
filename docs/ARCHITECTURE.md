@@ -33,7 +33,8 @@ core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
            (hex colours), map-style.ts (geometry-type filters), storage.ts (this
            browser's storage, read and written safely), author.ts, map-data.ts
 ui/        shared building blocks you see: dock (right), left column, details
-           panel, highlight, panels (panel.ts, makeModal), settings (openSettings),
+           panel, highlight, panels (panel.ts, makeModal), settings (the gear),
+           map buttons (map-button.ts: print, Settings, account),
            the tooltip, the right-click menu (context-menu.ts: withContextMenu),
            line icons (icons.ts: the eye), the key's checkboxes and its rows on
            prints (key/)
@@ -52,8 +53,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   satellite    imagery as the background
   map-sources  background tiles and Photon (Settings)
-  layout       the dock, the Settings link, the search box in the top bar
-  account      who is logged in, log out, Settings → Accounts (admins)
+  layout       no header; the dock, About in the credits, the search box top left
+  account      who is logged in and Log out (a map button), Settings → Accounts (admins)
   userlayers   My layers (below)
 locales/en.json   the fork's English strings
 ```

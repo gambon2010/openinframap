@@ -1,5 +1,5 @@
 // Fork: My layers' sidebar in the left column: a header (the situation selector, ⚙:
-// My layers' preferences in Settings, ×), the list of layers and items
+// My layers' settings, in their own window, ×), the list of layers and items
 // (outliner/), the only part that scrolls, and its buttons under it. Built once, so
 // the list's search box keeps its focus; each update refreshes the message and the
 // list. It's as tall as its content, up to the bottom of the left column.
@@ -7,7 +7,7 @@ import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from '../model/model.ts'
 import { Outliner } from './outliner/index.ts'
-import { addSettingsSection, openSettings, SettingsSection } from '../../../ui/settings.ts'
+import { makeModal } from '../../../ui/panel.ts'
 import { preferencesSection } from './preferences.ts'
 import { download, importFile } from '../io/files.ts'
 import type { Workspace } from './workspace.ts'
@@ -20,12 +20,19 @@ export class Sidebar {
   readonly outliner: Outliner
   private built = false
   private ws: Workspace
-  private preferences: SettingsSection
+  /** My layers' settings: their own window, opened with ⚙. */
+  private preferences: { open: () => void }
 
   constructor(ws: Workspace) {
     this.ws = ws
-    this.preferences = preferencesSection(() => void ws.renderer.render(ws.store.layers, ws.store.hidden))
-    addSettingsSection(this.preferences)
+    const section = preferencesSection(() => void ws.renderer.render(ws.store.layers, ws.store.hidden))
+    const dialog = makeModal(t('userlayers.settings-title', 'My layers settings'), section.el)
+    this.preferences = {
+      open: () => {
+        section.refresh?.()
+        dialog.open()
+      }
+    }
     this.outliner = new Outliner(ws.store, {
       update: () => ws.update(),
       select: (feature, add) => {
@@ -54,10 +61,10 @@ export class Sidebar {
     close.onclick = () => this.ws.toggle(false)
     const settings = el('button.oim-panel-button.oim-ul-settings-button', '⚙', {
       type: 'button',
-      title: t('userlayers.settings', 'Labels and bearings (Settings)'),
-      'aria-label': t('userlayers.settings', 'Labels and bearings (Settings)')
+      title: t('userlayers.settings', 'My layers settings: colour, labels, bearings'),
+      'aria-label': t('userlayers.settings', 'My layers settings: colour, labels, bearings')
     })
-    settings.onclick = () => openSettings(this.preferences)
+    settings.onclick = () => this.preferences.open()
     // The header, the list (the only part that scrolls) and the buttons under it.
     this.outline.append(this.message, this.outliner.el)
     this.el.append(

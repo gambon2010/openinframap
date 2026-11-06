@@ -1,8 +1,10 @@
-// Fork: the page's layout around upstream's controls. The layer list and the key
-// open on click in the right-hand dock (ui/dock.ts), with one look for all panels
-// (ui/panel.css); a Settings window opens from the header (ui/settings.ts, where
-// modules add sections); the search box is in the top bar, right of the header
-// (search-bar.ts).
+// Fork: the page's layout around upstream's controls. No header: upstream's title
+// and links (about, stats, a paid export) go; "About this map" is in the map's
+// credits (© OpenStreetMap…, bottom right), Settings is a gear among the map's
+// buttons (ui/settings.ts, where modules add sections), print is in My layers'
+// toolbar. The layer list and the key open on click in the right-hand dock
+// (ui/dock.ts), with one look for all panels (ui/panel.css); the search box is at
+// the top left (search-bar.ts).
 import { t } from '../../core/i18n.ts'
 import { Map } from 'maplibre-gl'
 import { mount } from 'redom'
@@ -11,18 +13,16 @@ import { dock } from '../../ui/dock.ts'
 import { makePanel } from '../../ui/panel.ts'
 import { addSettings } from '../../ui/settings.ts'
 import { moveSearchToTopBar } from './search-bar.ts'
+import { aboutInCredits } from './about.ts'
 
 const ui: ForkModule = {
   init: ({ map, layerSwitcher }) => {
     dock.attach(map)
 
-    // The header: upstream's statistics (OpenStreetMap's completeness by country,
-    // for its contributors) and its link to a paid online export don't fit this map
-    // (offline, with its own export); "about" is the fork's page (backend fork/about.py).
-    for (const link of document.querySelectorAll<HTMLAnchorElement>('header nav a')) {
-      const href = link.getAttribute('href') ?? ''
-      if (href === '/stats' || href.includes('infrageomatics.com')) link.closest('li')?.remove()
-    }
+    // The header: its statistics (OpenStreetMap's completeness by country, for its
+    // contributors) and paid online export don't fit this map, and the rest moved.
+    document.querySelector('header')?.remove()
+    aboutInCredits(map)
 
     // Layers: upstream shows its list while the pointer is over the button, level
     // with it and over the other buttons. Put the list in a docked panel instead.
@@ -49,7 +49,7 @@ const ui: ForkModule = {
       dock.add(keyButton, keyPanel)
     }
 
-    addSettings()
+    addSettings(map)
     moveSearchToTopBar(map)
 
     // For browser tests (development server only).

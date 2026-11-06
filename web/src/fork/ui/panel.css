@@ -230,3 +230,25 @@ html button.oim-on {
 .oim-search-top .oim-search-control {
   max-width: none;
 }
+
+/* Buttons of the fork's own among the map's (ui/map-button.ts): a line icon. */
+.oim-map-button svg {
+  display: block;
+  margin: auto;
+}
+/* The map's buttons (top right): the map's own and the panels first, then print,
+   Settings and your account at the bottom. */
+.maplibregl-ctrl-top-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
+  order: 1;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-settings-button) {
+  order: 2;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-account-button) {
+  order: 3;
+}

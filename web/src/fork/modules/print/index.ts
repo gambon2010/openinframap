@@ -1,10 +1,12 @@
-// Fork: printing the map as a PDF (docs/SPECIFICATIONS.md 10.7): "print" in the
-// header opens a window (title, paper, orientation, legend), beside the map: a frame
+// Fork: printing the map as a PDF (docs/SPECIFICATIONS.md 10.7): the printer among
+// the map's buttons (top right) opens a window (title, paper, orientation, legend), beside the map: a frame
 // on the map shows what will be printed (frame.ts), and the map can be moved under
 // it. The PDF: the map filling the page, a box over its corner with the legend, the
 // scale, north and the centre's grid reference (pdf.ts). What the legend lists,
 // modules say (ui/legend.ts).
 import { el } from 'redom'
+import { addMapButton } from '../../ui/map-button.ts'
+import { printerIcon } from '../../ui/icons.ts'
 import { ForkModule } from '../../types.ts'
 import { t } from '../../core/i18n.ts'
 import { makePanel } from '../../ui/panel.ts'
@@ -100,9 +102,7 @@ const print: ForkModule = {
         make.disabled = false
       }
     }
-    const link = el('a', t('nav.print', 'print'), { href: '#print' })
-    link.onclick = (event: Event) => {
-      event.preventDefault()
+    const open = () => {
       status.textContent = ''
       panel.classList.add('visible')
       frame.show()
@@ -113,7 +113,13 @@ const print: ForkModule = {
         .then((name) => (me = name))
         .catch(() => undefined)
     }
-    document.querySelector('header nav ul')?.append(' ', el('li', link))
+    // Among the map's buttons, top right.
+    addMapButton(map, {
+      content: printerIcon(),
+      title: t('print.button', 'Print the map (PDF)'),
+      className: 'oim-print-button',
+      onclick: open
+    })
   }
 }
 

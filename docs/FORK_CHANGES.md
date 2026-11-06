@@ -1493,6 +1493,23 @@ real renderer with its free point skewed, squares it up, and checks its main str
 (the longest line not along the base) is at a right angle to the base. (The task
 Disrupt was first squared through point 1: that check fails on it.)
 
+## No header: settings, print and the account among the map's buttons (2026-11-06)
+
+- Upstream's header (title, about, stats, a paid export) is removed by the layout
+  module (`document.querySelector('header')?.remove()`; index.html unchanged). The
+  search box sits at the top left.
+- At the bottom of the top-right buttons (`fork/ui/map-button.ts`, line icons from
+  `fork/ui/icons.ts`, ordered with CSS `order`): **print** (the printer opens the
+  print window, whether My layers is open or not), **Settings** (the gear: the
+  app's settings only: background, map sources, accounts) and **your account** (the
+  person: who is logged in, Log out, in the right-click menu's look).
+- **About this map** opens from the map's credits (bottom right): the credits
+  control is replaced by one with that link (`modules/layout/about.ts`), put back in
+  the corner.
+- **My layers' settings** (colour of new items, unit and graphic labels, bearings)
+  are in their own window, opened only from My layers' ⚙ (no longer a section of
+  Settings).
+
 ## My layers' panel, cleaner; dead code removed (2026-11-06)
 
 - **The panel:** as tall as its content, down to the bottom of the left column

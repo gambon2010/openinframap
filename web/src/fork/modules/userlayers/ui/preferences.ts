@@ -1,5 +1,5 @@
-// Fork: My layers' preferences, in the Settings window (fork/ui/settings.ts; the
-// sidebar's ⚙ opens it there): the colour of new items, the labels of units and of
+// Fork: My layers' settings, in their own window (opened with the sidebar's ⚙;
+// the app's settings are the gear among the map's buttons): the colour of new items, the labels of units and of
 // tactical graphics, and which north measured bearings are from. Kept in this browser (bearings: your
 // account, measure/prefs.ts).
 import { el } from 'redom'
@@ -24,7 +24,7 @@ function choice<T extends string>(choices: [T, string][], current: () => T, set:
   return select
 }
 
-/** The section; `redraw` draws the layers again with the new labels. */
+/** The settings; `redraw` draws the layers again with the new labels. */
 export function preferencesSection(redraw: () => void): SettingsSection {
   const units = choice<LabelLevel>(
     [
@@ -69,7 +69,6 @@ export function preferencesSection(redraw: () => void): SettingsSection {
     el('label.oim-ul-field', { title }, el('span', label), control)
   const section = el(
     'section.oim-ul-preferences',
-    el('h3', t('userlayers.title', 'My layers')),
     field(
       t('userlayers.new-colour', 'Colour of new items'),
       t(

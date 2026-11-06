@@ -76,7 +76,7 @@ gate`) to make a new one.
 - **Admins** add the other accounts in **Settings → Accounts** (nobody can sign up
   alone), set new passwords, and give the rights: **Admin** (manage accounts) and
   **Can set statuses** (damage and threats on the map). An account can be disabled.
-- **"log out (name)"** in the header ends the session; otherwise it lasts 30 days
+- **Log out** (the person among the buttons, top right) ends the session; otherwise it lasts 30 days
   from the last visit.
 
 Behind it, the **gate** (`gate/nginx.conf`, the `gate` Compose service) is the only
@@ -100,11 +100,13 @@ port 8800.
 - **Top right, the buttons:** zoom, your location, **Key**, **Layers**, **Status
   board** (⚠), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
-  Long panels scroll inside.
-- **Header:** **about** (this map: its region and the date of its data, the
-  datasets, how to use it, credits and licences), **settings** (background map and
-  address search servers; see below) and **print** (the map as a PDF: title, A4 or
-  A3, landscape or portrait). While the print window is open, a frame on the map
+  Long panels scroll inside. At the bottom: **print** (the printer), **Settings**
+  (the gear: background map and address search servers, see below; admins:
+  accounts) and **your account** (the person: who is logged in, **Log out**).
+- **About this map** (its region and the date of its data, the datasets, how to use
+  it, credits and licences): in the credits at the bottom right (ⓘ).
+- **Print:** the map as a PDF: title, A4 or
+  A3, landscape or portrait. While the print window is open, a frame on the map
   shows what will be printed; move or zoom the map under it. The map fills the
   page (quarter-inch margins, what nearly every printer can print to; print at
   actual size, 100 %, for the written scale to be true), with a box over its bottom-right
@@ -370,7 +372,7 @@ VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt
 
 ### Changing the background map without editing `.env`
 
-**Settings** (in the header, after about / stats / export) shows which
+**Settings** (the gear among the buttons, top right) shows which
 background-map URL is in use and where it comes from (built-in default, `web/.env`,
 or this tab). You can paste another `{z}/{x}/{y}` URL there and it switches
 immediately; **"How do I change the default?"** explains the `web/.env` setting.
