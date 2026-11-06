@@ -6,27 +6,18 @@
 // Tactical graphics (arrows, phase lines, areas...) are drawn by the C5ISR renderer
 // (graphics.ts) into a second source per layer (user_<id>_g), redrawn when the
 // zoom changes (arrow heads and teeth depend on the scale).
-import {
-  FilterSpecification,
-  GeoJSONSource,
-  LayerSpecification,
-  Map as MapLibreMap,
-  SymbolLayerSpecification
-} from 'maplibre-gl'
+import { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
-import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { getLabelLevel } from './symbols.ts'
 import { isDirection } from '../graphics/variants.ts'
 import { ensureImage, iconName } from './icons.ts'
-import { KINDS, kindOf } from '../kinds/index.ts'
 import { Measurement, measurementFeatures, measurementOf } from '../measure/features.ts'
 import { measurePrefs } from '../measure/prefs.ts'
 import {
   axisControlPoints,
   axisWidth,
   axisWidthFrom,
-  axisWidthPoint,
   graphicsLibrary,
   isAxis,
   mapScale,
@@ -35,24 +26,33 @@ import {
   squareUp
 } from '../graphics/graphics.ts'
 import { modifiersToDraw } from '../model/fields.ts'
-import { SUPPLY_COLOURS, supplyColours } from '../../../services/supply.ts'
+import { supplyColours } from '../../../services/supply.ts'
 import { pointOf } from '../model/shapes.ts'
-import { clamp } from '../../../core/math.ts'
-
-const SELECTION = 'user_selection'
-// The selection's yellow, and its handles' darker yellow (points, sizes, widths).
-const HIGHLIGHT = '#ffd600'
-const HANDLE = '#b88a00'
-const DRAFT = 'user_draft'
-// What a placing tool would put down, faint under the cursor ("user_draft…": kept
-// with the draft when the map's layers are tidied).
-const GHOST = 'user_draft_ghost'
-// A graphic being drawn, as it will look (faint).
-const GRAPHIC_DRAFT = 'user_draft_graphic'
-
-function sourceId(layerId: string) {
-  return `user_${layerId}`
-}
+import { DRAFT, GHOST, GRAPHIC_DRAFT, OUTLINE_PAD_PX, SELECTION } from './render.constants.ts'
+import { GraphicDraft, IconBox } from './render.types.ts'
+import {
+  controlPoints,
+  glows,
+  isGraphic,
+  isMeasure,
+  resizable,
+  scaledBox,
+  selectionFeatures,
+  visibleBox
+} from './geometry.ts'
+import {
+  copyLayers,
+  graphicLayers,
+  graphicSpecs,
+  graphicsSourceId,
+  highlightFilter,
+  measureLayers,
+  measureSourceId,
+  overlayLayers,
+  ownLayers,
+  sourceId,
+  supplyLayers
+} from './layers.ts'
 
 /** A feature as drawn: its properties plus what the map layers need. */
 function drawn(feature: UserFeature, layerColor: string, conflict = false): GeoJSON.Feature {
@@ -74,89 +74,6 @@ function drawn(feature: UserFeature, layerColor: string, conflict = false): GeoJ
       ...(conflict ? { conflict: true } : {})
     }
   }
-}
-
-const POLYGON: FilterSpecification = ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]]
-const LINE_OR_POLYGON: FilterSpecification = [
-  'in',
-  ['geometry-type'],
-  ['literal', ['LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']]
-]
-const POINT: FilterSpecification = ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]]
-// Kinds drawn the standard way (kinds/): copies are drawn by clones of upstream's
-// layers, graphics from their own source.
-const OWN: FilterSpecification = [
-  '!',
-  ['in', ['get', 'kind'], ['literal', KINDS.filter((k) => k.drawn !== 'standard').map((k) => k.id)]]
-]
-
-/** Drawn by the tactical graphics renderer (graphics.ts). */
-const isGraphic = (f: UserFeature) => kindOf(f.properties).drawn === 'graphic'
-
-/** A graphic being drawn (Renderer.graphicDraft). */
-export interface GraphicDraft {
-  sidc: string
-  points: [number, number][]
-  /** An arrow: the points are its path (its width follows from them). */
-  axis?: boolean
-  /** An arrow: its width against the automatic one. */
-  widthFactor?: number
-  colour: string
-}
-
-function graphicsSourceId(layerId: string) {
-  return `user_${layerId}_g`
-}
-
-/** Measurement labels: turned and placed as each says (measure/features.ts); where
- * two would overlap, the one with the lower priority stays (the total first). */
-const MEASURE_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = {
-  'text-field': ['coalesce', ['get', 'label'], ['get', 'tickLabel']],
-  'text-font': font,
-  'text-size': ['case', ['has', 'tickLabel'], 10, ['==', ['get', 'big'], true], 14, 12],
-  'text-rotate': ['coalesce', ['get', 'rotate'], 0],
-  'text-rotation-alignment': 'map',
-  'text-offset': ['coalesce', ['array', 'number', 2, ['get', 'offset']], ['literal', [0, 0]]],
-  'text-anchor': ['coalesce', ['get', 'anchor'], 'center'],
-  'symbol-sort-key': ['coalesce', ['get', 'priority'], 1],
-  'text-allow-overlap': false,
-  'text-padding': 1,
-  // One line along the leg ("23.7 km · 005°T (89 mils)").
-  'text-max-width': 40
-}
-
-function measureSourceId(layerId: string) {
-  return `user_${layerId}_m`
-}
-
-const isMeasure = (f: UserFeature) => kindOf(f.properties).drawn === 'measure'
-
-/** The control points of a graphic (stored as a line through them). */
-export function controlPoints(geometry: GeoJSON.Geometry): [number, number][] {
-  if (geometry.type === 'LineString' || geometry.type === 'MultiPoint')
-    return geometry.coordinates as [number, number][]
-  if (geometry.type === 'Point') return [geometry.coordinates as [number, number]]
-  if (geometry.type === 'Polygon') return geometry.coordinates[0] as [number, number][]
-  return []
-}
-
-// Sizes a picture, symbol or marker can have (1 = its normal size).
-export const MIN_SIZE = 0.2
-export const MAX_SIZE = 8
-
-/** Kinds drawn as an image that the resize handle (and the Size slider) apply to. */
-export function resizable(feature: UserFeature | null): boolean {
-  return feature?.geometry.type === 'Point' && Boolean(kindOf(feature.properties).sized)
-}
-
-/**
- * The size when the resize handle is dragged: how far the pointer is from the
- * centre, against where the handle sits at size 1. Clamped, in steps of 0.05.
- */
-export function sizeFromDrag(distance: number, distanceAtSize1: number): number {
-  if (!(distanceAtSize1 > 0)) return 1
-  const size = Math.round((distance / distanceAtSize1) * 20) / 20
-  return clamp(size, MIN_SIZE, MAX_SIZE)
 }
 
 export class Renderer {
@@ -199,150 +116,6 @@ export class Renderer {
     map.on('style.load', () => {
       if (this.last) void this.render(this.last.layers, this.last.hidden)
     })
-  }
-
-  private ownLayers(layer: UserLayer): LayerSpecification[] {
-    const source = sourceId(layer.id)
-    const color = ['coalesce', ['get', 'color'], layer.style.color ?? DEFAULT_COLOR]
-    return [
-      // Items in conflict: an orange dashed ring or outline, under the item.
-      {
-        id: `${source}_conflict_line`,
-        type: 'line',
-        source,
-        filter: ['all', ['has', 'conflict'], LINE_OR_POLYGON],
-        paint: { 'line-color': '#e8590c', 'line-width': 8, 'line-dasharray': [1, 1], 'line-opacity': 0.8 }
-      },
-      {
-        id: `${source}_conflict_point`,
-        type: 'circle',
-        source,
-        filter: ['all', ['has', 'conflict'], POINT],
-        paint: {
-          'circle-radius': 22,
-          'circle-opacity': 0,
-          'circle-stroke-color': '#e8590c',
-          'circle-stroke-width': 3
-        }
-      },
-      {
-        id: `${source}_fill`,
-        type: 'fill',
-        source,
-        filter: ['all', POLYGON, OWN],
-        paint: { 'fill-color': color, 'fill-opacity': 0.2 }
-      },
-      {
-        id: `${source}_line`,
-        type: 'line',
-        source,
-        filter: ['all', LINE_OR_POLYGON, OWN],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': color, 'line-width': ['coalesce', ['get', 'width'], 3] }
-      },
-      {
-        id: `${source}_symbol`,
-        type: 'symbol',
-        source,
-        filter: ['all', POINT, OWN],
-        layout: {
-          'icon-image': ['coalesce', ['get', 'icon'], ''],
-          'icon-size': ['coalesce', ['get', 'size'], 1],
-          'icon-allow-overlap': true,
-          'icon-ignore-placement': true,
-          'text-field': ['coalesce', ['get', 'name'], ''],
-          'text-font': font,
-          'text-size': 12,
-          'text-offset': [0, 1.6],
-          'text-anchor': 'top',
-          'text-optional': true
-        },
-        paint: text_paint
-      }
-    ] as LayerSpecification[]
-  }
-
-  private graphicLayers(layer: UserLayer): LayerSpecification[] {
-    return this.graphicSpecs(graphicsSourceId(layer.id), layer.style.color ?? DEFAULT_COLOR)
-  }
-
-  /** The map layers a graphic's pieces are drawn with (graphics.ts renderGraphic):
-   * fills, a casing, lines in their colour (else `colour`), labels; faint for a
-   * preview (opacity). */
-  private graphicSpecs(source: string, colour: string, opacity = 1): LayerSpecification[] {
-    // The selected graphics glow under their own lines (not for a preview).
-    const highlight: LayerSpecification[] =
-      opacity === 1
-        ? [
-            {
-              id: `${source}_highlight`,
-              type: 'line',
-              source,
-              filter: this.highlightFilter('graphic'),
-              layout: { 'line-join': 'round', 'line-cap': 'round' },
-              paint: {
-                'line-color': HIGHLIGHT,
-                'line-width': ['+', ['coalesce', ['get', 'width'], 2], 10],
-                'line-opacity': 0.6
-              }
-            } as LayerSpecification
-          ]
-        : []
-    return [
-      ...highlight,
-      {
-        id: `${source}_fill`,
-        type: 'fill',
-        source,
-        filter: ['all', POLYGON, ['!=', ['get', 'fill'], null]],
-        paint: { 'fill-color': ['get', 'fill'], 'fill-opacity': ['*', ['get', 'fillOpacity'], opacity] }
-      },
-      {
-        id: `${source}_casing`,
-        type: 'line',
-        source,
-        filter: ['all', LINE_OR_POLYGON, ['!=', ['get', 'casing'], null]],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': ['get', 'casing'],
-          'line-width': ['+', ['get', 'width'], 2],
-          'line-opacity': 0.8 * opacity
-        }
-      },
-      {
-        id: `${source}_line`,
-        type: 'line',
-        source,
-        filter: LINE_OR_POLYGON,
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': ['coalesce', ['get', 'stroke'], colour],
-          'line-width': ['get', 'width'],
-          'line-opacity': opacity
-        }
-      },
-      {
-        id: `${source}_label`,
-        type: 'symbol',
-        source,
-        filter: POINT,
-        layout: {
-          'text-field': ['get', 'label'],
-          'text-font': font,
-          'text-size': 15,
-          'text-rotate': ['get', 'angle'],
-          'text-rotation-alignment': 'map',
-          'text-allow-overlap': true,
-          'text-ignore-placement': true
-        },
-        paint: {
-          'text-color': ['get', 'color'],
-          'text-halo-color': ['coalesce', ['get', 'halo'], '#ffffff'],
-          'text-halo-width': 2,
-          'text-opacity': opacity
-        }
-      }
-    ] as LayerSpecification[]
   }
 
   /** Draw the graphics of the layers shown (after render(), and on zoom); `changed`
@@ -419,81 +192,6 @@ export class Renderer {
     }
   }
 
-  /** Power supply mode: copies of power lines, substations and plants in their
-   * original's colour (ui/supply.ts), over their own look; nothing while it's off. */
-  private supplyLayers(layer: UserLayer): LayerSpecification[] {
-    if (!supplyColours.active) return []
-    const source = sourceId(layer.id)
-    const colour = [
-      'match',
-      ['get', 'supply'],
-      'red',
-      SUPPLY_COLOURS.red,
-      'orange',
-      SUPPLY_COLOURS.orange,
-      'risk',
-      SUPPLY_COLOURS.risk,
-      SUPPLY_COLOURS.green
-    ] as unknown as string
-    return [
-      {
-        id: `${source}__supply_line`,
-        type: 'line',
-        source,
-        filter: ['all', ['has', 'supply'], LINE_OR_POLYGON] as FilterSpecification,
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': colour, 'line-width': 5 }
-      },
-      {
-        id: `${source}__supply_point`,
-        type: 'circle',
-        source,
-        filter: ['all', ['has', 'supply'], POINT] as FilterSpecification,
-        paint: {
-          'circle-color': colour,
-          'circle-radius': 9,
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 2
-        }
-      }
-    ]
-  }
-
-  /** Upstream's layers for the data copies came from, drawing the copies instead. */
-  private copyLayers(layer: UserLayer): LayerSpecification[] {
-    const keys = new Set<string>()
-    for (const f of layer.features.values()) {
-      const copy = f.properties.copy
-      if (copy) keys.add(`${copy.source}/${copy.sourceLayer}`)
-    }
-    if (!keys.size) return []
-    const source = sourceId(layer.id)
-    const clones: LayerSpecification[] = []
-    for (const original of this.primaryLayers()) {
-      if (!('source-layer' in original) || original.id.startsWith('user_')) continue
-      const key = `${original.source}/${original['source-layer']}`
-      if (!keys.has(key)) continue
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { zorder, minzoom, maxzoom, 'source-layer': _sourceLayer, ...rest } = original
-      // A copy stays at every zoom: the original's "only once zoomed in" conditions
-      // (small plants, low voltages) are left out; its other ones (a point while
-      // zoomed out, an area closer) are kept.
-      const filter = (
-        original.filter
-          ? ['all', ['==', ['get', 'copy_key'], key], withoutMinZoom(original.filter)]
-          : ['==', ['get', 'copy_key'], key]
-      ) as FilterSpecification
-      clones.push({
-        ...rest,
-        id: `${source}__${original.id}`,
-        source,
-        filter,
-        layout: { ...(original.layout ?? {}), visibility: 'visible' }
-      } as LayerSpecification)
-    }
-    return clones
-  }
-
   /** Show these layers (and nothing else of My layers). */
   async render(layers: Map<string, UserLayer>, hidden: Set<string>) {
     this.last = { layers, hidden }
@@ -545,11 +243,11 @@ export class Renderer {
         map.addSource(measureSourceId(layer.id), { type: 'geojson', data: empty })
       const ids: string[] = []
       for (const spec of [
-        ...this.copyLayers(layer),
-        ...this.supplyLayers(layer),
-        ...this.graphicLayers(layer),
-        ...this.measureLayers(layer),
-        ...this.ownLayers(layer)
+        ...copyLayers(layer, this.primaryLayers),
+        ...supplyLayers(layer),
+        ...graphicLayers(layer, this.highlighted),
+        ...measureLayers(layer, this.highlighted),
+        ...ownLayers(layer)
       ]) {
         wanted.add(spec.id)
         ids.push(spec.id)
@@ -637,67 +335,6 @@ export class Renderer {
     }
   }
 
-  private measureLayers(layer: UserLayer): LayerSpecification[] {
-    const source = measureSourceId(layer.id)
-    const color = ['get', 'color']
-    return [
-      {
-        // A selected measurement glows under its lines and rings, like a line.
-        id: `${source}_highlight`,
-        type: 'line',
-        source,
-        filter: this.highlightFilter('measure'),
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': HIGHLIGHT, 'line-width': 12, 'line-opacity': 0.6 }
-      },
-      {
-        id: `${source}_fill`,
-        type: 'fill',
-        source,
-        filter: ['==', ['geometry-type'], 'Polygon'],
-        paint: { 'fill-color': color, 'fill-opacity': 0.12 }
-      },
-      // The lines and their marks (ticks: thinner) in one layer.
-      {
-        id: `${source}_line`,
-        type: 'line',
-        source,
-        filter: ['==', ['geometry-type'], 'LineString'],
-        layout: { 'line-join': 'round' },
-        paint: {
-          'line-color': color,
-          'line-width': ['match', ['coalesce', ['get', 'tick'], ''], 'major', 2, 'minor', 1.2, 2.5]
-        }
-      },
-      {
-        id: `${source}_vertex`,
-        type: 'circle',
-        source,
-        filter: ['==', ['get', 'vertex'], true],
-        paint: {
-          'circle-radius': 4,
-          'circle-color': '#fff',
-          'circle-stroke-color': color,
-          'circle-stroke-width': 2
-        }
-      },
-      // Lengths and bearings (along their leg, above it), the total, the marks'
-      // distances (under the line, smaller, in its colour): measure/features.ts.
-      {
-        id: `${source}_label`,
-        type: 'symbol',
-        source,
-        filter: ['any', ['has', 'label'], ['has', 'tickLabel']],
-        layout: MEASURE_LABEL_LAYOUT,
-        paint: {
-          'text-color': ['case', ['has', 'tickLabel'], color, '#222'],
-          'text-halo-color': '#fff',
-          'text-halo-width': 2
-        }
-      }
-    ] as unknown as LayerSpecification[]
-  }
-
   /** Map layer ids of My layers' features (for clicks). */
   featureLayerIds(): string[] {
     return (this.map.getStyle().layers ?? [])
@@ -711,122 +348,12 @@ export class Renderer {
     for (const id of [SELECTION, DRAFT, GHOST]) {
       if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: empty })
     }
-    const overlays: LayerSpecification[] = [
-      {
-        id: `${SELECTION}_line`,
-        type: 'line',
-        source: SELECTION,
-        paint: {
-          'line-color': HIGHLIGHT,
-          // A picture, symbol or marker: a thin box around it.
-          'line-width': ['case', ['==', ['get', 'outline'], true], 3, 8],
-          'line-opacity': ['case', ['==', ['get', 'outline'], true], 1, 0.6]
-        }
-      },
-      {
-        // The points of a selected line, area or graphic: drag one to move it.
-        id: `${SELECTION}_vertex`,
-        type: 'circle',
-        source: SELECTION,
-        filter: ['all', POINT, ['==', ['get', 'vertex'], true]] as FilterSpecification,
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#fff',
-          'circle-stroke-color': HANDLE,
-          'circle-stroke-width': 2
-        }
-      },
-      {
-        // Drag it to resize a picture, symbol or marker.
-        id: `${SELECTION}_resize`,
-        type: 'circle',
-        source: SELECTION,
-        filter: ['==', ['get', 'resize'], true],
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#fff',
-          'circle-stroke-color': HANDLE,
-          'circle-stroke-width': 2
-        }
-      },
-      {
-        id: `${SELECTION}_point`,
-        type: 'circle',
-        source: SELECTION,
-        filter: [
-          'all',
-          POINT,
-          ['!=', ['get', 'vertex'], true],
-          ['!=', ['get', 'resize'], true]
-        ] as FilterSpecification,
-        paint: {
-          'circle-radius': 22,
-          'circle-color': 'rgba(255, 214, 0, 0.15)',
-          'circle-stroke-color': HIGHLIGHT,
-          'circle-stroke-width': 3
-        }
-      },
-      {
-        id: `${DRAFT}_line`,
-        type: 'line',
-        source: DRAFT,
-        paint: { 'line-color': '#1565c0', 'line-width': 3, 'line-dasharray': [2, 1] }
-      },
-      {
-        id: `${DRAFT}_point`,
-        type: 'circle',
-        source: DRAFT,
-        filter: ['all', POINT, ['!', ['has', 'label']], ['!', ['has', 'tickLabel']]] as FilterSpecification,
-        paint: {
-          'circle-radius': 5,
-          'circle-color': '#fff',
-          'circle-stroke-color': '#1565c0',
-          'circle-stroke-width': 2
-        }
-      },
-      {
-        // What a placing tool would put down, faint, under the cursor.
-        id: GHOST,
-        type: 'symbol',
-        source: GHOST,
-        layout: {
-          'icon-image': ['get', 'icon'],
-          'icon-size': ['coalesce', ['get', 'size'], 1],
-          'icon-allow-overlap': true,
-          'icon-ignore-placement': true
-        },
-        paint: { 'icon-opacity': 0.55 }
-      },
-      {
-        // A measurement being drawn: its lengths and bearings so far.
-        id: `${DRAFT}_label`,
-        type: 'symbol',
-        source: DRAFT,
-        filter: ['has', 'label'],
-        layout: MEASURE_LABEL_LAYOUT,
-        paint: { 'text-color': '#1565c0', 'text-halo-color': '#fff', 'text-halo-width': 2 }
-      }
-    ]
-    for (const spec of overlays) if (!map.getLayer(spec.id)) map.addLayer(spec)
+    for (const spec of overlayLayers()) if (!map.getLayer(spec.id)) map.addLayer(spec)
   }
 
   // The graphics and measurements highlighted: they glow under their own lines
   // (renderGraphics, renderMeasures), not a shape drawn over them.
   private highlighted: string[] = []
-
-  /** The pieces of the highlighted items a glow goes under: a graphic's lines and
-   * outlines; a measurement's lines and rings, not its tick marks. */
-  private highlightFilter(of: 'graphic' | 'measure'): FilterSpecification {
-    const ids = ['in', ['get', 'fid'], ['literal', this.highlighted]]
-    return (of === 'graphic'
-      ? ['all', LINE_OR_POLYGON, ids]
-      : [
-          'all',
-          ['==', ['geometry-type'], 'LineString'],
-          ['!', ['has', 'tick']],
-          ids
-        ]) as unknown as FilterSpecification
-  }
 
   private highlightItems(features: UserFeature[]) {
     const ids = features.filter((f) => isGraphic(f) || isMeasure(f)).map((f) => f.id)
@@ -834,8 +361,10 @@ export class Renderer {
     this.highlighted = ids
     for (const layer of this.map.getStyle().layers) {
       if (!layer.id.startsWith('user_')) continue
-      if (layer.id.endsWith('_g_highlight')) this.map.setFilter(layer.id, this.highlightFilter('graphic'))
-      if (layer.id.endsWith('_m_highlight')) this.map.setFilter(layer.id, this.highlightFilter('measure'))
+      if (layer.id.endsWith('_g_highlight'))
+        this.map.setFilter(layer.id, highlightFilter('graphic', this.highlighted))
+      if (layer.id.endsWith('_m_highlight'))
+        this.map.setFilter(layer.id, highlightFilter('measure', this.highlighted))
     }
   }
 
@@ -859,25 +388,15 @@ export class Renderer {
     if (!resizable(feature)) return null
     const box = this.iconBox(feature)
     if (!box) return null
-    const size = feature.properties.size ?? 1
-    const pad = 4
-    const [l, t, r, b] = [
-      box.left * size - pad,
-      box.top * size - pad,
-      box.right * size + pad,
-      box.bottom * size + pad
-    ]
-    const c = this.map.project(pointOf(feature))
+    const { left, top, right, bottom } = scaledBox(box, feature.properties.size ?? 1, OUTLINE_PAD_PX)
+    const at = pointOf(feature)
     const ring = [
-      [l, t],
-      [r, t],
-      [r, b],
-      [l, b],
-      [l, t]
-    ].map(([x, y]) => {
-      const at = this.map.unproject([c.x + x, c.y + y])
-      return [at.lng, at.lat]
-    })
+      [left, top],
+      [right, top],
+      [right, bottom],
+      [left, bottom],
+      [left, top]
+    ].map(([x, y]) => this.offsetOnScreen(at, x, y))
     return [
       { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: { outline: true } }
     ]
@@ -924,10 +443,15 @@ export class Renderer {
     if (!resizable(feature)) return null
     const box = this.iconBox(feature)
     if (!box) return null
-    const size = feature.properties.size ?? 1
-    const centre = this.map.project(pointOf(feature))
-    const corner = this.map.unproject([centre.x + box.right * size, centre.y + box.bottom * size])
-    return [corner.lng, corner.lat]
+    const { right, bottom } = scaledBox(box, feature.properties.size ?? 1)
+    return this.offsetOnScreen(pointOf(feature), right, bottom)
+  }
+
+  /** A point `dx`, `dy` screen pixels from another, on the map. */
+  private offsetOnScreen(at: [number, number], dx: number, dy: number): [number, number] {
+    const p = this.map.project(at)
+    const moved = this.map.unproject([p.x + dx, p.y + dy])
+    return [moved.lng, moved.lat]
   }
 
   /** Draw a feature as it's being changed (e.g. resized), before it's saved. */
@@ -998,7 +522,7 @@ export class Renderer {
     this.ensureOverlays()
     if (!map.getSource(GRAPHIC_DRAFT)) {
       map.addSource(GRAPHIC_DRAFT, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      for (const spec of this.graphicSpecs(GRAPHIC_DRAFT, DEFAULT_COLOR, 0.6)) map.addLayer(spec)
+      for (const spec of graphicSpecs(GRAPHIC_DRAFT, DEFAULT_COLOR, 0.6)) map.addLayer(spec)
     }
     const source = map.getSource(GRAPHIC_DRAFT) as GeoJSONSource
     if (!draft) {
@@ -1051,139 +575,4 @@ export class Renderer {
     }
     ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
-}
-
-/** Items that glow under their own lines when selected (Renderer.highlightItems)
- * rather than have their shape drawn over them: graphics and measurements. */
-const glows = (f: UserFeature) => isGraphic(f) || isMeasure(f)
-
-/** A selected feature as drawn: its shape (unless it glows), and its points as
- * handles when it has more than one. */
-export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
-  const graphic = isGraphic(feature)
-  const points = graphic
-    ? squareUp(feature.properties.sidc, controlPoints(feature.geometry))
-    : vertices(feature.geometry)
-  const out: GeoJSON.Feature[] = glows(feature)
-    ? []
-    : [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
-  // Arrows: the size handle, at the arrowhead's corner. Not part of the path (or of
-  // the highlighted line): it only sets the width.
-  const p = feature.properties
-  if (graphic && (p.axis || p.axisWidth !== undefined) && points.length > 1) {
-    out.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: axisWidthPoint(points, p.axisWidth ?? axisWidth(points)) },
-      properties: { vertex: true, index: -1, width: true }
-    })
-  }
-  if (feature.geometry.type !== 'Point') {
-    points.forEach((c, index) =>
-      out.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: c },
-        properties: { vertex: true, index }
-      })
-    )
-  }
-  return out
-}
-
-/** The points of a drawing that can be moved (a polygon's closing point left out). */
-export function vertices(geometry: GeoJSON.Geometry): [number, number][] {
-  if (geometry.type === 'LineString') return geometry.coordinates as [number, number][]
-  if (geometry.type === 'Polygon') return (geometry.coordinates[0] as [number, number][]).slice(0, -1)
-  return []
-}
-
-/** A geometry with one of its movable points moved (vertices() order). */
-export function moveVertex(
-  geometry: GeoJSON.Geometry,
-  index: number,
-  to: [number, number]
-): GeoJSON.Geometry {
-  if (geometry.type === 'LineString') {
-    const coordinates = geometry.coordinates.map((c, i) => (i === index ? to : c))
-    return { type: 'LineString', coordinates }
-  }
-  if (geometry.type === 'Polygon') {
-    const ring = geometry.coordinates[0].map((c, i, all) =>
-      i === index || (index === 0 && i === all.length - 1) ? to : c
-    )
-    return { type: 'Polygon', coordinates: [ring, ...geometry.coordinates.slice(1)] }
-  }
-  return geometry
-}
-
-/** Every position of a geometry moved by the same amount (degrees). */
-export function translateGeometry(geometry: GeoJSON.Geometry, dLng: number, dLat: number): GeoJSON.Geometry {
-  const move = (c: unknown): unknown =>
-    Array.isArray(c) && typeof c[0] === 'number'
-      ? [(c[0] as number) + dLng, (c[1] as number) + dLat, ...c.slice(2)]
-      : (c as unknown[]).map(move)
-  if (geometry.type === 'GeometryCollection') {
-    return { ...geometry, geometries: geometry.geometries.map((g) => translateGeometry(g, dLng, dLat)) }
-  }
-  return { ...geometry, coordinates: move(geometry.coordinates) } as GeoJSON.Geometry
-}
-
-/** The middle of a geometry's bounding box. */
-export function geometryCentre(geometry: GeoJSON.Geometry): [number, number] {
-  const xs: number[] = []
-  const ys: number[] = []
-  const add = (c: unknown): void => {
-    if (Array.isArray(c) && typeof c[0] === 'number') {
-      xs.push(c[0] as number)
-      ys.push(c[1] as number)
-    } else if (Array.isArray(c)) c.forEach(add)
-  }
-  if (geometry.type === 'GeometryCollection') geometry.geometries.forEach((g) => add(geometryCentre(g)))
-  else add(geometry.coordinates)
-  if (!xs.length) return [0, 0]
-  return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]
-}
-
-/** A box around an image's drawn part: px from its centre (left and top negative). */
-export interface IconBox {
-  left: number
-  top: number
-  right: number
-  bottom: number
-}
-
-/** The box around an image's visible pixels (RGBA, alpha over a small threshold),
- * in px from its centre on screen; the whole image when nothing is visible. */
-export function visibleBox(rgba: ArrayLike<number>, width: number, height: number, ratio = 1): IconBox {
-  let [x0, y0, x1, y1] = [width, height, -1, -1]
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (rgba[(y * width + x) * 4 + 3] > 16) {
-        if (x < x0) x0 = x
-        if (x > x1) x1 = x
-        if (y < y0) y0 = y
-        if (y > y1) y1 = y
-      }
-    }
-  }
-  if (x1 < 0) [x0, y0, x1, y1] = [0, 0, width - 1, height - 1]
-  return {
-    left: (x0 - width / 2) / ratio,
-    top: (y0 - height / 2) / ratio,
-    right: (x1 + 1 - width / 2) / ratio,
-    bottom: (y1 + 1 - height / 2) / ratio
-  }
-}
-
-const isZoom = (e: unknown) => Array.isArray(e) && e.length === 1 && e[0] === 'zoom'
-
-/** A filter with its minimum-zoom conditions (zoom > n, zoom >= n, n < zoom,
- * n <= zoom) always true; the rest unchanged. */
-export function withoutMinZoom<T>(filter: T): T {
-  if (!Array.isArray(filter)) return filter
-  const [op, a, b] = filter as unknown[]
-  if (filter.length === 3) {
-    if ((op === '>' || op === '>=') && isZoom(a) && typeof b === 'number') return true as T
-    if ((op === '<' || op === '<=') && typeof a === 'number' && isZoom(b)) return true as T
-  }
-  return filter.map((part) => withoutMinZoom(part)) as T
 }

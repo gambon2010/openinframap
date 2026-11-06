@@ -2,7 +2,8 @@
 // constants): any change in a number, rounding or unit shows here.
 import { describe, expect, test } from 'vitest'
 import { axisWidth, axisWidthFrom, axisWidthPoint, mapScale, pathLength } from './graphics/graphics.ts'
-import { MAX_SIZE, MIN_SIZE, sizeFromDrag } from './map/render.ts'
+import { MAX_SIZE, MIN_SIZE } from './map/render.constants.ts'
+import { sizeFromDrag } from './map/geometry.ts'
 import { metresPerPixel as tickMetresPerPixel } from './measure/ticks.ts'
 
 const path: [number, number][] = [

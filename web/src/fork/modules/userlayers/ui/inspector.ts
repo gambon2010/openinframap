@@ -6,7 +6,7 @@ import { t } from '../../../core/i18n.ts'
 import { leftColumn } from '../../../ui/left-column.ts'
 import { UserFeature, UserLayer } from '../model/model.ts'
 import { buildBulkCard, buildEditor } from './editor.ts'
-import { geometryCentre, translateGeometry } from '../map/render.ts'
+import { geometryCentre, translateGeometry } from '../map/geometry.ts'
 import type { Workspace } from './workspace.ts'
 
 export class Inspector {

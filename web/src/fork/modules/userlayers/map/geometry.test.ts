@@ -1,20 +1,20 @@
 // The geometry helpers of My layers: control points of graphics, moving the points
 // of lines and areas, and the selection's handles.
 import { describe, expect, test } from 'vitest'
+import { MAX_SIZE, MIN_SIZE } from './render.constants.ts'
 import {
-  MAX_SIZE,
-  MIN_SIZE,
   controlPoints,
   geometryCentre,
   moveVertex,
   resizable,
   selectionFeatures,
-  visibleBox,
-  withoutMinZoom,
   sizeFromDrag,
   translateGeometry,
-  vertices
-} from './render.ts'
+  vertices,
+  visibleBox,
+  scaledBox
+} from './geometry.ts'
+import { withoutMinZoom } from './layers.ts'
 import { dropRepeats, graphicGeometry, wheelPixels } from './tools.ts'
 import { UserFeature } from '../model/model.ts'
 
@@ -219,5 +219,13 @@ describe('Shift + scroll', () => {
     expect(wheelPixels({ deltaX: 0, deltaY: 3, deltaMode: 1 })).toBe(120)
     expect(wheelPixels({ deltaX: 0, deltaY: 1, deltaMode: 2 })).toBe(400)
     expect(wheelPixels({ deltaX: 50, deltaY: 0, deltaMode: 0 })).toBe(50)
+  })
+})
+
+describe('the selection box around an image', () => {
+  test('scaled, and padded each side', () => {
+    const box = { left: -10, top: -5, right: 10, bottom: 5 }
+    expect(scaledBox(box, 2)).toEqual({ left: -20, top: -10, right: 20, bottom: 10 })
+    expect(scaledBox(box, 1, 4)).toEqual({ left: -14, top: -9, right: 14, bottom: 9 })
   })
 })

@@ -6,15 +6,9 @@ import { t } from '../../../core/i18n.ts'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { Store } from '../state/store.ts'
-import {
-  MAX_SIZE,
-  MIN_SIZE,
-  Renderer,
-  controlPoints,
-  moveVertex,
-  sizeFromDrag,
-  translateGeometry
-} from './render.ts'
+import { MAX_SIZE, MIN_SIZE } from './render.constants.ts'
+import { Renderer } from './render.ts'
+import { controlPoints, moveVertex, sizeFromDrag, translateGeometry } from './geometry.ts'
 import { axisWidth, axisWidthFrom, squareUp } from '../graphics/graphics.ts'
 import { DEFAULT_COLOR, FeatureProps, UserFeature } from '../model/model.ts'
 import { sourceGeometry } from '../../../core/map-data.ts'
