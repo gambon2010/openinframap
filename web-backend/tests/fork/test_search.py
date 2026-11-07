@@ -28,3 +28,13 @@ def test_result_tier_and_sort_key():
     assert sort_key({"type": "plant", "output": 1_300_000_000}) == 1300
     assert sort_key({"type": "place", "population": 1000}) == 1000
     assert sort_key({"type": "feature"}) == 0
+
+
+def test_each_station_kind_has_its_own_fields():
+    from src.fork.search.stations import STATIONS
+
+    substation = STATIONS["substation"]["fields"]({"operator": "RTE", "voltage": 225000.0})
+    assert substation == {"operator": "RTE", "voltage": 225000}
+    plant = STATIONS["plant"]["fields"]({"output": None, "source": "wind", "operator": None})
+    assert plant == {"output": None, "source": "wind", "operator": None}
+    assert {s["table"] for s in STATIONS.values()} == {"substation", "power_plant"}
