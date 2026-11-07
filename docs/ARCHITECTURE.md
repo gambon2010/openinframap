@@ -157,6 +157,8 @@ session):
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers.py`
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
+- `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
+  upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:
   - `schema.py` and `userdata.sql`;
   - `changes.py` (applying and logging, no HTTP);

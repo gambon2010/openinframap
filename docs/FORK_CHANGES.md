@@ -1656,6 +1656,18 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## Backend: upstream's Wikidata files untouched (2026-11-07)
+
+The offline Wikidata cache (entity JSON and pictures from `scripts/fetch_images.py`)
+was edits in upstream's `config.py`, `data.py` and `views/wikidata.py`. They're back
+to upstream's; `src/fork/wikidata_offline.py` does the same by wrapping upstream's
+functions when the fork's routes load (`install()`): `get_wikidata` reads the cache
+first and gives None without a network, `get_commons_thumbnail` gives the picture
+downloaded for the item being shown (`wikidata_json` wrapped to say which) and None
+without a network. It replaces the functions where upstream defines them and where
+it imported them (`views/wikidata.py`, `views/area.py`); a test checks they're the
+same everywhere. The cache folders are in `src/fork/paths.py`.
+
 ## Statuses removed (2026-11-06)
 
 The status system (docs/plans/feature-status.md) is gone, to be rebuilt simpler
@@ -2394,7 +2406,6 @@ Upstream files the fork still changes, and how:
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
 | `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's; the database middleware skips the fork's streams (`streaming_paths`) |
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
-| `web-backend/src/config.py`, `data.py`, `views/wikidata.py` | Offline Wikidata cache |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
 | `openinframap.ts` (the `GeolocateControl` removed) | The "find my location" button removed (2026-11-06, asked for). On a merge, keep it out. |
 | `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted; `remote-control.ts` stays (the validation popup uses it). |

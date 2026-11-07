@@ -8,12 +8,14 @@ from starlette.middleware import Middleware
 from starlette.routing import BaseRoute, Mount
 from starlette.staticfiles import StaticFiles
 
-from ..config import IMAGES_DIR
-from . import about, auth, circuits, grid, map_data, search, userdata
+from . import about, auth, circuits, grid, map_data, search, userdata, wikidata_offline
 from .auth import LoginMiddleware
+from .paths import IMAGES_DIR
 from .userdata.events import STREAMING as events_streaming
 
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+# Popups from the offline Wikidata cache (upstream's functions wrapped).
+wikidata_offline.install()
 
 routes: list[BaseRoute] = [
     # Logging in, the accounts (every other call needs a logged-in user: LoginMiddleware).

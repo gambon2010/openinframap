@@ -17,7 +17,7 @@ from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
 from .. import Request, get_db
-from ..config import WIKIDATA_JSON_DIR
+from .paths import WIKIDATA_JSON_DIR
 from ..templates import templates as upstream
 
 FORK_TEMPLATES = Path(__file__).parent / "templates"
