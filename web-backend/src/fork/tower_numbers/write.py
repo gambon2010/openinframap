@@ -11,6 +11,22 @@ from .register import number_from_register
 
 
 async def write(database: AsyncConnection, lines: list[Line]) -> None:
+    """The lines, each tower's place along them, their numbers (from the register)."""
+    await write_lines(database, lines)
+    towers = await towers_along(database)
+    numbered = await number_from_register(database, lines, towers)
+    await write_numbers(database, numbered)
+
+
+async def copy_rows(database: AsyncConnection, table: str, rows: list) -> None:
+    raw = (await database.get_raw_connection()).driver_connection
+    assert raw is not None
+    await raw.copy_records_to_table(table, records=rows)
+
+
+async def write_lines(database: AsyncConnection, lines: list[Line]) -> None:
+    """tower_line (each line, with what the search matches) and tower_line_edge
+    (where each stretch of the network is along its line)."""
     await database.execute(text("DROP TABLE IF EXISTS tower_number, tower_line_edge, tower_line"))
     await database.execute(
         text(
@@ -24,14 +40,11 @@ async def write(database: AsyncConnection, lines: list[Line]) -> None:
                                              start_m double precision, backwards boolean)"""
         )
     )
-    raw = (await database.get_raw_connection()).driver_connection
-    assert raw is not None
-    await raw.copy_records_to_table(
-        "tower_line", records=[(x.line_id, x.voltage, x.name, x.start, x.end) for x in lines]
-    )
-    await raw.copy_records_to_table(
+    await copy_rows(database, "tower_line", [(x.line_id, x.voltage, x.name, x.start, x.end) for x in lines])
+    await copy_rows(
+        database,
         "tower_line_edge",
-        records=[(x.line_id, e, m, back) for x in lines for e, (m, back) in x.edges.items()],
+        [(x.line_id, e, m, back) for x in lines for e, (m, back) in x.edges.items()],
     )
     # What the search matches ("23 marlenheim"): the line's name and stations, plain.
     await database.execute(text("ALTER TABLE tower_line ADD COLUMN search text"))
@@ -40,6 +53,10 @@ async def write(database: AsyncConnection, lines: list[Line]) -> None:
     )
     await database.execute(text("CREATE INDEX ON tower_line_edge (edge_id)"))
     await database.execute(text("ANALYZE tower_line_edge"))
+
+
+async def towers_along(database: AsyncConnection) -> dict[int, list[int]]:
+    """Each line's towers, in order along it."""
     # Each tower on a stretch of a line: how far along the line it is. The towers
     # are points of the lines' ways (within a few cm).
     await database.execute(
@@ -61,15 +78,16 @@ async def write(database: AsyncConnection, lines: list[Line]) -> None:
         text("SELECT line_id, osm_id FROM tower_along ORDER BY line_id, at_m, osm_id")
     ):
         towers.setdefault(line_id, []).append(osm_id)
+    return towers
 
-    # Their numbers, as the register (userdata) has them, and the new ones.
-    numbered = await number_from_register(database, lines, towers)
+
+async def write_numbers(database: AsyncConnection, numbered: list[tuple[int, int, str, int]]) -> None:
+    """tower_number: each tower's number on each of its lines (one per voltage), and
+    which row labels it on the map."""
     await database.execute(
         text("CREATE TEMP TABLE tower_label (line_id integer, osm_id bigint, number text, total integer)")
     )
-    raw = (await database.get_raw_connection()).driver_connection
-    assert raw is not None
-    await raw.copy_records_to_table("tower_label", records=numbered)
+    await copy_rows(database, "tower_label", numbered)
     await database.execute(
         text(
             """CREATE TABLE tower_number AS
