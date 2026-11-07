@@ -28,7 +28,7 @@ def feed(entries: list[str], total: int | None = None) -> bytes:
 
 
 def entry(title: str, href: str = "", length: int = 0) -> str:
-    link = f'<link href="{href}" length="{length}"/>' if href else ""
+    link = f'<link href="{href}" gpf_dl:length="{length}"/>' if href else ""
     return f"<entry><title>{title}</title>{link}</entry>"
 
 

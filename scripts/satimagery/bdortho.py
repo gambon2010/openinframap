@@ -148,7 +148,9 @@ def archive_files(resource: str) -> tuple[list[tuple[str, int]], str | None]:
         if href.endswith(".md5"):
             md5 = href
         elif re.search(r"\.7z(\.\d+)?$", href):
-            parts.append((href, int(link.get("length") or 0)))
+            # Its size: gpf_dl:length (IGN's namespace), as the listing gives it.
+            size = link.get(f"{GPF}length") or link.get("length") or 0
+            parts.append((href, int(size)))
     return sorted(parts), md5
 
 
