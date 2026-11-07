@@ -1667,6 +1667,15 @@ finishing, the draft and ghost), `dragging.ts`, `resize.ts` (Shift + scroll),
 `copy.ts`, `selection.ts`; they work on `ToolsContext` (`map/tools.types.ts`),
 which `Tools` is. The tests didn't change.
 
+Then the list: a safety net first, `ui/outliner/list.test.ts` (14 tests through its
+outside only: what it draws, as a snapshot, the search, long layers, clicks,
+renaming, the right-click menus, as a snapshot, drag and drop). `outliner/index.ts`
+(849 lines) became the class keeping the list's state and drawing the tree (161),
+and its parts: `rows/` (`item.ts`, `layer.ts`, `folder.ts`), `menus.ts`,
+`editing.ts`, `drag.ts`, `footer.ts`, `widgets.ts`, on `OutlinerContext`
+(`outliner/types.ts`), which the `Outliner` is. The snapshots didn't change; checked
+in the browser too (a layer made, a line drawn into it, its menu).
+
 ## Refactor e: the backend's largest files split (2026-11-07)
 
 docs/plans/refactor-5e.md. Each file moved as is first, then improved apart, each

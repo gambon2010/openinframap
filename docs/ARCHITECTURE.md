@@ -134,7 +134,8 @@ ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast,
          preferences.ts (My layers' part of Settings); editor/ (the card:
          index.ts builds it from sections.ts, controls.ts the small inputs),
-         outliner/ (the list: index.ts, filter.ts, order.ts), palette.ts (the picker);
+         outliner/ (the list: index.ts, rows/ item, layer, folder; menus.ts, editing.ts,
+         drag.ts, footer.ts over types.ts's OutlinerContext; filter.ts, order.ts), palette.ts (the picker);
          userlayers.css lists the CSS files in order (order matters)
 ```
 

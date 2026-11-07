@@ -2,6 +2,8 @@
 // to do, and a name being typed in place.
 import type { UserFeature, UserLayer } from '../../model/model.ts'
 import type { Format } from '../../io/formats.ts'
+import type { Store } from '../../state/store.ts'
+import type { PersonalSettings } from '../../state/personal.ts'
 
 export type Filter = 'hostile' | 'friend' | 'planned' | 'units' | 'graphics' | 'pictures'
 
@@ -47,3 +49,32 @@ export type ItemGroup =
   | 'drawings'
   | 'pictures'
   | 'copies'
+
+/** What the list's parts (rows/, menus.ts, editing.ts, drag.ts, footer.ts) share:
+ * the Outliner is it. */
+export interface OutlinerContext {
+  readonly el: HTMLElement
+  readonly store: Store
+  readonly actions: OutlinerActions
+  /** Folders, the order, open layers, folded folders and groups: yours. */
+  readonly personal: PersonalSettings
+  /** A situation's layers, shown read-only instead of the live ones (state/view.ts). */
+  readonly past: Map<string, UserLayer> | null
+  readonly filterButton: HTMLButtonElement
+  query: string
+  filters: Set<Filter>
+  /** The filter chips are showing (Filter). */
+  filtersOpen: boolean
+  editing: Editing | null
+  /** Layers showing all their items, not only the first ITEMS_SHOWN. */
+  showAll: Set<string>
+  /** The items in the list, in the order shown (for Shift-click ranges). */
+  shownItems: string[]
+  /** The item clicked last without Shift: where a Shift-click range starts. */
+  anchor: string | null
+  /** The row that had the keyboard focus, to give it back after drawing again. */
+  focusKey: string | null
+  /** The symbol library, once loaded (items' pictures). */
+  render?: (sidc: string, size?: number) => string
+  folderOf: (layer: UserLayer) => string | null
+}
