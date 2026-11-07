@@ -89,7 +89,10 @@ async def load_index(database: AsyncConnection) -> GridIndex:
                       ST_X(c) AS cx, ST_Y(c) AS cy, ST_X(d) AS dx, ST_Y(d) AS dy
                  FROM (SELECT *, ST_PointN(geom, 1) AS a, ST_PointN(geom, 2) AS b,
                               ST_PointN(geom, -1) AS c, ST_PointN(geom, -2) AS d
-                         FROM grid_edge) AS e"""
+                         FROM grid_edge) AS e
+                -- In a fixed order: where two ways tie at a junction, the same one
+                -- wins each time (the database's own order varies).
+                ORDER BY edge_id"""
         )
     )
     for r in rows:

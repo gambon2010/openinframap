@@ -1667,7 +1667,10 @@ use found two answers that changed from one request to the next: a search's equa
 ranked results (towers on the same line, "tower 5 graffenstaden") taken in the
 database's order, which varies, and a route's pieces along parallel lines likewise.
 Each search query now ends its order with the feature's id, and `build_graph` takes
-the edges in their id's order.
+the edges in their id's order. Later the same day the grid check (`grid_check.py`)
+gave 222 or 223 loose ends from one run to the next: the network was loaded in the
+database's order, so where two ways tie at a junction a different one could win.
+`load_index` now loads the stretches by id (the tower numbers didn't change).
 
 ## A test for the fork's routes (2026-11-07)
 
