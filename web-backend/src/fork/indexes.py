@@ -1,12 +1,12 @@
 """
-Fork: the search indexes the fork's search (src/fork/search.py) needs, on top of
+Fork: the search indexes the fork's search (src/fork/search/) needs, on top of
 upstream's (create_indexes.py adds these to its lists): places, and trigram
 indexes for matching a word anywhere in a name ("Centrale de Vianden").
 """
 
 from typing import Optional
 
-# (table, name expression) pairs searched by src/fork/search.py.
+# (table, name expression) pairs searched by src/fork/search/.
 NAME_COLUMNS = [
     ("osm_power_substation", "tags->'name'"),
     ("power_substation_relation", "name"),

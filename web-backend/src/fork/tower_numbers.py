@@ -2,7 +2,7 @@
 Fork: number the towers (pylons) along each power line, for those without a ref:
 "tower 23 of 61, Graffenstaden - Marlenheim, from Graffenstaden". Shown in a
 tower's details (GET /grid/tower/<osm_id>, grid.py), as its label from zoom 16
-(tegola/layers.fork.yml) and found by the search ("23 marlenheim", search.py).
+(tegola/layers.fork.yml) and found by the search ("23 marlenheim", search/towers.py).
 
 Every line of the grid network (schema/grid.sql) is followed (line_trace.py) from
 one of its stations, A: the one its name starts with, else the first by name. Its

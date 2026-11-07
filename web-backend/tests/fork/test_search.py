@@ -1,4 +1,4 @@
-"""Fork: search helpers (src/fork/search.py)."""
+"""Fork: search helpers (src/fork/search/)."""
 
 import re
 

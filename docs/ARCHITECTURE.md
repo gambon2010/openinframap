@@ -151,7 +151,7 @@ session):
 - `auth/`: accounts, sessions, the login page, `LoginMiddleware`;
 - `about.py` and `templates/` (the about page, replacing upstream's: built on its
   `_base.html` layout);
-- `search.py`;
+- `search/` (the search box: `matching.py`, one file per kind of result, `ranking.py`);
 - `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
 - `grid.py` (routes over the power grid, `/grid/line`), `line_trace.py` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers.py`
