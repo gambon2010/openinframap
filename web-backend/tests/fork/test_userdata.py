@@ -1,7 +1,8 @@
 """Fork: My layers' backend (src/fork/userdata/): what can be checked without a database."""
 
+import asyncio
 import uuid
-from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from starlette.exceptions import HTTPException
@@ -21,24 +22,64 @@ def test_parse_uuid():
         assert "layer" in e.value.detail
 
 
-def test_schema_statements_split_cleanly():
-    # ensure_schema runs userdata.sql statement by statement (split on ";\n").
-    sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
-    statements = [s.strip() for s in sql.split(";\n") if s.strip()]
-    assert any("CREATE TABLE IF NOT EXISTS userdata.change" in s for s in statements)
-    for statement in statements:
-        # A statement split in the middle would leave unbalanced brackets.
-        assert statement.count("(") == statement.count(")"), statement[:80]
+def test_migrations_are_numbered_and_split_cleanly():
+    found = schema.migrations()
+    # 001, 002...: none missing, none twice.
+    assert [n for n, _, _ in found] == list(range(1, len(found) + 1))
+    assert schema.LATEST == len(found)
+    assert schema.statements(found[0][2])[0].strip() == "CREATE SCHEMA IF NOT EXISTS userdata"
+    for _, name, sql in found:
+        for statement in schema.statements(sql):
+            # ensure_schema runs them one at a time (split on ";\n"): a statement
+            # split in the middle would leave unbalanced brackets.
+            assert statement.count("(") == statement.count(")"), (name, statement[:80])
+            assert ";" not in statement.rstrip().rstrip(";"), (name, statement[:80])
 
 
-def test_schema_is_upgraded_by_its_newest_addition():
-    sql = (Path(userdata.__file__).parent / "userdata.sql").read_text()
-    assert "CREATE TABLE IF NOT EXISTS userdata.situation" in sql
-    assert "userdata.feature_status" not in sql  # statuses removed (2026-11-06)
-    # ensure_schema checks for the newest addition (the last statement makes that
-    # table), so older databases get everything.
-    last = [s for s in sql.split(";\n") if s.strip()][-1]
-    assert f"CREATE TABLE IF NOT EXISTS {schema.NEWEST_TABLE} " in last
+def test_a_migration_name_is_checked(tmp_path):
+    (tmp_path / "1_bad.sql").write_text("SELECT 1")
+    with pytest.raises(ValueError, match="NNN_name"):
+        schema.migrations(tmp_path)
+
+
+class FakeDb:
+    """Answers the version queries; records the statements run."""
+
+    def __init__(self, version):
+        self.version, self.ran, self.committed = version, [], False
+
+    async def execute(self, statement, params=None):
+        sql = str(statement)
+        self.ran.append((sql, params))
+        if "to_regclass('userdata.schema_version')" in sql:
+            return SimpleNamespace(scalar=lambda: self.version > 0)
+        if "max(version)" in sql:
+            return SimpleNamespace(scalar=lambda: self.version)
+        if "INSERT INTO userdata.schema_version" in sql:
+            self.version = params["v"]
+        return SimpleNamespace(scalar=lambda: None)
+
+    async def commit(self):
+        self.committed = True
+
+
+def test_only_the_new_migrations_run(monkeypatch):
+    monkeypatch.setattr(
+        schema,
+        "MIGRATIONS",
+        [(1, "first", "CREATE TABLE one (a int);\n"), (2, "second", "-- note\nALTER TABLE one ADD b int;\n")],
+    )
+    monkeypatch.setattr(schema, "LATEST", 2)
+    db = FakeDb(version=1)
+    asyncio.run(schema.ensure_schema(db))  # type: ignore[arg-type]
+    ran = [sql for sql, _ in db.ran]
+    assert "ALTER TABLE one ADD b int" in ran and "CREATE TABLE one (a int)" not in ran
+    assert any("pg_advisory_xact_lock" in sql for sql in ran)
+    assert db.version == 2 and db.committed
+    # Up to date: nothing but the version check.
+    again = FakeDb(version=2)
+    asyncio.run(schema.ensure_schema(again))  # type: ignore[arg-type]
+    assert len(again.ran) == 2 and not again.committed
 
 
 def test_parse_time():

@@ -1656,6 +1656,18 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## My layers' schema: numbered migrations (2026-11-07)
+
+`userdata.sql` was run whole whenever its newest table was missing: it could add
+tables, never change or drop anything (the statuses' tables were dropped by hand).
+Now `userdata/migrations/NNN_name.sql`, run once each in order by `ensure_schema`
+(under an advisory lock, so two requests don't both run them), each recorded in
+`userdata.schema_version`. `001_userdata.sql` is the old file ("if not exists"
+throughout, so a database from before migrations, version 0, runs it safely);
+`002_no_statuses.sql` drops the statuses' tables and account right, also in a
+database restored from an older export. Checked on a new empty database (13 tables,
+versions 1 and 2) and on this one.
+
 ## Backend: upstream's Wikidata files untouched (2026-11-07)
 
 The offline Wikidata cache (entity JSON and pictures from `scripts/fetch_images.py`)

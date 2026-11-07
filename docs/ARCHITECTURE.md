@@ -160,7 +160,7 @@ session):
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:
-  - `schema.py` and `userdata.sql`;
+  - `schema.py` and `migrations/` (numbered, run once each: `userdata.schema_version`);
   - `changes.py` (applying and logging, no HTTP);
   - `layers.py`, `situations.py`, `images.py`;
   - `users.py`, where `current_user()` is the one place login and access control
@@ -242,6 +242,12 @@ The credit reaches the map by itself (`VITE_SATELLITE_TIERS`).
 **A panel on the left:** `leftColumn.add(element, order)` from `ui/left-column.ts`.
 Pick an order between the existing ones (`LEFT_ORDER`). To show details, use
 `leftColumn.details.show(content, onClose)`.
+
+**A change to the My layers schema:** a new file in
+`web-backend/src/fork/userdata/migrations/`, numbered after the last
+(`003_what_it_does.sql`), never an edit of one already run: databases that ran it
+won't run it again. The backend runs it on the next request; a database restored
+from an older export catches up the same way.
 
 **A setting:** `addSettingsSection({ el, refresh?, order?, focus? })` from
 `ui/settings.ts`.
