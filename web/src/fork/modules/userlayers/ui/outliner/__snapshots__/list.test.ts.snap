@@ -1,0 +1,87 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`right-click menus > yours, someone else's to view, a folder's 1`] = `
+[
+  "Units",
+  "Draw into this layer",
+  "Zoom to its items",
+  "Rename",
+  "🔒 Lock (no changes to its items)",
+  "Move to folder",
+  "+ New folder…",
+  "Out of the folder",
+  "Export as",
+  "GeoJSON",
+  "KML (Google Earth)",
+  "GPX (GPS)",
+  "---",
+  "Delete",
+]
+`;
+
+exports[`right-click menus > yours, someone else's to view, a folder's 2`] = `
+[
+  "Theirs",
+  "Shared with you to view only",
+  "Move to folder",
+  "📁 Ops",
+  "+ New folder…",
+  "Export as",
+  "GeoJSON",
+  "KML (Google Earth)",
+  "GPX (GPS)",
+]
+`;
+
+exports[`right-click menus > yours, someone else's to view, a folder's 3`] = `
+[
+  "📁 Ops",
+  "New layer in this folder",
+  "Rename",
+  "🔒 Lock its layers (yours)",
+  "Export as",
+  "GeoJSON",
+  "KML (Google Earth)",
+  "GPX (GPS)",
+  "---",
+  "Remove the folder (its layers stay)",
+]
+`;
+
+exports[`what the list shows > a search shows what matches, every group open 1`] = `
+[
+  "▾ 📁 Ops | 2 layers",
+  "  ▾ Units | ✎ | 1/4  [active]",
+  "    ▾ Drawings and markers | 1",
+  "    BridgeMarker",
+  "Drop a layer here to take it out of its folder",
+]
+`;
+
+exports[`what the list shows > folders, layers, groups and items 1`] = `
+[
+  "▾ 📁 Ops | 2 layers",
+  "  ▸ Plans | 1  [closed]",
+  "  ▾ Units | ✎ | 4  [active]",
+  "    ▾ Friendly units | 1",
+  "    2nd BnInfantry · Friend",
+  "    ▾ Hostile units | 1",
+  "    45th BnInfantry · Hostile",
+  "    ▾ Drawings and markers | 2",
+  "    RouteLine",
+  "    BridgeMarker",
+  "▸ Empty | 0  [closed]",
+  "▸ Hidden one | 0  [closed]  [hidden]",
+  "▸ Theirs | 👁 | 0  [closed]",
+  "Drop a layer here to take it out of its folder",
+]
+`;
+
+exports[`what the list shows > folders, layers, groups and items 2`] = `
+[
+  "New layer",
+  "A folder to drag layers into",
+  "Import a file: GeoJSON, KML or GPX (a new layer with what it has)",
+  "Export the layers shown",
+]
+`;
