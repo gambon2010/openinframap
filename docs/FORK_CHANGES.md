@@ -2416,6 +2416,15 @@ The fork's own files are under `web/src/fork/`, `web-backend/src/fork/`,
 `tegola/layers.fork.yml`, `docker-compose.override.yml`, `*.fork.md` and the docs.
 Upstream files the fork still changes, and how:
 
+Trial merge, 2026-11-07 (branch `trial-upstream-merge`, not pushed): upstream's 12
+commits since 2026-10-13 (translations, dependency upgrades) merge cleanly but for
+the dependency files. `web/package.json`: keep the fork's packages (`magvar`,
+`mgrs`) and take upstream's versions. `web/package-lock.json` and
+`web-backend/uv.lock`: take upstream's (`git checkout --theirs`), then `npm install`
+and `uv lock` add the fork's packages back. After it every check passed (fork's
+frontend tests, the build, backend and scripts tests); `tsc` shows the same 31
+errors in upstream's own files as before.
+
 | File | Change |
 |------|--------|
 | `README.md` | The fork's description (the GitHub page) |
