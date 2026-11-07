@@ -1656,18 +1656,6 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
-## A voltage of 0 is no voltage (2026-11-06)
-
-Lines tagged `voltage=0` were drawn as power lines labelled "0 V": in France,
-mostly the antenna wires of the Sainte-Assise transmitter (Seine-Port) tagged
-`power=minor_line`, a few short Enedis lines, an HVDC link's electrode line. And
-RTE lines with an unenergised second circuit (`225000;0`) were labelled "225/0 kV"
-with a second, grey circuit. Upstream's `line_voltages` (schema/functions.sql), which
-the power line tiles read, now drops 0 as it drops what it can't read: the first
-have no voltage (no label, the colour of an unknown voltage), the second show their
-real voltage only. Applied to the database with the function alone (`CREATE OR
-REPLACE`); a build loads it anyway. Tegola recreated (its tile cache).
-
 ## Statuses removed (2026-11-06)
 
 The status system (docs/plans/feature-status.md) is gone, to be rebuilt simpler
@@ -2401,7 +2389,7 @@ Upstream files the fork still changes, and how:
 | `README.md` | The fork's description (the GitHub page) |
 | `imposm/main.py` | Imports `places.py` and `sites.py`; no longer excludes the keys they match on |
 | `schema/dev-init.sql` | Database from `template_postgis`, pre-installs `intarray` / `hstore` |
-| `schema/functions.sql` | Function order fixed for fresh installs; `line_voltages` drops 0 like an unreadable voltage (2026-11-06) |
+| `schema/functions.sql` | Function order fixed for fresh installs |
 | `tegola/generate_tegola_config.py`, `Dockerfile` | More than one layers file |
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
 | `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's; the database middleware skips the fork's streams (`streaming_paths`) |
