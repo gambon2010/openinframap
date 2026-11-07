@@ -1,6 +1,6 @@
 """
 Fork: following a power line through the grid network (schema/grid.sql), from a
-clicked piece to the stations at its ends: GET /grid/line (grid.py) and the check of
+clicked piece to the stations at its ends: GET /grid/line (grid/line.py) and the check of
 the whole network (grid_check.py).
 
 The network (lines of 10 kV and more, split into stretches between junctions) is

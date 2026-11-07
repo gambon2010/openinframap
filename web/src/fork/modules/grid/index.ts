@@ -1,6 +1,6 @@
 // Fork: the power grid. Routes between two stations (the Grid connection panel,
 // grid-route.ts), "Route from / to here" in a substation's or plant's details,
-// and where a clicked power line goes (line.ts). Backend: web-backend/src/fork/grid.py.
+// and where a clicked power line goes (line.ts). Backend: web-backend/src/fork/grid/.
 import { t } from '../../core/i18n.ts'
 import { MapGeoJSONFeature } from 'maplibre-gl'
 import { el, mount } from 'redom'
