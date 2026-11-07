@@ -1656,6 +1656,14 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## A test for the fork's routes (2026-11-07)
+
+The fork's routes come before upstream's (`main.py`), so a fork route at an address
+upstream serves replaces it. `tests/fork/test_routes.py` lists the five meant
+(`/about`, `/search/typeahead`, `/api/circuit|line|substation/{id}`) and fails on
+any other shared address (same methods), or a fork mount covering an upstream
+route: after a merge, a new upstream route the fork would hide shows up there.
+
 ## My layers' schema: numbered migrations (2026-11-07)
 
 `userdata.sql` was run whole whenever its newest table was missing: it could add
