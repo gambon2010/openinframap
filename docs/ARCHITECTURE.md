@@ -120,7 +120,9 @@ kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
 map/     render.ts (the Renderer: sources, selection, handles), layers.ts (the map
          style layers, as functions), geometry.ts (pure: control points, moving,
          boxes), symbols.ts (drawing the images), icons.ts (adding them to the
-         map, by the kinds' prefixes), tools.ts, interactions.ts (hover,
+         map, by the kinds' prefixes), tools.ts (what a click does: wires the
+         map's events; its parts in tools/: drawing, dragging, resize, copy,
+         selection, sharing tools.types.ts's ToolsContext), interactions.ts (hover,
          right-click, copy / paste), legend.ts
 graphics/ tactical graphics: graphics.ts (the C5ISR renderer: codes, points,
          squaring), labels.ts (plain labels, English/French), variants.ts (two

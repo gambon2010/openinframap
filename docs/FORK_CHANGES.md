@@ -1656,6 +1656,17 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## Refactor 5: My layers' map tools split (2026-11-07)
+
+docs/plans/refactor-5e.md. First a safety net: `map/tools.test.ts` (17 tests, a fake
+map and renderer, a real store) for what clicking, dragging, scrolling and the
+keyboard do, none tested before. Then `map/tools.ts` (768 lines) became the class
+that wires the map's events and keeps what the rest of My layers calls (242), and
+its parts in `map/tools/`: `drawing.ts` (points one click at a time, refusals,
+finishing, the draft and ghost), `dragging.ts`, `resize.ts` (Shift + scroll),
+`copy.ts`, `selection.ts`; they work on `ToolsContext` (`map/tools.types.ts`),
+which `Tools` is. The tests didn't change.
+
 ## Refactor e: the backend's largest files split (2026-11-07)
 
 docs/plans/refactor-5e.md. Each file moved as is first, then improved apart, each
