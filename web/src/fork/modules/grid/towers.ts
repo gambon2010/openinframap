@@ -1,4 +1,4 @@
-// Fork: towers numbered along their lines (web-backend/src/fork/tower_numbers.py):
+// Fork: towers numbered along their lines (web-backend/src/fork/tower_numbers/):
 // a short label from zoom 15, their ref cut down to its number or their number
 // (the tower_number tile layer; upstream's tower and pole labels, which can be a
 // whole sentence put in ref, are hidden), and "Tower 23 of 61 on A - B, counted

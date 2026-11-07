@@ -1,5 +1,5 @@
 """Fork: a tower's numbers along the lines it carries (grid/__init__.py,
-tower_numbers.py).
+tower_numbers/).
 
     GET /grid/tower/<osm_id>
 """
@@ -12,7 +12,7 @@ from ... import Request, get_db
 
 
 async def tower(request: Request) -> Response:
-    """A tower's number on each line it carries (tower_numbers.py), highest voltage
+    """A tower's number on each line it carries (tower_numbers/), highest voltage
     first: [{number, total, voltage_kv, name, start, end}].
 
         GET /grid/tower/<osm_id>

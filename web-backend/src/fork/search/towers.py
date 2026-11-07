@@ -11,12 +11,12 @@ from .matching import plain, table_exists
 
 
 # "23 marlenheim", "tower 23a marlenheim", "pylône n°23 reichstett": a tower's number
-# on a line (tower_numbers.py) and words of the line's name or stations.
+# on a line (tower_numbers/) and words of the line's name or stations.
 TOWER_QUERY = re.compile(r"^(?:(?:tower|pylon|pylone|support)\s+)?(?:n°\s*)?(\d{1,4}[a-z]{0,3})\s+(\S.*)$")
 
 
 async def search_towers(database: AsyncConnection, query: str, limit: Optional[int] = 10) -> list[dict]:
-    """Towers by their number along a line (fork: tower_numbers.py)."""
+    """Towers by their number along a line (fork: tower_numbers/)."""
     match = TOWER_QUERY.match(plain(query).strip())
     if not match or not await table_exists(database, "tower_number"):
         return []

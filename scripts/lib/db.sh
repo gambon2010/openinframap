@@ -101,7 +101,7 @@ schema_hash() {
     cat "${files[@]}" | md5sum | cut -c1-12
 }
 
-# Number the towers along their lines (web-backend/src/fork/tower_numbers.py) with
+# Number the towers along their lines (web-backend/src/fork/tower_numbers/) with
 # the backend's image, rebuilt first if its code changed. After grid.sql and
 # tower-numbers.sql (the empty tables).
 number_towers() {

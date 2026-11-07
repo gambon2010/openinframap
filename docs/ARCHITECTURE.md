@@ -154,7 +154,7 @@ session):
 - `search/` (the search box: `matching.py`, one file per kind of result, `ranking.py`);
 - `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
 - `grid/` (`route.py`: routes over the power grid; `line.py`: where a line goes; `tower.py`), `line_trace.py` (following a
-  line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers.py`
+  line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
