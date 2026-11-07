@@ -137,7 +137,9 @@ def build_graph(rows: Any, edge_info: dict[int, dict], min_voltage: int = 0) -> 
     more); parallel lines become one hop (shortest as weight). A hop's "circuits"
     are its (edge_id, voltage)."""
     graph: nx.Graph[Point] = nx.Graph()
-    for row in rows:
+    # In the edges' order, not the database's (which varies): parallel lines, and
+    # so the route's pieces, come out the same each time.
+    for row in sorted(rows, key=lambda r: r._mapping["edge_id"]):
         e = dict(row._mapping)
         edge_info[e["edge_id"]] = e
         for voltage in voltages_of(e.get("voltage_tag"), e["voltage"]):

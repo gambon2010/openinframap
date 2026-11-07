@@ -106,7 +106,7 @@ async def search_substations(
                 OR {name_match(f"tags->'name:{language}'")}
               )
             AND ST_Intersects(substation.geometry, country.geom)
-        ORDER BY match_rank, convert_voltage(voltage) DESC NULLS LAST, name ASC NULLS LAST
+        ORDER BY match_rank, convert_voltage(voltage) DESC NULLS LAST, name ASC NULLS LAST, osm_id
         LIMIT :limit
         """
         ),
@@ -149,7 +149,7 @@ async def search_plants(
                 OR {name_match(f"tags->'name:{language}'")}
               )
             AND ST_Intersects(power_plant.geometry, country.geom)
-        ORDER BY match_rank, output DESC NULLS LAST, name ASC NULLS LAST
+        ORDER BY match_rank, output DESC NULLS LAST, name ASC NULLS LAST, osm_id
         LIMIT :limit
     """
         ),
@@ -202,7 +202,7 @@ async def search_places(
         FROM osm_place
         WHERE {name_match("name")} OR {name_match(f"tags->'name:{language}'")}
         ORDER BY match_rank, CASE type {place_order} ELSE 99 END,
-            convert_integer(NULLIF(population, '')) DESC NULLS LAST, name
+            convert_integer(NULLIF(population, '')) DESC NULLS LAST, name, osm_id
         LIMIT :limit
         """
         ),
@@ -273,7 +273,7 @@ async def search_features(
                 ELSE 3 END AS match_rank
         FROM search_feature
         WHERE substr(name_plain, 1, 20) LIKE :query OR name_plain ~ :word OR ({town_match})
-        ORDER BY match_rank, importance, name
+        ORDER BY match_rank, importance, name, source, id
         LIMIT :limit
         """
         ),
@@ -318,7 +318,7 @@ async def search_towers(database: AsyncConnection, query: str, limit: Optional[i
                        ST_AsGeoJSON(ST_Transform(n.geometry, 4326)) AS geometry
                   FROM tower_number AS n JOIN tower_line AS l USING (line_id)
                  WHERE n.number = :number AND {matches}
-                 ORDER BY n.voltage DESC, l.name NULLS LAST
+                 ORDER BY n.voltage DESC, l.name NULLS LAST, n.osm_id, l.line_id
                  LIMIT :limit"""
         ),
         params,

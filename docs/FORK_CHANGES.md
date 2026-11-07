@@ -1656,6 +1656,19 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## The backend's answers, compared on the real database (2026-11-07)
+
+`tests/fork/test_answers.py` (opt-in, `OIM_TEST_REAL_DB=1`): 50 questions to the
+backend on the database built (18 searches, 10 routes, 12 lines, 10 towers, picked
+the same way each time) and the 1.5 million tower numbers' fingerprint, recorded in
+`data/test-answers/<region>.json` on the first run, compared on the next: the safety
+net for splitting the backend's large files (docs/plans/refactor-5e.md). Its first
+use found two answers that changed from one request to the next: a search's equally
+ranked results (towers on the same line, "tower 5 graffenstaden") taken in the
+database's order, which varies, and a route's pieces along parallel lines likewise.
+Each search query now ends its order with the feature's id, and `build_graph` takes
+the edges in their id's order.
+
 ## A test for the fork's routes (2026-11-07)
 
 The fork's routes come before upstream's (`main.py`), so a fork route at an address
