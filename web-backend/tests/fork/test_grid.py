@@ -149,3 +149,22 @@ def test_which_circuit_of_a_way_a_line_is():
     assert grid.circuit_of("400000;225000", 225000) == {"index": 2, "count": 2}
     assert grid.circuit_of("225000", 225000) == {"index": 1, "count": 1}
     assert grid.circuit_of(None, 225000) == {"index": 1, "count": 1}
+
+
+def test_route_params():
+    from types import SimpleNamespace
+
+    from starlette.exceptions import HTTPException
+
+    from src.fork.grid.route import MAX_PATHS, route_params
+
+    def ask(**params):
+        return route_params(SimpleNamespace(query_params=params))  # type: ignore[arg-type]
+
+    assert ask(**{"from": "substation/1", "to": "plant/2"}) == (("substation", 1), ("plant", 2), 3)
+    assert ask(**{"from": "substation/1", "to": "plant/2", "paths": "99"})[2] == MAX_PATHS
+    assert ask(**{"from": "substation/1", "to": "plant/2", "paths": "0"})[2] == 1
+    for bad in ({"from": "substation/1", "to": "plant/2", "paths": "x"}, {"from": "road/1", "to": "plant/2"}):
+        with pytest.raises(HTTPException) as e:
+            ask(**bad)
+        assert e.value.status_code == 400

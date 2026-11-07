@@ -55,8 +55,8 @@ def parse_station(value: Optional[str], param: str) -> tuple[str, int]:
         raise HTTPException(400, f"'{param}' must look like substation/<osm_id> or plant/<osm_id>")
 
 
-async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[dict, Optional[str]]:
-    """The grid node for a station, or the nearest station on the grid (with a notice)."""
+async def grid_node_of(database: AsyncConnection, kind: str, osm_id: int) -> Optional[dict]:
+    """The station's own node in the grid network, None if it has none."""
     row = (
         await database.execute(
             text(
@@ -66,9 +66,11 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
             {"kind": kind, "osm_id": osm_id},
         )
     ).first()
-    if row:
-        return dict(row._mapping), None
+    return dict(row._mapping) if row else None
 
+
+async def station_row(database: AsyncConnection, kind: str, osm_id: int) -> Any:
+    """The station's name and geometry; 404 if it isn't in the database."""
     table = "substation" if kind == "substation" else "power_plant"
     station = (
         await database.execute(
@@ -77,7 +79,11 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
     ).first()
     if not station:
         raise HTTPException(404, f"{kind} {osm_id} isn't in the database")
+    return station
 
+
+async def nearest_grid_station(database: AsyncConnection, geometry: Any) -> Optional[dict]:
+    """The grid's nearest station within NEAREST_STATION metres, with its distance."""
     nearest = (
         await database.execute(
             text(
@@ -91,15 +97,24 @@ async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[
                     ORDER BY n.geom <-> s.geom
                     LIMIT 1"""
             ),
-            {"geom": station._mapping["geometry"], "radius": NEAREST_STATION},
+            {"geom": geometry, "radius": NEAREST_STATION},
         )
     ).first()
+    return dict(nearest._mapping) if nearest else None
+
+
+async def find_node(database: AsyncConnection, kind: str, osm_id: int) -> tuple[dict, Optional[str]]:
+    """The grid node for a station, or the nearest station on the grid (with a notice)."""
+    node = await grid_node_of(database, kind, osm_id)
+    if node:
+        return node, None
+    station = await station_row(database, kind, osm_id)
     label = station._mapping["name"] or f"this {kind}"
-    if not nearest:
+    node = await nearest_grid_station(database, station._mapping["geometry"])
+    if not node:
         raise HTTPException(
             404, f"No power line of known voltage reaches {label}, and there's no station with one nearby."
         )
-    node = dict(nearest._mapping)
     distance = node.pop("distance")
     if distance < SAME_STATION:
         return node, None
@@ -286,30 +301,29 @@ def describe(
     }
 
 
-async def route(request: Request) -> Response:
-    database = get_db(request)
-    if not (await database.execute(text("SELECT to_regclass('grid_edge') IS NOT NULL"))).scalar():
-        raise HTTPException(
-            503, "The grid network hasn't been built yet: rebuild the region with build-region.sh"
-        )
-    from_kind, from_id = parse_station(request.query_params.get("from"), "from")
-    to_kind, to_id = parse_station(request.query_params.get("to"), "to")
+def route_params(request: Request) -> tuple[tuple[str, int], tuple[str, int], int]:
+    """The two stations asked for, and how many paths (1 to MAX_PATHS)."""
+    a = parse_station(request.query_params.get("from"), "from")
+    b = parse_station(request.query_params.get("to"), "to")
     try:
         count = max(1, min(int(request.query_params.get("paths", "3")), MAX_PATHS))
     except ValueError:
         raise HTTPException(400, "Invalid number of paths")
+    return a, b, count
 
-    a, notice_a = await find_node(database, from_kind, from_id)
-    b, notice_b = await find_node(database, to_kind, to_id)
-    notices = [n for n in (notice_a, notice_b) if n]
-    if a["node_id"] == b["node_id"]:
-        raise HTTPException(400, "Both ends are the same station on the grid")
 
-    edge_info: dict[int, dict] = {}
-    backbone = await load_backbone(database, a, b, edge_info)
+async def access_legs(
+    database: AsyncConnection,
+    ends: tuple[dict, dict],
+    backbone: "nx.Graph[Point]",
+    edge_info: dict[int, dict],
+    notices: list[str],
+) -> tuple[list[Optional[list[Point]]], list[Optional["nx.Graph[Point]"]]]:
+    """Each end's way onto the grid of 110 kV and more (None if it has none in
+    reach, with a notice), and the graph each is in."""
     legs: list[Optional[list[Point]]] = []
     leg_graphs: list[Optional["nx.Graph[Point]"]] = []
-    for end, node in (("from", a), ("to", b)):
+    for node in ends:
         found = await access_leg(database, node, backbone, edge_info)
         if found is None:
             notices.append(
@@ -318,6 +332,25 @@ async def route(request: Request) -> Response:
             )
         legs.append(found[0] if found else None)
         leg_graphs.append(found[1] if found else None)
+    return legs, leg_graphs
+
+
+async def route(request: Request) -> Response:
+    database = get_db(request)
+    if not (await database.execute(text("SELECT to_regclass('grid_edge') IS NOT NULL"))).scalar():
+        raise HTTPException(
+            503, "The grid network hasn't been built yet: rebuild the region with build-region.sh"
+        )
+    (from_kind, from_id), (to_kind, to_id), count = route_params(request)
+    a, notice_a = await find_node(database, from_kind, from_id)
+    b, notice_b = await find_node(database, to_kind, to_id)
+    notices = [n for n in (notice_a, notice_b) if n]
+    if a["node_id"] == b["node_id"]:
+        raise HTTPException(400, "Both ends are the same station on the grid")
+
+    edge_info: dict[int, dict] = {}
+    backbone = await load_backbone(database, a, b, edge_info)
+    legs, leg_graphs = await access_legs(database, (a, b), backbone, edge_info, notices)
 
     paths: list[list[Point]] = []
     # Both ends reach the ≥110 kV grid at the same point: the access legs are the whole connection.
