@@ -46,91 +46,177 @@ class Trace:
         return {index.edges[e].way for e in self.edges}
 
 
-def _continuing(index: GridIndex, trace: Trace, node: int) -> tuple[list[Edge], bool, str]:
-    """At a junction: the stretches continuing the line, whether to follow them
-    further, and if none, why."""
+# At a junction: the stretches continuing the line, whether to follow them further,
+# and if none, why ("" when nothing's wrong).
+Decision = tuple[list[Edge], bool, str]
+
+
+@dataclass
+class Junction:
+    """What _continuing's rules look at, at one junction of a trace."""
+
+    index: GridIndex
+    trace: Trace
+    node: int
+    # The stretches here not taken yet, and those the trace arrived by.
+    here: list[Edge]
+    arrived_edges: list[Edge]
+    # Does the line's way end here (one stretch here), or pass through (two)?
+    ends_here: bool
+    # The stretches here by way; the places the line's names join.
+    by_way: dict[int, list[Edge]]
+    wanted: set
+    # Filled in by the rules as they go: the ways starting here that could continue
+    # the line, the whole of each, and the stations each touches.
+    starting: list[Edge] = field(default_factory=list)
+    ways: list[list[Edge]] = field(default_factory=list)
+    ends: list[set[int]] = field(default_factory=list)
+
+
+def _junction(index: GridIndex, trace: Trace, node: int) -> Junction:
     here = [e for e in index.meeting(node, trace.voltage) if e.edge_id not in trace.edges]
     arrived_edges = [index.edges[i] for i in index.at_node.get(node, []) if i in trace.edges]
     arrived = {e.way for e in arrived_edges}
-    # Does the line's way end here (one stretch here), or pass through (two)?
-    ends_here = any(sum(1 for e in arrived_edges if e.way == way) == 1 for way in arrived)
     by_way: dict[int, list[Edge]] = {}
     for e in here:
         by_way.setdefault(e.way, []).append(e)
-    wanted = {ends for name in trace.names for ends in line_ends(name)}
-    taken = [e for way, es in by_way.items() if way in arrived for e in es]
+    return Junction(
+        index,
+        trace,
+        node,
+        here,
+        arrived_edges,
+        ends_here=any(sum(1 for e in arrived_edges if e.way == way) == 1 for way in arrived),
+        by_way=by_way,
+        wanted={ends for name in trace.names for ends in line_ends(name)},
+    )
+
+
+def _same_line(j: Junction) -> Decision | None:
+    """The same OSM way going on, or a way with the same name (compared by places)."""
+    arrived = {e.way for e in j.arrived_edges}
+    taken = [e for way, es in j.by_way.items() if way in arrived for e in es]
     taken += [
         e
-        for way, es in by_way.items()
+        for way, es in j.by_way.items()
         if way not in arrived
         and es[0].name
-        and (es[0].name in trace.names or same_line(line_ends(es[0].name), wanted))
+        and (es[0].name in j.trace.names or same_line(line_ends(es[0].name), j.wanted))
         for e in es
     ]
-    if taken:
-        return taken, True, ""
-    if not ends_here:
-        # Passing a pylon it shares with other lines: nothing to take there.
-        return [], True, ""
-    if not by_way:
-        return [], True, "open end"
-    if all(len(es) == 2 for es in by_way.values()):
-        # It ends on another line passing through (a tee): connected.
-        return [], True, "tap"
-    # A way passing through meets the junction twice (a stretch on each side); one
-    # that starts or ends here, once.
-    starting = [es[0] for es in by_way.values() if len(es) == 1]
-    if trace.names:
-        # A named line goes on into an unnamed way, not into another line's name,
-        # unless that line goes to one of its places too (shared pylons into the
-        # same substation).
+    return (taken, True, "") if taken else None
+
+
+def _passing_through(j: Junction) -> Decision | None:
+    """Passing a pylon it shares with other lines: nothing to take there."""
+    return None if j.ends_here else ([], True, "")
+
+
+def _open_end(j: Junction) -> Decision | None:
+    """Nothing else here: the line ends at nothing."""
+    return None if j.by_way else ([], True, "open end")
+
+
+def _ends_on_a_line_through(j: Junction) -> Decision | None:
+    """It ends on another line passing through (a tee): connected."""
+    return ([], True, "tap") if all(len(es) == 2 for es in j.by_way.values()) else None
+
+
+def _ways_starting(j: Junction) -> Decision | None:
+    """The ways starting here (one passing through meets the junction twice, a
+    stretch on each side). A named line goes on into an unnamed way, not into
+    another line's name, unless that line goes to one of its places too (shared
+    pylons into the same substation)."""
+    starting = [es[0] for es in j.by_way.values() if len(es) == 1]
+    if j.trace.names:
         unnamed = [e for e in starting if not e.name or not line_ends(e.name)]
-        sharing = [e for e in starting if e.name and shares_a_place(line_ends(e.name), wanted)]
+        sharing = [e for e in starting if e.name and shares_a_place(line_ends(e.name), j.wanted)]
         starting = unnamed or sharing
-    if not starting:
-        return [], True, "other line"
-    if len(starting) == 1:
-        return starting, True, ""
-    named = {e.name for e in starting}
-    if not trace.names and None not in named and len(named) == 1:
-        # Clicked on an unnamed part, going on into ways all of one line.
-        return starting, True, ""
-    ways = [_whole_way(index, trace, first) for first in starting]
-    ends = [_stations(index, way) for way in ways]
-    # A named line: the way leading to a station named after one of its places not
-    # reached yet (it goes into that substation, not past it).
+    j.starting = starting
+    return None if starting else ([], True, "other line")
+
+
+def _only_one(j: Junction) -> Decision | None:
+    return (j.starting, True, "") if len(j.starting) == 1 else None
+
+
+def _all_of_one_line(j: Junction) -> Decision | None:
+    """Clicked on an unnamed part, going on into ways all of one line."""
+    named = {e.name for e in j.starting}
+    if not j.trace.names and None not in named and len(named) == 1:
+        return j.starting, True, ""
+    return None
+
+
+def _into_a_station_it_names(j: Junction) -> Decision | None:
+    """A named line: the way leading to a station named after one of its places not
+    reached yet (it goes into that substation, not past it)."""
+    index, trace = j.index, j.trace
+    j.ways = [_whole_way(index, trace, first) for first in j.starting]
+    j.ends = [_stations(index, way) for way in j.ways]
     places = {p for name in trace.names for pair, _ in line_ends(name) for p in pair}
     reached = " ".join(place(index.nodes[n].name or "") for n in trace.stations)
     places = {p for p in places if p not in reached}
     into = [
         way
-        for way, stations in zip(ways, ends)
+        for way, stations in zip(j.ways, j.ends)
         if any(any(p in place(index.nodes[n].name or "") for p in places) for n in stations)
     ]
-    if len(into) == 1:
-        return into[0], True, ""
-    # Else the straightest, if clearly so. A way turning back alongside the line
-    # (the other circuit of a double line, going back) isn't it.
-    if arrived_edges:
-        arriving = arrived_edges[0].away_from(node)
-        turns = sorted((turn(arriving, e.away_from(node)), i) for i, e in enumerate(starting))
-        if turns[0][0] <= BACK_TURN:
-            turns = [(t, i) for t, i in turns if t <= BACK_TURN]
-        if len(turns) == 1:
-            return ways[turns[0][1]], True, ""
-        if turns[0][0] <= MAX_TURN and turns[1][0] - turns[0][0] >= CLEAR_MARGIN:
-            return [starting[turns[0][1]]], True, ""
-        if all(ends) and len(set().union(*ends)) == 1:
-            # All lead to the same station (a double line splitting at its gate):
-            # the straightest.
-            return ways[turns[0][1]], True, ""
-        if turns[0][0] > MAX_TURN and _goes_through(node, starting):
-            # It ends beside another line passing through, cut into two ways there.
-            return [], True, "tap"
-        if turns[0][0] <= MAX_TURN:
-            # Side by side, nothing tells them apart: the straightest, a guess.
-            return [starting[turns[0][1]]], True, "guessed split"
-    return starting, False, "unclear split"
+    return (into[0], True, "") if len(into) == 1 else None
+
+
+def _straightest(j: Junction) -> Decision | None:
+    """Else the straightest, if clearly so. A way turning back alongside the line
+    (the other circuit of a double line, going back) isn't it."""
+    if not j.arrived_edges:
+        return None
+    node, starting, ways, ends = j.node, j.starting, j.ways, j.ends
+    arriving = j.arrived_edges[0].away_from(node)
+    turns = sorted((turn(arriving, e.away_from(node)), i) for i, e in enumerate(starting))
+    if turns[0][0] <= BACK_TURN:
+        turns = [(t, i) for t, i in turns if t <= BACK_TURN]
+    if len(turns) == 1:
+        return ways[turns[0][1]], True, ""
+    if turns[0][0] <= MAX_TURN and turns[1][0] - turns[0][0] >= CLEAR_MARGIN:
+        return [starting[turns[0][1]]], True, ""
+    if all(ends) and len(set().union(*ends)) == 1:
+        # All lead to the same station (a double line splitting at its gate): the
+        # straightest.
+        return ways[turns[0][1]], True, ""
+    if turns[0][0] > MAX_TURN and _goes_through(node, starting):
+        # It ends beside another line passing through, cut into two ways there.
+        return [], True, "tap"
+    if turns[0][0] <= MAX_TURN:
+        # Side by side, nothing tells them apart: the straightest, a guess.
+        return [starting[turns[0][1]]], True, "guessed split"
+    return None
+
+
+# What continues a line at a junction: the first rule that decides. A new rule is a
+# function here, in its place.
+RULES = [
+    _same_line,
+    _passing_through,
+    _open_end,
+    _ends_on_a_line_through,
+    _ways_starting,
+    _only_one,
+    _all_of_one_line,
+    _into_a_station_it_names,
+    _straightest,
+]
+
+
+def _continuing(index: GridIndex, trace: Trace, node: int) -> Decision:
+    """At a junction: the stretches continuing the line, whether to follow them
+    further, and if none, why. None of the rules decides: the line splits in ways
+    nothing tells apart; their first stretches are shown, not followed."""
+    j = _junction(index, trace, node)
+    for rule in RULES:
+        decision = rule(j)
+        if decision is not None:
+            return decision
+    return j.starting, False, "unclear split"
 
 
 def _goes_through(node: int, edges: list[Edge]) -> bool:

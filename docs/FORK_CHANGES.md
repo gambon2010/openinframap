@@ -1656,6 +1656,24 @@ lighter housing (89%).
 satellite imagery; the choice is kept in this browser (`services/map-colours.ts`,
 `oim-map-colours`).
 
+## Refactor e: the backend's largest files split (2026-11-07)
+
+docs/plans/refactor-5e.md. Each file moved as is first, then improved apart, each
+step checked against the recorded answers (`tests/fork/test_answers.py`), all 1.5
+million tower numbers (renumbered each time) and the grid check's list:
+- `search.py` → `search/`: `matching.py`, `ranking.py`, `stations.py` (substations
+  and plants, which were near-copies, now one `search_stations` with what differs
+  in `STATIONS`), `places.py`, `features.py`, `towers.py`;
+- `grid.py` → `grid/`: `route.py` (`find_node` and `route` cut into named steps),
+  `line.py`, `tower.py`;
+- `tower_numbers.py` → `tower_numbers/`: `numbering.py`, `labels.py`, `register.py`,
+  `write.py` (`write` cut into its steps), `__main__.py` (`python -m
+  src.fork.tower_numbers` as before);
+- `line_trace.py` → `line_trace/`: `network.py`, `names.py`, `trace.py`, where
+  `_continuing`'s 85 lines are now `RULES`, one small function per rule tried in
+  order (a new rule is one more function).
+What other files import keeps its name (each package re-exports it).
+
 ## The backend's answers, compared on the real database (2026-11-07)
 
 `tests/fork/test_answers.py` (opt-in, `OIM_TEST_REAL_DB=1`): 50 questions to the

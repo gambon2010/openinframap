@@ -1,6 +1,6 @@
 # Plan: splitting the largest files (refactor 5: My layers; refactor e: the backend)
 
-Status: **proposed** (2026-11-07), not started. Nothing changes for whoever uses the
+Status: refactor e **done** (2026-11-07, below); refactor 5 next. Nothing changes for whoever uses the
 map: the same behaviour, in smaller files, each about one thing. Done one file at a
 time, each its own commit, with the tests below passing before and after.
 
