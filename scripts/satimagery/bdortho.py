@@ -286,33 +286,43 @@ def extract(first_part: Path, into: Path, gdal_image: str) -> list[Path]:
 
 def pipeline(maxzoom: int, minzoom: int = MINZOOM) -> str:
     """The GDAL commands (run in `work`, the images listed in images.txt) that make
-    the département's tiles into tiles/z/x/y.webp. First one image of it all,
-    reprojected to the web map at the last zoom's resolution (GDAL reads each JPEG
-    2000 at the reduced resolution it needs, on every core; JPEG inside, with
+    the département's tiles into tiles-z<maxzoom>/z/x/y.webp. First one image of it
+    all, reprojected to the web map at the last zoom's resolution (GDAL reads each
+    JPEG 2000 at the reduced resolution it needs, on every core; JPEG inside, with
     transparency outside the photos). Then each zoom straight from that image, on
     every core (gdal raster tile, GDAL 3.11): a lower zoom made from the tiles
     above it would read them while they're being written.
     Measured on Paris (13 images of 5 km, zoom 17): 1 min 18 s; the virtual mosaic
     of the images reprojected on the fly took over 15 min (each image read whole at
-    20 cm)."""
+    20 cm).
+    Run again after it stopped, it goes on: the reprojected image is kept once
+    complete (written under another name until then), and a zoom's tiles already
+    made are kept (--resume). gdal raster tile now and then fails to write one
+    tile ("Unable to create WEBP file", its threads tripping over each other: once
+    on Paris, once on Bas-Rhin): each zoom is tried up to three times, the next
+    tries making only what's missing."""
     resolution = EARTH_CIRCUMFERENCE_M / 256 / 2**maxzoom
+    warped, tiles = f"warped-z{maxzoom}.tif", f"tiles-z{maxzoom}"
     tile = (
         f"gdal raster tile --format WEBP --co QUALITY={QUALITY} -r average "
-        "--skip-blank --webviewer none -j ALL_CPUS warped.tif tiles"
+        f"--skip-blank --webviewer none -j ALL_CPUS --resume {warped} {tiles}"
     )
     return " && ".join(
         [
             (
-                "gdalwarp -q -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:3857 "
-                f"-tr {resolution} {resolution} -r bilinear -dstalpha -co TILED=YES "
-                "-co COMPRESS=JPEG -co JPEG_QUALITY=90 -co BIGTIFF=YES "
-                "--optfile images.txt warped.tif"
+                f"{{ [ -f {warped} ] || gdalwarp -q -multi -wo NUM_THREADS=ALL_CPUS "
+                f"-t_srs EPSG:3857 -tr {resolution} {resolution} -r bilinear -dstalpha "
+                "-co TILED=YES -co COMPRESS=JPEG -co JPEG_QUALITY=90 -co BIGTIFF=YES "
+                "--optfile images.txt -overwrite partial.tif; }"
             ),
+            f"{{ [ -f {warped} ] || mv partial.tif {warped}; }}",
             *(
-                f"{tile} --min-zoom {z} --max-zoom {z}"
+                "{ "
+                + " || ".join([f"{tile} --min-zoom {z} --max-zoom {z}"] * 3)
+                + "; }"
                 for z in range(maxzoom, minzoom - 1, -1)
             ),
-            "rm warped.tif",
+            f"rm {warped}",
         ]
     )
 
@@ -350,10 +360,10 @@ def make_tiles(
     (work / "images.txt").write_text(
         "".join(f"{p.relative_to(work)}\n" for p in images)
     )
-    shutil.rmtree(work / "tiles", ignore_errors=True)
+    tiles = work / f"tiles-z{maxzoom}"
     docker_run(image, work, ["sh", "-c", pipeline(maxzoom)], {"GDAL_CACHEMAX": "4096"})
-    mbtiles = pack(work / "tiles", work / "tiles.mbtiles", code)
-    shutil.rmtree(work / "tiles")
+    mbtiles = pack(tiles, work / "tiles.mbtiles", code)
+    shutil.rmtree(tiles)
     return mbtiles
 
 

@@ -124,13 +124,20 @@ def test_the_archive_parts_in_order(monkeypatch):
 
 def test_the_pipeline_makes_webp_to_the_zoom_and_down_to_12():
     commands = bdortho.pipeline(17).split(" && ")
-    assert commands[0].startswith("gdalwarp") and "EPSG:3857" in commands[0]
-    assert "-dstalpha" in commands[0] and "--optfile images.txt" in commands[0]
-    # Each zoom straight from the reprojected image, the last zoom first.
-    zooms = [c.split("--min-zoom ")[1].split()[0] for c in commands[1:-1]]
+    # The reprojected image: made once (under another name until complete).
+    assert commands[0].startswith("{ [ -f warped-z17.tif ] ||")
+    assert "EPSG:3857" in commands[0] and "-dstalpha" in commands[0]
+    assert "--optfile images.txt" in commands[0] and "partial.tif" in commands[0]
+    assert commands[1] == "{ [ -f warped-z17.tif ] || mv partial.tif warped-z17.tif; }"
+    # Each zoom straight from it, the last zoom first, tried three times, going on
+    # from what's there.
+    zooms = [c.split("--min-zoom ")[1].split()[0] for c in commands[2:-1]]
     assert zooms == ["17", "16", "15", "14", "13", "12"]
-    assert all("--format WEBP" in c and "QUALITY=75" in c for c in commands[1:-1])
-    assert commands[-1] == "rm warped.tif"
+    for command in commands[2:-1]:
+        assert command.count(" || ") == 2 and command.count("--resume") == 3
+        assert "--format WEBP" in command and "QUALITY=75" in command
+        assert "warped-z17.tif tiles-z17" in command
+    assert commands[-1] == "rm warped-z17.tif"
 
 
 def test_tiles_are_packed_with_their_bounds(tmp_path):
