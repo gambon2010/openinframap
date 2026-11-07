@@ -1,35 +1,13 @@
-"""
-Fork: following a power line through the grid network (schema/grid.sql), from a
-clicked piece to the stations at its ends: GET /grid/line (grid/line.py) and the check of
-the whole network (grid_check.py).
-
-The network (lines of 10 kV and more, split into stretches between junctions) is
-loaded once into memory (`GridIndex`) and reloaded when the grid is rebuilt. A way
-carrying several voltages ("225000;63000", two lines on the same pylons) belongs to
-each of them.
-
-A line is followed through junctions (pylons where OSM ways join, or that lines
-share), never through stations, and only along what continues it:
-- the same OSM way;
-- a way with the same name, compared by the places it joins ("Liaison 225 kV n°1
-  A - B" = "a - b"; ";" separates the lines of shared pylons);
-- where its way ends: the single way starting there that has no other line's name,
-  or where several start (a double line splitting in two near a substation), the
-  straightest if clearly so, else the one leading to a station named after one of
-  its places. If none can be told, the first stretch of each is shown, not followed.
-Every place the trace stops at something other than a station is a loose end, with
-the reason (`Trace.loose`): those are where the map's data is probably wrong.
-"""
+"""Fork: following a line (line_trace/__init__.py) through junctions to the stations at
+its ends: at each junction, what continues it (_continuing)."""
 
 from __future__ import annotations
 
 import math
-import re
-import unicodedata
 from dataclasses import dataclass, field
 
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection
+from .names import line_ends, place, same_line, shares_a_place
+from .network import Edge, GridIndex, Vector
 
 # Several ways start where a line ends: the straightest one is its continuation if
 # it turns less than this, and clearly less than the next one (degrees).
@@ -43,162 +21,12 @@ THROUGH_TURN = 30
 # Stretches followed before giving up (a corridor looping through junctions).
 MAX_EDGES = 5000
 
-Vector = tuple[float, float]
-
-
-@dataclass(slots=True)
-class Edge:
-    edge_id: int
-    way: int
-    source: int
-    target: int
-    voltages: frozenset[int]
-    name: str | None
-    length_m: float
-    # Direction leaving the source, and leaving the target (east, north).
-    out_source: Vector
-    out_target: Vector
-
-    def away_from(self, node: int) -> Vector:
-        return self.out_source if node == self.source else self.out_target
-
-    def other(self, node: int) -> int:
-        return self.target if node == self.source else self.source
-
-
-@dataclass(slots=True)
-class Node:
-    kind: str  # substation, plant or junction
-    osm_id: int | None
-    name: str | None
-
-
-def voltages_of(tag: str | None, fallback: int) -> frozenset[int]:
-    """The voltages of a way's tag ("225000;63000"), or the one given."""
-    values = set()
-    for value in (tag or "").split(";"):
-        try:
-            values.add(int(float(value.strip())))
-        except ValueError:
-            pass
-    return frozenset(values or {fallback})
-
-
-LineEnds = tuple[frozenset[str], int | None]
-# A circuit number: "n°1", "N° 2", "No 3", "N0 1" (a zero typed for the °).
-CIRCUIT = re.compile(r"(?i)\bn\s*[°º0o]\.?\s*(\d+)\b")
-
-
-def place(text: str) -> str:
-    """A place name compared loosely: lower case, no accents, "St-" = "Saint-"."""
-    text = unicodedata.normalize("NFKD", text.lower())
-    text = "".join(c for c in text if not unicodedata.combining(c))
-    text = re.sub(r"\bste?\b\.?", lambda m: "sainte" if m.group(0).startswith("ste") else "saint", text)
-    return " ".join(re.sub(r"[-'’]", " ", text).split())
-
-
-def line_ends(name: str | None) -> set[LineEnds]:
-    """The places a line's name joins, and its circuit number if it says:
-    "Liaison 225 kV n°1 Graffenstaden - Marlenheim" gives ({graffenstaden,
-    marlenheim}, 1), "graffenstaden - marlenheim" the same places and no number; a
-    line with a tee names three ("A - B - C"); a name for several lines on shared
-    pylons ("…;…") gives each."""
-    found = set()
-    for part in (name or "").split(";"):
-        number = re.search(CIRCUIT, part)
-        part = re.sub(
-            r"(?i)\([^)]*\)|\b(liaisons?|lignes?|et|à)\b|\b\d+([.,]\d+)?\s*kv\b", " ", CIRCUIT.sub(" ", part)
-        )
-        places = [place(p) for p in re.split(r"\s+-\s+|\s*[–—]\s*", part)]
-        places = [p for p in places if p]
-        if len(places) >= 2:
-            found.add((frozenset(places), int(number.group(1)) if number else None))
-    return found
-
-
-def same_line(a: set[LineEnds], b: set[LineEnds]) -> bool:
-    """Whether two names are of the same line: the same places (or one naming part
-    of the other's: "A - B" of "A - B - C"), and the same circuit number when both
-    give one (n°1 and n°2 are two lines)."""
-    return any(
-        (pa <= pb or pb <= pa) and (na is None or nb is None or na == nb) for pa, na in a for pb, nb in b
-    )
-
-
-def shares_a_place(a: set[LineEnds], b: set[LineEnds]) -> bool:
-    """Whether two lines' names have a place in common (two lines going into the
-    same substation on shared pylons)."""
-    return any(pa & pb for pa, _ in a for pb, _ in b)
-
 
 def turn(arriving: Vector, leaving: Vector) -> float:
     """How much a line turns (degrees, 0 = straight on) going in along `arriving`
     (pointing away from the node) and out along `leaving`."""
     angle = math.degrees(math.atan2(leaving[1], leaving[0]) - math.atan2(arriving[1], arriving[0]))
     return abs(180 - abs((angle + 180) % 360 - 180))
-
-
-@dataclass
-class GridIndex:
-    edges: dict[int, Edge] = field(default_factory=dict)
-    nodes: dict[int, Node] = field(default_factory=dict)
-    at_node: dict[int, list[int]] = field(default_factory=dict)
-    by_way: dict[int, list[int]] = field(default_factory=dict)
-    version: tuple = ()
-
-    def add(self, edge: Edge) -> None:
-        self.edges[edge.edge_id] = edge
-        self.at_node.setdefault(edge.source, []).append(edge.edge_id)
-        self.at_node.setdefault(edge.target, []).append(edge.edge_id)
-        self.by_way.setdefault(edge.way, []).append(edge.edge_id)
-
-    def meeting(self, node: int, voltage: int) -> list[Edge]:
-        return [self.edges[i] for i in self.at_node.get(node, []) if voltage in self.edges[i].voltages]
-
-
-_index: GridIndex | None = None
-
-
-async def grid_version(database: AsyncConnection) -> tuple:
-    row = (await database.execute(text("SELECT count(*), max(edge_id) FROM grid_edge"))).one()
-    return tuple(row)
-
-
-async def load_index(database: AsyncConnection) -> GridIndex:
-    """The network in memory, loaded again when the grid has been rebuilt."""
-    global _index
-    version = await grid_version(database)
-    if _index is not None and _index.version == version:
-        return _index
-    index = GridIndex(version=version)
-    rows = await database.execute(
-        text(
-            """SELECT edge_id, line_osm_id, source, target, voltage, voltage_tag, name, length_m,
-                      ST_X(a) AS ax, ST_Y(a) AS ay, ST_X(b) AS bx, ST_Y(b) AS by,
-                      ST_X(c) AS cx, ST_Y(c) AS cy, ST_X(d) AS dx, ST_Y(d) AS dy
-                 FROM (SELECT *, ST_PointN(geom, 1) AS a, ST_PointN(geom, 2) AS b,
-                              ST_PointN(geom, -1) AS c, ST_PointN(geom, -2) AS d
-                         FROM grid_edge) AS e"""
-        )
-    )
-    for r in rows:
-        index.add(
-            Edge(
-                r.edge_id,
-                r.line_osm_id,
-                r.source,
-                r.target,
-                voltages_of(r.voltage_tag, r.voltage),
-                r.name,
-                r.length_m,
-                (r.bx - r.ax, r.by - r.ay),
-                (r.dx - r.cx, r.dy - r.cy),
-            )
-        )
-    for r in await database.execute(text("SELECT node_id, kind, osm_id, name FROM grid_node")):
-        index.nodes[r.node_id] = Node(r.kind, r.osm_id, r.name)
-    _index = index
-    return index
 
 
 @dataclass

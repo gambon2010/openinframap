@@ -1,7 +1,7 @@
 """
 Fork: check the power grid network for lines that stop at nothing.
 
-Every line of MIN_VOLTAGE and more is followed (line_trace.py) to its ends. A big
+Every line of MIN_VOLTAGE and more is followed (line_trace/) to its ends. A big
 line ends at a substation, a power plant, or the edge of the built region (it goes
 on outside); anywhere else is a loose end: the line's data in OpenStreetMap is
 probably wrong there, or the rules connecting lines are. Prints counts by reason

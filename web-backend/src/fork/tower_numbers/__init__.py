@@ -4,7 +4,7 @@ Fork: number the towers (pylons) along each power line, for those without a ref:
 tower's details (GET /grid/tower/<osm_id>, grid/tower.py), as its label from zoom 16
 (tegola/layers.fork.yml) and found by the search ("23 marlenheim", search/towers.py).
 
-Every line of the grid network (schema/grid.sql) is followed (line_trace.py) from
+Every line of the grid network (schema/grid.sql) is followed (line_trace/) from
 one of its stations, A: the one its name starts with, else the first by name. Its
 towers are numbered by how far along the line they are. A tower on several lines
 (shared pylons) has a number on each.

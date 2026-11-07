@@ -1,5 +1,5 @@
 """Fork: tower numbers (tower_numbers/__init__.py): the lines of the network, followed
-(line_trace.py), and how far along its line each stretch is."""
+(line_trace/), and how far along its line each stretch is."""
 
 from __future__ import annotations
 

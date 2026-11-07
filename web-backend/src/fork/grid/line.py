@@ -1,5 +1,5 @@
 """Fork: where a power line goes (grid/__init__.py): the clicked line followed
-through junctions to the stations at its ends (line_trace.py).
+through junctions to the stations at its ends (line_trace/).
 
     GET /grid/line/<osm_id>
 """
@@ -29,7 +29,7 @@ def circuit_of(voltage_tag: str | None, voltage: int) -> dict:
 
 async def line(request: Request) -> Response:
     """Where a power line goes: the clicked line followed through junctions to the
-    stations at its ends (line_trace.py says how).
+    stations at its ends (line_trace/ says how).
 
         GET /grid/line/<osm_id>
     """
