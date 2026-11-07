@@ -616,3 +616,14 @@ def test_build_steps_never_end_in_a_failing_test():
         body = re.search(rf"\n{step}\(\) \{{\n(.*?)\n\}}\n", script, re.DOTALL).group(1)
         last = [line.strip() for line in body.split("\n") if line.strip()][-1]
         assert "&&" not in last and not last.startswith("["), f"{step}: {last}"
+
+
+def test_number_towers(sandbox):
+    # The tower numbers' SQL, the numbering (the backend's code, in Docker), then
+    # Tegola made again so the map shows them.
+    result = sandbox.run("number-towers.sh")
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert sandbox.docker_calls("psql")  # schema/tower-numbers.sql
+    assert sandbox.docker_calls("run", "src.fork.tower_numbers")
+    assert sandbox.docker_calls("up", "--force-recreate", "tegola")
+    assert "Towers numbered" in result.stdout

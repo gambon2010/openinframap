@@ -46,7 +46,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 2.12 | Rebuilding the OSM data must not delete the extra data (it's slow to download): keep it, and keep the raw downloads to rebuild from. | ✅ `data/extra/` |
 | 2.13 | List the dependencies needed to run the project from nothing. | ✅ LOCAL_DEVELOPMENT "Prerequisites" |
 | 2.14 | Rebuilds and imports keep My layers (they belong to the computer). | ✅ |
-| 2.15 | Should the setup scripts have tests? (asked 2026-10-30) | 🚧 see section 11 |
+| 2.15 | Should the setup scripts have tests? (asked 2026-10-30) | ✅ yes: every setup script and Python tool is tested (11.2), the last ones added 2026-11-07 (`number-towers.sh`, `fetch_images.py`) |
 | 2.16 | Re-export a region's ready-made export by default when it's out of date (no question). | ✅ `reexport_if_outdated` in `build-region.sh` and `start.sh` |
 
 ## 3. Background map and map sources
@@ -135,7 +135,6 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 7.6 | Gas distribution network (unknown pressure treated as low-pressure distribution); biomethane injection points; ICPE classified installations (Géorisques). | ✅ |
 | 7.7 | ICPE duplicates of OSM power plants: don't drop factories that just have solar panels. | ✅ |
 | 7.8 | Not wanted: HTA/BT poles (clutter). | ✖ |
-| 7.9 | Other countries' open distribution data (e.g. Germany). | 🗂 |
 | 7.10 | FINESS health establishments, fuel stations (after the OSM equivalents). | 🗂 |
 
 ## 8. Critical sites (from OpenStreetMap)
@@ -226,16 +225,14 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.7 | Import/export GeoJSON, KML, GPX; print a PDF with a legend. | ✅ My layers' Import / Export (`userlayers/io/`), "print" in the header (`fork/modules/print/`) (2026-11-01) |
 | 10.7c | The printed map fills the page (margins only what printers need), the legend in the room left: a box over the map's corner; a frame on screen shows what's printed. | ✅ (2026-11-05) |
 | 10.7d | The printed legend explains what's on the page: the key's rows for the infrastructure there; My layers by layer name, each item with its own picture (graphics drawn small). | ✅ (2026-11-05) |
-| 10.8 | Power supply scenarios: "what if these were lost?" without setting real statuses. | 🗂 (parked 2026-10-31) |
 | 10.9 | Buildings: show building outlines on the map (a layer to switch on); copy chosen buildings' outlines into My layers. | 🗂 (asked 2026-11-05) |
-| 10.10 | Power supply mode recolours the map layers it reads from the style (every layer drawn from the power-line and station tiles), not a hand-written list of upstream's layer names (a new or renamed upstream layer would silently keep its colour). | 🗂 (asked 2026-11-06) |
 | 10.11 | Feature statuses as layer information (a side's or team's own assessment), not one global state. The old status system was removed (2026-11-06); something simpler is to be designed and rebuilt. | 🗂 (asked 2026-11-06) |
 
 ## 11. Quality
 
 | # | Requirement | Status |
 |---|---|---|
-| 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | ✅ 321 frontend (`npm run test:fork`), 19 backend (`tests/fork/`), 77 scripts (`scripts/tests/`) |
+| 11.1 | Unit tests for the fork's code (frontend: Vitest; backend: pytest), where they make sense. | ✅ frontend `npm run test:fork`, backend `tests/fork/`, scripts `scripts/tests/` |
 | 11.2 | Tests for the setup scripts. | ✅ the scripts run in a sandbox with fake Docker/network (options, refusals, safety rules); a real Luxembourg build, export and import in a separate test database (opt-in) |
 | 11.7 | Distances and areas mean the same anywhere in the world: written in real metres, not map units tuned for France. | ✅ (2026-11-06) |
 | 11.6 | Dead code removed: features replaced or dropped (the typed author name, layer colours, ⋯ menus, unused strings, styles and helpers). | ✅ (2026-11-06) |
