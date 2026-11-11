@@ -29,12 +29,8 @@ ok "Map database: $REGION (OSM data as of $(build_info osm_timestamp))"
 up_services tegola
 ok "Tile server running on http://localhost:7800"
 REGION_ID=$(build_info region_id)
-if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]] || has_satellite "$REGION_ID"; then
-    # The same server serves the offline background map and the satellite imagery.
-    start_basemap_if_present
-    if [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]]; then
-        ok "Offline background map running on http://localhost:$BASEMAP_PORT"
-    fi
+if has_satellite "$REGION_ID"; then
+    start_satellite_if_present
 fi
 # The imagery list (and its credits) for the frontend, kept up to date.
 select_satellite "$REGION_ID"

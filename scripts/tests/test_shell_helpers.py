@@ -368,7 +368,7 @@ python3() {{
     else command python3 "$@"; fi
 }}
 docker() {{ echo "docker $*" >> "{calls}"; }}
-basemap_image() {{ echo pmtiles:test; }}
+pmtiles_image() {{ echo pmtiles:test; }}
 catch_up_lower_zooms 2>&1
 """,
         BASEMAP_DIR=str(tmp_path),
@@ -376,7 +376,7 @@ catch_up_lower_zooms 2>&1
     made = calls.read_text()
     # What satellite.py lists (lower_zooms_needed, tested there), and only that.
     assert "lower-zooms --file old.sat-regional" in made
-    assert "restart basemap" in made  # the server reads the new file
+    assert "restart satellite" in made  # the server reads the new file
     assert "adding its lower zooms" in out
 
 
@@ -428,3 +428,24 @@ download_satellite france 2>&1
     assert "--queued --yes" in made[2]
     assert made[3] == "select france"
     assert "Offline maps" in out
+
+
+def test_the_frontend_is_pointed_at_the_backends_background_map(tmp_path):
+    env = tmp_path / ".env"
+    env.write_text("VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt\n")
+    (tmp_path / "france.sat-regional.pmtiles").write_bytes(b"x")  # imagery: not one
+
+    def select():
+        bash(
+            "port_in_use() { return 1; }\nselect_basemap france >/dev/null",
+            BASEMAP_DIR=str(tmp_path),
+            WEB_ENV=str(env),
+        )
+        return env.read_text()
+
+    # None downloaded: the old address (a single file, the old server) goes.
+    assert "VITE_BASEMAP_URL" not in select()
+    (tmp_path / "france.pmtiles").write_bytes(b"x")
+    (tmp_path / "luxembourg.pmtiles").write_bytes(b"x")
+    assert "VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt" in select()
+    assert bash("background_areas", BASEMAP_DIR=str(tmp_path)) == "france\nluxembourg"

@@ -55,8 +55,8 @@ describe('imagery coverage', () => {
   })
 
   it('reads the bounds from the TileJSON next to the tiles', () => {
-    expect(tileJsonUrl('http://h:8800/basemap/luxembourg.sat-regional/{z}/{x}/{y}.webp')).toBe(
-      'http://h:8800/basemap/luxembourg.sat-regional.json'
+    expect(tileJsonUrl('http://h:8800/satellite/luxembourg.sat-regional/{z}/{x}/{y}.webp')).toBe(
+      'http://h:8800/satellite/luxembourg.sat-regional.json'
     )
   })
   it('is offered only where some imagery is', () => {

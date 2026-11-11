@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Offline satellite imagery for the built region, in three tiers (one PMTiles file
-each, in data/basemap/, served by the `basemap` Compose service like the offline
+each, in data/basemap/, served by the `satellite` Compose service like the offline
 background map). Run by scripts/build-region.sh; see docs/plans/satellite-imagery.md.
 
   overview   zoom 0-8   NASA Blue Marble Next Generation (NASA GIBS, 500 m):

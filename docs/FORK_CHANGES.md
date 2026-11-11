@@ -362,7 +362,7 @@ region:
   build file itself (~139 GB), downloaded resumably. Files go to
   `data/basemap/<region>.pmtiles` with a `.json` noting the build and detail level.
 - **Serving:** the `basemap` Compose service (`protomaps/go-pmtiles`, `pmtiles serve`)
-  on port 8090. No database or rendering: it reads the file.
+  on port 8090 (now the backend, below; the service is `satellite`). No database or rendering: it reads the file.
 - **Wiring:** `select_basemap` sets `VITE_BASEMAP_URL` in `web/.env` to the region's
   local map (and removes it if that file is gone), and starts the server. Builds,
   imports, `launch.sh` and `start.sh` all call it. Vite reads `.env` at startup, so
@@ -380,9 +380,28 @@ region:
 - The default `web/.env` written by `launch.sh` now leaves the URL unset (online)
   until a background map is downloaded.
 
-**Night lights** (NASA Black Marble: the Earth at night) is an alternative background
+**Several areas, served by the backend** (2026-11-11, asked for: local tiles only):
+the background map is no longer served by `pmtiles serve` one file at a time. The
+backend's `/background/{z}/{x}/{y}.mvt` (`web-backend/src/fork/background/`, the
+`pmtiles` package's parsing with each file's index cached, files read through mmap,
+picked up again when they change) answers each tile from the first
+`data/basemap/<area>.pmtiles` that has it: newest Protomaps edition first (from
+`<area>.json`), `world` last. A border tile is in both neighbours' files, the same
+tile from the same edition: sent once, nothing drawn twice. None has it: 204 (an
+empty tile). `pmtiles serve` can't do "first file that has it", and it's
+Protomaps' program, so it isn't changed: the Compose service is renamed
+`satellite` and serves the satellite imagery only (gate `/satellite/`).
+`select_basemap` points `VITE_BASEMAP_URL` at the backend whenever any background
+map is there (`background_areas`). The backend container mounts `data/basemap/`
+read-only. Tests: `tests/fork/test_background.py`.
+
+**Night lights** (NASA Black Marble: the Earth at night) was an alternative background
 in upstream's layer menu. It only exists online (tiles from openinframap.org), so the
-fork hides the whole Background switch (OpenStreetMap / Nighttime Lights).
+fork hid the whole Background switch (OpenStreetMap / Nighttime Lights), then
+removed it (2026-11-11): its source (`style.ts`) and layers (`style_base.ts`).
+The infrastructure layers no longer fall back to openinframap.org either
+(`OIM_TILES` in `fork/config.ts`: the local Tegola, `http://localhost:7800` if
+`VITE_TEGOLA_URL` isn't set).
 
 *Tried and reverted:* bringing the switch back with night lights greyed out when
 offline. It worked, but broke saved map links: links made while the switch was hidden
@@ -2562,12 +2581,12 @@ errors in upstream's own files as before.
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
 | `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's; the database middleware skips the fork's streams (`streaming_paths`) |
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
-| `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden |
+| `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden; the night lights' source removed (`style.ts`; on a merge, keep it out) |
 | `openinframap.ts` (the `GeolocateControl` removed) | The "find my location" button removed (2026-11-06, asked for). On a merge, keep it out. |
 | `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted; `remote-control.ts` stays (the validation popup uses it). |
 | `web/src/search/search.ts` | Photon instead of OpenCage (`opencage.ts` is kept, unused); `Promise.allSettled` |
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
-| `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; a few constants exported for the fork's styles |
+| `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; the night lights' two layers removed (`black_marble*`); a few constants exported for the fork's styles |
 | `web/src/elements/external-links.ts` | Popup crash fix |
 | `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol and graphics libraries); tests exclude `src/fork/` |
 | `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols), `@armyc2.c5isr.renderer/mil-sym-ts-web` (tactical graphics); dev: `happy-dom`; script `test:fork` |

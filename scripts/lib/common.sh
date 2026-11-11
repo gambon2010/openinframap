@@ -12,9 +12,10 @@ EEZ_ZIP="$DATA_DIR/$EEZ_NAME.zip"
 EEZ_DOWNLOAD_URL="https://marineregions.org/download_file.php?name=$EEZ_NAME.zip"
 EEZ_INFO_URL="https://marineregions.org/sources.php#unioneezcountry"
 BUILD_LOG="$OSM_DIR/build-history.log"
-# Offline background maps (Protomaps extracts), served by the `basemap` service.
+# Offline maps: background maps (<area>.pmtiles, served by the backend) and
+# satellite imagery (<area>.sat-*.pmtiles, served by the `satellite` service).
 BASEMAP_DIR="$DATA_DIR/basemap"
-BASEMAP_PORT=8090
+SATELLITE_PORT=8090
 WEB_ENV="$REPO_ROOT/web/.env"
 # Ready-made databases made by scripts/export-db.sh, imported by import-db.sh.
 EXPORTS_DIR="$DATA_DIR/exports"

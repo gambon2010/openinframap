@@ -206,9 +206,10 @@ Sizes grow quickly with area. Roughly: France 9.5 GB full / 2.3 GB reduced,
 Russia 26 / 7.4 GB, Europe 49 / 13 GB, the whole world ~139 GB at full detail.
 
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
-`data/basemap/<region>.pmtiles`. A small server (`docker compose up -d basemap`,
-port 8090) serves it, and `web/.env` gets
-`VITE_BASEMAP_URL=http://localhost:8090/<region>/{z}/{x}/{y}.mvt`. Restart the
+`data/basemap/<region>.pmtiles`. The backend serves every background map there
+together (each tile from the first file that has it, so several areas show at
+once), and `web/.env` gets
+`VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt`. Restart the
 frontend after that changes. Re-running the build offers to refresh it with newer
 map data. Unattended: `--basemap full`, `--basemap reduced` or `--basemap none`.
 
@@ -406,15 +407,15 @@ uv run uvicorn src.main:app --reload --port 8001
 ### `web/.env`
 
 ```
-# Night-lights tiles, and the background map unless VITE_BASEMAP_URL is set.
+# The background map unless VITE_BASEMAP_URL is set.
 VITE_TILE_BASE_URL=https://openinframap.org
 # Infrastructure tiles from the local Tegola.
 VITE_TEGOLA_URL=http://localhost:7800
 # The local backend.
 VITE_BACKEND_BASE_URL=http://localhost:8001
-# Background map server (Protomaps schema), full {z}/{x}/{y} URL. build-region.sh
-# sets it when you download an offline background map.
-VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt
+# Background map server (Protomaps schema), full {z}/{x}/{y} URL: the backend,
+# once an offline background map is downloaded (the scripts set it).
+VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt
 # Optional Photon server for street-address search (not set up by the scripts).
 # VITE_PHOTON_URL=http://localhost:2322
 ```

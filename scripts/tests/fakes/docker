@@ -22,7 +22,7 @@ def has(*words):
 if args[:1] == ["info"] or args[:2] == ["compose", "version"]:
     sys.exit(0)
 if has("config", "--format"):
-    print(json.dumps({"name": "oimtest", "services": {"db": {"image": "postgis:test"}, "basemap": {"image": "pmtiles:test"}}}))
+    print(json.dumps({"name": "oimtest", "services": {"db": {"image": "postgis:test"}, "satellite": {"image": "pmtiles:test"}}}))
     sys.exit(0)
 if args[:2] == ["volume", "inspect"]:
     sys.exit(0 if os.environ.get("FAKE_DB_EXISTS") == "1" else 1)

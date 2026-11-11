@@ -1,5 +1,5 @@
 import i18next from 'i18next'
-import { TILE_BASE_URL, BASEMAP_URL, OIM_TILES } from '../fork/config.ts'
+import { BASEMAP_URL, OIM_TILES } from '../fork/config.ts'
 import { forkSources, forkLayers } from '../fork/index.ts'
 import style_base from './style_base.js'
 import style_labels from './style_labels.js'
@@ -64,14 +64,6 @@ const style: StyleSpecification = {
       tiles: [BASEMAP_URL],
       maxzoom: 15,
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
-    },
-    blackmarble: {
-      type: 'raster',
-      tiles: [`${TILE_BASE_URL}/black-marble-2024/{z}/{x}/{y}.webp`],
-      tileSize: 256,
-      maxzoom: 8,
-      attribution:
-        '<a href="https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VNP46A4/">NASA Black Marble 2024</a>'
     },
     power: {
       type: 'vector',

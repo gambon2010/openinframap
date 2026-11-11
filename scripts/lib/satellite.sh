@@ -13,6 +13,13 @@ has_satellite() {
     compgen -G "$BASEMAP_DIR/*.sat-*.pmtiles" >/dev/null
 }
 
+# Start the satellite imagery server (the "satellite" service) if there's any.
+start_satellite_if_present() {
+    if has_satellite; then
+        docker compose --progress quiet up -d satellite </dev/null
+    fi
+}
+
 # region_satellite REGION — whether imagery of the region itself is downloaded.
 region_satellite() {
     compgen -G "$BASEMAP_DIR/$1.sat-*.pmtiles" >/dev/null
@@ -80,7 +87,7 @@ satellite_tiers_value() {
         fi
         ext=$(pmtiles_ext "$file" "$ext")
         bounds=$(pmtiles_bounds "$file")
-        value+="${value:+;}http://localhost:$BASEMAP_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range${bounds:+ $bounds}|${credits[i]:-}"
+        value+="${value:+;}http://localhost:$SATELLITE_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range${bounds:+ $bounds}|${credits[i]:-}"
         i=$((i + 1))
     done
     echo "$value"
@@ -98,7 +105,7 @@ select_satellite() {
         BASEMAP_CHANGED=1
     fi
     if [[ -n "$value" ]]; then
-        docker compose --progress quiet up -d basemap </dev/null
+        docker compose --progress quiet up -d satellite </dev/null
         ok "Satellite imagery: $(satellite_summary "$region"). Turn it on in Settings → Background."
     fi
     if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
@@ -166,7 +173,7 @@ download_satellite() {
     fi
     if [[ ${#SAT_STEPS[@]} -gt 0 ]]; then
         section "Downloading satellite imagery (${#SAT_STEPS[@]} at once)..."
-        SAT_PMTILES_IMAGE=$(basemap_image)
+        SAT_PMTILES_IMAGE=$(pmtiles_image)
         SAT_OK=1
         run_parallel "${#SAT_STEPS[@]}" satellite_step_label satellite_step || SAT_OK=0
         for i in "${!JOB_STATUS[@]}"; do
@@ -195,14 +202,14 @@ catch_up_lower_zooms() {
     mapfile -t files < <(python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --list-needed \
         --basemap-dir "$BASEMAP_DIR" 2>/dev/null)
     [[ ${#files[@]} -gt 0 ]] || return 0
-    docker compose --progress quiet up -d basemap </dev/null
+    docker compose --progress quiet up -d satellite </dev/null
     for file in "${files[@]}"; do
         run_with_timer --progress --keep-going "${file/.sat-/ }: adding its lower zooms" \
             python3 -I "$REPO_ROOT/scripts/satellite.py" lower-zooms --file "$file" \
-                --basemap-dir "$BASEMAP_DIR" --pmtiles-image "$(basemap_image)" \
+                --basemap-dir "$BASEMAP_DIR" --pmtiles-image "$(pmtiles_image)" \
             || warn "Adding its lower zooms failed; it shows from a higher zoom until then."
     done
-    docker compose --progress quiet restart basemap </dev/null >/dev/null
+    docker compose --progress quiet restart satellite </dev/null >/dev/null
     return 0
 }
 

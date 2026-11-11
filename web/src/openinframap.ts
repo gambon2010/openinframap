@@ -55,11 +55,11 @@ export default class OpenInfraMap {
   init() {
     const layer_switcher = new LayerSwitcher(
       [
-        // Fork: background switch hidden: night lights are online-only, and showing
-        // the switch breaks saved map links without an "A" in their layer list.
+        // Fork: background switch removed: the night lights (online only) are gone,
+        // and showing the switch breaks saved map links without an "A" in their
+        // layer list.
         // new LayerGroup(t('layers.background'), [
-        //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
-        //   new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
+        //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true)
         // ]),
         new LayerGroup(t('layers.overlays'), [
           new Layer('L', t('layers.labels'), 'label_', true),

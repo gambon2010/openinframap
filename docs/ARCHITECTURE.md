@@ -160,6 +160,9 @@ session):
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
+- `background/` (the background map's tiles, `/background/{z}/{x}/{y}.mvt`: each from
+  the first `data/basemap/<area>.pmtiles` that has it, so several areas show together;
+  satellite imagery is the `satellite` service's);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:

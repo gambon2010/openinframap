@@ -108,9 +108,7 @@ function apply(map: Map) {
   // Satellite: above the whole background map (place names come later, from the
   // labels style). Hybrid: under its roads, railways and boundaries.
   const firstOverlay = layers.find((l) => isHybridOverlay(l.id))?.id
-  const firstData = layers.find(
-    (l) => !l.id.startsWith('osm_') && !l.id.startsWith('satellite_') && !l.id.startsWith('black_marble')
-  )?.id
+  const firstData = layers.find((l) => !l.id.startsWith('osm_') && !l.id.startsWith('satellite_'))?.id
   const before = mode === 'hybrid' ? firstOverlay : firstData
   // Buildings would cover the imagery in hybrid mode.
   if (map.getLayer('osm_buildings'))

@@ -7,7 +7,7 @@ export const TILE_BASE_URL: string = import.meta.env.VITE_TILE_BASE_URL ?? 'http
 const THROUGH_GATE: [RegExp, string][] = [
   [/^https?:\/\/(localhost|127\.0\.0\.1):7800/, '/tegola'],
   [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, ''],
-  [/^https?:\/\/(localhost|127\.0\.0\.1):8090/, '/basemap']
+  [/^https?:\/\/(localhost|127\.0\.0\.1):8090/, '/satellite']
 ]
 
 /** A local service's address as reached through the gate, from this page. */
@@ -70,10 +70,7 @@ export const BACKEND_BASE_URL: string = throughGate(
   import.meta.env.VITE_BACKEND_BASE_URL ?? 'https://openinframap.org'
 )
 
-// Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.).
-// Production nginx serves these at /map/*; local Tegola serves them at /maps/*.
-// When VITE_TEGOLA_URL is set we point directly at Tegola — Tegola returns
-// Access-Control-Allow-Origin: * so cross-origin tile fetches work fine.
-export const OIM_TILES: string = import.meta.env.VITE_TEGOLA_URL
-  ? `${throughGate(import.meta.env.VITE_TEGOLA_URL)}/maps`
-  : `${TILE_BASE_URL}/map`
+// Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
+// the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online
+// fallback: the map only shows local tiles.
+export const OIM_TILES = `${throughGate(import.meta.env.VITE_TEGOLA_URL || 'http://localhost:7800')}/maps`

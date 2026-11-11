@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # The offline background map (data/basemap/<region>.pmtiles), served by the
-# "basemap" service; PMTiles headers.
+# backend; PMTiles headers.
 # Sourced by common.sh.
 
 # Offline background maps are cut from Protomaps' daily world build.
@@ -10,36 +10,38 @@ PROTOMAPS_BASE="https://build.protomaps.com"
 # as satimagery/sources/protomaps.py (a test checks).
 REDUCED_MAXZOOM=13
 
-basemap_image() {
-    docker compose config --format json </dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["basemap"]["image"])'
+pmtiles_image() {
+    docker compose config --format json </dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["satellite"]["image"])'
 }
 
-has_local_basemaps() {
-    compgen -G "$BASEMAP_DIR/*.pmtiles" >/dev/null
+# The background maps downloaded: data/basemap/<area>.pmtiles (not satellite
+# imagery, <area>.sat-*.pmtiles), their areas, one per line.
+background_areas() {
+    local file name
+    for file in "$BASEMAP_DIR"/*.pmtiles; do
+        [[ -f "$file" ]] || continue
+        name=$(basename "$file" .pmtiles)
+        [[ "$name" == *.* ]] || echo "$name"
+    done
 }
 
-# Point the frontend at the local background map for region $1 if there is one,
-# and start the server. A setting pointing at a local map that no longer exists
-# is removed, so the map falls back to the online one.
+# Point the frontend at the background map: every area downloaded, served by the
+# backend (/background, web-backend/src/fork/background/: each tile from the
+# first file that has it). The argument (the region built) is no longer needed.
 select_basemap() {
-    local region="$1" current url
+    local current want="" areas
     ensure_web_env
     current=$(grep -E '^VITE_BASEMAP_URL=' "$WEB_ENV" | cut -d= -f2- || true)
-    if [[ -f "$BASEMAP_DIR/$region.pmtiles" ]]; then
-        url="http://localhost:$BASEMAP_PORT/$region/{z}/{x}/{y}.mvt"
-        if [[ "$current" != "$url" ]]; then
-            set_env_line "$WEB_ENV" VITE_BASEMAP_URL "$url"
-            BASEMAP_CHANGED=1
-        fi
-        mkdir -p "$BASEMAP_DIR"
-        docker compose --progress quiet up -d basemap </dev/null
-        ok "Offline background map: $region (http://localhost:$BASEMAP_PORT)"
-    elif [[ "$current" == "http://localhost:$BASEMAP_PORT/"* ]]; then
-        # A local background map of another region (or a deleted one) would leave
-        # this region blank: switch to the online one.
-        set_env_line "$WEB_ENV" VITE_BASEMAP_URL ""
+    areas=$(background_areas | paste -sd, - | sed 's/,/, /g')
+    [[ -n "$areas" ]] && want="http://localhost:$BACKEND_PORT/background/{z}/{x}/{y}.mvt"
+    if [[ "$current" != "$want" ]]; then
+        set_env_line "$WEB_ENV" VITE_BASEMAP_URL "$want"
         BASEMAP_CHANGED=1
-        info "Background map: online (openinframap.org)."
+    fi
+    if [[ -n "$areas" ]]; then
+        ok "Offline background map: $areas"
+    else
+        info "No background map downloaded yet (bash scripts/satellite.sh: Add, Background map)."
     fi
     if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
         warn "Restart the frontend to switch background maps (Ctrl+C in its window, then bash scripts/start.sh)."
@@ -90,7 +92,7 @@ pmtiles_ext() {
 # pmtiles ARGS... — the pmtiles CLI from the basemap service's image, with
 # data/basemap/ at /out.
 pmtiles() {
-    docker run --rm --user "$(id -u):$(id -g)" -v "$BASEMAP_DIR:/out:z" "$(basemap_image)" "$@"
+    docker run --rm --user "$(id -u):$(id -g)" -v "$BASEMAP_DIR:/out:z" "$(pmtiles_image)" "$@"
 }
 
 # latest_protomaps_build — "KEY SIZE" of Protomaps' latest world build (nothing offline).
@@ -132,13 +134,4 @@ download_basemap() {
     mv "$partial" "$BASEMAP_DIR/$region.pmtiles"
     json_write "$BASEMAP_DIR/$region.json" region_id="$region" build="$build" detail="$detail" \
         downloaded_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-
-# --- Serving it --------------------------------------------------------------------
-
-# Start the background-map server if any background map has been downloaded.
-start_basemap_if_present() {
-    if has_local_basemaps; then
-        docker compose --progress quiet up -d basemap </dev/null
-    fi
 }

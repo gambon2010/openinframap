@@ -91,7 +91,7 @@ fi
 section "Starting the Tegola tile server..."
 up_services tegola
 ok "Running on http://localhost:7800"
-start_basemap_if_present
+start_satellite_if_present
 
 # ---------------------------------------------------------------------------
 # 6. Start the app — each server in its own terminal window

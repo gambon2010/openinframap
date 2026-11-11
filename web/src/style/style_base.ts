@@ -618,20 +618,6 @@ const layers: LayerSpecificationWithZIndex[] = [
     }
   },
   {
-    id: 'black_marble_background',
-    type: 'background',
-    layout: { visibility: 'none' },
-    paint: {
-      'background-color': 'rgb(0,0,0)'
-    }
-  },
-  {
-    id: 'black_marble',
-    type: 'raster',
-    source: 'blackmarble',
-    layout: { visibility: 'none' }
-  },
-  {
     id: 'boundaries_country',
     type: 'line',
     source: 'basemap',
