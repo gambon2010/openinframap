@@ -1799,6 +1799,16 @@ starting above their area's lowest; `catch_up_lower_zooms` (was
   (`offerImagery`: its last zoom, where it covers). Strings `satellite.*` of the
   section became `background.*`.
 
+## IGN's photos: Bas-Rhin, and what it taught (2026-11-07)
+
+The first whole département (Bas-Rhin, 4,761 km², 251 images): 22.8 GB downloaded,
+1.17 GB kept to zoom 17 (7.5 KB a tile, 245 KB/km²; Paris, all city, 11 KB), so the
+menu's sizes now use 8 KB a tile (`WEBP_TILE_BYTES`): all of France to 17 is ~130
+GB. Making its tiles on all 32 cores, `gdal raster tile` failed to write a tile
+every few thousand ("Unable to create WEBP file", three tries in a row); with 8
+threads (`TILE_THREADS`) it never did. A conversion that stops goes on where it was
+(the reprojected image and the tiles made are kept).
+
 ## France's aerial photos from IGN's files (2026-11-06)
 
 IGN's tile server blocked this computer after a thousand tiles (below), so France's

@@ -47,12 +47,18 @@ PARTS_AT_ONCE = 3
 MINZOOM = TIERS["detailed"][0]
 # WebP quality of the tiles: smaller than IGN's JPEG, still sharp.
 QUALITY = 75
+# Threads making tiles at once: with all 32 cores, gdal raster tile fails to
+# write a tile every few thousand ("Unable to create WEBP file", three times in a
+# row on Bas-Rhin); 8 never did, and is nearly as fast.
+TILE_THREADS = min(8, os.cpu_count() or 8)
 # GDAL 3.11 for `gdal raster tile` (every core, every zoom); Sentinel-2 stays on
 # sources.GDAL_IMAGE.
 TILER_IMAGE = "ghcr.io/osgeo/gdal:alpine-small-3.11.4"
-# Sizes, measured on Bas-Rhin (2024): the archive per km², a WebP tile.
+# Sizes, measured on Bas-Rhin (2024, 4,761 km², mostly countryside): the archive
+# per km² (22.8 GB), and a WebP tile on average (1.17 GB to zoom 17: 7.5 KB; Paris,
+# all city, 11 KB).
 ARCHIVE_BYTES_PER_KM2 = 4_800_000
-WEBP_TILE_BYTES = 12_000
+WEBP_TILE_BYTES = 8_000
 
 # --- Which département ---------------------------------------------------------
 
@@ -298,14 +304,14 @@ def pipeline(maxzoom: int, minzoom: int = MINZOOM) -> str:
     Run again after it stopped, it goes on: the reprojected image is kept once
     complete (written under another name until then), and a zoom's tiles already
     made are kept (--resume). gdal raster tile now and then fails to write one
-    tile ("Unable to create WEBP file", its threads tripping over each other: once
-    on Paris, once on Bas-Rhin): each zoom is tried up to three times, the next
-    tries making only what's missing."""
+    tile ("Unable to create WEBP file", its threads tripping over each other), less
+    so with fewer threads (TILE_THREADS): each zoom is tried up to three times, the
+    next tries making only what's missing."""
     resolution = EARTH_CIRCUMFERENCE_M / 256 / 2**maxzoom
     warped, tiles = f"warped-z{maxzoom}.tif", f"tiles-z{maxzoom}"
     tile = (
         f"gdal raster tile --format WEBP --co QUALITY={QUALITY} -r average "
-        f"--skip-blank --webviewer none -j ALL_CPUS --resume {warped} {tiles}"
+        f"--skip-blank --webviewer none -j {TILE_THREADS} --resume {warped} {tiles}"
     )
     return " && ".join(
         [
