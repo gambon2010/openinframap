@@ -1,9 +1,7 @@
-export const TILE_BASE_URL: string = import.meta.env.VITE_TILE_BASE_URL ?? 'https://openinframap.org'
-
 // The app is opened through the gate (gate/nginx.conf, http://<this computer>:8800),
 // which checks the login on every request: the local services in web/.env
 // (Tegola, the backend, the background map, on localhost) are reached through it,
-// at the page's own address. Other addresses (openinframap.org...) are left as they are.
+// at the page's own address. Other addresses are left as they are.
 const THROUGH_GATE: [RegExp, string][] = [
   [/^https?:\/\/(localhost|127\.0\.0\.1):7800/, '/tegola'],
   [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, ''],
@@ -19,11 +17,16 @@ export function throughGate(url: string, origin = globalThis.location?.origin): 
   return url
 }
 
+// The local backend (no online fallback: everything comes from this computer).
+const LOCAL_BACKEND = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:8001'
+
 // Basemap (roads, buildings, water, labels) vector tiles in the Protomaps
-// schema. Defaults to openinframap.org; set VITE_BASEMAP_URL to use your own
-// tile server, e.g. `pmtiles serve` or a Martin instance. The "Map sources"
-// panel (src/map-sources/) can override it for the current browser tab.
-export const DEFAULT_BASEMAP_URL = `${TILE_BASE_URL}/20250311/{z}/{x}/{y}.mvt`
+// schema: the background maps downloaded into data/basemap/, served together by
+// the backend (/background; web-backend/src/fork/background/). Only local tiles:
+// where none was downloaded the background is empty. VITE_BASEMAP_URL can point
+// at another Protomaps-schema server; the "Map sources" panel can override it
+// for the current browser tab.
+export const DEFAULT_BASEMAP_URL = `${LOCAL_BACKEND}/background/{z}/{x}/{y}.mvt`
 export const CONFIGURED_BASEMAP_URL: string = throughGate(
   import.meta.env.VITE_BASEMAP_URL || DEFAULT_BASEMAP_URL
 )
@@ -66,9 +69,7 @@ export function getPhotonUrl(): string {
   return getSessionUrl(PHOTON_SESSION_KEY) ?? CONFIGURED_PHOTON_URL
 }
 
-export const BACKEND_BASE_URL: string = throughGate(
-  import.meta.env.VITE_BACKEND_BASE_URL ?? 'https://openinframap.org'
-)
+export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
 
 // Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
 // the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online

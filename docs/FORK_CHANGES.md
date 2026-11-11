@@ -409,6 +409,18 @@ own download code (`download_basemap`, `basemap_size`, `choose_basemap_detail`)
 is gone; `region_outline` writes the region's outline (Geofabrik's, or a local
 file's bounding box) where the menu looks for it.
 
+**Only local tiles** (2026-11-11, asked for): no online background map any more.
+The frontend's default background map is the backend's `/background`
+(`DEFAULT_BASEMAP_URL` in `fork/config.ts`); where nothing is downloaded the
+background is empty. `VITE_TILE_BASE_URL` is no longer read (upstream's
+`web/.env.example` still lists it, left as upstream's) nor written by
+`launch.sh`; the backend's address defaults to `http://localhost:8001`, not
+openinframap.org. `select_basemap` only removes an old `VITE_BASEMAP_URL` (the
+one-file server, or the default's own address) and says which areas there are, or
+that the background is empty. Settings → Map sources says "the background maps
+downloaded on this computer". France's background map: 5.4 GB (by its outline;
+the bounding box's 9.5 GB was an upper bound), 3 min at ~30 MB/s.
+
 **Night lights** (NASA Black Marble: the Earth at night) was an alternative background
 in upstream's layer menu. It only exists online (tiles from openinframap.org), so the
 fork hid the whole Background switch (OpenStreetMap / Nighttime Lights), then

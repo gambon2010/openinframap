@@ -164,7 +164,7 @@ class BasemapRow extends SourceRow {
   }
 
   placeholder() {
-    return 'http://localhost:8090/<region>/{z}/{x}/{y}.mvt'
+    return 'http://localhost:8001/background/{z}/{x}/{y}.mvt'
   }
 
   validate(url: string) {
@@ -190,7 +190,7 @@ class BasemapRow extends SourceRow {
     if (this.overridden()) return t('sources.origin-session', 'Changed for this tab only.')
     if (CONFIGURED_BASEMAP_URL !== DEFAULT_BASEMAP_URL)
       return t('sources.origin-env', 'Default, from VITE_BASEMAP_URL in web/.env.')
-    return t('sources.origin-builtin', 'Default: the openinframap.org background map.')
+    return t('sources.origin-local', 'Default: the background maps downloaded on this computer.')
   }
 
   helpContent() {
@@ -206,14 +206,14 @@ class BasemapRow extends SourceRow {
         code('web/.env'),
         ':'
       ),
-      el('pre', 'VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt'),
+      el('pre', 'VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt'),
       el(
         'p',
         t('sources.help-3', 'Then restart the frontend (Ctrl+C in its window, then'),
         ' ',
         code('bash scripts/start.sh'),
         '). ',
-        t('sources.help-4', 'Remove the line to go back to the openinframap.org background map.')
+        t('sources.help-local', 'Remove the line to go back to the background maps downloaded here.')
       ),
       el(
         'p',

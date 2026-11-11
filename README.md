@@ -62,8 +62,8 @@ What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)*
 | **Key** | Every row has a checkbox to hide those features; remembered per browser |
 | **My layers** | Your own layers on the map: military and emergency symbols (MIL-STD-2525C, as in ODIN), pictures, markers, lines, areas and copies of map features (which stay visible when the grid is hidden); saved in the database, with a history you can play back step by step |
 | **Wikidata popups** | `scripts/fetch_images.py` caches entity data and photos in `data/`; the backend serves them offline |
-| **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`, `VITE_TILE_BASE_URL`) |
-| **UI** | Layers, key and My layers open on click beside the buttons, one at a time, all panels with one look; Settings window (map sources) in the header; background switch (OpenStreetMap / online-only night lights) hidden |
+| **URLs** | Backend, Tegola and background-map URLs configurable in `web/.env` (`VITE_BACKEND_BASE_URL`, `VITE_TEGOLA_URL`, `VITE_BASEMAP_URL`); only local tiles, no online fallback |
+| **UI** | Layers, key and My layers open on click beside the buttons, one at a time, all panels with one look; Settings window (map sources) in the header; background switch hidden, the online-only night lights removed |
 
 ## Upstream project
 

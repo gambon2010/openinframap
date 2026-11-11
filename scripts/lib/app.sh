@@ -178,12 +178,11 @@ print_manual_start() {
 ensure_web_env() {
     [[ -f "$WEB_ENV" ]] && return
     cat > "$WEB_ENV" <<'ENV'
-VITE_TILE_BASE_URL=https://openinframap.org
 VITE_TEGOLA_URL=http://localhost:7800
 VITE_BACKEND_BASE_URL=http://localhost:8001
-# Background map: openinframap.org unless VITE_BASEMAP_URL is set. build-region.sh
-# sets it when you download a background map for offline use; you can also point
-# it at your own Protomaps-schema tile server (full {z}/{x}/{y} URL template):
+# Background map: the ones downloaded (bash scripts/satellite.sh), served by the
+# backend. Only local tiles. To use another Protomaps-schema tile server instead
+# (full {z}/{x}/{y} URL template):
 # VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt
 # Optional Photon server for street-address search (not set up by the scripts):
 # VITE_PHOTON_URL=http://localhost:2322

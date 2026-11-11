@@ -70,7 +70,6 @@
     "help-1": "To change the default for this copy of the project, set",
     "help-2": "in",
     "help-3": "Then restart the frontend (Ctrl+C in its window, then",
-    "help-4": "Remove the line to go back to the openinframap.org background map.",
     "help-5": "The URL must contain {z}, {x} and {y}, and the tiles must use the Protomaps basemap layers. To get an offline background map for your region, run \"bash scripts/build-region.sh\": it downloads one and sets this for you.",
     "load-error": "Couldn't load background tiles from this URL. Check it's right and the server is running.",
     "invalid-start": "The URL must start with http://, https:// or /.",
@@ -79,7 +78,6 @@
     "reset-done": "Back to the default background map.",
     "origin-session": "Changed for this tab only.",
     "origin-env": "Default, from VITE_BASEMAP_URL in web/.env.",
-    "origin-builtin": "Default: the openinframap.org background map.",
     "photon": "Address search (Photon, optional)",
     "photon-placeholder": "e.g. http://localhost:2322 (empty = not used)",
     "photon-off": "Not using Photon. Places in your region are still found.",
@@ -89,7 +87,9 @@
     "photon-origin-env": "Default, from VITE_PHOTON_URL in web/.env.",
     "photon-origin-none": "Not used. Places in your region are found without it.",
     "photon-help-1": "Photon is a search server for addresses and places from OpenStreetMap. Cities, towns and villages in the region you built are found without it; Photon adds street addresses and places elsewhere. The setup scripts don't install it: see",
-    "photon-help-2": "To use one by default, set"
+    "photon-help-2": "To use one by default, set",
+    "origin-local": "Default: the background maps downloaded on this computer.",
+    "help-local": "Remove the line to go back to the background maps downloaded here."
   },
   "extra": {
     "substation": "Distribution substation",

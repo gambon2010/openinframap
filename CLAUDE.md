@@ -117,7 +117,7 @@ Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that 
 ## Environment Variables
 
 `launch.sh` creates both files if missing:
-- `web/.env`: `VITE_TILE_BASE_URL` (the background map's default, openinframap.org; to be removed: local tiles only), `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (background map; set by `build-region.sh` to the local `basemap` service when one is downloaded), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts), `VITE_SATELLITE_TIERS` (satellite imagery tiers, set by `select_satellite`). The map style needs Protomaps-schema background tiles. The map sources in Settings (`web/src/fork/modules/map-sources/`, `fork/ui/settings.ts`) overrides it per tab via `sessionStorage`.
+- `web/.env`: `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (optional: another background map server; the default is the backend's `/background`, every area downloaded; only local tiles, no online fallback), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts), `VITE_SATELLITE_TIERS` (satellite imagery tiers, set by `select_satellite`). The map style needs Protomaps-schema background tiles. The map sources in Settings (`web/src/fork/modules/map-sources/`, `fork/ui/settings.ts`) overrides it per tab via `sessionStorage`.
 - `web-backend/.env`: `DATABASE_URL` for running the backend on the host (the Docker service sets its own)
 
 ## Gotchas

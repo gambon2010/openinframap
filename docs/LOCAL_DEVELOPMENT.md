@@ -192,8 +192,8 @@ Measured on this project's dev machine; your download speed dominates.
 
 ## Offline background map
 
-The background map (streets, buildings, place names) comes from openinframap.org
-unless you download it, in the offline maps menu (`bash scripts/satellite.sh`, or
+The background map (streets, buildings, place names) is only ever local: where
+none is downloaded the background is empty. Download it in the offline maps menu (`bash scripts/satellite.sh`, or
 in `build-region.sh`): Add, the area, *Background map*. Always full detail (to
 zoom 15, buildings included). The menu shows each area's edition (Protomaps'
 date) and offers it again only when a newer one exists. Several areas can be
@@ -204,9 +204,7 @@ downloaded; they show together. The whole world is Protomaps' file itself
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
 `data/basemap/<region>.pmtiles`. The backend serves every background map there
 together (each tile from the first file that has it, so several areas show at
-once), and `web/.env` gets
-`VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt`. Restart the
-frontend after that changes. Unattended: `build-region.sh --basemap full`, or
+once), at `/background`, the frontend's default. Unattended: `build-region.sh --basemap full`, or
 `python3 scripts/satellite.py maps --source protomaps --area france --yes`.
 
 ## Satellite imagery (offline)
@@ -403,15 +401,13 @@ uv run uvicorn src.main:app --reload --port 8001
 ### `web/.env`
 
 ```
-# The background map unless VITE_BASEMAP_URL is set.
-VITE_TILE_BASE_URL=https://openinframap.org
 # Infrastructure tiles from the local Tegola.
 VITE_TEGOLA_URL=http://localhost:7800
 # The local backend.
 VITE_BACKEND_BASE_URL=http://localhost:8001
-# Background map server (Protomaps schema), full {z}/{x}/{y} URL: the backend,
-# once an offline background map is downloaded (the scripts set it).
-VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt
+# Optional: another background map server (Protomaps schema), full {z}/{x}/{y}
+# URL. Unset: the backend's, every background map downloaded (only local tiles).
+# VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt
 # Optional Photon server for street-address search (not set up by the scripts).
 # VITE_PHOTON_URL=http://localhost:2322
 ```

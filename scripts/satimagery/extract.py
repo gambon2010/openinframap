@@ -29,7 +29,11 @@ def latest_build() -> tuple[str, int] | None:
     """(file, bytes) of Protomaps' latest world build, None without the network."""
 
     def get() -> bytes:
-        with urllib.request.urlopen(BUILDS_URL, timeout=20) as response:
+        # Protomaps refuses Python's own client name (403).
+        request = urllib.request.Request(
+            BUILDS_URL, headers={"User-Agent": netsafe.USER_AGENT}
+        )
+        with urllib.request.urlopen(request, timeout=20) as response:
             return response.read()
 
     try:

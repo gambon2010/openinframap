@@ -422,26 +422,34 @@ download_satellite france 2>&1
     assert "Offline maps" in out
 
 
-def test_the_frontend_is_pointed_at_the_backends_background_map(tmp_path):
+def test_an_old_background_map_address_is_removed(tmp_path):
+    # The frontend's default is the backend's background map: an address left
+    # from the old one-file server goes; one pointing elsewhere stays.
     env = tmp_path / ".env"
-    env.write_text(
-        "VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt\n"
-    )
+    (tmp_path / "france.pmtiles").write_bytes(b"x")
+    (tmp_path / "luxembourg.pmtiles").write_bytes(b"x")
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(b"x")  # imagery: not one
 
-    def select():
-        bash(
-            "port_in_use() { return 1; }\nselect_basemap france >/dev/null",
+    def select(line):
+        env.write_text(
+            f"VITE_TILE_BASE_URL=https://openinframap.org\nVITE_TEGOLA_URL=http://localhost:7800\n{line}\n"
+        )
+        out = bash(
+            "port_in_use() { return 1; }\nselect_basemap 2>&1",
             BASEMAP_DIR=str(tmp_path),
             WEB_ENV=str(env),
         )
-        return env.read_text()
+        return env.read_text(), out
 
-    # None downloaded: the old address (a single file, the old server) goes.
-    assert "VITE_BASEMAP_URL" not in select()
-    (tmp_path / "france.pmtiles").write_bytes(b"x")
-    (tmp_path / "luxembourg.pmtiles").write_bytes(b"x")
-    assert (
-        "VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt" in select()
+    text, out = select(
+        "VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt"
     )
-    assert bash("background_areas", BASEMAP_DIR=str(tmp_path)) == "france\nluxembourg"
+    assert "VITE_BASEMAP_URL" not in text and "VITE_TEGOLA_URL" in text
+    assert "VITE_TILE_BASE_URL" not in text  # no longer read
+    assert "Offline background map: france, luxembourg" in out
+    text, _ = select(
+        "VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt"
+    )
+    assert "VITE_BASEMAP_URL" not in text
+    text, _ = select("VITE_BASEMAP_URL=http://tiles.example/{z}/{x}/{y}.mvt")
+    assert "tiles.example" in text

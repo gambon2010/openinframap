@@ -19,23 +19,26 @@ background_areas() {
     done
 }
 
-# Point the frontend at the background map: every area downloaded, served by the
-# backend (/background, web-backend/src/fork/background/: each tile from the
-# first file that has it). The argument (the region built) is no longer needed.
+# The background map: every area downloaded, served by the backend (/background,
+# web-backend/src/fork/background/: each tile from the first file that has it),
+# which is the frontend's default. A VITE_BASEMAP_URL left from before (the old
+# one-file server on 8090, or the backend's own address) is removed; one pointing
+# elsewhere is someone's choice and stays. The argument is no longer needed.
 select_basemap() {
-    local current want="" areas
+    local current areas
     ensure_web_env
+    # No longer read (the online background map is gone).
+    grep -q '^VITE_TILE_BASE_URL=' "$WEB_ENV" && set_env_line "$WEB_ENV" VITE_TILE_BASE_URL ""
     current=$(grep -E '^VITE_BASEMAP_URL=' "$WEB_ENV" | cut -d= -f2- || true)
-    areas=$(background_areas | paste -sd, - | sed 's/,/, /g')
-    [[ -n "$areas" ]] && want="http://localhost:$BACKEND_PORT/background/{z}/{x}/{y}.mvt"
-    if [[ "$current" != "$want" ]]; then
-        set_env_line "$WEB_ENV" VITE_BASEMAP_URL "$want"
+    if [[ "$current" == "http://localhost:$SATELLITE_PORT/"* || "$current" == "http://localhost:$BACKEND_PORT/background/"* ]]; then
+        set_env_line "$WEB_ENV" VITE_BASEMAP_URL ""
         BASEMAP_CHANGED=1
     fi
+    areas=$(background_areas | paste -sd, - | sed 's/,/, /g')
     if [[ -n "$areas" ]]; then
         ok "Offline background map: $areas"
     else
-        info "No background map downloaded yet (bash scripts/satellite.sh: Add, Background map)."
+        warn "No background map downloaded: the map's background is empty (bash scripts/satellite.sh: Add, Background map)."
     fi
     if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
         warn "Restart the frontend to switch background maps (Ctrl+C in its window, then bash scripts/start.sh)."
