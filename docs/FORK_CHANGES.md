@@ -425,7 +425,8 @@ the bounding box's 9.5 GB was an upper bound), 3 min at ~30 MB/s.
 in upstream's layer menu. It only exists online (tiles from openinframap.org), so the
 fork hid the whole Background switch (OpenStreetMap / Nighttime Lights), then
 removed it (2026-11-11): its source (`style.ts`) and layers (`style_base.ts`).
-The infrastructure layers no longer fall back to openinframap.org either
+The Osmose validation layer (OpenStreetMap's live error reports, online only) was
+removed too, with its popup. The infrastructure layers no longer fall back to openinframap.org either
 (`OIM_TILES` in `fork/config.ts`: the local Tegola, `http://localhost:7800` if
 `VITE_TEGOLA_URL` isn't set).
 
@@ -893,7 +894,7 @@ as the end; the map shows how they're connected over lines of **110 kV and more*
   clicking the same one again (its icon or its area) deselects it; Escape closes
   them. Picking a **search result** works like clicking it: after the map flies
   there, a substation or power plant opens its full details and highlight; places,
-  coordinates and addresses get a short panel and a ring at the location. (The Osmose validation popups are unchanged.)
+  coordinates and addresses get a short panel and a ring at the location. (The Osmose validation popups were unchanged then; the layer was removed on 2026-11-11.)
 - **Highlight of the selected feature** (`web/src/fork/modules/grid/highlight.ts`): areas
   (substations, plants, wind farms) get an outline and light fill, lines a glow,
   points a ring. Plants and substations are drawn both as an area and an icon: the
@@ -2609,7 +2610,8 @@ errors in upstream's own files as before.
 | `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden; the night lights' source removed (`style.ts`; on a merge, keep it out) |
 | `openinframap.ts` (the `GeolocateControl` removed) | The "find my location" button removed (2026-11-06, asked for). On a merge, keep it out. |
-| `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted; `remote-control.ts` stays (the validation popup uses it). |
+| `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted. |
+| `web/src/style/style_osmose.ts`, `popup/validation-error-popup.ts`, `.css`, `remote-control.ts` (deleted), `style/style.ts` (the `osmose_errors_power` source, the import), `openinframap.ts` (the Validation group, the popup) | The Osmose validation layer removed (2026-11-11, asked for): it loaded OpenStreetMap's live error reports from osmose.openstreetmap.fr, online only, about data that isn't the local copy. Saved links listing its `E` still open (unknown codes are ignored). On a merge, keep them deleted. |
 | `web/src/search/search.ts` | Photon instead of OpenCage (`opencage.ts` is kept, unused); `Promise.allSettled` |
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
 | `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; the night lights' two layers removed (`black_marble*`); a few constants exported for the fork's styles |

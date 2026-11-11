@@ -13,7 +13,6 @@ import OIMSearch from './search/search.ts'
 
 import { getStyle, getPrimaryLayers } from './style/style.js'
 
-import { ValidationErrorPopup } from './popup/validation-error-popup.js'
 import { SymbolLoader } from './symbol-loader.ts'
 import { ClickRouter } from './click-router.js'
 import { CircuitInspector } from './circuit/circuitinspector.ts'
@@ -75,10 +74,8 @@ export default class OpenInfraMap {
           new Layer('I', t('layers.other-pipelines'), 'pipeline_', false),
           new Layer('W', t('layers.water'), 'water_', false)
         ]),
-        ...forkSwitcherGroups(),
-        new LayerGroup(t('layers.validation'), [
-          new Layer('E', t('layers.osmose-power'), 'osmose_errors_power', false)
-        ])
+        ...forkSwitcherGroups()
+        // Fork: the Osmose validation layer removed (online only).
       ],
       t('layers.title', 'Layers')
     )
@@ -121,7 +118,6 @@ export default class OpenInfraMap {
       circuit_inspector
     })
     info_popup.add(map, clickRouter)
-    new ValidationErrorPopup(map, clickRouter)
     forkInit({
       map,
       layerSwitcher: layer_switcher,
