@@ -211,6 +211,10 @@ steps → Tegola (vector tiles) → the frontend.
     `netsafe`), `gdal.py`;
   - `bdortho.py`: France's photos as IGN's files, one département at a time
     (`departements.py`: their codes, names, areas, bounds and regions);
+  - `inventory.py`: what's in `data/basemap/` (`inventory.json`, made from the
+    files), stopped jobs, `settings.json`, the one-download lock;
+  - `coverage.py`: what's worth offering (zooms another source takes over, areas
+    inside areas, what could be freed);
   - `menu.py`: the questions and the plan;
   - `cli.py`.
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per

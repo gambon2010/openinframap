@@ -2252,6 +2252,23 @@ shown by `web/src/fork/modules/satellite/`.
   contract (a source never made past the zoom where its pixels only stretch:
   `finest_zoom`); a shell test checks `REDUCED_MAXZOOM` and `PROTOMAPS_BASE` match
   `protomaps.py`. A country's photos are now one new file.
+- **The inventory and coverage rules** (2026-11-11, step 2):
+  `satimagery/inventory.py` makes `data/basemap/inventory.json` again from the files
+  on every start (files are the truth: a file is known by its name and PMTiles
+  header, an entry whose file is gone is dropped; the notes only the downloader
+  knows, a file's edition, are kept), with the jobs stopped half-way from their
+  work folders (`.bdortho-33`: bytes so far, of about how many, why it stopped).
+  `settings.json` (speed cap, zoom) and a lock (`.offline-maps.lock`, `flock`):
+  one download at a time, `bdortho` takes it and says what holds it otherwise.
+  `bdortho` now writes the edition and why a job stopped (`server blocked`, `no
+  connection`, `interrupted`, `disk full`) into its work folder and notes the
+  edition when a département is done; a source fetched by units has a converter
+  with `units_in`, `unit_name`, `unit_of`, `jobs` (bdortho's). `satimagery/coverage.py`:
+  how far a source is worth making for an area (Sentinel-2 to 11 where aerial
+  photos cover all of it: "IGN from 12"), whether an area inside one already there
+  adds anything, and what could be freed (a file inside a bigger one of the same
+  source; Sentinel-2's zooms once the photos are downloaded over the whole area),
+  never deleted by itself. Tests: `tests/test_inventory.py`.
 
 ## One look for the panels; Settings
 

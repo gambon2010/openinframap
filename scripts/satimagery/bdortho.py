@@ -27,6 +27,7 @@ from pathlib import Path
 
 import netsafe
 
+from . import inventory
 from .departements import DEPARTEMENTS
 from .download import MBTiles
 from .gdal import docker_run, pmtiles_zooms, to_pmtiles
@@ -99,6 +100,68 @@ def estimate(codes: list[str], maxzoom: int) -> dict:
         "bytes": sum(tiles_of(c, maxzoom) for c in codes) * WEBP_TILE_BYTES,
         "download": sum(DEPARTEMENTS[c][1] for c in codes) * ARCHIVE_BYTES_PER_KM2,
     }
+
+
+# --- The units, for the offline maps menu (sources/fr_ign.py: units) -------------
+# A converter of a source fetched as files, one unit at a time, has these: the
+# units in an area, their names, which unit a file is, the jobs stopped half-way.
+
+units_in = departements_in
+unit_file = file_of
+unit_estimate = estimate
+# A département's work folder (kept between runs: a stopped download goes on).
+WORK_PREFIX = ".bdortho-"
+
+
+def unit_name(code: str) -> str:
+    return DEPARTEMENTS[code][0]
+
+
+def unit_of(file_area: str) -> str | None:
+    """The département of a file's area name (fr-67 → 67, fr-2a → 2A)."""
+    code = file_area.removeprefix("fr-").upper()
+    return code if file_area.startswith("fr-") and code in DEPARTEMENTS else None
+
+
+def work_of(folder: Path, code: str) -> Path:
+    return folder / f"{WORK_PREFIX}{code}"
+
+
+def jobs(folder: Path) -> list[dict]:
+    """The départements started and not finished (their work folders): how far
+    the download got (bytes so far, of about how many), why it stopped if it
+    said, the edition."""
+    out = []
+    for work in sorted(folder.glob(f"{WORK_PREFIX}*")):
+        code = work.name[len(WORK_PREFIX) :]
+        if code not in DEPARTEMENTS or not work.is_dir():
+            continue
+        of = DEPARTEMENTS[code][1] * ARCHIVE_BYTES_PER_KM2
+        converting = (work / "images").exists()
+        have = (
+            of
+            if converting
+            else sum(f.stat().st_size for f in work.glob("*.7z.*") if f.is_file())
+        )
+        names = [f.name for f in work.glob("*.7z.*")]
+        edition = next(
+            (m[4] for n in names if (m := EDITION.match(n.split(".")[0]))), ""
+        )
+        stopped = work / "stopped"
+        out.append(
+            {
+                "unit": code,
+                "work": work.name,
+                "have": have,
+                "of": max(of, have),
+                "phase": "converting" if converting else "download",
+                "reason": stopped.read_text().strip() if stopped.exists() else "",
+                "edition": (work / "edition").read_text().strip()
+                if (work / "edition").exists()
+                else edition,
+            }
+        )
+    return out
 
 
 # --- IGN's download service -----------------------------------------------------------
@@ -385,26 +448,40 @@ def have_zoom(path: Path) -> int | None:
 
 
 def command_bdortho(args) -> None:
-    """Download and convert départements one after the other (bdortho --dept 67 68)."""
+    """Download and convert départements one after the other (bdortho --dept 67
+    68), one download at a time (the offline maps' lock)."""
     folder = Path(args.basemap_dir).resolve()
+    count = len(args.dept)
+    what = f"IGN {count} département{'s' if count > 1 else ''} to zoom {args.maxzoom}"
+    try:
+        with inventory.lock(folder, what):
+            for n, code in enumerate(args.dept, 1):
+                one_departement(args, folder, code, f"[{n}/{count}]")
+    except inventory.Busy as busy:
+        sys.exit(f"Another download is running: {busy}.")
+
+
+def one_departement(args, folder: Path, code: str, counter: str) -> None:
+    name = DEPARTEMENTS[code][0]
+    out = file_of(folder, code)
+    have = have_zoom(out)
+    label = f"{counter} {name} ({code})"
+    if have is not None and have >= args.maxzoom:
+        print(f"{label}: already there to zoom {have}.", file=sys.stderr)
+        return
     # A speed cap for IGN's download service (MB/s), all parts together.
     limit = netsafe.RateLimit(args.max_rate * 1e6) if args.max_rate else None
-    for n, code in enumerate(args.dept, 1):
-        name = DEPARTEMENTS[code][0]
-        out = file_of(folder, code)
-        have = have_zoom(out)
-        label = f"[{n}/{len(args.dept)}] {name} ({code})"
-        if have is not None and have >= args.maxzoom:
-            print(f"{label}: already there to zoom {have}.", file=sys.stderr)
-            continue
-        # Kept between runs: a stopped download goes on from there.
-        work = folder / f".bdortho-{code}"
-        work.mkdir(exist_ok=True)
+    # Kept between runs: a stopped download goes on from there.
+    work = work_of(folder, code)
+    work.mkdir(exist_ok=True)
+    (work / "stopped").unlink(missing_ok=True)
+    try:
         images_dir = work / "images"
         images = sorted(images_dir.rglob("*.jp2")) if images_dir.exists() else []
         if not images:
             print(f"{label}: looking for IGN's latest photos...", file=sys.stderr)
             resource = latest_edition(code)
+            (work / "edition").write_text(EDITION.match(resource)[4] + "\n")
             print(f"{label}: downloading {resource}", file=sys.stderr)
             first = download_archive(resource, work, limit)
             print(f"{label}: extracting...", file=sys.stderr)
@@ -416,5 +493,25 @@ def command_bdortho(args) -> None:
         (work / "tiles.mbtiles").unlink(missing_ok=True)
         mbtiles = make_tiles(images, work, args.maxzoom, args.tiler_image, code)
         to_pmtiles(mbtiles, out, args.pmtiles_image)
-        shutil.rmtree(work)
-        print(f"{label}: done -> {out.name}", file=sys.stderr)
+    except BaseException as stopped:
+        # Why, for the offline maps menu (Resume).
+        (work / "stopped").write_text(stop_reason(stopped) + "\n")
+        raise
+    edition = (
+        (work / "edition").read_text().strip() if (work / "edition").exists() else ""
+    )
+    shutil.rmtree(work)
+    inventory.record(folder, out.name, edition=edition)
+    print(f"{label}: done -> {out.name}", file=sys.stderr)
+
+
+def stop_reason(stopped: BaseException) -> str:
+    if isinstance(stopped, netsafe.ServerStopped):
+        return "server blocked"
+    if isinstance(stopped, netsafe.ConnectionLost):
+        return "no connection"
+    if isinstance(stopped, KeyboardInterrupt):
+        return "interrupted"
+    if isinstance(stopped, OSError) and stopped.errno == 28:
+        return "disk full"
+    return "failed"
