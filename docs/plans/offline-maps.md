@@ -3,8 +3,9 @@
 Status: **agreed** (2026-11-11): no zoom steps for Blue Marble and Sentinel-2 (their
 most, or nothing); aerial photos from zoom 17, more on request. **Done** (2026-11-11):
 sources as files; the inventory and coverage rules; the menu (`satellite.py
-maps`); the scripts use it. Not yet: the one-line progress bar (each command
-shows its own progress), *Update* for newer IGN editions (editions are recorded).
+maps`); the scripts use it. Each command shows its own progress
+(fine, no one-line bar); *Update* for newer IGN editions is far-off backlog
+(SPECIFICATIONS 10.13; editions are recorded).
 
 ## Why
 

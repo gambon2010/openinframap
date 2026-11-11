@@ -104,7 +104,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.24 | In high contrast, roads visible over towns (white with a grey edge; footpaths grey). | ✅ (2026-11-06) |
 | 5.25 | Aerial photos shown from zoom 12 (were 14); files made before get the lower zooms without downloading. | ✅ (2026-11-06) |
 | 5.27 | A download speed cap for IGN's photos (e.g. 10 MB/s, all parts together). | ✅ (2026-11-11) |
-| 5.28 | Offline maps as one clear menu (docs/plans/offline-maps.md): sources as files, an inventory of what is there, no pointless offers (coverage rules), short screens; Blue Marble and Sentinel-2 at their most or nothing, aerial photos from zoom 17. | ✅ (2026-11-11; not yet: a one-line progress bar, Update for newer IGN editions) |
+| 5.28 | Offline maps as one clear menu (docs/plans/offline-maps.md): sources as files, an inventory of what is there, no pointless offers (coverage rules), short screens; Blue Marble and Sentinel-2 at their most or nothing, aerial photos from zoom 17. | ✅ (2026-11-11; each download shows its own progress: fine as it is; newer IGN editions: 10.13) |
 | 5.29 | Only local tiles: no online background map (openinframap.org) as default or fallback; no night lights, no Osmose validation layer; several background map areas shown at once (served by the backend, first file that has the tile), full detail only, the build's own background map question folded into the offline maps menu. | ✅ (2026-11-11: night lights and the infrastructure fallback removed; the background map served by the backend, several areas at once; the `basemap` service renamed `satellite`; the background map chosen in the offline maps menu, full detail, editions shown; no online background map: the default is the backend's; France's downloaded, 5.4 GB) |
 
 ## 6. Grid connections (power routing)
@@ -231,6 +231,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.9 | Buildings: show building outlines on the map (a layer to switch on); copy chosen buildings' outlines into My layers. | 🗂 (asked 2026-11-05) |
 | 10.11 | Feature statuses as layer information (a side's or team's own assessment), not one global state. The old status system was removed (2026-11-06); something simpler is to be designed and rebuilt. | 🗂 (asked 2026-11-06) |
 | 10.12 | Critical infrastructure people tend to miss, as map layers: airports, ports, military sites, food (distribution centres, wholesale markets, silos), health and emergency (hospitals, fire, ambulance, police), fuel depots and storage tanks, transport chokepoints (bridges, tunnels, rail yards, container terminals), digital (IXPs, satellite ground stations), dams, wastewater plants, landfills. From OSM (new imposm mapping, rebuild) and open data (extra data). Not HTA/BT poles. See also 7.10, 8.6. | 🗂 (asked 2026-10-15; listed 2026-11-11) |
+| 10.13 | Far off: update aerial photos when IGN publishes a newer edition of a département (every ~3 years): only those, replaced when done. Editions are recorded from 2026-11-11. | 🗂 far off (2026-11-11) |
 
 ## 11. Quality
 
