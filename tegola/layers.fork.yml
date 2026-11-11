@@ -1,4 +1,4 @@
-# Fork: layers of the fork's maps ("extra", "sites"), added to layers.yml's by
+# Fork: layers of the fork's maps ("extra", "sites", "buildings"), added to layers.yml's by
 # generate_tegola_config.py (it takes more than one layers file). Field sets
 # (geom, name, wiki...) are layers.yml's. See docs/FORK_CHANGES.md.
 layers:
@@ -183,3 +183,24 @@ layers:
         sql: tags -> 'icao'
     id_field: id
     from: site_points(!BBOX!, !ZOOM!) AS s
+
+  # Fork: large buildings zoomed out (web-backend/src/fork/background/
+  # large_buildings.py, from the background maps' zoom 15 tiles), at each zoom
+  # those about 4 pixels across or more; from zoom 15 the background map itself
+  # shows every building (web/src/fork/modules/buildings).
+  - name: buildings_large
+    map:
+      - buildings
+    geometry_type: MultiPolygon
+    min_zoom: 12
+    max_zoom: 14
+    field_sets: [geom]
+    fields:
+      - name: height
+      - name: area_m2
+        sql: round(area_m2)::int
+    id_field: id
+    from: basemap_building_large
+    where: >
+      geometry && !BBOX!
+      AND area_m2 >= CASE WHEN !ZOOM! >= 14 THEN 600 WHEN !ZOOM! >= 13 THEN 2500 ELSE 10000 END

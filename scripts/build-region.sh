@@ -737,7 +737,7 @@ import_osm() {
         -overwritecache
 
     section "Creating views..."
-    run_schema views distances stats places sites grid tower-numbers
+    run_schema views distances stats places sites grid tower-numbers buildings
     run_with_timer "Creating search indexes" create_search_indexes
     # Extra data kept for this region goes back first; then the extra data tables
     # (which always exist, as Tegola serves them) get whatever is new.
@@ -812,6 +812,10 @@ offline_background() {
     download_satellite "$(maps_area)"
     section "Background map"
     select_basemap
+    if [[ -n "$(background_areas)" ]]; then
+        run_with_timer --keep-going "Finding the large buildings (shown zoomed out)" large_buildings \
+            || warn "Finding the large buildings failed; zoomed out none show. Retry: python3 scripts/satellite.py large-buildings"
+    fi
 }
 
 # The Wikidata cache for the info popups (if asked).

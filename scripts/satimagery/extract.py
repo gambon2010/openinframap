@@ -60,27 +60,39 @@ def pmtiles(folder: Path, args: list[str]) -> list[str]:
     ]
 
 
-def extract_args(build: str, outline: Path, out: str) -> list[str]:
-    """pmtiles extract of an outline (a file in data/basemap/, /out in Docker)."""
-    return [
-        "extract",
-        f"{PROTOMAPS.address}/{build}",
-        out,
-        f"--region=/out/{outline.name}",
-    ]
+# The whole world, as pmtiles extract takes it (web Mercator's limits).
+WORLD_BBOX = "--bbox=-180,-85.0511,180,85.0511"
+# The whole world zoomed out: every country's borders, names, coasts and main
+# roads, like Blue Marble for imagery (560 MB at 8, measured 2026-11-11).
+WORLD_LOW_ZOOM = 8
+
+
+def extract_args(
+    build: str, outline: Path | None, out: str, maxzoom: int | None = None
+) -> list[str]:
+    """pmtiles extract of an outline (a file in data/basemap/, /out in Docker), or
+    of the whole world (no outline), up to a zoom if one is given."""
+    area = f"--region=/out/{outline.name}" if outline else WORLD_BBOX
+    args = ["extract", f"{PROTOMAPS.address}/{build}", out, area]
+    return args + [f"--maxzoom={maxzoom}"] if maxzoom is not None else args
 
 
 SIZE = re.compile(r"archive size of ([0-9.]+) ([kMGT]?)B")
 UNITS = {"": 1, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12}
 
 
-def size(folder: Path, build: str, outline: Path) -> int | None:
-    """What the background map of an outline would weigh (a dry run), None if
-    pmtiles can't tell."""
+def size(
+    folder: Path, build: str, outline: Path | None, maxzoom: int | None = None
+) -> int | None:
+    """What the background map of an outline (or the world, to a zoom) would
+    weigh (a dry run), None if pmtiles can't tell."""
     run = subprocess.run(
         pmtiles(
             folder,
-            [*extract_args(build, outline, "/out/.dry-run.pmtiles"), "--dry-run"],
+            [
+                *extract_args(build, outline, "/out/.dry-run.pmtiles", maxzoom),
+                "--dry-run",
+            ],
         ),
         check=False,
         capture_output=True,
@@ -114,7 +126,7 @@ def command_basemap(args) -> None:
     folder = Path(args.basemap_dir).resolve()
     out = folder / f"{args.area}.pmtiles"
     url = f"{PROTOMAPS.address}/{args.build}"
-    if args.area == "world":
+    if args.area == "world" and not args.maxzoom:
         total = args.size or 0
         partial = folder / ".world.partial.pmtiles"
         netsafe.fetch_file(
@@ -122,13 +134,14 @@ def command_basemap(args) -> None:
         )
         print(file=sys.stderr)
     else:
-        if not args.outline:
+        if not args.outline and args.area != "world":
             sys.exit(f"{args.area}: its outline is needed (--outline).")
-        outline = Path(args.outline).resolve()
+        outline = Path(args.outline).resolve() if args.outline else None
         partial = folder / f".{args.area}.partial.pmtiles"
         partial.unlink(missing_ok=True)
         command = pmtiles(
-            folder, extract_args(args.build, outline, f"/out/{partial.name}")
+            folder,
+            extract_args(args.build, outline, f"/out/{partial.name}", args.maxzoom),
         )
         netsafe.safely(
             lambda: subprocess.run(command, check=True, stdin=subprocess.DEVNULL),
@@ -143,6 +156,7 @@ def command_basemap(args) -> None:
                 "region_id": args.area,
                 "build": args.build,
                 "detail": "full",
+                **({"maxzoom": args.maxzoom} if args.maxzoom else {}),
                 "downloaded_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             },
             indent=2,
@@ -150,3 +164,36 @@ def command_basemap(args) -> None:
         + "\n"
     )
     print(f"{ui.human(out.stat().st_size)} -> {out.name}", file=sys.stderr)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def command_large_buildings(args) -> None:
+    """The large buildings shown zoomed out, found again from the background maps
+    there (web-backend/src/fork/background/large_buildings.py, in the backend's
+    image; ~10 min for France), then Tegola's tiles of them forgotten. After a
+    background map is added or removed (satellite.py large-buildings)."""
+    run = ["docker", "compose", "--progress", "quiet"]
+    subprocess.run(
+        [
+            *run,
+            "run",
+            "--rm",
+            "--no-deps",
+            "--entrypoint",
+            "/app/.venv/bin/python",
+            "backend",
+            "-m",
+            "src.fork.background.large_buildings",
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+        stdin=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        [*run, "up", "-d", "--force-recreate", "tegola"],
+        cwd=REPO_ROOT,
+        check=True,
+        stdin=subprocess.DEVNULL,
+    )

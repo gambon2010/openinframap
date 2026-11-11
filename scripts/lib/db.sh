@@ -66,7 +66,7 @@ project_images() {
 # when the database is created, eez.sql with the country boundaries, the rest in
 # build-region.sh. A test (scripts/tests) checks every schema/*.sql is either here
 # or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in this order.
-SCHEMA_FILES=(functions views distances stats places sites grid tower-numbers extra search eez local-stats)
+SCHEMA_FILES=(functions views distances stats places sites grid tower-numbers buildings extra search eez local-stats)
 
 # Not part of a build: database creation (dev-init, prod-init) and production jobs.
 SCHEMA_NOT_BUILT=(dev-init prod-init refresh_matviews)
@@ -80,6 +80,7 @@ declare -A SCHEMA_LABELS=(
     [sites]="Sorting critical sites"
     [grid]="Building the power grid network"
     [tower-numbers]="Preparing tower numbers"
+    [buildings]="Preparing the large buildings' table"
     [extra]="Creating extra data tables"
     [search]="Preparing search"
     [local-stats]="Computing per-country stats"
@@ -108,6 +109,16 @@ number_towers() {
     local run=(--rm --no-deps --entrypoint /app/.venv/bin/python backend -m src.fork.tower_numbers)
     docker compose --progress quiet run --build "${run[@]}" </dev/null >/dev/null 2>&1 \
         || docker compose --progress quiet run "${run[@]}" </dev/null >/dev/null
+}
+
+# The large buildings shown zoomed out (web-backend/src/fork/background/
+# large_buildings.py), from the background maps downloaded: after a build, and
+# after a background map is added or removed (satellite.py large-buildings). Then
+# Tegola forgets the tiles it made of them.
+large_buildings() {
+    local run=(--rm --no-deps --entrypoint /app/.venv/bin/python backend -m src.fork.background.large_buildings)
+    docker compose --progress quiet run "${run[@]}" </dev/null >/dev/null 2>&1 || return
+    docker compose --progress quiet up -d --force-recreate tegola </dev/null >/dev/null 2>&1 || true
 }
 
 # --- Replacing the database (build-region.sh, import-db.sh) ------------------------

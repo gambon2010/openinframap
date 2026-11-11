@@ -17,6 +17,10 @@ export const BUILDINGS_SOURCE = 'basemap'
 export const BUILDINGS_SOURCE_LAYER = 'buildings'
 /** Every building is in the tiles from this zoom. */
 export const BUILDINGS_MINZOOM = 15
+/** Large buildings zoomed out (Tegola's "buildings" map, web-backend/src/fork/background/
+ * large_buildings.py): from this zoom, each zoom those big enough to see there. */
+export const LARGE_BUILDINGS_LAYER = 'buildings_large'
+export const LARGE_BUILDINGS_MINZOOM = 12
 
 /** A building's id: the same in every tile it's cut into (Protomaps' own, not
  * OpenStreetMap's number). */
@@ -45,10 +49,18 @@ function toMulti(p: Polygon | MultiPolygon): MultiPolygon {
   return typeof p[0][0][0] === 'number' ? [p as Polygon] : (p as MultiPolygon)
 }
 
-/** A building's whole outline, from every loaded tile that holds a piece of it. */
-export function buildingOutline(map: Map, id: number): GeoJSON.Polygon | GeoJSON.MultiPolygon | null {
+/** A building's whole outline, from every loaded tile of its source (the
+ * background map, or the large buildings zoomed out) that holds a piece of it. */
+export function buildingOutline(
+  map: Map,
+  feature: Pick<MapGeoJSONFeature, 'id' | 'source' | 'sourceLayer'>
+): GeoJSON.Polygon | GeoJSON.MultiPolygon | null {
+  const id = buildingId(feature)
+  if (id === undefined) return null
   const pieces = map
-    .querySourceFeatures(BUILDINGS_SOURCE, { sourceLayer: BUILDINGS_SOURCE_LAYER })
+    .querySourceFeatures(feature.source ?? BUILDINGS_SOURCE, {
+      sourceLayer: feature.sourceLayer ?? BUILDINGS_SOURCE_LAYER
+    })
     .filter((f) => f.id === id)
     .map((f) => f.geometry)
   return joinPieces(pieces)

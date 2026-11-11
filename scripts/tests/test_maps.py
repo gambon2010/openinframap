@@ -3,6 +3,7 @@ temporary data/basemap/ (the downloads it starts are recorded, not run)."""
 
 import io
 import json
+import re
 import subprocess
 
 import pytest
@@ -69,7 +70,9 @@ def folder(tmp_path, monkeypatch):
     monkeypatch.setattr(
         maps.extract, "latest_build", lambda: ("20261110.pmtiles", 140 * 10**9)
     )
-    monkeypatch.setattr(maps.extract, "size", lambda folder, build, outline: 5 * 10**9)
+    monkeypatch.setattr(
+        maps.extract, "size", lambda folder, build, outline, maxzoom=None: 5 * 10**9
+    )
     monkeypatch.setattr(
         maps.shutil, "disk_usage", lambda p: type("U", (), {"free": 10**13})()
     )
@@ -213,9 +216,10 @@ def test_a_background_map_full_detail_with_its_edition(folder, capsys):
     shown = capsys.readouterr().err
     assert "z0–15, 2026-11-10" in shown
     assert "Background map, France, z0–15 (2026-11-10)" in shown and "5.0 GB" in shown
-    (argv,) = folder["ran"]
+    # Then its large buildings are found, for showing them zoomed out.
+    argv, after = folder["ran"]
     assert argv[:5] == ["basemap", "--area", "france", "--build", "20261110.pmtiles"]
-    assert "--outline" in argv
+    assert "--outline" in argv and after == ["large-buildings"]
 
 
 def test_a_background_map_again_only_when_newer(folder, capsys):
@@ -232,8 +236,11 @@ def test_a_background_map_again_only_when_newer(folder, capsys):
 
 
 def test_the_worlds_background_map_is_protomaps_file(folder, capsys):
-    menu(folder, "1\n4\n17\ny\n\n")  # Add → World → Background map (the last)
-    (argv,) = folder["ran"]
+    menu(
+        folder, "1\n4\n18\ny\n\n"
+    )  # Add → World → Background map, all zooms (the last)
+    argv, after = folder["ran"]
+    assert after == ["large-buildings"]
     assert argv[:3] == ["basemap", "--area", "world"] and "--outline" not in argv
     assert argv[argv.index("--size") + 1] == str(140 * 10**9)
     assert "140 GB" in capsys.readouterr().err
@@ -244,3 +251,19 @@ def test_no_network_no_background_map_offered(folder, capsys, monkeypatch):
     menu(folder, "1\n2\n4\n\n\n")
     shown = capsys.readouterr().err
     assert "can't reach Protomaps" in shown and "Nothing to add there." in shown
+
+
+def test_the_world_zoomed_out_like_blue_marble(folder, capsys):
+    # Add → World → the background map to zoom 8: every country's borders and names.
+    menu(folder, "1\n4\n17\ny\n\n")
+    (argv,) = folder["ran"]  # zoom 8 has no buildings: no large buildings step
+    assert argv[:3] == ["basemap", "--area", "world"]
+    assert argv[argv.index("--maxzoom") + 1] == "8" and "--outline" not in argv
+    assert "Background map, World, z0–8" in capsys.readouterr().err
+    # Once there, the full world is still offered ("all zooms"); zoom 8 isn't again.
+    pmtiles(folder["dir"] / "world.pmtiles", 0, 8)
+    (folder["dir"] / "world.json").write_text(json.dumps({"build": "20261110.pmtiles"}))
+    menu(folder, "1\n4\n\n\n")
+    shown = capsys.readouterr().err
+    assert "all zooms, 2026-11-10" in shown
+    assert re.search(r"zoomed out \(to 8\) +z0–8 +—", shown)

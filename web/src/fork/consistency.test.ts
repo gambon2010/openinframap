@@ -8,8 +8,9 @@ import extra from './modules/extra/index.ts'
 import sites from './modules/sites/index.ts'
 import satellite from './modules/satellite/index.ts'
 import grid from './modules/grid/index.ts'
+import buildings from './modules/buildings/index.ts'
 
-const MODULES = [extra, sites, satellite, grid]
+const MODULES = [extra, sites, satellite, grid, buildings]
 // Upstream's layer switcher entries that fork layers join (openinframap.ts).
 const UPSTREAM_PREFIXES = ['power_', 'petroleum_']
 
@@ -24,7 +25,11 @@ test("every tile layer the fork adds is drawn, and every style draws one that's 
   const forkTiles = tegolaLayers('../tegola/layers.fork.yml')
   const allTiles = new Set([...forkTiles, ...tegolaLayers('../tegola/layers.yml')])
   const used = new Set(
-    forkStyleLayers.map((l) => ('source-layer' in l ? l['source-layer'] : undefined)).filter(Boolean)
+    forkStyleLayers
+      // Drawn from the background map's own tiles (Protomaps), not Tegola's.
+      .filter((l) => !('source' in l) || l.source !== 'basemap')
+      .map((l) => ('source-layer' in l ? l['source-layer'] : undefined))
+      .filter(Boolean)
   )
   expect(forkTiles.length).toBeGreaterThan(5) // the files were read
   expect(forkTiles.filter((name) => !used.has(name))).toEqual([])

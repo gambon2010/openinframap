@@ -457,7 +457,7 @@ off by default) draws every building's outline from zoom 15, over the map and ov
 satellite imagery, from the background map already downloaded (Protomaps'
 `buildings` layer): nothing new to fetch. Only zoom 15 tiles hold every building:
 lower zooms keep a few landmarks (central Paris: 5 at zoom 11, 46 at 14, 730 at 15),
-so they aren't shown below 15 (large buildings at lower zooms: below).
+so they aren't shown below 15 by themselves (large buildings at lower zooms: below).
 The outlines aren't clickable (a click in a town would always land on one): the
 module removes their details handler.
 
@@ -486,6 +486,33 @@ invisible wide line `<id>_hit`). The extra data's thin power lines and gas pipes
 made clickable by hand before, use `hitLine` now; buildings use `clickableArea`.
 `groundArea` and `formatArea` moved from My layers' measuring to `core/geo.ts`
 (buildings need them too; measuring re-exports them).
+
+**Large buildings zoomed out** (asked for): from zoom 12 to 14, each zoom the
+buildings about 4 pixels across or more (≥ 10,000 m² at 12, 2,500 at 13, 600 at 14);
+every building from 15 as before. A build step,
+`web-backend/src/fork/background/large_buildings.py` (in the backend's image: the
+`pmtiles` and `mapbox-vector-tile` packages, 8 processes), reads every zoom 15 tile
+of the background maps with buildings (not the world to zoom 8), keeps the
+buildings of 600 m² or more and the pieces cut at tile edges, joins pieces by id
+in PostGIS, measures them on the ground (`oim_ground_area`) and replaces
+`basemap_building_large` (EPSG:3857; `schema/buildings.sql` makes it empty in every
+build, so Tegola always has it). Tegola's new `buildings` map serves it
+(`tegola/layers.fork.yml`, `buildings_large`, the size per zoom in its SQL). France
+and Luxembourg: 1,025,024 buildings, 382 MB, ~10 minutes (1.1 million tiles). It runs
+after a build (`large_buildings` in `lib/db.sh`, from `offline_background`) and
+after a background map with buildings is added or removed in the menu (a
+"Large buildings" job; `satellite.py large-buildings`), then Tegola is recreated
+(it caches tiles). The frontend draws them with the same `clickableArea` and
+colours (`modules/buildings`: a `buildings_large` source, zooms 12–15); their
+details use the area measured whole. Tests: `tests/fork/test_large_buildings.py`.
+
+**The world zoomed out** (asked for): every country's borders, names and coasts
+were missing on low-zoom imagery, the background map covering only the areas
+downloaded. The menu offers the whole world's background map to zoom 8 (560 MB;
+zoom 7: 190 MB, 6: 45 MB), cut with `--bbox` and `--maxzoom`
+(`satellite.py basemap --area world --maxzoom 8`), next to the whole world at every
+zoom (~140 GB). The backend tries it last, so detailed areas win where they have a
+tile. Downloaded here.
 
 ## Wikidata popups and image cache
 

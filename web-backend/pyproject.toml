@@ -24,6 +24,7 @@ dependencies = [
     "shapely>=2.1.2",
     "networkx>=3.7",
     "pmtiles>=3.8.1",
+    "mapbox-vector-tile>=2.2.0",
 ]
 
 [tool.ruff]

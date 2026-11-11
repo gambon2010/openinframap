@@ -1,11 +1,13 @@
 // Fork: building outlines, a layer to switch on (Data layers → Background map →
 // Buildings), over the map and over satellite imagery: dark on the map, white on
-// imagery. Every building from zoom 15 (fork/core/buildings.ts: only those tiles
-// hold them all), from the background map already downloaded. Clickable anywhere
+// imagery. Zoomed out (12 to 14) the large ones, each zoom those big enough to see
+// there (Tegola's "buildings" map, made by a build step from the background maps);
+// every building from zoom 15 (fork/core/buildings.ts: only those tiles hold them
+// all), from the background map already downloaded. Clickable anywhere
 // inside (core/map-style.ts clickableArea): its details (height, area), and My
 // layers' copy tool or the details' copy button make it an area of your own.
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
-import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
+import type { LineLayerSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { formatArea } from '../../core/geo.ts'
@@ -16,21 +18,51 @@ import {
   BUILDINGS_PREFIX,
   BUILDINGS_SOURCE,
   BUILDINGS_SOURCE_LAYER,
-  buildingId,
+  LARGE_BUILDINGS_LAYER,
+  LARGE_BUILDINGS_MINZOOM,
   buildingOutline,
   isBuildingLayer,
   outlineArea
 } from '../../core/buildings.ts'
 import { followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
+import { OIM_TILES } from '../../config.ts'
 
 const OUTLINE = { map: 'hsl(0, 0%, 15%)', imagery: '#ffffff' }
 
 let theMap: Map | undefined
 
+const OUTLINE_PAINT: LineLayerSpecification['paint'] = {
+  'line-color': OUTLINE.map,
+  'line-opacity': 0.8,
+  'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 15, 0.6, 18, 1.4, 20, 2]
+}
+
 const buildings: ForkModule = {
-  layers: () =>
-    clickableArea(
+  sources: () => ({
+    [LARGE_BUILDINGS_LAYER]: {
+      type: 'vector',
+      tiles: [`${OIM_TILES}/buildings/{z}/{x}/{y}.pbf`],
+      minzoom: LARGE_BUILDINGS_MINZOOM,
+      maxzoom: 14
+    }
+  }),
+
+  layers: () => [
+    // Zoomed out: the large ones (each zoom those big enough to see there).
+    ...clickableArea(
+      LARGE_BUILDINGS_LAYER,
+      {
+        source: LARGE_BUILDINGS_LAYER,
+        sourceLayer: LARGE_BUILDINGS_LAYER,
+        minzoom: LARGE_BUILDINGS_MINZOOM,
+        maxzoom: BUILDINGS_MINZOOM
+      },
+      -10.5,
+      OUTLINE_PAINT
+    ),
+    // From zoom 15: every one.
+    ...clickableArea(
       BUILDINGS_LAYER,
       {
         source: BUILDINGS_SOURCE,
@@ -40,23 +72,26 @@ const buildings: ForkModule = {
       },
       // Under everything else that's data: the infrastructure is drawn and clicked first.
       -10,
-      {
-        'line-color': OUTLINE.map,
-        'line-opacity': 0.8,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 15, 0.6, 18, 1.4, 20, 2]
-      }
-    ),
+      OUTLINE_PAINT
+    )
+  ],
 
   switcherGroups: () => [
     new LayerGroup(t('layers.background-map', 'Background map'), [
       // K: a letter never used before (E and N were the removed Osmose and night lights).
-      new Layer('K', t('layers.buildings', 'Buildings (zoom 15 and closer)'), BUILDINGS_PREFIX, false)
+      new Layer(
+        'K',
+        t('layers.buildings-all', 'Buildings (large ones from zoom 12)'),
+        BUILDINGS_PREFIX,
+        false
+      )
     ])
   ],
 
   init: ({ map }) => {
     theMap = map
     followBackground(map, BUILDINGS_LAYER, 'line-color', OUTLINE)
+    followBackground(map, LARGE_BUILDINGS_LAYER, 'line-color', OUTLINE)
   },
 
   popup: {
@@ -68,10 +103,14 @@ const buildings: ForkModule = {
  * outline, height and kind), plus its area worked out from the outline. */
 function details(feature: MapGeoJSONFeature): HTMLElement {
   const p = feature.properties
-  const id = buildingId(feature)
-  const outline = (theMap && id !== undefined && buildingOutline(theMap, id)) || feature.geometry
+  const outline = (theMap && buildingOutline(theMap, feature)) || feature.geometry
+  // The large ones were measured whole when they were found; the others now.
   const area =
-    outline.type === 'Polygon' || outline.type === 'MultiPolygon' ? outlineArea(outline) : undefined
+    typeof p.area_m2 === 'number'
+      ? p.area_m2
+      : outline.type === 'Polygon' || outline.type === 'MultiPolygon'
+        ? outlineArea(outline)
+        : undefined
   const rows: [string, string | undefined][] = [
     [t('buildings.height', 'Height'), typeof p.height === 'number' ? `${Math.round(p.height)} m` : undefined],
     [

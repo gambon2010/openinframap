@@ -263,6 +263,8 @@ class Maps:
                 rows.append(self.units_offer(source, area))
             else:
                 rows.append(self.tiles_offer(source, area))
+        if area == "world":
+            rows.append(self.world_low_offer())
         rows.append(self.basemap_offer(area))
         return rows
 
@@ -299,8 +301,16 @@ class Maps:
                 continue
             jobs = action()
             if jobs:
-                self.start(self.with_blue_marble(jobs))
+                self.start(self.with_large_buildings(self.with_blue_marble(jobs)))
                 return
+
+    def with_large_buildings(self, jobs: list[Job]) -> list[Job]:
+        """A background map with every building (to zoom 15): its large ones are
+        found for showing zoomed out, after it (once, at the end)."""
+        full = any(j.argv[0] == "basemap" and "--maxzoom" not in j.argv for j in jobs)
+        if full and not any(j.argv[0] == "large-buildings" for j in jobs):
+            return jobs + [large_buildings_job()]
+        return jobs
 
     def with_blue_marble(self, jobs: list[Job]) -> list[Job]:
         """Blue Marble comes with any imagery: it's what shows further out."""
@@ -522,6 +532,8 @@ class Maps:
             add = f"— (covered by {self.name(cover.area)})"
         elif not latest:
             add = "can't reach Protomaps"
+        elif own and own.zooms[1] < protomaps.last_zoom:
+            add = f"all zooms, {edition_date(newest)}"
         elif own and own.edition >= newest:
             add = "— (the latest)"
         elif own:
@@ -533,7 +545,29 @@ class Maps:
             lambda: self.basemap_jobs(area)
         ) if offered else None
 
-    def basemap_jobs(self, area: str) -> list[Job] | None:
+    def world_low_offer(self):
+        """The whole world's background map zoomed out (to zoom 8): every
+        country's borders and names, small (like Blue Marble for imagery)."""
+        own = self.have("protomaps", "world")
+        latest = self.latest_build()
+        top = extract.WORLD_LOW_ZOOM
+        if (
+            own
+            and own.zooms[1] >= top
+            and (not latest or own.edition >= edition(latest[0]))
+        ):
+            add = "—"
+        elif not latest:
+            add = "can't reach Protomaps"
+        else:
+            add = f"z0–{top}, {edition_date(edition(latest[0]))}"
+        have = f"z0–{own.zooms[1]}" if own else "—"
+        row = [f"Background map, zoomed out (to {top})", have, add]
+        return row, (
+            lambda: self.basemap_jobs("world", top)
+        ) if latest and add != "—" else None
+
+    def basemap_jobs(self, area: str, maxzoom: int | None = None) -> list[Job] | None:
         """The background map of an area, full detail (the world: Protomaps' file)."""
         latest = self.latest_build()
         if not latest:
@@ -549,7 +583,11 @@ class Maps:
             "--basemap-dir",
             str(self.folder),
         ]
-        if area == "world":
+        if area == "world" and maxzoom:
+            ui.say("Working out its size...")
+            size = extract.size(self.folder, build, None, maxzoom) or 0
+            argv += ["--maxzoom", str(maxzoom)]
+        elif area == "world":
             size = world_size
             argv += ["--size", str(size)]
         else:
@@ -562,7 +600,8 @@ class Maps:
             argv += ["--outline", str(outline)]
         return [
             Job(
-                f"Background map, {self.name(area)}, z0–15 ({edition_date(edition(build))})",
+                f"Background map, {self.name(area)}, z0–{maxzoom or 15}"
+                f" ({edition_date(edition(build))})",
                 argv,
                 kept=size,
                 download=size,
@@ -702,6 +741,9 @@ class Maps:
         ui.say(
             f"Deleted {ui.human(size)}. The map shows it once the scripts update it (start.sh)."
         )
+        if source.id == "protomaps":
+            # Its large buildings go too.
+            self.run([large_buildings_job()])
         self.refresh()
 
     # --- Settings -------------------------------------------------------------------
@@ -748,7 +790,8 @@ class Maps:
                 )
             ]
         elif source.layer == "basemap":
-            jobs = self.basemap_jobs(area) or []
+            zoom = args.zoom if area == "world" else None
+            jobs = self.basemap_jobs(area, zoom) or []
         elif source.units:
             conv = inventory.converter(source)
             zoom = args.zoom or self.zoom_offered(source)
@@ -761,7 +804,15 @@ class Maps:
             sys.exit(
                 f"{source.id}: not without questions yet (satellite.sh --sources)."
             )
-        return self.start(self.with_blue_marble(jobs))
+        return self.start(self.with_large_buildings(self.with_blue_marble(jobs)))
+
+
+def large_buildings_job() -> Job:
+    return Job(
+        "Large buildings, found again from the background maps (shown zoomed out)",
+        ["large-buildings"],
+        seconds=600,
+    )
 
 
 def edition(build: str) -> str:

@@ -24,7 +24,7 @@ from .estimate import (
     world_overview_tiles,
     worldcover_cells,
 )
-from .extract import command_basemap
+from .extract import command_basemap, command_large_buildings
 from .gdal import (
     docker_run,
     pmtiles_header,
@@ -409,10 +409,14 @@ def main(argv: Iterable[str] | None = None) -> None:
         help="add to the queue, don't download (build-region.sh: questions first)",
     )
     p.add_argument("--yes", action="store_true", help="start without asking")
+    sub.add_parser(
+        "large-buildings", help="find the large buildings again (shown zoomed out)"
+    )
     p = sub.add_parser("basemap", help="cut the background map of an area")
     p.add_argument("--area", required=True)
     p.add_argument("--outline", help="the area's outline (GeoJSON; not for world)")
     p.add_argument("--size", type=int, help="world: the file's size, for the progress")
+    p.add_argument("--maxzoom", type=int, help="world: only up to this zoom (cut out)")
     p.add_argument("--build", required=True, help="Protomaps' build (20261014.pmtiles)")
     p.add_argument("--basemap-dir", required=True)
     for name in ("choose", "steps"):
@@ -499,4 +503,5 @@ def run_command(args) -> None:
         "bdortho": command_bdortho,
         "maps": command_maps,
         "basemap": command_basemap,
+        "large-buildings": command_large_buildings,
     }[args.command](args)

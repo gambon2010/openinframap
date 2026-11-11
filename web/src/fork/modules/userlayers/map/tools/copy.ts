@@ -80,7 +80,7 @@ function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): 'copied' | 'alread
       return 'already'
     }
   }
-  const geometry = (id !== undefined && buildingOutline(c.map, id)) || f.geometry
+  const geometry = buildingOutline(c.map, f) || f.geometry
   const properties: FeatureProps = {
     kind: 'drawing',
     name: t('userlayers.copy.building', 'Building'),
