@@ -35,7 +35,7 @@ let theMap: Map | undefined
 const OUTLINE_PAINT: LineLayerSpecification['paint'] = {
   'line-color': OUTLINE.map,
   'line-opacity': 0.8,
-  'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 15, 0.6, 18, 1.4, 20, 2]
+  'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 15, 1, 18, 2, 20, 3]
 }
 
 const buildings: ForkModule = {

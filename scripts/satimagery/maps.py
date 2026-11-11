@@ -301,8 +301,24 @@ class Maps:
                 continue
             jobs = action()
             if jobs:
-                self.start(self.with_large_buildings(self.with_blue_marble(jobs)))
+                self.start(self.complete(jobs))
                 return
+
+    def complete(self, jobs: list[Job]) -> list[Job]:
+        """What comes with any choice: Blue Marble with imagery, the world's
+        background map zoomed out, the large buildings after a background map."""
+        return self.with_large_buildings(
+            self.with_world_background(self.with_blue_marble(jobs))
+        )
+
+    def with_world_background(self, jobs: list[Job]) -> list[Job]:
+        """The whole world's background map to zoom 8 (every country's borders,
+        names, coasts; 560 MB) comes with anything, once: like Blue Marble."""
+        if not jobs or self.have("protomaps", "world"):
+            return jobs
+        if any(j.argv[:3] == ["basemap", "--area", "world"] for j in jobs):
+            return jobs
+        return (self.basemap_jobs("world", extract.WORLD_LOW_ZOOM) or []) + jobs
 
     def with_large_buildings(self, jobs: list[Job]) -> list[Job]:
         """A background map with every building (to zoom 15): its large ones are
@@ -804,7 +820,7 @@ class Maps:
             sys.exit(
                 f"{source.id}: not without questions yet (satellite.sh --sources)."
             )
-        return self.start(self.with_large_buildings(self.with_blue_marble(jobs)))
+        return self.start(self.complete(jobs))
 
 
 def large_buildings_job() -> Job:

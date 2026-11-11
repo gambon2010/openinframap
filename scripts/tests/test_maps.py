@@ -55,6 +55,7 @@ def folder(tmp_path, monkeypatch):
     basemap = tmp_path / "basemap"
     basemap.mkdir()
     pmtiles(basemap / "world.sat-overview.pmtiles", 0, 8)
+    pmtiles(basemap / "world.pmtiles", 0, 8)  # the world's background map zoomed out
     pmtiles(basemap / "france.sat-regional.pmtiles", 5, 11)
     pmtiles(basemap / "fr-67.sat-detailed-fr_ign.pmtiles", 12, 17)
     pmtiles(basemap / "luxembourg.sat-regional.pmtiles", 7, 11)
@@ -162,7 +163,7 @@ def test_sentinel_where_photos_take_over_and_blue_marble_with_it(folder, capsys)
 def test_remove_what_could_be_freed(folder, capsys):
     # Alsace's Sentinel-2, inside France's to the same zoom.
     pmtiles(folder["dir"] / "alsace.sat-regional.pmtiles", 7, 11)
-    menu(folder, "2\n2\ny\n\n")
+    menu(folder, "2\n3\ny\n\n")  # World: Blue Marble, background map; then Alsace
     shown = capsys.readouterr().err
     assert "could free 127 B: covered by france" in shown
     assert not (folder["dir"] / "alsace.sat-regional.pmtiles").exists()
@@ -236,6 +237,7 @@ def test_a_background_map_again_only_when_newer(folder, capsys):
 
 
 def test_the_worlds_background_map_is_protomaps_file(folder, capsys):
+    (folder["dir"] / "world.pmtiles").unlink()
     menu(
         folder, "1\n4\n18\ny\n\n"
     )  # Add → World → Background map, all zooms (the last)
@@ -254,6 +256,7 @@ def test_no_network_no_background_map_offered(folder, capsys, monkeypatch):
 
 
 def test_the_world_zoomed_out_like_blue_marble(folder, capsys):
+    (folder["dir"] / "world.pmtiles").unlink()
     # Add → World → the background map to zoom 8: every country's borders and names.
     menu(folder, "1\n4\n17\ny\n\n")
     (argv,) = folder["ran"]  # zoom 8 has no buildings: no large buildings step
@@ -267,3 +270,12 @@ def test_the_world_zoomed_out_like_blue_marble(folder, capsys):
     shown = capsys.readouterr().err
     assert "all zooms, 2026-11-10" in shown
     assert re.search(r"zoomed out \(to 8\) +z0–8 +—", shown)
+
+
+def test_the_world_zoomed_out_comes_with_anything(folder, capsys):
+    # Like Blue Marble with imagery: every country's borders and names, once.
+    (folder["dir"] / "world.pmtiles").unlink()
+    menu(folder, "", "--source", "fr_ign", "--units", "33", "--zoom", "17", "--yes")
+    first, then = folder["ran"]
+    assert first[:3] == ["basemap", "--area", "world"] and "--maxzoom" in first
+    assert then[0] == "bdortho"

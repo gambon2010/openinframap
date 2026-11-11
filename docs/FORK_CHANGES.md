@@ -512,7 +512,10 @@ downloaded. The menu offers the whole world's background map to zoom 8 (560 MB;
 zoom 7: 190 MB, 6: 45 MB), cut with `--bbox` and `--maxzoom`
 (`satellite.py basemap --area world --maxzoom 8`), next to the whole world at every
 zoom (~140 GB). The backend tries it last, so detailed areas win where they have a
-tile. Downloaded here.
+tile. Downloaded here. It comes **by default**, once: with any download from the
+menu (`with_world_background`, like Blue Marble with imagery) and in every build
+(`prepare_background_map` queues it; `--basemap none` leaves it out). Building
+outlines a little thicker (asked for).
 
 ## Wikidata popups and image cache
 

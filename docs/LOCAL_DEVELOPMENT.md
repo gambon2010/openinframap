@@ -198,7 +198,8 @@ in `build-region.sh`): Add, the area, *Background map*. Always full detail (to
 zoom 15, buildings included). The menu shows each area's edition (Protomaps'
 date) and offers it again only when a newer one exists. Several areas can be
 downloaded; they show together. The whole world is Protomaps' file itself
-(~140 GB). Sizes grow quickly with area: by bounding box (upper bounds) France
+(~140 GB); the whole world to zoom 8 (560 MB: every country's borders and names
+zoomed out) comes by default with any download and every build. Sizes grow quickly with area: by bounding box (upper bounds) France
 9.5 GB, Russia 26 GB, Europe 49 GB; the menu shows the real size, by outline.
 
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as

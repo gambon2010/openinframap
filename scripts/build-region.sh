@@ -50,7 +50,8 @@ Usage: bash scripts/build-region.sh [options]
   --no-extra      No extra data at all, and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
   --basemap MODE  Offline background map for the region: full or none. Default:
-                  the offline maps menu (with --yes: none). Downloaded after the build
+                  the offline maps menu (with --yes: none). Downloaded after the build.
+                  The world's to zoom 8 (borders, names; 560 MB) comes unless none
   --satellite MODE  Offline satellite imagery: none, overview (NASA Blue Marble,
                   zoom 0-8), regional (+ Sentinel-2 10 m, zoom 9-12) or regional13
                   (to zoom 13). Default: ask (with --yes: keep what you have, else none)
@@ -634,6 +635,15 @@ ask_extra_data() {
 # --basemap full queues it without a question, downloaded after the build.
 prepare_background_map() {
     region_outline
+    # The whole world zoomed out (to zoom 8: every country's borders and names,
+    # 560 MB) comes by default, once; --basemap none leaves it out.
+    if [[ "$BASEMAP_MODE" != none && ! -f "$BASEMAP_DIR/world.pmtiles" ]]; then
+        python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only --yes \
+            --source protomaps --area world --zoom 8 \
+            --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" \
+            || warn "Couldn't plan the world's background map (no network?)."
+        SATELLITE_MENU=1
+    fi
     if [[ "$BASEMAP_MODE" == full ]]; then
         python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only --yes \
             --source protomaps --area "$(maps_area)" --region "$(maps_area)" \
