@@ -103,6 +103,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.23 | No "find my location" button on the map. | ✅ (2026-11-06) |
 | 5.24 | In high contrast, roads visible over towns (white with a grey edge; footpaths grey). | ✅ (2026-11-06) |
 | 5.25 | Aerial photos shown from zoom 12 (were 14); files made before get the lower zooms without downloading. | ✅ (2026-11-06) |
+| 5.27 | A download speed cap for IGN's photos (e.g. 10 MB/s, all parts together). | ✅ (2026-11-11) |
 
 ## 6. Grid connections (power routing)
 

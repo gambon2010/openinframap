@@ -184,7 +184,9 @@ def expected_md5(md5_url: str | None) -> dict[str, str]:
     return sums
 
 
-def download_archive(resource: str, work: Path) -> Path:
+def download_archive(
+    resource: str, work: Path, limit: netsafe.RateLimit | None = None
+) -> Path:
     """The département's archive in `work` (resumed, checked); its first part."""
     parts, md5_url = archive_files(resource)
     if not parts:
@@ -216,7 +218,9 @@ def download_archive(resource: str, work: Path) -> Path:
     def one(url: str) -> None:
         path = work / Path(urllib.parse.urlsplit(url).path).name
         for attempt in (1, 2):
-            netsafe.fetch_file(url, path, user_agent=USER_AGENT, progress=progress)
+            netsafe.fetch_file(
+                url, path, user_agent=USER_AGENT, progress=progress, limit=limit
+            )
             want = sums.get(path.name)
             if not want or md5_of(path) == want:
                 return
@@ -385,6 +389,8 @@ def have_zoom(path: Path) -> int | None:
 def command_bdortho(args) -> None:
     """Download and convert départements one after the other (bdortho --dept 67 68)."""
     folder = Path(args.basemap_dir).resolve()
+    # A speed cap for IGN's download service (MB/s), all parts together.
+    limit = netsafe.RateLimit(args.max_rate * 1e6) if args.max_rate else None
     for n, code in enumerate(args.dept, 1):
         name = DEPARTEMENTS[code][0]
         out = file_of(folder, code)
@@ -402,7 +408,7 @@ def command_bdortho(args) -> None:
             print(f"{label}: looking for IGN's latest photos...", file=sys.stderr)
             resource = latest_edition(code)
             print(f"{label}: downloading {resource}", file=sys.stderr)
-            first = download_archive(resource, work)
+            first = download_archive(resource, work, limit)
             print(f"{label}: extracting...", file=sys.stderr)
             images = extract(first, images_dir, args.gdal_image)
         print(

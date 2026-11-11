@@ -1799,6 +1799,14 @@ starting above their area's lowest; `catch_up_lower_zooms` (was
   (`offerImagery`: its last zoom, where it covers). Strings `satellite.*` of the
   section became `background.*`.
 
+## A download speed cap (2026-11-11)
+
+`netsafe.RateLimit`: at most so many bytes a second for every download sharing it
+(threads too), given to `fetch_file` (`limit=`). IGN's archives are fetched three
+parts at once under one cap: `satellite.py bdortho --max-rate 10` (MB/s), default
+`OIM_MAX_RATE`, else none. Measured: 4.00 MB/s asked, 4.00 MB/s got, on a line
+doing 29.
+
 ## IGN's photos: Bas-Rhin, and what it taught (2026-11-07)
 
 The first whole département (Bas-Rhin, 4,761 km², 251 images): 22.8 GB downloaded,

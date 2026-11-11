@@ -265,7 +265,9 @@ to 15–19), then the download is deleted: the disk holds the tiles and one
 département's files at a time. The menu asks the last zoom, then which départements
 (their codes; Enter: all of the area's). Kept on disk, all of France: ~12 GB to
 zoom 15, ~130 GB to 17, ~2 TB to 19 (one département to 19: ~20–30 GB). Bas-Rhin
-to zoom 17: 1.17 GB from a 22.8 GB download. Each
+to zoom 17: 1.17 GB from a 22.8 GB download. To cap the download speed (MB/s, all
+parts together): `OIM_MAX_RATE=10 bash scripts/satellite.sh`, or `--max-rate 10` on
+`python3 scripts/satellite.py bdortho …`. Each
 département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
 there to the zoom asked is skipped, a higher zoom makes it again.
 

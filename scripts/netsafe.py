@@ -7,7 +7,8 @@ do the same with `download` / `safely` (scripts/lib/net.sh), with the same setti
                             whole download that can be run again)
     checked(response)       an httpx response, its HTTP error raised (inside call)
     fetch(url)              a URL's bytes (standard library), through safely()
-    fetch_file(url, path)   a big file to path, resumed where it stopped (HTTP Range)
+    fetch_file(url, path)   a big file to path, resumed where it stopped (HTTP Range),
+                            at most a RateLimit's speed if given
     run_until_connected(main)  main(), exiting with CONNECTION_LOST (75) and a short
                             message instead of a traceback when the connection is lost
                             (SERVER_STOPPED, 76: only that server stopped answering)
@@ -264,17 +265,36 @@ def fetch(url: str, timeout: float = 60, user_agent: str = USER_AGENT) -> bytes 
     return safely(get, url)
 
 
+class RateLimit:
+    """At most `bytes_per_second`, for every download that shares it (threads
+    included): each waits its turn after a read (take)."""
+
+    def __init__(self, bytes_per_second: float):
+        self.rate = bytes_per_second
+        self.lock = threading.Lock()
+        self.free_at = time.monotonic()  # when the bytes taken so far are paid for
+
+    def take(self, n: int) -> None:
+        with self.lock:
+            now = time.monotonic()
+            self.free_at = max(self.free_at, now) + n / self.rate
+            wait = self.free_at - now - 1.0  # a second of slack: smooth, not jerky
+        if wait > 0:
+            time.sleep(wait)
+
+
 def fetch_file(
     url: str,
     path: Path,
     timeout: float = 60,
     user_agent: str = USER_AGENT,
     progress: Callable[[int], None] | None = None,
+    limit: RateLimit | None = None,
 ) -> None:
     """A big file saved to `path`, through path.part: a dropped download goes on
     from where it stopped (HTTP Range), here or when run again; `path` only appears
     once complete. A read stalled for `timeout` seconds counts as dropped.
-    progress(n): n more bytes arrived."""
+    progress(n): n more bytes arrived. limit: a speed cap (shared, RateLimit)."""
     part = path.with_name(path.name + ".part")
 
     def get() -> None:
@@ -291,10 +311,12 @@ def fetch_file(
             raise
         # 200 to a Range: the server sends it all again.
         with response, part.open("ab" if response.status == 206 else "wb") as out:
-            while chunk := response.read(1 << 20):
+            while chunk := response.read(1 << 18):
                 out.write(chunk)
                 if progress:
                     progress(len(chunk))
+                if limit:
+                    limit.take(len(chunk))
             # A connection closed before the end reads as the end: say it isn't.
             if response.length:
                 raise http.client.IncompleteRead(b"", response.length)

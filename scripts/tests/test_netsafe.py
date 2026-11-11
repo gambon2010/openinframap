@@ -129,3 +129,24 @@ def test_run_until_connected_exits_75(capsys):
         netsafe.run_until_connected(main)
     assert stop.value.code == netsafe.CONNECTION_LOST == 75
     assert "run again" in capsys.readouterr().err
+
+
+def test_a_rate_limit_holds_every_download_to_its_speed(monkeypatch):
+    # A fake clock: sleeping moves it on. 10 MB at 1 MB/s takes 10 s, however the
+    # reads are split between the downloads sharing the limit.
+    now = [0.0]
+    monkeypatch.setattr(netsafe.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(netsafe.time, "sleep", lambda s: now.__setitem__(0, now[0] + s))
+    limit = netsafe.RateLimit(1_000_000)
+    for _ in range(40):
+        limit.take(250_000)
+    assert 9 <= now[0] <= 10
+
+
+def test_a_rate_limit_lets_a_short_burst_through(monkeypatch):
+    slept = []
+    monkeypatch.setattr(netsafe.time, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(netsafe.time, "sleep", slept.append)
+    limit = netsafe.RateLimit(1_000_000)
+    limit.take(500_000)  # half a second's worth: within the second of slack
+    assert slept == []
