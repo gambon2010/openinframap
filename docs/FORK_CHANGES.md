@@ -395,6 +395,20 @@ Protomaps' program, so it isn't changed: the Compose service is renamed
 map is there (`background_areas`). The backend container mounts `data/basemap/`
 read-only. Tests: `tests/fork/test_background.py`.
 
+**Chosen in the offline maps menu** (2026-11-11): `build-region.sh` no longer asks
+its own question (full / reduced / none); the menu's Add has a "Background map"
+line for any area, the world included (Protomaps' file itself, downloaded
+resumably with `netsafe.fetch_file`; elsewhere cut with `pmtiles extract`:
+`satimagery/extract.py`, `satellite.py basemap`). **Full detail only**: a reduced
+file (to zoom 13) would go blank past 13, the style's source going to 15, and
+saves little for a country. Each file's edition (Protomaps' build, from
+`<area>.json`) is shown, and the line is offered again only when Protomaps has a
+newer one; an area inside one already there is "covered". `--basemap full` queues
+it without a question (`--basemap reduced` is refused, saying why). The shell's
+own download code (`download_basemap`, `basemap_size`, `choose_basemap_detail`)
+is gone; `region_outline` writes the region's outline (Geofabrik's, or a local
+file's bounding box) where the menu looks for it.
+
 **Night lights** (NASA Black Marble: the Earth at night) was an alternative background
 in upstream's layer menu. It only exists online (tiles from openinframap.org), so the
 fork hid the whole Background switch (OpenStreetMap / Nighttime Lights), then

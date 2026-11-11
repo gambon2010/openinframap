@@ -193,25 +193,21 @@ Measured on this project's dev machine; your download speed dominates.
 ## Offline background map
 
 The background map (streets, buildings, place names) comes from openinframap.org
-unless you download it. `build-region.sh` asks, showing the real sizes for the
-region:
-
-```
-      1) Full detail         67MB  streets and individual buildings at every zoom
-      2) Reduced detail      24MB  streets and places; blurry when zoomed in close
-      3) Skip                 —  keep using the online background map
-```
-
-Sizes grow quickly with area. Roughly: France 9.5 GB full / 2.3 GB reduced,
-Russia 26 / 7.4 GB, Europe 49 / 13 GB, the whole world ~139 GB at full detail.
+unless you download it, in the offline maps menu (`bash scripts/satellite.sh`, or
+in `build-region.sh`): Add, the area, *Background map*. Always full detail (to
+zoom 15, buildings included). The menu shows each area's edition (Protomaps'
+date) and offers it again only when a newer one exists. Several areas can be
+downloaded; they show together. The whole world is Protomaps' file itself
+(~140 GB). Sizes grow quickly with area: by bounding box (upper bounds) France
+9.5 GB, Russia 26 GB, Europe 49 GB; the menu shows the real size, by outline.
 
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
 `data/basemap/<region>.pmtiles`. The backend serves every background map there
 together (each tile from the first file that has it, so several areas show at
 once), and `web/.env` gets
 `VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt`. Restart the
-frontend after that changes. Re-running the build offers to refresh it with newer
-map data. Unattended: `--basemap full`, `--basemap reduced` or `--basemap none`.
+frontend after that changes. Unattended: `build-region.sh --basemap full`, or
+`python3 scripts/satellite.py maps --source protomaps --area france --yes`.
 
 ## Satellite imagery (offline)
 

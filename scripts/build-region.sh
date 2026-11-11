@@ -49,8 +49,8 @@ Usage: bash scripts/build-region.sh [options]
                   gas, biomethane, icpe; see: uv run scripts/extra_data.py offer)
   --no-extra      No extra data at all, and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
-  --basemap MODE  Offline background map: full, reduced (zoom 13) or none.
-                  Default: ask (with --yes: keep the one you have, else none)
+  --basemap MODE  Offline background map for the region: full or none. Default:
+                  the offline maps menu (with --yes: none). Downloaded after the build
   --satellite MODE  Offline satellite imagery: none, overview (NASA Blue Marble,
                   zoom 0-8), regional (+ Sentinel-2 10 m, zoom 9-12) or regional13
                   (to zoom 13). Default: ask (with --yes: keep what you have, else none)
@@ -97,15 +97,10 @@ EXTRA_KEPT=""         # what is kept, described ("" if nothing)
 EXTRA_NEW=ask         # download extra data (--extra, --extra-only: yes; --no-extra: no)
 EXTRA_CHOOSE=""       # which datasets (e.g. gas,icpe; "" = all that cover the region)
 EXTRA_RESTORED=0      # 1: the kept extra data went back in
-BASEMAP_MODE=""       # background map: full, reduced, none, keep ("" = ask)
+BASEMAP_MODE=""       # background map: full, none ("" = the offline maps menu)
 SATELLITE_MODE=""     # satellite imagery (lib/satellite.sh; "" = ask)
 SATELLITE_DETAILED="" # aerial photos to this zoom, or none ("" = ask)
 REEXPORT=yes          # --no-export: don't export again when out of date
-
-# The background map (ask_background_map)
-PROTOMAPS_BUILD=""    # Protomaps' world build to cut it from ("" if unreachable)
-BASEMAP_AREA=()       # pmtiles' --region=FILE or --bbox=...: the region's area
-BASEMAP_SIZE=0        # bytes to download
 
 # Disk space
 DOCKER_ROOT=""        # where Docker keeps the database (checked twice)
@@ -126,7 +121,7 @@ while [[ $# -gt 0 ]]; do
         --refresh)   REFRESH=yes; shift ;;
         --rebuild)   REBUILD=yes; shift ;;
         --no-export) REEXPORT=no; shift ;;
-        --basemap)   BASEMAP_MODE="${2:?--basemap needs full, reduced or none}"; shift 2 ;;
+        --basemap)   BASEMAP_MODE="${2:?--basemap needs full or none}"; shift 2 ;;
         --satellite) SATELLITE_MODE="${2:?--satellite needs none, overview, regional or regional13}"; shift 2 ;;
         --satellite-detailed) SATELLITE_DETAILED="${2:?--satellite-detailed needs 15, 16, 17 or none}"; shift 2 ;;
         --yes|-y)    ASSUME_YES=1; shift ;;
@@ -137,8 +132,9 @@ done
 
 # Check option values now, before any question or download.
 case "$BASEMAP_MODE" in
-    ""|full|reduced|none) ;;
-    *) die "--basemap must be full, reduced or none." ;;
+    ""|full|none) ;;
+    reduced) die "--basemap reduced no longer exists: background maps are full detail (--basemap full)." ;;
+    *) die "--basemap must be full or none." ;;
 esac
 case "$SATELLITE_MODE" in
     ""|none|overview|regional|regional13) ;;
@@ -394,38 +390,26 @@ choose_extra_datasets() {
     done
 }
 
-# --- The background map (ask_background_map) -----------------------------------------
+# --- The background map --------------------------------------------------------------
 
-# find_basemap_area — BASEMAP_AREA: what to cut out of the world map: the
-# Geofabrik outline, else the file's bounding box (the world: everything).
-find_basemap_area() {
+# region_outline — the region's outline for the offline maps menu
+# (data/basemap/.area-<region>.geojson, where it looks first): Geofabrik's, else
+# the local file's bounding box as a rectangle.
+region_outline() {
     local outline="$BASEMAP_DIR/.area-$REGION_ID.geojson" bbox
-    BASEMAP_AREA=()
     [[ "$REGION_ID" == "$PLANET_ID" ]] && return 0
+    mkdir -p "$BASEMAP_DIR"
     if [[ -n "$PBF_URL" ]] && geofabrik_outline "$REGION_ID" "$outline"; then
-        BASEMAP_AREA=("--region=/out/$(basename "$outline")")
+        return 0
     elif [[ -f "$PBF_SOURCE" ]]; then
         bbox=$(osmium fileinfo -g header.boxes /src.osm.pbf 2>/dev/null | tr -d '() ' | head -1 || true)
-        [[ "$bbox" =~ ^-?[0-9.]+,-?[0-9.]+,-?[0-9.]+,-?[0-9.]+$ ]] && BASEMAP_AREA=("--bbox=$bbox")
+        if [[ "$bbox" =~ ^-?[0-9.]+,-?[0-9.]+,-?[0-9.]+,-?[0-9.]+$ ]]; then
+            python3 -c 'import json, sys
+w, s, e, n = map(float, sys.argv[1].split(","))
+json.dump({"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}, open(sys.argv[2], "w"))' "$bbox" "$outline"
+        fi
     fi
     return 0
-}
-
-# choose_basemap_detail FULL_SIZE REDUCED_SIZE — the menu: full, reduced or none
-# (reduced first for a map over 10 GB).
-choose_basemap_detail() {
-    local default=1
-    [[ "$1" -gt $((10 * 1000 * 1000 * 1000)) ]] && default=2
-    echo ""
-    printf "      1) Full detail     %8s  streets and individual buildings at every zoom\n" "$(human_size "$1")"
-    printf "      2) Reduced detail  %8s  streets and places; blurry when zoomed in close\n" "$(human_size "$2")"
-    printf "      3) Skip            %8s  keep using the online background map\n" "—"
-    echo ""
-    case "$(choose_number 3 "$default")" in
-        1) BASEMAP_MODE=full ;;
-        2) BASEMAP_MODE=reduced ;;
-        *) BASEMAP_MODE=none ;;
-    esac
 }
 
 # ---------------------------------------------------------------------------
@@ -646,52 +630,28 @@ ask_extra_data() {
     fi
 }
 
-# The offline background map: full, reduced, none, or keep the one there.
-ask_background_map() {
-    local file="$BASEMAP_DIR/$REGION_ID.pmtiles" manifest="$BASEMAP_DIR/$REGION_ID.json"
-    local planet_size=0 full_size reduced_size
-    [[ -z "$BASEMAP_MODE" && "$ASSUME_YES" == 1 ]] && BASEMAP_MODE=none
-    [[ "$BASEMAP_MODE" == none ]] && return 0
-    section "Background map"
-    mkdir -p "$BASEMAP_DIR"
-    read -r PROTOMAPS_BUILD planet_size < <(latest_protomaps_build) || true
-    find_basemap_area
-    if [[ -f "$file" && -z "$BASEMAP_MODE" ]]; then
-        ok "Already downloaded: $(json_get "$manifest" detail) detail, $(human_size "$(stat -c%s "$file")"), map data from $(json_get "$manifest" build | cut -c1-8)."
-        if [[ -z "$PROTOMAPS_BUILD" ]] || ! ask_yes_no "Download it again with the latest map data?" n; then
-            BASEMAP_MODE=keep
-            return 0
-        fi
+# The offline background map: chosen in the offline maps menu (ask_satellite);
+# --basemap full queues it without a question, downloaded after the build.
+prepare_background_map() {
+    region_outline
+    if [[ "$BASEMAP_MODE" == full ]]; then
+        python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only --yes \
+            --source protomaps --area "$(maps_area)" --region "$(maps_area)" \
+            --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" \
+            || warn "Couldn't plan the background map; the build goes on without it."
+        SATELLITE_MENU=1
     fi
-    if [[ -z "$PROTOMAPS_BUILD" ]]; then
-        warn "Can't reach Protomaps — the background map will come from openinframap.org (online)."
-        BASEMAP_MODE=none
-        return 0
-    fi
-    if [[ "$REGION_ID" != "$PLANET_ID" && ${#BASEMAP_AREA[@]} -eq 0 ]]; then
-        warn "Can't tell which area this region covers, so there's no offline background map for it."
-        BASEMAP_MODE=none
-        return 0
-    fi
-    info "The background map (streets, buildings, place names) normally comes from"
-    info "openinframap.org over the internet. Download it for this region to use the"
-    info "map fully offline. Checking sizes..."
-    if [[ "$REGION_ID" == "$PLANET_ID" ]]; then
-        full_size=$planet_size
-    else
-        full_size=$(basemap_size "$PROTOMAPS_BUILD" "" "${BASEMAP_AREA[@]}")
-    fi
-    reduced_size=$(basemap_size "$PROTOMAPS_BUILD" "$REDUCED_MAXZOOM" "${BASEMAP_AREA[@]}")
-    [[ -n "$BASEMAP_MODE" ]] || choose_basemap_detail "$full_size" "$reduced_size"
-    [[ "$BASEMAP_MODE" == none ]] && return 0
-    BASEMAP_SIZE=$full_size
-    [[ "$BASEMAP_MODE" == reduced ]] && BASEMAP_SIZE=$reduced_size
-    room_for "$BASEMAP_SIZE" "$BASEMAP_DIR" "data/basemap/" || BASEMAP_MODE=none
+    return 0
+}
+
+# The region as the offline maps menu calls it (the planet: world).
+maps_area() {
+    if [[ "$REGION_ID" == "$PLANET_ID" ]]; then echo world; else echo "$REGION_ID"; fi
 }
 
 # Satellite imagery (lib/satellite.sh).
 ask_satellite() {
-    choose_satellite "$REGION_ID"
+    choose_satellite "$(maps_area)"
 }
 
 # No more questions: the build starts (and is logged).
@@ -849,23 +809,9 @@ start_tile_server() {
 # The offline background map and satellite imagery, after everything else: a
 # failure here doesn't lose the build.
 offline_background() {
-    local status=0
-    if [[ "$BASEMAP_MODE" == full || "$BASEMAP_MODE" == reduced ]]; then
-        section "Downloading the background map ($BASEMAP_MODE detail, $(human_size "$BASEMAP_SIZE"))..."
-        download_basemap "$REGION_ID" "$PROTOMAPS_BUILD" "$BASEMAP_MODE" "${BASEMAP_AREA[@]}" || status=$?
-        if [[ "$status" == 0 ]]; then
-            ok "Saved $(human_size "$(stat -c%s "$BASEMAP_DIR/$REGION_ID.pmtiles")") → data/basemap/$REGION_ID.pmtiles"
-        else
-            [[ "$status" == "$CONNECTION_LOST" ]] && warn "No internet connection."
-            [[ "$status" == "$SERVER_STOPPED" ]] && warn "The background map's server stopped answering this computer."
-            warn "Downloading the background map failed, so the map will use the online one."
-            warn "Re-run this script to try again."
-        fi
-    fi
+    download_satellite "$(maps_area)"
     section "Background map"
-    select_basemap "$REGION_ID"
-    [[ -f "$BASEMAP_DIR/$REGION_ID.pmtiles" ]] || info "Using the online background map (openinframap.org)."
-    download_satellite "$REGION_ID"
+    select_basemap
 }
 
 # The Wikidata cache for the info popups (if asked).
@@ -908,7 +854,7 @@ check_space
 confirm_replacing_database
 ask_boundaries_and_images
 ask_extra_data
-ask_background_map
+prepare_background_map
 ask_satellite
 start_building
 download_extract

@@ -263,18 +263,7 @@ class Maps:
                 rows.append(self.units_offer(source, area))
             else:
                 rows.append(self.tiles_offer(source, area))
-        if area != "world":
-            own = self.have("protomaps", area)
-            rows.append(
-                (
-                    [
-                        "Background map",
-                        f"z{ui.zooms(*own.zooms)}" if own else "—",
-                        "again, newer" if own else "size asked online",
-                    ],
-                    lambda: self.basemap_jobs(area),
-                )
-            )
+        rows.append(self.basemap_offer(area))
         return rows
 
     def have(self, source: str, area: str) -> Entry | None:
@@ -512,46 +501,69 @@ class Maps:
             )
         ]
 
+    def latest_build(self) -> tuple[str, int] | None:
+        """Protomaps' latest world map (asked once a menu; None offline)."""
+        if not hasattr(self, "_latest"):
+            self._latest = extract.latest_build()
+        return self._latest
+
+    def basemap_offer(self, area: str):
+        """The background map: what's there (its edition), and whether there's
+        a newer one or it's covered by an area around it."""
+        protomaps = SOURCES["protomaps"]
+        own = self.have(protomaps.id, area)
+        cover = coverage.covered_by(
+            protomaps, area, protomaps.last_zoom, self.entries, self.within
+        )
+        latest = self.latest_build()
+        newest = edition(latest[0]) if latest else ""
+        have = edition_date(own.edition) if own else "—"
+        if cover and cover.area != area:
+            add = f"— (covered by {self.name(cover.area)})"
+        elif not latest:
+            add = "can't reach Protomaps"
+        elif own and own.edition >= newest:
+            add = "— (the latest)"
+        elif own:
+            add = f"newer: {edition_date(newest)}"
+        else:
+            add = f"z0–15, {edition_date(newest)}"
+        offered = latest and not add.startswith("—")
+        return ["Background map", have, add], (
+            lambda: self.basemap_jobs(area)
+        ) if offered else None
+
     def basemap_jobs(self, area: str) -> list[Job] | None:
-        outline = self.index.outline(area, self.folder)
-        if not outline:
-            ui.say(f"No outline for {self.name(area)} in Geofabrik's index.")
-            return None
-        ui.say("Asking Protomaps...")
-        build = extract.latest_build()
-        if not build:
+        """The background map of an area, full detail (the world: Protomaps' file)."""
+        latest = self.latest_build()
+        if not latest:
             ui.say("Can't reach Protomaps (no network?).")
             return None
-        sizes = {
-            d: extract.size(self.folder, build[0], outline, d)
-            for d in ("full", "reduced")
-        }
-        reduced = SOURCES["protomaps"].sizes["reduced_zoom"]
-        options = [
-            f"Full (z0–15)  {ui.human(sizes['full'] or 0)}",
-            f"Streets and places (z0–{reduced}, no buildings)  {ui.human(sizes['reduced'] or 0)}",
+        build, world_size = latest
+        argv = [
+            "basemap",
+            "--area",
+            area,
+            "--build",
+            build,
+            "--basemap-dir",
+            str(self.folder),
         ]
-        picked = ui.choose(options)
-        if picked is None:
-            return None
-        detail = ("full", "reduced")[picked]
-        size = sizes[detail] or 0
+        if area == "world":
+            size = world_size
+            argv += ["--size", str(size)]
+        else:
+            outline = self.index.outline(area, self.folder)
+            if not outline:
+                ui.say(f"No outline for {self.name(area)} in Geofabrik's index.")
+                return None
+            ui.say("Working out its size...")
+            size = extract.size(self.folder, build, outline) or 0
+            argv += ["--outline", str(outline)]
         return [
             Job(
-                f"Background map, {self.name(area)}, {'z0–15' if detail == 'full' else f'z0–{reduced}'}",
-                [
-                    "basemap",
-                    "--area",
-                    area,
-                    "--outline",
-                    str(outline),
-                    "--detail",
-                    detail,
-                    "--build",
-                    build[0],
-                    "--basemap-dir",
-                    str(self.folder),
-                ],
+                f"Background map, {self.name(area)}, z0–15 ({edition_date(edition(build))})",
+                argv,
                 kept=size,
                 download=size,
             )
@@ -735,6 +747,8 @@ class Maps:
                     area, coverage.top_zoom(source, area, self.within).zoom
                 )
             ]
+        elif source.layer == "basemap":
+            jobs = self.basemap_jobs(area) or []
         elif source.units:
             conv = inventory.converter(source)
             zoom = args.zoom or self.zoom_offered(source)
@@ -748,6 +762,20 @@ class Maps:
                 f"{source.id}: not without questions yet (satellite.sh --sources)."
             )
         return self.start(self.with_blue_marble(jobs))
+
+
+def edition(build: str) -> str:
+    """Protomaps' build file (20261110.pmtiles) as its edition (20261110)."""
+    return build.removesuffix(".pmtiles")
+
+
+def edition_date(value: str) -> str:
+    """20261110 as 2026-11-10 (anything else as it is)."""
+    return (
+        f"{value[:4]}-{value[4:6]}-{value[6:8]}"
+        if len(value) == 8 and value.isdigit()
+        else value
+    )
 
 
 def short(name: str, width: int = 15) -> str:

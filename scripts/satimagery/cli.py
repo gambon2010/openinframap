@@ -411,8 +411,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--yes", action="store_true", help="start without asking")
     p = sub.add_parser("basemap", help="cut the background map of an area")
     p.add_argument("--area", required=True)
-    p.add_argument("--outline", required=True, help="the area's outline (GeoJSON)")
-    p.add_argument("--detail", choices=("full", "reduced"), default="full")
+    p.add_argument("--outline", help="the area's outline (GeoJSON; not for world)")
+    p.add_argument("--size", type=int, help="world: the file's size, for the progress")
     p.add_argument("--build", required=True, help="Protomaps' build (20261014.pmtiles)")
     p.add_argument("--basemap-dir", required=True)
     for name in ("choose", "steps"):

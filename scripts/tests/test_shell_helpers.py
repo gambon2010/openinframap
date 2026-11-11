@@ -386,14 +386,6 @@ def test_sentinel_starts_at_the_same_zoom_in_the_scripts_and_satellite_py():
     assert bash("echo $REGIONAL_FIRST_ZOOM") == str(satellite.TIERS["regional"][0])
 
 
-def test_the_background_maps_zooms_in_the_scripts_and_its_source_file():
-    from satimagery.sources import SOURCES
-
-    protomaps = SOURCES["protomaps"]
-    assert bash("echo $REDUCED_MAXZOOM") == str(protomaps.sizes["reduced_zoom"])
-    assert bash("echo $PROTOMAPS_BASE") == protomaps.address
-
-
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
     value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
@@ -432,7 +424,9 @@ download_satellite france 2>&1
 
 def test_the_frontend_is_pointed_at_the_backends_background_map(tmp_path):
     env = tmp_path / ".env"
-    env.write_text("VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt\n")
+    env.write_text(
+        "VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt\n"
+    )
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(b"x")  # imagery: not one
 
     def select():
@@ -447,5 +441,7 @@ def test_the_frontend_is_pointed_at_the_backends_background_map(tmp_path):
     assert "VITE_BASEMAP_URL" not in select()
     (tmp_path / "france.pmtiles").write_bytes(b"x")
     (tmp_path / "luxembourg.pmtiles").write_bytes(b"x")
-    assert "VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt" in select()
+    assert (
+        "VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt" in select()
+    )
     assert bash("background_areas", BASEMAP_DIR=str(tmp_path)) == "france\nluxembourg"

@@ -155,7 +155,7 @@ def test_unknown_option(sandbox, script):
 @pytest.mark.parametrize(
     "option, value, message",
     [
-        ("--basemap", "huge", "--basemap must be full, reduced or none"),
+        ("--basemap", "huge", "--basemap must be full or none"),
         (
             "--satellite",
             "everything",

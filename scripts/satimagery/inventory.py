@@ -94,6 +94,7 @@ def scan(folder: Path) -> list[Entry]:
                 zooms=list(zooms),
                 bytes=stat.st_size,
                 done=date.fromtimestamp(stat.st_mtime).isoformat(),
+                edition=manifest_edition(path) if what[0] == "protomaps" else "",
             )
         )
     busy = running(folder)
@@ -129,6 +130,15 @@ def written_lately(work: Path) -> bool:
     return any(
         now - f.stat().st_mtime < LATELY_SECONDS for f in work.rglob("*") if f.is_file()
     )
+
+
+def manifest_edition(path: Path) -> str:
+    """A background map's Protomaps build (its <area>.json: "20261014.pmtiles")."""
+    try:
+        build = json.loads(path.with_suffix(".json").read_text()).get("build", "")
+    except (OSError, ValueError, AttributeError):
+        return ""
+    return str(build).removesuffix(".pmtiles")
 
 
 def load(folder: Path) -> list[Entry]:

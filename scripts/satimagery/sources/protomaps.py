@@ -14,8 +14,4 @@ SOURCE = Source(
     last_zoom=15,
     address="https://build.protomaps.com",
     format="mvt",
-    sizes={
-        # "Reduced detail": up to this zoom (streets and places, no buildings).
-        "reduced_zoom": 13,
-    },
 )

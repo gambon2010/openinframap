@@ -65,6 +65,11 @@ def folder(tmp_path, monkeypatch):
         return subprocess.CompletedProcess(command, 0)
 
     monkeypatch.setattr(maps.subprocess, "run", run)
+    # Protomaps' latest world map, and a background map's size: no network here.
+    monkeypatch.setattr(
+        maps.extract, "latest_build", lambda: ("20261110.pmtiles", 140 * 10**9)
+    )
+    monkeypatch.setattr(maps.extract, "size", lambda folder, build, outline: 5 * 10**9)
     monkeypatch.setattr(
         maps.shutil, "disk_usage", lambda p: type("U", (), {"free": 10**13})()
     )
@@ -193,3 +198,49 @@ def test_build_region_asks_first_and_downloads_after(folder, capsys):
     menu(folder, "", "--queued", "--yes")
     assert [a[:3] for a in folder["ran"]] == [["bdortho", "--dept", "68"]]
     assert not (folder["dir"] / maps.QUEUE).exists()
+
+
+def background_map(folder, area, build):
+    pmtiles(folder["dir"] / f"{area}.pmtiles", 0, 15)
+    (folder["dir"] / f"{area}.json").write_text(
+        json.dumps({"build": f"{build}.pmtiles"})
+    )
+
+
+def test_a_background_map_full_detail_with_its_edition(folder, capsys):
+    # Add → France → Background map (4th): no detail question, straight to the plan.
+    menu(folder, "1\n2\n4\ny\n\n")
+    shown = capsys.readouterr().err
+    assert "z0–15, 2026-11-10" in shown
+    assert "Background map, France, z0–15 (2026-11-10)" in shown and "5.0 GB" in shown
+    (argv,) = folder["ran"]
+    assert argv[:5] == ["basemap", "--area", "france", "--build", "20261110.pmtiles"]
+    assert "--outline" in argv
+
+
+def test_a_background_map_again_only_when_newer(folder, capsys):
+    background_map(folder, "france", "20261014")
+    menu(folder, "1\n2\n\n\n")
+    assert "2026-10-14   newer: 2026-11-10" in capsys.readouterr().err
+    background_map(folder, "france", "20261110")
+    menu(folder, "1\n2\n4\n\n\n")
+    shown = capsys.readouterr().err
+    assert "— (the latest)" in shown and "Nothing to add there." in shown
+    # Alsace, inside France.
+    menu(folder, "1\n1\n\n\n")
+    assert "— (covered by France)" in capsys.readouterr().err
+
+
+def test_the_worlds_background_map_is_protomaps_file(folder, capsys):
+    menu(folder, "1\n4\n17\ny\n\n")  # Add → World → Background map (the last)
+    (argv,) = folder["ran"]
+    assert argv[:3] == ["basemap", "--area", "world"] and "--outline" not in argv
+    assert argv[argv.index("--size") + 1] == str(140 * 10**9)
+    assert "140 GB" in capsys.readouterr().err
+
+
+def test_no_network_no_background_map_offered(folder, capsys, monkeypatch):
+    monkeypatch.setattr(maps.extract, "latest_build", lambda: None)
+    menu(folder, "1\n2\n4\n\n\n")
+    shown = capsys.readouterr().err
+    assert "can't reach Protomaps" in shown and "Nothing to add there." in shown

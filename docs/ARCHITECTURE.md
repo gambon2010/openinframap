@@ -199,8 +199,8 @@ steps → Tegola (vector tiles) → the frontend.
     label), `schema_hash` (the fingerprint exports carry), and what building and
     importing share: `fresh_database` (My layers and extra data kept),
     `put_back_my_layers`, `restart_map_services`;
-  - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap` (also cutting the
-    background map: `download_basemap`), `geofabrik` (the index, region lookups,
+  - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap` (`select_basemap`: the
+    frontend pointed at the backend's background map), `geofabrik` (the index, region lookups,
     extracts), `satellite`.
 - **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
   data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
