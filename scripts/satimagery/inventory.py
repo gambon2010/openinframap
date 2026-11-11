@@ -14,6 +14,7 @@ import fcntl
 import importlib
 import json
 import os
+import time
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
@@ -107,13 +108,27 @@ def scan(folder: Path) -> list[Entry]:
                     unit=job["unit"],
                     file=job["work"],
                     edition=job["edition"],
-                    status="running" if busy else "stopped",
+                    status="running"
+                    if busy or written_lately(folder / job["work"])
+                    else "stopped",
                     reason=job["reason"],
                     have=job["have"],
                     of=job["of"],
                 )
             )
     return entries
+
+
+# A work folder written to this recently is a download running (even one started
+# without the lock: a second one there would spoil both).
+LATELY_SECONDS = 120
+
+
+def written_lately(work: Path) -> bool:
+    now = time.time()
+    return any(
+        now - f.stat().st_mtime < LATELY_SECONDS for f in work.rglob("*") if f.is_file()
+    )
 
 
 def load(folder: Path) -> list[Entry]:
@@ -179,7 +194,11 @@ class Busy(Exception):
 
 @contextlib.contextmanager
 def lock(folder: Path, what: str):
-    """Held while a download runs; another one meanwhile raises Busy."""
+    """Held while a download runs; another one meanwhile raises Busy. A command
+    the menu runs, holding it, goes ahead (OIM_MAPS_LOCK: the folder)."""
+    if os.environ.get("OIM_MAPS_LOCK") == str(folder.resolve()):
+        yield
+        return
     path = folder / LOCK
     handle = path.open("a+")
     try:

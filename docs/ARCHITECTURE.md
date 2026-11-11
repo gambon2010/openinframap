@@ -215,7 +215,10 @@ steps → Tegola (vector tiles) → the frontend.
     files), stopped jobs, `settings.json`, the one-download lock;
   - `coverage.py`: what's worth offering (zooms another source takes over, areas
     inside areas, what could be freed);
-  - `menu.py`: the questions and the plan;
+  - `maps.py`: the offline maps menu (`satellite.py maps`), its screens through
+    `ui.py`; `extract.py`: the background map from Protomaps;
+  - `menu.py`: the older questions and plan (`choose`, `steps`), still used by
+    the shell scripts;
   - `cli.py`.
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
   source, and `SOURCES`.

@@ -1,8 +1,9 @@
 # Plan: offline maps, one clear menu (satellite, aerial photos, background map)
 
 Status: **agreed** (2026-11-11): no zoom steps for Blue Marble and Sentinel-2 (their
-most, or nothing); aerial photos from zoom 17, more on request. **Steps 1–2 done**
-(2026-11-11): sources as files; the inventory and coverage rules.
+most, or nothing); aerial photos from zoom 17, more on request. **Steps 1–3 done**
+(2026-11-11): sources as files; the inventory and coverage rules; the menu
+(`satellite.py maps`; progress is still each command's own output).
 
 ## Why
 

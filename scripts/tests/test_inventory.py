@@ -2,6 +2,7 @@
 settings) and coverage.py (what's worth offering)."""
 
 import json
+import os
 
 import pytest
 
@@ -77,6 +78,8 @@ def test_the_inventory_is_made_from_the_files(tmp_path):
         work / "BDORTHO_2-0_RVB-0M20_JP2-E080_LAMB93_D033_2024-01-01.7z.001.part"
     ).write_bytes(b"x" * 300)
     (work / "stopped").write_text("server blocked\n")
+    for f in work.iterdir():  # nothing written there lately
+        os.utime(f, (1, 1))
     entries = inventory.load(tmp_path)
     by_file = {e.file: e for e in entries}
     assert set(by_file) == {
@@ -102,6 +105,14 @@ def test_the_inventory_is_made_from_the_files(tmp_path):
     )
     assert job.of == DEPARTEMENTS["33"][1] * SOURCES["fr_ign"].read_per_km2
     assert json.loads((tmp_path / "inventory.json").read_text())
+
+
+def test_a_job_written_to_lately_is_running(tmp_path):
+    # Started without the lock (before there was one): a second download there
+    # would spoil both, so it isn't offered to resume.
+    (tmp_path / ".bdortho-33").mkdir()
+    (tmp_path / ".bdortho-33" / "a.7z.001.part").write_bytes(b"x")
+    assert inventory.scan(tmp_path)[0].status == "running"
 
 
 def test_notes_are_kept_and_files_gone_are_dropped(tmp_path):

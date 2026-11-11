@@ -24,6 +24,7 @@ from .estimate import (
     world_overview_tiles,
     worldcover_cells,
 )
+from .extract import command_basemap
 from .gdal import (
     docker_run,
     pmtiles_header,
@@ -31,11 +32,13 @@ from .gdal import (
     regional_pipeline,
     to_pmtiles,
 )
+from .maps import command_maps
 from .menu import command_choose, command_steps
 from .sources import (
     DETAILED_SOURCES,
     GDAL_IMAGE,
     GIBS_URL,
+    SOURCES,
     TIERS,
     WORLD_BBOX,
     attribution_for,
@@ -387,6 +390,25 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--gdal-image", default=GDAL_IMAGE, help="for 7-Zip, if not here")
     p.add_argument("--tiler-image", default=TILER_IMAGE)
     p.add_argument("--pmtiles-image", default="protomaps/go-pmtiles:v1.28.0")
+    p = sub.add_parser("maps", help="the offline maps menu (what's there, add, remove)")
+    p.add_argument(
+        "--basemap-dir",
+        default=str(Path(__file__).resolve().parents[2] / "data" / "basemap"),
+    )
+    p.add_argument("--index", help="Geofabrik's index (index-v1.json)")
+    p.add_argument("--region", default="", help="the region built")
+    p.add_argument("--source", choices=sorted(SOURCES), help="no questions: add this")
+    p.add_argument("--area", help="with --source: the area (default: the region)")
+    p.add_argument("--units", nargs="+", help="with --source: these units (67 2A...)")
+    p.add_argument("--zoom", type=int, help="with --source: aerial photos to this zoom")
+    p.add_argument("--resume", action="store_true", help="no questions: resume")
+    p.add_argument("--yes", action="store_true", help="start without asking")
+    p = sub.add_parser("basemap", help="cut the background map of an area")
+    p.add_argument("--area", required=True)
+    p.add_argument("--outline", required=True, help="the area's outline (GeoJSON)")
+    p.add_argument("--detail", choices=("full", "reduced"), default="full")
+    p.add_argument("--build", required=True, help="Protomaps' build (20261014.pmtiles)")
+    p.add_argument("--basemap-dir", required=True)
     for name in ("choose", "steps"):
         p = sub.add_parser(name)
         p.add_argument("--plan", required=True, help="the plan file (JSON)")
@@ -469,4 +491,6 @@ def run_command(args) -> None:
         "steps": command_steps,
         "lower-zooms": command_lower_zooms,
         "bdortho": command_bdortho,
+        "maps": command_maps,
+        "basemap": command_basemap,
     }[args.command](args)

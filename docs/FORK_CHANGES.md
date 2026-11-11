@@ -2269,6 +2269,25 @@ shown by `web/src/fork/modules/satellite/`.
   adds anything, and what could be freed (a file inside a bigger one of the same
   source; Sentinel-2's zooms once the photos are downloaded over the whole area),
   never deleted by itself. Tests: `tests/test_inventory.py`.
+- **The menu** (2026-11-11, step 3): `satellite.py maps` (`satimagery/maps.py`),
+  every question through `satimagery/ui.py` (`table`, `choose`, `pick_row`,
+  `codes`, `confirm`). Home: what's there by area and source, jobs stopped or
+  running, free space; Resume · Add · Remove · Settings. Add: an area (the region
+  built, those already there, World, a search) → what it can have (have / add;
+  Sentinel-2 to its most after the coverage rules, no zoom question; "covered by
+  France") → for aerial photos the zoom (default from Settings, 17; sizes kept
+  per zoom) and, for IGN, the départements (Enter: all; `?` lists them in columns,
+  ✓ there, ◐ stopped) → the plan (kept, download, time at the speed cap, room
+  needed while converting; Start? defaults to No when the disk is too small) →
+  the downloads one after the other as `satellite.py`'s own commands, under the
+  lock (`OIM_MAPS_LOCK` lets them through), the rest kept in `queue.json` for
+  Resume. Blue Marble comes with any imagery. Remove shows what could be freed.
+  The background map is cut in Python now too (`satimagery/extract.py`,
+  `satellite.py basemap`). Unattended: `--source fr_ign --units 33 40 --zoom 17
+  --yes`, `--resume --yes`. A work folder written to in the last 2 minutes counts
+  as running (a download started before the lock existed), so it isn't resumed
+  twice. Progress is each command's own output, not yet the plan's one-line bar.
+  Tests: `tests/test_maps.py` (typed answers; the commands recorded).
 
 ## One look for the panels; Settings
 
