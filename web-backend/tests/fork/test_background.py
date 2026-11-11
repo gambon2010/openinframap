@@ -62,8 +62,10 @@ def test_each_tile_from_the_file_that_has_it(client):
     assert got(client, 5, 17, 12) == (200, b"lux")
     # In both: once, from the newest edition.
     assert got(client, 5, 16, 12) == (200, b"border-new")
-    # In none: an empty tile.
+    # In none: an empty tile, never kept by the browser (the area may come later).
     assert got(client, 5, 0, 0)[0] == 204
+    assert client.get("/background/5/0/0.mvt").headers["cache-control"] == "no-store"
+    assert "max-age" in client.get("/background/5/16/11.mvt").headers["cache-control"]
     assert got(client, 9, 0, 0)[0] == 204  # beyond every file's zooms
     assert got(client, 5, 40, 0)[0] == 404  # not a tile
 

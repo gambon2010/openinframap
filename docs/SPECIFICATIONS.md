@@ -230,6 +230,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 10.7d | The printed legend explains what's on the page: the key's rows for the infrastructure there; My layers by layer name, each item with its own picture (graphics drawn small). | ✅ (2026-11-05) |
 | 10.9 | Buildings: show building outlines on the map (a layer to switch on); copy chosen buildings' outlines into My layers. | 🗂 (asked 2026-11-05) |
 | 10.11 | Feature statuses as layer information (a side's or team's own assessment), not one global state. The old status system was removed (2026-11-06); something simpler is to be designed and rebuilt. | 🗂 (asked 2026-11-06) |
+| 10.12 | Critical infrastructure people tend to miss, as map layers: airports, ports, military sites, food (distribution centres, wholesale markets, silos), health and emergency (hospitals, fire, ambulance, police), fuel depots and storage tanks, transport chokepoints (bridges, tunnels, rail yards, container terminals), digital (IXPs, satellite ground stations), dams, wastewater plants, landfills. From OSM (new imposm mapping, rebuild) and open data (extra data). Not HTA/BT poles. See also 7.10, 8.6. | 🗂 (asked 2026-10-15; listed 2026-11-11) |
 
 ## 11. Quality
 

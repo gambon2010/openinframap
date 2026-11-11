@@ -146,9 +146,10 @@ async def background_tile(request: Request) -> Response:
     if not (0 <= z <= 22 and 0 <= x < 2**z and 0 <= y < 2**z):
         return Response(status_code=404)
     found = await run_in_threadpool(ARCHIVES.tile, z, x, y)
-    headers = {"Cache-Control": f"max-age={CACHE_SECONDS}"}
     if not found:
-        return Response(status_code=204, headers=headers)
+        # Never kept by the browser: the area may be downloaded a minute later.
+        return Response(status_code=204, headers={"Cache-Control": "no-store"})
+    headers = {"Cache-Control": f"max-age={CACHE_SECONDS}"}
     data, archive = found
     if archive.header["tile_compression"] == Compression.GZIP:
         headers["Content-Encoding"] = "gzip"

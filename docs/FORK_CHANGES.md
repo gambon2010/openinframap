@@ -388,7 +388,9 @@ picked up again when they change) answers each tile from the first
 `data/basemap/<area>.pmtiles` that has it: newest Protomaps edition first (from
 `<area>.json`), `world` last. A border tile is in both neighbours' files, the same
 tile from the same edition: sent once, nothing drawn twice. None has it: 204 (an
-empty tile). `pmtiles serve` can't do "first file that has it", and it's
+empty tile; `no-store`, so a browser never keeps it: an area downloaded later
+would otherwise stay blank there for an hour, as happened while France's was
+downloading). `pmtiles serve` can't do "first file that has it", and it's
 Protomaps' program, so it isn't changed: the Compose service is renamed
 `satellite` and serves the satellite imagery only (gate `/satellite/`).
 `select_basemap` points `VITE_BASEMAP_URL` at the backend whenever any background
