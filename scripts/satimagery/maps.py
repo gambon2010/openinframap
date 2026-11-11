@@ -590,6 +590,14 @@ class Maps:
         if not jobs:
             return 0
         room = self.show_plan(jobs)
+        if self.args.queue_only:
+            # build-region.sh: every question first, the downloads after the build.
+            if ui.confirm("Download it after the build?", default=room):
+                queued = self.queue()
+                seen = {tuple(j.argv) for j in queued}
+                self.save_queue(queued + [j for j in jobs if tuple(j.argv) not in seen])
+                ui.say("Added to the downloads after the build.")
+            return 0
         if not (self.args.yes or ui.confirm("Start?", default=room)):
             return 0
         return self.run(jobs)
@@ -713,6 +721,8 @@ class Maps:
 
     def unattended(self) -> int:
         args = self.args
+        if args.queued:
+            return self.start(self.queue())
         if args.resume:
             return self.start(self.resume_jobs())
         source = SOURCES[args.source]
@@ -769,6 +779,6 @@ def work_zoom(work: Path) -> int | None:
 
 def command_maps(args) -> None:
     maps = Maps(args)
-    if args.source or args.resume:
+    if args.source or args.resume or args.queued:
         sys.exit(maps.unattended())
     maps.home()

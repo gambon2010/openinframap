@@ -7,13 +7,16 @@ set -euo pipefail
 #
 #   bash scripts/satellite.sh
 #
-# Asks what you want, with sizes (the same questions as build-region.sh): NASA
-# Blue Marble for the whole world, Sentinel-2 10 m for this region, another
-# country or the whole world, and aerial photos (8 to 60 cm) where a country
-# publishes them. Downloads into data/basemap/ and points the map at everything
-# there (Settings → Background → Satellite). Your map data and your own layers
-# are left as they are; the frontend needs a restart to show new imagery. A
-# download stopped half-way goes on where it stopped when run again.
+# The offline maps menu (the same as build-region.sh's): what's there, then
+# Resume, Add, Remove, Settings. Add offers, for an area (this region, another
+# country, the world), NASA Blue Marble, Sentinel-2 10 m, aerial photos (8 to 60
+# cm) where a country publishes them, and the background map, with sizes; only
+# what isn't there yet or pointless. Downloads into data/basemap/ and points the
+# map at everything there (Settings → Background → Satellite). Your map data and
+# your own layers are left as they are; the frontend needs a restart to show new
+# imagery. A download stopped half-way goes on with Resume.
+# The options below skip the menu (the older questions' presets); for the menu
+# without questions: python3 scripts/satellite.py maps --help.
 #
 #   --satellite MODE           overview (the world only), regional (Sentinel-2)
 #   --area ID                  Sentinel-2 / photos for this Geofabrik region, or
@@ -42,7 +45,7 @@ while [[ $# -gt 0 ]]; do
         --zoom)               SATELLITE_ZOOM="${2:?--zoom needs 9 to 13}"; shift 2 ;;
         --sources)            SATELLITE_SOURCES="${2:?--sources needs source ids}"; shift 2 ;;
         --yes|-y)             ASSUME_YES=1; shift ;;
-        -h|--help)            sed -n '4,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)            sed -n '4,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)                    die "Unknown option: $1" ;;
     esac
 done
@@ -72,9 +75,17 @@ ok "Region: $REGION_NAME"
 # Outlines come from Geofabrik's index (kept from the build; refreshed daily).
 fetch_geofabrik_index || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
 
-choose_satellite "$REGION_ID"
-# Nothing new chosen: older imagery is still brought up to date (download_satellite).
-[[ -f "$SATELLITE_PLAN" ]] || info "Nothing new to download."
+if [[ -z "$SATELLITE_MODE" ]]; then
+    # The offline maps menu: what's there, Resume, Add, Remove, Settings; it
+    # downloads itself.
+    python3 -I "$REPO_ROOT/scripts/satellite.py" maps --basemap-dir "$BASEMAP_DIR" \
+        --index "$GEOFABRIK_INDEX" --region "$REGION_ID" || warn "Stopped: Resume goes on from there."
+    select_basemap "$REGION_ID"
+else
+    choose_satellite "$REGION_ID"
+    # Nothing new chosen: older imagery is still brought up to date (download_satellite).
+    [[ -f "$SATELLITE_PLAN" ]] || info "Nothing new to download."
+fi
 download_satellite "$REGION_ID"
 echo ""
 ok "Done. Restart the frontend (Ctrl+C in its window, then bash scripts/start.sh) and"

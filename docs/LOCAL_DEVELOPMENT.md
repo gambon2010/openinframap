@@ -214,12 +214,45 @@ map data. Unattended: `--basemap full`, `--basemap reduced` or `--basemap none`.
 
 ## Satellite imagery (offline)
 
-`build-region.sh` offers satellite imagery after the background map. To add it to
-the region you already have, without rebuilding (your map data and layers stay):
+One menu for offline maps (satellite imagery, aerial photos, background maps), in
+`build-region.sh` (after the background map; what you choose is downloaded after
+the build) and on its own, for the region you already have, without rebuilding
+(your map data and layers stay):
 
 ```bash
-bash scripts/satellite.sh      # the same questions; then restart the frontend
+bash scripts/satellite.sh      # the menu; then restart the frontend
 ```
+
+```
+Offline maps                                        273 GB free
+
+ Area         Source              zoom      size
+ World        Blue Marble 500 m   0–8     285 MB
+ France       Sentinel-2 10 m     5–13    512 MB
+ France       IGN 20 cm           12–17   1.3 GB   2/96 départements
+
+ 1 Resume   2 Add   3 Remove   4 Settings      Enter: quit
+```
+
+- **Add**: an area (the region built, one you have, the world, or a search), then
+  what it can have, with what's there and what's left. Only what makes sense is
+  offered: Sentinel-2 stops at zoom 11 where aerial photos take over at 12 ("IGN
+  from 12"); an area inside one you have to the same zoom isn't offered again.
+  Blue Marble and Sentinel-2 come at their most (no zoom question); aerial photos
+  ask the zoom (17 by default, 18 and 19 shown with their sizes), IGN also which
+  départements (Enter: all; `?` lists them, ✓ there, ◐ stopped). Then the plan
+  (kept, download, time, room needed) and *Start?*.
+- **Resume**: a download stopped (no connection, the server blocking, Ctrl+C)
+  goes on from where it was.
+- **Remove**: shows what could be freed (a file another one covers).
+- **Settings**: a speed cap (MB/s) and the aerial photos' usual zoom, kept in
+  `data/basemap/settings.json`.
+
+One download runs at a time; a second window shows it instead of starting another.
+What's in `data/basemap/` is listed in `data/basemap/inventory.json`, made from the
+files themselves each time (copy the folder and it comes along). Unattended:
+`python3 scripts/satellite.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
+or `--resume --yes`.
 
 It's shown with
 **Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
@@ -232,7 +265,7 @@ Three kinds, each adding detail to the one below (sizes are what's kept on disk)
 |---|---|---|
 | NASA Blue Marble, 500 m, to zoom 8 | the whole world, one file for every region (`world.sat-overview.pmtiles`), downloaded once | ~330 MB, about an hour |
 | Sentinel-2 10 m, cloud-free composite (2021), zoom 7 to 12 or 13 (Blue Marble further out) | the region you built, **another country or region** (searched by name), or **the whole world** | France to 12: ~200 MB (reads ~13 GB from ESA); to 13: ~800 MB (reads ~51 GB) |
-| Aerial photos, 8 to 60 cm, zoom 14 to 15/16/17 (France: to 19) | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
+| Aerial photos, 8 to 60 cm, from zoom 12 (17 by default; France: to 19) | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
 
 The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
 
@@ -271,16 +304,13 @@ parts together): `OIM_MAX_RATE=10 bash scripts/satellite.sh`, or `--max-rate 10`
 département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
 there to the zoom asked is skipped, a higher zoom makes it again.
 
-**Adding more detail later**: download to zoom 15 now, run `bash scripts/satellite.sh`
-again later and choose a higher zoom. The file is made again up to it (the zooms
-below are about a third more work), and what you have stays until the new one is
-finished; the menu shows what you have and offers only more. The menu says what
-each zoom shows (15: streets and blocks, 16: houses, 17: cars) and the free space;
-while a file is finished it needs up to twice its size on disk.
+**Adding more detail later**: run `bash scripts/satellite.sh` again, Add, and
+choose a higher zoom. The file is made again up to it, and what you have stays
+until the new one is finished; the menu shows what you have and offers only more.
 
 Everything in `data/basemap/` is shown, whatever area it's of; past a file's last
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
-shows. Copy `data/basemap/` along with an export to take it with you. Unattended:
+shows. Copy `data/basemap/` along with an export to take it with you. The older unattended options skip the menu:
 `--satellite none|overview|regional|regional13` and `--satellite-detailed 15|16|17|none`
 (both scripts); `satellite.sh` also takes `--area ID|world`, `--zoom 9-13` (the last zoom) and
 `--sources "ID ..."` (and `--yes` needs `--satellite`).

@@ -402,6 +402,12 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--units", nargs="+", help="with --source: these units (67 2A...)")
     p.add_argument("--zoom", type=int, help="with --source: aerial photos to this zoom")
     p.add_argument("--resume", action="store_true", help="no questions: resume")
+    p.add_argument("--queued", action="store_true", help="no questions: the queue")
+    p.add_argument(
+        "--queue-only",
+        action="store_true",
+        help="add to the queue, don't download (build-region.sh: questions first)",
+    )
     p.add_argument("--yes", action="store_true", help="start without asking")
     p = sub.add_parser("basemap", help="cut the background map of an area")
     p.add_argument("--area", required=True)

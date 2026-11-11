@@ -106,8 +106,8 @@ select_satellite() {
     fi
 }
 
-# choose_satellite REGION — the questions (scripts/satellite.py choose): what to
-# download, written to a plan. Presets, no questions: SATELLITE_MODE (none, keep,
+# choose_satellite REGION — the questions: the offline maps menu (satellite.py
+# maps), queuing; with presets, the older plan (satellite.py choose). Presets: SATELLITE_MODE (none, keep,
 # overview, regional, regional13), SATELLITE_DETAILED (15-17, none),
 # SATELLITE_AREA_ID (an area other than REGION: a Geofabrik id, or world),
 # SATELLITE_ZOOM (Sentinel-2's last zoom), SATELLITE_SOURCES (aerial photo sources).
@@ -130,17 +130,27 @@ choose_satellite() {
         [[ -n "${SATELLITE_SOURCES:-}" ]] && args+=(--sources "$SATELLITE_SOURCES")
         [[ "$SATELLITE_MODE" == none ]] && return 0
     else
-        section "Satellite imagery"
-        if region_satellite "$region"; then
-            ok "Already downloaded: $(satellite_summary "$region")."
-            if ! ask_yes_no "Download more (or again)?" n; then
-                SATELLITE_MODE=keep
-                return 0
-            fi
-        fi
+        # The offline maps menu (satellite.py maps), queuing what's chosen: it's
+        # downloaded after the build (download_satellite), every question first.
+        section "Offline maps (satellite imagery, aerial photos)"
+        python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only \
+            --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" --region "$region" \
+            || warn "The offline maps menu stopped; nothing more is downloaded."
+        SATELLITE_MENU=1
+        return 0
     fi
     python3 -I "$REPO_ROOT/scripts/satellite.py" choose "${args[@]}" \
         || { warn "Couldn't work out the satellite imagery; skipping it."; rm -f "$SATELLITE_PLAN"; }
+}
+
+# run_maps_queue — what the offline maps menu queued (satellite.py maps
+# --queued: one after the other, under its lock).
+run_maps_queue() {
+    [[ -f "$BASEMAP_DIR/queue.json" ]] || return 0
+    section "Downloading the offline maps chosen..."
+    python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queued --yes \
+        --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" \
+        || warn "What was downloaded is kept. To go on: bash scripts/satellite.sh, then Resume."
 }
 
 # download_satellite REGION — download what choose_satellite planned, all at once
@@ -167,6 +177,9 @@ download_satellite() {
         [[ "$stopped" == 0 ]] || warn "A server stopped answering this computer (see above): try it again in a few hours."
         [[ "$SAT_OK" == 1 ]] || warn "What was downloaded is kept. Run it again to go on: bash scripts/satellite.sh"
         rm -f "$SATELLITE_PLAN"
+    fi
+    if [[ "${SATELLITE_MENU:-0}" == 1 ]]; then
+        run_maps_queue
     fi
     catch_up_lower_zooms
     select_satellite "$region"

@@ -179,3 +179,17 @@ def test_one_download_at_a_time(folder, capsys):
         menu(folder, "", "--source", "fr_ign", "--yes")
     assert "Another download is running: IGN 3 départements" in capsys.readouterr().err
     assert folder["ran"] == []
+
+
+def test_build_region_asks_first_and_downloads_after(folder, capsys):
+    # During the build's questions: queued, nothing run.
+    menu(folder, "1\n1\n3\n\ny\n\n", "--queue-only")
+    assert "Download it after the build?" in capsys.readouterr().err
+    assert folder["ran"] == []
+    # Asked twice: queued once.
+    menu(folder, "1\n1\n3\n\ny\n\n", "--queue-only")
+    assert len(json.loads((folder["dir"] / maps.QUEUE).read_text())) == 1
+    # After the build.
+    menu(folder, "", "--queued", "--yes")
+    assert [a[:3] for a in folder["ran"]] == [["bdortho", "--dept", "68"]]
+    assert not (folder["dir"] / maps.QUEUE).exists()

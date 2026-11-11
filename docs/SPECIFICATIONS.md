@@ -104,7 +104,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 5.24 | In high contrast, roads visible over towns (white with a grey edge; footpaths grey). | ✅ (2026-11-06) |
 | 5.25 | Aerial photos shown from zoom 12 (were 14); files made before get the lower zooms without downloading. | ✅ (2026-11-06) |
 | 5.27 | A download speed cap for IGN's photos (e.g. 10 MB/s, all parts together). | ✅ (2026-11-11) |
-| 5.28 | Offline maps as one clear menu (docs/plans/offline-maps.md): sources as files, an inventory of what is there, no pointless offers (coverage rules), short screens; Blue Marble and Sentinel-2 at their most or nothing, aerial photos from zoom 17. | 🔄 (2026-11-11: steps 1–3 of 4 done: sources as files, the inventory and coverage rules, the menu `satellite.py maps`) |
+| 5.28 | Offline maps as one clear menu (docs/plans/offline-maps.md): sources as files, an inventory of what is there, no pointless offers (coverage rules), short screens; Blue Marble and Sentinel-2 at their most or nothing, aerial photos from zoom 17. | ✅ (2026-11-11; not yet: a one-line progress bar, Update for newer IGN editions) |
 
 ## 6. Grid connections (power routing)
 

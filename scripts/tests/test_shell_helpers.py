@@ -398,3 +398,33 @@ def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
     value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
     assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value
+
+
+def test_the_build_asks_with_the_offline_maps_menu_and_downloads_after(tmp_path):
+    # Every question first (the menu, queuing), the downloads after the build.
+    calls = tmp_path / "calls"
+    out = bash(
+        f"""
+python3() {{
+    if [[ "$*" == *satellite.py\\ maps* ]]; then
+        echo "maps $*" >> "{calls}"
+        [[ "$*" == *--queue-only* ]] && echo '[]' > "$BASEMAP_DIR/queue.json"
+    elif [[ "$*" == *satellite.py* ]]; then :
+    else command python3 "$@"; fi
+}}
+docker() {{ :; }}
+select_satellite() {{ echo "select $1" >> "{calls}"; }}
+SATELLITE_MODE="" ASSUME_YES=0
+choose_satellite france 2>&1
+echo "--- the build ---" >> "{calls}"
+download_satellite france 2>&1
+""",
+        BASEMAP_DIR=str(tmp_path),
+        GEOFABRIK_INDEX="index.json",
+    )
+    made = calls.read_text().splitlines()
+    assert "--queue-only" in made[0] and "--region france" in made[0]
+    assert made[1] == "--- the build ---"
+    assert "--queued --yes" in made[2]
+    assert made[3] == "select france"
+    assert "Offline maps" in out

@@ -2288,6 +2288,14 @@ shown by `web/src/fork/modules/satellite/`.
   as running (a download started before the lock existed), so it isn't resumed
   twice. Progress is each command's own output, not yet the plan's one-line bar.
   Tests: `tests/test_maps.py` (typed answers; the commands recorded).
+- **The scripts use the menu** (2026-11-11, step 4): `satellite.sh` without
+  options opens it (it downloads itself; then the map is pointed at what's there);
+  `build-region.sh` opens it with `--queue-only` (`choose_satellite`): what's
+  chosen goes in `queue.json` and is downloaded after the build (`run_maps_queue`
+  in `download_satellite`, `satellite.py maps --queued --yes`), so every question
+  still comes first. The older options (`--satellite`, `--satellite-detailed`,
+  `--area`, `--zoom`, `--sources`) keep the older plan (`satellite.py choose` /
+  `steps`). The build's own background map question is still there too.
 
 ## One look for the panels; Settings
 
