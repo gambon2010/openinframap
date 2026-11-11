@@ -403,7 +403,12 @@
       "already": "Already in this layer.",
       "done": "Copied. Click more features to copy them, or Esc to stop.",
       "building": "Building",
-      "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 15 or closer)"
+      "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 15 or closer)",
+      "into": "Copy into “{{layer}}”",
+      "into-new": "Copy into My layers",
+      "into-help": "Into the layer you draw into (My layers)",
+      "already-in": "Already in “{{layer}}”",
+      "copied-into": "Copied into “{{layer}}”"
     },
     "group": {
       "who": "Who",
@@ -715,5 +720,13 @@
     "title": "Background",
     "zooms": "Imagery up to zoom {{zoom}}.",
     "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos."
+  },
+  "buildings": {
+    "height": "Height",
+    "starts-at": "Starts at",
+    "area": "Area (on the ground)",
+    "part": "Part of a building",
+    "building": "Building",
+    "source": "From the background map (OpenStreetMap, via Protomaps)."
   }
 }

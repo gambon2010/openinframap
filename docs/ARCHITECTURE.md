@@ -30,7 +30,8 @@ structure", "Merging from upstream"). Upstream imports only three fork files:
 index.ts, types.ts, config.ts   the module registry and hooks, the types, the URLs
 core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references),
            geo.ts (metres per pixel, degrees/radians), math.ts (clamp), colour.ts
-           (hex colours), map-style.ts (geometry-type filters), storage.ts (this
+           (hex colours), map-style.ts (geometry-type filters; clickableArea and hitLine:
+           areas clickable inside, thin lines easy to click), storage.ts (this
            browser's storage, read and written safely), author.ts, map-data.ts,
            buildings.ts (the background map's buildings: their layer, a building's
            pieces joined across tiles)
@@ -258,6 +259,11 @@ steps → Tegola (vector tiles) → the frontend.
 2. Check that it answers tile requests and allows offline copies.
 
 The credit reaches the map by itself (`VITE_SATELLITE_TIERS`).
+
+**Something clickable on the map:** an area clickable anywhere inside, or a thin line
+easy to hit: `clickableArea` / `hitLine` in `core/map-style.ts` (their `<id>_hit`
+layer is what clicks find). A colour that changes over satellite imagery:
+`followBackground` (`services/background.ts`).
 
 **A panel on the left:** `leftColumn.add(element, order)` from `ui/left-column.ts`.
 Pick an order between the existing ones (`LEFT_ORDER`). To show details, use

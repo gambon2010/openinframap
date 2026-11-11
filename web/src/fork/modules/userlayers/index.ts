@@ -8,6 +8,10 @@ import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
 import { Renderer } from './map/render.ts'
 import { Tools } from './map/tools.ts'
+import { copyFeature } from './map/tools/copy.ts'
+import { addDetailsExtra } from '../../ui/details.ts'
+import { el, mount } from 'redom'
+import { t } from '../../core/i18n.ts'
 import { Workspace } from './ui/workspace.ts'
 import { Interactions } from './map/interactions.ts'
 import { addLegend } from '../../services/legend.ts'
@@ -38,6 +42,32 @@ const userlayers: ForkModule = {
     // Clicks My layers handles (its features, or a tool in use) don't open
     // upstream's info popups.
     mapMode.claimClicks((e) => tools.capturesClick(e))
+
+    // A map feature's details (a line, a substation, a building...): copy it into
+    // the layer you draw into, as the copy tool does.
+    addDetailsExtra((feature, content) => {
+      if (!feature.sourceLayer || feature.layer.id.startsWith('user_')) return
+      const active = store.activeLayer ? store.layers.get(store.activeLayer) : undefined
+      const into = active && store.view.canEdit(active) ? active.name : null
+      const button = el(
+        'button.oim-button',
+        into
+          ? t('userlayers.copy.into', 'Copy into “{{layer}}”', { layer: into })
+          : t('userlayers.copy.into-new', 'Copy into My layers'),
+        { type: 'button', title: t('userlayers.copy.into-help', 'Into the layer you draw into (My layers)') }
+      ) as HTMLButtonElement
+      button.disabled = !tools.enabled
+      button.onclick = async () => {
+        const done = await copyFeature(tools, feature)
+        const layer = store.layers.get(tools.activeLayer())
+        button.textContent =
+          done === 'already'
+            ? t('userlayers.copy.already-in', 'Already in “{{layer}}”', { layer: layer?.name ?? '' })
+            : t('userlayers.copy.copied-into', 'Copied into “{{layer}}”', { layer: layer?.name ?? '' })
+        button.disabled = true
+      }
+      mount(content, el('div.oim-route-buttons', button))
+    })
 
     store.onChange(() => {
       // While the past is shown (history, a situation), the live layers wait.

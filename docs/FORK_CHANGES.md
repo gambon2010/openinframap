@@ -457,8 +457,7 @@ off by default) draws every building's outline from zoom 15, over the map and ov
 satellite imagery, from the background map already downloaded (Protomaps'
 `buildings` layer): nothing new to fetch. Only zoom 15 tiles hold every building:
 lower zooms keep a few landmarks (central Paris: 5 at zoom 11, 46 at 14, 730 at 15),
-so they aren't shown below 15; a real "large buildings" rule (every building over a
-size, from zoom 11) would need a build step reading them all (asked: not for now).
+so they aren't shown below 15 (large buildings at lower zooms: below).
 The outlines aren't clickable (a click in a town would always land on one): the
 module removes their details handler.
 
@@ -470,6 +469,23 @@ pieces (one per tile, overlapping a little): `fork/core/buildings.ts` joins them
 (Protomaps' building id). Protomaps' ids aren't OpenStreetMap's numbers (checked), so
 no link to OpenStreetMap is kept. Tests: `core/buildings.test.ts`, the copy tool's
 in `map/tools.test.ts`.
+
+**Refined the same day** (asked for): the outlines are **clickable anywhere inside**
+(an invisible fill under them) and open the building's details (height, where it
+starts if it's raised, its area on the ground worked out from the joined outline,
+holes taken out; a "part of a building" for `building_part`). The outline is **white
+over satellite imagery** and dark over the map (`followBackground` in
+`services/background.ts`, which now also tells its listeners when imagery becomes
+known). Every map feature's details have a **"Copy into “<layer>”"** button (the
+layer you draw into), sharing the copy tool's code (`copyFeature`, which says
+whether it copied or found it already there).
+
+**One way to make things clickable** (`core/map-style.ts`): `clickableArea(id, …)`
+(an invisible fill `<id>_hit` and the outline `<id>`) and `hitLine(id, …)` (an
+invisible wide line `<id>_hit`). The extra data's thin power lines and gas pipes,
+made clickable by hand before, use `hitLine` now; buildings use `clickableArea`.
+`groundArea` and `formatArea` moved from My layers' measuring to `core/geo.ts`
+(buildings need them too; measuring re-exports them).
 
 ## Wikidata popups and image cache
 

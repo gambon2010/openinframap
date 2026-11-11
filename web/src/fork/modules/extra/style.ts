@@ -3,6 +3,7 @@
 // substations of the same voltage (the tiles carry a nominal voltage) and like
 // OSM gas pipes, below the OSM layers; popups say where the data comes from.
 import { t } from '../../core/i18n.ts'
+import { hitLine } from '../../core/map-style.ts'
 import { interpolate, zoom } from '../../../style/stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { ExpressionSpecification } from 'maplibre-gl'
@@ -93,14 +94,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       }
     },
     // Gas distribution pipes, like OSM's (style_oim_petroleum.ts), just below them.
-    {
-      id: 'extra_gas_pipeline_hit',
-      zorder: 0.4,
-      source: 'extra',
-      'source-layer': 'extra_pipeline',
-      type: 'line',
-      paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 12 }
-    },
+    hitLine('extra_gas_pipeline', { source: 'extra', sourceLayer: 'extra_pipeline' }, 0.4),
     {
       id: 'extra_gas_pipeline_case',
       zorder: 0.5,
@@ -155,22 +149,20 @@ export default function layers(): LayerSpecificationWithZIndex[] {
     // Invisible and wider than the lines, so thin low-voltage lines are easy to
     // click. Lowest z-order: anything drawn under the pointer is picked first.
     // One per line layer (named after it), so hiding a layer hides its click area.
-    ...(['underground', 'overhead'] as const).map((location): LayerSpecificationWithZIndex => ({
-      id: location === 'underground' ? 'extra_power_line_underground_hit' : 'extra_power_line_hit',
-      zorder: 249,
-      source: 'extra',
-      'source-layer': 'extra_power_line',
-      filter:
-        location === 'underground'
-          ? ['==', ['get', 'location'], 'underground']
-          : ['!=', ['get', 'location'], 'underground'],
-      type: 'line',
-      paint: {
-        'line-color': '#000000',
-        'line-opacity': 0,
-        'line-width': 12
-      }
-    })),
+    ...(['underground', 'overhead'] as const).map((location) =>
+      hitLine(
+        location === 'underground' ? 'extra_power_line_underground' : 'extra_power_line',
+        {
+          source: 'extra',
+          sourceLayer: 'extra_power_line',
+          filter:
+            location === 'underground'
+              ? ['==', ['get', 'location'], 'underground']
+              : ['!=', ['get', 'location'], 'underground']
+        },
+        249
+      )
+    ),
     {
       id: 'extra_power_line_underground',
       zorder: 250,

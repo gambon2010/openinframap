@@ -4,6 +4,7 @@
 // alone or with the map's roads (drawn by modules/satellite, which says here what
 // imagery there is). They meet here: modules don't import each other. Kept in this
 // browser; the map in high contrast at first.
+import type { Map } from 'maplibre-gl'
 import { readText, writeText } from '../core/storage.ts'
 
 export type MapColours = 'original' | 'contrast'
@@ -62,5 +63,27 @@ export const background = {
   /** The satellite module, when it has imagery. */
   offerImagery(offered: Imagery) {
     imagery = offered
+    // The mode kept may be imagery: it shows now.
+    for (const listener of listeners) listener()
   }
+}
+
+/**
+ * A paint property that follows the background: one value over the map, another
+ * over imagery (e.g. dark outlines on the map, white ones on satellite photos).
+ * Applied now and after each change.
+ */
+export function followBackground(
+  map: Map,
+  layerId: string,
+  property: string,
+  values: { map: unknown; imagery: unknown }
+) {
+  const apply = () => {
+    if (!map.getLayer(layerId)) return
+    map.setPaintProperty(layerId, property as any, background.mode() === 'map' ? values.map : values.imagery)
+  }
+  apply()
+  map.on('style.load', apply)
+  background.onChange(apply)
 }

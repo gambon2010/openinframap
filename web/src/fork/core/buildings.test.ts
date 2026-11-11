@@ -31,3 +31,47 @@ describe('buildings', () => {
     expect(joinPieces([{ type: 'Point', coordinates: [0, 0] }])).toBeNull()
   })
 })
+
+describe('a building on the ground', () => {
+  test('its area, a courtyard taken out', async () => {
+    const { outlineArea } = await import('./buildings.ts')
+    // About 100 m × 100 m at 48.86° N, with a 50 m × 50 m courtyard.
+    const dLat = 100 / 111_195
+    const dLng = dLat / Math.cos((48.86 * Math.PI) / 180)
+    const square = (w: number, s: number, size: number) => [
+      [w, s],
+      [w + dLng * size, s],
+      [w + dLng * size, s + dLat * size],
+      [w, s + dLat * size],
+      [w, s]
+    ]
+    const solid = outlineArea({ type: 'Polygon', coordinates: [square(2.33, 48.86, 1)] })
+    expect(solid).toBeGreaterThan(9_900)
+    expect(solid).toBeLessThan(10_100)
+    const courtyard = outlineArea({
+      type: 'Polygon',
+      coordinates: [square(2.33, 48.86, 1), square(2.33 + dLng / 4, 48.86 + dLat / 4, 0.5)]
+    })
+    expect(Math.round(courtyard / 100)).toBe(75)
+  })
+
+  test('a clickable area: an invisible fill under its outline, both found by a prefix', async () => {
+    const { clickableArea } = await import('./map-style.ts')
+    const [hit, outline] = clickableArea(
+      'buildings_outline',
+      { source: 'basemap', sourceLayer: 'buildings', minzoom: 15 },
+      -10,
+      {
+        'line-color': '#000'
+      }
+    )
+    expect(hit).toMatchObject({
+      id: 'buildings_outline_hit',
+      type: 'fill',
+      minzoom: 15,
+      paint: { 'fill-opacity': 0 }
+    })
+    expect(outline).toMatchObject({ id: 'buildings_outline', type: 'line', 'source-layer': 'buildings' })
+    expect(outline.zorder).toBeGreaterThan(hit.zorder)
+  })
+})

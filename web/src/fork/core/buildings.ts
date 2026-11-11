@@ -4,9 +4,15 @@
 // (lower zooms keep a few landmarks), so outlines show from 15.
 import polygonClipping, { type MultiPolygon, type Polygon } from 'polygon-clipping'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
+import { groundArea } from './geo.ts'
 
-/** The outlines' map layer (modules/buildings). */
+/** The outlines' map layer (modules/buildings); its clickable inside is `<id>_hit`. */
 export const BUILDINGS_LAYER = 'buildings_outline'
+/** Every buildings layer's id starts with this (the layer switcher's prefix too). */
+export const BUILDINGS_PREFIX = 'buildings_'
+
+/** Whether a map layer is one of the buildings' (outline, inside, large ones). */
+export const isBuildingLayer = (id: string) => id.startsWith(BUILDINGS_PREFIX)
 export const BUILDINGS_SOURCE = 'basemap'
 export const BUILDINGS_SOURCE_LAYER = 'buildings'
 /** Every building is in the tiles from this zoom. */
@@ -46,4 +52,15 @@ export function buildingOutline(map: Map, id: number): GeoJSON.Polygon | GeoJSON
     .filter((f) => f.id === id)
     .map((f) => f.geometry)
   return joinPieces(pieces)
+}
+
+/** Square metres inside an outline (holes, such as courtyards, taken out). */
+export function outlineArea(outline: GeoJSON.Polygon | GeoJSON.MultiPolygon): number {
+  const polygons = outline.type === 'Polygon' ? [outline.coordinates] : outline.coordinates
+  let total = 0
+  for (const [outer, ...holes] of polygons) {
+    total += groundArea(outer as [number, number][])
+    for (const hole of holes) total -= groundArea(hole as [number, number][])
+  }
+  return total
 }

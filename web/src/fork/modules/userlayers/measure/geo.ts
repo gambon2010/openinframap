@@ -26,20 +26,8 @@ export function pathLength(points: LngLat[]): number {
   return total
 }
 
-/** Square metres inside a ring (closed or not), on the sphere. */
-export function area(ring: LngLat[]): number {
-  const points = ring.length > 1 && same(ring[0], ring[ring.length - 1]) ? ring.slice(0, -1) : ring
-  if (points.length < 3) return 0
-  let sum = 0
-  for (let i = 0; i < points.length; i++) {
-    const [lng1, lat1] = points[i]
-    const [lng2, lat2] = points[(i + 1) % points.length]
-    sum += rad(lng2 - lng1) * (2 + Math.sin(rad(lat1)) + Math.sin(rad(lat2)))
-  }
-  return Math.abs((sum * R * R) / 2)
-}
-
-const same = (a: LngLat, b: LngLat) => a[0] === b[0] && a[1] === b[1]
+/** Square metres inside a ring (core/geo.ts: buildings need it too). */
+export { groundArea as area, formatArea } from '../../../core/geo.ts'
 
 /** The initial bearing from one point to another: degrees from true north, 0–360. */
 export function bearing([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {
@@ -137,14 +125,6 @@ export function parseLength(text: string): number | null {
     found = true
   }
   return found && total > 0 ? total : null
-}
-
-/** "450 m²", "3.2 ha", "12.5 km²", "4,096 km²". */
-export function formatArea(m2: number): string {
-  if (m2 < 10000) return `${Math.round(m2)} m²`
-  if (m2 < 1e6) return `${number(m2 / 10000, 1)} ha`
-  const km2 = m2 / 1e6
-  return `${number(km2, km2 < 100 ? 1 : 0)} km²`
 }
 
 /** "047° (836 mils)": degrees, and NATO mils (6400 to a full turn); with the north
