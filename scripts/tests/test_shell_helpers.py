@@ -386,6 +386,14 @@ def test_sentinel_starts_at_the_same_zoom_in_the_scripts_and_satellite_py():
     assert bash("echo $REGIONAL_FIRST_ZOOM") == str(satellite.TIERS["regional"][0])
 
 
+def test_the_background_maps_zooms_in_the_scripts_and_its_source_file():
+    from satimagery.sources import SOURCES
+
+    protomaps = SOURCES["protomaps"]
+    assert bash("echo $REDUCED_MAXZOOM") == str(protomaps.sizes["reduced_zoom"])
+    assert bash("echo $PROTOMAPS_BASE") == protomaps.address
+
+
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
     value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))

@@ -1866,7 +1866,7 @@ copy of it behind every second.
 ## Sentinel-2 from zoom 7 (2026-11-06)
 
 For every area, Sentinel-2 is made from zoom 7 and shown from 7 at the earliest
-(`TIERS["regional"]` in sources.py; `REGIONAL_FIRST_ZOOM` in lib/satellite.sh, which
+(`TIERS["regional"]` from `sources/sentinel2.py`; `REGIONAL_FIRST_ZOOM` in lib/satellite.sh, which
 clamps any file's range, a test keeping the two equal); further out, Blue Marble.
 At zoom 5 or 6 a country is a patch of a few dozen pixels: not worth it. France's
 file, made when it started at 5, keeps its zooms 5 and 6 unused (a few MB). Below:
@@ -2241,6 +2241,17 @@ shown by `web/src/fork/modules/satellite/`.
   `--public-url` (`docker-compose.override.yml`).
 - **A lost connection doesn't crash a download** (2026-11-06): see "Setup scripts
   tidied; safe downloads" below.
+- **Sources as files** (2026-11-11, `docs/plans/offline-maps.md` step 1): each
+  source is one file in `scripts/satimagery/sources/` with a `SOURCE`
+  (`sources/source.py`: short name, credit, layer, how it's fetched, first and last
+  zoom, metres per pixel, coverage, units, measured sizes): Blue Marble,
+  Sentinel-2, the 14 aerial sources and the background map (Protomaps). `SOURCES`
+  reads the folder; `DETAILED_SOURCES`, `TIERS` and the size constants are made
+  from it, so the older code is unchanged. IGN's sizes moved from `bdortho.py` to
+  `sources/fr_ign.py`. `tests/test_sources.py` checks every source keeps the
+  contract (a source never made past the zoom where its pixels only stretch:
+  `finest_zoom`); a shell test checks `REDUCED_MAXZOOM` and `PROTOMAPS_BASE` match
+  `protomaps.py`. A country's photos are now one new file.
 
 ## One look for the panels; Settings
 

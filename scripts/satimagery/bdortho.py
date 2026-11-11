@@ -30,7 +30,7 @@ import netsafe
 from .departements import DEPARTEMENTS
 from .download import MBTiles
 from .gdal import docker_run, pmtiles_zooms, to_pmtiles
-from .sources import DETAILED_SOURCES, EARTH_CIRCUMFERENCE_M, TIERS, USER_AGENT
+from .sources import DETAILED_SOURCES, EARTH_CIRCUMFERENCE_M, SOURCES, TIERS, USER_AGENT
 from .tiles import tile_bounds
 
 LISTING = "https://data.geopf.fr/telechargement/resource/BDORTHO"
@@ -54,11 +54,9 @@ TILE_THREADS = min(8, os.cpu_count() or 8)
 # GDAL 3.11 for `gdal raster tile` (every core, every zoom); Sentinel-2 stays on
 # sources.GDAL_IMAGE.
 TILER_IMAGE = "ghcr.io/osgeo/gdal:alpine-small-3.11.4"
-# Sizes, measured on Bas-Rhin (2024, 4,761 km², mostly countryside): the archive
-# per km² (22.8 GB), and a WebP tile on average (1.17 GB to zoom 17: 7.5 KB; Paris,
-# all city, 11 KB).
-ARCHIVE_BYTES_PER_KM2 = 4_800_000
-WEBP_TILE_BYTES = 8_000
+# Sizes (sources/fr_ign.py): the archive per km², and a WebP tile on average.
+ARCHIVE_BYTES_PER_KM2 = SOURCES["fr_ign"].read_per_km2
+WEBP_TILE_BYTES = SOURCES["fr_ign"].tile_bytes
 
 # --- Which département ---------------------------------------------------------
 

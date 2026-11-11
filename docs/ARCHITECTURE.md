@@ -204,7 +204,9 @@ steps → Tegola (vector tiles) → the frontend.
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,
   `NET_CHECK_EVERY`).
 - **`satellite.py`** is the command line for `satimagery/`:
-  - `sources.py`: Blue Marble, Sentinel-2, `DETAILED_SOURCES`, credits;
+  - `sources/`: one file per source (`SOURCE`, fields in `source.py`): Blue
+    Marble, Sentinel-2, the aerial photos by country, the background map; read into
+    `SOURCES` (and the older `DETAILED_SOURCES`, `TIERS`), credits;
   - `tiles.py`, `estimate.py`, `download.py` (tiles into MBTiles, through
     `netsafe`), `gdal.py`;
   - `bdortho.py`: France's photos as IGN's files, one département at a time
@@ -236,8 +238,10 @@ steps → Tegola (vector tiles) → the frontend.
 2. Add its tables or views in `schema/extra.sql`, and draw it in `modules/extra/`.
 
 **A country's aerial photos:**
-1. Add an entry in `DETAILED_SOURCES` (`satimagery/sources.py`): URL or WMS,
-   region, resolution, credit.
+1. Add a file in `satimagery/sources/` (copy one of the same kind, e.g.
+   `lu_geoportail.py` for a tile server, `be_wallonia.py` for a WMS): its `SOURCE`
+   with the URL, region, metres per pixel, last zoom, credit.
+   `tests/test_sources.py` checks it.
 2. Check that it answers tile requests and allows offline copies.
 
 The credit reaches the map by itself (`VITE_SATELLITE_TIERS`).

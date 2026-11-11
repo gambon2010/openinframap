@@ -6,7 +6,8 @@
 # Offline background maps are cut from Protomaps' daily world build.
 PROTOMAPS_BUILDS_URL="https://build-metadata.protomaps.dev/builds.json"
 PROTOMAPS_BASE="https://build.protomaps.com"
-# "Reduced detail": up to this zoom (streets and places, no buildings).
+# "Reduced detail": up to this zoom (streets and places, no buildings); the same
+# as satimagery/sources/protomaps.py (a test checks).
 REDUCED_MAXZOOM=13
 
 basemap_image() {
