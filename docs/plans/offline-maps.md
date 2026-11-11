@@ -1,6 +1,7 @@
 # Plan: offline maps, one clear menu (satellite, aerial photos, background map)
 
-Status: **proposed** (2026-11-11), to be agreed before work starts.
+Status: **agreed** (2026-11-11): no zoom steps for Blue Marble and Sentinel-2 (their
+most, or nothing); aerial photos from zoom 17, more on request.
 
 ## Why
 
@@ -38,8 +39,13 @@ has them.
 
 **Useful up to** is the zoom past which a source adds nothing: Sentinel-2's pixel
 is 10 m; zoom 13 is ~13 m a pixel in France (finer near the equator), so 13 is its
-end (14 would only stretch it). That's why it stops there, and 12 is offered as a
-cheaper choice (a quarter of the size). Blue Marble ends at 8.
+end (14 would only stretch it). Blue Marble ends at 8.
+
+**Zooms offered** (no steps to choose between where they'd only confuse):
+- Blue Marble and Sentinel-2: their most (useful up to, after the coverage rules
+  below), or nothing. One line, one size, yes or no.
+- Aerial photos: zoom 17 (cars and small details), or their own most if lower; more
+  (18, 19) offered as extras with their sizes, for a few units rather than a country.
 
 ### 2. The inventory: what's there
 
@@ -71,16 +77,17 @@ Zooms stack: Blue Marble 0–8, Sentinel-2 7–13, aerial photos 12–17/19. A c
 source is only worth its zooms where no finer one takes over:
 
 - **Where aerial photos cover an area** (IGN: all of France, available even if not
-  downloaded yet), Sentinel-2 is offered **to zoom 11 only** (12+ is IGN's). Its
-  line says so: `z12–13: IGN shows there`.
+  downloaded yet), Sentinel-2's most is **zoom 11** (12+ is IGN's). Its line says
+  so: `to 11 (IGN from 12)`.
 - **Partly covered** (France while IGN is half done): Sentinel-2 is still offered
   to 11; the gaps show Sentinel-2 at 11 stretched until IGN arrives there, rather
   than downloading zooms that become useless.
 - **Areas inside areas**: Sentinel-2 of Alsace when France is there to the same
   zoom: not offered (`covered by France`); to a higher zoom: offered for the
   difference.
-- **The world**: offered per zoom with its size (it's 190 GB at 13); a country's
-  own file can go further where wanted.
+- **The world**: Blue Marble (0–8, 285 MB) and Sentinel-2 for the whole world at
+  its most (13, ~190 GB, days to make): shown with its size so the choice is clear;
+  a country's own Sentinel-2 is the usual choice.
 
 Already-downloaded files that coverage makes redundant (this France file's zooms
 12–13) are shown as *could free 400 MB* in Remove, never deleted by themselves.
@@ -118,12 +125,15 @@ France                              have        add
  3 Background map                   —           1.2 GB
 ```
 
+Sentinel-2 or Blue Marble picked: no zoom question, straight to the plan (`to 13`,
+or `to 11` where aerial photos take over).
+
 → a source with units: its zoom, then which units:
 
 ```
-IGN zoom     15    16   [17]    18     19
-kept, GB      8    33   132    528   2110        download 2.6 TB
-> 17
+IGN zoom    [17]    more: 18    19
+kept, GB    132           528  2110        download 2.6 TB
+> 
 
 Départements (94 left)   [Enter: all]   or codes: 33 40 2A   ? : list
 > 
