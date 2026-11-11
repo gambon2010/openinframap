@@ -1,9 +1,12 @@
 // Fork: My layers' map tools (tools.ts): copying the map feature under a click (a
 // line, a substation, a site...) into the active layer, with its full geometry from
-// the backend; once per layer.
-import type { MapMouseEvent } from 'maplibre-gl'
+// the backend; once per layer. A building (the Buildings layer, switched on) is
+// copied as an ordinary area: its outline, joined from the tiles it's cut into.
+import type { MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl'
 import { t } from '../../../../core/i18n.ts'
 import { sourceGeometry } from '../../../../core/map-data.ts'
+import { BUILDINGS_LAYER, buildingId, buildingOutline } from '../../../../core/buildings.ts'
+import { withNewColour } from '../new-colour.ts'
 import type { FeatureProps } from '../../model/model.ts'
 import type { ToolsContext } from '../tools.types.ts'
 
@@ -19,10 +22,14 @@ export async function copyAt(c: ToolsContext, e: MapMouseEvent) {
     .sort((a, b) => (order.get(b.layer.id) ?? 0) - (order.get(a.layer.id) ?? 0))
   const f = candidates[0]
   if (!f) {
-    c.message = t('userlayers.copy.nothing', 'Nothing to copy there: click a line, a substation, a site...')
+    c.message = t(
+      'userlayers.copy.nothing-buildings',
+      'Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 15 or closer)'
+    )
     c.notify()
     return
   }
+  if (f.layer.id === BUILDINGS_LAYER) return copyBuilding(c, f)
   const id = Number(f.properties.osm_id ?? f.properties.id)
   const layerId = c.activeLayer()
   const key = `${f.source}/${f.sourceLayer}`
@@ -49,6 +56,31 @@ export async function copyAt(c: ToolsContext, e: MapMouseEvent) {
     copy: { source: f.source, sourceLayer: f.sourceLayer!, layer: f.layer.id }
   }
   const featureId = c.store.addFeature(layerId, geometry, properties)
+  c.message = t('userlayers.copy.done', 'Copied. Click more features to copy them, or Esc to stop.')
+  c.select(featureId)
+}
+
+/** A building as an ordinary area of the active layer (editable, the colour for
+ * new items), named "Building", with its height kept. */
+function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature) {
+  const id = buildingId(f)
+  const layerId = c.activeLayer()
+  const layer = c.store.layers.get(layerId)!
+  for (const existing of layer.features.values()) {
+    if (id !== undefined && existing.properties.building_id === id) {
+      c.message = t('userlayers.copy.already', 'Already in this layer.')
+      c.select(existing.id)
+      return
+    }
+  }
+  const geometry = (id !== undefined && buildingOutline(c.map, id)) || f.geometry
+  const properties: FeatureProps = {
+    kind: 'drawing',
+    name: t('userlayers.copy.building', 'Building'),
+    ...(id !== undefined ? { building_id: id } : {}),
+    ...(typeof f.properties.height === 'number' ? { height: f.properties.height } : {})
+  }
+  const featureId = c.store.addFeature(layerId, geometry, withNewColour(properties))
   c.message = t('userlayers.copy.done', 'Copied. Click more features to copy them, or Esc to stop.')
   c.select(featureId)
 }

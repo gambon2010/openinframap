@@ -10,7 +10,9 @@
   },
   "layers": {
     "extra-icpe": "Classified installations (ICPE)",
-    "sites": "Critical sites"
+    "sites": "Critical sites",
+    "background-map": "Background map",
+    "buildings": "Buildings (zoom 15 and closer)"
   },
   "search": {
     "place": {
@@ -398,9 +400,10 @@
     "graphic-more": "This graphic needs at least {{n}} points.",
     "copy-item": "Copy (Ctrl+C)",
     "copy": {
-      "nothing": "Nothing to copy there: click a line, a substation, a site...",
       "already": "Already in this layer.",
-      "done": "Copied. Click more features to copy them, or Esc to stop."
+      "done": "Copied. Click more features to copy them, or Esc to stop.",
+      "building": "Building",
+      "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 15 or closer)"
     },
     "group": {
       "who": "Who",

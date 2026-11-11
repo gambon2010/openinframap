@@ -450,6 +450,27 @@ later.
 
 ---
 
+## Building outlines (2026-11-11)
+
+*Data layers → Background map → Buildings* (`fork/modules/buildings/`, letter `K`,
+off by default) draws every building's outline from zoom 15, over the map and over
+satellite imagery, from the background map already downloaded (Protomaps'
+`buildings` layer): nothing new to fetch. Only zoom 15 tiles hold every building:
+lower zooms keep a few landmarks (central Paris: 5 at zoom 11, 46 at 14, 730 at 15),
+so they aren't shown below 15; a real "large buildings" rule (every building over a
+size, from zoom 11) would need a build step reading them all (asked: not for now).
+The outlines aren't clickable (a click in a town would always land on one): the
+module removes their details handler.
+
+My layers' copy tool copies a clicked building (the layer switched on) as an
+**ordinary area** (`kind: 'drawing'`, the colour for new items, named "Building",
+its height kept; editable), not a fixed copy. A building cut at tile edges comes in
+pieces (one per tile, overlapping a little): `fork/core/buildings.ts` joins them
+(`polygon-clipping`, a new dependency) from the loaded tiles. Copied once per layer
+(Protomaps' building id). Protomaps' ids aren't OpenStreetMap's numbers (checked), so
+no link to OpenStreetMap is kept. Tests: `core/buildings.test.ts`, the copy tool's
+in `map/tools.test.ts`.
+
 ## Wikidata popups and image cache
 
 From earlier fork work, still current: `scripts/fetch_images.py` caches Wikidata

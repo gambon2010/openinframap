@@ -41,6 +41,11 @@ class FakeMap {
   queryRenderedFeatures(_box: unknown, options?: { layers?: string[] }) {
     return this.found(options?.layers)
   }
+  /** What querySourceFeatures finds (a building's pieces, one per tile). */
+  pieces: Partial<MapGeoJSONFeature>[] = []
+  querySourceFeatures() {
+    return this.pieces
+  }
 }
 
 function fakeRenderer() {
@@ -355,6 +360,51 @@ describe('resizing and copying', () => {
       layer: 'power_tower'
     })
     await click(3, 4)
+    expect(items()).toHaveLength(1)
+    expect(tools.message).toMatch(/Already/)
+  })
+
+  test('copy: a building becomes an ordinary area, joined from its tiles, once', async () => {
+    tools = new Tools(map as unknown as MapLibre, store, fakeRenderer() as unknown as Renderer, () => [
+      { id: 'buildings_outline', zorder: -10 } as never
+    ])
+    const square = (w: number, e: number) => ({
+      type: 'Polygon',
+      coordinates: [
+        [
+          [w, 0],
+          [e, 0],
+          [e, 1],
+          [w, 1],
+          [w, 0]
+        ]
+      ]
+    })
+    const building = 35184388166030
+    map.found = () => [
+      {
+        id: building,
+        layer: { id: 'buildings_outline' },
+        source: 'basemap',
+        sourceLayer: 'buildings',
+        properties: { kind: 'building', height: 12 },
+        geometry: square(0, 1.1)
+      } as never
+    ]
+    // Cut at a tile edge (x = 1), each piece a little over it.
+    map.pieces = [
+      { id: building, geometry: square(0, 1.1) },
+      { id: building, geometry: square(0.9, 2) }
+    ] as never
+    tools.setTool({ mode: 'copy' })
+    await click(0.5, 0.5)
+    const [copy] = items()
+    expect(copy.properties).toMatchObject({ kind: 'drawing', name: 'Building', height: 12 })
+    expect(copy.properties.color).toBeTruthy()
+    expect(copy.geometry.type).toBe('Polygon')
+    const xs = (copy.geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
+    expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 2])
+    await click(0.5, 0.5)
     expect(items()).toHaveLength(1)
     expect(tools.message).toMatch(/Already/)
   })

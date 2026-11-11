@@ -22,6 +22,7 @@ import details from './modules/details/index.ts'
 import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
 import background from './modules/background/index.ts'
+import buildings from './modules/buildings/index.ts'
 import account from './modules/account/index.ts'
 import coordinates from './modules/coordinates/index.ts'
 import debug from './modules/debug/index.ts'
@@ -32,6 +33,7 @@ import './fork.css'
 const MODULES: ForkModule[] = [
   satellite,
   background,
+  buildings,
   mapSources,
   extra,
   sites,

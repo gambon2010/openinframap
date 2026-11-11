@@ -31,7 +31,9 @@ index.ts, types.ts, config.ts   the module registry and hooks, the types, the UR
 core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references),
            geo.ts (metres per pixel, degrees/radians), math.ts (clamp), colour.ts
            (hex colours), map-style.ts (geometry-type filters), storage.ts (this
-           browser's storage, read and written safely), author.ts, map-data.ts
+           browser's storage, read and written safely), author.ts, map-data.ts,
+           buildings.ts (the background map's buildings: their layer, a building's
+           pieces joined across tiles)
 ui/        shared building blocks you see: dock (right), left column, details
            panel, highlight, panels (panel.ts, makeModal), settings (the gear),
            map buttons (map-button.ts: print, Settings, account),
@@ -52,6 +54,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   background   Settings → Background: the map in high contrast or original colours, or imagery
   satellite    the imagery (tells services/background.ts what there is)
+  buildings    building outlines from zoom 15, a layer to switch on (not clickable)
   map-sources  background tiles and Photon (Settings)
   layout       no header; the dock, About in the credits, the search box top left
   account      who is logged in and Log out (a map button), Settings → Accounts (admins)
