@@ -24,7 +24,7 @@ changes for whoever uses the map except where a line below says so.
 | # | Batch | Status |
 |---|---|---|
 | 1 | **The old satellite path** and what only it used: `menu.py`'s questions and plan, the `choose` / `steps` / `estimate` / `estimate-detailed` commands, the shell presets and `run_parallel`, the options `--satellite`, `--satellite-detailed`, `--area`, `--zoom`, `--sources` (replaced: `build-region.sh --maps "ID ..."`, `satellite.py maps --source ID --yes`, now also for tile-server photos); the stand-in names (`DETAILED_SOURCES`, `TIERS`, the size constants); one-time code (lower zooms added to old imagery files, the old `.sat-detailed` name, a region's own Blue Marble file, `select_basemap`'s old addresses, `import-db.sh` patching exports from before search / the grid / extra data existed: an older export now defaults to "don't import") | ✅ 2026-11-12 |
-| 2 | **Quick and safe:** `.gitignore` (`*.bak`); lint findings; the debug print; unused string; upstream files nothing imports (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.ts`); the `area` re-export | |
+| 2 | **Quick and safe:** `.gitignore` (`*.bak`); lint findings; the debug print; unused string; upstream files nothing imports (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.ts`); the `area` re-export | ✅ 2026-11-12 |
 | 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | |
 | 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | |
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | |
@@ -44,3 +44,9 @@ changes for whoever uses the map except where a line below says so.
   `build-region.sh --maps "sentinel2 fr_ign"` queues without questions.
   Downloads from the menu run one after the other (the old path ran them side by
   side). Blue Marble is the world's file only.
+- **2026-11-12, batch 2.** `*.bak` ignored (the stray `web-backend/.env.bak` itself
+  is left: yours to delete). Scripts' lint clean. Upstream files nothing imported
+  deleted (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.*`, the Osmose
+  icon): upstream's own type errors go from 31 to 24. Measuring's own copy of the
+  distance formula and its re-export of the area go: one of each, in
+  `core/geo.ts`. The debug line on a clicked feature stays (development only).

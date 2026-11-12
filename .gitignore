@@ -11,3 +11,4 @@ web/dist
 data/
 data/images/
 data/wikidata_json/
+*.bak

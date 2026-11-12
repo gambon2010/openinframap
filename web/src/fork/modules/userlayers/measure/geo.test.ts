@@ -1,21 +1,19 @@
 import { describe, expect, test } from 'vitest'
 import {
-  area,
   bearing,
   circle,
   destination,
-  distance,
-  formatArea,
   formatBearing,
   formatDistance,
   parseDistances,
   pathLength
 } from './geo.ts'
+import { formatArea, groundArea, groundDistance } from '../../../core/geo.ts'
 
 describe('on the sphere', () => {
   test('distances: a degree of latitude, Paris–London', () => {
-    expect(distance([7, 47], [7, 48])).toBeCloseTo(111195, -1)
-    expect(distance([2.3522, 48.8566], [-0.1276, 51.5072]) / 1000).toBeCloseTo(343.5, 0)
+    expect(groundDistance([7, 47], [7, 48])).toBeCloseTo(111195, -1)
+    expect(groundDistance([2.3522, 48.8566], [-0.1276, 51.5072]) / 1000).toBeCloseTo(343.5, 0)
     expect(
       pathLength([
         [7, 47],
@@ -33,9 +31,9 @@ describe('on the sphere', () => {
       [d, d],
       [0, d]
     ]
-    expect(area(square)).toBeCloseTo(1e6, -3)
-    expect(area([...square, square[0]])).toBeCloseTo(1e6, -3)
-    expect(area(square.slice(0, 2))).toBe(0)
+    expect(groundArea(square)).toBeCloseTo(1e6, -3)
+    expect(groundArea([...square, square[0]])).toBeCloseTo(1e6, -3)
+    expect(groundArea(square.slice(0, 2))).toBe(0)
   })
 
   test('bearings and destinations', () => {
@@ -43,14 +41,14 @@ describe('on the sphere', () => {
     expect(bearing([7, 47], [8, 47])).toBeCloseTo(89.6, 0)
     expect(bearing([7, 47], [7, 46])).toBeCloseTo(180, 5)
     const [lng, lat] = destination([7, 47], 10000, 90)
-    expect(distance([7, 47], [lng, lat])).toBeCloseTo(10000, 0)
+    expect(groundDistance([7, 47], [lng, lat])).toBeCloseTo(10000, 0)
   })
 
   test('a circle: closed, every point at the radius', () => {
     const ring = circle([7, 47], 5000, 32)
     expect(ring).toHaveLength(33)
     expect(ring[0]).toEqual(ring[32])
-    for (const p of ring) expect(distance([7, 47], p)).toBeCloseTo(5000, 0)
+    for (const p of ring) expect(groundDistance([7, 47], p)).toBeCloseTo(5000, 0)
   })
 })
 

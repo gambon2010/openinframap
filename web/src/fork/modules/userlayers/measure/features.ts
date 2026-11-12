@@ -9,18 +9,15 @@ import { North, fromNorth, northLetter } from './north.ts'
 import { along, metresPerPixel, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
 import {
   LngLat,
-  area,
   bearing,
   circle,
   destination,
-  distance,
-  formatArea,
   formatBearing,
   formatDistance,
   greatCirclePath,
   pathLength
 } from './geo.ts'
-import { toRadians } from '../../../core/geo.ts'
+import { formatArea, groundArea, groundDistance, toRadians } from '../../../core/geo.ts'
 import type { Measurement, DrawOptions, Placement } from './features.types.ts'
 
 /** Range rings' radii when none are set (metres). */
@@ -49,7 +46,7 @@ export function withLegLength(points: LngLat[], i: number, metres: number): LngL
   const out = points.slice(0, i + 1)
   for (let j = i; j < points.length - 1; j++) {
     const [a, b] = [points[j], points[j + 1]]
-    const length = j === i ? metres : distance(a, b)
+    const length = j === i ? metres : groundDistance(a, b)
     out.push(destination(out[j], length, bearing(a, b)))
   }
   return out
@@ -58,7 +55,7 @@ export function withLegLength(points: LngLat[], i: number, metres: number): LngL
 /** A measurement's legs (an area's closing one too): their lengths and bearings. */
 export function legsOf(m: Measurement): { length: number; from: LngLat; to: LngLat }[] {
   const points = m.type === 'area' ? [...m.points, m.points[0]] : m.points
-  return points.slice(1).map((to, i) => ({ length: distance(points[i], to), from: points[i], to }))
+  return points.slice(1).map((to, i) => ({ length: groundDistance(points[i], to), from: points[i], to }))
 }
 
 /** A leg's bearing, from the north chosen ("047°M (836 mils)"). */
@@ -72,7 +69,7 @@ export function summary(m: Measurement, north: North = 'true'): string {
   if (m.type === 'area') {
     const ring = [...m.points, m.points[0]]
     return t('measure.area-summary', '{{area}}, perimeter {{perimeter}}', {
-      area: formatArea(area(m.points)),
+      area: formatArea(groundArea(m.points)),
       perimeter: formatDistance(pathLength(ring))
     })
   }
@@ -166,7 +163,7 @@ export function measurementFeatures(m: Measurement, options: DrawOptions = {}): 
         m.points.reduce((s, p) => s + p[0], 0) / m.points.length,
         m.points.reduce((s, p) => s + p[1], 0) / m.points.length
       ]
-      out.push(label(centre, formatArea(area(m.points)), { priority: 0 }, { big: true }))
+      out.push(label(centre, formatArea(groundArea(m.points)), { priority: 0 }, { big: true }))
     }
     out.push(line(ring))
     return out

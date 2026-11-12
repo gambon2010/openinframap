@@ -1,4 +1,4 @@
-import { toDegrees, toRadians } from '../../../core/geo.ts'
+import { groundDistance, toDegrees, toRadians } from '../../../core/geo.ts'
 // Fork: distances, areas, bearings and circles on the Earth (a sphere of the mean
 // radius: within 0.5 % of the ellipsoid, enough to measure on a map). Pure.
 export type LngLat = [lng: number, lat: number]
@@ -11,23 +11,12 @@ type DistanceUnit = keyof typeof UNIT_METRES
 const rad = toRadians
 const deg = toDegrees
 
-/** Metres between two points (haversine). */
-export function distance([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {
-  const dLat = rad(lat2 - lat1)
-  const dLng = rad(lng2 - lng1)
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)))
-}
-
 /** Metres along a path. */
 export function pathLength(points: LngLat[]): number {
   let total = 0
-  for (let i = 1; i < points.length; i++) total += distance(points[i - 1], points[i])
+  for (let i = 1; i < points.length; i++) total += groundDistance(points[i - 1], points[i])
   return total
 }
-
-/** Square metres inside a ring (core/geo.ts: buildings need it too). */
-export { groundArea as area, formatArea } from '../../../core/geo.ts'
 
 /** The initial bearing from one point to another: degrees from true north, 0–360. */
 export function bearing([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {
@@ -54,7 +43,7 @@ export function destination([lng, lat]: LngLat, metres: number, bearingDeg: numb
 
 /** The point a fraction of the way from a to b along the great circle. */
 export function intermediate([lng1, lat1]: LngLat, [lng2, lat2]: LngLat, f: number): LngLat {
-  const d = distance([lng1, lat1], [lng2, lat2]) / R
+  const d = groundDistance([lng1, lat1], [lng2, lat2]) / R
   if (d === 0) return [lng1, lat1]
   const A = Math.sin((1 - f) * d) / Math.sin(d)
   const B = Math.sin(f * d) / Math.sin(d)
@@ -77,7 +66,7 @@ export function greatCirclePath(points: LngLat[]): LngLat[] {
   const out: LngLat[] = points.slice(0, 1)
   for (let i = 1; i < points.length; i++) {
     const [a, b] = [points[i - 1], points[i]]
-    const n = Math.min(2000, Math.ceil(distance(a, b) / SEGMENT))
+    const n = Math.min(2000, Math.ceil(groundDistance(a, b) / SEGMENT))
     for (let k = 1; k < n; k++) out.push(intermediate(a, b, k / n))
     out.push(b)
   }

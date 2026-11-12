@@ -10,7 +10,8 @@
 //
 // Marks sit on the line as drawn: the great-circle path (geo.ts greatCirclePath),
 // straight on the flat map between its points, and across it as seen on screen.
-import { LngLat, distance, greatCirclePath } from './geo.ts'
+import { groundDistance } from '../../../core/geo.ts'
+import { LngLat, greatCirclePath } from './geo.ts'
 import { metresPerPixel, toDegrees, toRadians } from '../../../core/geo.ts'
 import { clamp } from '../../../core/math.ts'
 import type { TickView, XY, Segment } from './ticks.types.ts'
@@ -72,7 +73,7 @@ export function segmentsOf(path: LngLat[]): Segment[] {
   const out: Segment[] = []
   let start = 0
   for (let i = 1; i < path.length; i++) {
-    const length = distance(path[i - 1], path[i])
+    const length = groundDistance(path[i - 1], path[i])
     if (!length) continue
     out.push({ a: toMercator(path[i - 1]), b: toMercator(path[i]), start, length })
     start += length

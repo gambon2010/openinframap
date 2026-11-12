@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { distance } from './geo.ts'
+import { groundDistance } from '../../../core/geo.ts'
 import {
   formatTick,
   fromMercator,
@@ -55,7 +55,7 @@ describe('marks along a path', () => {
     [7.1, 47.8],
     [7.2, 47.8]
   ]
-  const length = distance(path[0], path[1]) + distance(path[1], path[2])
+  const length = groundDistance(path[0], path[1]) + groundDistance(path[1], path[2])
 
   test('from the start (marked), across legs; labelled at the major ones', () => {
     const zoom = 11
@@ -127,7 +127,7 @@ describe('the rule: marks 60 to 150 px apart at every zoom; none only for a tiny
     [7.396, 48.7],
     [7.43, 48.665]
   ]
-  const length = distance(route[0], route[1]) + distance(route[1], route[2])
+  const length = groundDistance(route[0], route[1]) + groundDistance(route[1], route[2])
 
   test('at every zoom from 6 to 18', () => {
     for (let zoom = 6; zoom <= 18; zoom += 0.1) {

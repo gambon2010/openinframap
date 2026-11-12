@@ -84,7 +84,8 @@ describe('measurements', () => {
 describe("a leg's length typed over", () => {
   test('its end moves along the same bearing; the legs after keep theirs', async () => {
     const { withLegLength, legsOf } = await import('./features.ts')
-    const { bearing, distance } = await import('./geo.ts')
+    const { bearing } = await import('./geo.ts')
+    const { groundDistance } = await import('../../../core/geo.ts')
     const points: [number, number][] = [
       [7, 47],
       [7.1, 47.05],
@@ -92,9 +93,9 @@ describe("a leg's length typed over", () => {
     ]
     const changed = withLegLength(points, 0, 5000)
     expect(changed[0]).toEqual(points[0])
-    expect(distance(changed[0], changed[1])).toBeCloseTo(5000, 3)
+    expect(groundDistance(changed[0], changed[1])).toBeCloseTo(5000, 3)
     expect(bearing(changed[0], changed[1])).toBeCloseTo(bearing(points[0], points[1]), 6)
-    expect(distance(changed[1], changed[2])).toBeCloseTo(distance(points[1], points[2]), 3)
+    expect(groundDistance(changed[1], changed[2])).toBeCloseTo(groundDistance(points[1], points[2]), 3)
     expect(legsOf({ type: 'area', points })).toHaveLength(3)
     expect(legsOf({ type: 'distance', points })).toHaveLength(2)
   })
