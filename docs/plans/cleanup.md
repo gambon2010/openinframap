@@ -1,6 +1,6 @@
 # Plan: the global clean-up
 
-Status: **in progress** (started 2026-11-11). Findings: `cleanup-audit.md`. Nothing
+Status: **done but batch 8** (2026-11-12; batch 8 waits for the IGN download). Findings: `cleanup-audit.md`. Nothing
 changes for whoever uses the map except where a line below says so.
 
 ## Rules
@@ -33,7 +33,7 @@ changes for whoever uses the map except where a line below says so.
 | 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | ⏸ waits for the IGN download (it writes in `data/basemap/`, and `satellite.sh` is running) |
 | 9 | **CI:** one workflow running the fork's three test suites; upstream's deploy workflows off in the fork | ✅ 2026-11-12 |
 | 10 | **Docs:** `FORK_CHANGES.md` split into "how it is" and a dated history; finished plans archived; the guide trimmed; `CLAUDE.md` checked line by line | ✅ 2026-11-12 |
-| 11 | **Proof:** the real Luxembourg build → export → import test (`OIM_TEST_REAL_BUILD=1`), then the export made again | |
+| 11 | **Proof:** the real Luxembourg build → export → import test (`OIM_TEST_REAL_BUILD=1`), then the export made again | ✅ 2026-11-12 |
 
 ## Log
 
@@ -112,3 +112,7 @@ changes for whoever uses the map except where a line below says so.
 - **Batch 8 waits.** The IGN download was resumed from the menu
   (`bash scripts/satellite.sh`, 93 départements): renaming `data/basemap/` and the
   scripts it runs would break it. To do once it's finished (or stopped for good).
+- **2026-11-12, batch 11.** The real Luxembourg build → export → import
+  (`OIM_TEST_REAL_BUILD=1`, its own Docker project) passed (1 min 56 s). The export
+  made again after it (database: migration 003, the large buildings; images: the
+  backend and Tegola).
