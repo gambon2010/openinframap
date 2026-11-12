@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2034  # the build's variables are shared by its three files
 # Fork: build-region.sh's helpers and questions (everything asked before the first long step). Sourced by build-region.sh (its variables, at the
 # top of it, are what the steps share); not run on its own.
 
