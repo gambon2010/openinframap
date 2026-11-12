@@ -6,7 +6,7 @@ the scripts that build everything. Upstream won't take its changes, so it keeps 
 out of upstream's files.
 
 This page is the map of the code and how to extend it. What changed and why, step
-by step, is in `FORK_CHANGES.md`. Requirements are in `SPECIFICATIONS.md`, and plans
+by step, is in `HISTORY.md`; every upstream file the fork changes, in `FORK_CHANGES.md`. Requirements are in `SPECIFICATIONS.md`, and plans
 are in `plans/`.
 
 ## The rule that shapes everything: stay out of upstream's files
@@ -224,10 +224,12 @@ steps → Tegola (vector tiles) → the frontend.
   - `coverage.py`: what's worth offering (zooms another source takes over, areas
     inside areas, what could be freed);
   - `maps.py`: the offline maps menu (`satellite.py maps`), its screens through
-    `ui.py`; `extract.py`: the background map from Protomaps;
-  - `menu.py`: the older questions and plan (`choose`, `steps`), still used by
-    the shell scripts;
-  - `cli.py`.
+    `ui.py`; `offers.py`: what each source offers and the downloads it makes;
+    `jobs.py`: a download and the queue (Resume);
+  - `regions.py` (Geofabrik's index), `aerial.py` (tile-server photos),
+    `pmtiles.py` (a file's header), `extract.py` (background maps);
+  - `cli.py`: one command per download, `maps`, `tiers` / `summary` (what the map
+    is told about the imagery).
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
   source, and `SOURCES`.
 - **Exports** (`export-db.sh`, `import-db.sh`) carry the database. An export that's

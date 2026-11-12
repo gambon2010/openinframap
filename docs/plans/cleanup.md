@@ -30,9 +30,9 @@ changes for whoever uses the map except where a line below says so.
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | ✅ 2026-11-12 |
 | 6 | **Buildings: exact copies at every zoom.** Planned: the backend making the zoomed-out tiles from the background map's zoom 15 tiles (one source). Measured too slow (below), so the zoomed-out drawing stays the build step and Tegola; a copy takes the exact outline from the backend instead | ✅ 2026-11-12 (reduced) |
 | 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | ✅ 2026-11-12 (the menu, the build script; the rest left: below) |
-| 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | |
-| 9 | **CI:** one workflow running the fork's three test suites; upstream's deploy workflows off in the fork | |
-| 10 | **Docs:** `FORK_CHANGES.md` split into "how it is" and a dated history; finished plans archived; the guide trimmed; `CLAUDE.md` checked line by line | |
+| 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | ⏸ waits for the IGN download (it writes in `data/basemap/`, and `satellite.sh` is running) |
+| 9 | **CI:** one workflow running the fork's three test suites; upstream's deploy workflows off in the fork | ✅ 2026-11-12 |
+| 10 | **Docs:** `FORK_CHANGES.md` split into "how it is" and a dated history; finished plans archived; the guide trimmed; `CLAUDE.md` checked line by line | ✅ 2026-11-12 |
 | 11 | **Proof:** the real Luxembourg build → export → import test (`OIM_TEST_REAL_BUILD=1`), then the export made again | |
 
 ## Log
@@ -96,3 +96,19 @@ changes for whoever uses the map except where a line below says so.
   sections, listing → download → extract → tiles → command), `cli.py` (336, now
   small), and the frontend's `render.ts` (564) and `store.ts` (463), each one
   class whose methods share its state: a split would scatter it for no gain.
+- **2026-11-12, batch 9.** `.github/workflows/fork-tests.yml`: on every push and
+  pull request, the fork's three suites and their linters (frontend: eslint and
+  prettier on `src/fork`, type errors in `src/fork` only, `test:fork`; backend:
+  ruff, mypy, `tests/fork`; scripts: ruff, shellcheck, `scripts/tests`). Upstream's
+  six workflows build upstream's images: their build jobs now run only in
+  upstream's repository (one `if:` each, listed in FORK_CHANGES.md).
+  `scripts/.shellcheckrc` says once what's shared between sourced files.
+- **2026-11-12, batch 10.** `FORK_CHANGES.md` (2,700 lines) split: it keeps what a
+  merge from upstream needs (goals, the fork's structure rules, every upstream
+  file changed: 180 lines); the dated notes went to `HISTORY.md`, as they were.
+  Plans built, done or dropped moved to `plans/archive/` (refactor, refactor-5e,
+  feature-status, satellite-imagery, my-layers-v2, my-layers-v3, graphic-labels,
+  offline-maps); `sync.md`, the audit and this plan stay.
+- **Batch 8 waits.** The IGN download was resumed from the menu
+  (`bash scripts/satellite.sh`, 93 départements): renaming `data/basemap/` and the
+  scripts it runs would break it. To do once it's finished (or stopped for good).

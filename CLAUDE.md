@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Open Infrastructure Map is a web geospatial application displaying world infrastructure (power grids, telecom, water, petroleum) from OpenStreetMap. It has five main services: a TypeScript/MapLibre frontend, a Python/Starlette backend, a Go/Tegola tile server, a PostgreSQL/PostGIS database, and an Imposm-based OSM importer.
 
-**This is a fork** whose goal is running everything locally (and offline, from an exported database) for a chosen region. How the fork's code is organised, its folder rules and recipes for adding things: `docs/ARCHITECTURE.md` (keep it current when the structure changes). What changed and why is recorded in `docs/FORK_CHANGES.md`; keep it up to date when making fork-specific changes. The user-facing guide is `docs/LOCAL_DEVELOPMENT.md`.
+**This is a fork** whose goal is running everything locally (and offline, from an exported database) for a chosen region. How the fork's code is organised, its folder rules and recipes for adding things: `docs/ARCHITECTURE.md` (keep it current when the structure changes). Every upstream file the fork changes, and how, is in `docs/FORK_CHANGES.md` ("Fork structure", "Merging from upstream"): keep it exact. What changed, when and why goes in `docs/HISTORY.md` (dated notes, newest at the end of their section). The user-facing guide is `docs/LOCAL_DEVELOPMENT.md`.
 
 **Specifications:** every requirement the project owner has asked for is in `docs/SPECIFICATIONS.md`, with its status. Add each new request there when it's made and update the status when it's done. Plans for bigger features are in `docs/plans/`.
 

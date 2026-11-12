@@ -42,7 +42,7 @@ bash scripts/start.sh
 ```
 
 Full guide: **[docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md)**.
-What the fork changed and why: **[docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md)**.
+How the fork is organised: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**; every upstream file it changes: [docs/FORK_CHANGES.md](./docs/FORK_CHANGES.md); what changed when and why: [docs/HISTORY.md](./docs/HISTORY.md).
 
 ## What's different from upstream
 

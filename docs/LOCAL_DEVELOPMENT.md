@@ -6,7 +6,7 @@ data for the region you choose. Once set up, everything can work without interne
 including searching for places; only street-address search needs an optional Photon
 server.
 
-For *what* the fork changed and *why*, see [FORK_CHANGES.md](./FORK_CHANGES.md).
+For *what* the fork changed and *why*, see [HISTORY.md](./HISTORY.md).
 
 ---
 
@@ -306,10 +306,10 @@ until the new one is finished; the menu shows what you have and offers only more
 
 Everything in `data/basemap/` is shown, whatever area it's of; past a file's last
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
-shows. Copy `data/basemap/` along with an export to take it with you. The older unattended options skip the menu:
-`--satellite none|overview|regional|regional13` and `--satellite-detailed 15|16|17|none`
-(both scripts); `satellite.sh` also takes `--area ID|world`, `--zoom 9-13` (the last zoom) and
-`--sources "ID ..."` (and `--yes` needs `--satellite`).
+shows. Copy `data/basemap/` along with an export to take it with you. Without
+questions: `build-region.sh --maps "sentinel2 fr_ign"` (downloaded after the build),
+or `python3 scripts/satellite.py maps --source ID --yes` (`--area`, `--units`,
+`--zoom`; `--help` lists the sources).
 
 ## Sharing a built database (export / import)
 
@@ -718,13 +718,3 @@ If you add your own mounts, add `:z` too.
 often on the system disk. The script shows the estimate before starting. Downloads
 and filtered files in `data/osm/` are reused, so after freeing space just re-run.
 
-**Sentinel-2 downloaded when it started at zoom 9** (it now starts at 7):
-`bash scripts/satellite.sh` adds the lower zooms by itself, without downloading
-anything (even if you choose nothing new), as does a build. By hand:
-
-```bash
-python3 scripts/satellite.py lower-zooms --file france.sat-regional
-```
-
-Then restart the frontend. GDAL stops where the whole area fits in about one tile
-(Luxembourg: zoom 8; France: about 5).

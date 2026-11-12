@@ -115,7 +115,9 @@ open_browser() {
 # Returns 1 if the frontend window couldn't be opened (print_manual_start then helps).
 start_app() {
     # Only run npm install when packages changed, so the app also starts offline.
-    local frontend_cmd="cd $(printf %q "$REPO_ROOT/web") && { [ node_modules/.package-lock.json -nt package-lock.json ] || npm install; } && npm start"
+    local web frontend_cmd
+    web=$(printf %q "$REPO_ROOT/web")
+    frontend_cmd="cd $web && { [ node_modules/.package-lock.json -nt package-lock.json ] || npm install; } && npm start"
     if port_in_use "$BACKEND_PORT"; then
         ok "Backend already running."
     else

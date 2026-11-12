@@ -1,7 +1,7 @@
 // Fork: the hooks upstream files call. Each gathers what the fork modules add, so
 // upstream files keep one-line changes and new layers only need a new module in
 // MODULES. Upstream imports only this file, types.ts and config.ts. See
-// docs/FORK_CHANGES.md ("Fork modules").
+// docs/FORK_CHANGES.md ("Fork structure").
 import i18next from 'i18next'
 import { Map, MapGeoJSONFeature, SourceSpecification } from 'maplibre-gl'
 import { LayerGroup } from '@russss/maplibregl-layer-switcher'

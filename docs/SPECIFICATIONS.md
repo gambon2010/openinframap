@@ -8,8 +8,9 @@ the status when they're done.
 Status: ✅ done · 🚧 in progress · 📋 planned (plan written) · 🗂 backlog (parked,
 don't start unprompted) · ✖ dropped or replaced
 
-How the work is organised: [FORK_CHANGES.md](./FORK_CHANGES.md) (what changed and
-why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
+How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
+[HISTORY.md](./HISTORY.md) (what changed and why), [FORK_CHANGES.md](./FORK_CHANGES.md)
+(upstream's files the fork changes), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 (plans for bigger features).
 
 ---
@@ -23,7 +24,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 1.3 | Upstream (russss/openinframap) won't take the fork's changes: keep the fork's code apart from upstream's so upstream changes merge easily. Changing upstream files is OK if it stays easy to merge (one-line hooks). | ✅ `web/src/fork/`, `web-backend/src/fork/`, `tegola/layers.fork.yml`, `docker-compose.override.yml`; list in FORK_CHANGES "Merging from upstream" |
 | 1.4 | Keep upstream's `main` changes merged into the fork. | ✅ (merged 2026-10-14) |
 | 1.5 | Remove stale branches. | ✅ |
-| 1.6 | Docs explain what was done and why; the GitHub page (README) describes the fork. | ✅ FORK_CHANGES, LOCAL_DEVELOPMENT, README |
+| 1.6 | Docs explain what was done and why; the GitHub page (README) describes the fork. | ✅ ARCHITECTURE, HISTORY, FORK_CHANGES, LOCAL_DEVELOPMENT, README |
 | 1.7 | One place with all the specifications (this file). | ✅ |
 | 1.8 | Unit tests for the fork's code where they make sense; not for upstream's code unless needed. | ✅ |
 | 1.9 | Licences: don't copy code whose licence would change the project's (e.g. ODIN is AGPL). | ✅ (rule followed) |
@@ -61,7 +62,7 @@ why), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 | 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/satellite.py`, `fork/modules/satellite/`; Settings → Background |
 | 3.7 | Download satellite imagery for the region already built without losing the data (no rebuild). | ✅ `scripts/satellite.sh` |
 | 3.8 | Blue Marble for the whole world by default; a menu that explains each choice. | ✅ one shared `world.sat-overview.pmtiles` (~330 MB) |
-| 3.9 | Sentinel-2 for other countries or the whole world; high-resolution photos for more countries than France. | ✅ `satellite.py choose`, `DETAILED_SOURCES` (14 sources, 10 countries); the world end to end not run (too big to test) |
+| 3.9 | Sentinel-2 for other countries or the whole world; high-resolution photos for more countries than France. | ✅ the offline maps menu (`satellite.py maps`), `satimagery/sources/` (14 aerial sources, 10 countries); the world end to end not run (too big to test) |
 
 ## 4. Search
 

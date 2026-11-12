@@ -1,0 +1,7 @@
+# Fork: the scripts share variables and functions across files (lib/*.sh, sourced
+# by common.sh; build-region.sh with build/*.sh). Checked one file at a time,
+# shellcheck takes them for unused or never set:
+#   SC2034 a variable set here, read in another file;
+#   SC2154 a variable read here, set in another file (or inside a trap's string);
+#   SC2120 a function called with arguments from another file.
+disable=SC2034,SC2154,SC2120
