@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import os
-import struct
 import subprocess
 from pathlib import Path
 
-from .sources import EARTH_CIRCUMFERENCE_M, TIERS
+from .sources import EARTH_CIRCUMFERENCE_M, SENTINEL2
 
 # --- Docker helpers -------------------------------------------------------------
 
@@ -40,23 +39,6 @@ def pmtiles_zooms(path: Path) -> tuple[int, int] | None:
     return (header[100], header[101]) if header[:7] == b"PMTiles" else None
 
 
-def pmtiles_header(path: Path) -> dict | None:
-    """A PMTiles file's zooms, bounds and tile format (its header), None if unreadable."""
-    try:
-        header = path.open("rb").read(127)
-    except OSError:
-        return None
-    if header[:7] != b"PMTiles":
-        return None
-    west, south, east, north = (v / 1e7 for v in struct.unpack_from("<4i", header, 102))
-    return {
-        "minzoom": header[100],
-        "maxzoom": header[101],
-        "bounds": (west, south, east, north),
-        "format": {2: "png", 3: "jpg", 4: "webp"}.get(header[99], "jpg"),
-    }
-
-
 def to_pmtiles(mbtiles: Path, out: Path, pmtiles_image: str) -> None:
     """MBTiles -> PMTiles, with the basemap service's pmtiles CLI."""
     workdir = mbtiles.parent
@@ -74,7 +56,7 @@ def regional_pipeline(maxzoom: int, cut: bool = True) -> str:
     resolution = EARTH_CIRCUMFERENCE_M / 256 / 2**maxzoom
     # Many cells (the world): their list in a file, not on the command line.
     sources = "-input_file_list cells.txt"
-    levels = " ".join(str(2**i) for i in range(1, maxzoom - TIERS["regional"][0] + 1))
+    levels = " ".join(str(2**i) for i in range(1, maxzoom - SENTINEL2.first_zoom + 1))
     scale = " ".join(f"-scale_{b} 0 2200 0 255 -exponent_{b} 0.7" for b in (1, 2, 3))
     return " && ".join(
         [

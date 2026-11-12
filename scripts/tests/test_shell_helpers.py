@@ -45,35 +45,26 @@ def pmtiles_header(maxzoom: int, minzoom: int = 0) -> bytes:
 
 
 def test_satellite_tiers_value(tmp_path):
-    (tmp_path / "lux.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
+    (tmp_path / "world.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
     (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 9))
-    value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
+    # A region's own Blue Marble (made before the world's): not shown.
+    (tmp_path / "lux.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
+    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert "|NASA Blue Marble;" in value
     value = re.sub(r"\|[^;]*", "", value)
     assert value == (
-        "http://localhost:8090/lux.sat-overview/{z}/{x}/{y}.jpg 0 8;"
+        "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
         "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
     )
-    # Another region: everything downloaded shows, but not lux's own overview.
-    assert re.sub(
-        r"\|[^;]*", "", bash("satellite_tiers_value other", BASEMAP_DIR=str(tmp_path))
-    ) == ("http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13")
     assert (
-        bash("has_satellite other && echo yes || echo no", BASEMAP_DIR=str(tmp_path))
-        == "yes"
+        bash("has_satellite && echo yes || echo no", BASEMAP_DIR=str(tmp_path)) == "yes"
     )
     assert (
-        bash("region_satellite other && echo yes || echo no", BASEMAP_DIR=str(tmp_path))
+        bash("has_satellite && echo yes || echo no", BASEMAP_DIR=str(tmp_path / "none"))
         == "no"
     )
-    assert (
-        bash(
-            "has_satellite x && echo yes || echo no", BASEMAP_DIR=str(tmp_path / "none")
-        )
-        == "no"
-    )
-    assert bash("satellite_summary lux", BASEMAP_DIR=str(tmp_path)).startswith(
-        "lux overview, lux regional ("
+    assert bash("satellite_summary", BASEMAP_DIR=str(tmp_path)).startswith(
+        "world overview, lux regional ("
     )
 
 
@@ -103,26 +94,6 @@ export_outdated && echo outdated || echo current
     assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B2", EXTRA="") == "current"
 
 
-def test_world_overview_is_shared_by_every_region(tmp_path):
-    (tmp_path / "world.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
-    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(12, 9))
-    value = bash("satellite_tiers_value lux", BASEMAP_DIR=str(tmp_path))
-    assert "|NASA Blue Marble;" in value
-    value = re.sub(r"\|[^;]*", "", value)
-    assert value == (
-        "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
-        "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 12"
-    )
-    # Another region with nothing of its own still has the world.
-    assert bash("satellite_tiers_value fr", BASEMAP_DIR=str(tmp_path)).startswith(
-        "http://localhost:8090/world.sat-overview/"
-    )
-    assert bash(
-        "has_satellite fr && echo yes; region_satellite fr || echo none",
-        BASEMAP_DIR=str(tmp_path),
-    ).split() == ["yes", "none"]
-
-
 def test_tiers_list_every_area_and_source(tmp_path):
     # Each file as satellite.py writes it: its own first and last zoom in its header.
     def pmtiles(name, maxzoom, tile_type, minzoom):
@@ -141,7 +112,7 @@ def test_tiers_list_every_area_and_source(tmp_path):
     header = bytearray(more.read_bytes())
     header[100] = 16
     more.write_bytes(bytes(header))
-    value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert "Digitaal Vlaanderen" in value
     assert re.sub(r"\|[^;]*", "", value).split(";") == [
         "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
@@ -163,12 +134,12 @@ def test_departement_files_carry_their_bounds_and_are_summed_up(tmp_path):
         header[99] = 4  # WebP
         struct.pack_into("<4i", header, 102, *(round(v * 1e7) for v in box))
         (tmp_path / f"fr-{code}.sat-detailed-fr_ign.pmtiles").write_bytes(bytes(header))
-    value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert (
         "http://localhost:8090/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
         "6.94000,48.12000,8.23000,49.08000|© IGN (Licence Ouverte)"
     ) in value
-    summary = bash("satellite_summary france", BASEMAP_DIR=str(tmp_path))
+    summary = bash("satellite_summary", BASEMAP_DIR=str(tmp_path))
     assert summary.startswith("IGN photos of 2 départements (")
 
 
@@ -329,21 +300,6 @@ def test_room_for(tmp_path):
     )
 
 
-def test_run_parallel_runs_steps_at_the_same_time():
-    script = """
-label() { echo "step $1"; }
-step() { sleep 1; [[ $1 != 1 ]] || { echo "why it failed"; return 75; }; echo fine; }
-start=$SECONDS
-run_parallel 3 label step 2>&1 || echo "some failed"
-echo "statuses ${JOB_STATUS[*]} in $((SECONDS - start))s"
-"""
-    out = bash(script)
-    # Three one-second steps together: about one second, not three.
-    assert out.endswith(("statuses 0 75 0 in 1s", "statuses 0 75 0 in 2s"))
-    assert "why it failed" in out and "step 1 failed" in out and "some failed" in out
-    assert "step 0" in out and "step 2" in out
-
-
 def test_distances_in_the_build_sql_are_real_metres():
     # Map units stretch with latitude (schema/distances.sql): a distance written as
     # a bare number means something else in Norway than in France.
@@ -358,37 +314,15 @@ def test_distances_in_the_build_sql_are_real_metres():
     assert found == [], "use oim_units / oim_max_stretch (schema/distances.sql)"
 
 
-def test_older_imagery_files_get_their_lower_zooms(tmp_path):
-    calls = tmp_path / "calls"
-    out = bash(
-        f"""
-python3() {{
-    if [[ "$*" == *--list-needed* ]]; then echo old.sat-regional
-    elif [[ "$*" == *satellite.py* ]]; then echo "python3 $*" >> "{calls}"
-    else command python3 "$@"; fi
-}}
-docker() {{ echo "docker $*" >> "{calls}"; }}
-pmtiles_image() {{ echo pmtiles:test; }}
-catch_up_lower_zooms 2>&1
-""",
-        BASEMAP_DIR=str(tmp_path),
-    )
-    made = calls.read_text()
-    # What satellite.py lists (lower_zooms_needed, tested there), and only that.
-    assert "lower-zooms --file old.sat-regional" in made
-    assert "restart satellite" in made  # the server reads the new file
-    assert "adding its lower zooms" in out
-
-
 def test_sentinel_starts_at_the_same_zoom_in_the_scripts_and_satellite_py():
-    import satellite
+    from satimagery.sources import SENTINEL2
 
-    assert bash("echo $REGIONAL_FIRST_ZOOM") == str(satellite.TIERS["regional"][0])
+    assert bash("echo $REGIONAL_FIRST_ZOOM") == str(SENTINEL2.first_zoom)
 
 
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
-    value = bash("satellite_tiers_value france", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value
 
 
@@ -405,11 +339,11 @@ python3() {{
     else command python3 "$@"; fi
 }}
 docker() {{ :; }}
-select_satellite() {{ echo "select $1" >> "{calls}"; }}
-SATELLITE_MODE="" ASSUME_YES=0
+select_satellite() {{ echo "select" >> "{calls}"; }}
+ASSUME_YES=0
 choose_satellite france 2>&1
 echo "--- the build ---" >> "{calls}"
-download_satellite france 2>&1
+download_satellite 2>&1
 """,
         BASEMAP_DIR=str(tmp_path),
         GEOFABRIK_INDEX="index.json",
@@ -418,38 +352,40 @@ download_satellite france 2>&1
     assert "--queue-only" in made[0] and "--region france" in made[0]
     assert made[1] == "--- the build ---"
     assert "--queued --yes" in made[2]
-    assert made[3] == "select france"
+    assert made[3] == "select"
     assert "Offline maps" in out
 
 
-def test_an_old_background_map_address_is_removed(tmp_path):
-    # The frontend's default is the backend's background map: an address left
-    # from the old one-file server goes; one pointing elsewhere stays.
-    env = tmp_path / ".env"
+def test_the_background_maps_there_are(tmp_path):
+    # Served together by the backend, the frontend's default: nothing to set.
+    assert "background is empty" in bash(
+        "select_basemap 2>&1", BASEMAP_DIR=str(tmp_path)
+    )
     (tmp_path / "france.pmtiles").write_bytes(b"x")
     (tmp_path / "luxembourg.pmtiles").write_bytes(b"x")
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(b"x")  # imagery: not one
-
-    def select(line):
-        env.write_text(
-            f"VITE_TILE_BASE_URL=https://openinframap.org\nVITE_TEGOLA_URL=http://localhost:7800\n{line}\n"
-        )
-        out = bash(
-            "port_in_use() { return 1; }\nselect_basemap 2>&1",
-            BASEMAP_DIR=str(tmp_path),
-            WEB_ENV=str(env),
-        )
-        return env.read_text(), out
-
-    text, out = select(
-        "VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt"
-    )
-    assert "VITE_BASEMAP_URL" not in text and "VITE_TEGOLA_URL" in text
-    assert "VITE_TILE_BASE_URL" not in text  # no longer read
+    out = bash("select_basemap 2>&1", BASEMAP_DIR=str(tmp_path))
     assert "Offline background map: france, luxembourg" in out
-    text, _ = select(
-        "VITE_BASEMAP_URL=http://localhost:8001/background/{z}/{x}/{y}.mvt"
+    assert bash("background_areas", BASEMAP_DIR=str(tmp_path)) == "france\nluxembourg"
+
+
+def test_a_build_without_questions_queues_the_maps_asked_for(tmp_path):
+    # build-region.sh --maps "sentinel2 fr_ign": each queued for the region, no menu.
+    calls = tmp_path / "calls"
+    bash(
+        f"""
+python3() {{ echo "$*" >> "{calls}"; }}
+ASSUME_YES=1 MAPS_SOURCES="sentinel2 fr_ign"
+choose_satellite france
+echo "menu flag: $SATELLITE_MENU" >> "{calls}"
+ASSUME_YES=1 MAPS_SOURCES="" SATELLITE_MENU=0
+choose_satellite france
+echo "menu flag: $SATELLITE_MENU" >> "{calls}"
+""",
+        BASEMAP_DIR=str(tmp_path),
+        GEOFABRIK_INDEX="index.json",
     )
-    assert "VITE_BASEMAP_URL" not in text
-    text, _ = select("VITE_BASEMAP_URL=http://tiles.example/{z}/{x}/{y}.mvt")
-    assert "tiles.example" in text
+    first, second, flag, none = calls.read_text().splitlines()
+    assert "--queue-only" in first and "--yes --source sentinel2 --area france" in first
+    assert "--source fr_ign" in second and flag == "menu flag: 1"
+    assert none == "menu flag: 0"  # --yes alone: nothing asked, nothing queued

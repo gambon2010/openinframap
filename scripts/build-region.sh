@@ -52,11 +52,10 @@ Usage: bash scripts/build-region.sh [options]
   --basemap MODE  Offline background map for the region: full or none. Default:
                   the offline maps menu (with --yes: none). Downloaded after the build.
                   The world's to zoom 8 (borders, names; 560 MB) comes unless none
-  --satellite MODE  Offline satellite imagery: none, overview (NASA Blue Marble,
-                  zoom 0-8), regional (+ Sentinel-2 10 m, zoom 9-12) or regional13
-                  (to zoom 13). Default: ask (with --yes: keep what you have, else none)
-  --satellite-detailed ZOOM  France only: IGN 20 cm aerial photos from zoom 14 to
-                  ZOOM (15, 16 or 17), or none. Large: see the estimate when asked
+  --maps "ID ..."  Offline maps to download for the region after the build, without
+                  questions: sentinel2, fr_ign, protomaps... (python3
+                  scripts/satellite.py maps --help lists them). Default: the
+                  offline maps menu (with --yes: none)
   --rebuild       Build from scratch even if data/exports/ has a ready-made export
   --no-export     Don't export the region again when its ready-made export in
                   data/exports/ is out of date (by default it is, at the end)
@@ -99,8 +98,7 @@ EXTRA_NEW=ask         # download extra data (--extra, --extra-only: yes; --no-ex
 EXTRA_CHOOSE=""       # which datasets (e.g. gas,icpe; "" = all that cover the region)
 EXTRA_RESTORED=0      # 1: the kept extra data went back in
 BASEMAP_MODE=""       # background map: full, none ("" = the offline maps menu)
-SATELLITE_MODE=""     # satellite imagery (lib/satellite.sh; "" = ask)
-SATELLITE_DETAILED="" # aerial photos to this zoom, or none ("" = ask)
+MAPS_SOURCES=""       # offline maps to queue without questions ("" = the menu)
 REEXPORT=yes          # --no-export: don't export again when out of date
 
 # Disk space
@@ -123,8 +121,9 @@ while [[ $# -gt 0 ]]; do
         --rebuild)   REBUILD=yes; shift ;;
         --no-export) REEXPORT=no; shift ;;
         --basemap)   BASEMAP_MODE="${2:?--basemap needs full or none}"; shift 2 ;;
-        --satellite) SATELLITE_MODE="${2:?--satellite needs none, overview, regional or regional13}"; shift 2 ;;
-        --satellite-detailed) SATELLITE_DETAILED="${2:?--satellite-detailed needs 15, 16, 17 or none}"; shift 2 ;;
+        --maps)      MAPS_SOURCES="${2:?--maps needs source ids, e.g. \"sentinel2 fr_ign\"}"; shift 2 ;;
+        --satellite|--satellite-detailed)
+            die "$1 is gone: use --maps \"sentinel2 fr_ign\" (python3 scripts/satellite.py maps --help lists the sources)." ;;
         --yes|-y)    ASSUME_YES=1; shift ;;
         -h|--help)   usage; exit 0 ;;
         *)           usage; die "Unknown option: $1" ;;
@@ -134,16 +133,7 @@ done
 # Check option values now, before any question or download.
 case "$BASEMAP_MODE" in
     ""|full|none) ;;
-    reduced) die "--basemap reduced no longer exists: background maps are full detail (--basemap full)." ;;
     *) die "--basemap must be full or none." ;;
-esac
-case "$SATELLITE_MODE" in
-    ""|none|overview|regional|regional13) ;;
-    *) die "--satellite must be none, overview, regional or regional13." ;;
-esac
-case "$SATELLITE_DETAILED" in
-    ""|none|15|16|17) ;;
-    *) die "--satellite-detailed must be 15, 16, 17 or none." ;;
 esac
 
 # Unfinished builds are noted in data/osm/build-history.log.
@@ -819,7 +809,7 @@ start_tile_server() {
 # The offline background map and satellite imagery, after everything else: a
 # failure here doesn't lose the build.
 offline_background() {
-    download_satellite "$(maps_area)"
+    download_satellite
     section "Background map"
     select_basemap
     if [[ -n "$(background_areas)" ]]; then

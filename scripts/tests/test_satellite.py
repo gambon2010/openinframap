@@ -1,9 +1,7 @@
 """scripts/satellite.py: tile maths, outlines, estimates, MBTiles and downloads."""
 
-import contextlib
+import dataclasses
 import http.server
-import io
-import json
 import sqlite3
 import threading
 from typing import ClassVar
@@ -95,14 +93,6 @@ def test_area_km2():
     assert 4500 < s.area_km2(LUXEMBOURG) < 5200
 
 
-def test_overview_tiles():
-    tiles = s.overview_tiles(LUXEMBOURG)
-    world = sum(4**z for z in range(s.WORLD_OVERVIEW_ZOOM + 1))
-    assert len([t for t in tiles if t[0] <= s.WORLD_OVERVIEW_ZOOM]) == world
-    assert max(t[0] for t in tiles) == 8
-    assert len(set(tiles)) == len(tiles)
-
-
 def test_tiles_in_outline_skip_tiles_outside():
     inside = s.tiles_in_outline(LUXEMBOURG, 10)
     bbox = list(s.tiles_in_bbox(s.rings_bbox(LUXEMBOURG), 10))
@@ -110,17 +100,6 @@ def test_tiles_in_outline_skip_tiles_outside():
     triangle = [[(5.73, 49.45), (6.53, 49.45), (5.73, 50.18), (5.73, 49.45)]]
     assert len(s.tiles_in_outline(triangle, 12)) < len(
         list(s.tiles_in_bbox(s.rings_bbox(triangle), 12))
-    )
-
-
-def test_estimate_grows_with_zoom():
-    e = s.estimate(LUXEMBOURG, regional_maxzoom=12, detailed_maxzoom=16)
-    assert e["overview"]["tiles"] == len(s.overview_tiles(LUXEMBOURG))
-    sizes = e["detailed_by_zoom"]
-    assert sizes["15"] < sizes["16"] < sizes["17"]
-    assert (
-        s.estimate(LUXEMBOURG, regional_maxzoom=13)["regional"]["download"]
-        > e["regional"]["download"]
     )
 
 
@@ -228,7 +207,6 @@ def test_world_overview_tiles():
     tiles = s.world_overview_tiles()
     assert len(tiles) == sum(4**z for z in range(9))  # zoom 0 to 8
     assert len(set(tiles)) == len(tiles)
-    assert s.estimate(LUXEMBOURG)["world_overview"]["tiles"] == len(tiles)
 
 
 def test_repeated_small_tiles_are_dropped(tmp_path, tile_server):
@@ -291,133 +269,28 @@ def test_tile_blocks_inside_every_outline():
 
 
 def test_wms_tile_url():
-    source = {"wms": "http://x/wms?BBOX={bbox}"}
+    wms = dataclasses.replace(
+        s.SOURCES["be_wallonia"], address="http://x/wms?BBOX={bbox}"
+    )
     assert (
-        s.tile_url(source, 1, 0, 0)
+        s.tile_url(wms, 1, 0, 0)
         == "http://x/wms?BBOX=-20037508.34,0.00,0.00,20037508.34"
     )
-    assert s.tile_url({"url": "http://x/{z}/{x}/{ty}"}, 2, 1, 0) == "http://x/2/1/3"
-
-
-def test_every_source_is_complete():
-    for source_id in s.DETAILED_SOURCES:
-        src = s.detailed_source(source_id)
-        assert src["regions"] and src["attribution"] and src["resolution"]
-        if "files" in src:  # the agency's files, not tiles (bdortho.py)
-            assert "url" not in src and "wms" not in src
-            assert src["format"] == "webp" and src["maxzoom"] == 19
-            continue
-        assert ("url" in src) != ("wms" in src)
-        assert src["format"] in ("jpg", "png") and 15 <= src["maxzoom"] <= 17
-
-
-def test_choose_presets_and_steps(tmp_path):
-    index = tmp_path / "index.json"
-    square = {
-        "type": "Polygon",
-        "coordinates": [
-            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
-        ],
-    }
-    index.write_text(
-        json.dumps(
-            {
-                "features": [
-                    {
-                        "properties": {"id": "europe", "name": "Europe"},
-                        "geometry": square,
-                    },
-                    {
-                        "properties": {
-                            "id": "luxembourg",
-                            "name": "Luxembourg",
-                            "parent": "europe",
-                        },
-                        "geometry": square,
-                    },
-                ]
-            }
-        )
+    tiles = dataclasses.replace(
+        s.SOURCES["lu_geoportail"], address="http://x/{z}/{x}/{ty}"
     )
-    plan = tmp_path / "plan.json"
-    common = [
-        "--plan",
-        str(plan),
-        "--basemap-dir",
-        str(tmp_path),
-        "--index",
-        str(index),
-    ]
-    s.main(
-        [
-            "choose",
-            *common,
-            "--region",
-            "luxembourg",
-            "--mode",
-            "regional",
-            "--detailed",
-            "16",
-        ]
-    )
-    chosen = json.loads(plan.read_text())
-    assert chosen["world_overview"] is True
-    assert (
-        chosen["regional"]["area"] == "luxembourg"
-        and chosen["regional"]["maxzoom"] == 12
-    )
-    # Luxembourg's own photos: the region is the source's, nothing to cut.
-    assert [(d["source"], d["maxzoom"], d["clip"]) for d in chosen["detailed"]] == [
-        ("lu_geoportail", 16, None)
-    ]
-
-    s.main(["choose", *common, "--mode", "regional", "--area", "world"])
-    assert json.loads(plan.read_text())["regional"] == {
-        "area": "world",
-        "outline": None,
-        "maxzoom": 10,
-    }
-
-    # A region inside a source's country: cut to both.
-    s.main(
-        [
-            "choose",
-            *common,
-            "--region",
-            "europe",
-            "--mode",
-            "overview",
-            "--detailed",
-            "15",
-            "--sources",
-            "lu_geoportail",
-        ]
-    )
-    (job,) = json.loads(plan.read_text())["detailed"]
-    assert (
-        job["source"] == "lu_geoportail" and job["clip"] is None
-    )  # Luxembourg is inside Europe
-
-    lines = io.StringIO()
-    with contextlib.redirect_stdout(lines):
-        s.main(["steps", *common])
-    steps = [line.split("\t") for line in lines.getvalue().splitlines()]
-    assert steps[0][1:3] == ["overview", "--world"]
-    assert steps[-1][1] == "detailed" and steps[-1][-1].endswith(
-        "europe.sat-detailed-lu_geoportail.pmtiles"
-    )
+    assert s.tile_url(tiles, 2, 1, 0) == "http://x/2/1/3"
 
 
 def test_every_imagery_file_has_its_credit():
     assert "NASA" in s.attribution_for("world.sat-overview.pmtiles")
     assert "Copernicus" in s.attribution_for("data/basemap/bayern.sat-regional.pmtiles")
-    assert "IGN" in s.attribution_for("alsace.sat-detailed.pmtiles")  # the old name
-    for source_id, source in s.DETAILED_SOURCES.items():
+    for source_id, source in s.AERIAL.items():
         credit = s.attribution_for(f"area.sat-detailed-{source_id}.pmtiles")
-        assert credit == source["attribution"]
+        assert credit == source.credit
         # Credits travel in VITE_SATELLITE_TIERS, between ";" and after "|".
         assert ";" not in credit and "|" not in credit
-    assert s.attribution_for("other.pmtiles") == ""
+    assert s.attribution_for("notes.txt") == ""
 
 
 def fake_pmtiles(path, minzoom, maxzoom):
@@ -426,87 +299,6 @@ def fake_pmtiles(path, minzoom, maxzoom):
     header[:7] = b"PMTiles"
     header[100], header[101] = minzoom, maxzoom
     path.write_bytes(bytes(header))
-
-
-def test_aerial_photos_already_there(tmp_path):
-    from satimagery.gdal import pmtiles_zooms
-    from satimagery.menu import detailed_file, detailed_have
-
-    first = detailed_file(tmp_path, "spain", "es_pnoa")
-    assert first.name == "spain.sat-detailed-es_pnoa.pmtiles"
-    fake_pmtiles(first, 14, 15)
-    assert pmtiles_zooms(first) == (14, 15)
-    assert pmtiles_zooms(tmp_path / "none.pmtiles") is None
-    assert detailed_have(tmp_path, "spain", "es_pnoa") == 15
-    assert detailed_have(tmp_path, "portugal", "es_pnoa") is None
-
-
-def test_more_detail_later_makes_the_file_again(tmp_path):
-    index = tmp_path / "index.json"
-    square = {
-        "type": "Polygon",
-        "coordinates": [
-            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
-        ],
-    }
-    index.write_text(
-        json.dumps(
-            {
-                "features": [
-                    {
-                        "properties": {"id": "luxembourg", "name": "Luxembourg"},
-                        "geometry": square,
-                    }
-                ]
-            }
-        )
-    )
-    fake_pmtiles(tmp_path / "luxembourg.sat-detailed-lu_geoportail.pmtiles", 14, 15)
-    plan = tmp_path / "plan.json"
-    common = [
-        "--plan",
-        str(plan),
-        "--basemap-dir",
-        str(tmp_path),
-        "--index",
-        str(index),
-    ]
-    top = s.detailed_source("lu_geoportail")["maxzoom"]
-    s.main(
-        [
-            "choose",
-            *common,
-            "--region",
-            "luxembourg",
-            "--mode",
-            "overview",
-            "--detailed",
-            str(top),
-        ]
-    )
-    (job,) = json.loads(plan.read_text())["detailed"]
-    assert job["maxzoom"] == top and "minzoom" not in job
-    lines = io.StringIO()
-    with contextlib.redirect_stdout(lines):
-        s.main(["steps", *common])
-    step = lines.getvalue().splitlines()[-1].split("\t")
-    # The same file, made again from zoom 14 (replaced once it's finished).
-    assert "--minzoom" not in step
-    assert step[-1].endswith("luxembourg.sat-detailed-lu_geoportail.pmtiles")
-    # Already as detailed as asked: nothing to download.
-    s.main(
-        [
-            "choose",
-            *common,
-            "--region",
-            "luxembourg",
-            "--mode",
-            "overview",
-            "--detailed",
-            "15",
-        ]
-    )
-    assert json.loads(plan.read_text())["detailed"] == []
 
 
 class FlakyServer(http.server.BaseHTTPRequestHandler):
@@ -573,121 +365,6 @@ def test_the_command_line_says_so_and_exits_75(tmp_path, monkeypatch, capsys):
 
     monkeypatch.setattr(s.cli, "command_overview", lost)
     with pytest.raises(SystemExit) as stop:
-        s.main(["overview", "--world", "--out", str(tmp_path / "w.pmtiles")])
+        s.main(["overview", "--out", str(tmp_path / "w.pmtiles")])
     assert stop.value.code == 75
     assert "run again" in capsys.readouterr().err
-
-
-def test_lower_zooms_of_a_file_that_already_has_them(tmp_path, capsys):
-    # A Sentinel-2 file starting at the tier's first zoom: nothing to do.
-    header = bytearray(127)
-    header[:7], header[100], header[101] = b"PMTiles", s.TIERS["regional"][0], 12
-    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(bytes(header))
-    s.main(
-        ["lower-zooms", "--file", "lux.sat-regional", "--basemap-dir", str(tmp_path)]
-    )
-    assert "nothing to do" in capsys.readouterr().err
-
-
-def test_lower_zooms_without_the_file(tmp_path):
-    with pytest.raises(SystemExit) as stop:
-        s.main(["lower-zooms", "--file", "nowhere", "--basemap-dir", str(tmp_path)])
-    assert "No imagery file" in str(stop.value)
-
-
-def test_keeping_sentinel_still_offers_the_aerial_photos(tmp_path, monkeypatch, capsys):
-    square = {
-        "type": "Polygon",
-        "coordinates": [
-            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
-        ],
-    }
-    index = tmp_path / "index.json"
-    index.write_text(
-        json.dumps(
-            {
-                "features": [
-                    {
-                        "properties": {"id": "europe", "name": "Europe"},
-                        "geometry": square,
-                    },
-                    {
-                        "properties": {
-                            "id": "luxembourg",
-                            "name": "Luxembourg",
-                            "parent": "europe",
-                        },
-                        "geometry": square,
-                    },
-                ]
-            }
-        )
-    )
-    # Its Sentinel-2 is there already, to zoom 12.
-    header = bytearray(127)
-    header[:7], header[100], header[101] = b"PMTiles", 5, 12
-    (tmp_path / "luxembourg.sat-regional.pmtiles").write_bytes(bytes(header))
-    (tmp_path / "world.sat-overview.pmtiles").write_bytes(bytes(header))
-    plan = tmp_path / "plan.json"
-    # Enter: keep it; then the aerial photos (one source: the zoom straight away):
-    # "1" isn't a zoom (said so, asked again), then 15.
-    monkeypatch.setattr("sys.stdin", io.StringIO("\n1\n15\n"))
-    s.main(
-        [
-            "choose",
-            "--plan",
-            str(plan),
-            "--basemap-dir",
-            str(tmp_path),
-            "--index",
-            str(index),
-            "--region",
-            "luxembourg",
-            "--region-name",
-            "Luxembourg",
-        ]
-    )
-    shown = capsys.readouterr().err
-    assert "Keep what you have (Luxembourg to zoom 12)" in shown
-    assert "Step 2 of 2. Aerial photos of Luxembourg" in shown
-    chosen = json.loads(plan.read_text())
-    assert chosen["regional"] is None and chosen["world_overview"] is False
-    assert "up to which zoom?" in shown and "Type one of: 15" in shown
-    assert [(d["source"], d["maxzoom"]) for d in chosen["detailed"]] == [
-        ("lu_geoportail", 15)
-    ]
-
-
-def test_which_files_need_lower_zooms(tmp_path):
-    lux = {
-        "type": "Polygon",
-        "coordinates": [
-            [[5.7, 49.4], [6.6, 49.4], [6.6, 50.2], [5.7, 50.2], [5.7, 49.4]]
-        ],
-    }
-    france = {
-        "type": "Polygon",
-        "coordinates": [[[-5, 42], [9.6, 42], [9.6, 51.1], [-5, 51.1], [-5, 42]]],
-    }
-
-    def make(area, outline, first):
-        header = bytearray(127)
-        header[:7], header[100], header[101] = b"PMTiles", first, 13
-        (tmp_path / f"{area}.sat-regional.pmtiles").write_bytes(bytes(header))
-        (tmp_path / f".area-{area}.geojson").write_text(json.dumps(outline))
-
-    make("lux", lux, 8)  # Luxembourg can't go lower than 8: done
-    make("old", france, 9)  # France made from 9: needs 7 and 8
-    make("france", france, 5)  # made when it started at 5: more than enough
-    # Aerial photos made when they started at 14; one already from 12.
-    for name, first in (
-        ("fr-75.sat-detailed-fr_ign", 14),
-        ("fr-67.sat-detailed-fr_ign", 12),
-    ):
-        header = bytearray(127)
-        header[:7], header[100], header[101] = b"PMTiles", first, 17
-        (tmp_path / f"{name}.pmtiles").write_bytes(bytes(header))
-    assert s.lower_zooms_needed(tmp_path) == [
-        "fr-75.sat-detailed-fr_ign",
-        "old.sat-regional",
-    ]

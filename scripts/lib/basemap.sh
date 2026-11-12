@@ -3,11 +3,6 @@
 # scripts/satellite.py maps, served by the backend's /background); PMTiles headers.
 # Sourced by common.sh.
 
-# The pmtiles CLI's image (the satellite service's), for the scripts' own uses.
-pmtiles_image() {
-    docker compose config --format json </dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["satellite"]["image"])'
-}
-
 # The background maps downloaded: data/basemap/<area>.pmtiles (not satellite
 # imagery, <area>.sat-*.pmtiles), their areas, one per line.
 background_areas() {
@@ -21,27 +16,15 @@ background_areas() {
 
 # The background map: every area downloaded, served by the backend (/background,
 # web-backend/src/fork/background/: each tile from the first file that has it),
-# which is the frontend's default. A VITE_BASEMAP_URL left from before (the old
-# one-file server on 8090, or the backend's own address) is removed; one pointing
-# elsewhere is someone's choice and stays. The argument is no longer needed.
+# which is the frontend's default: nothing to set. Says which areas there are, or
+# that the background is empty.
 select_basemap() {
-    local current areas
-    ensure_web_env
-    # No longer read (the online background map is gone).
-    grep -q '^VITE_TILE_BASE_URL=' "$WEB_ENV" && set_env_line "$WEB_ENV" VITE_TILE_BASE_URL ""
-    current=$(grep -E '^VITE_BASEMAP_URL=' "$WEB_ENV" | cut -d= -f2- || true)
-    if [[ "$current" == "http://localhost:$SATELLITE_PORT/"* || "$current" == "http://localhost:$BACKEND_PORT/background/"* ]]; then
-        set_env_line "$WEB_ENV" VITE_BASEMAP_URL ""
-        BASEMAP_CHANGED=1
-    fi
+    local areas
     areas=$(background_areas | paste -sd, - | sed 's/,/, /g')
     if [[ -n "$areas" ]]; then
         ok "Offline background map: $areas"
     else
         warn "No background map downloaded: the map's background is empty (bash scripts/satellite.sh: Add, Background map)."
-    fi
-    if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
-        warn "Restart the frontend to switch background maps (Ctrl+C in its window, then bash scripts/start.sh)."
     fi
 }
 

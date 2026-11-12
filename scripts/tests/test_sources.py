@@ -42,7 +42,7 @@ def test_a_source_declares_what_the_menus_need(name):
         assert s.units and s.read_per_km2 > 0
         importlib.import_module(f"satimagery.{s.address}")
     if s.layer == "detailed":
-        assert s.regions and s.first_zoom == sources.TIERS["detailed"][0]
+        assert s.regions and s.first_zoom == sources.AERIAL_FIRST_ZOOM
     if s.bbox:
         west, south, east, north = s.bbox
         assert -180 <= west < east <= 180 and -90 <= south < north <= 90

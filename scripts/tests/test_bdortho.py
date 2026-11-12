@@ -3,8 +3,6 @@ département at a time; netsafe.fetch_file, the resumable download it uses."""
 
 import hashlib
 import http.server
-import io
-import json
 import sqlite3
 import threading
 
@@ -228,56 +226,3 @@ def test_a_departement_already_there_is_skipped(tmp_path, monkeypatch, capsys):
         ["bdortho", "--dept", "67", "--maxzoom", "16", "--basemap-dir", str(tmp_path)]
     )
     assert "already there to zoom 17" in capsys.readouterr().err
-
-
-def test_the_menu_asks_the_zoom_then_the_departements(tmp_path, monkeypatch, capsys):
-    square = {
-        "type": "Polygon",
-        "coordinates": [[[7, 47], [8, 47], [8, 49], [7, 49], [7, 47]]],
-    }
-    index = tmp_path / "index.json"
-    index.write_text(
-        json.dumps(
-            {
-                "features": [
-                    {
-                        "properties": {"id": "france", "name": "France"},
-                        "geometry": square,
-                    },
-                    {
-                        "properties": {
-                            "id": "alsace",
-                            "name": "Alsace",
-                            "parent": "france",
-                        },
-                        "geometry": square,
-                    },
-                ]
-            }
-        )
-    )
-    header = bytearray(127)
-    header[:7], header[100], header[101] = b"PMTiles", 7, 12
-    (tmp_path / "alsace.sat-regional.pmtiles").write_bytes(bytes(header))
-    (tmp_path / "world.sat-overview.pmtiles").write_bytes(bytes(header))
-    plan = tmp_path / "plan.json"
-    # Keep Sentinel-2; IGN to zoom 17; "99" isn't one of them, then 67.
-    monkeypatch.setattr("sys.stdin", io.StringIO("\n17\n99\n67\n"))
-    args = ["--plan", str(plan), "--basemap-dir", str(tmp_path), "--index", str(index)]
-    s.main(["choose", *args, "--region", "alsace"])
-    shown = capsys.readouterr().err
-    assert "IGN's aerial photos (BD ORTHO" in shown and "2 départements" in shown
-    assert "67 Bas-Rhin" in shown and "Type codes from the list" in shown
-    assert json.loads(plan.read_text())["bdortho"] == {"codes": ["67"], "maxzoom": 17}
-    s.main(["steps", *args])
-    step = capsys.readouterr().out.strip().split("\t")
-    assert step[0] == "IGN aerial photos (BD ORTHO), Bas-Rhin, to zoom 17"
-    assert step[1:] == [
-        "bdortho",
-        "--dept",
-        "67",
-        "--maxzoom",
-        "17",
-        "--basemap-dir",
-        str(tmp_path),
-    ]

@@ -66,9 +66,9 @@ fi
 EXPORT_HASH=$(json_get "$MANIFEST" schema_hash)
 if [[ -n "$EXPORT_HASH" && "$EXPORT_HASH" != "$(schema_hash)" ]]; then
     warn "This export was made with a different version of the project (commit"
-    warn "$(json_get "$MANIFEST" git_commit)). It will probably work, but some map layers may be"
-    warn "missing or broken. Rebuilding the region from scratch avoids that."
-    ask_yes_no "Import it anyway?" y || die "Aborted — nothing was changed."
+    warn "$(json_get "$MANIFEST" git_commit)): map layers added since are missing from it, and the"
+    warn "map may not start. Rebuild the region (or export it again where it was made)."
+    ask_yes_no "Import it anyway?" n || die "Aborted — nothing was changed."
 fi
 
 if db_volume_exists; then
@@ -120,24 +120,13 @@ restore() {
         --no-owner --no-privileges --exit-on-error -L /tmp/restore-list < "$DUMP"
 }
 run_with_timer "Restoring the database" restore
-# Exports made before search indexes were part of the build don't have them.
-run_with_timer "Checking search indexes" create_search_indexes
-# Exports made before extra data existed don't have its tables (Tegola needs them).
-# Exports made before distances were in real metres don't have their helpers.
-run_schema distances
-run_with_timer "Checking extra data tables" run_sql_file schema/extra.sql
-# Exports made before these steps existed don't have their tables.
-if [[ "$(db_query "SELECT to_regclass('search_feature') IS NULL")" == "t" ]]; then
-    run_schema search
-fi
-if [[ "$(db_query "SELECT to_regclass('grid_edge') IS NULL")" == "t" ]]; then
-    run_schema grid
-fi
+# The towers are numbered again: My layers (kept from this computer) hold the
+# register of the numbers people saw.
 run_schema tower-numbers
 put_back_my_layers
 restart_map_services
-select_basemap "$REGION_ID"
-select_satellite "$REGION_ID"
+select_basemap
+select_satellite
 
 TOOK=$(duration $((SECONDS - START)))
 log_build "$REGION_ID  imported in $TOOK (OSM data as of $OSM_TIMESTAMP)"

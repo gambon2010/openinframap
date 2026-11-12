@@ -31,8 +31,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# The code is in scripts/satimagery/ (sources, tiles, estimate, download, gdal,
-# menu, cli). Run as a script (python3 -I), Python doesn't look next to it.
+# The code is in scripts/satimagery/. Run as a script (python3 -I), Python doesn't look next to it.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from satimagery import *

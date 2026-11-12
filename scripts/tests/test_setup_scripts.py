@@ -156,16 +156,9 @@ def test_unknown_option(sandbox, script):
     "option, value, message",
     [
         ("--basemap", "huge", "--basemap must be full or none"),
-        (
-            "--satellite",
-            "everything",
-            "--satellite must be none, overview, regional or regional13",
-        ),
-        (
-            "--satellite-detailed",
-            "20",
-            "--satellite-detailed must be 15, 16, 17 or none",
-        ),
+        # Options that are gone say what replaces them.
+        ("--satellite", "regional", "--satellite is gone: use --maps"),
+        ("--satellite-detailed", "17", "--satellite-detailed is gone: use --maps"),
     ],
 )
 def test_build_refuses_bad_values_before_doing_anything(
@@ -280,12 +273,10 @@ def test_import(sandbox):
     basemap.mkdir(parents=True)
     header = bytearray(127)
     header[:7], header[101] = b"PMTiles", 8
-    (basemap / "luxembourg.sat-overview.pmtiles").write_bytes(bytes(header))
+    (basemap / "world.sat-overview.pmtiles").write_bytes(bytes(header))
     db = answers(
         **{
             "count(*) FROM userdata.save": "3",  # there are My layers to keep
-            "to_regclass('search_feature') IS NULL": "t",  # an old export: no search view
-            "to_regclass('grid_edge') IS NULL": "t",  # ... and no grid network
             "region_name": "France",
         }
     )
@@ -305,16 +296,10 @@ def test_import(sandbox):
         < first("pg_restore", "--exit-on-error")
     )
     assert (sandbox.root / "data" / "userdata" / "userdata.dump").exists()
-    # Old exports get the search view and the grid network built.
-    sql_runs = [c for c in calls if "psql" in c and "-tAc" not in c]
-    assert (
-        len(sql_runs) >= 3
-    )  # extra.sql, search.sql, grid.sql (and My layers' restore)
-    assert "Building the power grid network" in result.stdout
     # The satellite imagery copied along is switched on.
     env = (sandbox.root / "web" / ".env").read_text()
     assert (
-        "VITE_SATELLITE_TIERS=http://localhost:8090/luxembourg.sat-overview/{z}/{x}/{y}.jpg 0 8"
+        "VITE_SATELLITE_TIERS=http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8"
         in env
     )
     # The tile server is recreated so it doesn't serve the old data's tiles.
@@ -428,7 +413,7 @@ def test_start(sandbox):
 def test_start_serves_satellite_imagery_without_a_background_map(sandbox):
     basemap = sandbox.root / "data" / "basemap"
     basemap.mkdir(parents=True)
-    (basemap / "luxembourg.sat-overview.pmtiles").write_bytes(b"PMTiles")
+    (basemap / "world.sat-overview.pmtiles").write_bytes(b"PMTiles")
     db = answers(
         **{"key = 'region_name'": "Luxembourg", "key = 'region_id'": "luxembourg"}
     )
@@ -562,8 +547,6 @@ def test_real_build_export_and_import(tmp_path):
             "--no-extra",
             "--basemap",
             "none",
-            "--satellite",
-            "none",
         )
         check_database()
         run("bash", "scripts/export-db.sh", "--yes", "--no-docker-images")
@@ -589,11 +572,9 @@ def test_real_build_export_and_import(tmp_path):
 @pytest.mark.parametrize(
     "args, message",
     [
-        (
-            ["--satellite", "everything"],
-            "--satellite must be overview, regional or regional13",
-        ),
-        (["--yes"], "With --yes, say which tiers"),
+        (["--satellite", "regional"], "--satellite is gone: without questions, use"),
+        (["--yes"], "--yes is gone: without questions, use"),
+        (["--everything"], "Unknown option: --everything"),
     ],
 )
 def test_satellite_refuses_bad_options_before_doing_anything(sandbox, args, message):

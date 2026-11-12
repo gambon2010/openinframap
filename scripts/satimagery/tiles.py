@@ -8,8 +8,6 @@ import sys
 from collections.abc import Iterator
 from pathlib import Path
 
-from .sources import EARTH_CIRCUMFERENCE_M
-
 # --- Tile maths ---------------------------------------------------------------
 
 
@@ -41,11 +39,6 @@ def tiles_in_bbox(
     for x in range(x0, x1 + 1):
         for y in range(y0, y1 + 1):
             yield x, y
-
-
-def tile_side_km(lat: float, zoom: int) -> float:
-    """A tile's side on the ground at a latitude."""
-    return EARTH_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / 2**zoom / 1000
 
 
 # --- Outlines -----------------------------------------------------------------
@@ -237,23 +230,3 @@ def load_rings(path: str) -> list[Ring]:
     if not rings:
         sys.exit(f"No polygon in {path}")
     return rings
-
-
-def lowest_zoom(rings: list[Ring], floor: int) -> int:
-    """The lowest zoom (from `floor`) at which an area still spans half a tile (128
-    pixels) or more: GDAL makes no lower zooms for it (Luxembourg: 8)."""
-    west, south, east, north = rings_bbox(rings)
-
-    def y(lat: float) -> float:
-        lat = max(-85.0511, min(85.0511, lat))
-        return (
-            1
-            - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat)))
-            / math.pi
-        ) / 2
-
-    span = max((east - west) / 360, abs(y(south) - y(north)))
-    zoom = floor
-    while zoom < 20 and span * 256 * 2**zoom < 128:
-        zoom += 1
-    return zoom

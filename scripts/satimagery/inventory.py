@@ -64,8 +64,6 @@ def identify(name: str) -> tuple[str, str, str] | None:
         return "blue_marble", area, ""
     if tier == "regional":
         return "sentinel2", area, ""
-    if tier == "detailed":  # before there were several sources: IGN's
-        return "fr_ign", area, ""
     source = SOURCES.get(tier.removeprefix("detailed-"))
     if not tier.startswith("detailed-") or not source:
         return None
@@ -74,6 +72,14 @@ def identify(name: str) -> tuple[str, str, str] | None:
         if unit:
             return source.id, source.regions[0], unit
     return source.id, area, ""
+
+
+def attribution_for(name: str) -> str:
+    """The credit line of an imagery file, from its name ("" if it isn't one). The
+    scripts pass it to the frontend with the file (VITE_SATELLITE_TIERS): the
+    sources' credits are the only list."""
+    what = identify(Path(name).name)
+    return SOURCES[what[0]].credit if what else ""
 
 
 def scan(folder: Path) -> list[Entry]:

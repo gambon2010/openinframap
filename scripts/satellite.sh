@@ -2,68 +2,38 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# satellite.sh — download offline satellite imagery for the region already
-# built, without touching the database (build-region.sh would rebuild it).
+# satellite.sh — the offline maps menu, for the region already built, without
+# touching the database (build-region.sh would rebuild it).
 #
 #   bash scripts/satellite.sh
 #
-# The offline maps menu (the same as build-region.sh's): what's there, then
-# Resume, Add, Remove, Settings. Add offers, for an area (this region, another
-# country, the world), NASA Blue Marble, Sentinel-2 10 m, aerial photos (8 to 60
-# cm) where a country publishes them, and the background map, with sizes; only
-# what isn't there yet or pointless. Downloads into data/basemap/ and points the
-# map at everything there (Settings → Background → Satellite). Your map data and
-# your own layers are left as they are; the frontend needs a restart to show new
-# imagery. A download stopped half-way goes on with Resume.
-# The options below skip the menu (the older questions' presets); for the menu
-# without questions: python3 scripts/satellite.py maps --help.
+# Shows what's downloaded, then Resume, Add, Remove, Settings. Add offers, for an
+# area (this region, another country, the world), NASA Blue Marble, Sentinel-2
+# 10 m, aerial photos (8 to 60 cm) where a country publishes them, and the
+# background map, with sizes: only what isn't there yet and makes sense. Downloads
+# into data/basemap/ and points the map at everything there (Settings →
+# Background). Your map data and your own layers are left as they are; the
+# frontend needs a restart to show new imagery. A download stopped half-way goes
+# on with Resume.
 #
-#   --satellite MODE           overview (the world only), regional (Sentinel-2)
-#   --area ID                  Sentinel-2 / photos for this Geofabrik region, or
-#                              world (default: the region built)
-#   --zoom N                   Sentinel-2 to zoom 9-13 (default 12; world: 10)
-#   --satellite-detailed ZOOM  aerial photos to zoom 15, 16 or 17 (or none)
-#   --sources "ID ..."         which aerial photo sources (default: all that
-#                              cover the area; python3 scripts/satellite.py sources)
-#   --yes, -y                  don't ask (needs --satellite)
+# Without questions: python3 scripts/satellite.py maps --source ID --yes
+# (--help lists the sources and options); start.sh then shows it on the map.
 # ---------------------------------------------------------------------------
 
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-SATELLITE_MODE=""
-SATELLITE_DETAILED=""
-SATELLITE_AREA_ID=""
-SATELLITE_ZOOM=""
-SATELLITE_SOURCES=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --satellite)          SATELLITE_MODE="${2:?--satellite needs overview, regional or regional13}"; shift 2 ;;
-        --satellite-detailed) SATELLITE_DETAILED="${2:?--satellite-detailed needs 15, 16, 17 or none}"; shift 2 ;;
-        --area)               SATELLITE_AREA_ID="${2:?--area needs a region id or world}"; shift 2 ;;
-        --zoom)               SATELLITE_ZOOM="${2:?--zoom needs 9 to 13}"; shift 2 ;;
-        --sources)            SATELLITE_SOURCES="${2:?--sources needs source ids}"; shift 2 ;;
-        --yes|-y)             ASSUME_YES=1; shift ;;
-        -h|--help)            sed -n '4,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-        *)                    die "Unknown option: $1" ;;
+        -h|--help)  sed -n '4,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --satellite|--satellite-detailed|--area|--zoom|--sources|--yes|-y)
+            die "$1 is gone: without questions, use python3 scripts/satellite.py maps --source ID --yes (see --help there)." ;;
+        *)          die "Unknown option: $1" ;;
     esac
 done
-case "$SATELLITE_MODE" in
-    ""|overview|regional|regional13) ;;
-    *) die "--satellite must be overview, regional or regional13." ;;
-esac
-case "$SATELLITE_ZOOM" in
-    ""|9|10|11|12|13) ;;
-    *) die "--zoom must be 9 to 13." ;;
-esac
-case "$SATELLITE_DETAILED" in
-    ""|none|15|16|17) ;;
-    *) die "--satellite-detailed must be 15, 16, 17 or none." ;;
-esac
-[[ "${ASSUME_YES:-0}" == 1 && -z "$SATELLITE_MODE" ]] && die "With --yes, say which tiers: --satellite regional (or overview, regional13)."
 
-banner "offline satellite imagery"
+banner "offline maps"
 
 docker info >/dev/null 2>&1 || die "Docker isn't running."
 db_volume_exists || die "There's no map database yet. Build a region first: bash scripts/build-region.sh"
@@ -75,18 +45,11 @@ ok "Region: $REGION_NAME"
 # Outlines come from Geofabrik's index (kept from the build; refreshed daily).
 fetch_geofabrik_index || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
 
-if [[ -z "$SATELLITE_MODE" ]]; then
-    # The offline maps menu: what's there, Resume, Add, Remove, Settings; it
-    # downloads itself.
-    python3 -I "$REPO_ROOT/scripts/satellite.py" maps --basemap-dir "$BASEMAP_DIR" \
-        --index "$GEOFABRIK_INDEX" --region "$REGION_ID" || warn "Stopped: Resume goes on from there."
-    select_basemap "$REGION_ID"
-else
-    choose_satellite "$REGION_ID"
-    # Nothing new chosen: older imagery is still brought up to date (download_satellite).
-    [[ -f "$SATELLITE_PLAN" ]] || info "Nothing new to download."
-fi
-download_satellite "$REGION_ID"
+# It downloads itself; what's left of a stopped download waits for Resume.
+python3 -I "$REPO_ROOT/scripts/satellite.py" maps --basemap-dir "$BASEMAP_DIR" \
+    --index "$GEOFABRIK_INDEX" --region "$REGION_ID" || warn "Stopped: Resume goes on from there."
+select_basemap
+download_satellite
 echo ""
 ok "Done. Restart the frontend (Ctrl+C in its window, then bash scripts/start.sh) and"
 info "turn it on in Settings → Background."

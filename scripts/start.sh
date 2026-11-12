@@ -29,11 +29,11 @@ ok "Map database: $REGION (OSM data as of $(build_info osm_timestamp))"
 up_services tegola
 ok "Tile server running on http://localhost:7800"
 REGION_ID=$(build_info region_id)
-if has_satellite "$REGION_ID"; then
+if has_satellite; then
     start_satellite_if_present
 fi
 # The imagery list (and its credits) for the frontend, kept up to date.
-select_satellite "$REGION_ID"
+select_satellite
 
 section "Starting the app..."
 if ! start_app; then

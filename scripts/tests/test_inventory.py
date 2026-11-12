@@ -56,7 +56,6 @@ def test_files_are_known_by_their_names():
         "bayern",
         "",
     )
-    assert inventory.identify("alsace.sat-detailed.pmtiles") == ("fr_ign", "alsace", "")
     assert inventory.identify("luxembourg.pmtiles") == ("protomaps", "luxembourg", "")
     for other in (
         "x.sat-detailed-nope.pmtiles",

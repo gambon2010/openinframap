@@ -279,3 +279,22 @@ def test_the_world_zoomed_out_comes_with_anything(folder, capsys):
     first, then = folder["ran"]
     assert first[:3] == ["basemap", "--area", "world"] and "--maxzoom" in first
     assert then[0] == "bdortho"
+
+
+def test_tile_server_photos_without_questions(folder):
+    # A country's tile server (not IGN's files): the zoom asked, as far as it goes.
+    menu(
+        folder,
+        "",
+        "--source",
+        "lu_geoportail",
+        "--area",
+        "luxembourg",
+        "--zoom",
+        "19",
+        "--yes",
+    )
+    (argv,) = folder["ran"]
+    assert argv[:3] == ["detailed", "--source", "lu_geoportail"]
+    assert argv[argv.index("--maxzoom") + 1] == "17"  # its last zoom
+    assert argv[-1].endswith("luxembourg.sat-detailed-lu_geoportail.pmtiles")

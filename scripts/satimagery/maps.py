@@ -19,14 +19,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from . import coverage, extract, inventory, ui
+from .aerial import detailed_file, detailed_job, job_estimate
+from .bdortho import DOWNLOAD_BYTES_PER_SECOND
 from .inventory import Entry
-from .menu import (
-    BDORTHO_BYTES_PER_SECOND,
-    Index,
-    detailed_file,
-    detailed_job,
-    job_estimate,
-)
+from .regions import Index
 from .sources import BLUE_MARBLE, SENTINEL2, SOURCES, Source
 from .tiles import area_km2, load_rings
 
@@ -346,7 +342,7 @@ class Maps:
         return [
             Job(
                 f"{BLUE_MARBLE.label}, the world, z0–8",
-                ["overview", "--world", "--out", str(out)],
+                ["overview", "--out", str(out)],
                 kept=BLUE_MARBLE.sizes["world"],
                 download=BLUE_MARBLE.sizes["world"],
                 seconds=3600,
@@ -455,7 +451,7 @@ class Maps:
         e = conv.unit_estimate(units, zoom)
         had = sum(x.have for x in self.stopped() if x.unit in units)
         rate_setting = self.settings()["max_rate"]
-        rate = (rate_setting or 0) * 1e6 or BDORTHO_BYTES_PER_SECOND
+        rate = (rate_setting or 0) * 1e6 or DOWNLOAD_BYTES_PER_SECOND
         argv = [
             "bdortho",
             "--dept",
@@ -494,16 +490,21 @@ class Maps:
         ]
         return row, None if full else (lambda: self.tiles_jobs(source, area))
 
-    def tiles_jobs(self, source: Source, area: str) -> list[Job] | None:
+    def tiles_jobs(
+        self, source: Source, area: str, zoom: int | None = None
+    ) -> list[Job] | None:
         job = detailed_job(source.id, area, self.index, self.folder)
         if not job:
             ui.say(f"No outline for {self.name(area)} in Geofabrik's index.")
             return None
         ui.say("Working out the sizes...")
         estimate = {int(z): v for z, v in job_estimate(job).items()}
-        zoom = self.ask_zoom(source, {z: v["bytes"] for z, v in estimate.items()})
         if zoom is None:
-            return None
+            zoom = self.ask_zoom(source, {z: v["bytes"] for z, v in estimate.items()})
+            if zoom is None:
+                return None
+        # Without questions: the zoom asked, as far as the source goes.
+        zoom = max(min(zoom, max(estimate)), min(estimate))
         clip = ["--clip", job["clip"]] if job["clip"] else []
         out = detailed_file(self.folder, area, source.id)
         return [
@@ -817,9 +818,8 @@ class Maps:
             ]
             jobs = [self.units_job(source, units, zoom)] if units else []
         else:
-            sys.exit(
-                f"{source.id}: not without questions yet (satellite.sh --sources)."
-            )
+            zoom = args.zoom or self.zoom_offered(source)
+            jobs = self.tiles_jobs(source, area, zoom) or []
         return self.start(self.complete(jobs))
 
 

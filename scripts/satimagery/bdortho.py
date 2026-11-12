@@ -31,7 +31,7 @@ from . import inventory
 from .departements import DEPARTEMENTS
 from .download import MBTiles
 from .gdal import docker_run, pmtiles_zooms, to_pmtiles
-from .sources import DETAILED_SOURCES, EARTH_CIRCUMFERENCE_M, SOURCES, TIERS, USER_AGENT
+from .sources import AERIAL_FIRST_ZOOM, EARTH_CIRCUMFERENCE_M, SOURCES, USER_AGENT
 from .tiles import tile_bounds
 
 LISTING = "https://data.geopf.fr/telechargement/resource/BDORTHO"
@@ -44,8 +44,8 @@ ATOM = "{http://www.w3.org/2005/Atom}"
 GPF = "{https://data.geopf.fr/annexes/ressources/xsd/gpf_dl.xsd}"
 # Archive parts downloaded at once (IGN's service sends each one slowly).
 PARTS_AT_ONCE = 3
-# From zoom 12, as every aerial source (TIERS); the two zooms below 14 add about 8%.
-MINZOOM = TIERS["detailed"][0]
+# From zoom 12, as every aerial source; the two zooms below 14 add about 8%.
+MINZOOM = AERIAL_FIRST_ZOOM
 # WebP quality of the tiles: smaller than IGN's JPEG, still sharp.
 QUALITY = 75
 # Threads making tiles at once: with all 32 cores, gdal raster tile fails to
@@ -55,6 +55,9 @@ TILE_THREADS = min(8, os.cpu_count() or 8)
 # GDAL 3.11 for `gdal raster tile` (every core, every zoom); Sentinel-2 stays on
 # sources.GDAL_IMAGE.
 TILER_IMAGE = "ghcr.io/osgeo/gdal:alpine-small-3.11.4"
+# How fast IGN's download service sends its files (several at once), for the
+# times shown before a download.
+DOWNLOAD_BYTES_PER_SECOND = 3_000_000
 # Sizes (sources/fr_ign.py): the archive per km², and a WebP tile on average.
 ARCHIVE_BYTES_PER_KM2 = SOURCES["fr_ign"].read_per_km2
 WEBP_TILE_BYTES = SOURCES["fr_ign"].tile_bytes
@@ -413,7 +416,7 @@ def pack(tiles: Path, out: Path, code: str) -> Path:
         "webp",
         zooms[0],
         top,
-        DETAILED_SOURCES["fr_ign"]["attribution"],
+        SOURCES["fr_ign"].credit,
         (west, south, east, north),
     )
     for path in tiles.rglob("*.webp"):
