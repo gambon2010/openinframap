@@ -293,14 +293,6 @@ def test_every_imagery_file_has_its_credit():
     assert s.attribution_for("notes.txt") == ""
 
 
-def fake_pmtiles(path, minzoom, maxzoom):
-    """A file with a PMTiles header (its zooms at bytes 100 and 101), nothing else."""
-    header = bytearray(127)
-    header[:7] = b"PMTiles"
-    header[100], header[101] = minzoom, maxzoom
-    path.write_bytes(bytes(header))
-
-
 class FlakyServer(http.server.BaseHTTPRequestHandler):
     """Hangs up without answering the first `drops` requests, then serves tiles."""
 

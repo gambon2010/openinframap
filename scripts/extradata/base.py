@@ -9,7 +9,6 @@ from typing import ClassVar
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 EXTRA_DIR = REPO_ROOT / "data" / "extra"
 GEOFABRIK_INDEX = REPO_ROOT / "data" / "osm" / "geofabrik-index-v1.json"
-USER_AGENT = "OpenInfraMap-LocalDev/1.0 (https://github.com/gambon2010/openinframap)"
 
 
 def region_geojson(cur) -> tuple[str, str]:

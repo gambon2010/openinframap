@@ -45,12 +45,6 @@ THUMBNAIL_WIDTH = 300
 API_DELAY = 1.1  # seconds between MediaWiki API calls (Wikidata / Commons)
 IMAGE_DELAY = 1.0  # seconds between image downloads from upload.wikimedia.org
 
-# Must identify the bot per Wikimedia policy. Update the URL if you fork.
-USER_AGENT = (
-    "OpenInfraMap-LocalDev/1.0 "
-    "(local dev image cache, single operator, not mass scraping; "
-    "https://github.com/gambon2010/openinframap)"
-)
 
 # All tables whose `tags` hstore may carry a wikidata key.
 TAGGED_TABLES = [
@@ -390,7 +384,7 @@ def main() -> None:
             f"(use --json-only for metadata-only run in ~10 sec)"
         )
 
-    with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30) as client:
+    with httpx.Client(headers={"User-Agent": netsafe.USER_AGENT}, timeout=30) as client:
         fetched, images = step_entities(client, todo, "/1" if args.json_only else "/3")
         if args.json_only:
             print(f"\nDone (--json-only) — entity JSON cached for {len(fetched)} IDs.")

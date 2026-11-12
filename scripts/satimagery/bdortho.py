@@ -30,8 +30,9 @@ import netsafe
 from . import inventory
 from .departements import DEPARTEMENTS
 from .download import MBTiles
-from .gdal import docker_run, pmtiles_zooms, to_pmtiles
-from .sources import AERIAL_FIRST_ZOOM, EARTH_CIRCUMFERENCE_M, SOURCES, USER_AGENT
+from .gdal import docker_run, to_pmtiles
+from .pmtiles import read_header
+from .sources import AERIAL_FIRST_ZOOM, EARTH_CIRCUMFERENCE_M, SOURCES
 from .tiles import tile_bounds
 
 LISTING = "https://data.geopf.fr/telechargement/resource/BDORTHO"
@@ -120,6 +121,11 @@ def unit_name(code: str) -> str:
     return DEPARTEMENTS[code][0]
 
 
+def unit_code(typed: str) -> str:
+    """A département's code as typed ("2a", "1"): "2A", "01"."""
+    return typed.upper() if typed[-1:].isalpha() else typed.zfill(2)
+
+
 def unit_of(file_area: str) -> str | None:
     """The département of a file's area name (fr-67 → 67, fr-2a → 2A)."""
     code = file_area.removeprefix("fr-").upper()
@@ -171,7 +177,7 @@ def jobs(folder: Path) -> list[dict]:
 
 
 def atom(url: str) -> ET.Element:
-    data = netsafe.fetch(url, user_agent=USER_AGENT)
+    data = netsafe.fetch(url)
     if data is None:
         raise RuntimeError(f"Nothing at {url}")
     return ET.fromstring(data)
@@ -239,7 +245,7 @@ def expected_md5(md5_url: str | None) -> dict[str, str]:
     """IGN's md5 of each part, by file name."""
     if not md5_url:
         return {}
-    text = (netsafe.fetch(md5_url, user_agent=USER_AGENT) or b"").decode()
+    text = (netsafe.fetch(md5_url) or b"").decode()
     sums = {}
     for line in text.splitlines():
         parts = line.split()
@@ -282,9 +288,7 @@ def download_archive(
     def one(url: str) -> None:
         path = work / Path(urllib.parse.urlsplit(url).path).name
         for attempt in (1, 2):
-            netsafe.fetch_file(
-                url, path, user_agent=USER_AGENT, progress=progress, limit=limit
-            )
+            netsafe.fetch_file(url, path, progress=progress, limit=limit)
             want = sums.get(path.name)
             if not want or md5_of(path) == want:
                 return
@@ -446,8 +450,8 @@ def make_tiles(
 
 def have_zoom(path: Path) -> int | None:
     """The last zoom of a département's file, None if it isn't there."""
-    zooms = pmtiles_zooms(path)
-    return zooms[1] if zooms else None
+    header = read_header(path)
+    return header.maxzoom if header else None
 
 
 def command_bdortho(args) -> None:

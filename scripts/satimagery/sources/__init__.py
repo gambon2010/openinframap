@@ -12,9 +12,6 @@ from .source import LAYERS as LAYERS
 from .source import Source
 
 GDAL_IMAGE = "ghcr.io/osgeo/gdal:alpine-small-3.10.3"
-USER_AGENT = (
-    "openinframap-local (offline satellite cache; github.com/gambon2010/openinframap)"
-)
 
 
 def _load() -> dict[str, Source]:

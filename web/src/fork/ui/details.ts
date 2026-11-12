@@ -28,6 +28,32 @@ export function detailsExtras(): readonly DetailsExtra[] {
   return extras
 }
 
+/** A details row: its label and its value (nothing: the row is left out). */
+export type DetailsRow = [label: string, value: string | Node | null | undefined | false]
+
+/**
+ * A map feature's details as the panel shows them: a title, a table of the rows
+ * that have a value, and what goes under it (a source notice...). For modules
+ * that write their own (popup.html in types.ts).
+ */
+export function detailsCard(
+  title: string,
+  rows: DetailsRow[],
+  ...under: (Node | null | undefined)[]
+): HTMLElement {
+  return el(
+    'div.oim-popup-content',
+    el('div.oim-popup-header', el('h3', title)),
+    el(
+      'table.item_info',
+      rows
+        .filter(([, value]) => value)
+        .map(([label, value]) => el('tr', el('th', label), el('td', value as string | Node)))
+    ),
+    under.filter((node) => node)
+  )
+}
+
 export class DetailsPanel implements IControl {
   _container!: HTMLDivElement
   _body!: HTMLDivElement

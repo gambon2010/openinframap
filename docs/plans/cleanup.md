@@ -25,7 +25,7 @@ changes for whoever uses the map except where a line below says so.
 |---|---|---|
 | 1 | **The old satellite path** and what only it used: `menu.py`'s questions and plan, the `choose` / `steps` / `estimate` / `estimate-detailed` commands, the shell presets and `run_parallel`, the options `--satellite`, `--satellite-detailed`, `--area`, `--zoom`, `--sources` (replaced: `build-region.sh --maps "ID ..."`, `satellite.py maps --source ID --yes`, now also for tile-server photos); the stand-in names (`DETAILED_SOURCES`, `TIERS`, the size constants); one-time code (lower zooms added to old imagery files, the old `.sat-detailed` name, a region's own Blue Marble file, `select_basemap`'s old addresses, `import-db.sh` patching exports from before search / the grid / extra data existed: an older export now defaults to "don't import") | ✅ 2026-11-12 |
 | 2 | **Quick and safe:** `.gitignore` (`*.bak`); lint findings; the debug print; unused string; upstream files nothing imports (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.ts`); the `area` re-export | ✅ 2026-11-12 |
-| 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | |
+| 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | ✅ 2026-11-12 |
 | 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | |
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | |
 | 6 | **Buildings from one source:** zoomed out, the backend makes the tiles from the background map's zoom 15 data on the fly (all buildings at 13 and 14, the large ones at 12), instead of a table in the database, a build step and a Tegola layer; copies are then exact at every zoom | |
@@ -50,3 +50,15 @@ changes for whoever uses the map except where a line below says so.
   icon): upstream's own type errors go from 31 to 24. Measuring's own copy of the
   distance formula and its re-export of the area go: one of each, in
   `core/geo.ts`. The debug line on a clicked feature stays (development only).
+- **2026-11-12, batch 3.** One PMTiles header reader (`satimagery/pmtiles.py`):
+  the shell's own (five functions with Python inside) is gone, because the list of
+  imagery the map is told about (`VITE_SATELLITE_TIERS`) and its summary are now
+  made in Python (`inventory.imagery_tiers`, `imagery_summary`; `satellite.py
+  tiers` / `summary`), which also ends the first-zoom number kept in two
+  languages. `backend_python` (`lib/db.sh`) runs every build step written in the
+  backend. One client name for downloads (`netsafe.USER_AGENT`). One fake offline
+  map for the tests (`tests/fake_pmtiles.py`). The département code as typed and
+  a background map's edition: one function each (`bdortho.unit_code`,
+  `extract.edition`). Frontend: `detailsCard` (`ui/details.ts`) builds the details
+  of the extra data and of buildings. Left: the map credit line written in
+  `sites` and in upstream's `style.ts` (upstream's isn't exported).

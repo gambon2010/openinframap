@@ -49,7 +49,12 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
-USER_AGENT = "OpenInfraMap-local (offline map setup)"
+# Who is asking, for every download (servers want to know; Wikimedia's policy
+# asks for a contact address: update it if you fork).
+USER_AGENT = (
+    "OpenInfraMap-local/1.0 (offline map setup, one operator, no mass scraping; "
+    "https://github.com/gambon2010/openinframap)"
+)
 
 # The same settings as scripts/lib/net.sh (which exports them).
 WAIT_LIMIT = float(os.environ.get("NET_WAIT_SECONDS", "900"))

@@ -7,7 +7,7 @@ import httpx
 
 import netsafe
 
-from .base import EXTRA_DIR, USER_AGENT, Source, inside, outer_rings
+from .base import EXTRA_DIR, Source, inside, outer_rings
 
 
 class FrenchSource(Source):
@@ -22,7 +22,8 @@ class FrenchSource(Source):
 
     def __init__(self) -> None:
         self.http = httpx.Client(
-            headers={"User-Agent": USER_AGENT}, timeout=httpx.Timeout(60, read=600)
+            headers={"User-Agent": netsafe.USER_AGENT},
+            timeout=httpx.Timeout(60, read=600),
         )
 
     def departments_file(self) -> Path:

@@ -26,6 +26,7 @@ import {
 } from '../../core/buildings.ts'
 import { followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
+import { detailsCard } from '../../ui/details.ts'
 import { OIM_TILES } from '../../config.ts'
 
 const OUTLINE = { map: 'hsl(0, 0%, 15%)', imagery: '#ffffff' }
@@ -111,31 +112,18 @@ function details(feature: MapGeoJSONFeature): HTMLElement {
       : outline.type === 'Polygon' || outline.type === 'MultiPolygon'
         ? outlineArea(outline)
         : undefined
-  const rows: [string, string | undefined][] = [
-    [t('buildings.height', 'Height'), typeof p.height === 'number' ? `${Math.round(p.height)} m` : undefined],
+  return detailsCard(
+    p.kind === 'building_part'
+      ? t('buildings.part', 'Part of a building')
+      : t('buildings.building', 'Building'),
     [
-      t('buildings.starts-at', 'Starts at'),
-      typeof p.min_height === 'number' && p.min_height > 0 ? `${Math.round(p.min_height)} m` : undefined
+      [t('buildings.height', 'Height'), typeof p.height === 'number' && `${Math.round(p.height)} m`],
+      [
+        t('buildings.starts-at', 'Starts at'),
+        typeof p.min_height === 'number' && p.min_height > 0 && `${Math.round(p.min_height)} m`
+      ],
+      [t('buildings.area', 'Area (on the ground)'), area ? formatArea(area) : undefined]
     ],
-    [t('buildings.area', 'Area (on the ground)'), area ? formatArea(area) : undefined]
-  ]
-  return el(
-    'div.oim-popup-content',
-    el(
-      'div.oim-popup-header',
-      el(
-        'h3',
-        p.kind === 'building_part'
-          ? t('buildings.part', 'Part of a building')
-          : t('buildings.building', 'Building')
-      )
-    ),
-    el(
-      'table.item_info',
-      rows
-        .filter(([, value]) => value)
-        .map(([key, value]) => el('tr', el('th', key), el('td', value as string)))
-    ),
     el('p.oim-extra-notice', t('buildings.source', 'From the background map (OpenStreetMap, via Protomaps).'))
   )
 }

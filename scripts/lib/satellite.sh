@@ -4,10 +4,6 @@
 # queue after the build (download_satellite); select_satellite tells the frontend
 # which imagery files there are.
 
-# Sentinel-2's first zoom, for every area (scripts/satimagery/sources/sentinel2.py:
-# the same number, checked by a test).
-REGIONAL_FIRST_ZOOM=7
-
 # Whether any satellite imagery is downloaded (data/basemap/<area>.sat-*.pmtiles).
 has_satellite() {
     compgen -G "$BASEMAP_DIR/*.sat-*.pmtiles" >/dev/null
@@ -20,63 +16,18 @@ start_satellite_if_present() {
     fi
 }
 
-# "world overview, france regional, IGN photos of 2 départements (12 MB)": the
+# "world overview, france regional, IGN photos of 2 départements (3.4 GB)": the
 # imagery there is, and its total size.
 satellite_summary() {
-    local value file total=0 names=() departements=0
-    value=$(satellite_tiers_value)
-    [[ -n "$value" ]] || { echo "none"; return; }
-    for file in $(tr ';' '\n' <<<"$value" | cut -d' ' -f1 | sed -E 's|.*/([^/]+)/\{z\}.*|\1|'); do
-        if [[ "$file" == fr-*.sat-detailed-fr_ign ]]; then
-            departements=$((departements + 1))
-        else
-            names+=("${file/.sat-/ }")
-        fi
-        total=$((total + $(stat -c%s "$BASEMAP_DIR/$file.pmtiles")))
-    done
-    [[ "$departements" == 0 ]] || names+=("IGN photos of $departements département$([[ "$departements" == 1 ]] || echo s)")
-    echo "$(IFS=,; echo "${names[*]}" | sed 's/,/, /g') ($(human_size "$total"))"
+    python3 -I "$REPO_ROOT/scripts/satellite.py" summary --basemap-dir "$BASEMAP_DIR"
 }
 
-# The satellite tiers as the frontend reads them (VITE_SATELLITE_TIERS,
-# fork/modules/satellite): "URL MINZOOM MAXZOOM [W,S,E,N]|CREDIT;..." (empty:
-# none; the bounds from the file's header, so the map only asks the files that
-# cover what's on screen: one per French département); the
-# credit lines come from satellite.py (attribution_for). Everything downloaded
-# is shown, whatever area it's of: Blue Marble (the world), then Sentinel-2 (the
-# world's first, then each area's), then the aerial photos.
+# The imagery as the frontend reads it (VITE_SATELLITE_TIERS; empty: none):
+# every imagery file, with its zooms, bounds and credit
+# (scripts/satimagery/inventory.py imagery_tiers).
 satellite_tiers_value() {
-    local value="" file range ext min max bounds
-    local files=()
-    file="$BASEMAP_DIR/world.sat-overview.pmtiles"
-    [[ -f "$file" ]] && files+=("$file")
-    [[ -f "$BASEMAP_DIR/world.sat-regional.pmtiles" ]] && files+=("$BASEMAP_DIR/world.sat-regional.pmtiles")
-    for file in "$BASEMAP_DIR"/*.sat-regional.pmtiles "$BASEMAP_DIR"/*.sat-detailed*.pmtiles; do
-        [[ -f "$file" && "$file" != "$BASEMAP_DIR/world.sat-regional.pmtiles" ]] && files+=("$file")
-    done
-    [[ ${#files[@]} -gt 0 ]] || return 0
-    local credits=() i=0
-    mapfile -t credits < <(python3 -I "$REPO_ROOT/scripts/satellite.py" attribution "${files[@]}")
-    for file in "${files[@]}"; do
-        # Each file is shown over the zooms its header says it has; its kind's usual
-        # ones only if it can't be read.
-        case "$file" in
-            *.sat-overview.pmtiles) min=0; max=8; ext=jpg ;;
-            *.sat-regional.pmtiles) min=$REGIONAL_FIRST_ZOOM; max=12; ext=webp ;;
-            *) min=12; max=16; ext=jpg ;;
-        esac
-        range="$(pmtiles_minzoom "$file" "$min") $(pmtiles_maxzoom "$file" "$max")"
-        # Sentinel-2 from REGIONAL_FIRST_ZOOM at the earliest, whatever its file holds:
-        # further out, Blue Marble is what's shown.
-        if [[ "$file" == *.sat-regional.pmtiles && "${range%% *}" -lt "$REGIONAL_FIRST_ZOOM" ]]; then
-            range="$REGIONAL_FIRST_ZOOM ${range#* }"
-        fi
-        ext=$(pmtiles_ext "$file" "$ext")
-        bounds=$(pmtiles_bounds "$file")
-        value+="${value:+;}http://localhost:$SATELLITE_PORT/$(basename "$file" .pmtiles)/{z}/{x}/{y}.$ext $range${bounds:+ $bounds}|${credits[i]:-}"
-        i=$((i + 1))
-    done
-    echo "$value"
+    python3 -I "$REPO_ROOT/scripts/satellite.py" tiers --basemap-dir "$BASEMAP_DIR" \
+        --server "http://localhost:$SATELLITE_PORT"
 }
 
 # Point the frontend at the satellite imagery there is (or drop the setting if

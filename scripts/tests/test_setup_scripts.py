@@ -18,6 +18,7 @@ import subprocess
 import time
 from pathlib import Path
 
+import fake_pmtiles
 import pytest
 from conftest import SCRIPTS
 
@@ -271,9 +272,7 @@ def test_import(sandbox):
     dump = make_export(sandbox)
     basemap = sandbox.root / "data" / "basemap"
     basemap.mkdir(parents=True)
-    header = bytearray(127)
-    header[:7], header[101] = b"PMTiles", 8
-    (basemap / "world.sat-overview.pmtiles").write_bytes(bytes(header))
+    fake_pmtiles.write(basemap / "world.sat-overview.pmtiles", 0, 8)
     db = answers(
         **{
             "count(*) FROM userdata.save": "3",  # there are My layers to keep
@@ -413,7 +412,7 @@ def test_start(sandbox):
 def test_start_serves_satellite_imagery_without_a_background_map(sandbox):
     basemap = sandbox.root / "data" / "basemap"
     basemap.mkdir(parents=True)
-    (basemap / "world.sat-overview.pmtiles").write_bytes(b"PMTiles")
+    fake_pmtiles.write(basemap / "world.sat-overview.pmtiles", 0, 8)
     db = answers(
         **{"key = 'region_name'": "Luxembourg", "key = 'region_id'": "luxembourg"}
     )

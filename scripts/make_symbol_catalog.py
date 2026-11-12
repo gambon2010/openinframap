@@ -22,7 +22,16 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT = REPO_ROOT / "web" / "src" / "fork" / "modules" / "userlayers" / "model" / "symbols-2525c.json"
+OUT = (
+    REPO_ROOT
+    / "web"
+    / "src"
+    / "fork"
+    / "modules"
+    / "userlayers"
+    / "model"
+    / "symbols-2525c.json"
+)
 
 # Tables in palette order (infrastructure and emergencies first), with group names.
 TABLES = [

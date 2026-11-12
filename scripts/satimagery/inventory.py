@@ -19,8 +19,10 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
 
-from .gdal import pmtiles_zooms
+from .extract import manifest_edition
+from .pmtiles import read_header
 from .sources import SOURCES, Source
+from .ui import human
 
 INVENTORY = "inventory.json"
 SETTINGS = "settings.json"
@@ -82,13 +84,85 @@ def attribution_for(name: str) -> str:
     return SOURCES[what[0]].credit if what else ""
 
 
+# --- What the map is told (VITE_SATELLITE_TIERS) ----------------------------------
+
+# In the order the map stacks them: Blue Marble, Sentinel-2, aerial photos.
+IMAGERY_LAYERS = ("overview", "regional", "detailed")
+
+
+def imagery_files(folder: Path) -> list[tuple[Path, Source]]:
+    """The imagery files shown on the map, coarsest first: the world's Blue Marble
+    (a region's own, made before the world's, isn't), Sentinel-2 (the world's
+    first), then the aerial photos."""
+    found = []
+    for path in sorted(folder.glob("*.sat-*.pmtiles")):
+        what = identify(path.name)
+        if not what or SOURCES[what[0]].layer not in IMAGERY_LAYERS:
+            continue
+        source = SOURCES[what[0]]
+        world = path.name.startswith("world.")
+        if source.layer == "overview" and not world:
+            continue
+        found.append(
+            (IMAGERY_LAYERS.index(source.layer), not world, path.name, path, source)
+        )
+    return [(path, source) for *_, path, source in sorted(found)]
+
+
+def imagery_tiers(folder: Path, server: str) -> str:
+    """The imagery as the frontend reads it (fork/modules/satellite):
+    "URL MINZOOM MAXZOOM [W,S,E,N]|CREDIT;..." ("" if there's none). Each file over
+    the zooms its header says (Sentinel-2 never before its source's first zoom:
+    further out, Blue Marble shows), with its bounds, so the map only asks the
+    files that cover what's on screen (one per French département)."""
+    tiers = []
+    for path, source in imagery_files(folder):
+        header = read_header(path)
+        if not header:
+            continue
+        first = (
+            max(header.minzoom, source.first_zoom)
+            if source.layer == "regional"
+            else header.minzoom
+        )
+        bounds = (
+            " " + ",".join(f"{v:.5f}" for v in header.bounds) if header.bounds else ""
+        )
+        ext = header.format or source.format
+        tiers.append(
+            f"{server}/{path.stem}/{{z}}/{{x}}/{{y}}.{ext} {first} {header.maxzoom}{bounds}|{source.credit}"
+        )
+    return ";".join(tiers)
+
+
+def imagery_summary(folder: Path) -> str:
+    """ "world overview, france regional, IGN photos of 2 départements (3.4 GB)":
+    the imagery there is and its size ("none" if there's none)."""
+    files = imagery_files(folder)
+    if not files:
+        return "none"
+    names, units = [], {}
+    for path, source in files:
+        if source.units and identify(path.name)[2]:  # type: ignore[index]
+            units[source.id] = units.get(source.id, 0) + 1
+        else:
+            names.append(path.stem.replace(".sat-", " "))
+    for source_id, count in units.items():
+        source = SOURCES[source_id]
+        names.append(
+            f"{source.name} photos of {count} {source.units if count > 1 else source.units.rstrip('s')}"
+        )
+    total = sum(path.stat().st_size for path, _ in files)
+    return f"{', '.join(names)} ({human(total)})"
+
+
 def scan(folder: Path) -> list[Entry]:
     """What the files in data/basemap/ are, and the jobs stopped half-way."""
     entries = []
     for path in sorted(folder.glob("*.pmtiles")):
         what = identify(path.name)
-        zooms = pmtiles_zooms(path)
-        if not what or not zooms:
+        header = read_header(path)
+        if not what or not header:
             continue
         stat = path.stat()
         entries.append(
@@ -97,7 +171,7 @@ def scan(folder: Path) -> list[Entry]:
                 area=what[1],
                 unit=what[2],
                 file=path.name,
-                zooms=list(zooms),
+                zooms=list(header.zooms),
                 bytes=stat.st_size,
                 done=date.fromtimestamp(stat.st_mtime).isoformat(),
                 edition=manifest_edition(path) if what[0] == "protomaps" else "",
@@ -136,15 +210,6 @@ def written_lately(work: Path) -> bool:
     return any(
         now - f.stat().st_mtime < LATELY_SECONDS for f in work.rglob("*") if f.is_file()
     )
-
-
-def manifest_edition(path: Path) -> str:
-    """A background map's Protomaps build (its <area>.json: "20261014.pmtiles")."""
-    try:
-        build = json.loads(path.with_suffix(".json").read_text()).get("build", "")
-    except (OSError, ValueError, AttributeError):
-        return ""
-    return str(build).removesuffix(".pmtiles")
 
 
 def load(folder: Path) -> list[Entry]:

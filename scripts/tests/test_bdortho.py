@@ -6,6 +6,7 @@ import http.server
 import sqlite3
 import threading
 
+import fake_pmtiles
 import pytest
 
 import netsafe
@@ -216,9 +217,7 @@ def test_a_damaged_part_is_downloaded_again(tmp_path, range_server, monkeypatch)
 
 
 def test_a_departement_already_there_is_skipped(tmp_path, monkeypatch, capsys):
-    header = bytearray(127)
-    header[:7], header[100], header[101] = b"PMTiles", 14, 17
-    bdortho.file_of(tmp_path, "67").write_bytes(bytes(header))
+    fake_pmtiles.write(bdortho.file_of(tmp_path, "67"), 14, 17)
     monkeypatch.setattr(
         bdortho, "latest_edition", lambda code: pytest.fail("nothing to download")
     )

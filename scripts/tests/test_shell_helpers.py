@@ -2,9 +2,9 @@
 
 import json
 import re
-import struct
 import subprocess
 
+import fake_pmtiles
 from conftest import SCRIPTS
 
 COMMON = SCRIPTS / "lib" / "common.sh"
@@ -36,19 +36,11 @@ def test_set_env_line(tmp_path):
     assert env.read_text() == "B=3\nC=4\n"
 
 
-def pmtiles_header(maxzoom: int, minzoom: int = 0) -> bytes:
-    header = bytearray(127)
-    header[:7] = b"PMTiles"
-    header[7] = 3
-    header[100], header[101] = minzoom, maxzoom
-    return bytes(header)
-
-
 def test_satellite_tiers_value(tmp_path):
-    (tmp_path / "world.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
-    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 9))
+    (tmp_path / "world.sat-overview.pmtiles").write_bytes(fake_pmtiles.header(0, 8))
+    (tmp_path / "lux.sat-regional.pmtiles").write_bytes(fake_pmtiles.header(9, 13))
     # A region's own Blue Marble (made before the world's): not shown.
-    (tmp_path / "lux.sat-overview.pmtiles").write_bytes(pmtiles_header(8))
+    (tmp_path / "lux.sat-overview.pmtiles").write_bytes(fake_pmtiles.header(0, 8))
     value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert "|NASA Blue Marble;" in value
     value = re.sub(r"\|[^;]*", "", value)
@@ -66,13 +58,6 @@ def test_satellite_tiers_value(tmp_path):
     assert bash("satellite_summary", BASEMAP_DIR=str(tmp_path)).startswith(
         "world overview, lux regional ("
     )
-
-
-def test_pmtiles_maxzoom_falls_back(tmp_path):
-    bad = tmp_path / "bad.pmtiles"
-    bad.write_bytes(b"not pmtiles")
-    assert bash(f'pmtiles_maxzoom "{bad}" 12') == "12"
-    assert bash(f'pmtiles_maxzoom "{tmp_path}/missing" 16') == "16"
 
 
 def test_export_outdated(tmp_path):
@@ -96,22 +81,17 @@ export_outdated && echo outdated || echo current
 
 def test_tiers_list_every_area_and_source(tmp_path):
     # Each file as satellite.py writes it: its own first and last zoom in its header.
-    def pmtiles(name, maxzoom, tile_type, minzoom):
-        header = bytearray(pmtiles_header(maxzoom, minzoom))
-        header[99] = tile_type
-        (tmp_path / name).write_bytes(bytes(header))
+    def pmtiles(name, minzoom, maxzoom, tile_format):
+        fake_pmtiles.write(tmp_path / name, minzoom, maxzoom, tile_format=tile_format)
 
-    pmtiles("world.sat-overview.pmtiles", 8, 3, 0)
-    pmtiles("bayern.sat-regional.pmtiles", 12, 4, 9)
-    pmtiles("world.sat-regional.pmtiles", 10, 4, 9)
-    pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 17, 2, 14)  # PNG
-    # More detail added later: a file of its own, from its own first zoom.
-    pmtiles("alsace.sat-detailed-fr_ign.pmtiles", 15, 3, 14)
-    pmtiles("alsace.sat-detailed-fr_ign-z16-17.pmtiles", 17, 3, 14)
-    more = tmp_path / "alsace.sat-detailed-fr_ign-z16-17.pmtiles"
-    header = bytearray(more.read_bytes())
-    header[100] = 16
-    more.write_bytes(bytes(header))
+    pmtiles("world.sat-overview.pmtiles", 0, 8, "jpg")
+    pmtiles("bayern.sat-regional.pmtiles", 9, 12, "webp")
+    pmtiles("world.sat-regional.pmtiles", 9, 10, "webp")
+    pmtiles("belgium.sat-detailed-be_flanders.pmtiles", 14, 17, "png")
+    pmtiles("alsace.sat-detailed-fr_ign.pmtiles", 14, 15, "jpg")
+    pmtiles(
+        "notes.sat-detailed-nobody.pmtiles", 14, 15, "jpg"
+    )  # no such source: not shown
     value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert "Digitaal Vlaanderen" in value
     assert re.sub(r"\|[^;]*", "", value).split(";") == [
@@ -119,7 +99,6 @@ def test_tiers_list_every_area_and_source(tmp_path):
         "http://localhost:8090/world.sat-regional/{z}/{x}/{y}.webp 9 10",
         "http://localhost:8090/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
         "http://localhost:8090/alsace.sat-detailed-fr_ign/{z}/{x}/{y}.jpg 14 15",
-        "http://localhost:8090/alsace.sat-detailed-fr_ign-z16-17/{z}/{x}/{y}.jpg 16 17",
         "http://localhost:8090/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
     ]
 
@@ -130,10 +109,13 @@ def test_departement_files_carry_their_bounds_and_are_summed_up(tmp_path):
         ("67", (6.94, 48.12, 8.23, 49.08)),
         ("68", (6.84, 47.42, 7.62, 48.31)),
     ):
-        header = bytearray(pmtiles_header(17, 14))
-        header[99] = 4  # WebP
-        struct.pack_into("<4i", header, 102, *(round(v * 1e7) for v in box))
-        (tmp_path / f"fr-{code}.sat-detailed-fr_ign.pmtiles").write_bytes(bytes(header))
+        fake_pmtiles.write(
+            tmp_path / f"fr-{code}.sat-detailed-fr_ign.pmtiles",
+            14,
+            17,
+            tile_format="webp",
+            bounds=box,
+        )
     value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert (
         "http://localhost:8090/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
@@ -314,14 +296,8 @@ def test_distances_in_the_build_sql_are_real_metres():
     assert found == [], "use oim_units / oim_max_stretch (schema/distances.sql)"
 
 
-def test_sentinel_starts_at_the_same_zoom_in_the_scripts_and_satellite_py():
-    from satimagery.sources import SENTINEL2
-
-    assert bash("echo $REGIONAL_FIRST_ZOOM") == str(SENTINEL2.first_zoom)
-
-
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
-    (tmp_path / "france.sat-regional.pmtiles").write_bytes(pmtiles_header(13, 5))
+    (tmp_path / "france.sat-regional.pmtiles").write_bytes(fake_pmtiles.header(5, 13))
     value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
     assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value
 

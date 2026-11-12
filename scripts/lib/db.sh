@@ -3,15 +3,21 @@
 # built, the schema files and their fingerprint.
 # Sourced by common.sh.
 
-# Name indexes for search (as on openinframap.org), using upstream's
-# web-backend/create_indexes.py from the backend image. Without them search
-# gets slow on large regions. Indexes that already exist are skipped.
-create_search_indexes() {
-    # Rebuild the image so script changes are picked up; offline, use the existing one.
-    docker compose --progress quiet build backend </dev/null 2>/dev/null || true
+# backend_python ARGS... — Python in the backend's image (its code, its packages,
+# the database), for the build steps written there. The image is rebuilt first so
+# code changes are picked up; offline, the one there is used.
+backend_python() {
+    docker compose --progress quiet build backend </dev/null >/dev/null 2>&1 || true
     docker compose --progress quiet run --rm --no-deps -T \
         -e ADMIN_DATABASE_URL="postgresql://$DB_USER:osm@db:5432/$DB_NAME" \
-        --entrypoint /app/.venv/bin/python backend create_indexes.py </dev/null
+        --entrypoint /app/.venv/bin/python backend "$@" </dev/null
+}
+
+# Name indexes for search (as on openinframap.org), using upstream's
+# web-backend/create_indexes.py. Without them search gets slow on large regions.
+# Indexes that already exist are skipped.
+create_search_indexes() {
+    backend_python create_indexes.py
 }
 
 # Run a SQL file against the osm database (for use with run_with_timer).
@@ -102,13 +108,10 @@ schema_hash() {
     cat "${files[@]}" | md5sum | cut -c1-12
 }
 
-# Number the towers along their lines (web-backend/src/fork/tower_numbers/) with
-# the backend's image, rebuilt first if its code changed. After grid.sql and
-# tower-numbers.sql (the empty tables).
+# Number the towers along their lines (web-backend/src/fork/tower_numbers/). After
+# grid.sql and tower-numbers.sql (the empty tables).
 number_towers() {
-    local run=(--rm --no-deps --entrypoint /app/.venv/bin/python backend -m src.fork.tower_numbers)
-    docker compose --progress quiet run --build "${run[@]}" </dev/null >/dev/null 2>&1 \
-        || docker compose --progress quiet run "${run[@]}" </dev/null >/dev/null
+    backend_python -m src.fork.tower_numbers >/dev/null
 }
 
 # The large buildings shown zoomed out (web-backend/src/fork/background/
@@ -116,8 +119,7 @@ number_towers() {
 # after a background map is added or removed (satellite.py large-buildings). Then
 # Tegola forgets the tiles it made of them.
 large_buildings() {
-    local run=(--rm --no-deps --entrypoint /app/.venv/bin/python backend -m src.fork.background.large_buildings)
-    docker compose --progress quiet run "${run[@]}" </dev/null >/dev/null 2>&1 || return
+    backend_python -m src.fork.background.large_buildings >/dev/null 2>&1 || return
     docker compose --progress quiet up -d --force-recreate tegola </dev/null >/dev/null 2>&1 || true
 }
 

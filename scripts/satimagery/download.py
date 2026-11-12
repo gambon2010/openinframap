@@ -14,7 +14,7 @@ from pathlib import Path
 
 import netsafe
 
-from .sources import SMALL_TILE, USER_AGENT, worldcover_url
+from .sources import SMALL_TILE, worldcover_url
 
 # --- Writing tiles ------------------------------------------------------------
 
@@ -97,7 +97,7 @@ class MBTiles:
 
 def fetch(url: str) -> bytes | None:
     """A tile, or None if the server has none there (404)."""
-    return netsafe.fetch(url, user_agent=USER_AGENT)
+    return netsafe.fetch(url)
 
 
 def download_tiles(
@@ -183,7 +183,7 @@ def cell_exists(cell: str) -> bool:
 
     def head() -> bool:
         request = urllib.request.Request(
-            url, method="HEAD", headers={"User-Agent": USER_AGENT}
+            url, method="HEAD", headers={"User-Agent": netsafe.USER_AGENT}
         )
         try:
             with urllib.request.urlopen(request, timeout=30):

@@ -6,6 +6,7 @@ import { el } from 'redom'
 import { MapGeoJSONFeature } from 'maplibre-gl'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { ForkModule } from '../../types.ts'
+import { detailsCard, type DetailsRow } from '../../ui/details.ts'
 import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
 import layers, { icpe_colours, icpe_category_label } from './style.ts'
@@ -106,7 +107,7 @@ function popupHtml(feature: MapGeoJSONFeature): HTMLElement {
     title = t('extra.line', 'Distribution line')
   }
   const facility = icpe || biomethane
-  const rows: [string, any][] = [
+  const rows: DetailsRow[] = [
     // Sites have their name as the title; their kind is shown as Type below.
     [t('info.name'), facility ? null : p.name],
     [
@@ -173,13 +174,9 @@ function popupHtml(feature: MapGeoJSONFeature): HTMLElement {
     [t('extra.updated', 'Source updated'), p.updated]
   )
   const source = extra_sources[p.source]
-  return el(
-    'div.oim-popup-content',
-    el('div.oim-popup-header', el('h3', title)),
-    el(
-      'table.item_info',
-      rows.filter(([, value]) => value).map(([key, value]) => el('tr', el('th', key), el('td', value)))
-    ),
+  return detailsCard(
+    title,
+    rows,
     el(
       'p.oim-extra-notice',
       t('extra.notice', 'Not from OpenStreetMap: open data from'),

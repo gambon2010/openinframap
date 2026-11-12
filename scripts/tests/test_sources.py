@@ -40,7 +40,18 @@ def test_a_source_declares_what_the_menus_need(name):
     if s.fetch == "files":
         # Downloaded unit by unit with a converter module, read whole.
         assert s.units and s.read_per_km2 > 0
-        importlib.import_module(f"satimagery.{s.address}")
+        converter = importlib.import_module(f"satimagery.{s.address}")
+        # What the menu asks of a source fetched by units.
+        for name in (
+            "units_in",
+            "unit_name",
+            "unit_code",
+            "unit_of",
+            "unit_file",
+            "unit_estimate",
+            "jobs",
+        ):
+            assert callable(getattr(converter, name)), name
     if s.layer == "detailed":
         assert s.regions and s.first_zoom == sources.AERIAL_FIRST_ZOOM
     if s.bbox:

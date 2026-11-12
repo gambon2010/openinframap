@@ -7,16 +7,10 @@ import re
 import subprocess
 
 import pytest
+from fake_pmtiles import write as pmtiles
 
 import satellite as s
 from satimagery import inventory, maps
-
-
-def pmtiles(path, minzoom, maxzoom):
-    header = bytearray(127)
-    header[:7], header[100], header[101] = b"PMTiles", minzoom, maxzoom
-    path.write_bytes(bytes(header))
-
 
 SQUARE = {
     "type": "Polygon",

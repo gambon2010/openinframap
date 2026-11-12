@@ -4,6 +4,7 @@ settings) and coverage.py (what's worth offering)."""
 import json
 import os
 
+import fake_pmtiles
 import pytest
 
 from satimagery import coverage, inventory
@@ -29,9 +30,8 @@ def within(a, b):
 
 
 def pmtiles(path, minzoom, maxzoom, size=127):
-    header = bytearray(size)
-    header[:7], header[100], header[101] = b"PMTiles", minzoom, maxzoom
-    path.write_bytes(bytes(header))
+    """A fake offline map of `size` bytes."""
+    path.write_bytes(fake_pmtiles.header(minzoom, maxzoom).ljust(size, b"\0"))
 
 
 def test_files_are_known_by_their_names():

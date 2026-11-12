@@ -437,7 +437,7 @@ class Maps:
                 f"{source.units.capitalize()} ({len(left)} left)   [Enter: all]   or codes"
                 f" ({left[0]} {left[-1]}...)   ? : list\n>",
                 left,
-                normalise=lambda w: w.upper() if w[-1:].isalpha() else w.zfill(2),
+                normalise=conv.unit_code,
                 listing=listing,
             )
         else:
@@ -543,20 +543,20 @@ class Maps:
             protomaps, area, protomaps.last_zoom, self.entries, self.within
         )
         latest = self.latest_build()
-        newest = edition(latest[0]) if latest else ""
-        have = edition_date(own.edition) if own else "—"
+        newest = extract.edition(latest[0]) if latest else ""
+        have = extract.edition_date(own.edition) if own else "—"
         if cover and cover.area != area:
             add = f"— (covered by {self.name(cover.area)})"
         elif not latest:
             add = "can't reach Protomaps"
         elif own and own.zooms[1] < protomaps.last_zoom:
-            add = f"all zooms, {edition_date(newest)}"
+            add = f"all zooms, {extract.edition_date(newest)}"
         elif own and own.edition >= newest:
             add = "— (the latest)"
         elif own:
-            add = f"newer: {edition_date(newest)}"
+            add = f"newer: {extract.edition_date(newest)}"
         else:
-            add = f"z0–15, {edition_date(newest)}"
+            add = f"z0–15, {extract.edition_date(newest)}"
         offered = latest and not add.startswith("—")
         return ["Background map", have, add], (
             lambda: self.basemap_jobs(area)
@@ -571,13 +571,13 @@ class Maps:
         if (
             own
             and own.zooms[1] >= top
-            and (not latest or own.edition >= edition(latest[0]))
+            and (not latest or own.edition >= extract.edition(latest[0]))
         ):
             add = "—"
         elif not latest:
             add = "can't reach Protomaps"
         else:
-            add = f"z0–{top}, {edition_date(edition(latest[0]))}"
+            add = f"z0–{top}, {extract.edition_date(extract.edition(latest[0]))}"
         have = f"z0–{own.zooms[1]}" if own else "—"
         row = [f"Background map, zoomed out (to {top})", have, add]
         return row, (
@@ -618,7 +618,7 @@ class Maps:
         return [
             Job(
                 f"Background map, {self.name(area)}, z0–{maxzoom or 15}"
-                f" ({edition_date(edition(build))})",
+                f" ({extract.edition_date(extract.edition(build))})",
                 argv,
                 kept=size,
                 download=size,
@@ -738,7 +738,7 @@ class Maps:
                 ui.codes(
                     f"Which {source.units}? [Enter: all {len(units)}]   ? : list\n>",
                     units,
-                    normalise=lambda w: w.upper() if w[-1:].isalpha() else w.zfill(2),
+                    normalise=conv.unit_code,
                     listing=lambda: ui.columns(
                         [f"{u} {conv.unit_name(u)}" for u in units]
                     ),
@@ -828,20 +828,6 @@ def large_buildings_job() -> Job:
         "Large buildings, found again from the background maps (shown zoomed out)",
         ["large-buildings"],
         seconds=600,
-    )
-
-
-def edition(build: str) -> str:
-    """Protomaps' build file (20261110.pmtiles) as its edition (20261110)."""
-    return build.removesuffix(".pmtiles")
-
-
-def edition_date(value: str) -> str:
-    """20261110 as 2026-11-10 (anything else as it is)."""
-    return (
-        f"{value[:4]}-{value[4:6]}-{value[6:8]}"
-        if len(value) == 8 and value.isdigit()
-        else value
     )
 
 

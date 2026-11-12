@@ -45,6 +45,27 @@ def latest_build() -> tuple[str, int] | None:
     return build["key"], int(build.get("size", 0))
 
 
+def edition(build: str) -> str:
+    """Protomaps' build file (20261110.pmtiles) as an edition (20261110)."""
+    return build.removesuffix(".pmtiles")
+
+
+def edition_date(value: str) -> str:
+    """20261110 as 2026-11-10 (anything else as it is)."""
+    if len(value) == 8 and value.isdigit():
+        return f"{value[:4]}-{value[4:6]}-{value[6:8]}"
+    return value
+
+
+def manifest_edition(path: Path) -> str:
+    """The edition a background map was cut from (its <area>.json), "" if unknown."""
+    try:
+        build = json.loads(path.with_suffix(".json").read_text()).get("build", "")
+    except (OSError, ValueError, AttributeError):
+        return ""
+    return edition(str(build))
+
+
 def pmtiles(folder: Path, args: list[str]) -> list[str]:
     """The pmtiles command, data/basemap/ at /out."""
     return [
