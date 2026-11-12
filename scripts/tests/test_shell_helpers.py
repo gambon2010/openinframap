@@ -5,7 +5,7 @@ import re
 import subprocess
 
 import fake_pmtiles
-from conftest import SCRIPTS
+from conftest import BUILD_SCRIPT, SCRIPTS
 
 COMMON = SCRIPTS / "lib" / "common.sh"
 
@@ -132,7 +132,7 @@ def test_every_schema_file_is_built_and_fingerprinted():
     assert on_disk == set(built) | set(skipped), "add new schema/*.sql to SCHEMA_FILES"
     # build-region.sh runs them in the listed order (functions.sql and eez.sql run
     # elsewhere: at database creation, and in import_eez), with run_schema.
-    script = (SCRIPTS / "build-region.sh").read_text()
+    script = BUILD_SCRIPT
     ran = [
         name
         for line in re.findall(r"^\s*run_schema ([a-z -]+)$", script, re.MULTILINE)

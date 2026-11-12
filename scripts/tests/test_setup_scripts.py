@@ -20,7 +20,7 @@ from pathlib import Path
 
 import fake_pmtiles
 import pytest
-from conftest import SCRIPTS
+from conftest import BUILD_SCRIPT, SCRIPTS
 
 REPO = SCRIPTS.parent
 FAKES = Path(__file__).parent / "fakes"
@@ -588,7 +588,7 @@ def test_build_steps_never_end_in_a_failing_test():
     # Under `set -e`, a step whose last line is `[[ ... ]] && ...` (or a bare
     # test) returns "failed" when the test is false, and the build stops there
     # without a word. (It happened with --no-extra.) End steps with `if` instead.
-    script = (SCRIPTS / "build-region.sh").read_text()
+    script = BUILD_SCRIPT
     flow = script[script.rindex("# The build: all the questions first") :]
     steps = re.findall(r"^([a-z_]+)$", flow, re.MULTILINE)
     assert len(steps) > 10

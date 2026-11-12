@@ -10,7 +10,7 @@ import pytest
 from fake_pmtiles import write as pmtiles
 
 import satellite as s
-from satimagery import inventory, maps
+from satimagery import extract, inventory, jobs, maps
 
 SQUARE = {
     "type": "Polygon",
@@ -63,10 +63,10 @@ def folder(tmp_path, monkeypatch):
     monkeypatch.setattr(maps.subprocess, "run", run)
     # Protomaps' latest world map, and a background map's size: no network here.
     monkeypatch.setattr(
-        maps.extract, "latest_build", lambda: ("20261110.pmtiles", 140 * 10**9)
+        extract, "latest_build", lambda: ("20261110.pmtiles", 140 * 10**9)
     )
     monkeypatch.setattr(
-        maps.extract, "size", lambda folder, build, outline, maxzoom=None: 5 * 10**9
+        extract, "size", lambda folder, build, outline, maxzoom=None: 5 * 10**9
     )
     monkeypatch.setattr(
         maps.shutil, "disk_usage", lambda p: type("U", (), {"free": 10**13})()
@@ -115,7 +115,7 @@ def test_add_ign_departements(folder, capsys):
     assert "IGN 20 cm, Haut-Rhin, z17" in shown
     (argv,) = folder["ran"]
     assert argv[:5] == ["bdortho", "--dept", "68", "--maxzoom", "17"]
-    assert not (folder["dir"] / maps.QUEUE).exists()  # all done
+    assert not (folder["dir"] / jobs.QUEUE).exists()  # all done
 
 
 def test_departements_by_code_and_a_list(folder, capsys):
@@ -137,7 +137,7 @@ def test_a_stopped_download_is_resumed(folder, capsys, monkeypatch):
     assert menu(folder, "1\n1\n3\n\ny\n\n") == 0
     assert "Stopped (76)" in capsys.readouterr().err
     assert (
-        json.loads((folder["dir"] / maps.QUEUE).read_text())[0]["argv"][0] == "bdortho"
+        json.loads((folder["dir"] / jobs.QUEUE).read_text())[0]["argv"][0] == "bdortho"
     )
     assert menu(folder, "", "--resume", "--yes") == 76
     assert folder["ran"][0] == folder["ran"][1]
@@ -191,11 +191,11 @@ def test_build_region_asks_first_and_downloads_after(folder, capsys):
     assert folder["ran"] == []
     # Asked twice: queued once.
     menu(folder, "1\n1\n3\n\ny\n\n", "--queue-only")
-    assert len(json.loads((folder["dir"] / maps.QUEUE).read_text())) == 1
+    assert len(json.loads((folder["dir"] / jobs.QUEUE).read_text())) == 1
     # After the build.
     menu(folder, "", "--queued", "--yes")
     assert [a[:3] for a in folder["ran"]] == [["bdortho", "--dept", "68"]]
-    assert not (folder["dir"] / maps.QUEUE).exists()
+    assert not (folder["dir"] / jobs.QUEUE).exists()
 
 
 def background_map(folder, area, build):
@@ -243,7 +243,7 @@ def test_the_worlds_background_map_is_protomaps_file(folder, capsys):
 
 
 def test_no_network_no_background_map_offered(folder, capsys, monkeypatch):
-    monkeypatch.setattr(maps.extract, "latest_build", lambda: None)
+    monkeypatch.setattr(extract, "latest_build", lambda: None)
     menu(folder, "1\n2\n4\n\n\n")
     shown = capsys.readouterr().err
     assert "can't reach Protomaps" in shown and "Nothing to add there." in shown

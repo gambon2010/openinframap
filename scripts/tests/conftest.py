@@ -11,3 +11,9 @@ from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
+
+# build-region.sh with the files it sources for its questions and steps, as one text.
+BUILD_SCRIPT = "\n".join(
+    (SCRIPTS / name).read_text()
+    for name in ("build-region.sh", "build/questions.sh", "build/steps.sh")
+)

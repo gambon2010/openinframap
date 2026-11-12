@@ -29,7 +29,7 @@ changes for whoever uses the map except where a line below says so.
 | 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | ✅ 2026-11-12 (the building sizes: with batch 6) |
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | ✅ 2026-11-12 |
 | 6 | **Buildings: exact copies at every zoom.** Planned: the backend making the zoomed-out tiles from the background map's zoom 15 tiles (one source). Measured too slow (below), so the zoomed-out drawing stays the build step and Tegola; a copy takes the exact outline from the backend instead | ✅ 2026-11-12 (reduced) |
-| 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | |
+| 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | ✅ 2026-11-12 (the menu, the build script; the rest left: below) |
 | 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | |
 | 9 | **CI:** one workflow running the fork's three test suites; upstream's deploy workflows off in the fork | |
 | 10 | **Docs:** `FORK_CHANGES.md` split into "how it is" and a dated history; finished plans archived; the guide trimmed; `CLAUDE.md` checked line by line | |
@@ -86,3 +86,13 @@ changes for whoever uses the map except where a line below says so.
   buildings.py`), which joins the building's pieces from the zoom 15 tiles around
   it (45 ms for a large Paris building), at any zoom; offline from the backend,
   the pieces on screen. A cut leaving a line beside the area keeps the area only.
+- **2026-11-12, batch 7.** `satimagery/maps.py` (865 lines) → `maps.py` (the
+  screens, 434), `offers.py` (what each source offers and the downloads it makes,
+  417: a part `Maps` takes in) and `jobs.py` (a download, the queue: 53).
+  `build-region.sh` (874) → `build-region.sh` (options, the variables the steps
+  share, the order of the steps: 180), `build/questions.sh` (511) and
+  `build/steps.sh` (195); the tests read the three as one (`conftest.BUILD_SCRIPT`).
+  Left as they are, after reading them: `bdortho.py` (524: one pipeline in clear
+  sections, listing → download → extract → tiles → command), `cli.py` (336, now
+  small), and the frontend's `render.ts` (564) and `store.ts` (463), each one
+  class whose methods share its state: a split would scatter it for no gain.
