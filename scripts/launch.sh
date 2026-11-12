@@ -90,7 +90,7 @@ fi
 # ---------------------------------------------------------------------------
 section "Starting the Tegola tile server..."
 up_services tegola
-ok "Running on http://localhost:7800"
+ok "Running on http://localhost:$TEGOLA_PORT"
 start_satellite_if_present
 
 # ---------------------------------------------------------------------------

@@ -15,6 +15,10 @@ BUILD_LOG="$OSM_DIR/build-history.log"
 # Offline maps: background maps (<area>.pmtiles, served by the backend) and
 # satellite imagery (<area>.sat-*.pmtiles, served by the `satellite` service).
 BASEMAP_DIR="$DATA_DIR/basemap"
+# The services' ports on this computer (docker-compose.override.yml's: a test
+# checks they agree, with the gate's and the frontend's too).
+TEGOLA_PORT=7800
+BACKEND_PORT=8001
 SATELLITE_PORT=8090
 WEB_ENV="$REPO_ROOT/web/.env"
 # Ready-made databases made by scripts/export-db.sh, imported by import-db.sh.

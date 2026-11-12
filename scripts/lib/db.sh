@@ -169,7 +169,7 @@ put_back_my_layers() {
 restart_map_services() {
     docker compose --progress quiet up -d --build --force-recreate tegola </dev/null 2>/dev/null \
         || docker compose --progress quiet up -d --force-recreate tegola </dev/null
-    ok "Tile server running on http://localhost:7800"
+    ok "Tile server running on http://localhost:$TEGOLA_PORT"
     if [[ -n "${BACKEND_WAS_RUNNING:-}" ]]; then
         up_services backend
         ok "Backend restarted on http://localhost:$BACKEND_PORT"

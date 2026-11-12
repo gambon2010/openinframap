@@ -92,8 +92,6 @@ port_in_use() {
 GATE_PORT=8800
 APP_URL="https://localhost:$GATE_PORT"
 
-BACKEND_PORT=8001
-
 FRONTEND_PORT=5173
 
 # Start Compose services, rebuilding their images first so code changes are
@@ -177,9 +175,9 @@ print_manual_start() {
 # Create web/.env with the local-stack defaults if it doesn't exist yet.
 ensure_web_env() {
     [[ -f "$WEB_ENV" ]] && return
-    cat > "$WEB_ENV" <<'ENV'
-VITE_TEGOLA_URL=http://localhost:7800
-VITE_BACKEND_BASE_URL=http://localhost:8001
+    cat > "$WEB_ENV" <<ENV
+VITE_TEGOLA_URL=http://localhost:$TEGOLA_PORT
+VITE_BACKEND_BASE_URL=http://localhost:$BACKEND_PORT
 # Background map: the ones downloaded (bash scripts/satellite.sh), served by the
 # backend. Only local tiles. To use another Protomaps-schema tile server instead
 # (full {z}/{x}/{y} URL template):

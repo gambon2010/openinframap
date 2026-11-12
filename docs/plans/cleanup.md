@@ -26,7 +26,7 @@ changes for whoever uses the map except where a line below says so.
 | 1 | **The old satellite path** and what only it used: `menu.py`'s questions and plan, the `choose` / `steps` / `estimate` / `estimate-detailed` commands, the shell presets and `run_parallel`, the options `--satellite`, `--satellite-detailed`, `--area`, `--zoom`, `--sources` (replaced: `build-region.sh --maps "ID ..."`, `satellite.py maps --source ID --yes`, now also for tile-server photos); the stand-in names (`DETAILED_SOURCES`, `TIERS`, the size constants); one-time code (lower zooms added to old imagery files, the old `.sat-detailed` name, a region's own Blue Marble file, `select_basemap`'s old addresses, `import-db.sh` patching exports from before search / the grid / extra data existed: an older export now defaults to "don't import") | ✅ 2026-11-12 |
 | 2 | **Quick and safe:** `.gitignore` (`*.bak`); lint findings; the debug print; unused string; upstream files nothing imports (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.ts`); the `area` re-export | ✅ 2026-11-12 |
 | 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | ✅ 2026-11-12 |
-| 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | |
+| 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | ✅ 2026-11-12 (the building sizes: with batch 6) |
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | |
 | 6 | **Buildings from one source:** zoomed out, the backend makes the tiles from the background map's zoom 15 data on the fly (all buildings at 13 and 14, the large ones at 12), instead of a table in the database, a build step and a Tegola layer; copies are then exact at every zoom | |
 | 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | |
@@ -62,3 +62,8 @@ changes for whoever uses the map except where a line below says so.
   `extract.edition`). Frontend: `detailsCard` (`ui/details.ts`) builds the details
   of the extra data and of buildings. Left: the map credit line written in
   `sites` and in upstream's `style.ts` (upstream's isn't exported).
+- **2026-11-12, batch 4.** `scripts/tests/test_one_source.py`: each service's port
+  (Compose is the reference) agrees in the scripts, the gate and the frontend; the
+  PMTiles program is one version (Compose and `extract.py`). The scripts' ports
+  are named in one place (`lib/common.sh`: `TEGOLA_PORT` was a bare 7800 in five
+  places; the `.env` template now uses them).

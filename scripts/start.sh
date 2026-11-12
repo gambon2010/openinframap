@@ -27,7 +27,7 @@ REGION=$(build_info region_name)
 [[ -n "$REGION" ]] || die "The map database was never finished. Build it with: bash scripts/build-region.sh"
 ok "Map database: $REGION (OSM data as of $(build_info osm_timestamp))"
 up_services tegola
-ok "Tile server running on http://localhost:7800"
+ok "Tile server running on http://localhost:$TEGOLA_PORT"
 REGION_ID=$(build_info region_id)
 if has_satellite; then
     start_satellite_if_present
