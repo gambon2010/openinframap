@@ -67,12 +67,12 @@ describe('merging an item field by field', () => {
 })
 
 describe('merging a layer', () => {
-  const base = { name: 'Units', style: { folder: 'A' } }
-  it('name and each style key', () => {
-    const mine = { name: 'Units', style: { folder: 'B' } }
-    const theirs = { name: 'Our units', style: { folder: 'A', locked: true } }
+  const base = { name: 'Units', style: {} }
+  it('the name and each style key, from whoever changed it', () => {
+    const mine = { name: 'My units', style: {} }
+    const theirs = { name: 'Units', style: { locked: true } }
     expect(mergeLayer(base, mine, theirs)).toEqual({
-      merged: { name: 'Our units', style: { folder: 'B', locked: true } },
+      merged: { name: 'My units', style: { locked: true } },
       conflicts: []
     })
     expect(mergeLayer(base, { name: 'A', style: {} }, { name: 'B', style: {} }).conflicts).toContain('name')

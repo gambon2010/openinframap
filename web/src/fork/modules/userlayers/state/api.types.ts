@@ -28,7 +28,5 @@ export interface Situation {
 /** Who a layer is shared with (its owner only). */
 export interface LayerSharing {
   owner: string | null
-  /** From before accounts: everyone may change it. */
-  open_to_all: boolean
   people: { id: number; name: string; level: 'view' | 'modify' | null }[]
 }

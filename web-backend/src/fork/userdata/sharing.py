@@ -4,10 +4,6 @@ Fork: sharing a layer (docs/plans/sync.md, "Owners and sharing"), for its owner.
     GET /userdata/layers/{id}/access   {owner, people: [{id, name, level}]}: every
                                        other account and its access (null: none)
     PUT /userdata/layers/{id}/access   {user_id, level: "view" | "modify" | null}
-
-A layer from before there were accounts (no owner, open to everyone) gets one the
-first time an admin shares it: that admin, and every other account keeps modify
-access, as before, until it's changed.
 """
 
 from __future__ import annotations
@@ -42,9 +38,8 @@ async def owned(request: Request) -> tuple[AsyncConnection, uuid.UUID]:
     return db, layer_id
 
 
-async def people(db: AsyncConnection, layer_id: uuid.UUID, me: str | None) -> Response:
-    """Every account but the owner (or, for a layer from before accounts, but the
-    admin asking, who becomes its owner when sharing it) and its access."""
+async def people(db: AsyncConnection, layer_id: uuid.UUID) -> Response:
+    """Every account but the owner, and its access."""
     owner = (
         await db.execute(
             text(
@@ -61,18 +56,12 @@ async def people(db: AsyncConnection, layer_id: uuid.UUID, me: str | None) -> Re
                 WHERE NOT u.disabled AND u.id IS DISTINCT FROM :owner
                 ORDER BY lower(u.name)"""
         ),
-        {"layer": layer_id, "owner": owner.id if owner.id is not None else (int(me) if me else None)},
+        {"layer": layer_id, "owner": owner.id},
     )
     return JSONResponse(
         {
             "owner": owner.name,
-            # No owner: from before accounts, everyone may modify it.
-            "open_to_all": owner.id is None,
-            # From before accounts: everyone may change it.
-            "people": [
-                {"id": r.id, "name": r.name, "level": r.level if owner.id is not None else "modify"}
-                for r in rows
-            ],
+            "people": [{"id": r.id, "name": r.name, "level": r.level} for r in rows],
         }
     )
 
@@ -80,7 +69,7 @@ async def people(db: AsyncConnection, layer_id: uuid.UUID, me: str | None) -> Re
 async def layer_access(request: Request) -> Response:
     db, layer_id = await owned(request)
     if request.method == "GET":
-        return await people(db, layer_id, current_user(request).id)
+        return await people(db, layer_id)
     body = await read_json(request)
     try:
         user_id = int(str(body.get("user_id")))
@@ -89,25 +78,9 @@ async def layer_access(request: Request) -> Response:
     level = body.get("level")
     if level not in ("view", "modify", None):
         raise HTTPException(400, "Access is view, modify or none")
-    me = current_user(request)
     owner_id = (
         await db.execute(text("SELECT owner_id FROM userdata.layer WHERE id = :id"), {"id": layer_id})
     ).scalar()
-    if owner_id is None and me.id is not None:
-        # From before accounts: this admin becomes its owner, the others keep modifying it.
-        await db.execute(
-            text("UPDATE userdata.layer SET owner_id = :me WHERE id = :id"),
-            {"me": int(me.id), "id": layer_id},
-        )
-        await db.execute(
-            text(
-                """INSERT INTO userdata.layer_access (layer_id, user_id, level)
-                   SELECT :layer, id, 'modify' FROM userdata.app_user WHERE id <> :me
-                   ON CONFLICT DO NOTHING"""
-            ),
-            {"layer": layer_id, "me": int(me.id)},
-        )
-        owner_id = int(me.id)
     if user_id == owner_id:
         raise HTTPException(400, "That's the layer's owner")
     if level is None:
@@ -124,4 +97,4 @@ async def layer_access(request: Request) -> Response:
             {"layer": layer_id, "user": user_id, "level": level},
         )
     await db.commit()
-    return await people(db, layer_id, me.id)
+    return await people(db, layer_id)

@@ -11,12 +11,9 @@ const symbol = (sidc: string, modifiers: Record<string, string> = {}, notes?: st
   geometry: { type: 'Point', coordinates: [0, 0] },
   properties: { kind: 'symbol', sidc, modifiers, notes }
 })
-const layer = (id: string, folder?: string): UserLayer => ({
-  id,
-  name: id,
-  style: { folder },
-  features: new Map()
-})
+const layer = (id: string): UserLayer => ({ id, name: id, style: {}, features: new Map() })
+const folders: Record<string, string> = { b: 'Zulu', c: 'Alpha', d: 'Zulu', e: '  ' }
+const folderOf = (l: UserLayer) => folders[l.id]?.trim() || null
 
 describe('search and filters', () => {
   const friendUnit = symbol('SFGPUCI----F---', { T: '2nd Bn', M: '1st Bde' }, 'seen by the bridge')
@@ -42,13 +39,13 @@ describe('search and filters', () => {
 })
 
 test('layers by folder: folders sorted, loose layers last', () => {
-  const out = byFolder([layer('a'), layer('b', 'Zulu'), layer('c', 'Alpha'), layer('d', 'Zulu')])
+  const out = byFolder([layer('a'), layer('b'), layer('c'), layer('d')], [], folderOf)
   expect(out.map(([f, l]) => [f, l.map((x) => x.id)])).toEqual([
     ['Alpha', ['c']],
     ['Zulu', ['b', 'd']],
     [null, ['a']]
   ])
-  expect(byFolder([layer('a', '  ')])).toEqual([[null, [expect.objectContaining({ id: 'a' })]]])
+  expect(byFolder([layer('e')], [], folderOf)).toEqual([[null, [expect.objectContaining({ id: 'e' })]]])
 })
 
 test('an item in a few words', () => {

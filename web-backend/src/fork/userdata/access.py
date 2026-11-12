@@ -5,8 +5,6 @@ sharing"). One place for the rules; layers.py, changes.py and situations.py ask 
 - the owner: everything (share it, lock it, delete it);
 - shared to modify: change its items, its name and colour;
 - shared to view: see it (read-only);
-- a layer from before there were accounts (no owner): everyone may modify it, and
-  admins act as its owner;
 - ANYONE (no login middleware: tests, scripts): owner of everything.
 """
 
@@ -29,9 +27,7 @@ def level_of(user: User, owner_id: int | None, shared: str | None) -> Level:
     """A user's access to a layer, from its owner and what was shared with them."""
     if user.id is None:
         return "owner"
-    if owner_id is None:
-        return "owner" if user.is_admin else "modify"
-    if str(owner_id) == user.id:
+    if owner_id is not None and str(owner_id) == user.id:
         return "owner"
     if shared in ("view", "modify"):
         return shared  # type: ignore[return-value]

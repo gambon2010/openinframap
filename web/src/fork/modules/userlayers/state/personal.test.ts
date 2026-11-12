@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { PersonalSettings, complete } from './personal.ts'
 import { Store } from './store.ts'
 
-const layer = (id: string, folder?: string) => ({ id, style: folder === undefined ? {} : { folder } })
+const layer = (id: string) => ({ id })
 
 function answer(value: unknown, ok = true) {
   return vi.fn(async () => ({ ok, json: async () => ({ value }) }) as Response)
@@ -35,23 +35,13 @@ describe('personal settings', () => {
     expect(complete(null).folders).toEqual({})
   })
 
-  test('takes over what this browser kept before accounts', () => {
-    localStorage.setItem('oim-userlayers-hidden', '["a"]')
-    localStorage.setItem('oim-userlayers-folded', '["Grid"]')
-    localStorage.setItem('oim-userlayers-empty-folders', '["New"]')
+  test("a layer's folder is yours: none until you put it in one", () => {
     const p = new PersonalSettings()
-    expect(p.data).toMatchObject({ hidden: ['a'], folded: ['Grid'], empty: ['New'] })
-  })
-
-  test("a layer's folder: yours, else the one it had before (shared)", () => {
-    const p = new PersonalSettings()
-    expect(p.folderOf(layer('a', ' Old '))).toBe('Old')
-    expect(p.folderOf(layer('b'))).toBeNull()
-    p.setFolder('a', 'Mine')
-    expect(p.folderOf(layer('a', 'Old'))).toBe('Mine')
-    // Taken out: in none, even though the layer still says otherwise.
+    expect(p.folderOf(layer('a'))).toBeNull()
+    p.setFolder('a', ' Mine ')
+    expect(p.folderOf(layer('a'))).toBe('Mine')
     p.setFolder('a', null)
-    expect(p.folderOf(layer('a', 'Old'))).toBeNull()
+    expect(p.folderOf(layer('a'))).toBeNull()
   })
 
   test('a folder a layer is put in is no longer an empty one', () => {
@@ -94,7 +84,7 @@ describe('personal settings', () => {
   test("loading for the first time sends this browser's to the account", async () => {
     const fetch = answer(null)
     vi.stubGlobal('fetch', fetch)
-    localStorage.setItem('oim-userlayers-hidden', '["a"]')
+    localStorage.setItem('oim-userlayers-personal', '{"hidden": ["a"]}')
     const p = new PersonalSettings()
     await p.load()
     vi.advanceTimersByTime(600)
@@ -104,7 +94,7 @@ describe('personal settings', () => {
 
   test("the server can't be reached: this browser's are kept", async () => {
     vi.stubGlobal('fetch', answer(null, false))
-    localStorage.setItem('oim-userlayers-hidden', '["a"]')
+    localStorage.setItem('oim-userlayers-personal', '{"hidden": ["a"]}')
     const p = new PersonalSettings()
     await p.load()
     expect(p.data.hidden).toEqual(['a'])
@@ -129,17 +119,6 @@ describe('symbols', () => {
     expect(p.data.recent).toHaveLength(12)
     expect(new Set(p.data.recent).size).toBe(12)
   })
-
-  test("this browser's older favourites fill in what the account doesn't have yet", async () => {
-    const fetch = answer({ hidden: ['b'] })
-    vi.stubGlobal('fetch', fetch)
-    localStorage.setItem('oim-userlayers-favourites', '["S*G*UCI---------"]')
-    const p = new PersonalSettings()
-    await p.load()
-    expect(p.data).toMatchObject({ hidden: ['b'], favourites: ['S*G*UCI---------'] })
-    vi.advanceTimersByTime(600)
-    expect(fetch.mock.calls.some((c) => (c as unknown[])[1])).toBe(true)
-  })
 })
 
 describe('the store', () => {
@@ -158,7 +137,7 @@ describe('the store', () => {
     vi.stubGlobal('fetch', answer(null))
     const store = new Store()
     const id = store.createLayer('A', 'Grid')
-    expect(store.layers.get(id)?.style.folder).toBeUndefined()
+    expect(store.layers.get(id)?.style).not.toHaveProperty('folder')
     expect(store.personal.folderOf(store.layers.get(id)!)).toBe('Grid')
   })
 

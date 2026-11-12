@@ -5,22 +5,13 @@ import { readJson, writeJson } from '../../../core/storage.ts'
 // recently used symbols. Kept for the account on the server (GET / PUT
 // /userdata/settings/userlayers), so it follows you to any computer, and in this
 // browser (to show it at once, and when the server can't be reached). What the
-// account doesn't have yet is taken from what this browser remembered before.
+// account doesn't have yet is filled in empty.
 const URL = '/userdata/settings/userlayers'
 const KEY = 'oim-userlayers-personal'
-// Kept in the browser before accounts.
-const OLD = {
-  hidden: 'oim-userlayers-hidden',
-  folded: 'oim-userlayers-folded',
-  empty: 'oim-userlayers-empty-folders',
-  favourites: 'oim-userlayers-favourites',
-  recent: 'oim-userlayers-recent'
-}
 const MAX_RECENT = 12
 
 export interface Personal {
-  /** A layer's folder for you (null: in none); absent: the folder it had before
-   * folders were personal (its style.folder), if any. */
+  /** A layer's folder for you (null or absent: in none). */
   folders: Record<string, string | null>
   hidden: string[]
   /** Layers showing their items in the list. */
@@ -61,30 +52,13 @@ function empty(): Personal {
   }
 }
 
-/** What this browser remembered before these were personal. */
-function fromThisBrowser(): Personal {
-  return {
-    ...empty(),
-    hidden: readJson<string[]>(OLD.hidden, []),
-    folded: readJson<string[]>(OLD.folded, []),
-    empty: readJson<string[]>(OLD.empty, []),
-    favourites: readJson<string[]>(OLD.favourites, []),
-    recent: readJson<string[]>(OLD.recent, [])
-  }
-}
-
 /** A stored value, with any key missing filled in. */
 export function complete(value: Partial<Personal> | null | undefined): Personal {
   return { ...empty(), ...(value ?? {}) }
 }
 
-/** A stored value, what it doesn't have yet taken from what this browser kept before. */
-function withThisBrowser(value: Partial<Personal> | null | undefined): Personal {
-  return { ...fromThisBrowser(), ...(value ?? {}) }
-}
-
 export class PersonalSettings {
-  data: Personal = withThisBrowser(readJson<Partial<Personal> | null>(KEY, null))
+  data: Personal = complete(readJson<Partial<Personal> | null>(KEY, null))
   private timer: ReturnType<typeof setTimeout> | undefined
   private listeners: (() => void)[] = []
 
@@ -92,14 +66,13 @@ export class PersonalSettings {
     this.listeners.push(listener)
   }
 
-  /** Your settings from the server (the first time, or for what they don't have yet:
-   * this browser's, sent there). */
+  /** Your settings from the server (the first time: this browser's, sent there). */
   async load() {
     try {
       const response = await fetch(URL)
       if (!response.ok) return
       const { value } = (await response.json()) as { value: Partial<Personal> | null }
-      this.data = withThisBrowser(value ?? this.data)
+      this.data = complete(value ?? this.data)
       if (!value || Object.keys(empty()).some((key) => !(key in value))) this.save()
       this.keep()
       for (const listener of this.listeners) listener()
@@ -126,9 +99,8 @@ export class PersonalSettings {
   }
 
   /** A layer's folder for you. */
-  folderOf(layer: { id: string; style: { folder?: string } }): string | null {
-    if (layer.id in this.data.folders) return this.data.folders[layer.id]
-    return layer.style.folder?.trim() || null
+  folderOf(layer: { id: string }): string | null {
+    return this.data.folders[layer.id] ?? null
   }
 
   setFolder(layerId: string, folder: string | null) {

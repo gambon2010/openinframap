@@ -18,11 +18,8 @@ import { measurePrefs } from '../measure/prefs.ts'
 import {
   axisControlPoints,
   axisWidth,
-  axisWidthFrom,
   graphicsLibrary,
-  isAxis,
   mapScale,
-  pathFromAxisPoints,
   renderGraphic,
   squareUp
 } from '../graphics/graphics.ts'
@@ -83,9 +80,6 @@ export class Renderer {
   private orderKey = ''
 
   private graphicsZoom = -1
-  /** Called with arrows drawn the old way (four free points), to turn them into paths. */
-  onOldArrow?: (layerId: string, feature: UserFeature) => void
-  private oldArrowsReported = new Set<string>()
   // The selected feature, to keep the resize handle at its corner when the map moves.
   private selected: UserFeature | null = null
 
@@ -136,28 +130,8 @@ export class Renderer {
     for (const layer of withGraphics) {
       const features: GeoJSON.Feature[] = []
       for (const stored of layer.features.values()) {
-        let f = changed && stored.id === changed.id ? changed : stored
+        const f = changed && stored.id === changed.id ? changed : stored
         if (!isGraphic(f) || !f.properties.sidc) continue
-        const p = f.properties
-        if (
-          !p.axis &&
-          p.axisWidth === undefined &&
-          controlPoints(f.geometry).length >= 3 &&
-          isAxis(lib, p.sidc!)
-        ) {
-          // An old arrow: draw it as a path, and have it saved that way.
-          const old = controlPoints(f.geometry)
-          const path = pathFromAxisPoints(old)
-          f = {
-            ...f,
-            geometry: { type: 'LineString', coordinates: path },
-            properties: { ...p, axis: true, axisWidth: axisWidthFrom(path, old[old.length - 1]) }
-          }
-          if (!this.oldArrowsReported.has(f.id)) {
-            this.oldArrowsReported.add(f.id)
-            this.onOldArrow?.(layer.id, f)
-          }
-        }
         try {
           const pieces = renderGraphic(lib, {
             sidc: f.properties.sidc!,

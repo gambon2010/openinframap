@@ -144,15 +144,6 @@ export function axisWidthFrom(path: LonLat[], handle: LonLat): number {
   return Math.max(10, Math.round((2 * Math.abs(hx * dy - hy * dx)) / length))
 }
 
-/**
- * An arrow drawn before arrows were paths had the standard's points: tip, centre
- * line back to the tail, then the width point. Its path, tail to tip (the width
- * point becomes its width: axisWidthFrom).
- */
-export function pathFromAxisPoints(points: LonLat[]): LonLat[] {
-  return points.slice(0, -1).reverse()
-}
-
 /** Map scale (1:n) at a zoom and latitude, as the renderer wants it. */
 export function mapScale(zoom: number, latitude: number): number {
   // Metres per pixel / metres per screen pixel (0.28 mm, the OGC standard).

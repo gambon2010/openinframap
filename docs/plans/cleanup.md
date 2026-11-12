@@ -27,7 +27,7 @@ changes for whoever uses the map except where a line below says so.
 | 2 | **Quick and safe:** `.gitignore` (`*.bak`); lint findings; the debug print; unused string; upstream files nothing imports (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.ts`); the `area` re-export | ✅ 2026-11-12 |
 | 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | ✅ 2026-11-12 |
 | 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | ✅ 2026-11-12 (the building sizes: with batch 6) |
-| 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | |
+| 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | ✅ 2026-11-12 |
 | 6 | **Buildings from one source:** zoomed out, the backend makes the tiles from the background map's zoom 15 data on the fly (all buildings at 13 and 14, the large ones at 12), instead of a table in the database, a build step and a Tegola layer; copies are then exact at every zoom | |
 | 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | |
 | 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | |
@@ -67,3 +67,12 @@ changes for whoever uses the map except where a line below says so.
   PMTiles program is one version (Compose and `extract.py`). The scripts' ports
   are named in one place (`lib/common.sh`: `TEGOLA_PORT` was a bare 7800 in five
   places; the `.env` template now uses them).
+- **2026-11-12, batch 5.** The database had no old-format My layers data (no
+  ownerless layer, no layer's own folder, no item with its name as designation or
+  without a colour, no four-point arrow, none in the history either). Migration
+  `003_layers_have_owners.sql` makes every layer have an owner (one without gets
+  the first admin, the others keep "can change"); then the code for the old forms
+  went: ownerless layers' rules (`access.py`, `sharing.py`, the sharing window's
+  note), a layer's shared folder (`style.folder`), settings taken over from this
+  browser's storage before accounts, a symbol's name as its designation, old
+  arrows turned into paths when drawn. A layer without an owner is now nobody's.

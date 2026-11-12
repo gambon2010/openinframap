@@ -15,9 +15,12 @@ def test_the_owner_and_what_is_shared():
     assert level_of(admin, 3, None) == "none"
 
 
-def test_layers_from_before_accounts_are_open_to_everyone():
-    assert level_of(alice, None, None) == "modify"
-    assert level_of(admin, None, None) == "owner"
+def test_a_layer_without_an_owner_is_nobodys():
+    # Every layer has an owner (migration 003); one without is out of reach, not
+    # open to everyone. Without the login (tests, scripts): everything.
+    assert level_of(alice, None, None) == "none"
+    assert level_of(admin, None, None) == "none"
+    assert level_of(alice, None, "modify") == "modify"
     assert level_of(ANYONE, 3, None) == "owner"
 
 

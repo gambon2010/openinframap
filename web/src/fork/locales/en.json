@@ -505,7 +505,6 @@
     "share-none": "No access",
     "share-view": "Can view",
     "share-modify": "Can change",
-    "share-open": "This layer is from before there were accounts: everyone can change it. Choosing here makes you its owner; everyone keeps \"Can change\" until you change it.",
     "share-intro": "Who else can see or change this layer.",
     "share-nobody": "There are no other accounts yet.",
     "share-loading": "Loading…",

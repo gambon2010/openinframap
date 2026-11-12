@@ -28,7 +28,7 @@ export interface Card {
   military: boolean
   sidc: string
   kind: SymbolKind | null
-  /** Its text fields (2525 letters), the old name as its designation. */
+  /** Its text fields (2525 letters). */
   modifiers: Record<string, string>
   setModifier: (key: string, value: string) => void
 }

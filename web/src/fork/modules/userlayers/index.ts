@@ -24,14 +24,6 @@ const userlayers: ForkModule = {
   init: ({ map, primaryLayers }) => {
     const store = new Store()
     const renderer = new Renderer(map, primaryLayers)
-    // Arrows drawn with four free points are turned into paths (an unsaved change each).
-    renderer.onOldArrow = (layerId, feature) => {
-      queueMicrotask(() => {
-        if (store.layers.get(layerId)?.features.get(feature.id)?.properties.axis) return
-        store.updateFeature(layerId, feature)
-        if (tools.selected === feature.id) tools.select(feature.id)
-      })
-    }
     // The layers are drawn in the list's order (yours: state/personal.ts).
     renderer.orderOf = () => layerOrder([...store.layers.values()], store.personal)
     const tools = new Tools(map, store, renderer, primaryLayers)

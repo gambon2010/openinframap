@@ -52,15 +52,7 @@ export function openSharing(layer: UserLayer) {
       return el('tr', el('td', person.name), el('td', choice))
     })
     setChildren(body, [
-      sharing.open_to_all
-        ? el(
-            'p.oim-ul-sharing-note',
-            t(
-              'userlayers.share-open',
-              'This layer is from before there were accounts: everyone can change it. Choosing here makes you its owner; everyone keeps "Can change" until you change it.'
-            )
-          )
-        : el('p.oim-ul-sharing-note', t('userlayers.share-intro', 'Who else can see or change this layer.')),
+      el('p.oim-ul-sharing-note', t('userlayers.share-intro', 'Who else can see or change this layer.')),
       rows.length
         ? el('table.oim-ul-sharing-list', ...rows)
         : el('p', t('userlayers.share-nobody', 'There are no other accounts yet.')),

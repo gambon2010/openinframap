@@ -21,7 +21,7 @@ export function sortLayers(layers: UserLayer[], order: string[]): UserLayer[] {
 export function byFolder(
   layers: UserLayer[],
   empty: Iterable<string> = [],
-  folderOf: (layer: UserLayer) => string | null = (l) => l.style.folder?.trim() || null
+  folderOf: (layer: UserLayer) => string | null = () => null
 ): [folder: string | null, layers: UserLayer[]][] {
   const folders = new Map<string, UserLayer[]>([...empty].map((f): [string, UserLayer[]] => [f, []]))
   const loose: UserLayer[] = []

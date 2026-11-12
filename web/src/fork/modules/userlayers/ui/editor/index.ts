@@ -40,8 +40,6 @@ export async function buildEditor(
   const kind = military ? symbolKind(sidc) : null
   const parts: CardPart[] = []
   const modifiers = { ...(p.modifiers ?? {}) }
-  // Items made before the fields existed had a name: it's the designation.
-  if (military && !modifiers['T'] && p.name) modifiers['T'] = p.name
   const setModifier = (key: string, value: string) => {
     const next = { ...modifiers, [key]: value }
     if (!value) delete next[key]
