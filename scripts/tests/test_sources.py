@@ -42,7 +42,7 @@ def test_a_source_declares_what_the_menus_need(name):
         assert s.units and s.read_per_km2 > 0
         converter = importlib.import_module(f"satimagery.{s.address}")
         # What the menu asks of a source fetched by units.
-        for name in (
+        for function in (
             "units_in",
             "unit_name",
             "unit_code",
@@ -51,7 +51,7 @@ def test_a_source_declares_what_the_menus_need(name):
             "unit_estimate",
             "jobs",
         ):
-            assert callable(getattr(converter, name)), name
+            assert callable(getattr(converter, function)), function
     if s.layer == "detailed":
         assert s.regions and s.first_zoom == sources.AERIAL_FIRST_ZOOM
     if s.bbox:

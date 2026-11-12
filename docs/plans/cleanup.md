@@ -28,7 +28,7 @@ changes for whoever uses the map except where a line below says so.
 | 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | ✅ 2026-11-12 |
 | 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | ✅ 2026-11-12 (the building sizes: with batch 6) |
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | ✅ 2026-11-12 |
-| 6 | **Buildings from one source:** zoomed out, the backend makes the tiles from the background map's zoom 15 data on the fly (all buildings at 13 and 14, the large ones at 12), instead of a table in the database, a build step and a Tegola layer; copies are then exact at every zoom | |
+| 6 | **Buildings: exact copies at every zoom.** Planned: the backend making the zoomed-out tiles from the background map's zoom 15 tiles (one source). Measured too slow (below), so the zoomed-out drawing stays the build step and Tegola; a copy takes the exact outline from the backend instead | ✅ 2026-11-12 (reduced) |
 | 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | |
 | 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | |
 | 9 | **CI:** one workflow running the fork's three test suites; upstream's deploy workflows off in the fork | |
@@ -76,3 +76,13 @@ changes for whoever uses the map except where a line below says so.
   note), a layer's shared folder (`style.folder`), settings taken over from this
   browser's storage before accounts, a symbol's name as its designation, old
   arrows turned into paths when drawn. A layer without an owner is now nobody's.
+- **2026-11-12, batch 6.** Buildings made on request were timed over central
+  Paris: one zoom 12 tile = 64 zoom 15 tiles = 88,000 buildings, 3.8 s just to
+  decode them in Python, 13 s in all; a zoom 13 tile about 1 s, and a screen needs
+  ~20. Not usable, so reverted: the zoomed-out drawing stays the large-buildings
+  build step and Tegola (fast, measured before). What was kept fixes the actual
+  problem (a building copied zoomed out took Tegola's simplified shape): a copy
+  asks `/background/building/{id}?lon=&lat=` (`web-backend/src/fork/background/
+  buildings.py`), which joins the building's pieces from the zoom 15 tiles around
+  it (45 ms for a large Paris building), at any zoom; offline from the backend,
+  the pieces on screen. A cut leaving a line beside the area keeps the area only.

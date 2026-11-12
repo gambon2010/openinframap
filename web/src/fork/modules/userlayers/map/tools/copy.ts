@@ -5,7 +5,7 @@
 import type { MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl'
 import { t } from '../../../../core/i18n.ts'
 import { sourceGeometry } from '../../../../core/map-data.ts'
-import { buildingId, buildingOutline, isBuildingLayer } from '../../../../core/buildings.ts'
+import { buildingId, exactOutline, isBuildingLayer } from '../../../../core/buildings.ts'
 import { withNewColour } from '../new-colour.ts'
 import type { FeatureProps } from '../../model/model.ts'
 import type { ToolsContext } from '../tools.types.ts'
@@ -69,7 +69,7 @@ export async function copyFeature(c: ToolsContext, f: MapGeoJSONFeature): Promis
 
 /** A building as an ordinary area of the active layer (editable, the colour for
  * new items), named "Building", with its height kept. */
-function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): 'copied' | 'already' {
+async function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): Promise<'copied' | 'already'> {
   const id = buildingId(f)
   const layerId = c.activeLayer()
   const layer = c.store.layers.get(layerId)!
@@ -80,7 +80,7 @@ function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): 'copied' | 'alread
       return 'already'
     }
   }
-  const geometry = buildingOutline(c.map, f) || f.geometry
+  const geometry = (await exactOutline(c.map, f)) || f.geometry
   const properties: FeatureProps = {
     kind: 'drawing',
     name: t('userlayers.copy.building', 'Building'),

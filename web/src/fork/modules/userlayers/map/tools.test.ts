@@ -78,8 +78,8 @@ let tools: Tools
 
 async function click(lng: number, lat: number, shiftKey = false) {
   map.emit('click', at(lng, lat, shiftKey))
-  await Promise.resolve()
-  await Promise.resolve()
+  // Whatever the click started (a copy may ask the backend) is finished.
+  await new Promise((done) => setTimeout(done, 0))
 }
 
 function key(k: string) {
@@ -364,7 +364,7 @@ describe('resizing and copying', () => {
     expect(tools.message).toMatch(/Already/)
   })
 
-  test('copy: a building becomes an ordinary area, joined from its tiles, once', async () => {
+  test('copy: a building becomes an ordinary area, its exact outline from the backend, once', async () => {
     tools = new Tools(map as unknown as MapLibre, store, fakeRenderer() as unknown as Renderer, () => [
       { id: 'buildings_outline', zorder: -10 } as never
     ])
@@ -396,16 +396,32 @@ describe('resizing and copying', () => {
       { id: building, geometry: square(0, 1.1) },
       { id: building, geometry: square(0.9, 2) }
     ] as never
+    // The backend joins its pieces from the zoom 15 tiles (here, a bit wider than
+    // what's on screen: zoomed out, the tiles' shapes are simplified).
+    const asked: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      asked.push(url)
+      return new Response(JSON.stringify({ geometry: square(0, 2.5) }))
+    })
     tools.setTool({ mode: 'copy' })
     await click(0.5, 0.5)
     const [copy] = items()
+    expect(asked[0]).toMatch(new RegExp(`^/background/building/${building}\\?lon=0&lat=0$`))
     expect(copy.properties).toMatchObject({ kind: 'drawing', name: 'Building', height: 12 })
     expect(copy.properties.color).toBeTruthy()
-    expect(copy.geometry.type).toBe('Polygon')
     const xs = (copy.geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
-    expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 2])
+    expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 2.5])
     await click(0.5, 0.5)
     expect(items()).toHaveLength(1)
     expect(tools.message).toMatch(/Already/)
+    // The backend out of reach: the pieces on screen, joined.
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('offline')
+    })
+    store.deleteFeature(store.layerOf(copy.id)!.id, copy.id)
+    await click(0.5, 0.5)
+    const xs2 = (items()[0].geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
+    expect([Math.min(...xs2), Math.max(...xs2)]).toEqual([0, 2])
+    vi.unstubAllGlobals()
   })
 })

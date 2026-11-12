@@ -506,6 +506,13 @@ after a background map with buildings is added or removed in the menu (a
 colours (`modules/buildings`: a `buildings_large` source, zooms 12–15); their
 details use the area measured whole. Tests: `tests/fork/test_large_buildings.py`.
 
+**Exact copies at every zoom** (2026-11-12): zoomed out, a building's shape is
+Tegola's, simplified for the zoom; a copy now asks the backend for the exact outline
+(`/background/building/{id}?lon=&lat=`, `background/buildings.py`: the building's
+pieces in the background map's zoom 15 tiles around the point, joined; `exactOutline`
+in `core/buildings.ts`). Making the zoomed-out tiles from the zoom 15 ones on
+request was tried and measured (13 s for one zoom 12 tile over Paris): not done.
+
 **The world zoomed out** (asked for): every country's borders, names and coasts
 were missing on low-zoom imagery, the background map covering only the areas
 downloaded. The menu offers the whole world's background map to zoom 8 (560 MB;
