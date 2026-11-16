@@ -466,6 +466,10 @@ tile units in one vectorised step, not point by point; unused features never mad
 into shapes; pieces joined after rounding to the centimetre, as two tiles' shared
 ends differ in the last digits). France: 1,195 blocks, 227,635 tiles, 390 MB (the buildings' 56 MB included), 13 min
 (the buildings alone took 6).
+Then holes in the roads zoomed out (from zoom 8): pieces shorter than a pixel were
+left out, and between two others (a junction, a bridge) that's a hole; they're kept.
+Roads are grouped by the properties the styles read only (kind, kind_detail, tunnel,
+link): a bridge or another min_zoom parted a road into several lines.
 
 ---
 

@@ -77,7 +77,7 @@ def test_a_road_cut_at_tile_edges_is_one_line_again(paris):
     for x in (X, X + 1):
         zr.collect(zoomed_out.decoded(archive, x, Y), zoomed_out.tile_bounds(15, x, Y), groups)
     joined = zr.joined(groups)
-    tunnel = next(g for key, g in joined.items() if dict(key).get("is_tunnel"))
+    tunnel = next(g for (_, kept), g in joined.items() if dict(kept).get("is_tunnel"))
     assert tunnel.geom_type == "LineString"  # no seam, no overlap
 
 

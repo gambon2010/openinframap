@@ -28,8 +28,9 @@ from .tiles import BUFFER, EXTENT, PIXELS, in_tile_units, tile_bounds
 
 LAYER = "roads"
 ZOOMS = range(8, 14)
-# The properties kept (what the map's road styles read).
-KEPT = ("kind", "kind_detail", "is_tunnel", "is_bridge", "is_link", "service", "min_zoom")
+# The properties kept: what the map's road styles read at these zooms. No more, so
+# a road's pieces join into one line (a bridge or another min_zoom would part them).
+KEPT = ("kind", "kind_detail", "is_tunnel", "is_link")
 # Small roads from zoom 12, paths and tracks from 13 (Protomaps: most from 14).
 SMALL_ROADS_FROM = 12
 PATHS_FROM = 13
@@ -39,7 +40,8 @@ BIG_ROADS_BY = {"motorway": 8, "trunk": 8, "primary": 9, "secondary": 10, "terti
 
 SNAP_DECIMALS = 2  # metres rounded to the centimetre before joining
 
-Key = tuple[tuple[str, Any], ...]
+# A group of roads: the zoom they show from, and their properties (KEPT).
+Key = tuple[int, tuple[tuple[str, Any], ...]]
 
 
 def from_zoom(props: dict[str, Any]) -> int:
@@ -72,8 +74,8 @@ def collect(tile: dict[str, Any], bounds: tuple[float, float, float, float], gro
         line = shapely.clip_by_rect(feature["geometry"], *bounds)
         if line.is_empty:
             continue
-        kept = {k: props[k] for k in KEPT if k in props}
-        groups[tuple(sorted(kept.items()))].append(line)
+        kept = tuple((k, props[k]) for k in KEPT if k in props)
+        groups[(from_zoom(props), kept)].append(line)
 
 
 def joined(groups: dict[Key, list]) -> dict[Key, shapely.Geometry]:
@@ -93,17 +95,17 @@ def joined(groups: dict[Key, list]) -> dict[Key, shapely.Geometry]:
 
 def simplified(roads: dict[Key, shapely.Geometry], z: int) -> tuple[np.ndarray, list[dict[str, Any]]]:
     """The roads shown at a zoom, simplified to about a pixel there: single lines and
-    their properties."""
+    their properties. Short ones too: a road's piece between two others (a junction,
+    a bridge) left out would be a hole in it."""
     pixel = tile_size(z) / PIXELS
     lines, props = [], []
-    for key, geometry in roads.items():
-        properties = dict(key)
-        if from_zoom(properties) > z:
+    for (shown_from, kept), geometry in roads.items():
+        if shown_from > z:
             continue
+        properties = dict(kept)
         for line in shapely.get_parts(shapely.simplify(geometry, pixel)):
-            if shapely.length(line) >= pixel:
-                lines.append(line)
-                props.append(properties)
+            lines.append(line)
+            props.append(properties)
     return np.array(lines, dtype=object), props
 
 
@@ -174,7 +176,7 @@ def coarse(roads: dict[Key, shapely.Geometry], below: int) -> dict[Key, shapely.
     return {
         key: shapely.simplify(geometry, pixel)
         for key, geometry in roads.items()
-        if from_zoom(dict(key)) < below
+        if key[0] < below
     }
 
 
