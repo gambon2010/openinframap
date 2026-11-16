@@ -21,6 +21,7 @@ import userlayers from './modules/userlayers/index.ts'
 import details from './modules/details/index.ts'
 import grid from './modules/grid/index.ts'
 import satellite from './modules/satellite/index.ts'
+import roads from './modules/roads/index.ts'
 import background from './modules/background/index.ts'
 import buildings from './modules/buildings/index.ts'
 import account from './modules/account/index.ts'
@@ -33,6 +34,7 @@ import './fork.css'
 
 const MODULES: ForkModule[] = [
   satellite,
+  roads,
   background,
   buildings,
   mapSources,

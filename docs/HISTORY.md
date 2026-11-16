@@ -435,6 +435,19 @@ and all roads three quarters of the map's widths: zoomed in, its widths are wide
 over the photos.
 Then every road but motorways at least 0.75 px.
 
+
+**One set of roads for every mode (2026-11-16, plan `roads-and-railways.md`, step
+1):** the plain map drew upstream's roads and railways, "satellite with roads" the
+fork's, with other zooms and widths. Now the fork's (`modules/roads/`, moved from
+`modules/satellite/hybrid.ts`) are drawn in every mode but "satellite", upstream's
+road, railway and border layers hidden (its piers kept); which roads show at each
+zoom and how wide is the same, only colours (and edges, and the fading zoomed in)
+follow the background: over the map the high contrast palette's white roads with a
+grey edge (all roads white, as before), grey railways with white dashes, borders a
+pale red. The palette's road colours went (`map-sources/palette.ts`); "original
+colours" now has these roads too. The imagery sits right above upstream's layers,
+under the fork's roads (the lowest data layers, zorder -11).
+
 ---
 
 ## Building outlines (2026-11-11)

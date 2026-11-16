@@ -6,12 +6,11 @@
 // services/background.ts) chooses:
 //   map        the usual background map
 //   satellite  imagery instead of it (place names and infrastructure on top)
-//   hybrid     imagery with roads, railways and borders over it (hybrid.ts)
+//   hybrid     imagery with roads, railways and borders over it (modules/roads)
 import { Map, SourceSpecification } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { Bounds, background } from '../../services/background.ts'
-import { hybridLayers, isHybridLayer, streetNamesOverImagery } from './hybrid.ts'
 
 export interface Tier {
   url: string
@@ -98,21 +97,18 @@ if (TIERS.length)
 /** Show the imagery for a mode: its layers' visibility, and where they sit. */
 function apply(map: Map) {
   if (!TIERS.length || !map.getLayer(sourceId(0))) return
-  const mode = background.mode()
-  const layers = map.getStyle().layers ?? []
-  // Above the whole background map, roads over imagery right on it; place names
-  // come later (the labels style), the data above.
-  const firstData = layers.find((l) => !isBackgroundOrImagery(l.id))?.id
-  const place = (id: string, visible: boolean) => {
-    map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none')
-    if (firstData) map.moveLayer(id, firstData)
-  }
-  TIERS.forEach((_, i) => place(sourceId(i), mode !== 'map'))
-  for (const layer of layers) if (isHybridLayer(layer.id)) place(layer.id, mode === 'hybrid')
+  const visibility = background.mode() === 'map' ? 'none' : 'visible'
+  // Right above the whole background map (upstream's layers): the fork's roads
+  // (modules/roads, the lowest data layers) come over it, place names later.
+  const firstData = (map.getStyle().layers ?? []).find((l) => !isBackgroundOrImagery(l.id))?.id
+  TIERS.forEach((_, i) => {
+    map.setLayoutProperty(sourceId(i), 'visibility', visibility)
+    if (firstData) map.moveLayer(sourceId(i), firstData)
+  })
 }
 
 function isBackgroundOrImagery(layerId: string): boolean {
-  return layerId.startsWith('osm_') || layerId.startsWith('satellite_') || isHybridLayer(layerId)
+  return /^(osm_|boundaries_|satellite_)/.test(layerId)
 }
 
 const satellite: ForkModule = {
@@ -133,8 +129,8 @@ const satellite: ForkModule = {
     ),
 
   // Lowest of the data layers, so right above the background map; apply() moves them.
-  layers: () => [
-    ...TIERS.map((tier, i): LayerSpecificationWithZIndex => ({
+  layers: () =>
+    TIERS.map((tier, i): LayerSpecificationWithZIndex => ({
       zorder: 1,
       id: sourceId(i),
       type: 'raster',
@@ -144,17 +140,11 @@ const satellite: ForkModule = {
       ...(i > 0 ? { minzoom: tier.minzoom } : {}),
       layout: { visibility: background.mode() === 'map' ? 'none' : 'visible' }
     })),
-    ...(TIERS.length ? hybridLayers(background.mode() === 'hybrid') : [])
-  ],
 
   init: ({ map }) => {
     map.on('style.load', () => apply(map))
-    const loaded = () => {
-      apply(map)
-      streetNamesOverImagery(map)
-    }
-    if (map.isStyleLoaded()) loaded()
-    else map.once('load', loaded)
+    if (map.isStyleLoaded()) apply(map)
+    else map.once('load', () => apply(map))
 
     background.onChange(() => apply(map))
   }
