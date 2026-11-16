@@ -1,5 +1,5 @@
 """
-Fork: logging in, and the accounts (docs/plans/sync.md, "Login for the whole app").
+Fork: logging in, and the accounts (docs/plans/archive/sync.md, "Login for the whole app").
 
     GET  /login                  the login page (the setup page when there's no user yet)
     GET  /auth/check             204 with a valid session, else 401 (the gate asks)
@@ -108,7 +108,7 @@ async def logout(request: Request) -> Response:
 
 async def setup(request: Request) -> Response:
     """The first account, an admin; refused once there's one. The existing layers
-    stay as they are (owners come with sharing, docs/plans/sync.md)."""
+    stay as they are (owners come with sharing, docs/plans/archive/sync.md)."""
     if await has_users(request):
         raise HTTPException(403, "There are accounts already: ask an admin")
     body = await read_json(request)

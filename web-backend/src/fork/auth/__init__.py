@@ -1,5 +1,5 @@
 """
-Fork: accounts and login for the whole app (docs/plans/sync.md, "Login for the
+Fork: accounts and login for the whole app (docs/plans/archive/sync.md, "Login for the
 whole app"): passwords.py, sessions.py, routes.py (the login page, /auth/*) and
 middleware.py (every other call needs a logged-in user).
 """

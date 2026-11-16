@@ -91,7 +91,7 @@ const userlayers: ForkModule = {
     })
     void store.load()
     void store.personal.load()
-    // Others' saved changes, as they come (docs/plans/sync.md, phase 4).
+    // Others' saved changes, as they come (docs/plans/archive/sync.md, phase 4).
     onLive('changes', () => void store.refresh())
     onLive('access', () => void store.refresh())
   }

@@ -1,5 +1,5 @@
 """
-Fork: who may see and change which layer (docs/plans/sync.md, "Owners and
+Fork: who may see and change which layer (docs/plans/archive/sync.md, "Owners and
 sharing"). One place for the rules; layers.py, changes.py and situations.py ask here.
 
 - the owner: everything (share it, lock it, delete it);

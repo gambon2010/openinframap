@@ -3,7 +3,7 @@
 //   situation   a saved situation (a past version), read-only
 //   playback    a step of the history, read-only
 // Every "can I change this?" asks canEdit: a locked layer, or one shared with you
-// to view only (docs/plans/sync.md), can't be changed.
+// to view only (docs/plans/archive/sync.md), can't be changed.
 import { UserFeature, UserLayer } from '../model/model.ts'
 import { Situation } from './api.types.ts'
 

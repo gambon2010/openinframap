@@ -1,5 +1,5 @@
 // Fork: My layers on the server: loading the saved layers and sending the unsaved
-// changes (Save) with the versions they started from (docs/plans/sync.md); live
+// changes (Save) with the versions they started from (docs/plans/archive/sync.md); live
 // updates pushed by the server will come here, behind the same calls.
 import { Change, UserLayer } from '../model/model.ts'
 import { loadAll, saveChanges } from './api.ts'

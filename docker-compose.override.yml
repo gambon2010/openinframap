@@ -76,7 +76,7 @@ services:
       - ./data/offline-maps:/data:ro,z
 
   # The gate (gate/nginx.conf): the one entry point, https://<this computer>:8800.
-  # Every request needs a logged-in session (docs/plans/sync.md); the other
+  # Every request needs a logged-in session (docs/plans/archive/sync.md); the other
   # services above only listen on this computer. On the host's network, to reach
   # them and the frontend dev server (npm start) on 127.0.0.1.
   gate:

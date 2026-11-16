@@ -1,4 +1,4 @@
-// Fork: the conflict window (docs/plans/sync.md, "The conflict window"): items both
+// Fork: the conflict window (docs/plans/archive/sync.md, "The conflict window"): items both
 // you and someone else changed, one at a time: who changed it and when, the fields
 // that differ (yours and theirs side by side), Keep mine / Take theirs, Back /
 // Next, or all at once. It folds to a bar ("3 conflicts: resolve") to go on

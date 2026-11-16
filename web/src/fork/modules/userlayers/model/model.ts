@@ -48,7 +48,7 @@ export interface UserLayer {
    * locked: its items can't be changed or moved. */
   style: { locked?: boolean }
   features: Map<string, UserFeature>
-  /** Your access (docs/plans/sync.md): its owner (one you just made: none said),
+  /** Your access (docs/plans/archive/sync.md): its owner (one you just made: none said),
    * shared with you to modify, or to view (read-only). */
   access?: LayerAccess
   /** Its owner's name, for a layer shared with you. */

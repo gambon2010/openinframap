@@ -1,5 +1,5 @@
 // Fork: bringing your unsaved changes up to date with what's saved on the server
-// (docs/plans/sync.md): for every item and layer you changed, merge (merge.ts)
+// (docs/plans/archive/sync.md): for every item and layer you changed, merge (merge.ts)
 // how it was when you started (its base), yours, and the server's now. The result:
 // the server's layers as the new saved ones, your changes rewritten on top of them,
 // new bases (the server's versions), and the conflicts left to resolve. Pure.

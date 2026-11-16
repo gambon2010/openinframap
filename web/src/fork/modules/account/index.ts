@@ -1,4 +1,4 @@
-// Fork: the logged-in account (docs/plans/sync.md, "Login for the whole app"; the
+// Fork: the logged-in account (docs/plans/archive/sync.md, "Login for the whole app"; the
 // backend's web-backend/src/fork/auth/). A button among the map's (top right) says
 // who is logged in, with "Log out"; admins manage the accounts in Settings
 // (accounts.ts). When the session

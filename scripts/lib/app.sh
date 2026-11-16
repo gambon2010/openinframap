@@ -119,7 +119,7 @@ start_app() {
         up_services backend
         ok "Backend started (Docker). Its log: docker compose logs -f backend"
     fi
-    # The gate: the one way in, asking for a login (docs/plans/sync.md).
+    # The gate: the one way in, asking for a login (docs/plans/archive/sync.md).
     if port_in_use "$GATE_PORT"; then
         ok "Gate already running."
     else

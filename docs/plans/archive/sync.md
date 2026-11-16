@@ -1,6 +1,6 @@
 # Plan: users, shared layers and live sync for My layers
 
-Status: **agreed in discussion (2026-10-30)**; building started 2026-10-31 (see "Building
+Status: **done** (agreed 2026-10-30, built 2026-10-31 to 2026-11-01: see "Building
 it"). It builds on the refactor
 (`docs/plans/refactor.md`, phases 3 and 4). Backlog items 10.6 and 10.6b in
 `docs/SPECIFICATIONS.md`.

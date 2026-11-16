@@ -161,7 +161,7 @@ ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
 
 Every edit is a `Change`. It's applied at once, kept unsaved (in the browser too) and
 sent with Save. The backend logs each one, and that log is the history. Users,
-sharing and live sync are designed in `plans/sync.md`. They plug into
+sharing and live sync are designed in `plans/archive/sync.md`. They plug into
 `state/transport.ts`, `state/view.ts` (`canEdit`) and the backend's
 `userdata/users.py`.
 

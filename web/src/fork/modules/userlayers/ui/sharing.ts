@@ -1,4 +1,4 @@
-// Fork: sharing a layer (docs/plans/sync.md, "Owners and sharing"), from its menu
+// Fork: sharing a layer (docs/plans/archive/sync.md, "Owners and sharing"), from its menu
 // (outliner.ts), for its owner: every other account, with no access, view or modify.
 // Saved at once (backend: userdata/sharing.py); no Save needed.
 import { el, setChildren } from 'redom'

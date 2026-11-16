@@ -1,5 +1,5 @@
 """
-Fork: live updates (docs/plans/sync.md, "How the app hears about changes"): each
+Fork: live updates (docs/plans/archive/sync.md, "How the app hears about changes"): each
 open page keeps a connection here (Server-Sent Events) and is told when something
 it can see was saved, so it fetches it (the browser merges it with its unsaved
 changes). Every POLL seconds:

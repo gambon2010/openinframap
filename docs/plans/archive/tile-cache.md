@@ -1,6 +1,12 @@
 # Plan: a small cache for the joined background tiles
 
-Status: **proposed** (2026-11-16), not started.
+Status: **closed, not built** (2026-11-16). Measured not worth it: a joined tile
+costs 1–2 ms (9 ms in central Paris), tiles are small (zoom 14: 6 kB typical; a
+screen of central Paris ~2 MB), and the browser already keeps each tile for an hour,
+so a server cache would only save a few milliseconds for a second browser or after
+the hour. If repeat visits ever need to be faster, a longer browser cache time (with
+a recheck after files change) is the simpler lever. Had it been built: `cachetools`
+(`LRUCache` sized in bytes), not a cache of our own.
 
 ## Why
 

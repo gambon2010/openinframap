@@ -1,5 +1,5 @@
 """
-Fork: sharing a layer (docs/plans/sync.md, "Owners and sharing"), for its owner.
+Fork: sharing a layer (docs/plans/archive/sync.md, "Owners and sharing"), for its owner.
 
     GET /userdata/layers/{id}/access   {owner, people: [{id, name, level}]}: every
                                        other account and its access (null: none)

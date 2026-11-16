@@ -1,5 +1,5 @@
 """
-Fork: personal settings (docs/plans/sync.md, phase 5): a JSON value per account and
+Fork: personal settings (docs/plans/archive/sync.md, phase 5): a JSON value per account and
 key, e.g. My layers' "userlayers" (each layer's folder, the layers hidden, open or
 folded in the list, empty folders). Only for logged-in accounts.
 

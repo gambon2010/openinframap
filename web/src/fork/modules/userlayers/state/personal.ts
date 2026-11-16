@@ -1,5 +1,5 @@
 import { readJson, writeJson } from '../../../core/storage.ts'
-// Fork: what's personal in My layers (docs/plans/sync.md, phase 5): each layer's
+// Fork: what's personal in My layers (docs/plans/archive/sync.md, phase 5): each layer's
 // folder, the layers hidden from the map, those open and the folders and groups of
 // items folded in the list, folders made but still empty, the layer you draw into, your favourite and
 // recently used symbols. Kept for the account on the server (GET / PUT

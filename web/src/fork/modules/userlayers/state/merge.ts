@@ -1,5 +1,5 @@
 // Fork: merging what someone else saved with your unsaved changes, field by field
-// (docs/plans/sync.md, "Merging what arrives with what you're doing"). Pure: the
+// (docs/plans/archive/sync.md, "Merging what arrives with what you're doing"). Pure: the
 // store gives, for each item you changed, how it was when you started (base),
 // yours, and theirs (the server's now).
 //

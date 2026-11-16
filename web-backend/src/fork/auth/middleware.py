@@ -1,5 +1,5 @@
 """
-Fork: every call needs a logged-in user (docs/plans/sync.md, "Login for the whole
+Fork: every call needs a logged-in user (docs/plans/archive/sync.md, "Login for the whole
 app"), apart from logging in. Puts the user on the request (userdata/users.py
 current_user); without one, 401. The gate (gate/nginx.conf) checks the same session
 for the tiles and the frontend.
