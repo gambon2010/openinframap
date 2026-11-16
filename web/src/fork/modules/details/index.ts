@@ -1,6 +1,7 @@
 // Fork: a clicked map feature's details in the left details panel (instead of
 // upstream's popup), with the feature highlighted; a second click on it closes
-// them, and a click near a line selects it (near-click.ts). Search results open
+// them, a click on nothing closes them (deselect.ts), and a click near a line
+// selects it (near-click.ts). Search results open
 // the same way. Other modules add to the details with
 // addDetailsExtra (ui/details.ts), e.g. the grid's "Route from here". A circuit
 // opened from them shows below them (circuit.ts).
@@ -12,7 +13,10 @@ import type InfoPopup from '../../../popup/infopopup.ts'
 import { DetailsPanel, detailsExtras } from '../../ui/details.ts'
 import { FeatureHighlight } from '../../ui/highlight.ts'
 import { leftColumn } from '../../ui/left-column.ts'
-import { selectNearLines } from './near-click.ts'
+import { nothingClickableAt, selectNearLines } from './near-click.ts'
+import { mapMode } from '../../services/map-mode.ts'
+import { menuJustDismissed } from '../../ui/context-menu.ts'
+import { deselectOnEmptyClicks } from './deselect.ts'
 import { circuitBelowDetails } from './circuit.ts'
 
 class Details {
@@ -34,6 +38,12 @@ class Details {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.panel.isOpen()) this.panel.close()
     })
+    deselectOnEmptyClicks(
+      this.map,
+      this.panel,
+      (e) =>
+        !menuJustDismissed() && !mapMode.takes(e) && nothingClickableAt(this.map, ctx.clickRouter, e.point)
+    )
   }
 
   keyOf(feature: MapGeoJSONFeature): string | null {

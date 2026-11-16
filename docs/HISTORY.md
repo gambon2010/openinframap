@@ -516,6 +516,13 @@ part it lands on. Parts with no building mapped around them (checked around the
 Panthéon: 12% of 4,350) are still clicked on their own, shown as "Building". Test:
 `modules/buildings/index.test.ts` (the order clicks rely on).
 
+**A click on nothing deselects** (2026-11-16, asked for): a click on the map that
+does nothing else closes the details (`modules/details/deselect.ts`). Kept: dragging
+(MapLibre sends no click), a double-click (it zooms: the first click waits 300 ms),
+a click that only closed a right-click menu (`menuJustDismissed`), a click a tool
+or My layers takes (`mapMode.takes`), a click on a feature or near a line
+(`nothingClickableAt`, near-click.ts). Clicks in panels never reach the map.
+
 **CI's scripts job fixed** (2026-11-16): ruff run from the repo root (as CI does)
 took the scripts' own modules (`netsafe`, `satimagery`, ...) for outside packages and
 wanted their imports sorted otherwise; `scripts/ruff.toml` (`src = ["."]`) tells it.

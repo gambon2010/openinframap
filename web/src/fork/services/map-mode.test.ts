@@ -79,3 +79,18 @@ describe('the map mode', () => {
     expect(opened).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('whose click it is', () => {
+  test('a mode or a claim takes it; otherwise the map features', () => {
+    const { map } = fakeMap()
+    mapMode.install(map as never, { handleClick: vi.fn() } as never)
+    const onItem = { point: { x: 1, y: 1 } }
+    mapMode.claimClicks((e) => e === (onItem as never))
+    expect(mapMode.takes({} as never)).toBe(false)
+    expect(mapMode.takes(onItem as never)).toBe(true) // an item of My layers
+    mapMode.enter({ name: 'measure' })
+    expect(mapMode.takes({} as never)).toBe(true) // a tool has the map
+    mapMode.leave('measure')
+    expect(mapMode.takes({} as never)).toBe(false)
+  })
+})

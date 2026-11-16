@@ -40,38 +40,64 @@ function lineParts(map: Map, feature: MapGeoJSONFeature): Point[][] {
   )
 }
 
-export function selectNearLines(map: Map, clickRouter: ClickRouter) {
-  const router = clickRouter as unknown as {
-    handlers: Record<string, unknown>
-    minZoom: number
-    handleClick: (e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) => void
-  }
-  const layers = () => Object.keys(router.handlers).filter((id) => map.getLayer(id))
+/** The parts of upstream's click router this file needs (it doesn't export them). */
+interface Router {
+  handlers: Record<string, unknown>
+  minZoom: number
+  handleClick: (e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) => void
+}
 
-  /** The nearest line within reach of a point where nothing is hit, if any. */
-  const nearLine = (point: { x: number; y: number }): MapGeoJSONFeature | null => {
-    if (map.getZoom() < router.minZoom) return null
-    const ids = layers()
-    if (!ids.length || map.queryRenderedFeatures(point as PointLike, { layers: ids }).length) return null
-    const box: [PointLike, PointLike] = [
-      [point.x - NEAR_PIXELS, point.y - NEAR_PIXELS],
-      [point.x + NEAR_PIXELS, point.y + NEAR_PIXELS]
-    ]
-    let best: MapGeoJSONFeature | null = null
-    let bestDistance = NEAR_PIXELS
-    for (const feature of map.queryRenderedFeatures(box, { layers: ids })) {
-      if (!feature.geometry.type.endsWith('LineString')) continue
-      const distance = lineDistance([point.x, point.y], lineParts(map, feature))
-      if (distance <= bestDistance) {
-        best = feature
-        bestDistance = distance
-      }
+function routerOf(clickRouter: ClickRouter): Router {
+  return clickRouter as unknown as Router
+}
+
+/** The map layers a click opens details for (those on the map now). */
+function clickableLayers(map: Map, router: Router): string[] {
+  return Object.keys(router.handlers).filter((id) => map.getLayer(id))
+}
+
+function hitsFeature(map: Map, router: Router, point: { x: number; y: number }): boolean {
+  const ids = clickableLayers(map, router)
+  return ids.length > 0 && map.queryRenderedFeatures(point as PointLike, { layers: ids }).length > 0
+}
+
+/** The nearest line within reach of a point where nothing is hit, if any. */
+function nearLine(map: Map, router: Router, point: { x: number; y: number }): MapGeoJSONFeature | null {
+  const ids = clickableLayers(map, router)
+  // No layers: MapLibre would search every layer.
+  if (!ids.length || map.getZoom() < router.minZoom || hitsFeature(map, router, point)) return null
+  const box: [PointLike, PointLike] = [
+    [point.x - NEAR_PIXELS, point.y - NEAR_PIXELS],
+    [point.x + NEAR_PIXELS, point.y + NEAR_PIXELS]
+  ]
+  let best: MapGeoJSONFeature | null = null
+  let bestDistance = NEAR_PIXELS
+  for (const feature of map.queryRenderedFeatures(box, { layers: ids })) {
+    if (!feature.geometry.type.endsWith('LineString')) continue
+    const distance = lineDistance([point.x, point.y], lineParts(map, feature))
+    if (distance <= bestDistance) {
+      best = feature
+      bestDistance = distance
     }
-    return best
   }
+  return best
+}
+
+/** Whether a click there would open nothing: no feature under it, no line within reach. */
+export function nothingClickableAt(
+  map: Map,
+  clickRouter: ClickRouter,
+  point: { x: number; y: number }
+): boolean {
+  const router = routerOf(clickRouter)
+  return !hitsFeature(map, router, point) && nearLine(map, router, point) === null
+}
+
+export function selectNearLines(map: Map, clickRouter: ClickRouter) {
+  const router = routerOf(clickRouter)
 
   map.on('click', (e) => {
-    const feature = nearLine(e.point)
+    const feature = nearLine(map, router, e.point)
     if (feature) router.handleClick(Object.assign(e, { features: [feature] }))
   })
 
@@ -84,7 +110,7 @@ export function selectNearLines(map: Map, clickRouter: ClickRouter) {
     requestAnimationFrame(() => {
       pending = false
       const canvas = map.getCanvas()
-      const near = nearLine(e.point) !== null
+      const near = nearLine(map, router, e.point) !== null
       if (near && !canvas.style.cursor) {
         canvas.style.cursor = 'pointer'
         hand = true

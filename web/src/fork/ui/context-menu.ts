@@ -21,6 +21,9 @@ export interface MenuEntry {
 export type MenuItem = MenuEntry | 'separator' | { heading: string }
 
 let menu: HTMLElement | null = null
+// When a click elsewhere last closed the menu: that click was only to close it.
+let dismissedAt = -Infinity
+const DISMISS_MS = 500
 
 export function closeContextMenu() {
   menu?.remove()
@@ -32,7 +35,15 @@ export function closeContextMenu() {
 }
 
 function outside(e: Event) {
-  if (menu && !menu.contains(e.target as Node)) closeContextMenu()
+  if (menu && !menu.contains(e.target as Node)) {
+    closeContextMenu()
+    dismissedAt = performance.now()
+  }
+}
+
+/** Whether the click just made only closed a right-click menu. */
+export function menuJustDismissed(): boolean {
+  return performance.now() - dismissedAt < DISMISS_MS
 }
 
 function keys(e: KeyboardEvent) {

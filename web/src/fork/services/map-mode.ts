@@ -53,7 +53,7 @@ export const mapMode = {
     const router = clickRouter as unknown as { handleClick: (e: MapMouseEvent) => void }
     const handleClick = router.handleClick.bind(clickRouter)
     router.handleClick = (e) => {
-      if (current || claims.some((claim) => claim(e))) return
+      if (mapMode.takes(e)) return
       handleClick(e)
     }
     m.on('click', (e) => current?.click?.(e))
@@ -103,5 +103,11 @@ export const mapMode = {
   /** Take some clicks without a mode: they don't open the feature's details. */
   claimClicks(claim: (e: MapMouseEvent) => boolean) {
     claims.push(claim)
+  },
+
+  /** Whether a click belongs to a mode or a claim (a tool, an item of My layers),
+   * not to the map's features. */
+  takes(e: MapMouseEvent): boolean {
+    return current !== null || claims.some((claim) => claim(e))
   }
 }
