@@ -24,7 +24,7 @@ Open Infrastructure Map shows the world's infrastructure (power, telecoms, water
 These apply to the fork's own files. Upstream's files stay as close to upstream as possible: never split, rename or restructure them; turn an edit into a hook where you can (merges stay easy).
 
 - **Delete what's unused, in the same change:** dead files, functions, options, strings (`locales/en.json`), icons and CSS. When a new way replaces an old one, remove the old one everywhere (no two ways to do one thing, no compatibility layer rebuilding the old shape for old code, no message kept for a removed option: it's simply unknown). One-time upgrade code goes once the data is upgraded; the numbered `userdata` migrations are the exception (never edited, never removed).
-- **One copy of everything:** shared helpers in `fork/core/` (frontend), `scripts/lib/` / `offline_maps/` (scripts), never copied. A value more than one language needs (ports, zooms, paths, versions, source names) is defined once, or a test checks the copies agree (`scripts/tests/test_one_source.py`).
+- **One copy of everything that must stay in step:** shared helpers in `fork/core/` (frontend), `scripts/lib/` / `offline_maps/` (scripts), never copied. A value more than one language needs (ports, zooms, paths, versions, source names) is defined once, or a test checks the copies agree (`scripts/tests/test_one_source.py`). Code that only looks alike is a different matter: see "Code is written for a human reader" (extract on the third copy).
 - **Named values:** no magic numbers, paths or URLs buried in code: a named constant (`X.constants.ts`, a module constant, `lib/common.sh`) or a setting.
 - **One job per file:** split a file or class that does several (as a guide, past ~400 lines), with tests first. Names say what the thing is now.
 - **Folders as `docs/ARCHITECTURE.md` says** (`fork/structure.test.ts` checks part of it).
@@ -37,7 +37,25 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 - **Docs current:** they describe what is, not what was (history goes in `docs/HISTORY.md`); no section repeated in two files.
 - **Clean-ups in this order:** tests, then deletions, then merging duplicates, then structure (splits, renames, folders), docs last.
 
-**Report what should be cleaned.** While working on a feature, note anything you see that breaks these rules or should be refactored (in the code you touch or nearby) but isn't part of the request. Don't change it unasked; when the feature is done, list it at the end of your final message (what, where, why, rough size) so the user can decide whether to do it.
+## Code is written for a human reader
+
+The reader is one person maintaining this project, reading a file cold, months later, without you there to explain it. Optimise for that person, not for brevity or cleverness.
+
+- **Name the ideas.** If a block of code does one thing a person would describe in a phrase ("find the tiles that are missing"), make it a function or a named variable with that phrase as its name. Don't leave concepts implicit in inline expressions.
+- **Top-level functions read like a summary.** A main function should be a short list of named steps. Details live one level down.
+- **One level of thinking per function.** Don't mix the "what" (download the region) with the "how" (retry loops, byte offsets) in the same body.
+- **Limits.** Functions over ~40 lines, nesting deeper than 3 levels, or more than 4 parameters need a reason, or get split.
+- **No dense expressions.** No nested ternaries, no chained comprehensions, no multi-step one-liners. Use intermediate variables with meaningful names.
+- **Use the project's vocabulary.** Reuse the words already in the code and UI (region, imagery, source, zoom). Don't introduce a second word for the same thing.
+- **Comments say why, not what.** Explain the reason, the constraint or the surprise. If a comment explains what the code does, rename or extract until it isn't needed.
+- **No speculative abstraction.** No base classes, options or generic helpers for cases that don't exist yet. Two concrete copies beat one premature abstraction; extract on the third.
+- **Boring over clever.** Prefer the obvious approach even when it is a few lines longer.
+
+Before finishing any change, reread the diff as that reader and ask: could they say what each function does from its name and first five lines? If not, fix it before reporting done.
+
+**Fix readability as you go.** Code you come across while working that breaks these rules may be rewritten without asking, as long as the project behaves exactly the same (the tests pass unchanged). At the end of the task, list those changes briefly (file and what was made clearer). Anything that would change behaviour, or a bigger clean-up, is reported instead (below).
+
+**Report what should be cleaned.** While working on a feature, note anything you see that breaks these rules or should be refactored (in the code you touch or nearby) but isn't part of the request and isn't a readability fix that changes nothing. Don't change it unasked; when the feature is done, list it at the end of your final message (what, where, why, rough size) so the user can decide whether to do it.
 
 ## Development Setup
 
