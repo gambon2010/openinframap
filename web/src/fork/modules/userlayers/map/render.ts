@@ -299,7 +299,8 @@ export class Renderer {
 
   /** Map layer ids of My layers' features (for clicks). */
   featureLayerIds(): string[] {
-    return (this.map.getStyle().layers ?? [])
+    // No style yet while the page loads (the mouse may already move over the map): none.
+    return (this.map.getStyle()?.layers ?? [])
       .map((l) => l.id)
       .filter((id) => id.startsWith('user_') && !id.startsWith(SELECTION) && !id.startsWith(DRAFT))
   }

@@ -416,6 +416,13 @@ with white dashes and a light edge; borders light red; all fading to about half 
 zoom 16 to 18, where the photos show the roads. Street names are white on a dark halo
 over any imagery. The map's own roads stay under the imagery, so the buildings no
 longer need hiding in that mode.
+Then: small roads, service roads and paths drawn at their size from zoom 14 (where
+the background map has them all), a thin dark line before it (it has some from zoom
+12); railways only those in use (the map files dismantled, abandoned and disused
+lines, turntables and platforms as kind "rail" too); borders red on a dark edge.
+The background map has no railways before zoom 11 and leaves most small roads out
+before 14; some stretches of big roads are only in its zoom 15 tiles (a part of the
+A35 at Strasbourg, given min_zoom 16 by Protomaps), so they're missing zoomed out.
 
 ---
 

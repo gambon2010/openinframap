@@ -28,6 +28,7 @@ interface RoadKind {
   widthsFrom: { ground: string; tunnel: string }
   colour: string
   opacity: number
+  /** Small roads and paths: drawn at their size from this zoom, a thin dark line before. */
   minzoom?: number
   dashes?: number[]
 }
@@ -44,7 +45,7 @@ const ROAD_KINDS: RoadKind[] = [
     widthsFrom: { ground: 'osm_roads_other', tunnel: 'osm_roads_tunnels_other' },
     colour: look.MINOR_COLOUR,
     opacity: look.SMALLEST_OPACITY,
-    minzoom: look.SMALLEST_FROM_ZOOM,
+    minzoom: look.SMALL_ROADS_FROM_ZOOM,
     dashes: [3, 1]
   },
   {
@@ -53,14 +54,15 @@ const ROAD_KINDS: RoadKind[] = [
     widthsFrom: { ground: 'osm_roads_minor_service', tunnel: 'osm_roads_tunnels_minor' },
     colour: look.MINOR_COLOUR,
     opacity: look.SMALLEST_OPACITY,
-    minzoom: look.SMALLEST_FROM_ZOOM
+    minzoom: look.SMALL_ROADS_FROM_ZOOM
   },
   {
     name: 'minor',
     filter: ['all', kind('minor_road'), ['!', isService], ['!', isLink]],
     widthsFrom: { ground: 'osm_roads_minor', tunnel: 'osm_roads_tunnels_minor' },
     colour: look.MINOR_COLOUR,
-    opacity: look.MINOR_OPACITY
+    opacity: look.MINOR_OPACITY,
+    minzoom: look.SMALL_ROADS_FROM_ZOOM
   },
   {
     name: 'links',
@@ -85,9 +87,18 @@ const ROAD_KINDS: RoadKind[] = [
   }
 ]
 
+/** Small roads and paths (a thin line zoomed out). */
+const SMALL_KINDS = ROAD_KINDS.filter((road) => road.minzoom !== undefined)
+
 const inTunnel: ExpressionSpecification = ['has', 'is_tunnel']
 const aboveGround: ExpressionSpecification = ['!', inTunnel]
-const isRail = kind('rail')
+// Not the abandoned, disused or dismantled ones, platforms, turntables...: the
+// background map files all of those as kind "rail".
+const isRail: ExpressionSpecification = [
+  'all',
+  kind('rail'),
+  ['in', ['get', 'kind_detail'], ['literal', look.RAILWAYS]]
+]
 
 /** A layer of the background map (its widths and borders are reused, so they stay in step). */
 function mapLayer(id: string): LayerSpecificationWithZIndex {
@@ -121,7 +132,7 @@ function line(
   filter: ExpressionSpecification,
   paint: NonNullable<Extract<LayerSpecificationWithZIndex, { type: 'line' }>['paint']>,
   visible: boolean,
-  minzoom?: number
+  zooms: { minzoom?: number; maxzoom?: number } = {}
 ): LayerSpecificationWithZIndex {
   return {
     id: PREFIX + id,
@@ -130,7 +141,7 @@ function line(
     source: 'basemap',
     'source-layer': 'roads',
     filter,
-    ...(minzoom === undefined ? {} : { minzoom }),
+    ...zooms,
     layout: { 'line-join': 'round', visibility: visible ? 'visible' : 'none' },
     paint
   }
@@ -153,7 +164,7 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
       ...(tunnel ? { 'line-dasharray': look.TUNNEL_EDGE_DASHES } : {})
     },
     visible,
-    road.minzoom
+    { minzoom: road.minzoom }
   )
   const fill = line(
     `roads_${where}_${road.name}`,
@@ -165,7 +176,7 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
       ...(road.dashes ? { 'line-dasharray': road.dashes } : {})
     },
     visible,
-    road.minzoom
+    { minzoom: road.minzoom }
   )
   return [edge, fill]
 }
@@ -208,27 +219,54 @@ function railLayers(tunnel: boolean, visible: boolean): LayerSpecificationWithZI
   ]
 }
 
-/** The map's country borders, in a colour that shows on photos. */
-function borderLayer(visible: boolean): LayerSpecificationWithZIndex {
+/** Small roads and paths before they're drawn at their size: a thin dark line, where
+ * the background map has them (some from zoom 12, all from 14). */
+function smallRoadsZoomedOut(visible: boolean): LayerSpecificationWithZIndex {
+  const small: ExpressionSpecification = ['any', ...SMALL_KINDS.map((road) => road.filter)]
+  return line(
+    'roads_small_zoomed_out',
+    small,
+    {
+      'line-color': look.SMALL_ROADS_ZOOMED_OUT_COLOUR,
+      'line-width': look.SMALL_ROADS_ZOOMED_OUT_WIDTH
+    },
+    visible,
+    { maxzoom: look.SMALL_ROADS_FROM_ZOOM }
+  )
+}
+
+/** The map's country borders: red dashes on a dark edge, to show on any photo. */
+function borderLayers(visible: boolean): LayerSpecificationWithZIndex[] {
   const border = mapLayer('boundaries_country')
   if (border.type !== 'line') throw new Error("The background map's borders aren't lines")
-  return {
+  const width = border.paint?.['line-width']
+  const layout = { ...border.layout, visibility: visible ? ('visible' as const) : ('none' as const) }
+  const edge: LayerSpecificationWithZIndex = {
+    ...border,
+    id: `${PREFIX}borders_edge`,
+    zorder: 1,
+    layout,
+    paint: { 'line-color': look.EDGE_COLOUR, 'line-gap-width': width, 'line-width': look.EDGE_WIDTH }
+  }
+  const dashes: LayerSpecificationWithZIndex = {
     ...border,
     id: `${PREFIX}borders`,
     zorder: 1,
-    layout: { ...border.layout, visibility: visible ? 'visible' : 'none' },
+    layout,
     paint: { ...border.paint, 'line-color': look.BORDER_COLOUR }
   }
+  return [edge, dashes]
 }
 
-/** All of it, bottom to top: tunnels, roads, railways, borders. */
+/** All of it, bottom to top: small roads zoomed out, tunnels, roads, railways, borders. */
 export function hybridLayers(visible: boolean): LayerSpecificationWithZIndex[] {
   return [
+    smallRoadsZoomedOut(visible),
     ...ROAD_KINDS.flatMap((road) => roadLayers(road, true, visible)),
     ...railLayers(true, visible),
     ...ROAD_KINDS.flatMap((road) => roadLayers(road, false, visible)),
     ...railLayers(false, visible),
-    borderLayer(visible)
+    ...borderLayers(visible)
   ]
 }
 

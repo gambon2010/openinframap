@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
 import { hybridLayers, isHybridLayer } from './hybrid.ts'
-import { TUNNEL_EDGE_DASHES, TUNNEL_OPACITY } from './hybrid.constants.ts'
+import { SMALL_ROADS_FROM_ZOOM, TUNNEL_EDGE_DASHES, TUNNEL_OPACITY } from './hybrid.constants.ts'
 
 type Line = Extract<ReturnType<typeof hybridLayers>[number], { type: 'line' }>
 const layers = hybridLayers(true) as Line[]
@@ -42,18 +42,31 @@ describe('roads over imagery', () => {
     expect(layer('rail_tunnel')).toBeDefined()
   })
 
-  it('draw tunnels first, then roads from the smallest up, railways, borders on top', () => {
+  it('draw tunnels first (after the small roads zoomed out), then roads from the smallest up, railways, borders on top', () => {
     const at = (id: string) => layers.findIndex((l) => l.id === `satellite_roads_${id}`)
     expect(at('roads_tunnel_highway')).toBeLessThan(at('roads_ground_paths_edge'))
     expect(at('roads_ground_minor')).toBeLessThan(at('roads_ground_highway_edge'))
     expect(at('roads_ground_highway')).toBeLessThan(at('rail_ground_edge'))
-    expect(at('rail_ground_dashes')).toBe(layers.length - 2)
-    expect(layers.at(-1)?.id).toBe('satellite_roads_borders')
+    expect(at('rail_ground_dashes')).toBe(layers.length - 3)
+    expect(layers.slice(-2).map((l) => l.id)).toEqual([
+      'satellite_roads_borders_edge',
+      'satellite_roads_borders'
+    ])
   })
 
-  it('leave service roads and paths out until zoomed in', () => {
-    expect(layer('roads_ground_paths').minzoom).toBeGreaterThan(12)
-    expect(layer('roads_ground_service_edge').minzoom).toBeGreaterThan(12)
-    expect(layer('roads_ground_minor').minzoom).toBeUndefined()
+  it('draw small roads and paths at their size from zoom 14, a thin line before', () => {
+    for (const id of ['roads_ground_paths', 'roads_ground_service_edge', 'roads_ground_minor'])
+      expect(layer(id).minzoom).toBe(SMALL_ROADS_FROM_ZOOM)
+    expect(layer('roads_ground_major').minzoom).toBeUndefined()
+    const zoomedOut = layer('roads_small_zoomed_out')
+    expect(zoomedOut.maxzoom).toBe(SMALL_ROADS_FROM_ZOOM)
+    expect(zoomedOut.minzoom).toBeUndefined()
+    expect(layers[0]).toBe(zoomedOut)
+  })
+
+  it('draw railways in use, not their remains', () => {
+    const filter = JSON.stringify(layer('rail_ground').filter)
+    expect(filter).toContain('"light_rail"')
+    expect(filter).not.toContain('dismantled')
   })
 })

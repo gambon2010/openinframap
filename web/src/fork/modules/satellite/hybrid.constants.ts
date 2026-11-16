@@ -11,8 +11,11 @@ export const MAJOR_COLOUR = 'hsl(52, 100%, 66%)'
 export const MINOR_COLOUR = 'hsl(0, 0%, 100%)'
 export const MINOR_OPACITY = 0.8
 export const SMALLEST_OPACITY = 0.6
-/** Service roads and paths: only from this zoom (before it they're a tangle over the photos). */
-export const SMALLEST_FROM_ZOOM = 14
+/** Small roads, service roads and paths: at their size from this zoom (the background
+ * map has all of them from here), a thin dark line before it. */
+export const SMALL_ROADS_FROM_ZOOM = 14
+export const SMALL_ROADS_ZOOMED_OUT_COLOUR = 'hsla(0, 0%, 5%, 0.7)'
+export const SMALL_ROADS_ZOOMED_OUT_WIDTH = 1
 
 /** The dark edge on each side of every road, so it reads on fields, roofs and woods alike. */
 export const EDGE_COLOUR = 'hsla(0, 0%, 5%, 0.85)'
@@ -27,9 +30,20 @@ export const RAIL_COLOUR = 'hsl(240, 6%, 18%)'
 export const RAIL_DASH_COLOUR = 'hsl(0, 0%, 100%)'
 export const RAIL_DASHES = [3, 3]
 export const RAIL_EDGE_COLOUR = 'hsla(0, 0%, 100%, 0.55)'
+/** The railways drawn (the background map's kind_detail): lines in use, not their remains. */
+export const RAILWAYS = [
+  'rail',
+  'light_rail',
+  'narrow_gauge',
+  'subway',
+  'tram',
+  'funicular',
+  'monorail',
+  'preserved'
+]
 
-/** Borders: a light red dashed line. */
-export const BORDER_COLOUR = 'hsl(0, 65%, 78%)'
+/** Borders: red dashes on a dark edge. */
+export const BORDER_COLOUR = 'hsl(0, 90%, 62%)'
 
 /** Zoomed in the imagery shows the roads itself: the lines fade, from full here... */
 export const FADE_FROM_ZOOM = 16
