@@ -593,7 +593,13 @@ the building's shape: `@turf/boolean-point-in-polygon`); those buildings are lef
 of the raised layer by a filter on their ids, and every part rises from where it
 starts to its own height. Printing
 straightens the map first (scale and grid reference hold only seen from above).
-Buildings' drawing moved into `modules/buildings/look.ts`. A clicked building's
+Parts are drawn only in 3D (flat, the building's outline is enough). The 3D button
+pressed looks like the other map buttons (one helper, `showPressed` in
+`ui/map-button.ts`, the class `oim-pressed`, was `oim-dock-active`). Off, the map is
+flattened and locked flat (`maxPitch` 0, two-finger tilt included); a 3D view kept
+from before broke the button at load (the layer switcher was called before the style
+existed), so it never flattened. Buildings' drawing moved into
+`modules/buildings/look.ts`. A clicked building's
 highlight is its pieces from every loaded tile joined (it was the clicked tile's piece,
 cut at the tile's edges); the copy still asks the backend (it can reach tiles not
 loaded).

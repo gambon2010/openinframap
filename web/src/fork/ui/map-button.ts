@@ -3,6 +3,18 @@
 import type { Map } from 'maplibre-gl'
 import { el } from 'redom'
 
+/** The one look of a map button that's pressed (its panel open, its mode on): a soft
+ * grey, sunk in (ui/panel.css `.oim-pressed`). `aria-expanded` for a button opening a
+ * panel, `aria-pressed` for one switching something on. */
+export function showPressed(
+  button: HTMLElement,
+  pressed: boolean,
+  meaning: 'aria-pressed' | 'aria-expanded' = 'aria-pressed'
+) {
+  button.classList.toggle('oim-pressed', pressed)
+  button.setAttribute(meaning, String(pressed))
+}
+
 export function addMapButton(
   map: Map,
   options: {

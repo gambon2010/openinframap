@@ -4,6 +4,7 @@
 // (its button, its own close button), so upstream's panels need no changes.
 import { Map } from 'maplibre-gl'
 import { el } from 'redom'
+import { showPressed } from './map-button.ts'
 import './panel.css'
 
 interface Docked {
@@ -59,8 +60,7 @@ class Dock {
 
   private sync(entry: Docked) {
     const open = entry.panel.classList.contains('visible')
-    entry.button.classList.toggle('oim-dock-active', open)
-    entry.button.setAttribute('aria-expanded', String(open))
+    showPressed(entry.button, open, 'aria-expanded')
     if (!open) return
     for (const other of this.docked) {
       if (other !== entry) other.panel.classList.remove('visible')

@@ -12,6 +12,7 @@ import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { t } from '../../../core/i18n.ts'
 import { LEFT_ORDER, leftColumn } from '../../../ui/left-column.ts'
+import { showPressed } from '../../../ui/map-button.ts'
 import { Store } from '../state/store.ts'
 import { Tools } from '../map/tools.ts'
 import { Renderer } from '../map/render.ts'
@@ -117,8 +118,7 @@ export class Workspace implements IControl {
     // Shift-click selects several items,
     // so the map's Shift-drag zoom, which would swallow it, stays off.
     this.map.boxZoom.disable()
-    this.button.classList.toggle('oim-dock-active', open)
-    this.button.setAttribute('aria-pressed', String(open))
+    showPressed(this.button, open)
     if (!open) {
       this.situations.backToLive()
       this.toolbar.closePicker()

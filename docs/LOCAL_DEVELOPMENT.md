@@ -102,7 +102,7 @@ port 8800.
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
   Long panels scroll inside. At the bottom: **3D** (the map tilts and buildings rise to
   their height; drag with the right mouse button, or Ctrl and drag, to tilt and turn it;
-  click again for the flat map facing north), **print** (the printer), **Settings**
+  click again for the flat map facing north, which can't be tilted), **print** (the printer), **Settings**
   (the gear: background map and address search servers, see below; admins:
   accounts) and **your account** (the person: who is logged in, **Log out**).
 - **About this map** (its region and the date of its data, the datasets, how to use

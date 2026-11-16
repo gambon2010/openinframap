@@ -18,7 +18,7 @@ describe('the right-hand dock', () => {
     button1.click()
     await tick()
     expect(panel1.classList.contains('visible')).toBe(true)
-    expect(button1.classList.contains('oim-dock-active')).toBe(true)
+    expect(button1.classList.contains('oim-pressed')).toBe(true)
     expect(opened).toBe(1)
     button1.click()
     await tick()
@@ -48,7 +48,7 @@ describe('the right-hand dock', () => {
     await tick()
     panel1.classList.remove('visible')
     await tick()
-    expect(button1.classList.contains('oim-dock-active')).toBe(false)
+    expect(button1.classList.contains('oim-pressed')).toBe(false)
   })
 
   test('panels live in the dock, without the positions upstream gave them', () => {

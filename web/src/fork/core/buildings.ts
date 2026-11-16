@@ -11,8 +11,8 @@ import { groundArea } from './geo.ts'
 
 /** The outlines' map layer (modules/buildings); its clickable inside is `<id>_hit`. */
 export const BUILDINGS_LAYER = 'buildings_outline'
-/** Parts of buildings (towers, wings, a dome...): drawn, and clicked only where no
- * whole building is mapped around them (a click inside a building takes all of it). */
+/** Parts of buildings (towers, wings, a dome...): drawn and clicked in the 3D view
+ * only (`<id>_3d`), raised instead of the building around them. */
 export const PARTS_LAYER = 'buildings_parts'
 /** The Buildings entry in the layer switcher (K: a letter never used before; E and N
  * were the removed Osmose and night lights). The 3D view switches it on. */

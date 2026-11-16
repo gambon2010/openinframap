@@ -3,7 +3,8 @@
 // a roof, with a small shadow, so buildings read as buildings even on blurry
 // imagery. In the 3D view (services/view3d.ts) they're raised to their height
 // instead: the flat roofs, shadows and outlines would lie on the ground under them.
-// A building mapped with parts isn't raised: its parts are (parts.ts).
+// Parts (towers, wings, a dome) are only drawn there: a building mapped with parts
+// isn't raised, its parts are (parts.ts). Flat, the building's outline is enough.
 import type {
   ExpressionSpecification,
   FillExtrusionLayerSpecification,
@@ -133,7 +134,7 @@ const RAISED: [string, Buildings][] = [...ROOFED, [PARTS_LAYER, PARTS]]
 /** Buildings with parts found so far (left out in 3D), and the parts looked at. */
 const withParts = new Set<number>()
 const partsSeen = new Set<number>()
-const OUTLINED = [ZOOMED_OUT_LAYER, PARTS_LAYER, BUILDINGS_LAYER]
+const OUTLINED = [ZOOMED_OUT_LAYER, BUILDINGS_LAYER]
 
 /** Every buildings layer, bottom to top. */
 export function buildingLayers(): LayerSpecificationWithZIndex[] {
@@ -141,10 +142,6 @@ export function buildingLayers(): LayerSpecificationWithZIndex[] {
     ...ROOFED.map(([id, buildings]) => shadow(id, buildings, -10.6)),
     // Zoomed out: those big enough to see at each zoom.
     ...clickableArea(ZOOMED_OUT_LAYER, ZOOMED_OUT, -10, OUTLINE_PAINT),
-    // Parts under whole buildings: a click inside a building finds the building
-    // first, whichever part it lands on. Parts with no building mapped around them
-    // (about one in ten in Paris) are still clicked on their own.
-    ...clickableArea(PARTS_LAYER, PARTS, -10.5, OUTLINE_PAINT),
     // Every whole building, under everything else that's data: the infrastructure
     // is drawn and clicked first.
     ...clickableArea(BUILDINGS_LAYER, WHOLE, -10, OUTLINE_PAINT),

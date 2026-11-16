@@ -67,7 +67,8 @@ describe('the look follows the background and the 3D view', () => {
     followLook(map as never)
     expect(paint[`${BUILDINGS_LAYER}_hit fill-opacity`]).toBe(0)
     expect(paint[`${BUILDINGS_LAYER}_shadow fill-opacity`]).toBe(0)
-    expect(paint[`${PARTS_LAYER} line-opacity`]).toBe(OUTLINE_OPACITY)
+    expect(paint[`${BUILDINGS_LAYER} line-opacity`]).toBe(OUTLINE_OPACITY)
+    expect(filters[`${PARTS_LAYER}_3d`]).toEqual(['boolean', false])
     expect(filters[`${BUILDINGS_LAYER}_3d`]).toEqual(['boolean', false])
   })
 
