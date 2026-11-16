@@ -81,6 +81,21 @@ Examples:
 - `leftColumn.add`;
 - the details panel's `onShow`: the route folds itself.
 
+**The screen:** no header. The right-hand dock (`ui/dock.ts`) holds Data layers
+(upstream's layer list and key in one panel, `ui/data-layers.ts`: each entry's tick
+box calls the layer switcher, its key sections fold under it) and My layers, one
+open at a time (the panel element with class `visible`). A clicked feature's details
+open in the left panel (`modules/details/`, through the `forkPopup.open` hook), the
+Grid connection panel below it (`ui/left-column.ts` orders the left column). Settings,
+print and your account are buttons at the bottom of the top-right column
+(`ui/map-button.ts`); About this map is in the credits. Upstream's Background layer
+group (OpenStreetMap) stays commented out in `src/openinframap.ts`: re-enabling it
+breaks saved links whose layer list has no `A`. URLs come from `config.ts` (`VITE_*`
+variables; `throughGate` sends local services through the gate). Search
+(`src/search/`) combines coordinates, the backend (`search_feature`; picking a result
+switches its layer on) and an optional Photon server (`VITE_PHOTON_URL` / Settings),
+same-name results within ~5 km merged.
+
 **Styles:** panels share `ui/panel.css` (build them with `makePanel()`). Anything
 chosen, switched on or selected (a chip, an option, a tool, a list row; not the
 map's icon buttons, whose open panel gets a dark ring) gets the class `oim-on`: a highlighted background
@@ -152,14 +167,18 @@ sharing and live sync are designed in `plans/sync.md`. They plug into
 
 ## Backend: `web-backend/src/fork/`
 
-Starlette routes, put ahead of upstream's (the fork's search replaces upstream's at
-the same URL), and a login check (`auth/`: every route but logging in needs a
-session):
+Starlette (entry point `src.main:app`), SQLAlchemy async with asyncpg
+(`DATABASE_URL` with the `postgresql+asyncpg://` scheme; `pool_pre_ping`, so it
+survives database rebuilds). The fork's routes are put ahead of upstream's (the
+fork's search replaces upstream's at the same URL), behind a login check (`auth/`:
+every route but logging in needs a session):
 
 - `auth/`: accounts, sessions, the login page, `LoginMiddleware`;
 - `about.py` and `templates/` (the about page, replacing upstream's: built on its
   `_base.html` layout);
-- `search/` (the search box: `matching.py`, one file per kind of result, `ranking.py`);
+- `search/` (the search box: `matching.py`, one file per kind of result, `ranking.py`;
+  its name indexes, btree and `pg_trgm`, are made by upstream's `create_indexes.py`
+  plus `indexes.py`: keep them in step with `search/`);
 - `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
 - `grid/` (`route.py`: routes over the power grid; `line.py`: where a line goes; `tower.py`), `line_trace/` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
@@ -181,13 +200,41 @@ session):
   - `users.py`, where `current_user()` is the one place login and access control
     will go.
 
-The backend runs in Docker from its image: after changing it, run
-`docker compose up -d --build backend`.
+The backend runs in Docker from its image (`web-backend/Dockerfile`; Compose starts
+`/app/.venv/bin/uvicorn` directly, so `uv run` doesn't sync at startup), with
+`data/images`, `data/wikidata_json` and `data/offline-maps` mounted: after changing
+it, run `docker compose up -d --build backend`.
 
 ## Data and build: `scripts/`, `schema/`, `imposm/`, `tegola/`
 
-OSM extract → osmium filter → imposm (`imposm/*.py` mappings) → PostGIS → the SQL
-steps → Tegola (vector tiles) → the frontend.
+OSM extract → osmium filter (`scripts/osm_filter.py`, made from the imposm mapping)
+→ imposm (`imposm/*.py` mappings; the fork's: `places.py`, `osm_place` for search,
+and `sites.py`, `osm_site`, critical sites) → PostGIS → the SQL steps → Tegola
+(vector tiles) → the frontend. Changing the mapping changes the osmium filter and
+the schema fingerprint builds and exports carry.
+
+- **The build's steps, in order:** region menu → download to `data/osm/` → osmium
+  filter → `docker compose down -v` → imposm import → `views`, `distances`, `stats`,
+  `places`, `sites`, `grid` (the power grid network), `tower-numbers` +
+  `number_towers` → search indexes → extra data, `extra`, `search` → EEZ →
+  `local-stats` (a fast per-country stats snapshot) → `oim_build_info` → Tegola →
+  the offline maps queued in the menu (a background map: `pmtiles extract` of the
+  area's outline from Protomaps' daily build, then its buildings zoomed out;
+  `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). Every
+  question comes before the first long step.
+- **SQL (`schema/`):** upstream's: `dev-init.sql` / `prod-init.sql` (once, when the
+  database is created: extensions, roles), `functions.sql` (before `views.sql`),
+  `views.sql` (what Tegola queries), `stats.sql`, `jobs/` (upstream's production
+  job). The fork's, in `schema/fork/`: `distances.sql` (real metres:
+  `oim_units`, `oim_max_stretch`, `oim_ground_area`), `places.sql`, `sites.sql`
+  (`site_feature`, `site_points`), `grid.sql` (`grid_node` / `grid_edge`, used by
+  `/grid/route` and `/grid/line`), `tower-numbers.sql`, `extra.sql` (the `extra`
+  schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
+  `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered
+  migrations (`userdata/migrations/`).
+- **Tegola (`tegola/`):** `config.toml` is generated from `tegola.yml`, `layers.yml`
+  (upstream's) and `layers.fork.yml` (`generate_tegola_config.py`); never edit it.
+  Tegola caches tiles in its container: recreated after the data is replaced.
 
 - **`build-region.sh`:** at the top, "what the build will do": every variable the
   steps share, with what it means (choices are `yes` / `no` / `ask`). Then the
@@ -202,7 +249,9 @@ steps → Tegola (vector tiles) → the frontend.
   - `net`: **every download** goes through `download` (curl) or `safely` (another
     downloading command): tried again, waits up to 15 minutes for a lost connection,
     stops a download that hangs, ends with status 75 ("run again") when the
-    connection doesn't come back. Never call curl for a download directly;
+    connection doesn't come back, 76 at once when only that server stops answering
+    while the internet works (an anti-bot block). Never call curl for a download
+    directly;
   - `json`: `json_get`, `json_write` (manifests);
   - `docker`: **every Docker call**: `up_services` (start services, images rebuilt
     first, offline the ones there), `compose_run` (a one-off container of a service),
@@ -221,7 +270,15 @@ steps → Tegola (vector tiles) → the frontend.
   data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,
   `NET_CHECK_EVERY`).
-- **`offline-maps.py`** is the command line for `offline_maps/`:
+- **`offline-maps.py`** is the command line for `offline_maps/`, the offline maps
+  into `data/offline-maps/`: Blue Marble for the world, Sentinel-2 10 m for an area
+  or the world, aerial photos by country (France's as IGN's BD ORTHO files, one
+  département at a time, never IGN's tile server, which blocks bulk downloads) as
+  `<area>.sat-*.pmtiles`, background maps as `<area>.pmtiles`. Its menu is
+  `offline-maps.sh` (for the region built, no rebuild; `build-region.sh` opens it
+  with `--queue-only` and downloads the queue after the build); `select_satellite`
+  writes `VITE_SATELLITE_TIERS` (every imagery file and its credit; `start.sh`
+  refreshes it). The package:
   - `sources/`: one file per source (`SOURCE`, fields in `source.py`): Blue
     Marble, Sentinel-2, the aerial photos by country, the background map; read into
     `SOURCES`, credits;
@@ -242,8 +299,14 @@ steps → Tegola (vector tiles) → the frontend.
     is told about the imagery).
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
   source, and `SOURCES`.
-- **Exports** (`export-db.sh`, `import-db.sh`) carry the database. An export that's
-  out of date is redone by `build-region.sh` and `start.sh`.
+- **Exports** (`export-db.sh`, `import-db.sh`) carry the database: a `pg_dump` of
+  the `public`, `countries`, `stats`, `extra` and `userdata` schemas and a manifest.
+  The restore skips what a fresh database already has (PostGIS, `spatial_ref_sys`,
+  `functions.sql`'s functions) but keeps `views.sql`'s (Tegola needs them). An
+  export that's out of date is redone by `build-region.sh` and `start.sh`.
+- **`launch.sh`, `start.sh`:** start everything, the frontend in a new terminal
+  window (`open_in_terminal`). **`fetch_images.py`:** the offline Wikidata cache
+  (entity JSON, Commons thumbnails) in `data/`.
 
 ## Recipes
 

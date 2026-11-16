@@ -4,13 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Open Infrastructure Map is a web geospatial application displaying world infrastructure (power grids, telecom, water, petroleum) from OpenStreetMap. It has five main services: a TypeScript/MapLibre frontend, a Python/Starlette backend, a Go/Tegola tile server, a PostgreSQL/PostGIS database, and an Imposm-based OSM importer.
+Open Infrastructure Map shows the world's infrastructure (power, telecoms, water, oil and gas) from OpenStreetMap: a TypeScript/MapLibre frontend, a Python/Starlette backend, a Tegola tile server, a PostGIS database and an Imposm importer. **This is a fork** that runs everything locally, and offline from an exported database, for a chosen region.
 
-**This is a fork** whose goal is running everything locally (and offline, from an exported database) for a chosen region. How the fork's code is organised, its folder rules and recipes for adding things: `docs/ARCHITECTURE.md` (keep it current when the structure changes). Every upstream file the fork changes, and how, is in `docs/FORK_CHANGES.md` ("Fork structure", "Merging from upstream"): keep it exact. What changed, when and why goes in `docs/HISTORY.md` (dated notes, newest at the end of their section). The user-facing guide is `docs/LOCAL_DEVELOPMENT.md`.
+**Where things are written down (keep each current, nothing repeated between them):**
+- `docs/ARCHITECTURE.md`: how the fork's code is organised, folder rules, every script, module and SQL file, recipes for adding things. Read it before changing the structure.
+- `docs/FORK_CHANGES.md`: every upstream file the fork changes, and how ("Fork structure", "Merging from upstream"): keep it exact.
+- `docs/HISTORY.md`: what changed, when and why (dated notes, newest at the end of their section).
+- `docs/SPECIFICATIONS.md`: every requirement the owner asked for, with its status: add each new request when it's made, update it when done. Plans for bigger features: `docs/plans/` (finished ones in `archive/`).
+- `docs/LOCAL_DEVELOPMENT.md`: the user's guide.
 
-**Specifications:** every requirement the project owner has asked for is in `docs/SPECIFICATIONS.md`, with its status. Add each new request there when it's made and update the status when it's done. Plans for bigger features are in `docs/plans/`.
-
-**Keep fork code out of upstream files.** Upstream won't take the fork's changes, so merges must stay easy: new frontend features go in a module under `web/src/fork/modules/` (added to `MODULES` in `fork/index.ts`; upstream files only call its hooks and import only `fork/index.ts`, `types.ts`, `config.ts`; modules never import each other, shared pieces go in `fork/ui/` or `fork/core/`: `fork/structure.test.ts`), backend routes in `web-backend/src/fork/`, tile layers in `tegola/layers.fork.yml`, Compose changes in `docker-compose.override.yml`, English strings in `web/src/fork/locales/en.json`. Put a file's types in `X.types.ts` and its constants in `X.constants.ts` beside it, and helpers more than one place needs in `fork/core/` (never copied). Change an upstream file only with a one-line hook, and list it in `docs/FORK_CHANGES.md` ("Fork structure", "Merging from upstream").
+**Keep fork code out of upstream files.** Upstream won't take the fork's changes, so merges must stay easy:
+- frontend features: a module in `web/src/fork/modules/`, added to `MODULES` in `fork/index.ts`; upstream files only call its hooks and import only `fork/index.ts`, `types.ts`, `config.ts`; modules never import each other (shared pieces: `fork/ui/`, `fork/services/`, `fork/core/`; checked by `fork/structure.test.ts`);
+- backend routes: `web-backend/src/fork/`; SQL: `schema/fork/`; tile layers: `tegola/layers.fork.yml`; Compose: `docker-compose.override.yml`; English strings: `web/src/fork/locales/en.json`;
+- a file's types in `X.types.ts`, its constants in `X.constants.ts`, beside it;
+- an upstream file changes only with a one-line hook, listed in `docs/FORK_CHANGES.md`.
 
 ## Clean code rules (fork code)
 
@@ -34,121 +41,80 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 
 ## Development Setup
 
-Prerequisites: `docker`, `node`, `npm`, `curl`, `python3`, `unzip` (`uv` optional: Wikidata cache script, running the backend on the host).
+Prerequisites: `docker`, `node`, `npm`, `curl`, `python3`, `unzip` (`uv` optional).
 
 ```bash
-bash scripts/launch.sh   # first time: build/import a region, .env files, start the app
-bash scripts/start.sh    # every day: db + tegola + backend (Docker), frontend in a new terminal, browser
+bash scripts/launch.sh        # first time: build/import a region, .env files, start the app
+bash scripts/start.sh         # every day: Docker services, the frontend in a new terminal, the browser
+bash scripts/offline-maps.sh  # the offline maps menu: imagery, aerial photos, background maps
 ```
 
-Services (the fork's ports and services are in `docker-compose.override.yml`): `gate` (nginx, https on port 8800 with its own self-signed certificate made on first start in `data/gate/`: **the app is opened there**; the one way in from the network, every request needs a logged-in session, `gate/nginx.conf`), `db` (PostGIS, 5432), `tegola` (7800), `backend` (8001; also the offline background map, `/background`, from every `data/offline-maps/<area>.pmtiles`: `src/fork/background/`), `satellite` (satellite imagery, `pmtiles serve` of `data/offline-maps/*.sat-*.pmtiles`, 8810), all four on 127.0.0.1 only, and the frontend (`cd web && npm start`, port 5173, reached through the gate). Stop: Ctrl+C in the frontend window, then `docker compose stop`.
+Services (`docker-compose.override.yml`; all on 127.0.0.1 but the gate):
+
+| Service | Port | What |
+|---|---|---|
+| `gate` | 8800 (https) | nginx, **where the app is opened**; the one way in from the network, every request needs a logged-in session (`gate/nginx.conf`, certificate made in `data/gate/`) |
+| `db` | 5432 | PostGIS |
+| `tegola` | 7800 | the infrastructure tiles |
+| `backend` | 8001 | API, login, search, and the background map (`/background`, from `data/offline-maps/`) |
+| `satellite` | 8810 | satellite imagery (`pmtiles serve` of `data/offline-maps/*.sat-*.pmtiles`) |
+| frontend | 5173 | `cd web && npm start`, reached through the gate |
+
+Stop: Ctrl+C in the frontend window, then `docker compose stop`.
 
 ## Commands
 
 ### Frontend (`web/`)
 ```bash
-npm start         # Dev server on port 5173 (upstream renamed it from `npm run dev`)
-npm run build     # Production build
-npm run lint      # ESLint + Prettier
-npm run test      # Vitest (+ Puppeteer integration tests): upstream's
-npm run test:fork # The fork's unit tests (src/fork/**/*.test.ts, happy-dom; vitest.fork.config.ts)
-npm run fork-strings # Add the fork's new English strings (t('key', 'text'), from src/fork/core/i18n.ts) to src/fork/locales/en.json
-npm run extract   # Extract i18n translation strings
+npm start            # Dev server on port 5173
+npm run build        # Production build
+npm run lint         # ESLint + Prettier
+npm run test:fork    # The fork's unit tests (src/fork/**/*.test.ts, happy-dom, no network)
+npm run test         # Upstream's (Vitest + Puppeteer)
+npm run fork-strings # Add new t('key', 'text') strings to src/fork/locales/en.json
+npm run extract      # Upstream's translation strings
 ```
 
 ### Backend (`web-backend/`)
 ```bash
-docker compose up -d backend                       # Normal: runs in Docker
+docker compose up -d --build backend               # Normal: runs in Docker (rebuild after changes)
 uv run uvicorn src.main:app --reload --port 8001   # Developing it: `docker compose stop backend` first
-uv run ruff check                  # Lint
-uv run ruff format                 # Format
-uv run mypy .                      # Type check
-uv run pytest                      # Tests (the fork's: tests/fork/)
+uv run ruff check && uv run ruff format            # Lint, format
+uv run mypy .                                      # Type check
+uv run pytest tests/fork                           # The fork's tests
 ```
 
-### Setup scripts (`scripts/`)
+### Scripts and data (from the repo root)
 ```bash
-uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests   # From the repo root
-OIM_TEST_REAL_BUILD=1 uv run --with pytest ... pytest scripts/tests -k real_build   # Real Luxembourg build/export/import in a separate Docker project (the real DB is untouched)
-```
-Script tests run the scripts from a temporary copy with fake `docker`/`curl`/terminals (`scripts/tests/fakes/`); keep scripts testable that way (paths from `REPO_ROOT`, external programs called by name).
-
-**Tests for fork code:** add unit tests next to new fork code where they make sense
-(pure logic, parsing, geometry, state; not glue or layout): frontend `src/fork/**/*.test.ts`,
-backend `web-backend/tests/fork/`, scripts `scripts/tests/` (shell helpers are tested by
-running them in bash). Upstream's code isn't covered by the fork's tests.
-
-### Tile server (`tegola/`)
-```bash
-# Regenerate Tegola config from YAML sources:
-python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml
+uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests   # Script tests (fake docker/curl, scripts/tests/fakes/)
+OIM_TEST_REAL_BUILD=1 uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests -k real_build   # Real Luxembourg build/export/import, its own Docker project
+bash scripts/build-region.sh                               # Pick a region, wipe the DB, download + import
+bash scripts/build-region.sh --region luxembourg --yes     # Unattended (tiny test region)
+bash scripts/export-db.sh / import-db.sh FILE              # Save / restore data/exports/<region>.oimdb
+bash scripts/number-towers.sh                              # Number the towers again
+python3 scripts/offline-maps.py maps --source ID --yes     # An offline map without questions
+uv run scripts/fetch_images.py [--json-only|--count]       # Offline Wikidata cache in data/
+docker compose down -v                                     # Wipe the DB and all project volumes
+cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml   # After changing a layer
 ```
 
-### Data (`scripts/`)
-```bash
-bash scripts/build-region.sh                              # Interactive: pick a region, wipe DB, download + import
-bash scripts/build-region.sh --region luxembourg --yes    # Unattended (tiny test region, ~30 s)
-bash scripts/build-region.sh --region russia --rebuild --yes   # Ignore a ready-made export
-bash scripts/export-db.sh                                 # Save the DB to data/exports/<region>.oimdb (+ Docker images)
-bash scripts/import-db.sh data/exports/<region>.oimdb     # Restore one; build-region.sh offers this in its menu
-bash scripts/number-towers.sh                             # Number the towers along their lines again
-uv run scripts/fetch_images.py [--json-only|--count]      # Offline Wikidata cache in data/
-docker compose down -v                                    # Wipe the DB and all project volumes
-```
-
-## Architecture
-
-### Data flow
-OSM PBF → osmium pre-filter (`scripts/osm_filter.py`) → **Imposm** (`/imposm`) → PostGIS DB (`/schema`) → **Tegola** (`/tegola`) → vector tiles → **MapLibre frontend** (`/web`). The **web-backend** (`/web-backend`) serves stats pages, search and Wikidata popups.
-
-### Setup scripts (`/scripts/`, fork-only)
-- `lib/common.sh`: the paths and colours; it sources the helpers in `lib/*.sh` by theme (`ui.sh` prompts, `choose_number` menus, `room_for`, `run_with_timer`, `banner`; `net.sh` `download` / `safely`; `json.sh`; `docker.sh` `up_services`, `compose_run`, `backend_python` (every Docker call; Python's: `offline_maps/docker.py`); `db.sh` `db_psql`/`db_query`, `SCHEMA_FILES`, `schema_file`, `run_schema`, `fresh_database`; `eez.sh`, `extra.sh`, `userdata.sh`, `exports.sh`, `app.sh` `start_app` and `.env`, `basemap.sh`, `geofabrik.sh`, `offline-maps.sh`). Scripts source `common.sh`; don't run it.
-- **Downloads:** every download goes through `download` / `safely` (`lib/net.sh`) or, in Python, `netsafe.py` (`safely`, `fetch`, `run_until_connected`): retried, a lost connection waited for (up to 15 min), a hung download stopped, exit status 75 when the connection doesn't come back, 76 (`ServerStopped`) at once when only that server stops answering while the internet works (an anti-bot block). Never call curl/urllib/httpx for a download without them.
-- `build-region.sh` (its options, the variables the steps share and the order of the steps; the questions are in `build/questions.sh`, the long steps in `build/steps.sh`): region menu → download to `data/osm/` → osmium filter → `docker compose down -v` → imposm import → `views.sql`, `stats.sql`, `places.sql` → `sites.sql`, `grid.sql` (power grid network) → `tower-numbers.sql` + `number_towers` (towers numbered along their lines, `web-backend/src/fork/tower_numbers/`) → search indexes → EEZ (`schema/fork/eez.sql`) → stats snapshot (`schema/fork/local-stats.sql`) → `oim_build_info` table → Tegola → offline maps queued in the menu (background map: `pmtiles extract` of an area's outline from Protomaps' daily build into `data/offline-maps/<area>.pmtiles`, full detail, then its buildings zoomed out into `<area>.buildings.pmtiles` (`web-backend/src/fork/background/zoomed_buildings.py`, appended to zoom 12–14 tiles by the backend); `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). All prompts happen before the first long step.
-- `export-db.sh` / `import-db.sh`: `pg_dump` of the `public`, `countries`, `stats`, `extra` and `userdata` schemas plus a JSON manifest. The restore skips objects a fresh DB already has (PostGIS, `spatial_ref_sys`, functions from `functions.sql`) but must keep functions from `views.sql` (Tegola needs them).
-- `offline-maps.sh`: the offline maps menu (`offline-maps.py maps`) for the region already built (no rebuild); `build-region.sh` opens it with `--queue-only` and downloads the queue after the build (`choose_offline_maps`, `download_offline_maps`, `run_maps_queue` in `lib/offline-maps.sh`); without questions: `build-region.sh --maps "sentinel2 fr_ign"`, `offline-maps.py maps --source ID --yes`.
-- `offline-maps.py` (the command line; the code is in the `offline_maps/` package: `sources/` (one file per source, `SOURCE`; read into `SOURCES`), `regions.py` (Geofabrik's index), `tiles.py`, `estimate.py`, `download.py`, `gdal.py`, `aerial.py` (tile-server photos), `bdortho.py` with `departements.py` (IGN's files), `extract.py` (background maps), `inventory.py` (what's in `data/offline-maps/`, made from the files; the lock; each file's credit), `coverage.py` (what's worth offering), `maps.py` (the offline maps menu, `offline-maps.py maps`: its screens, through `ui.py`; what each source offers and the downloads it makes in `offers.py`; a download and the queue in `jobs.py`), `cli.py`): offline maps into `data/offline-maps/`: NASA Blue Marble for the world, Sentinel-2 10 m for an area or the world, aerial photos by country (France's as IGN's BD ORTHO files one département at a time, never IGN's tile server, which blocks bulk downloads) as `<area>.sat-*.pmtiles`, background maps as `<area>.pmtiles`; `select_satellite` writes `VITE_SATELLITE_TIERS` (every imagery file, each with its credit; `start.sh` refreshes it).
-- `launch.sh`, `start.sh`: start everything; the frontend runs in a new terminal window via `open_in_terminal`.
-- `osm_filter.py`: generates the osmium `tags-filter` expressions from the imposm mapping.
-- `fetch_images.py`: Wikidata entity JSON + Commons thumbnails into `data/`.
-
-### Database schema (`/schema/`: upstream's files; the fork's in `/schema/fork/`)
-- `dev-init.sql` / `prod-init.sql`: run once at DB creation to install extensions and set up roles
-- `functions.sql`: PL/pgSQL helper functions (must be loaded before `views.sql`)
-- `views.sql`: views/materialized views and functions that Tegola queries for tile rendering
-- `stats.sql`: the `stats` schema; `jobs/update-stats.sql` is upstream's production job
-- `grid.sql` (fork-only): `grid_node` / `grid_edge`, the network of lines with a known voltage used by `/grid/route` and `/grid/line` (`web-backend/src/fork/grid.py`, networkx) and `web/src/fork/modules/grid/`
-- `eez.sql`, `local-stats.sql`, `places.sql` (fork-only): EEZ views; fast per-country stats snapshot; one point per place in `osm_place` for search
-- `web-backend/src/fork/userdata/migrations/NNN_*.sql` (fork-only, run in order by the backend, once each, recorded in `userdata.schema_version`; a schema change is a new numbered file, never an edit of one already run; the package also has `users.py`, where login and access control go): the `userdata` schema of My layers (layers, features, a change log for playback, images); saved and restored around rebuilds/imports by `scripts/lib/common.sh`
-- `sites.sql`, `extra.sql`, `search.sql` (fork-only): critical sites (`site_feature`, `site_points` for grouped tiles); the `extra` schema (data from outside OSM); `search_feature`, everything else with a name for the search box (rebuilt after extra data changes)
-
-### Tile server (`/tegola/`)
-The `config.toml` Tegola reads is **generated**; never edit it directly. Edit `tegola.yml` (server config) and `layers.yml` (upstream's layer definitions) or `layers.fork.yml` (the fork's), then regenerate with `generate_tegola_config.py`. A second Docker image (`Dockerfile.expiry`) handles cache invalidation via the imposm expiry list. Tegola caches tiles inside its container, so recreate it after replacing the data.
-
-### Frontend (`/web/`)
-MapLibre GL JS map with i18next for internationalisation. The Background layer group (OpenStreetMap; the night lights were removed: online only) is commented out in `src/openinframap.ts`; re-enabling it breaks saved links whose layer list has no `A`. URLs come from `web/src/fork/config.ts` (`VITE_*` variables). UI (fork): Data layers (upstream's layer list and key in one panel, `fork/ui/data-layers.ts`: each entry's tick box calls the layer switcher, its key sections fold under it) and My layers open on click in the right-hand dock (`fork/ui/dock.ts`: any panel element with class `visible` is open, one at a time); feature details open in the left details panel (`fork/modules/details/`, via the `forkPopup.open` hook; the panel, highlight and left-column order are shared in `fork/ui/left-column.ts`, `details.ts`, `highlight.ts`; modules add to a feature's details with `addDetailsExtra`) with the Grid connection panel below; There's no header: Settings (`fork/ui/settings.ts`, the app's settings: background, map sources, accounts), print and your account (Log out) are buttons at the bottom of the top-right column (`fork/ui/map-button.ts`), About this map is in the credits (bottom right); My layers' own settings (colour, labels, bearings) are in their own window, opened from its ⚙. All panels share `fork/ui/panel.css`; build new ones with `makePanel()` (`fork/ui/panel.ts`) and dock them with `dock.add(button, panel)`. Anything chosen, switched on or selected gets the class `oim-on` (highlighted background, border unchanged), not a look of its own. Tooltips: a `title` (shown by `fork/ui/tooltip.ts`, never the browser's). Search (`src/search/`) combines coordinates, the backend (substations, plants, places and everything else with a name via `search_feature`; picking a result switches on its layer) and an optional Photon server (`VITE_PHOTON_URL` / Settings), via `Promise.allSettled`, merging same-name results within ~5 km. OpenCage was removed. Tests use Vitest with Puppeteer for browser-level integration tests.
-
-### Backend (`/web-backend/`)
-Starlette ASGI app (code under `src/`, entry point `src.main:app`) using SQLAlchemy async + asyncpg (`pool_pre_ping` so it survives DB rebuilds). Bokeh + Pandas generate stats charts. Runs as the `backend` Compose service (port 8001, built from `web-backend/Dockerfile`, entrypoint `/app/.venv/bin/uvicorn` to avoid `uv run` syncing at startup), mounting `data/images` and `data/wikidata_json`. Requires `DATABASE_URL` with the `postgresql+asyncpg://` scheme. Every route but logging in needs a logged-in session (`src/fork/auth/`: accounts, sessions, the login page, `LoginMiddleware`; `current_user()` in `userdata/users.py`); the frontend reaches local services through the gate (`throughGate` in `web/src/fork/config.ts`). The fork's routes (`src/fork/`) come before upstream's: its search (`src/fork/search/`) replaces upstream's `src/views/search.py` at the same URL. Search name indexes (btree + `pg_trgm`) are created by `create_indexes.py` plus `src/fork/indexes.py`; keep them in sync with `src/fork/search/`.
-
-### Imposm (`/imposm/`)
-Python files (`main.py`, `power.py`, …) generate the imposm mapping JSON that defines which OSM tags are imported into which tables. `places.py` (fork) adds `osm_place` for the search box; `sites.py` (fork) adds `osm_site` (critical sites), classified by `schema/fork/sites.sql` into the `site_feature` materialized view. Changing it changes the osmium filter (generated) and the schema fingerprint stored in builds and exports.
+**Tests for fork code:** next to new code where there's logic to get wrong (parsing, geometry, state; not glue or layout): frontend `src/fork/**/*.test.ts`, backend `web-backend/tests/fork/`, scripts `scripts/tests/` (shell helpers tested by running them in bash; keep scripts testable: paths from `REPO_ROOT`, programs called by name). Upstream's code isn't covered.
 
 ## Environment Variables
 
-`launch.sh` creates both files if missing:
-- `web/.env`: `VITE_TEGOLA_URL` (local Tegola, `http://localhost:7800`), `VITE_BACKEND_BASE_URL` (`http://localhost:8001`), `VITE_BASEMAP_URL` (optional: another background map server; the default is the backend's `/background`, every area downloaded; only local tiles, no online fallback), optional `VITE_PHOTON_URL` (Photon geocoder; never set by the scripts), `VITE_SATELLITE_TIERS` (satellite imagery tiers, set by `select_satellite`). The map style needs Protomaps-schema background tiles. The map sources in Settings (`web/src/fork/modules/map-sources/`, `fork/ui/settings.ts`) overrides it per tab via `sessionStorage`.
-- `web-backend/.env`: `DATABASE_URL` for running the backend on the host (the Docker service sets its own)
+`launch.sh` creates both files if missing (`start.sh` refreshes the imagery list):
+- `web/.env`: `VITE_TEGOLA_URL`, `VITE_BACKEND_BASE_URL`, `VITE_BASEMAP_URL` (optional; the default is the backend's `/background`; only local tiles), `VITE_SATELLITE_TIERS` (set by the scripts), optional `VITE_PHOTON_URL`. Settings → Map sources overrides them per tab.
+- `web-backend/.env`: `DATABASE_URL` (`postgresql+asyncpg://`) for running the backend on the host.
 
 ## Gotchas
 
 - Bash reads scripts as it runs them: don't edit `scripts/*.sh` while one is running.
 - Docker mounts need `:z` (Fedora/SELinux).
-- `data/` is gitignored: downloads (`osm/`), exports (`exports/`), EEZ zip, Wikidata cache.
-- The PostGIS alpine image's `shp2pgsql` needs `libintl` installed at run time (`import_eez` does it).
-- Upstream files changed by the fork are listed in `docs/FORK_CHANGES.md` ("Merging from upstream").
-- Build SQL must scale to a country like France (millions of rows): `ANALYZE` temp tables after creating them, join instead of `IN`/`NOT IN (subquery)`, never join on `ST_Equals`, and give `ST_DWithin` a constant distance (a per-row one can't use the spatial index). Distances and areas are written in real metres and converted with `schema/fork/distances.sql` (`ST_DWithin(a, b, D * oim_max_stretch()) AND ST_DWithin(a, b, oim_units(D, b))`; `oim_metres`, `oim_ground_area`): map units stretch with latitude (a test fails on a bare number). Test new build steps on more than Luxembourg.
+- `data/` is gitignored: downloads, exports, offline maps, caches. Never commit `.env` files or `*.bak`.
+- Tegola's `config.toml` is generated (command above); Tegola caches tiles, so recreate it after replacing the data.
+- Build SQL must scale to a country like France (millions of rows): `ANALYZE` temp tables after creating them, join instead of `IN`/`NOT IN (subquery)`, never join on `ST_Equals`, give `ST_DWithin` a constant distance. Distances and areas are written in real metres (`schema/fork/distances.sql`: `ST_DWithin(a, b, D * oim_max_stretch()) AND ST_DWithin(a, b, oim_units(D, b))`; `oim_metres`, `oim_ground_area`): map units stretch with latitude, and a test fails on a bare number. Test new build steps on more than Luxembourg.
+- My layers' schema changes are new numbered files in `web-backend/src/fork/userdata/migrations/`, never edits of one already run.
 
-## CI/CD
+## CI
 
-GitHub Actions workflows (`.github/workflows/`) run lint + type-check + tests on PRs, then build and push Docker images on pushes to `main`. Each service has its own workflow file (`web.yml`, `web-backend.yml`, `tileserver.yml`, `imposm.yml`, `web-router.yml`).
+`.github/workflows/fork-tests.yml` runs the fork's three test suites and linters on every push and pull request. Upstream's workflows (`web.yml`, `web-backend.yml`, ...) build and push images only in upstream's own repository.
