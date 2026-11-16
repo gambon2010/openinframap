@@ -435,14 +435,6 @@ and all roads three quarters of the map's widths: zoomed in, its widths are wide
 over the photos.
 Then every road but motorways at least 0.75 px.
 
-
-**Roofs over imagery (2026-11-16):** white outlines alone floated over blurry
-imagery and read like roads. Over imagery the whole buildings (and the zoomed out
-ones) are now filled like roofs (a muted tile colour at 70 %, their clickable inside
-doing it) with a small shadow 2 px down and right on screen; outlines dark
-everywhere. Parts get no fill (they lie inside buildings: it would darken them), so
-their outlines show faintly through the roof.
-
 ---
 
 ## Building outlines (2026-11-11)
@@ -577,6 +569,13 @@ tile. Downloaded here. It comes **by default**, once: with any download from the
 menu (`with_world_background`, like Blue Marble with imagery) and in every build
 (`prepare_background_map` queues it; `--basemap none` leaves it out). Building
 outlines a little thicker (asked for).
+
+**Roofs over imagery (2026-11-16):** white outlines alone floated over blurry
+imagery and read like roads. Over imagery the whole buildings (and the zoomed out
+ones) are now filled like roofs (a muted tile colour at 70 %, their clickable inside
+doing it) with a small shadow 2 px down and right on screen; outlines dark
+everywhere. Parts get no fill (they lie inside buildings: it would darken them), so
+their outlines show faintly through the roof.
 
 ## Wikidata popups and image cache
 
