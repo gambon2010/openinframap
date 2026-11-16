@@ -122,8 +122,6 @@ while [[ $# -gt 0 ]]; do
         --no-export) REEXPORT=no; shift ;;
         --basemap)   BASEMAP_MODE="${2:?--basemap needs full or none}"; shift 2 ;;
         --maps)      MAPS_SOURCES="${2:?--maps needs source ids, e.g. \"sentinel2 fr_ign\"}"; shift 2 ;;
-        --satellite|--satellite-detailed)
-            die "$1 is gone: use --maps \"sentinel2 fr_ign\" (python3 scripts/satellite.py maps --help lists the sources)." ;;
         --yes|-y)    ASSUME_YES=1; shift ;;
         -h|--help)   usage; exit 0 ;;
         *)           usage; die "Unknown option: $1" ;;

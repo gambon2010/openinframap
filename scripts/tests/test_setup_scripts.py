@@ -157,9 +157,7 @@ def test_unknown_option(sandbox, script):
     "option, value, message",
     [
         ("--basemap", "huge", "--basemap must be full or none"),
-        # Options that are gone say what replaces them.
-        ("--satellite", "regional", "--satellite is gone: use --maps"),
-        ("--satellite-detailed", "17", "--satellite-detailed is gone: use --maps"),
+        ("--satellite", "regional", "Unknown option: --satellite"),
     ],
 )
 def test_build_refuses_bad_values_before_doing_anything(
@@ -571,8 +569,7 @@ def test_real_build_export_and_import(tmp_path):
 @pytest.mark.parametrize(
     "args, message",
     [
-        (["--satellite", "regional"], "--satellite is gone: without questions, use"),
-        (["--yes"], "--yes is gone: without questions, use"),
+        (["--yes"], "Unknown option: --yes"),
         (["--everything"], "Unknown option: --everything"),
     ],
 )

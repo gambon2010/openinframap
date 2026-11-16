@@ -27,8 +27,6 @@ cd "$REPO_ROOT"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)  sed -n '4,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-        --satellite|--satellite-detailed|--area|--zoom|--sources|--yes|-y)
-            die "$1 is gone: without questions, use python3 scripts/satellite.py maps --source ID --yes (see --help there)." ;;
         *)          die "Unknown option: $1" ;;
     esac
 done

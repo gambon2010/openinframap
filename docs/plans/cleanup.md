@@ -7,8 +7,8 @@ changes for whoever uses the map except where a line below says so.
 
 1. **Old parts go**, everywhere: superseded paths, options kept "for older
    commands", code that upgraded old data once, stand-in names for old code.
-   What replaces an option removed is said by the option itself when someone
-   still types it.
+   A removed option is simply unknown (no message saying what replaced it;
+   decided 2026-11-16).
 2. **Split, rename, restructure only the fork's own files.** Upstream's files are
    only touched to make the fork's edits smaller, or to delete what nothing uses.
 3. **Order:** deletions → duplicates → one source of truth → structure → names →
