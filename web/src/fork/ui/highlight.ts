@@ -14,6 +14,7 @@ import {
 } from 'maplibre-gl'
 import type { Feature } from 'geojson'
 import { sourceGeometry } from '../core/map-data.ts'
+import { buildingOutline, isBuildingLayer } from '../core/buildings.ts'
 
 const SOURCE = 'feature_highlight'
 const YELLOW = '#ffd400'
@@ -189,8 +190,13 @@ export class FeatureHighlight {
     })
   }
 
-  /** A big area or long line is split over several tiles: collect all pieces. */
+  /** A big area or long line is split over several tiles: collect all pieces. A
+   * building's are joined into one outline (core/buildings.ts: they overlap a little). */
   allPieces(feature: MapGeoJSONFeature): Feature[] {
+    if (isBuildingLayer(feature.layer.id)) {
+      const outline = buildingOutline(this._map, feature)
+      if (outline) return [{ type: 'Feature', geometry: outline, properties: {} }]
+    }
     const osmId = feature.properties['osm_id']
     if (osmId !== undefined && feature.source) {
       const pieces = this._map.querySourceFeatures(feature.source, {

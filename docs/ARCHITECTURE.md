@@ -60,7 +60,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                imagery, street names white on it)
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
                to switch on (clickable: details, copy); look.ts: roofs and shadows over
-               imagery, raised to their height in the 3D view
+               imagery, raised to their height in the 3D view; parts.ts: the buildings
+               mapped with parts (their parts raised instead)
   view3d       the 3D button: the map tilted, tilting and turning allowed, buildings on
   map-sources  background tiles and Photon (Settings)
   layout       no header; the dock, About in the credits, the search box top left

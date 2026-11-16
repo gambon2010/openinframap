@@ -235,7 +235,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.13 | Far off: update aerial photos when IGN publishes a newer edition of a département (every ~3 years): only those, replaced when done. Editions are recorded from 2026-11-11. | 🗂 far off (2026-11-11) |
 | 10.14 | The whole world's background map zoomed out (to zoom 8, 560 MB), so every country's borders and names show over imagery. | ✅ (2026-11-11) |
 | 10.15 | Satellite with roads easy to read: roads at their real size coloured by importance (motorways orange, main roads yellow, smaller white) with a dark edge, railways highlighted, tunnels marked differently (not hidden), the lines fading when zoomed right in, street names white on a dark halo; small roads and paths as a thin dark line zoomed out; borders more visible. | ✅ (2026-11-16) `fork/modules/satellite/hybrid.ts` |
-| 10.16 | 3D buildings: a 3D view where the map can be tilted and turned and buildings rise to their height; big buildings selected whole (not the piece in one tile). | 🚧 3D view done (2026-11-16, `fork/modules/view3d/`, `modules/buildings/look.ts`); whole selection to do |
+| 10.16 | 3D buildings: a 3D view where the map can be tilted and turned and buildings rise to their height; big buildings selected whole (not the piece in one tile). | ✅ (2026-11-16) `fork/modules/view3d/`, `modules/buildings/look.ts`; buildings with parts: the parts raised, not the building (`parts.ts`); the selection joined from the loaded tiles |
 
 ## 11. Quality
 

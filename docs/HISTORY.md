@@ -584,10 +584,19 @@ it on only in 3D), the Buildings layer is switched on, and whole buildings (and 
 big ones zoomed out) rise to their height (8 m when the map has none), in the roofs'
 colour; their flat roofs, shadows and outlines are hidden then. The raised layers
 follow the layer switcher's Buildings entry for visibility, so they're hidden outside
-3D by a filter that matches nothing. Parts aren't raised: inside a raised building
-they'd fight with it, and the map doesn't say which buildings have parts. Printing
+3D by a filter that matches nothing. Then parts: the outer building of one mapped with
+parts usually carries the tallest height, hiding its parts in a box, and the map's
+data doesn't say which buildings have parts. So they're found in the browser
+(`modules/buildings/parts.ts`): each time the map settles in 3D, the parts not seen
+yet are looked up inside the loaded buildings (the middle of the part's box, inside
+the building's shape: `@turf/boolean-point-in-polygon`); those buildings are left out
+of the raised layer by a filter on their ids, and every part rises from where it
+starts to its own height. Printing
 straightens the map first (scale and grid reference hold only seen from above).
-Buildings' drawing moved into `modules/buildings/look.ts`.
+Buildings' drawing moved into `modules/buildings/look.ts`. A clicked building's
+highlight is its pieces from every loaded tile joined (it was the clicked tile's piece,
+cut at the tile's edges); the copy still asks the backend (it can reach tiles not
+loaded).
 
 ## Wikidata popups and image cache
 

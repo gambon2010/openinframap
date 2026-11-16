@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { buildingLayers, followLook } from './look.ts'
+import { type Buildings, buildingLayers, followLook, raisedFilter } from './look.ts'
 import { BUILDINGS_LAYER, PARTS_LAYER, ZOOMED_OUT_LAYER } from '../../core/buildings.ts'
 import { background } from '../../services/background.ts'
 import { view3d } from '../../services/view3d.ts'
@@ -17,6 +17,24 @@ describe('buildings raised in the 3D view', () => {
       'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0]
     })
     expect(layer(`${ZOOMED_OUT_LAYER}_3d`).type).toBe('fill-extrusion')
+  })
+
+  it('leave out the buildings with parts: their parts rise instead', () => {
+    const whole: Buildings = {
+      source: 's',
+      sourceLayer: 'l',
+      filter: ['==', ['get', 'kind'], 'building'],
+      minzoom: 15
+    }
+    expect(raisedFilter(BUILDINGS_LAYER, whole, new Set())).toEqual(whole.filter)
+    expect(raisedFilter(BUILDINGS_LAYER, whole, new Set([7, 9]))).toEqual([
+      'all',
+      whole.filter,
+      ['match', ['id'], [7, 9], false, true]
+    ])
+    const parts: Buildings = { ...whole, filter: ['==', ['get', 'kind'], 'building_part'] }
+    expect(raisedFilter(PARTS_LAYER, parts, new Set([7]))).toEqual(parts.filter)
+    expect(layer(`${PARTS_LAYER}_3d`).type).toBe('fill-extrusion')
   })
 
   it('are drawn above the flat buildings', () => {

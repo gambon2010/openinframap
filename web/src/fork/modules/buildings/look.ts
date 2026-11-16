@@ -3,6 +3,7 @@
 // a roof, with a small shadow, so buildings read as buildings even on blurry
 // imagery. In the 3D view (services/view3d.ts) they're raised to their height
 // instead: the flat roofs, shadows and outlines would lie on the ground under them.
+// A building mapped with parts isn't raised: its parts are (parts.ts).
 import type {
   ExpressionSpecification,
   FillExtrusionLayerSpecification,
@@ -26,6 +27,7 @@ import { background } from '../../services/background.ts'
 import { view3d } from '../../services/view3d.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import * as look from './buildings.constants.ts'
+import { findBuildingsWithParts } from './parts.ts'
 
 const OUTLINE_PAINT: LineLayerSpecification['paint'] = {
   'line-color': look.OUTLINE,
@@ -33,7 +35,7 @@ const OUTLINE_PAINT: LineLayerSpecification['paint'] = {
   'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 15, 1, 18, 2, 20, 3]
 }
 
-interface Buildings {
+export interface Buildings {
   source: string
   sourceLayer: string
   filter?: FilterSpecification
@@ -118,13 +120,19 @@ function raised(
   }
 }
 
-/** The layers filled like roofs over imagery, with a shadow, and raised in 3D: whole
- * buildings and the zoomed out ones. Parts lie inside buildings: a fill of their own
- * would darken them, and raised they'd sit in the building raised around them. */
+/** The layers filled like roofs over imagery, with a shadow: whole buildings and
+ * the zoomed out ones. Parts lie inside buildings: a fill of their own would darken
+ * them. */
 const ROOFED: [string, Buildings][] = [
   [ZOOMED_OUT_LAYER, ZOOMED_OUT],
   [BUILDINGS_LAYER, WHOLE]
 ]
+/** The layers raised in 3D: those, and the parts. */
+const RAISED: [string, Buildings][] = [...ROOFED, [PARTS_LAYER, PARTS]]
+
+/** Buildings with parts found so far (left out in 3D), and the parts looked at. */
+const withParts = new Set<number>()
+const partsSeen = new Set<number>()
 const OUTLINED = [ZOOMED_OUT_LAYER, PARTS_LAYER, BUILDINGS_LAYER]
 
 /** Every buildings layer, bottom to top. */
@@ -140,7 +148,7 @@ export function buildingLayers(): LayerSpecificationWithZIndex[] {
     // Every whole building, under everything else that's data: the infrastructure
     // is drawn and clicked first.
     ...clickableArea(BUILDINGS_LAYER, WHOLE, -10, OUTLINE_PAINT),
-    ...ROOFED.map(([id, buildings]) => raised(id, buildings, -9.9))
+    ...RAISED.map(([id, buildings]) => raised(id, buildings, -9.9))
   ]
 }
 
@@ -151,19 +159,34 @@ export function followLook(map: Map) {
   map.on('style.load', apply)
   background.onChange(apply)
   view3d.onChange(apply)
+  // Each time the map settles in 3D, with every building loaded: new parts?
+  map.on('idle', () => {
+    if (!view3d.on() || map.getZoom() < BUILDINGS_MINZOOM) return
+    if (findBuildingsWithParts(map, withParts, partsSeen)) apply()
+  })
+}
+
+/** What a raised layer shows: its buildings, but those with parts (their parts rise). */
+export function raisedFilter(id: string, buildings: Buildings, buildingsWithParts: Set<number>) {
+  const own = buildings.filter ?? null
+  if (id !== BUILDINGS_LAYER || !buildingsWithParts.size) return own
+  const withoutParts: FilterSpecification = ['match', ['id'], [...buildingsWithParts], false, true]
+  return own ? (['all', own, withoutParts] as FilterSpecification) : withoutParts
 }
 
 function applyLook(map: Map) {
   const raisedNow = view3d.on()
   const flatRoofs = background.mode() !== 'map' && !raisedNow
-  for (const [id, buildings] of ROOFED) {
+  for (const [id] of ROOFED) {
     if (!map.getLayer(`${id}_hit`)) continue
     // The clickable inside, invisible over the map, is the roof.
     map.setPaintProperty(`${id}_hit`, 'fill-color', look.ROOF_COLOUR)
     map.setPaintProperty(`${id}_hit`, 'fill-opacity', flatRoofs ? look.ROOF_OPACITY : 0)
     map.setPaintProperty(`${id}_shadow`, 'fill-opacity', flatRoofs ? look.SHADOW_OPACITY : 0)
-    map.setFilter(`${id}_3d`, raisedNow ? (buildings.filter ?? null) : NOTHING)
   }
+  for (const [id, buildings] of RAISED)
+    if (map.getLayer(`${id}_3d`))
+      map.setFilter(`${id}_3d`, raisedNow ? raisedFilter(id, buildings, withParts) : NOTHING)
   for (const id of OUTLINED)
     if (map.getLayer(id)) map.setPaintProperty(id, 'line-opacity', raisedNow ? 0 : look.OUTLINE_OPACITY)
 }
