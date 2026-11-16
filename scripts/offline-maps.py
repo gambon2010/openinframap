@@ -6,7 +6,7 @@ bash scripts/offline-maps.sh, or by build-region.sh.
 
     python3 scripts/offline-maps.py maps            the menu (what's there, add, remove)
     python3 scripts/offline-maps.py maps --source ID --yes      add one, no questions
-    python3 scripts/offline-maps.py zoomed-buildings --area AREA
+    python3 scripts/offline-maps.py zoomed-out --area AREA
     python3 scripts/offline-maps.py --help          every command (the menu's downloads
                                                     are commands too: overview, regional,
                                                     detailed, bdortho, basemap)

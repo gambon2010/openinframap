@@ -345,7 +345,7 @@ class Maps(SourceOffers):
             (self.folder / e.file).unlink(missing_ok=True)
             if source.id == "protomaps":
                 (self.folder / f"{e.area}.json").unlink(missing_ok=True)
-                extract.zoomed_buildings_of(self.folder, e.area).unlink(missing_ok=True)
+                extract.zoomed_out_of(self.folder, e.area).unlink(missing_ok=True)
         ui.say(
             f"Deleted {ui.human(size)}. The map shows it once the scripts update it (start.sh)."
         )

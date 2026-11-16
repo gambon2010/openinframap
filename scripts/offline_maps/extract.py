@@ -1,8 +1,9 @@
 """Fork: offline maps. The background map (streets, places, buildings), cut out of
 Protomaps' daily world build with pmtiles (in Docker) into
 data/offline-maps/<area>.pmtiles, with its manifest (<area>.json: the build it came
-from), then its buildings zoomed out (<area>.buildings.pmtiles, zooms 12 to 14,
-made in the backend's image: web-backend/src/fork/background/zoomed_buildings.py).
+from), then what it leaves out zoomed out, buildings and roads
+(<area>.zoomed-out.pmtiles, zooms 8 to 14, made in the backend's image:
+web-backend/src/fork/background/zoomed_out.py).
 The backend serves them all together (web-backend/src/fork/background/).
 Full detail only."""
 
@@ -25,13 +26,13 @@ from .sources import SOURCES
 PROTOMAPS = SOURCES["protomaps"]
 BUILDS_URL = "https://build-metadata.protomaps.dev/builds.json"
 PMTILES_IMAGE = "protomaps/go-pmtiles:v1.28.0"
-# The buildings zoomed out, beside a background map with every building (zoom 15):
+# Buildings and roads zoomed out, beside a background map with everything (zoom 15):
 # the backend's COMPANION (scripts/tests/test_one_source.py).
-ZOOMED_BUILDINGS = ".buildings.pmtiles"
+ZOOMED_OUT = ".zoomed-out.pmtiles"
 FULL_ZOOM = 15
 # Their size and time against the background map's size (France, 2026-11-16).
-ZOOMED_BUILDINGS_SIZE = 56 / 5390  # 56 MB from 5.4 GB
-ZOOMED_BUILDINGS_SECONDS_PER_BYTE = 370 / 5.39e9  # 6 min, 8 processes
+ZOOMED_OUT_SIZE = 390 / 5390  # 390 MB from 5.4 GB
+ZOOMED_OUT_SECONDS_PER_BYTE = 803 / 5.39e9  # 13 min, 8 processes
 
 
 def latest_build() -> tuple[str, int] | None:
@@ -176,44 +177,44 @@ def command_basemap(args) -> None:
         + "\n"
     )
     print(f"{ui.human(out.stat().st_size)} -> {out.name}", file=sys.stderr)
-    if zoomed_buildings_missing(folder, args.area):
+    if zoomed_out_missing(folder, args.area):
         try:
-            make_zoomed_buildings(folder, args.area)
+            make_zoomed_out(folder, args.area)
         except subprocess.CalledProcessError:
-            # The background map is kept; the menu offers its buildings again.
+            # The background map is kept; the menu offers its zoomed out file again.
             print(
-                f"Making its buildings zoomed out failed. Again: "
-                f"python3 scripts/offline-maps.py zoomed-buildings --area {args.area}",
+                f"Making its buildings and roads zoomed out failed. Again: "
+                f"python3 scripts/offline-maps.py zoomed-out --area {args.area}",
                 file=sys.stderr,
             )
 
 
-def zoomed_buildings_of(folder: Path, area: str) -> Path:
-    return folder / f"{area}{ZOOMED_BUILDINGS}"
+def zoomed_out_of(folder: Path, area: str) -> Path:
+    return folder / f"{area}{ZOOMED_OUT}"
 
 
-def zoomed_buildings_missing(folder: Path, area: str) -> bool:
+def zoomed_out_missing(folder: Path, area: str) -> bool:
     """Whether an area's background map has every building (zoom 15) but not its
-    buildings zoomed out, or only older ones than it."""
+    buildings and roads zoomed out, or only older ones than it."""
     background = folder / f"{area}.pmtiles"
     header = read_header(background)
     if not header or header.maxzoom < FULL_ZOOM:
         return False
-    companion = zoomed_buildings_of(folder, area)
+    companion = zoomed_out_of(folder, area)
     return (
         not companion.exists() or companion.stat().st_mtime < background.stat().st_mtime
     )
 
 
-def make_zoomed_buildings(folder: Path, area: str) -> None:
-    """An area's buildings zoomed out, in the backend's image (its pmtiles and
-    shapely packages; France: 6 min), as root (the image's Python is root's)."""
+def make_zoomed_out(folder: Path, area: str) -> None:
+    """An area's buildings and roads zoomed out, in the backend's image (its pmtiles and
+    shapely packages; France: 13 min), as root (the image's Python is root's)."""
     docker.run_service(
         "backend",
         [
             "/app/.venv/bin/python",
             "-m",
-            "src.fork.background.zoomed_buildings",
+            "src.fork.background.zoomed_out",
             "--area",
             area,
             "--folder",
@@ -225,6 +226,6 @@ def make_zoomed_buildings(folder: Path, area: str) -> None:
     )
 
 
-def command_zoomed_buildings(args) -> None:
-    """offline-maps.py zoomed-buildings --area AREA: an area already downloaded."""
-    make_zoomed_buildings(Path(args.maps_dir), args.area)
+def command_zoomed_out(args) -> None:
+    """offline-maps.py zoomed-out --area AREA: an area already downloaded."""
+    make_zoomed_out(Path(args.maps_dir), args.area)

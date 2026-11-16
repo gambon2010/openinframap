@@ -209,13 +209,15 @@ It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
 together (each tile from the first file that has it, so several areas show at
 once), at `/background`, the frontend's default.
 
-Buildings: Protomaps' tiles hold every building only from zoom 15. Right after an
-area is downloaded, the buildings big enough to see zoomed out (zooms 12 to 14)
-are made from them into `data/offline-maps/<region>.buildings.pmtiles` (France: 6 minutes,
-56 MB); the backend adds them to the background map's tiles, and *Data layers →
-Background map → Buildings* shows them. For an area downloaded before, the menu
-offers *Buildings zoomed out* (or `python3 scripts/offline-maps.py zoomed-buildings
---area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
+Zoomed out: Protomaps' tiles hold every building, small road and path, and the
+tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what they
+leave out zoomed out is made from its zoom 15 tiles into
+`data/offline-maps/<region>.zoomed-out.pmtiles` (France: 13 minutes, 390 MB): the
+buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (small
+roads from 12, paths from 13, tunnels dashed). The backend adds them to the background
+map's tiles; *Data layers → Background map → Buildings* shows the buildings. For an
+area downloaded before, the menu offers *Buildings and roads zoomed out* (or
+`python3 scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
 `python3 scripts/offline-maps.py maps --source protomaps --area france --yes`.
 
 ## Satellite imagery (offline)

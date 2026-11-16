@@ -193,11 +193,14 @@ every route but logging in needs a session):
 - `map_data.py` (a map feature's full geometry);
 - `background/` (the background map's tiles, `/background/{z}/{x}/{y}.mvt`: each from
   the first `data/offline-maps/<area>.pmtiles` that has it, so several areas show together;
-  at zooms 12 to 14 with the area's `<area>.buildings.pmtiles` tile appended;
-  satellite imagery is the `satellite` service's; `zoomed_buildings.py`, a build step
-  run after each download: the buildings big enough to see zoomed out, from the zoom 15
-  tiles, into `<area>.buildings.pmtiles`; `buildings.py`, a building's whole outline
-  from the zoom 15 tiles, `/background/building/{id}`, for copies);
+  at zooms 8 to 14 with the area's `<area>.zoomed-out.pmtiles` tile appended, its
+  roads replacing the background map's (`mvt.py`: a tile's layers, undecoded);
+  satellite imagery is the `satellite` service's; `zoomed_out.py`, a build step run
+  after each download, from the zoom 15 tiles: the buildings big enough to see at
+  zooms 12 to 14 (`zoomed_buildings.py`) and the roads at zooms 8 to 13 with what
+  Protomaps drops there, tunnel marks, small roads, paths (`zoomed_roads.py`);
+  `tiles.py` their tile geometry; `buildings.py`, a building's whole outline from the
+  zoom 15 tiles, `/background/building/{id}`, for copies);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:
@@ -226,7 +229,7 @@ the schema fingerprint builds and exports carry.
   `number_towers` → search indexes → extra data, `extra`, `search` → EEZ →
   `local-stats` (a fast per-country stats snapshot) → `oim_build_info` → Tegola →
   the offline maps queued in the menu (a background map: `pmtiles extract` of the
-  area's outline from Protomaps' daily build, then its buildings zoomed out;
+  area's outline from Protomaps' daily build, then its buildings and roads zoomed out;
   `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). Every
   question comes before the first long step.
 - **SQL (`schema/`):** upstream's: `dev-init.sql` / `prod-init.sql` (once, when the

@@ -448,6 +448,25 @@ pale red. The palette's road colours went (`map-sources/palette.ts`); "original
 colours" now has these roads too. The imagery sits right above upstream's layers,
 under the fork's roads (the lowest data layers, zorder -11).
 
+
+**Roads zoomed out (2026-11-16, plan `roads-and-railways.md`, step 3):** below zoom 12
+Protomaps merges each road into one line without its tunnel mark, leaves most small
+roads for zoom 14 and paths for 14 or 15, and keeps a few stretches of big roads for
+zoom 15 (a part of the A35 at Strasbourg). A dashed tunnel drawn over the merged road
+would still look solid, so the companion now carries every road at zooms 8 to 13,
+copied down from zoom 15 (small roads from 12, paths from 13), in a layer named
+"roads": the backend drops the background map's own there (`mvt.py` reads a tile's
+layers without decoding them), so the frontend needed no change. The companion was
+renamed `<area>.zoomed-out.pmtiles` and its builder split: `zoomed_out.py` (a zoom 10
+block per worker, each zoom 15 tile decoded once, only its buildings and roads),
+`zoomed_buildings.py`, `zoomed_roads.py`, `tiles.py`; the menu's offer and command
+`zoomed-out`. Measured on Strasbourg's zoom 8 tile first: 5.5 MB; the first prototype
+took 9 minutes there, the build 16 s with 8 workers (geometry moved into and out of
+tile units in one vectorised step, not point by point; unused features never made
+into shapes; pieces joined after rounding to the centimetre, as two tiles' shared
+ends differ in the last digits). France: 1,195 blocks, 227,635 tiles, 390 MB (the buildings' 56 MB included), 13 min
+(the buildings alone took 6).
+
 ---
 
 ## Building outlines (2026-11-11)

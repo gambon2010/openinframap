@@ -9,9 +9,11 @@ Protomaps edition: it's sent once, nothing is drawn twice. Files are tried
 newest edition first (the build in <area>.json), the whole world's last (the
 fallback). No file has it: 204, an empty tile, as pmtiles serve answers.
 
-At zooms 12 to 14, the tile of the area's companion, <area>.buildings.pmtiles
-(the buildings zoomed out, zoomed_buildings.py), is appended to it: a tile is a
-list of layers, so the two laid end to end are one tile with the layers of both.
+At zooms 8 to 14, the tile of the area's companion, <area>.zoomed-out.pmtiles
+(what the background map leaves out zoomed out, zoomed_out.py), is appended to
+it: a tile is a list of layers, so the two laid end to end are one tile with the
+layers of both. The companion's roads replace the background map's (its roads
+layer is dropped, mvt.py): the same roads, with what Protomaps leaves out there.
 
 The satellite imagery files (*.sat-*.pmtiles) are served by the "satellite"
 service, not here. Files are read through mmap, each file's index cached, and
@@ -33,19 +35,21 @@ from starlette.responses import Response
 from starlette.routing import Route
 
 from ..paths import LOCAL_DATA_DIR
+from . import mvt
 
 OFFLINE_MAPS_DIR = LOCAL_DATA_DIR / "offline-maps"
 WORLD = "world"
 MEDIA_TYPE = "application/vnd.mapbox-vector-tile"
 CACHE_SECONDS = 3600
-# The buildings zoomed out: <area>.buildings.pmtiles, these zooms (zoomed_buildings.py).
-COMPANION = ".buildings.pmtiles"
-COMPANION_ZOOMS = range(12, 15)
+# What the background map leaves out zoomed out: <area>.zoomed-out.pmtiles, these
+# zooms (zoomed_out.py).
+COMPANION = ".zoomed-out.pmtiles"
+COMPANION_ZOOMS = range(8, 15)
 
 
 def is_background_map(path: Path) -> bool:
     """<area>.pmtiles: not satellite imagery (<area>.sat-*), a companion
-    (<area>.buildings.pmtiles), nor a partial download."""
+    (<area>.zoomed-out.pmtiles), nor a partial download."""
     return path.suffix == ".pmtiles" and "." not in path.stem and not path.name.startswith(".")
 
 
@@ -165,8 +169,8 @@ class Archives:
                     data = self.with_companion(data, archive, z, x, y)
                 return data, archive
         if z in COMPANION_ZOOMS:
-            # No background tile there (Protomaps leaves a few out), buildings still:
-            # the companion's tile alone.
+            # No background tile there (Protomaps leaves a few out), the companion's
+            # still: its tile alone.
             for archive in archives:
                 companion = self.open.get(companion_of(archive.path))
                 data = companion.get(z, x, y) if companion else None
@@ -176,13 +180,16 @@ class Archives:
 
     def with_companion(self, data: bytes, archive: Archive, z: int, x: int, y: int) -> bytes:
         """The tile with its area's companion tile appended (both unzipped, then
-        zipped again as the area's tiles are)."""
+        zipped again as the area's tiles are), the companion's layers replacing the
+        tile's of the same name (its roads)."""
         companion = self.open.get(companion_of(archive.path))
         extra = companion.get(z, x, y) if companion else None
         if not extra:
             return data
         gzipped = archive.header["tile_compression"] == Compression.GZIP
-        joined = unzipped(data) + unzipped(extra)
+        extra = unzipped(extra)
+        replaced = {name for name, _ in mvt.layers(extra)}
+        joined = mvt.drop(unzipped(data), replaced) + extra
         return gzip.compress(joined, compresslevel=1, mtime=0) if gzipped else joined
 
 

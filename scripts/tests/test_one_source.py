@@ -51,12 +51,12 @@ def test_the_pmtiles_program_is_one_version():
     assert image == extract.PMTILES_IMAGE
 
 
-def test_the_buildings_zoomed_out_are_named_and_zoomed_alike():
+def test_the_zoomed_out_companion_is_named_and_zoomed_alike():
     backend = (
         ROOT / "web-backend" / "src" / "fork" / "background" / "__init__.py"
     ).read_text()
     made = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "zoomed_buildings.py"
+        ROOT / "web-backend" / "src" / "fork" / "background" / "zoomed_out.py"
     ).read_text()
-    assert f'COMPANION = "{extract.ZOOMED_BUILDINGS}"' in backend
+    assert f'COMPANION = "{extract.ZOOMED_OUT}"' in backend
     assert f"FULL_ZOOM = {extract.FULL_ZOOM}" in made

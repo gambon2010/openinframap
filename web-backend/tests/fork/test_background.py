@@ -5,6 +5,7 @@ import gzip
 import json
 import os
 
+import mapbox_vector_tile  # type: ignore[import-untyped]
 import pytest
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
@@ -12,6 +13,7 @@ from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
 from src.fork import background
+from src.fork.background import mvt
 
 
 def make(path, tiles: dict[tuple[int, int, int], bytes], build: str = "") -> None:
@@ -106,23 +108,37 @@ def test_a_big_file_with_leaf_directories(client):
     assert got(client, 10, 500, 500)[0] == 204
 
 
-def test_the_buildings_zoomed_out_are_appended_from_zoom_12_to_14(client):
-    client, folder = client
-    make(
-        folder / "france.pmtiles",
-        {(11, 1, 1): b"low", (12, 2, 2): b"base", (14, 8, 8): b"z14", (15, 16, 16): b"z15"},
+def layered(*names: str) -> bytes:
+    """A real vector tile with these layers (one point each, telling its layer)."""
+    return mapbox_vector_tile.encode(
+        [{"name": n, "features": [{"geometry": "POINT(1 1)", "properties": {"from": n}}]} for n in names]
     )
-    make(folder / "france.buildings.pmtiles", {(12, 2, 2): b"+ours", (14, 8, 8): b"+ours14"})
+
+
+def layers_of(content: bytes) -> list[str]:
+    return [name for name, _ in mvt.layers(content)]
+
+
+def test_the_zoomed_out_companion_is_appended_from_zoom_8_to_14(client):
+    client, folder = client
+    base = layered("water", "roads", "places")
+    make(folder / "france.pmtiles", {(7, 0, 0): base, (8, 1, 1): base, (12, 2, 2): base, (15, 16, 16): base})
+    make(
+        folder / "france.zoomed-out.pmtiles",
+        {(8, 1, 1): layered("roads"), (12, 2, 2): layered("buildings_large", "roads")},
+    )
     # Another area's companion never joins France's tiles.
-    make(folder / "spain.buildings.pmtiles", {(12, 2, 2): b"+spain"})
-    assert got(client, 12, 2, 2) == (200, b"base+ours")
-    assert got(client, 14, 8, 8) == (200, b"z14+ours14")
-    assert got(client, 11, 1, 1) == (200, b"low")
-    assert got(client, 15, 16, 16) == (200, b"z15")
+    make(folder / "spain.zoomed-out.pmtiles", {(12, 2, 2): layered("spain")})
+    # The companion's roads replace the background map's, its buildings are added.
+    status, content = got(client, 12, 2, 2)
+    assert status == 200 and layers_of(content) == ["water", "places", "buildings_large", "roads"]
+    assert layers_of(got(client, 8, 1, 1)[1]) == ["water", "places", "roads"]
+    assert layers_of(got(client, 7, 0, 0)[1]) == ["water", "roads", "places"]
+    assert layers_of(got(client, 15, 16, 16)[1]) == ["water", "roads", "places"]
     # A companion alone isn't an area of its own...
     assert got(client, 12, 3, 3)[0] == 204
-    # ...but where its area's background map has no tile, its buildings still show.
-    make(folder / "france.buildings.pmtiles", {(12, 2, 2): b"+ours", (13, 5, 5): b"only ours"})
-    assert got(client, 13, 5, 5) == (200, b"only ours")
+    # ...but where its area's background map has no tile, its own still shows.
+    make(folder / "france.zoomed-out.pmtiles", {(12, 2, 2): layered("roads"), (13, 5, 5): layered("roads")})
+    assert layers_of(got(client, 13, 5, 5)[1]) == ["roads"]
     assert got(client, 13, 6, 6)[0] == 204
     assert [a.area for a in background.ARCHIVES.ordered()] == ["france"]

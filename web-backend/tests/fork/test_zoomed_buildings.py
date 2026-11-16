@@ -1,5 +1,6 @@
-"""src/fork/background/zoomed_buildings.py: the buildings zoomed out (zooms 12 to
-14), made from a background map's zoom 15 tiles into <area>.buildings.pmtiles."""
+"""src/fork/background/zoomed_buildings.py and zoomed_out.py: the buildings zoomed
+out (zooms 12 to 14), made from a background map's zoom 15 tiles into its companion,
+<area>.zoomed-out.pmtiles."""
 
 import gzip
 import os
@@ -10,12 +11,14 @@ from pmtiles.tile import zxy_to_tileid
 
 from src.fork.background import Archive, companion_of
 from src.fork.background import zoomed_buildings as zb
+from src.fork.background import zoomed_out
+from src.fork.background.tiles import EXTENT, ground_stretch, tile_bounds
 from tests.fork.test_background import make
 
 # Two zoom 15 tiles side by side in Paris, in one zoom 12 block.
 X, Y = 16596, 11273
 BLOCK = (X >> 3, Y >> 3)
-UNITS_M2 = (zb.tile_bounds(15, X, Y)[2] - zb.tile_bounds(15, X, Y)[0]) ** 2 / zb.EXTENT**2
+UNITS_M2 = (tile_bounds(15, X, Y)[2] - tile_bounds(15, X, Y)[0]) ** 2 / EXTENT**2
 
 
 def tile(*features) -> bytes:
@@ -34,7 +37,7 @@ def square(i, x0, y0, x1, y1, kind="building", height=None):
 
 
 def ground_m2(units: float) -> float:
-    return units * UNITS_M2 * zb.ground_stretch(zb.BLOCK_ZOOM, BLOCK[1]) ** 2
+    return units * UNITS_M2 * ground_stretch(zb.BLOCK_ZOOM, BLOCK[1]) ** 2
 
 
 @pytest.fixture
@@ -67,7 +70,8 @@ def features(archive, z, x, y):
 
 def test_a_building_cut_at_tile_edges_is_joined_then_measured(paris):
     archive = Archive.open(paris)
-    found = {b["id"]: b for b in zb.block_buildings(lambda z, x, y: zb.stored(archive, z, x, y), *BLOCK)}
+    tiles = {(x, y): zoomed_out.decoded(archive, x, y) for x, y in [(X, Y), (X + 1, Y)]}
+    found = {b["id"]: b for b in zb.block_buildings(tiles, *BLOCK)}
     assert set(found) == {1, 2}  # the tiny one and the part left out
     whole = (4096 - 3600 + 500) * 600
     assert found[1]["area"] == pytest.approx(ground_m2(whole), rel=0.01)
@@ -76,9 +80,10 @@ def test_a_building_cut_at_tile_edges_is_joined_then_measured(paris):
 
 
 def test_each_zoom_has_the_buildings_big_enough_to_see_there(paris):
-    out = zb.make(paris, workers=1)
+    out = zoomed_out.make(paris, workers=1)
     assert out == companion_of(paris) and out.exists()
     companion = Archive.open(out)
+    # No roads in these tiles: the file starts at the buildings' first zoom.
     assert (companion.header["min_zoom"], companion.header["max_zoom"]) == (12, 14)
     assert ground_m2((4096 - 3600 + 500) * 600) > zb.MIN_AREA_M2[12]
     assert zb.MIN_AREA_M2[14] < ground_m2(170 * 170) < zb.MIN_AREA_M2[13]
@@ -95,20 +100,20 @@ def test_each_zoom_has_the_buildings_big_enough_to_see_there(paris):
 def test_no_zoom_15_no_companion(tmp_path):
     world = tmp_path / "world.pmtiles"
     make(world, {(8, 1, 1): b"zoomed out"})
-    assert zb.make(world, workers=1) is None
+    assert zoomed_out.make(world, workers=1) is None
     assert not companion_of(world).exists()
 
 
 def test_out_of_date_companions(tmp_path, paris):
-    assert zb.out_of_date(tmp_path) == [paris]
-    zb.make(paris, workers=1)
-    assert zb.out_of_date(tmp_path) == []
+    assert zoomed_out.out_of_date(tmp_path) == [paris]
+    zoomed_out.make(paris, workers=1)
+    assert zoomed_out.out_of_date(tmp_path) == []
     # A newer download of the area: its companion is made again.
     later = companion_of(paris).stat().st_mtime + 10
     os.utime(paris, (later, later))
-    assert zb.out_of_date(tmp_path) == [paris]
+    assert zoomed_out.out_of_date(tmp_path) == [paris]
 
 
-def test_the_block_list_comes_from_the_directories(paris):
-    assert zb.blocks(Archive.open(paris)) == [BLOCK]
+def test_the_work_list_comes_from_the_directories(paris):
+    assert zoomed_out.units(Archive.open(paris)) == [(X >> 5, Y >> 5)]
     assert zxy_to_tileid(15, X, Y) in set(Archive.open(paris).tile_ids())

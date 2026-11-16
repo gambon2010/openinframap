@@ -29,10 +29,15 @@ like motorways, smaller ones like main roads; tunnels marked at every zoom.
   database has none (a region built before).
 - Tested on Luxembourg; France at its next rebuild.
 
-## 3. Small roads, paths and tunnel marks zoomed out
+## 3. Small roads, paths and tunnel marks zoomed out (done, 2026-11-16)
 
-- The offline maps step that makes `<area>.buildings.pmtiles` (zoomed out buildings)
-  also copies down from zoom 14 tiles: small roads (from 12), paths and tracks (from
-  13), the tunnel mark of big roads (to 8), stretches of big roads the background map
-  keeps for zoom 15 only. Same companion file, appended by the backend.
-- `modules/roads` draws them with the rest.
+- Below zoom 12 the background map merges each road into one line without its tunnel
+  mark: a dashed copy over it would still look solid. So the companion carries every
+  road at zooms 8 to 13, copied down from zoom 15 (small roads from 12, paths from 13,
+  tunnels marked, the stretches of big roads Protomaps keeps for zoom 15), as a layer
+  named "roads": the backend drops the background map's own there. The frontend
+  needs no change.
+- The companion, renamed `<area>.zoomed-out.pmtiles` (was `.buildings.pmtiles`), made
+  by `zoomed_out.py` (buildings: `zoomed_buildings.py`, roads: `zoomed_roads.py`), a
+  zoom 10 block per worker, each zoom 15 tile decoded once (only its buildings and
+  roads).

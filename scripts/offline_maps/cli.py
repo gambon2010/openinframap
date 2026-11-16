@@ -18,7 +18,7 @@ from . import docker
 from .bdortho import TILER_IMAGE, command_bdortho
 from .download import MBTiles, cell_exists, download_tiles
 from .estimate import world_cells, world_overview_tiles, worldcover_cells
-from .extract import PMTILES_IMAGE, command_basemap, command_zoomed_buildings
+from .extract import PMTILES_IMAGE, command_basemap, command_zoomed_out
 from .gdal import regional_pipeline, to_pmtiles
 from .inventory import imagery_summary, imagery_tiers
 from .maps import command_maps
@@ -306,7 +306,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--maps-dir", required=True)
 
     p = sub.add_parser(
-        "zoomed-buildings", help="an area's buildings zoomed out (zooms 12 to 14)"
+        "zoomed-out",
+        help="an area's buildings and roads zoomed out (what its background map leaves out)",
     )
     p.add_argument("--area", required=True)
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
@@ -332,7 +333,7 @@ def run_command(args) -> None:
         "detailed": command_detailed,
         "bdortho": command_bdortho,
         "basemap": command_basemap,
-        "zoomed-buildings": command_zoomed_buildings,
+        "zoomed-out": command_zoomed_out,
         "sources": command_sources,
         "tiers": command_tiers,
         "summary": command_summary,
