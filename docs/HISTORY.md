@@ -508,6 +508,14 @@ tile ids from its directories) is shared by the build step. Tests:
 `scripts/tests/test_maps.py` (offer, removal), `test_one_source.py` (the companion's
 name and zoom agree between the scripts and the backend).
 
+**A click selects the whole building** (2026-11-16, asked for: no "part of a
+building"). Parts (towers, wings, a dome: `building_part`) are drawn in their own
+layer (`buildings_parts`) under whole buildings (`buildings_outline`, now only
+`building`), so a click or a copy inside a building finds the building, whichever
+part it lands on. Parts with no building mapped around them (checked around the
+Panthéon: 12% of 4,350) are still clicked on their own, shown as "Building". Test:
+`modules/buildings/index.test.ts` (the order clicks rely on).
+
 **CI's scripts job fixed** (2026-11-16): ruff run from the repo root (as CI does)
 took the scripts' own modules (`netsafe`, `satimagery`, ...) for outside packages and
 wanted their imports sorted otherwise; `scripts/ruff.toml` (`src = ["."]`) tells it.

@@ -24,7 +24,7 @@ export async function copyAt(c: ToolsContext, e: MapMouseEvent) {
   if (!f) {
     c.message = t(
       'userlayers.copy.nothing-buildings',
-      'Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 15 or closer)'
+      'Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 12 or closer)'
     )
     c.notify()
     return

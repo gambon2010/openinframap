@@ -11,6 +11,9 @@ import { groundArea } from './geo.ts'
 
 /** The outlines' map layer (modules/buildings); its clickable inside is `<id>_hit`. */
 export const BUILDINGS_LAYER = 'buildings_outline'
+/** Parts of buildings (towers, wings, a dome...): drawn, and clicked only where no
+ * whole building is mapped around them (a click inside a building takes all of it). */
+export const PARTS_LAYER = 'buildings_parts'
 /** Every buildings layer's id starts with this (the layer switcher's prefix too). */
 export const BUILDINGS_PREFIX = 'buildings_'
 

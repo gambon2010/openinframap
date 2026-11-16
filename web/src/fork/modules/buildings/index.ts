@@ -16,6 +16,7 @@ import {
   BUILDINGS_PREFIX,
   BUILDINGS_SOURCE,
   BUILDINGS_SOURCE_LAYER,
+  PARTS_LAYER,
   ZOOMED_OUT_LAYER,
   ZOOMED_OUT_MINZOOM,
   ZOOMED_OUT_SOURCE_LAYER,
@@ -51,16 +52,30 @@ const buildings: ForkModule = {
       -10,
       OUTLINE_PAINT
     ),
-    // Every one.
+    // Parts under whole buildings: a click inside a building finds the building
+    // first, whichever part it lands on. Parts with no building mapped around them
+    // (about one in ten in Paris) are still clicked on their own.
+    ...clickableArea(
+      PARTS_LAYER,
+      {
+        source: BUILDINGS_SOURCE,
+        sourceLayer: BUILDINGS_SOURCE_LAYER,
+        filter: ['==', ['get', 'kind'], 'building_part'],
+        minzoom: BUILDINGS_MINZOOM
+      },
+      -10.5,
+      OUTLINE_PAINT
+    ),
+    // Every whole building, under everything else that's data: the infrastructure
+    // is drawn and clicked first.
     ...clickableArea(
       BUILDINGS_LAYER,
       {
         source: BUILDINGS_SOURCE,
         sourceLayer: BUILDINGS_SOURCE_LAYER,
-        filter: ['in', ['get', 'kind'], ['literal', ['building', 'building_part']]],
+        filter: ['==', ['get', 'kind'], 'building'],
         minzoom: BUILDINGS_MINZOOM
       },
-      // Under everything else that's data: the infrastructure is drawn and clicked first.
       -10,
       OUTLINE_PAINT
     )
@@ -76,6 +91,7 @@ const buildings: ForkModule = {
   init: ({ map }) => {
     theMap = map
     followBackground(map, BUILDINGS_LAYER, 'line-color', OUTLINE)
+    followBackground(map, PARTS_LAYER, 'line-color', OUTLINE)
     followBackground(map, ZOOMED_OUT_LAYER, 'line-color', OUTLINE)
   },
 
@@ -85,21 +101,12 @@ const buildings: ForkModule = {
 }
 
 /** What there is to say about a building: little (the background map keeps its
- * outline, height and kind), plus its area worked out from the outline. */
+ * outline, height and kind), plus its area on the ground. */
 function details(feature: MapGeoJSONFeature): HTMLElement {
   const p = feature.properties
-  const outline = (theMap && buildingOutline(theMap, feature)) || feature.geometry
-  // Zoomed out, the tiles say it (measured whole when they were made).
-  const area =
-    typeof p.area_m2 === 'number'
-      ? p.area_m2
-      : outline.type === 'Polygon' || outline.type === 'MultiPolygon'
-        ? outlineArea(outline)
-        : undefined
+  const area = groundArea(feature)
   return detailsCard(
-    p.kind === 'building_part'
-      ? t('buildings.part', 'Part of a building')
-      : t('buildings.building', 'Building'),
+    t('buildings.building', 'Building'),
     [
       [t('buildings.height', 'Height'), typeof p.height === 'number' && `${Math.round(p.height)} m`],
       [
@@ -110,6 +117,16 @@ function details(feature: MapGeoJSONFeature): HTMLElement {
     ],
     el('p.oim-extra-notice', t('buildings.source', 'From the background map (OpenStreetMap, via Protomaps).'))
   )
+}
+
+/** Square metres: zoomed out, measured whole when the tiles were made; closer, from
+ * the outline joined across tiles. */
+function groundArea(feature: MapGeoJSONFeature): number | undefined {
+  const measuredWhenMade = feature.properties.area_m2
+  if (typeof measuredWhenMade === 'number') return measuredWhenMade
+  const outline = (theMap && buildingOutline(theMap, feature)) || feature.geometry
+  if (outline.type !== 'Polygon' && outline.type !== 'MultiPolygon') return undefined
+  return outlineArea(outline)
 }
 
 export default buildings

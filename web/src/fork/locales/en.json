@@ -403,7 +403,7 @@
       "already": "Already in this layer.",
       "done": "Copied. Click more features to copy them, or Esc to stop.",
       "building": "Building",
-      "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 15 or closer)",
+      "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 12 or closer)",
       "into": "Copy into “{{layer}}”",
       "into-new": "Copy into My layers",
       "into-help": "Into the layer you draw into (My layers)",
@@ -724,7 +724,6 @@
     "height": "Height",
     "starts-at": "Starts at",
     "area": "Area (on the ground)",
-    "part": "Part of a building",
     "building": "Building",
     "source": "From the background map (OpenStreetMap, via Protomaps)."
   }
