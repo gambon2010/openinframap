@@ -13,7 +13,6 @@ shows.
 
 from __future__ import annotations
 
-import gzip
 import math
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
@@ -27,7 +26,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from . import ARCHIVES
+from . import ARCHIVES, unzipped
 
 FULL_ZOOM = 15
 EXTENT = 4096
@@ -39,10 +38,7 @@ def full_tile(x: int, y: int) -> list[dict]:
     found = ARCHIVES.tile(FULL_ZOOM, x, y)
     if not found:
         return []
-    data = found[0]
-    if data[:2] == b"\x1f\x8b":
-        data = gzip.decompress(data)
-    layers = mapbox_vector_tile.decode(data, default_options={"y_coord_down": True})
+    layers = mapbox_vector_tile.decode(unzipped(found[0]), default_options={"y_coord_down": True})
     return [
         f
         for f in layers.get("buildings", {}).get("features", [])

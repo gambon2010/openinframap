@@ -37,7 +37,7 @@ from shapely import unary_union
 from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry
 
-from . import BASEMAP_DIR, COMPANION_ZOOMS, Archive, companion_of, is_background_map
+from . import BASEMAP_DIR, COMPANION_ZOOMS, Archive, companion_of, is_background_map, unzipped
 
 LAYER = "buildings_large"
 FULL_ZOOM = 15
@@ -70,7 +70,7 @@ def ground_stretch(z: int, y: int) -> float:
 def stored(archive: Archive, z: int, x: int, y: int) -> bytes | None:
     """A tile's protobuf bytes (unzipped), None if the file hasn't it."""
     data = archive.get(z, x, y)
-    return gzip.decompress(data) if data and data[:2] == b"\x1f\x8b" else data
+    return unzipped(data) if data else None
 
 
 def blocks(archive: Archive) -> list[tuple[int, int]]:
