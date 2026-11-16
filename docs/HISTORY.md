@@ -572,7 +572,7 @@ outlines a little thicker (asked for).
 
 **Roofs over imagery (2026-11-16):** white outlines alone floated over blurry
 imagery and read like roads. Over imagery the whole buildings (and the zoomed out
-ones) are now filled like roofs (a muted tile colour at 70 %, their clickable inside
+ones) are now filled like roofs (a muted tile colour at 45 %, first 70 %; their clickable inside
 doing it) with a small shadow 2 px down and right on screen; outlines dark
 everywhere. Parts get no fill (they lie inside buildings: it would darken them), so
 their outlines show faintly through the roof.
