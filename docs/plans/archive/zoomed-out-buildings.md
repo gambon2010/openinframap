@@ -1,6 +1,6 @@
 # Plan: buildings at zoom 12–14 in the background map
 
-Status: **proposed** (2026-11-16), not started.
+Status: **done** (2026-11-16): `docs/HISTORY.md`, "Buildings zoomed out, inside the background map". France measured 6 min and 56 MB (estimates below were 10–15 min, 150–300 MB).
 
 ## Goal
 

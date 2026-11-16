@@ -482,6 +482,32 @@ million building pieces in Protomaps' zoom 15 tiles, 279 bytes each in PostGIS
 remaking its tiles. The exact-outline endpoint stays: a copy also gets the pieces in
 tiles the browser hasn't loaded.
 
+**Buildings zoomed out, inside the background map** (2026-11-16, asked for; the plan:
+`docs/plans/archive/zoomed-out-buildings.md`): zooms 12 to 14 show the buildings
+big enough to see (≥ 10,000 m² at 12, 2,500 at 13, 600 at 14) from the background
+map itself, no database or Tegola. Protomaps' tiles below 15 hold no single
+buildings: its build merges them into blocks (central Paris at zoom 13: 15 shapes,
+the largest 1.7 km² from 2,998 buildings), the background map's pale city texture,
+kept as it is. `web-backend/src/fork/background/zoomed_buildings.py` reads an
+area's zoom 15 tiles one zoom 12 block (64 tiles) at a time, 8 processes, joins each
+building's pieces by id, measures it, and writes the block's zoom 12–14 tiles (one
+layer, `buildings_large`: kind, height, area_m2, Protomaps' id) into
+`<area>.buildings.pmtiles`, written under a hidden name then renamed. France: 6 min,
+17,793 blocks, 155,311 tiles, 56 MB, 0.9 GB of memory; Luxembourg 4 s. The backend
+appends the area's companion tile to the background map's own at zooms 12–14 (a
+tile is a list of layers: two laid end to end are one; its own layer name, as the
+vector tile format forbids two layers of one name): 9 ms for a joined tile over
+central Paris (unzip, join, zip again), 1–2 ms elsewhere, 0.2 ms untouched. Made
+right after each background map download (`extract.py`, in the backend's image,
+data/basemap/ mounted writable at /work); for one downloaded before, the menu
+offers *Buildings zoomed out* (`satellite.py zoomed-buildings --area`); removing an
+area removes it. Frontend: a second `clickableArea` on the same `basemap` source,
+zooms 12–15; details take `area_m2` from the tile. `Archive.tile_ids` (the file's
+tile ids from its directories) is shared by the build step. Tests:
+`tests/fork/test_zoomed_buildings.py`, `test_background.py` (appending),
+`scripts/tests/test_maps.py` (offer, removal), `test_one_source.py` (the companion's
+name and zoom agree between the scripts and the backend).
+
 **CI's scripts job fixed** (2026-11-16): ruff run from the repo root (as CI does)
 took the scripts' own modules (`netsafe`, `satimagery`, ...) for outside packages and
 wanted their imports sorted otherwise; `scripts/ruff.toml` (`src = ["."]`) tells it.

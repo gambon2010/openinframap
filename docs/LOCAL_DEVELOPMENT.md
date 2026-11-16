@@ -205,7 +205,15 @@ zoomed out) comes by default with any download and every build. Sizes grow quick
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
 `data/basemap/<region>.pmtiles`. The backend serves every background map there
 together (each tile from the first file that has it, so several areas show at
-once), at `/background`, the frontend's default. Unattended: `build-region.sh --basemap full`, or
+once), at `/background`, the frontend's default.
+
+Buildings: Protomaps' tiles hold every building only from zoom 15. Right after an
+area is downloaded, the buildings big enough to see zoomed out (zooms 12 to 14)
+are made from them into `data/basemap/<region>.buildings.pmtiles` (France: 6 minutes,
+56 MB); the backend adds them to the background map's tiles, and *Data layers →
+Background map → Buildings* shows them. For an area downloaded before, the menu
+offers *Buildings zoomed out* (or `python3 scripts/satellite.py zoomed-buildings
+--area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
 `python3 scripts/satellite.py maps --source protomaps --area france --yes`.
 
 ## Satellite imagery (offline)
@@ -437,7 +445,7 @@ DATABASE_URL=postgresql+asyncpg://osm:osm@localhost:5432/osm
 | Feature | Offline? |
 |---------|----------|
 | Infrastructure map (power, telecoms, pipelines, water) | Yes, from local Tegola |
-| Background map (roads, buildings from zoom 15, labels) | Yes, where you downloaded it (the world to zoom 8 comes with any download); nothing elsewhere: there's no online one |
+| Background map (roads, buildings, labels) | Yes, where you downloaded it (the world to zoom 8 comes with any download); nothing elsewhere: there's no online one |
 | Search for places (countries, cities, towns, villages, hamlets, suburbs, islands) | Yes, for the built region. Cities and towns are listed before infrastructure with the same name |
 | Search for power plants and substations | Yes. Names that start with what you type come first, then names with a word that does ("vianden" also finds "Centrale de Vianden") |
 | Search for coordinates | Yes |

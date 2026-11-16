@@ -1,7 +1,7 @@
 // Fork: building outlines, a layer to switch on (Data layers → Background map →
 // Buildings), over the map and over satellite imagery: dark on the map, white on
-// imagery. From zoom 15 (fork/core/buildings.ts: only those tiles hold them all),
-// from the background map already downloaded. Clickable anywhere
+// imagery. Every building from zoom 15; zoomed out (12 to 14) those big enough to
+// see there (fork/core/buildings.ts), all from the background map. Clickable anywhere
 // inside (core/map-style.ts clickableArea): its details (height, area), and My
 // layers' copy tool or the details' copy button make it an area of your own.
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
@@ -16,6 +16,9 @@ import {
   BUILDINGS_PREFIX,
   BUILDINGS_SOURCE,
   BUILDINGS_SOURCE_LAYER,
+  ZOOMED_OUT_LAYER,
+  ZOOMED_OUT_MINZOOM,
+  ZOOMED_OUT_SOURCE_LAYER,
   buildingOutline,
   isBuildingLayer,
   outlineArea
@@ -31,11 +34,24 @@ let theMap: Map | undefined
 const OUTLINE_PAINT: LineLayerSpecification['paint'] = {
   'line-color': OUTLINE.map,
   'line-opacity': 0.8,
-  'line-width': ['interpolate', ['linear'], ['zoom'], 15, 1, 18, 2, 20, 3]
+  'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 15, 1, 18, 2, 20, 3]
 }
 
 const buildings: ForkModule = {
   layers: () => [
+    // Zoomed out: those big enough to see at each zoom.
+    ...clickableArea(
+      ZOOMED_OUT_LAYER,
+      {
+        source: BUILDINGS_SOURCE,
+        sourceLayer: ZOOMED_OUT_SOURCE_LAYER,
+        minzoom: ZOOMED_OUT_MINZOOM,
+        maxzoom: BUILDINGS_MINZOOM
+      },
+      -10,
+      OUTLINE_PAINT
+    ),
+    // Every one.
     ...clickableArea(
       BUILDINGS_LAYER,
       {
@@ -53,13 +69,14 @@ const buildings: ForkModule = {
   switcherGroups: () => [
     new LayerGroup(t('layers.background-map', 'Background map'), [
       // K: a letter never used before (E and N were the removed Osmose and night lights).
-      new Layer('K', t('layers.buildings', 'Buildings (from zoom 15)'), BUILDINGS_PREFIX, false)
+      new Layer('K', t('layers.buildings', 'Buildings'), BUILDINGS_PREFIX, false)
     ])
   ],
 
   init: ({ map }) => {
     theMap = map
     followBackground(map, BUILDINGS_LAYER, 'line-color', OUTLINE)
+    followBackground(map, ZOOMED_OUT_LAYER, 'line-color', OUTLINE)
   },
 
   popup: {
@@ -72,8 +89,13 @@ const buildings: ForkModule = {
 function details(feature: MapGeoJSONFeature): HTMLElement {
   const p = feature.properties
   const outline = (theMap && buildingOutline(theMap, feature)) || feature.geometry
+  // Zoomed out, the tiles say it (measured whole when they were made).
   const area =
-    outline.type === 'Polygon' || outline.type === 'MultiPolygon' ? outlineArea(outline) : undefined
+    typeof p.area_m2 === 'number'
+      ? p.area_m2
+      : outline.type === 'Polygon' || outline.type === 'MultiPolygon'
+        ? outlineArea(outline)
+        : undefined
   return detailsCard(
     p.kind === 'building_part'
       ? t('buildings.part', 'Part of a building')

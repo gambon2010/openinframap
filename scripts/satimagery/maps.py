@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import coverage, inventory, ui
+from . import coverage, extract, inventory, ui
 from .inventory import Entry
 from .jobs import Job, read_queue, save_queue, work_zoom
 from .offers import SourceOffers
@@ -345,6 +345,7 @@ class Maps(SourceOffers):
             (self.folder / e.file).unlink(missing_ok=True)
             if source.id == "protomaps":
                 (self.folder / f"{e.area}.json").unlink(missing_ok=True)
+                extract.zoomed_buildings_of(self.folder, e.area).unlink(missing_ok=True)
         ui.say(
             f"Deleted {ui.human(size)}. The map shows it once the scripts update it (start.sh)."
         )

@@ -80,6 +80,8 @@ class SourceOffers:
         if area == "world":
             rows.append(self.world_low_offer())
         rows.append(self.basemap_offer(area))
+        if extract.zoomed_buildings_missing(self.folder, area):
+            rows.append(self.zoomed_buildings_offer(area))
         return rows
 
     def have(self, source: str, area: str) -> Entry | None:
@@ -344,6 +346,19 @@ class SourceOffers:
         return ["Background map", have, add], (
             lambda: self.basemap_jobs(area)
         ) if offered else None
+
+    def zoomed_buildings_offer(self, area: str):
+        """The buildings zoomed out of a background map already there (made with
+        each download; offered for one made before, or if making them failed)."""
+        size = (self.folder / f"{area}.pmtiles").stat().st_size
+        job = Job(
+            f"Buildings zoomed out, {self.name(area)}",
+            ["zoomed-buildings", "--area", area, "--basemap-dir", str(self.folder)],
+            kept=round(size * extract.ZOOMED_BUILDINGS_SIZE),
+            seconds=size * extract.ZOOMED_BUILDINGS_SECONDS_PER_BYTE,
+        )
+        row = ["Buildings zoomed out (z12–14)", "—", ui.human(job.kept)]
+        return row, lambda: [job]
 
     def world_low_offer(self):
         """The whole world's background map zoomed out (to zoom 8): every

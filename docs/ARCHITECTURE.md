@@ -55,7 +55,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   background   Settings → Background: the map in high contrast or original colours, or imagery
   satellite    the imagery (tells services/background.ts what there is)
-  buildings    building outlines from zoom 15, a layer to switch on (clickable: details, copy)
+  buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
+               to switch on (clickable: details, copy)
   map-sources  background tiles and Photon (Settings)
   layout       no header; the dock, About in the credits, the search box top left
   account      who is logged in and Log out (a map button), Settings → Accounts (admins)
@@ -166,8 +167,11 @@ session):
 - `map_data.py` (a map feature's full geometry);
 - `background/` (the background map's tiles, `/background/{z}/{x}/{y}.mvt`: each from
   the first `data/basemap/<area>.pmtiles` that has it, so several areas show together;
-  satellite imagery is the `satellite` service's; `buildings.py`, a building's whole
-  outline from the zoom 15 tiles, `/background/building/{id}`, for copies);
+  at zooms 12 to 14 with the area's `<area>.buildings.pmtiles` tile appended;
+  satellite imagery is the `satellite` service's; `zoomed_buildings.py`, a build step
+  run after each download: the buildings big enough to see zoomed out, from the zoom 15
+  tiles, into `<area>.buildings.pmtiles`; `buildings.py`, a building's whole outline
+  from the zoom 15 tiles, `/background/building/{id}`, for copies);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:

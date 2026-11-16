@@ -3,6 +3,7 @@ temporary data/basemap/ (the downloads it starts are recorded, not run)."""
 
 import io
 import json
+import os
 import re
 import subprocess
 
@@ -290,3 +291,36 @@ def test_tile_server_photos_without_questions(folder):
     assert argv[:3] == ["detailed", "--source", "lu_geoportail"]
     assert argv[argv.index("--maxzoom") + 1] == "17"  # its last zoom
     assert argv[-1].endswith("luxembourg.sat-detailed-lu_geoportail.pmtiles")
+
+
+def test_buildings_zoomed_out_offered_for_a_background_map_without_them(folder, capsys):
+    background_map(folder, "france", "20261110")
+    menu(folder, "1\n2\n5\ny\n\n")  # Add → France → Buildings zoomed out (5th)
+    assert "Buildings zoomed out (z12–14)" in capsys.readouterr().err
+    (argv,) = folder["ran"]
+    assert argv[:3] == ["zoomed-buildings", "--area", "france"]
+    # Once made (newer than the background map), no longer offered.
+    (folder["dir"] / "france.buildings.pmtiles").write_bytes(b"made")
+    menu(folder, "1\n2\n\n\n")
+    assert "Buildings zoomed out" not in capsys.readouterr().err
+
+
+def test_buildings_zoomed_out_need_every_building(folder):
+    # The world to zoom 8 has none; an older companion than its map is made again.
+    assert not extract.zoomed_buildings_missing(folder["dir"], "world")
+    background_map(folder, "france", "20261110")
+    assert extract.zoomed_buildings_missing(folder["dir"], "france")
+    companion = extract.zoomed_buildings_of(folder["dir"], "france")
+    companion.write_bytes(b"made")
+    assert not extract.zoomed_buildings_missing(folder["dir"], "france")
+    older = (folder["dir"] / "france.pmtiles").stat().st_mtime - 10
+    os.utime(companion, (older, older))
+    assert extract.zoomed_buildings_missing(folder["dir"], "france")
+
+
+def test_a_background_map_removed_with_its_buildings_zoomed_out(folder, capsys):
+    background_map(folder, "france", "20261110")
+    extract.zoomed_buildings_of(folder["dir"], "france").write_bytes(b"made")
+    menu(folder, "2\n5\ny\n\n")  # Remove → France, Background map (5th)
+    assert not (folder["dir"] / "france.pmtiles").exists()
+    assert not extract.zoomed_buildings_of(folder["dir"], "france").exists()

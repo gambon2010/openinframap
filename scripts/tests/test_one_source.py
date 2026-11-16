@@ -46,3 +46,14 @@ def test_ports_agree_everywhere():
 def test_the_pmtiles_program_is_one_version():
     image = re.search(r"image: (protomaps/go-pmtiles:\S+)", COMPOSE)[1]
     assert image == extract.PMTILES_IMAGE
+
+
+def test_the_buildings_zoomed_out_are_named_and_zoomed_alike():
+    backend = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "__init__.py"
+    ).read_text()
+    made = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "zoomed_buildings.py"
+    ).read_text()
+    assert f'COMPANION = "{extract.ZOOMED_BUILDINGS}"' in backend
+    assert f"FULL_ZOOM = {extract.FULL_ZOOM}" in made

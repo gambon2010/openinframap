@@ -9,12 +9,17 @@ Protomaps edition: it's sent once, nothing is drawn twice. Files are tried
 newest edition first (the build in <area>.json), the whole world's last (the
 fallback). No file has it: 204, an empty tile, as pmtiles serve answers.
 
+At zooms 12 to 14, the tile of the area's companion, <area>.buildings.pmtiles
+(the buildings zoomed out, zoomed_buildings.py), is appended to it: a tile is a
+list of layers, so the two laid end to end are one tile with the layers of both.
+
 The satellite imagery files (*.sat-*.pmtiles) are served by the "satellite"
 service, not here. Files are read through mmap, each file's index cached, and
 picked up again when they change (no restart)."""
 
 from __future__ import annotations
 
+import gzip
 import json
 import mmap
 from functools import lru_cache
@@ -33,11 +38,19 @@ BASEMAP_DIR = LOCAL_DATA_DIR / "basemap"
 WORLD = "world"
 MEDIA_TYPE = "application/vnd.mapbox-vector-tile"
 CACHE_SECONDS = 3600
+# The buildings zoomed out: <area>.buildings.pmtiles, these zooms (zoomed_buildings.py).
+COMPANION = ".buildings.pmtiles"
+COMPANION_ZOOMS = range(12, 15)
 
 
 def is_background_map(path: Path) -> bool:
-    """<area>.pmtiles: not satellite imagery (<area>.sat-*), nor a partial download."""
+    """<area>.pmtiles: not satellite imagery (<area>.sat-*), a companion
+    (<area>.buildings.pmtiles), nor a partial download."""
     return path.suffix == ".pmtiles" and "." not in path.stem and not path.name.startswith(".")
+
+
+def companion_of(background_map: Path) -> Path:
+    return background_map.with_name(background_map.stem + COMPANION)
 
 
 class Archive:
@@ -88,6 +101,19 @@ class Archive:
             return self.data[start : start + entry.length]
         return None
 
+    def tile_ids(self):
+        """Every tile id in the file, from its directories (no tile read)."""
+        h = self.header
+
+        def walk(offset: int, length: int):
+            for entry in self.directory(offset, length):
+                if entry.run_length:
+                    yield from range(entry.tile_id, entry.tile_id + entry.run_length)
+                else:
+                    yield from walk(h["leaf_directory_offset"] + entry.offset, entry.length)
+
+        yield from walk(h["root_offset"], h["root_length"])
+
 
 def edition_of(path: Path) -> str:
     """Protomaps' build a file was cut from (its manifest: "20261014.pmtiles")."""
@@ -99,7 +125,8 @@ def edition_of(path: Path) -> str:
 
 
 class Archives:
-    """The background map files in a folder, in the order they're tried."""
+    """The background map files in a folder, in the order they're tried, and their
+    companions."""
 
     def __init__(self, folder: Path):
         self.folder = folder
@@ -108,7 +135,9 @@ class Archives:
 
     def ordered(self) -> list[Archive]:
         try:
-            paths = sorted(p for p in self.folder.iterdir() if is_background_map(p))
+            paths = sorted(
+                p for p in self.folder.iterdir() if is_background_map(p) or p.name.endswith(COMPANION)
+            )
             listing = tuple((p, p.stat().st_mtime, p.stat().st_size) for p in paths)
         except OSError:
             return []
@@ -122,7 +151,7 @@ class Archives:
                     kept[path] = archive
             self.open = kept
         # Newest edition first (unknown last); the whole world last of all.
-        archives = sorted(self.open.values(), key=lambda a: a.area)
+        archives = sorted((a for a in self.open.values() if is_background_map(a.path)), key=lambda a: a.area)
         archives.sort(key=lambda a: a.edition, reverse=True)
         archives.sort(key=lambda a: a.area == WORLD)
         return archives
@@ -131,8 +160,25 @@ class Archives:
         for archive in self.ordered():
             data = archive.get(z, x, y)
             if data:
+                if z in COMPANION_ZOOMS:
+                    data = self.with_companion(data, archive, z, x, y)
                 return data, archive
         return None
+
+    def with_companion(self, data: bytes, archive: Archive, z: int, x: int, y: int) -> bytes:
+        """The tile with its area's companion tile appended (both unzipped, then
+        zipped again as the area's tiles are)."""
+        companion = self.open.get(companion_of(archive.path))
+        extra = companion.get(z, x, y) if companion else None
+        if not extra:
+            return data
+        gzipped = archive.header["tile_compression"] == Compression.GZIP
+        joined = unzipped(data) + unzipped(extra)
+        return gzip.compress(joined, compresslevel=1, mtime=0) if gzipped else joined
+
+
+def unzipped(data: bytes) -> bytes:
+    return gzip.decompress(data) if data[:2] == b"\x1f\x8b" else data
 
 
 ARCHIVES = Archives(BASEMAP_DIR)

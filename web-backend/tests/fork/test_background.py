@@ -104,3 +104,21 @@ def test_a_big_file_with_leaf_directories(client):
     make(folder / "big.pmtiles", tiles)
     assert got(client, 10, 77, 33) == (200, b"77,33")
     assert got(client, 10, 500, 500)[0] == 204
+
+
+def test_the_buildings_zoomed_out_are_appended_from_zoom_12_to_14(client):
+    client, folder = client
+    make(
+        folder / "france.pmtiles",
+        {(11, 1, 1): b"low", (12, 2, 2): b"base", (14, 8, 8): b"z14", (15, 16, 16): b"z15"},
+    )
+    make(folder / "france.buildings.pmtiles", {(12, 2, 2): b"+ours", (14, 8, 8): b"+ours14"})
+    # Another area's companion never joins France's tiles.
+    make(folder / "spain.buildings.pmtiles", {(12, 2, 2): b"+spain"})
+    assert got(client, 12, 2, 2) == (200, b"base+ours")
+    assert got(client, 14, 8, 8) == (200, b"z14+ours14")
+    assert got(client, 11, 1, 1) == (200, b"low")
+    assert got(client, 15, 16, 16) == (200, b"z15")
+    # A companion alone isn't an area of its own.
+    assert got(client, 12, 3, 3)[0] == 204
+    assert [a.area for a in background.ARCHIVES.ordered()] == ["france"]

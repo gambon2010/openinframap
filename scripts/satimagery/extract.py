@@ -1,7 +1,9 @@
 """Fork: offline maps. The background map (streets, places, buildings), cut out of
 Protomaps' daily world build with pmtiles (in Docker) into
 data/basemap/<area>.pmtiles, with its manifest (<area>.json: the build it came
-from). The backend serves them all together (web-backend/src/fork/background/).
+from), then its buildings zoomed out (<area>.buildings.pmtiles, zooms 12 to 14,
+made in the backend's image: web-backend/src/fork/background/zoomed_buildings.py).
+The backend serves them all together (web-backend/src/fork/background/).
 Full detail only."""
 
 from __future__ import annotations
@@ -18,11 +20,20 @@ from pathlib import Path
 import netsafe
 
 from . import ui
+from .pmtiles import read_header
 from .sources import SOURCES
 
 PROTOMAPS = SOURCES["protomaps"]
 BUILDS_URL = "https://build-metadata.protomaps.dev/builds.json"
 PMTILES_IMAGE = "protomaps/go-pmtiles:v1.28.0"
+# The buildings zoomed out, beside a background map with every building (zoom 15):
+# the backend's COMPANION (scripts/tests/test_one_source.py).
+ZOOMED_BUILDINGS = ".buildings.pmtiles"
+FULL_ZOOM = 15
+# Their size and time against the background map's size (France, 2026-11-16).
+ZOOMED_BUILDINGS_SIZE = 56 / 5390  # 56 MB from 5.4 GB
+ZOOMED_BUILDINGS_SECONDS_PER_BYTE = 370 / 5.39e9  # 6 min, 8 processes
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def latest_build() -> tuple[str, int] | None:
@@ -185,3 +196,65 @@ def command_basemap(args) -> None:
         + "\n"
     )
     print(f"{ui.human(out.stat().st_size)} -> {out.name}", file=sys.stderr)
+    if zoomed_buildings_missing(folder, args.area):
+        try:
+            make_zoomed_buildings(folder, args.area)
+        except subprocess.CalledProcessError:
+            # The background map is kept; the menu offers its buildings again.
+            print(
+                f"Making its buildings zoomed out failed. Again: "
+                f"python3 scripts/satellite.py zoomed-buildings --area {args.area}",
+                file=sys.stderr,
+            )
+
+
+def zoomed_buildings_of(folder: Path, area: str) -> Path:
+    return folder / f"{area}{ZOOMED_BUILDINGS}"
+
+
+def zoomed_buildings_missing(folder: Path, area: str) -> bool:
+    """Whether an area's background map has every building (zoom 15) but not its
+    buildings zoomed out, or only older ones than it."""
+    background = folder / f"{area}.pmtiles"
+    header = read_header(background)
+    if not header or header.maxzoom < FULL_ZOOM:
+        return False
+    companion = zoomed_buildings_of(folder, area)
+    return (
+        not companion.exists() or companion.stat().st_mtime < background.stat().st_mtime
+    )
+
+
+def make_zoomed_buildings(folder: Path, area: str) -> None:
+    """An area's buildings zoomed out, in the backend's image (its pmtiles and
+    shapely packages; France: 6 min), data/basemap/ written at /work."""
+    compose = ["docker", "compose", "--progress", "quiet"]
+    quiet = {"cwd": REPO_ROOT, "stdin": subprocess.DEVNULL}
+    subprocess.run([*compose, "build", "backend"], check=True, **quiet)
+    subprocess.run(
+        [
+            *compose,
+            "run",
+            "--rm",
+            "--no-deps",
+            "-T",
+            "-v",
+            f"{folder.resolve()}:/work:z",
+            "--entrypoint",
+            "/app/.venv/bin/python",
+            "backend",
+            "-m",
+            "src.fork.background.zoomed_buildings",
+            "--area",
+            area,
+            "--folder",
+            "/work",
+        ],
+        check=True,
+        **quiet,
+    )
+
+
+def command_zoomed_buildings(args) -> None:
+    """satellite.py zoomed-buildings --area AREA: an area already downloaded."""
+    make_zoomed_buildings(Path(args.basemap_dir), args.area)

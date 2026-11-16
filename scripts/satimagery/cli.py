@@ -17,7 +17,7 @@ import netsafe
 from .bdortho import TILER_IMAGE, command_bdortho
 from .download import MBTiles, cell_exists, download_tiles
 from .estimate import world_cells, world_overview_tiles, worldcover_cells
-from .extract import PMTILES_IMAGE, command_basemap
+from .extract import PMTILES_IMAGE, command_basemap, command_zoomed_buildings
 from .gdal import docker_run, regional_pipeline, to_pmtiles
 from .inventory import imagery_summary, imagery_tiers
 from .maps import command_maps
@@ -304,6 +304,12 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--build", required=True, help="Protomaps' build (20261014.pmtiles)")
     p.add_argument("--basemap-dir", required=True)
 
+    p = sub.add_parser(
+        "zoomed-buildings", help="an area's buildings zoomed out (zooms 12 to 14)"
+    )
+    p.add_argument("--area", required=True)
+    p.add_argument("--basemap-dir", default=BASEMAP_DIR)
+
     # For the scripts.
     sub.add_parser("sources", help="the aerial photo sources (JSON)")
     p = sub.add_parser("tiers", help="the imagery there is, as VITE_SATELLITE_TIERS")
@@ -325,6 +331,7 @@ def run_command(args) -> None:
         "detailed": command_detailed,
         "bdortho": command_bdortho,
         "basemap": command_basemap,
+        "zoomed-buildings": command_zoomed_buildings,
         "sources": command_sources,
         "tiers": command_tiers,
         "summary": command_summary,
