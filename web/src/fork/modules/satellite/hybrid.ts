@@ -2,7 +2,7 @@
 // imagery. The background map's own (white roads, light grey railways: made for a
 // light map) vanish on photos, so these are the fork's own layers on the same
 // source, shown only in that mode (index.ts places them right above the imagery):
-// roads at the map's widths (their real size, readable on coarse imagery too) but
+// roads at three quarters of the map's widths (readable on coarse imagery too) but
 // never thinner than a few pixels, each with a dark edge and coloured by importance,
 // tunnels dashed, railways black and white; all fade a little zoomed in, where the
 // photos show the roads themselves. Street names turn white on a dark halo over any imagery.
@@ -122,14 +122,15 @@ function mapLineWidth(id: string) {
   return width
 }
 
-/** A width by zoom (an interpolation, as the map's all are) never under `minimum`. */
-export function atLeast(width: unknown, minimum: number): ExpressionSpecification {
+/** A width by zoom (an interpolation, as the map's all are) times `scale`, never
+ * under `minimum`. */
+export function resized(width: unknown, scale: number, minimum: number): ExpressionSpecification {
   if (!Array.isArray(width) || width[0] !== 'interpolate')
     throw new Error(`Not a width by zoom: ${JSON.stringify(width)}`)
   const [operator, curve, input, ...stops] = width
   // Stops are zoom, width, zoom, width...: only the widths change.
-  const raised = stops.map((stop, i) => (i % 2 === 1 ? Math.max(Number(stop), minimum) : stop))
-  return [operator, curve, input, ...raised] as ExpressionSpecification
+  const widths = stops.map((stop, i) => (i % 2 === 1 ? Math.max(Number(stop) * scale, minimum) : stop))
+  return [operator, curve, input, ...widths] as ExpressionSpecification
 }
 
 /** Full strength until zoomed right in, then fading: the photos show the roads there. */
@@ -168,7 +169,7 @@ function line(
 /** A kind of road above ground or in a tunnel: its dark edge, then the road. */
 function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpecificationWithZIndex[] {
   const where = tunnel ? 'tunnel' : 'ground'
-  const width = atLeast(mapLineWidth(road.widthFrom), road.minWidth)
+  const width = resized(mapLineWidth(road.widthFrom), look.ROAD_WIDTH_SCALE, road.minWidth)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, road.filter]
   const edge = line(
     `roads_${where}_${road.name}_edge`,
@@ -202,7 +203,7 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
  * tunnel: the edge and the black line dashed, like the roads' tunnels. */
 function railLayers(tunnel: boolean, visible: boolean): LayerSpecificationWithZIndex[] {
   const where = tunnel ? 'tunnel' : 'ground'
-  const width = atLeast(mapLineWidth('osm_rail'), look.RAIL_MIN_WIDTH)
+  const width = resized(mapLineWidth('osm_rail'), 1, look.RAIL_MIN_WIDTH)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, isRail]
   const opacity = fading(1)
   const tunnelDashes = (dashes: number[]) => (tunnel ? { 'line-dasharray': dashes } : {})

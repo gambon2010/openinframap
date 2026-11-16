@@ -430,7 +430,9 @@ now dashed at full strength (railways: the black line dashed, no white dashes). 
 out the map's widths go down to nothing, so roads were their dark edges only (black
 lines) and dashes too small to see: every road now has a minimum width (motorways 3 px,
 main roads 1.5, railways 2.5, links and small roads 1.5; main roads first 2.5, then
-2, both a little thick), so tunnels are dashed at every zoom.
+2, both a little thick), so tunnels are dashed at every zoom. Then main roads 1.25 px
+and all roads three quarters of the map's widths: zoomed in, its widths are wide bands
+over the photos.
 
 ---
 

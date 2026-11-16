@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
-import { atLeast, hybridLayers, isHybridLayer } from './hybrid.ts'
+import { resized, hybridLayers, isHybridLayer } from './hybrid.ts'
 import {
   HIGHWAY_MIN_WIDTH,
+  ROAD_WIDTH_SCALE,
   RAIL_MIN_WIDTH,
   SMALL_ROAD_MIN_WIDTH,
   SMALL_ROADS_FROM_ZOOM,
@@ -24,19 +25,31 @@ describe('roads over imagery', () => {
   })
 
   it('keep the background map’s widths (their real size), never too thin, with a dark edge around them', () => {
-    const highway = atLeast(mapWidth('osm_roads_highway'), HIGHWAY_MIN_WIDTH)
+    const highway = resized(mapWidth('osm_roads_highway'), ROAD_WIDTH_SCALE, HIGHWAY_MIN_WIDTH)
     expect(layer('roads_ground_highway').paint?.['line-width']).toEqual(highway)
     expect(layer('roads_ground_highway_edge').paint?.['line-gap-width']).toEqual(highway)
     expect(layer('roads_tunnel_minor').paint?.['line-width']).toEqual(
-      atLeast(mapWidth('osm_roads_minor'), SMALL_ROAD_MIN_WIDTH)
+      resized(mapWidth('osm_roads_minor'), ROAD_WIDTH_SCALE, SMALL_ROAD_MIN_WIDTH)
     )
-    expect(layer('rail_ground').paint?.['line-width']).toEqual(atLeast(mapWidth('osm_rail'), RAIL_MIN_WIDTH))
+    expect(layer('rail_ground').paint?.['line-width']).toEqual(
+      resized(mapWidth('osm_rail'), 1, RAIL_MIN_WIDTH)
+    )
   })
 
-  it('raise only the widths of a width by zoom, not the zooms', () => {
+  it('resize only the widths of a width by zoom, not the zooms', () => {
     const width = ['interpolate', ['exponential', 1.6], ['zoom'], 3, 0, 6, 1.1, 18, 36]
-    expect(atLeast(width, 3)).toEqual(['interpolate', ['exponential', 1.6], ['zoom'], 3, 3, 6, 3, 18, 36])
-    expect(() => atLeast(4, 3)).toThrow()
+    expect(resized(width, 0.5, 3)).toEqual([
+      'interpolate',
+      ['exponential', 1.6],
+      ['zoom'],
+      3,
+      3,
+      6,
+      3,
+      18,
+      18
+    ])
+    expect(() => resized(4, 1, 3)).toThrow()
   })
 
   it('are coloured by importance', () => {
