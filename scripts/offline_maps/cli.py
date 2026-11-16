@@ -316,7 +316,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     p = sub.add_parser("tiers", help="the imagery there is, as VITE_SATELLITE_TIERS")
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
     p.add_argument(
-        "--server", default="http://localhost:8090", help="the imagery server"
+        "--server", default="http://localhost:8810", help="the imagery server"
     )
     p = sub.add_parser("summary", help="the imagery there is, in words")
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)

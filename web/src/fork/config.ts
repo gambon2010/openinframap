@@ -5,7 +5,7 @@
 const THROUGH_GATE: [RegExp, string][] = [
   [/^https?:\/\/(localhost|127\.0\.0\.1):7800/, '/tegola'],
   [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, ''],
-  [/^https?:\/\/(localhost|127\.0\.0\.1):8090/, '/satellite']
+  [/^https?:\/\/(localhost|127\.0\.0\.1):8810/, '/satellite']
 ]
 
 /** A local service's address as reached through the gate, from this page. */

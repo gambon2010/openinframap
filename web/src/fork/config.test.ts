@@ -6,7 +6,7 @@ describe('throughGate', () => {
   it('sends the local services through the gate', () => {
     expect(throughGate('http://localhost:7800/maps', gate)).toBe(`${gate}/tegola/maps`)
     expect(throughGate('http://localhost:8001', gate)).toBe(gate)
-    expect(throughGate('http://127.0.0.1:8090/france/{z}/{x}/{y}.mvt', gate)).toBe(
+    expect(throughGate('http://127.0.0.1:8810/france/{z}/{x}/{y}.mvt', gate)).toBe(
       `${gate}/satellite/france/{z}/{x}/{y}.mvt`
     )
   })

@@ -19,7 +19,7 @@ OFFLINE_MAPS_DIR="$DATA_DIR/offline-maps"
 # checks they agree, with the gate's and the frontend's too).
 TEGOLA_PORT=7800
 BACKEND_PORT=8001
-SATELLITE_PORT=8090
+SATELLITE_PORT=8810
 WEB_ENV="$REPO_ROOT/web/.env"
 # Ready-made databases made by scripts/export-db.sh, imported by import-db.sh.
 EXPORTS_DIR="$DATA_DIR/exports"

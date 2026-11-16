@@ -45,8 +45,8 @@ def test_satellite_tiers_value(tmp_path):
     assert "|NASA Blue Marble;" in value
     value = re.sub(r"\|[^;]*", "", value)
     assert value == (
-        "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
-        "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
+        "http://localhost:8810/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
+        "http://localhost:8810/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
     )
     assert (
         bash("has_satellite && echo yes || echo no", OFFLINE_MAPS_DIR=str(tmp_path))
@@ -99,11 +99,11 @@ def test_tiers_list_every_area_and_source(tmp_path):
     value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
     assert "Digitaal Vlaanderen" in value
     assert re.sub(r"\|[^;]*", "", value).split(";") == [
-        "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
-        "http://localhost:8090/world.sat-regional/{z}/{x}/{y}.webp 9 10",
-        "http://localhost:8090/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
-        "http://localhost:8090/alsace.sat-detailed-fr_ign/{z}/{x}/{y}.jpg 14 15",
-        "http://localhost:8090/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
+        "http://localhost:8810/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
+        "http://localhost:8810/world.sat-regional/{z}/{x}/{y}.webp 9 10",
+        "http://localhost:8810/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
+        "http://localhost:8810/alsace.sat-detailed-fr_ign/{z}/{x}/{y}.jpg 14 15",
+        "http://localhost:8810/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
     ]
 
 
@@ -122,7 +122,7 @@ def test_departement_files_carry_their_bounds_and_are_summed_up(tmp_path):
         )
     value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
     assert (
-        "http://localhost:8090/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
+        "http://localhost:8810/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
         "6.94000,48.12000,8.23000,49.08000|© IGN (Licence Ouverte)"
     ) in value
     summary = bash("satellite_summary", OFFLINE_MAPS_DIR=str(tmp_path))

@@ -296,7 +296,7 @@ def test_import(sandbox):
     # The satellite imagery copied along is switched on.
     env = (sandbox.root / "web" / ".env").read_text()
     assert (
-        "VITE_SATELLITE_TIERS=http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8"
+        "VITE_SATELLITE_TIERS=http://localhost:8810/world.sat-overview/{z}/{x}/{y}.jpg 0 8"
         in env
     )
     # The tile server is recreated so it doesn't serve the old data's tiles.

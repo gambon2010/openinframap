@@ -62,7 +62,7 @@ services:
 
   # Offline satellite imagery: serves the imagery files in data/offline-maps/
   # (<area>.sat-*.pmtiles, scripts/offline-maps.py) at
-  # http://localhost:8090/<file>/{z}/{x}/{y}.<ext>. Its image's pmtiles is also
+  # http://localhost:8810/<file>/{z}/{x}/{y}.<ext>. Its image's pmtiles is also
   # used by the scripts (cutting background maps, packing imagery). The
   # background map itself is served by the backend (/background).
   satellite:
@@ -71,7 +71,7 @@ services:
     # (the frontend greys out satellite imagery where there's none).
     command: ["serve", "/data", "--cors=*", "--public-url=https://localhost:8800/satellite"]
     ports:
-      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:8810:8080"
     volumes:
       - ./data/offline-maps:/data:ro,z
 
