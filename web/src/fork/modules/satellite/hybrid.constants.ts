@@ -21,8 +21,10 @@ export const SMALL_ROADS_ZOOMED_OUT_WIDTH = 1
 export const EDGE_COLOUR = 'hsla(0, 0%, 5%, 0.85)'
 export const EDGE_WIDTH = 1.5
 
-/** Tunnels: underground, so see-through, with a dashed edge. */
-export const TUNNEL_OPACITY = 0.45
+/** Tunnels: the road dashed, on a dashed edge, a little see-through (underground);
+ * still strong enough to show over dark forest. */
+export const TUNNEL_OPACITY = 0.75
+export const TUNNEL_DASHES = [2, 1.5]
 export const TUNNEL_EDGE_DASHES = [2, 2]
 
 /** Railways: the classic black line with white dashes, a light edge to part it from dark ground. */

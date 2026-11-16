@@ -3,7 +3,7 @@
 // light map) vanish on photos, so these are the fork's own layers on the same
 // source, shown only in that mode (index.ts places them right above the imagery):
 // roads at the map's widths (their real size, readable on coarse imagery too), each
-// with a dark edge and coloured by importance, tunnels see-through with a dashed
+// with a dark edge and coloured by importance, tunnels dashed and a little see-through
 // edge, railways black and white; all fade a little zoomed in, where the photos show
 // the roads themselves. Street names turn white on a dark halo over any imagery.
 import type { ExpressionSpecification, Map } from 'maplibre-gl'
@@ -24,8 +24,8 @@ interface RoadKind {
   name: string
   /** Which roads, tunnels or not. */
   filter: ExpressionSpecification
-  /** The background map's layers it takes its widths from: above ground, in a tunnel. */
-  widthsFrom: { ground: string; tunnel: string }
+  /** The background map's layer it takes its widths from (tunnels too: the road's size). */
+  widthFrom: string
   colour: string
   opacity: number
   /** Small roads and paths: drawn at their size from this zoom, a thin dark line before. */
@@ -42,7 +42,7 @@ const ROAD_KINDS: RoadKind[] = [
   {
     name: 'paths',
     filter: ['all', kind('other', 'path'), ['!', isPier]],
-    widthsFrom: { ground: 'osm_roads_other', tunnel: 'osm_roads_tunnels_other' },
+    widthFrom: 'osm_roads_other',
     colour: look.MINOR_COLOUR,
     opacity: look.SMALLEST_OPACITY,
     minzoom: look.SMALL_ROADS_FROM_ZOOM,
@@ -51,7 +51,7 @@ const ROAD_KINDS: RoadKind[] = [
   {
     name: 'service',
     filter: ['all', kind('minor_road'), isService],
-    widthsFrom: { ground: 'osm_roads_minor_service', tunnel: 'osm_roads_tunnels_minor' },
+    widthFrom: 'osm_roads_minor_service',
     colour: look.MINOR_COLOUR,
     opacity: look.SMALLEST_OPACITY,
     minzoom: look.SMALL_ROADS_FROM_ZOOM
@@ -59,7 +59,7 @@ const ROAD_KINDS: RoadKind[] = [
   {
     name: 'minor',
     filter: ['all', kind('minor_road'), ['!', isService], ['!', isLink]],
-    widthsFrom: { ground: 'osm_roads_minor', tunnel: 'osm_roads_tunnels_minor' },
+    widthFrom: 'osm_roads_minor',
     colour: look.MINOR_COLOUR,
     opacity: look.MINOR_OPACITY,
     minzoom: look.SMALL_ROADS_FROM_ZOOM
@@ -67,21 +67,21 @@ const ROAD_KINDS: RoadKind[] = [
   {
     name: 'links',
     filter: isLink,
-    widthsFrom: { ground: 'osm_roads_link', tunnel: 'osm_roads_tunnels_link' },
+    widthFrom: 'osm_roads_link',
     colour: look.MAJOR_COLOUR,
     opacity: 1
   },
   {
     name: 'major',
     filter: ['all', kind('major_road'), ['!', isLink]],
-    widthsFrom: { ground: 'osm_roads_major', tunnel: 'osm_roads_tunnels_major' },
+    widthFrom: 'osm_roads_major',
     colour: look.MAJOR_COLOUR,
     opacity: 1
   },
   {
     name: 'highway',
     filter: ['all', kind('highway'), ['!', isLink]],
-    widthsFrom: { ground: 'osm_roads_highway', tunnel: 'osm_roads_tunnels_highway' },
+    widthFrom: 'osm_roads_highway',
     colour: look.HIGHWAY_COLOUR,
     opacity: 1
   }
@@ -150,7 +150,7 @@ function line(
 /** A kind of road above ground or in a tunnel: its dark edge, then the road. */
 function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpecificationWithZIndex[] {
   const where = tunnel ? 'tunnel' : 'ground'
-  const width = mapLineWidth(road.widthsFrom[where])
+  const width = mapLineWidth(road.widthFrom)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, road.filter]
   const strength = tunnel ? look.TUNNEL_OPACITY : 1
   const edge = line(
@@ -173,7 +173,7 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
       'line-color': road.colour,
       'line-width': width,
       'line-opacity': fading(road.opacity * strength),
-      ...(road.dashes ? { 'line-dasharray': road.dashes } : {})
+      ...(tunnel || road.dashes ? { 'line-dasharray': road.dashes ?? look.TUNNEL_DASHES } : {})
     },
     visible,
     { minzoom: road.minzoom }

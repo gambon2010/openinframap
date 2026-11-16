@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
 import { hybridLayers, isHybridLayer } from './hybrid.ts'
-import { SMALL_ROADS_FROM_ZOOM, TUNNEL_EDGE_DASHES, TUNNEL_OPACITY } from './hybrid.constants.ts'
+import {
+  SMALL_ROADS_FROM_ZOOM,
+  TUNNEL_DASHES,
+  TUNNEL_EDGE_DASHES,
+  TUNNEL_OPACITY
+} from './hybrid.constants.ts'
 
 type Line = Extract<ReturnType<typeof hybridLayers>[number], { type: 'line' }>
 const layers = hybridLayers(true) as Line[]
@@ -21,7 +26,7 @@ describe('roads over imagery', () => {
     expect(layer('roads_ground_highway_edge').paint?.['line-gap-width']).toEqual(
       mapWidth('osm_roads_highway')
     )
-    expect(layer('roads_tunnel_minor').paint?.['line-width']).toEqual(mapWidth('osm_roads_tunnels_minor'))
+    expect(layer('roads_tunnel_minor').paint?.['line-width']).toEqual(mapWidth('osm_roads_minor'))
     expect(layer('rail_ground').paint?.['line-width']).toEqual(mapWidth('osm_rail'))
   })
 
@@ -32,13 +37,15 @@ describe('roads over imagery', () => {
     expect(colour('roads_ground_links')).toEqual(colour('roads_ground_major'))
   })
 
-  it('mark tunnels (see-through, dashed edge) instead of hiding them', () => {
+  it('mark tunnels (dashed, a little see-through) instead of hiding them', () => {
     const edge = layer('roads_tunnel_major_edge')
     expect(edge.paint?.['line-dasharray']).toEqual(TUNNEL_EDGE_DASHES)
     expect(JSON.stringify(edge.filter)).toContain('"has","is_tunnel"')
     expect(layer('roads_tunnel_highway').paint?.['line-opacity']).toEqual(
       expect.arrayContaining([TUNNEL_OPACITY])
     )
+    expect(layer('roads_tunnel_major').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+    expect(layer('roads_ground_major').paint?.['line-dasharray']).toBeUndefined()
     expect(layer('rail_tunnel')).toBeDefined()
   })
 

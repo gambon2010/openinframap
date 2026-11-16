@@ -423,6 +423,9 @@ lines, turntables and platforms as kind "rail" too); borders red on a dark edge.
 The background map has no railways before zoom 11 and leaves most small roads out
 before 14; some stretches of big roads are only in its zoom 15 tiles (a part of the
 A35 at Strasbourg, given min_zoom 16 by Protomaps), so they're missing zoomed out.
+Tunnels were first narrower (the map's tunnel widths) and at 45 %: the Maurice-Lemaire
+tunnel couldn't be seen over the Vosges' forest. Now the road's own width and colour,
+dashed, at 75 %.
 
 ---
 
