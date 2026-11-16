@@ -2,10 +2,10 @@
 // imagery. The background map's own (white roads, light grey railways: made for a
 // light map) vanish on photos, so these are the fork's own layers on the same
 // source, shown only in that mode (index.ts places them right above the imagery):
-// roads at the map's widths (their real size, readable on coarse imagery too), each
-// with a dark edge and coloured by importance, tunnels dashed and a little see-through
-// edge, railways black and white; all fade a little zoomed in, where the photos show
-// the roads themselves. Street names turn white on a dark halo over any imagery.
+// roads at the map's widths (their real size, readable on coarse imagery too) but
+// never thinner than a few pixels, each with a dark edge and coloured by importance,
+// tunnels dashed, railways black and white; all fade a little zoomed in, where the
+// photos show the roads themselves. Street names turn white on a dark halo over any imagery.
 import type { ExpressionSpecification, Map } from 'maplibre-gl'
 import baseLayers from '../../../style/style_base.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
@@ -28,6 +28,8 @@ interface RoadKind {
   widthFrom: string
   colour: string
   opacity: number
+  /** Never thinner than this (pixels): the map's widths go down to nothing zoomed out. */
+  minWidth: number
   /** Small roads and paths: drawn at their size from this zoom, a thin dark line before. */
   minzoom?: number
   dashes?: number[]
@@ -41,6 +43,7 @@ const isPier: ExpressionSpecification = ['==', ['get', 'kind_detail'], 'pier']
 const ROAD_KINDS: RoadKind[] = [
   {
     name: 'paths',
+    minWidth: look.SMALL_ROAD_MIN_WIDTH,
     filter: ['all', kind('other', 'path'), ['!', isPier]],
     widthFrom: 'osm_roads_other',
     colour: look.MINOR_COLOUR,
@@ -50,6 +53,7 @@ const ROAD_KINDS: RoadKind[] = [
   },
   {
     name: 'service',
+    minWidth: look.SMALL_ROAD_MIN_WIDTH,
     filter: ['all', kind('minor_road'), isService],
     widthFrom: 'osm_roads_minor_service',
     colour: look.MINOR_COLOUR,
@@ -58,6 +62,7 @@ const ROAD_KINDS: RoadKind[] = [
   },
   {
     name: 'minor',
+    minWidth: look.SMALL_ROAD_MIN_WIDTH,
     filter: ['all', kind('minor_road'), ['!', isService], ['!', isLink]],
     widthFrom: 'osm_roads_minor',
     colour: look.MINOR_COLOUR,
@@ -66,6 +71,7 @@ const ROAD_KINDS: RoadKind[] = [
   },
   {
     name: 'links',
+    minWidth: look.LINK_MIN_WIDTH,
     filter: isLink,
     widthFrom: 'osm_roads_link',
     colour: look.MAJOR_COLOUR,
@@ -73,6 +79,7 @@ const ROAD_KINDS: RoadKind[] = [
   },
   {
     name: 'major',
+    minWidth: look.MAJOR_MIN_WIDTH,
     filter: ['all', kind('major_road'), ['!', isLink]],
     widthFrom: 'osm_roads_major',
     colour: look.MAJOR_COLOUR,
@@ -80,6 +87,7 @@ const ROAD_KINDS: RoadKind[] = [
   },
   {
     name: 'highway',
+    minWidth: look.HIGHWAY_MIN_WIDTH,
     filter: ['all', kind('highway'), ['!', isLink]],
     widthFrom: 'osm_roads_highway',
     colour: look.HIGHWAY_COLOUR,
@@ -112,6 +120,16 @@ function mapLineWidth(id: string) {
   const width = layer.type === 'line' ? layer.paint?.['line-width'] : undefined
   if (width === undefined) throw new Error(`The background map's ${id} has no line width`)
   return width
+}
+
+/** A width by zoom (an interpolation, as the map's all are) never under `minimum`. */
+export function atLeast(width: unknown, minimum: number): ExpressionSpecification {
+  if (!Array.isArray(width) || width[0] !== 'interpolate')
+    throw new Error(`Not a width by zoom: ${JSON.stringify(width)}`)
+  const [operator, curve, input, ...stops] = width
+  // Stops are zoom, width, zoom, width...: only the widths change.
+  const raised = stops.map((stop, i) => (i % 2 === 1 ? Math.max(Number(stop), minimum) : stop))
+  return [operator, curve, input, ...raised] as ExpressionSpecification
 }
 
 /** Full strength until zoomed right in, then fading: the photos show the roads there. */
@@ -150,9 +168,8 @@ function line(
 /** A kind of road above ground or in a tunnel: its dark edge, then the road. */
 function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpecificationWithZIndex[] {
   const where = tunnel ? 'tunnel' : 'ground'
-  const width = mapLineWidth(road.widthFrom)
+  const width = atLeast(mapLineWidth(road.widthFrom), road.minWidth)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, road.filter]
-  const strength = tunnel ? look.TUNNEL_OPACITY : 1
   const edge = line(
     `roads_${where}_${road.name}_edge`,
     filter,
@@ -160,7 +177,7 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
       'line-color': look.EDGE_COLOUR,
       'line-gap-width': width,
       'line-width': look.EDGE_WIDTH,
-      'line-opacity': fading(strength),
+      'line-opacity': fading(1),
       ...(tunnel ? { 'line-dasharray': look.TUNNEL_EDGE_DASHES } : {})
     },
     visible,
@@ -172,7 +189,7 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
     {
       'line-color': road.colour,
       'line-width': width,
-      'line-opacity': fading(road.opacity * strength),
+      'line-opacity': fading(road.opacity),
       ...(tunnel || road.dashes ? { 'line-dasharray': road.dashes ?? look.TUNNEL_DASHES } : {})
     },
     visible,
@@ -181,13 +198,15 @@ function roadLayers(road: RoadKind, tunnel: boolean, visible: boolean): LayerSpe
   return [edge, fill]
 }
 
-/** Railways above ground or in a tunnel: a light edge, a black line, white dashes on it. */
+/** Railways above ground: a light edge, a black line, white dashes on it. In a
+ * tunnel: the edge and the black line dashed, like the roads' tunnels. */
 function railLayers(tunnel: boolean, visible: boolean): LayerSpecificationWithZIndex[] {
   const where = tunnel ? 'tunnel' : 'ground'
-  const width = mapLineWidth('osm_rail')
+  const width = atLeast(mapLineWidth('osm_rail'), look.RAIL_MIN_WIDTH)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, isRail]
-  const opacity = fading(tunnel ? look.TUNNEL_OPACITY : 1)
-  return [
+  const opacity = fading(1)
+  const tunnelDashes = (dashes: number[]) => (tunnel ? { 'line-dasharray': dashes } : {})
+  const layers = [
     line(
       `rail_${where}_edge`,
       filter,
@@ -195,16 +214,26 @@ function railLayers(tunnel: boolean, visible: boolean): LayerSpecificationWithZI
         'line-color': look.RAIL_EDGE_COLOUR,
         'line-gap-width': width,
         'line-width': look.EDGE_WIDTH,
-        'line-opacity': opacity
+        'line-opacity': opacity,
+        ...tunnelDashes(look.TUNNEL_EDGE_DASHES)
       },
       visible
     ),
     line(
       `rail_${where}`,
       filter,
-      { 'line-color': look.RAIL_COLOUR, 'line-width': width, 'line-opacity': opacity },
+      {
+        'line-color': look.RAIL_COLOUR,
+        'line-width': width,
+        'line-opacity': opacity,
+        ...tunnelDashes(look.TUNNEL_DASHES)
+      },
       visible
-    ),
+    )
+  ]
+  if (tunnel) return layers
+  return [
+    ...layers,
     line(
       `rail_${where}_dashes`,
       filter,

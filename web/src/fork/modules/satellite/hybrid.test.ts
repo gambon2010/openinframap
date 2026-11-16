@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
-import { hybridLayers, isHybridLayer } from './hybrid.ts'
+import { atLeast, hybridLayers, isHybridLayer } from './hybrid.ts'
 import {
+  HIGHWAY_MIN_WIDTH,
+  RAIL_MIN_WIDTH,
+  SMALL_ROAD_MIN_WIDTH,
   SMALL_ROADS_FROM_ZOOM,
   TUNNEL_DASHES,
-  TUNNEL_EDGE_DASHES,
-  TUNNEL_OPACITY
+  TUNNEL_EDGE_DASHES
 } from './hybrid.constants.ts'
 
 type Line = Extract<ReturnType<typeof hybridLayers>[number], { type: 'line' }>
@@ -21,13 +23,20 @@ describe('roads over imagery', () => {
     expect(hybridLayers(false).every((l) => l.layout?.visibility === 'none')).toBe(true)
   })
 
-  it('keep the background map’s widths (their real size), with a dark edge around them', () => {
-    expect(layer('roads_ground_highway').paint?.['line-width']).toEqual(mapWidth('osm_roads_highway'))
-    expect(layer('roads_ground_highway_edge').paint?.['line-gap-width']).toEqual(
-      mapWidth('osm_roads_highway')
+  it('keep the background map’s widths (their real size), never too thin, with a dark edge around them', () => {
+    const highway = atLeast(mapWidth('osm_roads_highway'), HIGHWAY_MIN_WIDTH)
+    expect(layer('roads_ground_highway').paint?.['line-width']).toEqual(highway)
+    expect(layer('roads_ground_highway_edge').paint?.['line-gap-width']).toEqual(highway)
+    expect(layer('roads_tunnel_minor').paint?.['line-width']).toEqual(
+      atLeast(mapWidth('osm_roads_minor'), SMALL_ROAD_MIN_WIDTH)
     )
-    expect(layer('roads_tunnel_minor').paint?.['line-width']).toEqual(mapWidth('osm_roads_minor'))
-    expect(layer('rail_ground').paint?.['line-width']).toEqual(mapWidth('osm_rail'))
+    expect(layer('rail_ground').paint?.['line-width']).toEqual(atLeast(mapWidth('osm_rail'), RAIL_MIN_WIDTH))
+  })
+
+  it('raise only the widths of a width by zoom, not the zooms', () => {
+    const width = ['interpolate', ['exponential', 1.6], ['zoom'], 3, 0, 6, 1.1, 18, 36]
+    expect(atLeast(width, 3)).toEqual(['interpolate', ['exponential', 1.6], ['zoom'], 3, 3, 6, 3, 18, 36])
+    expect(() => atLeast(4, 3)).toThrow()
   })
 
   it('are coloured by importance', () => {
@@ -37,16 +46,17 @@ describe('roads over imagery', () => {
     expect(colour('roads_ground_links')).toEqual(colour('roads_ground_major'))
   })
 
-  it('mark tunnels (dashed, a little see-through) instead of hiding them', () => {
+  it('mark tunnels (dashed) instead of hiding them', () => {
     const edge = layer('roads_tunnel_major_edge')
     expect(edge.paint?.['line-dasharray']).toEqual(TUNNEL_EDGE_DASHES)
     expect(JSON.stringify(edge.filter)).toContain('"has","is_tunnel"')
     expect(layer('roads_tunnel_highway').paint?.['line-opacity']).toEqual(
-      expect.arrayContaining([TUNNEL_OPACITY])
+      layer('roads_ground_highway').paint?.['line-opacity']
     )
     expect(layer('roads_tunnel_major').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
     expect(layer('roads_ground_major').paint?.['line-dasharray']).toBeUndefined()
-    expect(layer('rail_tunnel')).toBeDefined()
+    expect(layer('rail_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+    expect(layer('rail_tunnel_dashes')).toBeUndefined()
   })
 
   it('draw tunnels first (after the small roads zoomed out), then roads from the smallest up, railways, borders on top', () => {

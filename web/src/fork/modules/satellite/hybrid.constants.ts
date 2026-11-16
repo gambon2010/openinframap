@@ -21,9 +21,16 @@ export const SMALL_ROADS_ZOOMED_OUT_WIDTH = 1
 export const EDGE_COLOUR = 'hsla(0, 0%, 5%, 0.85)'
 export const EDGE_WIDTH = 1.5
 
-/** Tunnels: the road dashed, on a dashed edge, a little see-through (underground);
- * still strong enough to show over dark forest. */
-export const TUNNEL_OPACITY = 0.75
+/** Each road's width never under these (pixels): the map's go down to nothing
+ * zoomed out, where a road became its dark edges, a black line. */
+export const HIGHWAY_MIN_WIDTH = 3
+export const MAJOR_MIN_WIDTH = 2.5
+export const LINK_MIN_WIDTH = 1.5
+export const SMALL_ROAD_MIN_WIDTH = 1.5
+export const RAIL_MIN_WIDTH = 2.5
+
+/** Tunnels: the road dashed on a dashed edge (in road widths: the minimum widths keep
+ * them visible zoomed out). */
 export const TUNNEL_DASHES = [2, 1.5]
 export const TUNNEL_EDGE_DASHES = [2, 2]
 

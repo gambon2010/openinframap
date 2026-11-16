@@ -424,8 +424,13 @@ The background map has no railways before zoom 11 and leaves most small roads ou
 before 14; some stretches of big roads are only in its zoom 15 tiles (a part of the
 A35 at Strasbourg, given min_zoom 16 by Protomaps), so they're missing zoomed out.
 Tunnels were first narrower (the map's tunnel widths) and at 45 %: the Maurice-Lemaire
-tunnel couldn't be seen over the Vosges' forest. Now the road's own width and colour,
-dashed, at 75 %.
+tunnel couldn't be seen over the Vosges' forest. Then the road's own width and colour,
+dashed, at 75 %: the dashes made them visible, the transparency didn't, so tunnels are
+now dashed at full strength (railways: the black line dashed, no white dashes). Zoomed
+out the map's widths go down to nothing, so roads were their dark edges only (black
+lines) and dashes too small to see: every road now has a minimum width (motorways 3 px,
+main roads 2.5, railways 2.5, links and small roads 1.5), so tunnels are dashed at
+every zoom.
 
 ---
 
