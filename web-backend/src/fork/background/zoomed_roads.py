@@ -173,11 +173,7 @@ def coarse(roads: dict[Key, shapely.Geometry], below: int) -> dict[Key, shapely.
     """The roads shown before zoom `below`, simplified for it: what a zoom 10 block
     hands back for the zoomed out tiles made at the end (zooms 8 and 9)."""
     pixel = tile_size(below - 1) / PIXELS
-    return {
-        key: shapely.simplify(geometry, pixel)
-        for key, geometry in roads.items()
-        if key[0] < below
-    }
+    return {key: shapely.simplify(geometry, pixel) for key, geometry in roads.items() if key[0] < below}
 
 
 def new_groups() -> dict[Key, list]:
