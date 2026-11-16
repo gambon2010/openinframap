@@ -14,6 +14,9 @@ export const BUILDINGS_LAYER = 'buildings_outline'
 /** Parts of buildings (towers, wings, a dome...): drawn, and clicked only where no
  * whole building is mapped around them (a click inside a building takes all of it). */
 export const PARTS_LAYER = 'buildings_parts'
+/** The Buildings entry in the layer switcher (K: a letter never used before; E and N
+ * were the removed Osmose and night lights). The 3D view switches it on. */
+export const BUILDINGS_SWITCHER_ID = 'K'
 /** Every buildings layer's id starts with this (the layer switcher's prefix too). */
 export const BUILDINGS_PREFIX = 'buildings_'
 

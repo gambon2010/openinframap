@@ -27,6 +27,7 @@ import account from './modules/account/index.ts'
 import coordinates from './modules/coordinates/index.ts'
 import debug from './modules/debug/index.ts'
 import print from './modules/print/index.ts'
+import view3d from './modules/view3d/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
@@ -45,6 +46,7 @@ const MODULES: ForkModule[] = [
   layout,
   userlayers,
   // After layout: their header links go after Settings.
+  view3d,
   print,
   account,
   debug

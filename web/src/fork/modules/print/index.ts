@@ -103,6 +103,9 @@ const print: ForkModule = {
       }
     }
     const open = () => {
+      // A page is printed flat: its scale and grid reference hold only seen from above
+      // (the 3D view stays on; tilt it again after).
+      if (map.getPitch() !== 0) map.jumpTo({ pitch: 0 })
       status.textContent = ''
       panel.classList.add('visible')
       frame.show()

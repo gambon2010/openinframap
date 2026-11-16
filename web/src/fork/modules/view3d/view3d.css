@@ -1,0 +1,5 @@
+/* The 3D button: its label is text, not an icon. */
+.maplibregl-ctrl-group button.oim-3d-button {
+  font-size: 12px;
+  font-weight: 700;
+}

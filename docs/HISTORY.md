@@ -577,6 +577,18 @@ doing it) with a small shadow 2 px down and right on screen; outlines dark
 everywhere. Parts get no fill (they lie inside buildings: it would darken them), so
 their outlines show faintly through the roof.
 
+**3D view (2026-11-16):** a **3D** button among the map's buttons (`modules/view3d/`,
+the state in `services/view3d.ts`, kept per browser). On: the map tilts to 55°, right
+or Ctrl drag (two fingers) tilt and turn it (upstream turns that off; the fork turns
+it on only in 3D), the Buildings layer is switched on, and whole buildings (and the
+big ones zoomed out) rise to their height (8 m when the map has none), in the roofs'
+colour; their flat roofs, shadows and outlines are hidden then. The raised layers
+follow the layer switcher's Buildings entry for visibility, so they're hidden outside
+3D by a filter that matches nothing. Parts aren't raised: inside a raised building
+they'd fight with it, and the map doesn't say which buildings have parts. Printing
+straightens the map first (scale and grid reference hold only seen from above).
+Buildings' drawing moved into `modules/buildings/look.ts`.
+
 ## Wikidata popups and image cache
 
 From earlier fork work, still current: `scripts/fetch_images.py` caches Wikidata

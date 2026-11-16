@@ -100,7 +100,9 @@ port 8800.
 - **Top right, the buttons:** zoom, **Data layers** (what's on the map and its key: tick a
   category, unfold it ▸ to tick its rows), **My layers**. Click a button to open its panel next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
-  Long panels scroll inside. At the bottom: **print** (the printer), **Settings**
+  Long panels scroll inside. At the bottom: **3D** (the map tilts and buildings rise to
+  their height; drag with the right mouse button, or Ctrl and drag, to tilt and turn it;
+  click again for the flat map facing north), **print** (the printer), **Settings**
   (the gear: background map and address search servers, see below; admins:
   accounts) and **your account** (the person: who is logged in, **Log out**).
 - **About this map** (its region and the date of its data, the datasets, how to use
@@ -260,7 +262,7 @@ or `--resume --yes`.
 
 It's shown with
 **Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
-roads* (also roads, railways and borders); *Map, high contrast* is the usual
+roads* (also roads, railways and borders; buildings, when on, filled like roofs); *Map, high contrast* is the usual
 background (each kind of area its own pale shade), *Map, original colours* upstream's.
 
 Three kinds, each adding detail to the one below (sizes are what's kept on disk):

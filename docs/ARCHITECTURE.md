@@ -44,7 +44,8 @@ ui/        shared building blocks you see: dock (right), left column, details
 services/  shared state and registries, nothing drawn: live updates (live.ts),
            who has the map (map-mode.ts: measuring, drawing),
            what a printed map's legend lists (legend.ts), the background map's
-           background: the map's colours or imagery, chosen in Settings (background.ts)
+           background: the map's colours or imagery, chosen in Settings (background.ts),
+           the 3D view on or off (view3d.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
@@ -58,7 +59,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                "satellite with roads" (its own road, railway and border layers over the
                imagery, street names white on it)
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
-               to switch on (clickable: details, copy)
+               to switch on (clickable: details, copy); look.ts: roofs and shadows over
+               imagery, raised to their height in the 3D view
+  view3d       the 3D button: the map tilted, tilting and turning allowed, buildings on
   map-sources  background tiles and Photon (Settings)
   layout       no header; the dock, About in the credits, the search box top left
   account      who is logged in and Log out (a map button), Settings → Accounts (admins)

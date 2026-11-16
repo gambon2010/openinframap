@@ -726,5 +726,8 @@
     "area": "Area (on the ground)",
     "building": "Building",
     "source": "From the background map (OpenStreetMap, via Protomaps)."
+  },
+  "view3d": {
+    "button": "3D view: tilt the map, buildings rise"
   }
 }
