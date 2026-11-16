@@ -9,12 +9,16 @@ Buildings drawn from zoom 12, from one source: the background map
 the buildings big enough to see at that zoom, with the same size rule as the
 large buildings removed on 2026-11-16 (about 4 pixels across: ≥ 10,000 m² at 12,
 2,500 m² at 13, 600 m² at 14). From zoom 15, Protomaps' own tiles as today. No
-database table, no Tegola map, no second layer in the frontend.
+database table, no Tegola map, no second source in the frontend.
 
 ## Why the tiles must be edited
 
-Protomaps' tile build leaves buildings out below zoom 15, apart from a few
-landmarks. The map draws only what is in the tile for the zoom shown, and it can't
+Below zoom 15, Protomaps' tiles hold no single buildings: its tile build merges
+neighbouring buildings into blocks and keeps only the big blocks (checked over
+central Paris, 2026-11-16: zoom 13 has 15 shapes, the largest 1.7 km² made of 2,998
+buildings; zoom 12 has 6, zoom 11 has 5). The background map's style fills these
+blocks in pale beige (`osm_buildings`, `style_base.ts`): the city's texture
+zoomed out. The map draws only what is in the tile for the zoom shown, and it can't
 assemble a zoom 12 view from zoom 15 tiles (64 tiles for each one). So the zoom
 12–14 tiles need buildings added, made from the zoom 15 tiles we already have.
 
@@ -22,16 +26,24 @@ assemble a zoom 12 view from zoom 15 tiles (64 tiles for each one). So the zoom
 
 Each downloaded background map `<area>.pmtiles` gets a companion file,
 `<area>.buildings.pmtiles`. It holds only zoom 12–14 tiles, each with a single
-layer, `buildings`. When the backend serves a zoom 12–14 tile, it appends the
+layer, `buildings_large`. When the backend serves a zoom 12–14 tile, it appends the
 companion's tile to Protomaps' tile.
 
 **Why appending works.** A vector tile is a protobuf message whose layers are a
 repeated field, so two tiles' bytes laid end to end (uncompressed) form one valid
 tile with the layers of both. Appending costs a fraction of a millisecond, with no
-decoding. Protomaps' tiles already have a small `buildings` layer of landmarks at
-these zooms. When two layers share a name, MapLibre keeps the last one
-(`@mapbox/vector-tile`: `layers[layer.name] = layer`, checked). Ours comes last,
-so it replaces the landmarks. It holds them anyway, since landmarks are big.
+decoding. Each layer carries its own name and its own key and value tables, so
+nothing clashes.
+
+**Its own layer name, not `buildings`.** Reusing `buildings` would break the vector
+tile specification (a tile must not hold two layers with the same name); it would
+only work because MapLibre's reader keeps the last layer of a name
+(`layers[layer.name] = layer`). It would also replace Protomaps' merged blocks, so
+the background map's pale city texture at zoom 12–14 would turn into the few
+buildings over the size threshold. Instead, a separate `buildings_large` layer
+leaves the background map looking exactly as it does today. The frontend's
+buildings outlines read it at zoom 12–14 and `buildings` from 15: two map layers
+over **one source** (`basemap`).
 
 **Why a side file rather than rewriting the downloaded file:**
 
@@ -91,7 +103,7 @@ in parallel over blocks (8 processes):
 | `scripts/satimagery/cli.py` | `zoomed-buildings --area` |
 | `scripts/satimagery/inventory.py` | The companion counted with its area's background map (size, missing or present); `identify` doesn't take it for imagery |
 | `scripts/satimagery/offers.py`, `maps.py` | Offer it when missing; delete it with its area |
-| `web/src/fork/core/buildings.ts`, `modules/buildings/index.ts` | `BUILDINGS_MINZOOM` 15 → 12, same source and layer (one layer, no second source); details use `area_m2` when the tile has it (zoomed out), otherwise measure the outline as today; label "Buildings" |
+| `web/src/fork/core/buildings.ts`, `modules/buildings/index.ts` | A second `clickableArea` on the same `basemap` source, source layer `buildings_large`, zooms 12–14 (no new source, no Tegola); details use `area_m2` when the tile has it, otherwise measure the outline as today; label "Buildings" |
 | `docs/…` | `ARCHITECTURE.md`, `LOCAL_DEVELOPMENT.md` (offline maps), `SPECIFICATIONS.md` 10.9, `HISTORY.md`, `CLAUDE.md` (background service line) |
 
 No upstream file changes. No database, Tegola, schema or export change: the
@@ -102,7 +114,7 @@ companion lives in `data/basemap/`, copied with the rest.
 - Backend (`tests/fork/`): blocks to tiles on a small fake area (a building cut
   across four zoom 15 tiles comes out whole, a small one only at zoom 14, a tiny
   one never); appending (a tile from the background map plus the companion has
-  both layers, ours last); `is_background_map` ignores companions; zoom 11 and 15
+  all of Protomaps' layers, unchanged, and `buildings_large`); `is_background_map` ignores companions; zoom 11 and 15
   tiles come out unchanged.
 - Scripts (`scripts/tests/`): a downloaded area queues or runs the step, the world
   to zoom 8 doesn't, removing an area deletes its companion, the inventory shows
