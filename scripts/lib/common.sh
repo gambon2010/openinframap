@@ -45,6 +45,8 @@ source "$REPO_ROOT/scripts/lib/ui.sh"
 source "$REPO_ROOT/scripts/lib/net.sh"
 # shellcheck source=lib/json.sh
 source "$REPO_ROOT/scripts/lib/json.sh"
+# shellcheck source=lib/docker.sh
+source "$REPO_ROOT/scripts/lib/docker.sh"
 # shellcheck source=lib/db.sh
 source "$REPO_ROOT/scripts/lib/db.sh"
 # shellcheck source=lib/eez.sh

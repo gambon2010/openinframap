@@ -12,7 +12,7 @@ has_satellite() {
 # Start the satellite imagery server (the "satellite" service) if there's any.
 start_satellite_if_present() {
     if has_satellite; then
-        docker compose --progress quiet up -d satellite </dev/null
+        up_services satellite
     fi
 }
 
@@ -42,7 +42,7 @@ select_satellite() {
         BASEMAP_CHANGED=1
     fi
     if [[ -n "$value" ]]; then
-        docker compose --progress quiet up -d satellite </dev/null
+        up_services satellite
         ok "Satellite imagery: $(satellite_summary). Turn it on in Settings → Background."
     fi
     if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then

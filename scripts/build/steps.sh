@@ -73,7 +73,7 @@ import_osm() {
     fresh_database "$EXISTING_REGION_ID"
 
     section "Importing with imposm (the longest step)..."
-    docker compose --progress quiet run --rm --build \
+    compose_run --build \
         -v "$IMPORT_PBF:/data.osm.pbf:ro,z" \
         imposm import \
         -connection "postgis://$DB_USER:osm@db/$DB_NAME" \

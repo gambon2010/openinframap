@@ -9,7 +9,6 @@ Full detail only."""
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import sys
@@ -19,7 +18,7 @@ from pathlib import Path
 
 import netsafe
 
-from . import ui
+from . import docker, ui
 from .pmtiles import read_header
 from .sources import SOURCES
 
@@ -33,7 +32,6 @@ FULL_ZOOM = 15
 # Their size and time against the background map's size (France, 2026-11-16).
 ZOOMED_BUILDINGS_SIZE = 56 / 5390  # 56 MB from 5.4 GB
 ZOOMED_BUILDINGS_SECONDS_PER_BYTE = 370 / 5.39e9  # 6 min, 8 processes
-REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def latest_build() -> tuple[str, int] | None:
@@ -77,19 +75,9 @@ def manifest_edition(path: Path) -> str:
     return edition(str(build))
 
 
-def pmtiles(folder: Path, args: list[str]) -> list[str]:
-    """The pmtiles command, data/basemap/ at /out."""
-    return [
-        "docker",
-        "run",
-        "--rm",
-        "--user",
-        f"{os.getuid()}:{os.getgid()}",
-        "-v",
-        f"{folder.resolve()}:/out:z",
-        PMTILES_IMAGE,
-        *args,
-    ]
+def pmtiles(folder: Path, args: list[str], **options) -> subprocess.CompletedProcess:
+    """The pmtiles program (Docker), the offline maps' folder at /out."""
+    return docker.run(PMTILES_IMAGE, args, folder, at="/out", **options)
 
 
 # The whole world, as pmtiles extract takes it (web Mercator's limits).
@@ -118,18 +106,11 @@ def size(
 ) -> int | None:
     """What the background map of an outline (or the world, to a zoom) would
     weigh (a dry run), None if pmtiles can't tell."""
-    run = subprocess.run(
-        pmtiles(
-            folder,
-            [
-                *extract_args(build, outline, "/out/.dry-run.pmtiles", maxzoom),
-                "--dry-run",
-            ],
-        ),
+    run = pmtiles(
+        folder,
+        [*extract_args(build, outline, "/out/.dry-run.pmtiles", maxzoom), "--dry-run"],
         check=False,
-        capture_output=True,
-        text=True,
-        stdin=subprocess.DEVNULL,
+        capture=True,
     )
     found = SIZE.findall(run.stdout + run.stderr)
     return int(float(found[-1][0]) * UNITS[found[-1][1]]) if found else None
@@ -171,12 +152,11 @@ def command_basemap(args) -> None:
         outline = Path(args.outline).resolve() if args.outline else None
         partial = folder / f".{args.area}.partial.pmtiles"
         partial.unlink(missing_ok=True)
-        command = pmtiles(
-            folder,
-            extract_args(args.build, outline, f"/out/{partial.name}", args.maxzoom),
-        )
         netsafe.safely(
-            lambda: subprocess.run(command, check=True, stdin=subprocess.DEVNULL),
+            lambda: pmtiles(
+                folder,
+                extract_args(args.build, outline, f"/out/{partial.name}", args.maxzoom),
+            ),
             PROTOMAPS.address,
             also_retry=(subprocess.CalledProcessError,),
             report=True,
@@ -227,38 +207,21 @@ def zoomed_buildings_missing(folder: Path, area: str) -> bool:
 
 def make_zoomed_buildings(folder: Path, area: str) -> None:
     """An area's buildings zoomed out, in the backend's image (its pmtiles and
-    shapely packages; France: 6 min), data/basemap/ written at /work."""
-    compose = ["docker", "compose", "--progress", "quiet"]
-    quiet = {"cwd": REPO_ROOT, "stdin": subprocess.DEVNULL}
-    subprocess.run([*compose, "build", "backend"], check=True, **quiet)
-    subprocess.run(
+    shapely packages; France: 6 min), as root (the image's Python is root's)."""
+    docker.run_service(
+        "backend",
         [
-            *compose,
-            "run",
-            "--rm",
-            "--no-deps",
-            "-T",
-            "-v",
-            f"{folder.resolve()}:/work:z",
-            "-e",
-            f"OWNER={os.getuid()}:{os.getgid()}",
-            "--entrypoint",
-            "sh",
-            "backend",
-            # As root (the image's Python is root's), then the file made yours.
-            "-c",
-            (
-                '/app/.venv/bin/python -m src.fork.background.zoomed_buildings "$@"'
-                ' && chown "$OWNER" /work/*.buildings.pmtiles'
-            ),
-            "sh",
+            "/app/.venv/bin/python",
+            "-m",
+            "src.fork.background.zoomed_buildings",
             "--area",
             area,
             "--folder",
             "/work",
         ],
-        check=True,
-        **quiet,
+        folder,
+        at="/work",
+        as_root=True,
     )
 
 

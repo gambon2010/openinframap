@@ -18,5 +18,5 @@ cd "$REPO_ROOT"
 
 run_with_timer "Preparing tower numbers" run_sql_file schema/tower-numbers.sql
 run_with_timer "Numbering towers along their lines" number_towers
-docker compose --progress quiet up -d --force-recreate tegola </dev/null
+up_services --force-recreate tegola
 ok "Towers numbered; tile server restarted"

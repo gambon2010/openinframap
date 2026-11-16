@@ -94,13 +94,6 @@ APP_URL="https://localhost:$GATE_PORT"
 
 FRONTEND_PORT=5173
 
-# Start Compose services, rebuilding their images first so code changes are
-# picked up (fast when nothing changed). Offline the build fails, so fall back
-# to the existing images (e.g. loaded from data/exports/docker-images.tar.gz).
-up_services() {
-    docker compose --progress quiet up -d --build "$@" </dev/null 2>/dev/null \
-        || docker compose --progress quiet up -d "$@" </dev/null
-}
 
 open_browser() {
     if command -v xdg-open &>/dev/null; then

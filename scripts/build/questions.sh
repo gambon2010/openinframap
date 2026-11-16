@@ -8,7 +8,7 @@
 
 # Run osmium (Docker) with the source extract at /src.osm.pbf and data/osm at /osm.
 osmium() {
-    docker compose --progress quiet --profile tools run --rm -T --user "$(id -u):$(id -g)" \
+    compose_run --user "$(id -u):$(id -g)" \
         -v "$PBF_SOURCE:/src.osm.pbf:ro,z" -v "$OSM_DIR:/osm:z" osmium "$@"
 }
 

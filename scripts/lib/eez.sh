@@ -69,7 +69,7 @@ import_eez() {
     # (the alpine image is missing libintl, which it needs to run).
     local log
     log=$(mktemp)
-    if ! docker compose --progress quiet run --rm --no-deps -T \
+    if ! compose_run --no-deps \
         -v "$eez_dir:/eez:ro,z" \
         --entrypoint sh db -c \
         "apk add --no-cache -q libintl >&2 && shp2pgsql -s 4326 -c '/eez/${shp#"$eez_dir"/}' countries.country_eez" \

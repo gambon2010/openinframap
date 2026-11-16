@@ -1,40 +1,18 @@
-"""Fork: satellite imagery. Docker helpers: GDAL for the Sentinel-2 composite, pmtiles for the final files."""
+"""Fork: satellite imagery. GDAL for the Sentinel-2 composite, pmtiles for the final files (in Docker: docker.py)."""
 
 from __future__ import annotations
 
-import os
-import subprocess
 from pathlib import Path
 
+from . import docker
 from .sources import EARTH_CIRCUMFERENCE_M, SENTINEL2
-
-# --- Docker helpers -------------------------------------------------------------
-
-
-def docker_run(
-    image: str, workdir: Path, args: list[str], env: dict[str, str] | None = None
-) -> None:
-    command = [
-        "docker",
-        "run",
-        "--rm",
-        "--user",
-        f"{os.getuid()}:{os.getgid()}",
-        "-v",
-        f"{workdir}:/w:z",
-        "-w",
-        "/w",
-    ]
-    for key, value in (env or {}).items():
-        command += ["-e", f"{key}={value}"]
-    subprocess.run(command + [image] + args, check=True, stdin=subprocess.DEVNULL)
 
 
 def to_pmtiles(mbtiles: Path, out: Path, pmtiles_image: str) -> None:
     """MBTiles -> PMTiles, with the basemap service's pmtiles CLI."""
     workdir = mbtiles.parent
-    docker_run(
-        pmtiles_image, workdir, ["convert", f"/w/{mbtiles.name}", f"/w/{out.name}.tmp"]
+    docker.run(
+        pmtiles_image, ["convert", f"/w/{mbtiles.name}", f"/w/{out.name}.tmp"], workdir
     )
     (workdir / f"{out.name}.tmp").replace(out)
 

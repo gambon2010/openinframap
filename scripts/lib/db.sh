@@ -3,16 +3,6 @@
 # built, the schema files and their fingerprint.
 # Sourced by common.sh.
 
-# backend_python ARGS... — Python in the backend's image (its code, its packages,
-# the database), for the build steps written there. The image is rebuilt first so
-# code changes are picked up; offline, the one there is used.
-backend_python() {
-    docker compose --progress quiet build backend </dev/null >/dev/null 2>&1 || true
-    docker compose --progress quiet run --rm --no-deps -T \
-        -e ADMIN_DATABASE_URL="postgresql://$DB_USER:osm@db:5432/$DB_NAME" \
-        --entrypoint /app/.venv/bin/python backend "$@" </dev/null
-}
-
 # Name indexes for search (as on openinframap.org), using upstream's
 # web-backend/create_indexes.py. Without them search gets slow on large regions.
 # Indexes that already exist are skipped.
@@ -36,7 +26,7 @@ db_query() {
 # Start the db service and wait until the osm user can run queries. On a fresh
 # volume the init scripts (schema/dev-init.sql) run before that's possible.
 start_db() {
-    docker compose --progress quiet up -d db </dev/null
+    up_services db
     local elapsed=0
     until db_query "SELECT 1" >/dev/null; do
         [[ "$elapsed" -ge 180 ]] && die "Postgres did not become ready within 180s. Check: docker compose logs db"
@@ -157,8 +147,7 @@ put_back_my_layers() {
 # restart_map_services — Tegola recreated (no tiles cached from the old data), and
 # the backend if it was running before fresh_database.
 restart_map_services() {
-    docker compose --progress quiet up -d --build --force-recreate tegola </dev/null 2>/dev/null \
-        || docker compose --progress quiet up -d --force-recreate tegola </dev/null
+    up_services --force-recreate tegola
     ok "Tile server running on http://localhost:$TEGOLA_PORT"
     if [[ -n "${BACKEND_WAS_RUNNING:-}" ]]; then
         up_services backend

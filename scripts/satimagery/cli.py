@@ -14,11 +14,12 @@ from pathlib import Path
 
 import netsafe
 
+from . import docker
 from .bdortho import TILER_IMAGE, command_bdortho
 from .download import MBTiles, cell_exists, download_tiles
 from .estimate import world_cells, world_overview_tiles, worldcover_cells
 from .extract import PMTILES_IMAGE, command_basemap, command_zoomed_buildings
-from .gdal import docker_run, regional_pipeline, to_pmtiles
+from .gdal import regional_pipeline, to_pmtiles
 from .inventory import imagery_summary, imagery_tiers
 from .maps import command_maps
 from .sources import (
@@ -115,11 +116,11 @@ def command_regional(args) -> None:
         # GDAL reads the cells over the network: a lost connection fails the
         # pipeline, run again once it's back (netsafe).
         netsafe.safely(
-            lambda: docker_run(
+            lambda: docker.run(
                 args.gdal_image,
-                work,
                 ["sh", "-c", regional_pipeline(args.maxzoom, cut=not args.world)],
-                env,
+                work,
+                env=env,
             ),
             worldcover_url(cells[0]),
             retries=1,

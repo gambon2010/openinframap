@@ -27,10 +27,10 @@ from pathlib import Path
 
 import netsafe
 
-from . import inventory
+from . import docker, inventory
 from .departements import DEPARTEMENTS
 from .download import MBTiles
-from .gdal import docker_run, to_pmtiles
+from .gdal import to_pmtiles
 from .pmtiles import read_header
 from .sources import AERIAL_FIRST_ZOOM, EARTH_CIRCUMFERENCE_M, SOURCES
 from .tiles import tile_bounds
@@ -325,27 +325,19 @@ def extract(first_part: Path, into: Path, gdal_image: str) -> list[Path]:
             stdin=subprocess.DEVNULL,
         )
     else:
-        work = first_part.parent
-        subprocess.run(
+        # As root: 7-Zip is installed into the image as it runs.
+        docker.run(
+            gdal_image,
             [
-                "docker",
-                "run",
-                "--rm",
-                "-v",
-                f"{work}:/w:z",
-                "-w",
-                "/w",
-                gdal_image,
                 "sh",
                 "-c",
                 (
                     f"apk add -q --no-cache 7zip && 7z x -y -bso0 -bsp0 -o/w/{into.name} "
-                    f"/w/{first_part.name} '*.jp2' -r "
-                    f"&& chown -R {os.getuid()}:{os.getgid()} /w/{into.name}"
+                    f"/w/{first_part.name} '*.jp2' -r"
                 ),
             ],
-            check=True,
-            stdin=subprocess.DEVNULL,
+            first_part.parent,
+            as_root=True,
         )
     archive = first_part.name.removesuffix(".001")  # X.7z, or X.7z.001 and on
     for part in first_part.parent.iterdir():
@@ -439,7 +431,9 @@ def make_tiles(
         "".join(f"{p.relative_to(work)}\n" for p in images)
     )
     tiles = work / f"tiles-z{maxzoom}"
-    docker_run(image, work, ["sh", "-c", pipeline(maxzoom)], {"GDAL_CACHEMAX": "4096"})
+    docker.run(
+        image, ["sh", "-c", pipeline(maxzoom)], work, env={"GDAL_CACHEMAX": "4096"}
+    )
     mbtiles = pack(tiles, work / "tiles.mbtiles", code)
     shutil.rmtree(tiles)
     return mbtiles
