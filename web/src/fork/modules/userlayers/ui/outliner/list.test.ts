@@ -103,6 +103,8 @@ function drop(row: HTMLElement, type: 'item' | 'layer', id: string, offsetY = 1)
 beforeEach(() => {
   localStorage.clear()
   document.body.replaceChildren()
+  // Folders and order are saved to the server as they change: it accepts them.
+  vi.stubGlobal('fetch', async () => new Response('{}'))
   store = new Store()
   actions = {
     selected: [],

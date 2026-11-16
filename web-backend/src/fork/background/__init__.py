@@ -157,12 +157,21 @@ class Archives:
         return archives
 
     def tile(self, z: int, x: int, y: int) -> tuple[bytes, Archive] | None:
-        for archive in self.ordered():
+        archives = self.ordered()
+        for archive in archives:
             data = archive.get(z, x, y)
             if data:
                 if z in COMPANION_ZOOMS:
                     data = self.with_companion(data, archive, z, x, y)
                 return data, archive
+        if z in COMPANION_ZOOMS:
+            # No background tile there (Protomaps leaves a few out), buildings still:
+            # the companion's tile alone.
+            for archive in archives:
+                companion = self.open.get(companion_of(archive.path))
+                data = companion.get(z, x, y) if companion else None
+                if companion and data:
+                    return data, companion
         return None
 
     def with_companion(self, data: bytes, archive: Archive, z: int, x: int, y: int) -> bytes:

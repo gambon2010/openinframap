@@ -5,6 +5,8 @@ import { applyChange, revertFields } from './changes.ts'
 
 const at = '2026-10-30T10:00:00Z'
 const point: GeoJSON.Point = { type: 'Point', coordinates: [7.75, 48.58] }
+/** The backend can't be reached (fetch fails as a browser's does). */
+const unreachable = () => Promise.reject(new TypeError('Failed to fetch'))
 
 describe('applyChange', () => {
   test('layers and features, in order', () => {
@@ -61,7 +63,9 @@ describe('Store', () => {
   })
 
   test('every edit is a pending change, kept in the browser', async () => {
+    vi.stubGlobal('fetch', unreachable) // no server: the edits stay in this browser
     await store.load()
+    vi.unstubAllGlobals()
     const layer = store.createLayer('Grid')
     const id = store.addFeature(layer, point, { kind: 'symbol', sidc: 'SFGPUCI--------' })
     expect(store.activeLayer).toBe(layer)
@@ -513,7 +517,9 @@ describe('kept in this browser', () => {
 
   test("storage full: the page is told why, and told again when it's kept", async () => {
     const store = new Fresh()
+    vi.stubGlobal('fetch', unreachable) // no server: kept in this browser only
     await store.load()
+    vi.unstubAllGlobals()
     const heard = vi.fn()
     store.onChange(heard)
     const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {

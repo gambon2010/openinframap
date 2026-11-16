@@ -119,6 +119,10 @@ def test_the_buildings_zoomed_out_are_appended_from_zoom_12_to_14(client):
     assert got(client, 14, 8, 8) == (200, b"z14+ours14")
     assert got(client, 11, 1, 1) == (200, b"low")
     assert got(client, 15, 16, 16) == (200, b"z15")
-    # A companion alone isn't an area of its own.
+    # A companion alone isn't an area of its own...
     assert got(client, 12, 3, 3)[0] == 204
+    # ...but where its area's background map has no tile, its buildings still show.
+    make(folder / "france.buildings.pmtiles", {(12, 2, 2): b"+ours", (13, 5, 5): b"only ours"})
+    assert got(client, 13, 5, 5) == (200, b"only ours")
+    assert got(client, 13, 6, 6)[0] == 204
     assert [a.area for a in background.ARCHIVES.ordered()] == ["france"]
