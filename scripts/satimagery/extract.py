@@ -185,36 +185,3 @@ def command_basemap(args) -> None:
         + "\n"
     )
     print(f"{ui.human(out.stat().st_size)} -> {out.name}", file=sys.stderr)
-
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-def command_large_buildings(args) -> None:
-    """The large buildings shown zoomed out, found again from the background maps
-    there (web-backend/src/fork/background/large_buildings.py, in the backend's
-    image; ~10 min for France), then Tegola's tiles of them forgotten. After a
-    background map is added or removed (satellite.py large-buildings)."""
-    run = ["docker", "compose", "--progress", "quiet"]
-    subprocess.run(
-        [
-            *run,
-            "run",
-            "--rm",
-            "--no-deps",
-            "--entrypoint",
-            "/app/.venv/bin/python",
-            "backend",
-            "-m",
-            "src.fork.background.large_buildings",
-        ],
-        cwd=REPO_ROOT,
-        check=True,
-        stdin=subprocess.DEVNULL,
-    )
-    subprocess.run(
-        [*run, "up", "-d", "--force-recreate", "tegola"],
-        cwd=REPO_ROOT,
-        check=True,
-        stdin=subprocess.DEVNULL,
-    )

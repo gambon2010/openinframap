@@ -12,7 +12,7 @@
     "extra-icpe": "Classified installations (ICPE)",
     "sites": "Critical sites",
     "background-map": "Background map",
-    "buildings-all": "Buildings (large ones from zoom 12)"
+    "buildings": "Buildings (from zoom 15)"
   },
   "search": {
     "place": {

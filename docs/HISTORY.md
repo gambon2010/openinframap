@@ -412,7 +412,7 @@ off by default) draws every building's outline from zoom 15, over the map and ov
 satellite imagery, from the background map already downloaded (Protomaps'
 `buildings` layer): nothing new to fetch. Only zoom 15 tiles hold every building:
 lower zooms keep a few landmarks (central Paris: 5 at zoom 11, 46 at 14, 730 at 15),
-so they aren't shown below 15 by themselves (large buildings at lower zooms: below).
+so they aren't shown below 15 by themselves (large buildings at lower zooms: below, since removed).
 The outlines aren't clickable (a click in a town would always land on one): the
 module removes their details handler.
 
@@ -467,6 +467,24 @@ Tegola's, simplified for the zoom; a copy now asks the backend for the exact out
 pieces in the background map's zoom 15 tiles around the point, joined; `exactOutline`
 in `core/buildings.ts`). Making the zoomed-out tiles from the zoom 15 ones on
 request was tried and measured (13 s for one zoom 12 tile over Paris): not done.
+
+**Large buildings removed** (2026-11-16, asked for: one source, not two): buildings
+show from zoom 15 only, from the background map. Gone: the build step
+(`large_buildings.py`, `schema/buildings.sql`, `large_buildings` in `lib/db.sh`, the
+menu's "Large buildings" job, `satellite.py large-buildings`), Tegola's `buildings`
+map and the frontend's `buildings_large` layer. Every building in the database
+instead (Tegola the one source) was measured first and not done: France holds ~54
+million building pieces in Protomaps' zoom 15 tiles, 279 bytes each in PostGIS
+(Paris) → 12–15 GB, a 30–60 min build step; size-filtered tiles at zoom 12–14 took
+36–55 ms over central Paris, every building 0.6–1.7 s (zoom 13, 12), and zoom 15
+113 ms against a few for the file. Protomaps' own tiles below 15 have no buildings
+(its tile build leaves them out), so the background map can't show them without
+remaking its tiles. The exact-outline endpoint stays: a copy also gets the pieces in
+tiles the browser hasn't loaded.
+
+**CI's scripts job fixed** (2026-11-16): ruff run from the repo root (as CI does)
+took the scripts' own modules (`netsafe`, `satimagery`, ...) for outside packages and
+wanted their imports sorted otherwise; `scripts/ruff.toml` (`src = ["."]`) tells it.
 
 **The world zoomed out** (asked for): every country's borders, names and coasts
 were missing on low-zoom imagery, the background map covering only the areas

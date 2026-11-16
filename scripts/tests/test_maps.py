@@ -211,10 +211,9 @@ def test_a_background_map_full_detail_with_its_edition(folder, capsys):
     shown = capsys.readouterr().err
     assert "z0–15, 2026-11-10" in shown
     assert "Background map, France, z0–15 (2026-11-10)" in shown and "5.0 GB" in shown
-    # Then its large buildings are found, for showing them zoomed out.
-    argv, after = folder["ran"]
+    (argv,) = folder["ran"]
     assert argv[:5] == ["basemap", "--area", "france", "--build", "20261110.pmtiles"]
-    assert "--outline" in argv and after == ["large-buildings"]
+    assert "--outline" in argv
 
 
 def test_a_background_map_again_only_when_newer(folder, capsys):
@@ -235,8 +234,7 @@ def test_the_worlds_background_map_is_protomaps_file(folder, capsys):
     menu(
         folder, "1\n4\n18\ny\n\n"
     )  # Add → World → Background map, all zooms (the last)
-    argv, after = folder["ran"]
-    assert after == ["large-buildings"]
+    (argv,) = folder["ran"]
     assert argv[:3] == ["basemap", "--area", "world"] and "--outline" not in argv
     assert argv[argv.index("--size") + 1] == str(140 * 10**9)
     assert "140 GB" in capsys.readouterr().err
@@ -253,7 +251,7 @@ def test_the_world_zoomed_out_like_blue_marble(folder, capsys):
     (folder["dir"] / "world.pmtiles").unlink()
     # Add → World → the background map to zoom 8: every country's borders and names.
     menu(folder, "1\n4\n17\ny\n\n")
-    (argv,) = folder["ran"]  # zoom 8 has no buildings: no large buildings step
+    (argv,) = folder["ran"]
     assert argv[:3] == ["basemap", "--area", "world"]
     assert argv[argv.index("--maxzoom") + 1] == "8" and "--outline" not in argv
     assert "Background map, World, z0–8" in capsys.readouterr().err

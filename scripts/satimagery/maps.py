@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import coverage, inventory, ui
 from .inventory import Entry
-from .jobs import Job, large_buildings_job, read_queue, save_queue, work_zoom
+from .jobs import Job, read_queue, save_queue, work_zoom
 from .offers import SourceOffers
 from .regions import Index
 from .sources import SOURCES, Source
@@ -348,9 +348,6 @@ class Maps(SourceOffers):
         ui.say(
             f"Deleted {ui.human(size)}. The map shows it once the scripts update it (start.sh)."
         )
-        if source.id == "protomaps":
-            # Its large buildings go too.
-            self.run([large_buildings_job()])
         self.refresh()
 
     # --- Settings -------------------------------------------------------------------

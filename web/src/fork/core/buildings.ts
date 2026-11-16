@@ -1,10 +1,8 @@
 // Fork: buildings from the background map (Protomaps' "buildings" layer), shared by
 // the buildings module (their outlines, a layer to switch on) and My layers' copy
-// tool (a building copied as an area). Only zoom 15 tiles hold every building
-// (lower zooms keep a few landmarks): from 15 the background map's own tiles are
-// drawn; zoomed out (12 to 14), the large ones, found once by a build step
-// (web-backend/src/fork/background/large_buildings.py) and served by Tegola. A copy
-// takes the exact outline from the backend either way (exactOutline).
+// tool (a building copied as an area). Shown from zoom 15: Protomaps keeps every
+// building only in those tiles (lower zooms keep a few landmarks). A copy takes the
+// whole outline from the backend (exactOutline): a building can reach tiles not loaded.
 import polygonClipping, { type MultiPolygon, type Polygon } from 'polygon-clipping'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { groundArea } from './geo.ts'
@@ -14,16 +12,12 @@ export const BUILDINGS_LAYER = 'buildings_outline'
 /** Every buildings layer's id starts with this (the layer switcher's prefix too). */
 export const BUILDINGS_PREFIX = 'buildings_'
 
-/** Whether a map layer is one of the buildings' (outlines, insides, zoomed out or not). */
+/** Whether a map layer is one of the buildings' (outline, inside). */
 export const isBuildingLayer = (id: string) => id.startsWith(BUILDINGS_PREFIX)
 export const BUILDINGS_SOURCE = 'basemap'
 export const BUILDINGS_SOURCE_LAYER = 'buildings'
 /** Every building is in the tiles from this zoom. */
 export const BUILDINGS_MINZOOM = 15
-/** Large buildings zoomed out (Tegola's "buildings" map): from this zoom, each zoom
- * those big enough to see there. */
-export const LARGE_BUILDINGS_LAYER = 'buildings_large'
-export const LARGE_BUILDINGS_MINZOOM = 12
 
 /** A building's id: the same in every tile it's cut into (Protomaps' own, not
  * OpenStreetMap's number). */
@@ -52,8 +46,8 @@ function toMulti(p: Polygon | MultiPolygon): MultiPolygon {
   return typeof p[0][0][0] === 'number' ? [p as Polygon] : (p as MultiPolygon)
 }
 
-/** A building's whole outline, from every loaded tile of its source (the
- * background map, or the large buildings zoomed out) that holds a piece of it. */
+/** A building's whole outline, from every loaded background map tile that holds a
+ * piece of it. */
 export function buildingOutline(
   map: Map,
   feature: Pick<MapGeoJSONFeature, 'id' | 'source' | 'sourceLayer'>
@@ -88,9 +82,9 @@ function somePoint(g: GeoJSON.Geometry): [number, number] | null {
 }
 
 /**
- * A building's exact outline: the backend joins its pieces from the background
- * map's zoom 15 tiles, whatever zoom it was clicked at (zoomed out, the tiles'
- * shapes are simplified). The pieces on screen if the backend can't say.
+ * A building's whole outline: the backend joins its pieces from the background
+ * map's zoom 15 tiles, also those not loaded (a large building reaching off
+ * screen). The pieces on screen if the backend can't say.
  */
 export async function exactOutline(
   map: Map,

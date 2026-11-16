@@ -1,15 +1,14 @@
-"""Fork: a building's exact outline, from the background maps' zoom 15 tiles (the
-only ones holding every building whole: lower zooms keep a few landmarks, and
-Tegola's large buildings are simplified for their zoom).
+"""Fork: a building's whole outline, from the background maps' zoom 15 tiles (the
+only ones holding every building: lower zooms keep a few landmarks), also those
+the browser hasn't loaded (a large building reaching off screen).
 
     /background/building/{id}?lon=&lat=     its whole outline (GeoJSON, in degrees):
         its pieces in the zoom 15 tiles around the point, joined. What My layers'
-        copy takes, at any zoom.
+        copy takes.
 
 A building crossing a tile edge is cut there, each piece a little over the edge:
 pieces are cut back to their tile and joined by the building's id, so no seam
-shows. (Making the zoomed-out tiles this way too was tried: decoding 64 tiles for
-one zoom 12 tile over Paris took 13 s, so those stay a build step.)
+shows.
 """
 
 from __future__ import annotations

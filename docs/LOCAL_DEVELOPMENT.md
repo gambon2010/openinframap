@@ -437,8 +437,7 @@ DATABASE_URL=postgresql+asyncpg://osm:osm@localhost:5432/osm
 | Feature | Offline? |
 |---------|----------|
 | Infrastructure map (power, telecoms, pipelines, water) | Yes, from local Tegola |
-| Background map (roads, buildings, labels) | Yes if you downloaded it for the region; otherwise from openinframap.org |
-| Night-lights background | Not available: online only, and its switch is hidden |
+| Background map (roads, buildings from zoom 15, labels) | Yes, where you downloaded it (the world to zoom 8 comes with any download); nothing elsewhere: there's no online one |
 | Search for places (countries, cities, towns, villages, hamlets, suburbs, islands) | Yes, for the built region. Cities and towns are listed before infrastructure with the same name |
 | Search for power plants and substations | Yes. Names that start with what you type come first, then names with a word that does ("vianden" also finds "Centrale de Vianden") |
 | Search for coordinates | Yes |

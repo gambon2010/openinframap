@@ -13,7 +13,7 @@ from . import coverage, extract, inventory, ui
 from .aerial import detailed_file, detailed_job, job_estimate
 from .bdortho import DOWNLOAD_BYTES_PER_SECOND
 from .inventory import Entry
-from .jobs import Job, large_buildings_job
+from .jobs import Job
 from .regions import Index
 from .sources import BLUE_MARBLE, SENTINEL2, SOURCES, Source
 from .tiles import area_km2, load_rings
@@ -97,10 +97,8 @@ class SourceOffers:
 
     def complete(self, jobs: list[Job]) -> list[Job]:
         """What comes with any choice: Blue Marble with imagery, the world's
-        background map zoomed out, the large buildings after a background map."""
-        return self.with_large_buildings(
-            self.with_world_background(self.with_blue_marble(jobs))
-        )
+        background map zoomed out."""
+        return self.with_world_background(self.with_blue_marble(jobs))
 
     def with_world_background(self, jobs: list[Job]) -> list[Job]:
         """The whole world's background map to zoom 8 (every country's borders,
@@ -110,14 +108,6 @@ class SourceOffers:
         if any(j.argv[:3] == ["basemap", "--area", "world"] for j in jobs):
             return jobs
         return (self.basemap_jobs("world", extract.WORLD_LOW_ZOOM) or []) + jobs
-
-    def with_large_buildings(self, jobs: list[Job]) -> list[Job]:
-        """A background map with every building (to zoom 15): its large ones are
-        found for showing zoomed out, after it (once, at the end)."""
-        full = any(j.argv[0] == "basemap" and "--maxzoom" not in j.argv for j in jobs)
-        if full and not any(j.argv[0] == "large-buildings" for j in jobs):
-            return jobs + [large_buildings_job()]
-        return jobs
 
     def with_blue_marble(self, jobs: list[Job]) -> list[Job]:
         """Blue Marble comes with any imagery: it's what shows further out."""
