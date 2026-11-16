@@ -1,11 +1,18 @@
 // Fork: building outlines, a layer to switch on (Data layers → Background map →
-// Buildings), over the map and over satellite imagery: dark on the map, white on
-// imagery. Every building from zoom 15; zoomed out (12 to 14) those big enough to
+// Buildings), over the map and over satellite imagery. Over imagery they're also
+// filled like roofs, with a small shadow, so they read as buildings even on blurry
+// imagery (the background map has its own fill under the outlines). Every building from zoom 15; zoomed out (12 to 14) those big enough to
 // see there (fork/core/buildings.ts), all from the background map. Clickable anywhere
 // inside (core/map-style.ts clickableArea): its details (height, area), and My
 // layers' copy tool or the details' copy button make it an area of your own.
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
-import type { LineLayerSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
+import type {
+  FillLayerSpecification,
+  FilterSpecification,
+  LineLayerSpecification,
+  Map,
+  MapGeoJSONFeature
+} from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { formatArea } from '../../core/geo.ts'
@@ -27,31 +34,72 @@ import {
 import { followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
 import { detailsCard } from '../../ui/details.ts'
-
-const OUTLINE = { map: 'hsl(0, 0%, 15%)', imagery: '#ffffff' }
+import {
+  OUTLINE,
+  ROOF_COLOUR,
+  ROOF_OPACITY,
+  SHADOW_COLOUR,
+  SHADOW_OFFSET,
+  SHADOW_OPACITY
+} from './buildings.constants.ts'
 
 let theMap: Map | undefined
 
 const OUTLINE_PAINT: LineLayerSpecification['paint'] = {
-  'line-color': OUTLINE.map,
+  'line-color': OUTLINE,
   'line-opacity': 0.8,
   'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 15, 1, 18, 2, 20, 3]
 }
 
+const ZOOMED_OUT_FROM = {
+  source: BUILDINGS_SOURCE,
+  sourceLayer: ZOOMED_OUT_SOURCE_LAYER,
+  minzoom: ZOOMED_OUT_MINZOOM,
+  maxzoom: BUILDINGS_MINZOOM
+}
+const BUILDINGS_FROM = {
+  source: BUILDINGS_SOURCE,
+  sourceLayer: BUILDINGS_SOURCE_LAYER,
+  filter: ['==', ['get', 'kind'], 'building'] as FilterSpecification,
+  minzoom: BUILDINGS_MINZOOM
+}
+
+/** A building's shadow over imagery (`<id>_shadow`): its shape in dark, shifted down
+ * and right on screen, under the roof. Not drawn over the map. */
+function shadow(
+  id: string,
+  from: typeof ZOOMED_OUT_FROM | typeof BUILDINGS_FROM,
+  zorder: number
+): FillLayerSpecification & { zorder: number } {
+  return {
+    id: `${id}_shadow`,
+    type: 'fill',
+    zorder,
+    source: from.source,
+    'source-layer': from.sourceLayer,
+    ...('filter' in from ? { filter: from.filter } : {}),
+    minzoom: from.minzoom,
+    ...('maxzoom' in from ? { maxzoom: from.maxzoom } : {}),
+    paint: {
+      'fill-color': SHADOW_COLOUR,
+      'fill-opacity': SHADOW_OPACITY.map,
+      'fill-translate': SHADOW_OFFSET,
+      'fill-translate-anchor': 'viewport'
+    }
+  }
+}
+
+/** The layers filled like roofs over imagery (their `<id>_hit` fill), with a shadow:
+ * whole buildings and the zoomed out ones. Parts lie inside buildings: a fill of
+ * their own would darken them. */
+const ROOFED = [BUILDINGS_LAYER, ZOOMED_OUT_LAYER]
+
 const buildings: ForkModule = {
   layers: () => [
+    shadow(ZOOMED_OUT_LAYER, ZOOMED_OUT_FROM, -10.6),
+    shadow(BUILDINGS_LAYER, BUILDINGS_FROM, -10.6),
     // Zoomed out: those big enough to see at each zoom.
-    ...clickableArea(
-      ZOOMED_OUT_LAYER,
-      {
-        source: BUILDINGS_SOURCE,
-        sourceLayer: ZOOMED_OUT_SOURCE_LAYER,
-        minzoom: ZOOMED_OUT_MINZOOM,
-        maxzoom: BUILDINGS_MINZOOM
-      },
-      -10,
-      OUTLINE_PAINT
-    ),
+    ...clickableArea(ZOOMED_OUT_LAYER, ZOOMED_OUT_FROM, -10, OUTLINE_PAINT),
     // Parts under whole buildings: a click inside a building finds the building
     // first, whichever part it lands on. Parts with no building mapped around them
     // (about one in ten in Paris) are still clicked on their own.
@@ -68,17 +116,7 @@ const buildings: ForkModule = {
     ),
     // Every whole building, under everything else that's data: the infrastructure
     // is drawn and clicked first.
-    ...clickableArea(
-      BUILDINGS_LAYER,
-      {
-        source: BUILDINGS_SOURCE,
-        sourceLayer: BUILDINGS_SOURCE_LAYER,
-        filter: ['==', ['get', 'kind'], 'building'],
-        minzoom: BUILDINGS_MINZOOM
-      },
-      -10,
-      OUTLINE_PAINT
-    )
+    ...clickableArea(BUILDINGS_LAYER, BUILDINGS_FROM, -10, OUTLINE_PAINT)
   ],
 
   switcherGroups: () => [
@@ -90,9 +128,12 @@ const buildings: ForkModule = {
 
   init: ({ map }) => {
     theMap = map
-    followBackground(map, BUILDINGS_LAYER, 'line-color', OUTLINE)
-    followBackground(map, PARTS_LAYER, 'line-color', OUTLINE)
-    followBackground(map, ZOOMED_OUT_LAYER, 'line-color', OUTLINE)
+    for (const id of ROOFED) {
+      // The clickable inside (invisible over the map) is the roof.
+      followBackground(map, `${id}_hit`, 'fill-color', { map: '#000000', imagery: ROOF_COLOUR })
+      followBackground(map, `${id}_hit`, 'fill-opacity', ROOF_OPACITY)
+      followBackground(map, `${id}_shadow`, 'fill-opacity', SHADOW_OPACITY)
+    }
   },
 
   popup: {

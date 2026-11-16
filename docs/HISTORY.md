@@ -433,6 +433,15 @@ main roads 1.5, railways 2.5, links and small roads 1.5; main roads first 2.5, t
 2, both a little thick), so tunnels are dashed at every zoom. Then main roads 1.25 px
 and all roads three quarters of the map's widths: zoomed in, its widths are wide bands
 over the photos.
+Then every road but motorways at least 0.75 px.
+
+
+**Roofs over imagery (2026-11-16):** white outlines alone floated over blurry
+imagery and read like roads. Over imagery the whole buildings (and the zoomed out
+ones) are now filled like roofs (a muted tile colour at 70 %, their clickable inside
+doing it) with a small shadow 2 px down and right on screen; outlines dark
+everywhere. Parts get no fill (they lie inside buildings: it would darken them), so
+their outlines show faintly through the roof.
 
 ---
 

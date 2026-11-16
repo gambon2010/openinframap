@@ -27,9 +27,9 @@ export const ROAD_WIDTH_SCALE = 0.75
 /** Each road's width never under these (pixels): the map's go down to nothing
  * zoomed out, where a road became its dark edges, a black line. */
 export const HIGHWAY_MIN_WIDTH = 3
-export const MAJOR_MIN_WIDTH = 1.25
-export const LINK_MIN_WIDTH = 1.5
-export const SMALL_ROAD_MIN_WIDTH = 1.5
+export const MAJOR_MIN_WIDTH = 0.75
+export const LINK_MIN_WIDTH = 0.75
+export const SMALL_ROAD_MIN_WIDTH = 0.75
 export const RAIL_MIN_WIDTH = 2.5
 
 /** Tunnels: the road dashed on a dashed edge (in road widths: the minimum widths keep
