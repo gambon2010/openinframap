@@ -24,7 +24,7 @@ export const EDGE_WIDTH = 1.5
 /** Each road's width never under these (pixels): the map's go down to nothing
  * zoomed out, where a road became its dark edges, a black line. */
 export const HIGHWAY_MIN_WIDTH = 3
-export const MAJOR_MIN_WIDTH = 2.5
+export const MAJOR_MIN_WIDTH = 2
 export const LINK_MIN_WIDTH = 1.5
 export const SMALL_ROAD_MIN_WIDTH = 1.5
 export const RAIL_MIN_WIDTH = 2.5
