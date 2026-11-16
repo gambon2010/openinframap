@@ -234,6 +234,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.12 | Critical infrastructure people tend to miss, as map layers: airports, ports, military sites, food (distribution centres, wholesale markets, silos), health and emergency (hospitals, fire, ambulance, police), fuel depots and storage tanks, transport chokepoints (bridges, tunnels, rail yards, container terminals), digital (IXPs, satellite ground stations), dams, wastewater plants, landfills. From OSM (new imposm mapping, rebuild) and open data (extra data). Not HTA/BT poles. See also 7.10, 8.6. | 🗂 (asked 2026-10-15; listed 2026-11-11) |
 | 10.13 | Far off: update aerial photos when IGN publishes a newer edition of a département (every ~3 years): only those, replaced when done. Editions are recorded from 2026-11-11. | 🗂 far off (2026-11-11) |
 | 10.14 | The whole world's background map zoomed out (to zoom 8, 560 MB), so every country's borders and names show over imagery. | ✅ (2026-11-11) |
+| 10.15 | Satellite with roads easy to read: roads at their real size coloured by importance (motorways orange, main roads yellow, smaller white) with a dark edge, railways highlighted, tunnels marked differently (not hidden), the lines fading when zoomed right in, street names white on a dark halo. | ✅ (2026-11-16) `fork/modules/satellite/hybrid.ts` |
 
 ## 11. Quality
 

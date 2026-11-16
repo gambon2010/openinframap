@@ -54,7 +54,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   coordinates  the cursor's position and MGRS; MGRS in search
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   background   Settings → Background: the map in high contrast or original colours, or imagery
-  satellite    the imagery (tells services/background.ts what there is)
+  satellite    the imagery (tells services/background.ts what there is); hybrid.ts:
+               "satellite with roads" (its own road, railway and border layers over the
+               imagery, street names white on it)
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
                to switch on (clickable: details, copy)
   map-sources  background tiles and Photon (Settings)

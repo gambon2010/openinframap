@@ -42,7 +42,7 @@ test('every fork map layer can be turned off in the layer switcher', () => {
   )
   expect(prefixes.length).toBeGreaterThan(5)
   prefixes.push(...UPSTREAM_PREFIXES)
-  // Background imagery is chosen in Settings, not in the layer switcher. Open data
+  // Background imagery (and the roads over it) is chosen in Settings, not in the layer switcher. Open data
   // completing a category follows that category's entry (modules/extra/follow.ts),
   // which must itself be switchable.
   for (const [, category] of FOLLOWS) expect(prefixes).toContain(category)

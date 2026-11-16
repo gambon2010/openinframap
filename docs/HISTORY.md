@@ -403,6 +403,20 @@ last until the tab is closed, by design: the permanent default belongs in the
 config. The panel is built as a list of sources so a geocoder row can be added
 later.
 
+**Satellite with roads, readable (2026-11-16):** it used to draw the background map's
+own roads over the photos: wide white bands and pale grey dashed railways, made for a
+light map, lost on bright fields and roofs. Now the satellite module draws its own
+layers on the same tiles (`modules/satellite/hybrid.ts`), shown only in that mode,
+right above the imagery: roads at the map's widths (thin lines were
+considered, but on coarse imagery the roads would be hard to find), each with a dark
+edge, motorways bright orange, main roads yellow (first pale, but pale orange was
+hard to see on the photos), smaller roads white and slightly see-through, service
+roads and paths from zoom 14; tunnels see-through with a dashed edge; railways black
+with white dashes and a light edge; borders light red; all fading to about half from
+zoom 16 to 18, where the photos show the roads. Street names are white on a dark halo
+over any imagery. The map's own roads stay under the imagery, so the buildings no
+longer need hiding in that mode.
+
 ---
 
 ## Building outlines (2026-11-11)

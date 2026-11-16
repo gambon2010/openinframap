@@ -6,11 +6,12 @@
 // services/background.ts) chooses:
 //   map        the usual background map
 //   satellite  imagery instead of it (place names and infrastructure on top)
-//   hybrid     imagery with the background map's roads, railways and boundaries
+//   hybrid     imagery with roads, railways and borders over it (hybrid.ts)
 import { Map, SourceSpecification } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { Bounds, background } from '../../services/background.ts'
+import { hybridLayers, isHybridLayer, streetNamesOverImagery } from './hybrid.ts'
 
 export interface Tier {
   url: string
@@ -84,11 +85,6 @@ function imageryBounds(): Promise<Bounds[] | null> {
 
 const sourceId = (i: number) => `satellite_${i}`
 
-/** Background map layers drawn above the imagery in hybrid mode (the rest is hidden by it). */
-export function isHybridOverlay(layerId: string): boolean {
-  return /^osm_(roads|rail|runway|taxiway)|^boundaries/.test(layerId)
-}
-
 // The imagery there is, for the Background section (modules/background).
 if (TIERS.length)
   background.offerImagery({
@@ -103,21 +99,20 @@ if (TIERS.length)
 function apply(map: Map) {
   if (!TIERS.length || !map.getLayer(sourceId(0))) return
   const mode = background.mode()
-  const visibility = mode === 'map' ? 'none' : 'visible'
   const layers = map.getStyle().layers ?? []
-  // Satellite: above the whole background map (place names come later, from the
-  // labels style). Hybrid: under its roads, railways and boundaries.
-  const firstOverlay = layers.find((l) => isHybridOverlay(l.id))?.id
-  const firstData = layers.find((l) => !l.id.startsWith('osm_') && !l.id.startsWith('satellite_'))?.id
-  const before = mode === 'hybrid' ? firstOverlay : firstData
-  // Buildings would cover the imagery in hybrid mode.
-  if (map.getLayer('osm_buildings'))
-    map.setLayoutProperty('osm_buildings', 'visibility', mode === 'hybrid' ? 'none' : 'visible')
-  TIERS.forEach((_, i) => {
-    const id = sourceId(i)
-    map.setLayoutProperty(id, 'visibility', visibility)
-    if (before && before !== id) map.moveLayer(id, before)
-  })
+  // Above the whole background map, roads over imagery right on it; place names
+  // come later (the labels style), the data above.
+  const firstData = layers.find((l) => !isBackgroundOrImagery(l.id))?.id
+  const place = (id: string, visible: boolean) => {
+    map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none')
+    if (firstData) map.moveLayer(id, firstData)
+  }
+  TIERS.forEach((_, i) => place(sourceId(i), mode !== 'map'))
+  for (const layer of layers) if (isHybridLayer(layer.id)) place(layer.id, mode === 'hybrid')
+}
+
+function isBackgroundOrImagery(layerId: string): boolean {
+  return layerId.startsWith('osm_') || layerId.startsWith('satellite_') || isHybridLayer(layerId)
 }
 
 const satellite: ForkModule = {
@@ -138,8 +133,8 @@ const satellite: ForkModule = {
     ),
 
   // Lowest of the data layers, so right above the background map; apply() moves them.
-  layers: () =>
-    TIERS.map((tier, i): LayerSpecificationWithZIndex => ({
+  layers: () => [
+    ...TIERS.map((tier, i): LayerSpecificationWithZIndex => ({
       zorder: 1,
       id: sourceId(i),
       type: 'raster',
@@ -149,11 +144,17 @@ const satellite: ForkModule = {
       ...(i > 0 ? { minzoom: tier.minzoom } : {}),
       layout: { visibility: background.mode() === 'map' ? 'none' : 'visible' }
     })),
+    ...(TIERS.length ? hybridLayers(background.mode() === 'hybrid') : [])
+  ],
 
   init: ({ map }) => {
     map.on('style.load', () => apply(map))
-    if (map.isStyleLoaded()) apply(map)
-    else map.once('load', () => apply(map))
+    const loaded = () => {
+      apply(map)
+      streetNamesOverImagery(map)
+    }
+    if (map.isStyleLoaded()) loaded()
+    else map.once('load', loaded)
 
     background.onChange(() => apply(map))
   }

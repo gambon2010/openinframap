@@ -68,6 +68,9 @@ export const background = {
   }
 }
 
+type PaintProperty = Parameters<Map['setPaintProperty']>[1]
+type PaintValue = Parameters<Map['setPaintProperty']>[2]
+
 /**
  * A paint property that follows the background: one value over the map, another
  * over imagery (e.g. dark outlines on the map, white ones on satellite photos).
@@ -76,12 +79,12 @@ export const background = {
 export function followBackground(
   map: Map,
   layerId: string,
-  property: string,
-  values: { map: unknown; imagery: unknown }
+  property: PaintProperty,
+  values: { map: PaintValue; imagery: PaintValue }
 ) {
   const apply = () => {
     if (!map.getLayer(layerId)) return
-    map.setPaintProperty(layerId, property as any, background.mode() === 'map' ? values.map : values.imagery)
+    map.setPaintProperty(layerId, property, background.mode() === 'map' ? values.map : values.imagery)
   }
   apply()
   map.on('style.load', apply)
