@@ -240,11 +240,18 @@ def make_zoomed_buildings(folder: Path, area: str) -> None:
             "-T",
             "-v",
             f"{folder.resolve()}:/work:z",
+            "-e",
+            f"OWNER={os.getuid()}:{os.getgid()}",
             "--entrypoint",
-            "/app/.venv/bin/python",
+            "sh",
             "backend",
-            "-m",
-            "src.fork.background.zoomed_buildings",
+            # As root (the image's Python is root's), then the file made yours.
+            "-c",
+            (
+                '/app/.venv/bin/python -m src.fork.background.zoomed_buildings "$@"'
+                ' && chown "$OWNER" /work/*.buildings.pmtiles'
+            ),
+            "sh",
             "--area",
             area,
             "--folder",
