@@ -79,5 +79,5 @@ import_eez() {
         die "EEZ import failed (see above)."
     fi
     rm -f "$log"
-    db_psql < "$REPO_ROOT/schema/eez.sql"
+    db_psql < "$(schema_file eez)"
 }

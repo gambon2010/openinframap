@@ -20,7 +20,7 @@ from .base import (
 
 
 def ensure_schema(cur) -> None:
-    cur.execute((REPO_ROOT / "schema" / "extra.sql").read_text())
+    cur.execute((REPO_ROOT / "schema" / "fork" / "extra.sql").read_text())
 
 
 def applicable(cur) -> list[tuple[Source, list[str]]]:
@@ -103,7 +103,7 @@ def command_offer(args) -> None:
 
 
 def refresh_search(conn, cur) -> None:
-    """The search box searches the extra data too (schema/search.sql)."""
+    """The search box searches the extra data too (schema/fork/search.sql)."""
     cur.execute("SELECT to_regclass('search_feature') IS NOT NULL")
     if cur.fetchone()[0]:
         started = time.monotonic()

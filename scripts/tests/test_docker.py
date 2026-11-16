@@ -1,4 +1,4 @@
-"""scripts/satimagery/docker.py: the one way the Python scripts run a program in
+"""scripts/offline_maps/docker.py: the one way the Python scripts run a program in
 Docker (an image, or a Compose service), the files it writes left the user's."""
 
 import os
@@ -6,7 +6,7 @@ import subprocess
 
 import pytest
 
-from satimagery import docker
+from offline_maps import docker
 
 
 @pytest.fixture

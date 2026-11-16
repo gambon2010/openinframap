@@ -1,4 +1,4 @@
-"""scripts/satimagery/inventory.py (what's in data/basemap/, the lock, the
+"""scripts/offline_maps/inventory.py (what's in data/offline-maps/, the lock, the
 settings) and coverage.py (what's worth offering)."""
 
 import json
@@ -7,9 +7,9 @@ import os
 import fake_pmtiles
 import pytest
 
-from satimagery import coverage, inventory
-from satimagery.departements import DEPARTEMENTS
-from satimagery.sources import SENTINEL2, SOURCES
+from offline_maps import coverage, inventory
+from offline_maps.departements import DEPARTEMENTS
+from offline_maps.sources import SENTINEL2, SOURCES
 
 # A small Geofabrik tree: the départements' regions in France, France in Europe.
 PARENTS = {d[3]: "france" for d in DEPARTEMENTS.values()} | {

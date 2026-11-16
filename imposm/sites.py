@@ -3,7 +3,7 @@ Critical sites: health and emergency services, government offices, places of
 worship, fuel and weapons, transport hubs, military sites, food supply, dams and
 landfills.
 
-Fork-only. One table for all of them (points and areas); schema/sites.sql sorts
+Fork-only. One table for all of them (points and areas); schema/fork/sites.sql sorts
 them into categories and kinds (e.g. a storage tank only counts if it holds fuel)
 and decides how important each is. See docs/FORK_CHANGES.md.
 """

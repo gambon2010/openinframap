@@ -1,4 +1,4 @@
-"""scripts/satimagery/bdortho.py: IGN's aerial photos of France as IGN's files, one
+"""scripts/offline_maps/bdortho.py: IGN's aerial photos of France as IGN's files, one
 département at a time; netsafe.fetch_file, the resumable download it uses."""
 
 import hashlib
@@ -10,9 +10,8 @@ import fake_pmtiles
 import pytest
 
 import netsafe
-import satellite as s
-from satimagery import bdortho
-from satimagery.departements import DEPARTEMENTS
+from offline_maps import bdortho, cli
+from offline_maps.departements import DEPARTEMENTS
 
 ATOM = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom"
@@ -221,7 +220,7 @@ def test_a_departement_already_there_is_skipped(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(
         bdortho, "latest_edition", lambda code: pytest.fail("nothing to download")
     )
-    s.main(
-        ["bdortho", "--dept", "67", "--maxzoom", "16", "--basemap-dir", str(tmp_path)]
+    cli.main(
+        ["bdortho", "--dept", "67", "--maxzoom", "16", "--maps-dir", str(tmp_path)]
     )
     assert "already there to zoom 17" in capsys.readouterr().err

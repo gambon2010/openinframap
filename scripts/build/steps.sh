@@ -157,7 +157,7 @@ start_tile_server() {
 # The offline background map and satellite imagery, after everything else: a
 # failure here doesn't lose the build.
 offline_background() {
-    download_satellite
+    download_offline_maps
     section "Background map"
     select_basemap
 }

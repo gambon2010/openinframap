@@ -1,5 +1,5 @@
-"""scripts/satimagery/maps.py: the offline maps menu, driven by typed answers in a
-temporary data/basemap/ (the downloads it starts are recorded, not run)."""
+"""scripts/offline_maps/maps.py: the offline maps menu, driven by typed answers in a
+temporary data/offline-maps/ (the downloads it starts are recorded, not run)."""
 
 import io
 import json
@@ -10,8 +10,7 @@ import subprocess
 import pytest
 from fake_pmtiles import write as pmtiles
 
-import satellite as s
-from satimagery import extract, inventory, jobs, maps
+from offline_maps import cli, extract, inventory, jobs, maps
 
 SQUARE = {
     "type": "Polygon",
@@ -80,10 +79,10 @@ def menu(folder, typed, *more):
     with pytest.MonkeyPatch.context() as m:
         m.setattr("sys.stdin", io.StringIO(typed))
         try:
-            s.main(
+            cli.main(
                 [
                     "maps",
-                    "--basemap-dir",
+                    "--maps-dir",
                     str(folder["dir"]),
                     "--index",
                     folder["index"],

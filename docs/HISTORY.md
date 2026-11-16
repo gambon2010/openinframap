@@ -2546,4 +2546,31 @@ export, then removes the test project (`docker compose down -v --rmi local`).
   out of date.
 - **Docs** generally: README, `CLAUDE.md`, this file and `LOCAL_DEVELOPMENT.md`.
 
+## Clean-up (2026-11-12 to 2026-11-16)
+
+Batches 1 to 11 of `docs/plans/archive/cleanup.md` (its log says what each did and
+measured; findings in `archive/cleanup-audit.md`). The last ones, 2026-11-16:
+
+- **Names (batch 8):** `data/basemap/` → `data/offline-maps/` (it holds imagery
+  and the buildings zoomed out too), `BASEMAP_DIR` → `OFFLINE_MAPS_DIR`,
+  `--basemap-dir` → `--maps-dir`; `scripts/satellite.sh` / `satellite.py` /
+  `satimagery/` → `offline-maps.sh` / `offline-maps.py` / `offline_maps/`, the
+  shell's `choose_satellite` / `download_satellite` → `choose_offline_maps` /
+  `download_offline_maps`, `lib/satellite.sh` → `lib/offline-maps.sh`. The package's
+  re-export of everything "for the tests" went: the tests import the modules. The
+  fork's SQL in `schema/fork/` (found by name: `schema_file`), upstream's left in
+  `schema/`. Kept: `VITE_BASEMAP_URL`, `--basemap full|none`, `lib/basemap.sh`
+  ("basemap" there is the background map). The folder was moved with the IGN
+  download stopped, its queue's paths rewritten, then the download restarted
+  (`offline-maps.py maps --resume --yes`).
+- **One Docker helper per language:** `lib/docker.sh` (`up_services`,
+  `compose_run`, `backend_python`) and `offline_maps/docker.py` (`run`,
+  `run_service`; `as_root`: run as root, then everything under the mount given back
+  to the user, the program's status kept). Every call moved onto them; osmium runs
+  without naming its Compose profile (Compose enables it for a service named).
+- **Removed options say nothing any more:** `--satellite...` in `build-region.sh`
+  and `satellite.sh` were answered with what replaced them; now simply unknown.
+- **Clean code rules** in `CLAUDE.md`, with reporting what should be cleaned at the
+  end of each feature.
+
 ---

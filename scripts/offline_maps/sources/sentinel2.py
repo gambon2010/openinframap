@@ -11,7 +11,7 @@ SOURCE = Source(
     layer="regional",
     fetch="cells",
     # From zoom 7 for every area: made from there, and shown from there
-    # (scripts/lib/satellite.sh REGIONAL_FIRST_ZOOM, checked equal by a test).
+    # (scripts/lib/offline-maps.sh REGIONAL_FIRST_ZOOM, checked equal by a test).
     first_zoom=7,
     last_zoom=13,
     detail_m=10,

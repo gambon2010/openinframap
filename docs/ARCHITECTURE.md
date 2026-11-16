@@ -18,7 +18,7 @@ New code goes in fork-only places:
 - **Tiles:** `tegola/layers.fork.yml`.
 - **Docker:** `docker-compose.override.yml`.
 - **Strings:** `web/src/fork/locales/en.json`.
-- **Build:** `scripts/`, plus `schema/*.sql` for the fork's own SQL.
+- **Build:** `scripts/`, plus `schema/fork/*.sql` for the fork's own SQL (upstream's stay in `schema/`).
 
 Upstream files only get one-line hooks, all listed in `FORK_CHANGES.md` ("Fork
 structure", "Merging from upstream"). Upstream imports only three fork files:
@@ -166,7 +166,7 @@ session):
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
 - `background/` (the background map's tiles, `/background/{z}/{x}/{y}.mvt`: each from
-  the first `data/basemap/<area>.pmtiles` that has it, so several areas show together;
+  the first `data/offline-maps/<area>.pmtiles` that has it, so several areas show together;
   at zooms 12 to 14 with the area's `<area>.buildings.pmtiles` tile appended;
   satellite imagery is the `satellite` service's; `zoomed_buildings.py`, a build step
   run after each download: the buildings big enough to see zoomed out, from the zoom 15
@@ -204,30 +204,36 @@ steps → Tegola (vector tiles) → the frontend.
     stops a download that hangs, ends with status 75 ("run again") when the
     connection doesn't come back. Never call curl for a download directly;
   - `json`: `json_get`, `json_write` (manifests);
-  - `db`: `SCHEMA_FILES`, the SQL steps in order, `run_schema` (with each step's
+  - `docker`: **every Docker call**: `up_services` (start services, images rebuilt
+    first, offline the ones there), `compose_run` (a one-off container of a service),
+    `backend_python` (the backend's image, for build steps written in Python). The
+    Python scripts' one is `offline_maps/docker.py` (`run` an image, `run_service`;
+    `as_root` for images whose programs only run as root, the files given back);
+  - `db`: `SCHEMA_FILES`, the SQL steps in order, by name (`schema_file`: upstream's
+    in `schema/`, the fork's in `schema/fork/`), `run_schema` (with each step's
     label), `schema_hash` (the fingerprint exports carry), and what building and
     importing share: `fresh_database` (My layers and extra data kept),
     `put_back_my_layers`, `restart_map_services`;
   - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap` (`select_basemap`: the
     frontend pointed at the backend's background map), `geofabrik` (the index, region lookups,
-    extracts), `satellite`.
+    extracts), `offline-maps` (the imagery server, the menu during a build).
 - **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
   data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,
   `NET_CHECK_EVERY`).
-- **`satellite.py`** is the command line for `satimagery/`:
+- **`offline-maps.py`** is the command line for `offline_maps/`:
   - `sources/`: one file per source (`SOURCE`, fields in `source.py`): Blue
     Marble, Sentinel-2, the aerial photos by country, the background map; read into
-    `SOURCES` (and the older `DETAILED_SOURCES`, `TIERS`), credits;
+    `SOURCES`, credits;
   - `tiles.py`, `estimate.py`, `download.py` (tiles into MBTiles, through
-    `netsafe`), `gdal.py`;
+    `netsafe`), `gdal.py`, `docker.py` (every Docker call);
   - `bdortho.py`: France's photos as IGN's files, one département at a time
     (`departements.py`: their codes, names, areas, bounds and regions);
-  - `inventory.py`: what's in `data/basemap/` (`inventory.json`, made from the
+  - `inventory.py`: what's in `data/offline-maps/` (`inventory.json`, made from the
     files), stopped jobs, `settings.json`, the one-download lock;
   - `coverage.py`: what's worth offering (zooms another source takes over, areas
     inside areas, what could be freed);
-  - `maps.py`: the offline maps menu (`satellite.py maps`), its screens through
+  - `maps.py`: the offline maps menu (`offline-maps.py maps`), its screens through
     `ui.py`; `offers.py`: what each source offers and the downloads it makes;
     `jobs.py`: a download and the queue (Resume);
   - `regions.py` (Geofabrik's index), `aerial.py` (tile-server photos),
@@ -244,22 +250,22 @@ steps → Tegola (vector tiles) → the frontend.
 **A map layer from OSM** (e.g. airports):
 1. Add the mapping in `imposm/` (a new `*.py`, like `sites.py`). This changes the
    osmium filter and the fingerprint.
-2. SQL views in a `schema/*.sql`. A new file goes in `SCHEMA_FILES` and
+2. SQL views in a `schema/fork/*.sql`. A new file goes in `SCHEMA_FILES` and
    `SCHEMA_LABELS` (`lib/db.sh`) and in a `run_schema` line of `build-region.sh`.
 3. The tile layer in `tegola/layers.fork.yml`, then regenerate `config.toml`.
 4. A module in `fork/modules/<name>/`: its `layers()` (style),
    `switcherGroups()`, `key()`, popup rules. Add it to `MODULES`.
-5. Strings: `npm run fork-strings`. Searchable by name: `schema/search.sql`.
+5. Strings: `npm run fork-strings`. Searchable by name: `schema/fork/search.sql`.
 6. Rebuild the region. `consistency.test.ts` fails if a tile layer isn't drawn, or a
    layer can't be switched off.
 
 **Data from outside OSM:**
 1. Write a `Source` class in a new file in `scripts/extradata/`, plus a line in
    `SOURCES`.
-2. Add its tables or views in `schema/extra.sql`, and draw it in `modules/extra/`.
+2. Add its tables or views in `schema/fork/extra.sql`, and draw it in `modules/extra/`.
 
 **A country's aerial photos:**
-1. Add a file in `satimagery/sources/` (copy one of the same kind, e.g.
+1. Add a file in `offline_maps/sources/` (copy one of the same kind, e.g.
    `lu_geoportail.py` for a tile server, `be_wallonia.py` for a WMS): its `SOURCE`
    with the URL, region, metres per pixel, last zoom, credit.
    `tests/test_sources.py` checks it.

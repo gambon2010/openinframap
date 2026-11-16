@@ -58,7 +58,7 @@ Deleting is yours to decide; nothing here is removed without asking.
   merge notes; the first two were already replaced.)
 - **Packages never imported:** `@ts-stack/markdown`, `lodash.invert`, `lodash.sortby`
   (upstream's `package.json`; check upstream before removing).
-- **Fork:** `tiles_in_outline` (`scripts/satimagery/tiles.py`, only its test uses
+- **Fork:** `tiles_in_outline` (`scripts/offline_maps/tiles.py`, only its test uses
   it); one unused string (`layers.buildings`); the `console.info` of every clicked
   feature (`modules/details/index.ts:48`); shell variables never used (`DIM`,
   `CURRENT_STEP`, `DOCKER_IMAGES_TAR`); the Osmose icons (`validation_error*`).
@@ -70,10 +70,10 @@ Deleting is yours to decide; nothing here is removed without asking.
 
 ### B. Superseded paths (the biggest single item)
 The old satellite questions live on beside the new offline maps menu:
-- `scripts/satimagery/menu.py` (676 lines): `Planner`, `choose_bdortho`,
+- `scripts/offline_maps/menu.py` (676 lines): `Planner`, `choose_bdortho`,
   `command_choose`, `command_steps`. The new menu only takes five small things
   from it (`Index`, `detailed_file`, `detailed_job`, `job_estimate`, a speed).
-- In the shell: `choose_satellite`'s presets, `download_satellite`'s plan steps,
+- In the shell: `choose_offline_maps`'s presets, `download_offline_maps`'s plan steps,
   `satellite_step`, `.satellite-plan.json`, and `run_parallel` (used only there).
 - The options `--satellite`, `--satellite-detailed`, `--area`, `--zoom`, `--sources`
   on both scripts, and their tests.
@@ -82,7 +82,7 @@ mode to cover what those options did (it covers IGN, Sentinel-2, Blue Marble and
 background maps; **not yet the tile-server aerial sources**).
 
 ### C. One-time migration code
-- `catch_up_lower_zooms` / `satellite.py lower-zooms`: adds lower zooms to imagery
+- `catch_up_lower_zooms` / `offline-maps.py lower-zooms`: adds lower zooms to imagery
   files made before aerial photos started at zoom 12. Your files are all current.
 - The old file name `<area>.sat-detailed.pmtiles` (before several sources) and the
   per-region Blue Marble file (`luxembourg.sat-overview`, superseded by the world's).
@@ -114,9 +114,9 @@ background maps; **not yet the tile-server aerial sources**).
 | File | Lines | What's in it |
 |---|---|---|
 | `scripts/build-region.sh` | 884 | Options, every question, every build step |
-| `scripts/satimagery/maps.py` | 879 | One class: every screen and every source's jobs |
-| `scripts/satimagery/bdortho.py` | 517 | Listing, download, extraction, tiles, the command |
-| `scripts/satimagery/cli.py` | 507 | Every command and all their options |
+| `scripts/offline_maps/maps.py` | 879 | One class: every screen and every source's jobs |
+| `scripts/offline_maps/bdortho.py` | 517 | Listing, download, extraction, tiles, the command |
+| `scripts/offline_maps/cli.py` | 507 | Every command and all their options |
 | `web/src/fork/modules/userlayers/map/render.ts` | 564 | Drawing My layers |
 | `web/src/fork/modules/userlayers/state/store.ts` | 463 | My layers' state |
 | `web/src/fork/modules/userlayers/map/layers.ts` | 408 | My layers' map layers |
@@ -129,12 +129,12 @@ Not judged by this survey (it needs reading). First places to read: the files of
 `fork/ui/highlight.ts` (266), `line_trace/trace.py` (290), `userdata/changes.py` (251).
 
 ### H. Names that no longer fit
-- `data/basemap/` holds satellite imagery, aerial photos, background maps, the
+- `data/offline-maps/` holds satellite imagery, aerial photos, background maps, the
   inventory and the queue: "offline maps" (`data/maps/`?). Touches every script,
   Compose, the backend's mount, the docs, and your 56 GB of files (a folder rename,
   instant): only once the IGN download is finished.
-- In the scripts: `BASEMAP_DIR`, `lib/basemap.sh`, `--basemap-dir`, `select_basemap`,
-  `BASEMAP_CHANGED`. `scripts/satellite.sh` / `satellite.py` / `satimagery/` are now
+- In the scripts: `OFFLINE_MAPS_DIR`, `lib/basemap.sh`, `--maps-dir`, `select_basemap`,
+  `BASEMAP_CHANGED`. `scripts/offline-maps.sh` / `offline-maps.py` / `offline_maps/` are now
   the offline maps menu.
 - The fork's SQL files sit in `schema/` beside upstream's with nothing in their
   name to tell them apart (`grid.sql`, `sites.sql`, `extra.sql`, `search.sql`,
@@ -217,7 +217,7 @@ look at; the PMTiles one is deliberate).
    like Sentinel-2's.
 6. **Large files (F; a day):** `maps.py` (screens / jobs per source), `cli.py`,
    `build-region.sh` (questions / steps), with their tests as the safety net.
-7. **Renames (H; half a day, after the IGN download):** `data/basemap/` and the
+7. **Renames (H; half a day, after the IGN download):** `data/offline-maps/` and the
    `basemap` names; the fork's SQL files.
 8. **CI (2 hours):** one workflow running the fork's three test suites; upstream's
    deploy workflows switched off in the fork.

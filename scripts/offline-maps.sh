@@ -2,21 +2,21 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# satellite.sh — the offline maps menu, for the region already built, without
+# offline-maps.sh — the offline maps menu, for the region already built, without
 # touching the database (build-region.sh would rebuild it).
 #
-#   bash scripts/satellite.sh
+#   bash scripts/offline-maps.sh
 #
 # Shows what's downloaded, then Resume, Add, Remove, Settings. Add offers, for an
 # area (this region, another country, the world), NASA Blue Marble, Sentinel-2
 # 10 m, aerial photos (8 to 60 cm) where a country publishes them, and the
 # background map, with sizes: only what isn't there yet and makes sense. Downloads
-# into data/basemap/ and points the map at everything there (Settings →
+# into data/offline-maps/ and points the map at everything there (Settings →
 # Background). Your map data and your own layers are left as they are; the
 # frontend needs a restart to show new imagery. A download stopped half-way goes
 # on with Resume.
 #
-# Without questions: python3 scripts/satellite.py maps --source ID --yes
+# Without questions: python3 scripts/offline-maps.py maps --source ID --yes
 # (--help lists the sources and options); start.sh then shows it on the map.
 # ---------------------------------------------------------------------------
 
@@ -44,10 +44,10 @@ ok "Region: $REGION_NAME"
 fetch_geofabrik_index || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
 
 # It downloads itself; what's left of a stopped download waits for Resume.
-python3 -I "$REPO_ROOT/scripts/satellite.py" maps --basemap-dir "$BASEMAP_DIR" \
+python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --maps-dir "$OFFLINE_MAPS_DIR" \
     --index "$GEOFABRIK_INDEX" --region "$REGION_ID" || warn "Stopped: Resume goes on from there."
 select_basemap
-download_satellite
+download_offline_maps
 echo ""
 ok "Done. Restart the frontend (Ctrl+C in its window, then bash scripts/start.sh) and"
 info "turn it on in Settings → Background."

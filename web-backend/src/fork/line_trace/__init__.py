@@ -1,5 +1,5 @@
 """
-Fork: following a power line through the grid network (schema/grid.sql), from a
+Fork: following a power line through the grid network (schema/fork/grid.sql), from a
 clicked piece to the stations at its ends: GET /grid/line (grid/line.py) and the check of
 the whole network (grid_check.py).
 

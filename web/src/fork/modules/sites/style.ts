@@ -1,4 +1,4 @@
-// Fork: critical sites from OSM (imposm/sites.py, schema/sites.sql, the "sites"
+// Fork: critical sites from OSM (imposm/sites.py, schema/fork/sites.sql, the "sites"
 // Tegola map): an icon per kind (web/src/icons/site_*.svg, made by
 // scripts/make_site_icons.py) and a light area for sites mapped as areas. One layer
 // per category, so the layer switcher and the key can hide each.
@@ -21,7 +21,7 @@ export const site_colours: { [category: string]: string } = {
   water_waste: '#00838F'
 }
 
-// category -> kinds (schema/sites.sql), in the order the key lists them.
+// category -> kinds (schema/fork/sites.sql), in the order the key lists them.
 export const site_kinds: { [category: string]: string[] } = {
   health: ['hospital', 'clinic', 'pharmacy', 'fire_station', 'police', 'ambulance', 'siren'],
   government: [
@@ -175,7 +175,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       }
     },
     // Icons, all shown (overlapping if need be): below zoom 14, nearby sites of the
-    // same category come as one group (site_points in schema/sites.sql), drawn by
+    // same category come as one group (site_points in schema/fork/sites.sql), drawn by
     // the _group layer. Important sites are larger and labelled; the rest are
     // labelled from zoom 15.
     {

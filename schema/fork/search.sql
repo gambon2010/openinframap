@@ -5,7 +5,7 @@
 -- entry that shows it (layer), and the nearest town to tell apart the many
 -- features with the same name ("Mairie", "Château d'eau"...).
 --
--- Run after schema/sites.sql and schema/extra.sql; scripts/extra_data.py refreshes
+-- Run after schema/fork/sites.sql and schema/fork/extra.sql; scripts/extra_data.py refreshes
 -- it when the extra data changes. Safe to run more than once.
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
@@ -24,7 +24,7 @@ $$;
 DROP MATERIALIZED VIEW IF EXISTS search_feature;
 CREATE MATERIALIZED VIEW search_feature AS
 WITH named AS (
-    -- Critical sites (schema/sites.sql); the kind is the site's (hospital, townhall...).
+    -- Critical sites (schema/fork/sites.sql); the kind is the site's (hospital, townhall...).
     SELECT 'site' AS source, kind, NULL::text AS subtype, name, tags, tags -> 'operator' AS detail,
            NULL::text AS town, importance,
            CASE category WHEN 'health' THEN 'H' WHEN 'government' THEN 'G' WHEN 'religion' THEN 'R'
@@ -118,7 +118,7 @@ WITH named AS (
     UNION ALL
     SELECT 'osm', 'water_well', NULL, tags -> 'name', tags, tags -> 'operator', NULL, 2, 'W', ST_Centroid(geometry)
       FROM osm_water_well WHERE tags -> 'name' <> ''
-    -- Extra data (schema/extra.sql): ICPE sites, biomethane injection points (shown
+    -- Extra data (schema/fork/extra.sql): ICPE sites, biomethane injection points (shown
     -- with Oil & Natural Gas, O), distribution substations (with Power, P)
     UNION ALL
     SELECT 'extra', kind, details ->> 'category', name, NULL, details ->> 'operator', details ->> 'commune',

@@ -718,7 +718,7 @@
     "not-here": "No satellite imagery here: move the map to where you have some.",
     "title": "Background",
     "zooms": "Imagery up to zoom {{zoom}}.",
-    "none": "No satellite imagery yet. Run \"bash scripts/satellite.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos."
+    "none": "No satellite imagery yet. Run \"bash scripts/offline-maps.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos."
   },
   "buildings": {
     "height": "Height",

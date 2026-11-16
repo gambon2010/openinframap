@@ -15,7 +15,7 @@ buildings come the block's zoom 12, 13 and 14 tiles.
     python -m src.fork.background.zoomed_buildings [--area AREA] [--folder DIR]
 
 Without --area: every background map with zoom 15 whose companion is missing or
-older than it. scripts/satimagery/extract.py runs it after a download.
+older than it. scripts/offline_maps/extract.py runs it after a download.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ from shapely import unary_union
 from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry
 
-from . import BASEMAP_DIR, COMPANION_ZOOMS, Archive, companion_of, is_background_map, unzipped
+from . import OFFLINE_MAPS_DIR, COMPANION_ZOOMS, Archive, companion_of, is_background_map, unzipped
 
 LAYER = "buildings_large"
 FULL_ZOOM = 15
@@ -269,7 +269,7 @@ def out_of_date(folder: Path) -> list[Path]:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Buildings zoomed out, for the background maps.")
     parser.add_argument("--area", help="one area (<area>.pmtiles); default: every one out of date")
-    parser.add_argument("--folder", type=Path, default=BASEMAP_DIR)
+    parser.add_argument("--folder", type=Path, default=OFFLINE_MAPS_DIR)
     args = parser.parse_args(argv)
     maps = [args.folder / f"{args.area}.pmtiles"] if args.area else out_of_date(args.folder)
     for path in maps:

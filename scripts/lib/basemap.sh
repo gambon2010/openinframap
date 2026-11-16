@@ -1,13 +1,13 @@
 # shellcheck shell=bash
-# The offline background maps (data/basemap/<area>.pmtiles, downloaded by
-# scripts/satellite.py maps, served by the backend's /background).
+# The offline background maps (data/offline-maps/<area>.pmtiles, downloaded by
+# scripts/offline-maps.py maps, served by the backend's /background).
 # Sourced by common.sh.
 
-# The background maps downloaded: data/basemap/<area>.pmtiles (not satellite
+# The background maps downloaded: data/offline-maps/<area>.pmtiles (not satellite
 # imagery, <area>.sat-*.pmtiles), their areas, one per line.
 background_areas() {
     local file name
-    for file in "$BASEMAP_DIR"/*.pmtiles; do
+    for file in "$OFFLINE_MAPS_DIR"/*.pmtiles; do
         [[ -f "$file" ]] || continue
         name=$(basename "$file" .pmtiles)
         [[ "$name" == *.* ]] || echo "$name"
@@ -24,6 +24,6 @@ select_basemap() {
     if [[ -n "$areas" ]]; then
         ok "Offline background map: $areas"
     else
-        warn "No background map downloaded: the map's background is empty (bash scripts/satellite.sh: Add, Background map)."
+        warn "No background map downloaded: the map's background is empty (bash scripts/offline-maps.sh: Add, Background map)."
     fi
 }

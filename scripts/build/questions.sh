@@ -61,7 +61,7 @@ show_local_files() {
             "$([[ -f "$OSM_DIR/$id-filtered.osm.pbf" ]] && echo ', filtered')")"
     done
     [[ "$found" == 1 ]] || info "No region downloads yet (they're kept in data/osm/)."
-    for f in "$BASEMAP_DIR"/*.pmtiles; do
+    for f in "$OFFLINE_MAPS_DIR"/*.pmtiles; do
         [[ -f "$f" ]] || continue
         ok "$(printf '%-22s %7s  offline background map, %s detail' "$(basename "$f" .pmtiles)" \
             "$(human_size "$(stat -c%s "$f")")" "$(json_get "${f%.pmtiles}.json" detail 2>/dev/null || echo unknown)")"
@@ -240,12 +240,12 @@ choose_extra_datasets() {
 # --- The background map --------------------------------------------------------------
 
 # region_outline — the region's outline for the offline maps menu
-# (data/basemap/.area-<region>.geojson, where it looks first): Geofabrik's, else
+# (data/offline-maps/.area-<region>.geojson, where it looks first): Geofabrik's, else
 # the local file's bounding box as a rectangle.
 region_outline() {
-    local outline="$BASEMAP_DIR/.area-$REGION_ID.geojson" bbox
+    local outline="$OFFLINE_MAPS_DIR/.area-$REGION_ID.geojson" bbox
     [[ "$REGION_ID" == "$PLANET_ID" ]] && return 0
-    mkdir -p "$BASEMAP_DIR"
+    mkdir -p "$OFFLINE_MAPS_DIR"
     if [[ -n "$PBF_URL" ]] && geofabrik_outline "$REGION_ID" "$outline"; then
         return 0
     elif [[ -f "$PBF_SOURCE" ]]; then
@@ -483,17 +483,17 @@ prepare_background_map() {
     region_outline
     # The whole world zoomed out (to zoom 8: every country's borders and names,
     # 560 MB) comes by default, once; --basemap none leaves it out.
-    if [[ "$BASEMAP_MODE" != none && ! -f "$BASEMAP_DIR/world.pmtiles" ]]; then
-        python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only --yes \
+    if [[ "$BASEMAP_MODE" != none && ! -f "$OFFLINE_MAPS_DIR/world.pmtiles" ]]; then
+        python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only --yes \
             --source protomaps --area world --zoom 8 \
-            --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" \
+            --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
             || warn "Couldn't plan the world's background map (no network?)."
         SATELLITE_MENU=1
     fi
     if [[ "$BASEMAP_MODE" == full ]]; then
-        python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only --yes \
+        python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only --yes \
             --source protomaps --area "$(maps_area)" --region "$(maps_area)" \
-            --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" \
+            --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
             || warn "Couldn't plan the background map; the build goes on without it."
         SATELLITE_MENU=1
     fi
@@ -505,7 +505,7 @@ maps_area() {
     if [[ "$REGION_ID" == "$PLANET_ID" ]]; then echo world; else echo "$REGION_ID"; fi
 }
 
-# Satellite imagery (lib/satellite.sh).
+# Satellite imagery (lib/offline-maps.sh).
 ask_satellite() {
-    choose_satellite "$(maps_area)"
+    choose_offline_maps "$(maps_area)"
 }

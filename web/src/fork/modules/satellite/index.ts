@@ -1,5 +1,5 @@
-// Fork: offline satellite imagery as the background (scripts/satellite.py, chosen in
-// scripts/build-region.sh or scripts/satellite.sh). Each file (NASA Blue Marble for
+// Fork: offline satellite imagery as the background (scripts/offline-maps.py, chosen in
+// scripts/build-region.sh or scripts/offline-maps.sh). Each file (NASA Blue Marble for
 // the world to zoom 8, Sentinel-2 10 m for an area or the world, aerial photos by
 // country) is a raster source served by the `basemap` service; the scripts write
 // them to VITE_SATELLITE_TIERS. Settings → Background (modules/background,
@@ -16,7 +16,7 @@ export interface Tier {
   url: string
   minzoom: number
   maxzoom: number
-  /** Its credit line (from scripts/satellite.py, written with the tier). */
+  /** Its credit line (from scripts/offline-maps.py, written with the tier). */
   attribution: string
   /** What its file covers (from its header): the map asks it for nothing outside. */
   bounds?: Bounds

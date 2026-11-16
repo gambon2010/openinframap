@@ -15,7 +15,7 @@ DROP TABLE IF EXISTS grid_edge;
 DROP TABLE IF EXISTS grid_node;
 
 -- How close a line end must be to a station to count as connected (real metres:
--- schema/distances.sql turns them into map units at each station).
+-- schema/fork/distances.sql turns them into map units at each station).
 \set station_polygon_snap 65
 \set station_point_snap 170
 

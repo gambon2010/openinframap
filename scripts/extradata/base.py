@@ -77,7 +77,7 @@ FEATURE_COUNT = """((SELECT count(*) FROM extra.power_line l WHERE l.source = ex
 def remove_osm_duplicates(
     cur, source_id: str, table: str, location=None, voltage_class=None
 ) -> int:
-    """Delete a source's features OpenStreetMap already has (schema/extra.sql has the
+    """Delete a source's features OpenStreetMap already has (schema/fork/extra.sql has the
     rules); the OSM data is left as it is. Returns how many were deleted."""
     cur.execute("SELECT to_regclass('public.osm_power_line') IS NOT NULL")
     if not cur.fetchone()[0]:

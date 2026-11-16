@@ -1,4 +1,4 @@
-// Fork: data from outside OpenStreetMap (scripts/extra_data.py, schema/extra.sql,
+// Fork: data from outside OpenStreetMap (scripts/extra_data.py, schema/fork/extra.sql,
 // Tegola's "extra" map): French distribution networks, biomethane injection
 // points, classified installations (ICPE). One fork module.
 import { t } from '../../core/i18n.ts'

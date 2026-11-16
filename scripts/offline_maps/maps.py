@@ -1,11 +1,11 @@
-"""Fork: offline maps, the one menu (satellite.py maps): satellite imagery, aerial
+"""Fork: offline maps, the one menu (offline-maps.py maps): satellite imagery, aerial
 photos and the background map. Home shows what's there (the inventory), then
 Resume, Add, Remove, Settings; every question goes through ui.py, every offer
 through coverage.py, so nothing pointless or already there is offered.
 
-Downloads run one after the other as satellite.py's own commands (bdortho,
+Downloads run one after the other as offline-maps.py's own commands (bdortho,
 regional, overview, detailed, basemap), holding the offline maps' lock; what's
-left of them is kept in data/basemap/queue.json, so Resume goes on after a stop.
+left of them is kept in data/offline-maps/queue.json, so Resume goes on after a stop.
 docs/plans/offline-maps.md."""
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from .offers import SourceOffers
 from .regions import Index
 from .sources import SOURCES, Source
 
-SATELLITE_PY = Path(__file__).resolve().parents[1] / "satellite.py"
+OFFLINE_MAPS_PY = Path(__file__).resolve().parents[1] / "offline-maps.py"
 # The lock's holder, for the commands it runs (they'd wait for it otherwise).
 LOCK_ENV = "OIM_MAPS_LOCK"
 LAYER_ORDER = {"overview": 0, "regional": 1, "detailed": 2, "basemap": 3}
@@ -32,7 +32,7 @@ LAYER_ORDER = {"overview": 0, "regional": 1, "detailed": 2, "basemap": 3}
 class Maps(SourceOffers):
     def __init__(self, args):
         self.args = args
-        self.folder = Path(args.basemap_dir).resolve()
+        self.folder = Path(args.maps_dir).resolve()
         self.folder.mkdir(parents=True, exist_ok=True)
         self.index = Index(args.index)
         self.region = args.region or ""
@@ -275,7 +275,7 @@ class Maps(SourceOffers):
                     ui.say("")
                     ui.say(f"[{n}/{len(jobs)}] {job.label}")
                     status = subprocess.run(
-                        [sys.executable, "-I", str(SATELLITE_PY), *job.argv],
+                        [sys.executable, "-I", str(OFFLINE_MAPS_PY), *job.argv],
                         check=False,
                         env=env,
                     ).returncode

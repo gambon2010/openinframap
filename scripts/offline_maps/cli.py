@@ -1,4 +1,4 @@
-"""Fork: satellite imagery. The command line (python3 scripts/satellite.py <command>)."""
+"""Fork: satellite imagery. The command line (python3 scripts/offline-maps.py <command>)."""
 
 from __future__ import annotations
 
@@ -145,12 +145,12 @@ def detailed_outlines(args, source: Source) -> list[list[Ring]]:
 
 def command_tiers(args) -> None:
     """The imagery there is, as the frontend's VITE_SATELLITE_TIERS (one line)."""
-    print(imagery_tiers(Path(args.basemap_dir), args.server))
+    print(imagery_tiers(Path(args.maps_dir), args.server))
 
 
 def command_summary(args) -> None:
     """The imagery there is, in words, with its size."""
-    print(imagery_summary(Path(args.basemap_dir)))
+    print(imagery_summary(Path(args.maps_dir)))
 
 
 def command_sources(args) -> None:
@@ -224,7 +224,7 @@ def command_detailed(args) -> None:
     print(f"{found:,} tiles -> {out}")
 
 
-BASEMAP_DIR = str(Path(__file__).resolve().parents[2] / "data" / "basemap")
+OFFLINE_MAPS_DIR = str(Path(__file__).resolve().parents[2] / "data" / "offline-maps")
 
 
 def main(argv: Iterable[str] | None = None) -> None:
@@ -235,7 +235,7 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     # The menu, and what it runs without questions.
     p = sub.add_parser("maps", help="the offline maps menu (what's there, add, remove)")
-    p.add_argument("--basemap-dir", default=BASEMAP_DIR)
+    p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
     p.add_argument("--index", help="Geofabrik's index (index-v1.json)")
     p.add_argument("--region", default="", help="the region built")
     p.add_argument("--source", choices=sorted(SOURCES), help="no questions: add this")
@@ -286,7 +286,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         "--dept", nargs="+", required=True, help="département codes (67 2A...)"
     )
     p.add_argument("--maxzoom", type=int, choices=range(15, 20), default=17)
-    p.add_argument("--basemap-dir", required=True)
+    p.add_argument("--maps-dir", required=True)
     p.add_argument(
         "--max-rate",
         type=float,
@@ -303,23 +303,23 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--size", type=int, help="world: the file's size, for the progress")
     p.add_argument("--maxzoom", type=int, help="world: only up to this zoom (cut out)")
     p.add_argument("--build", required=True, help="Protomaps' build (20261014.pmtiles)")
-    p.add_argument("--basemap-dir", required=True)
+    p.add_argument("--maps-dir", required=True)
 
     p = sub.add_parser(
         "zoomed-buildings", help="an area's buildings zoomed out (zooms 12 to 14)"
     )
     p.add_argument("--area", required=True)
-    p.add_argument("--basemap-dir", default=BASEMAP_DIR)
+    p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
 
     # For the scripts.
     sub.add_parser("sources", help="the aerial photo sources (JSON)")
     p = sub.add_parser("tiers", help="the imagery there is, as VITE_SATELLITE_TIERS")
-    p.add_argument("--basemap-dir", default=BASEMAP_DIR)
+    p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
     p.add_argument(
         "--server", default="http://localhost:8090", help="the imagery server"
     )
     p = sub.add_parser("summary", help="the imagery there is, in words")
-    p.add_argument("--basemap-dir", default=BASEMAP_DIR)
+    p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
     args = parser.parse_args(list(argv) if argv is not None else None)
     netsafe.run_until_connected(lambda: run_command(args))
 

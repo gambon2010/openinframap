@@ -1,4 +1,4 @@
-# Fork: the scripts import each other by name (netsafe, satimagery, extradata...),
+# Fork: the scripts import each other by name (netsafe, offline_maps, extradata...),
 # run from scripts/: ruff must know them as this project's own, from wherever it runs
 # (CI runs it from the repo root).
 src = ["."]

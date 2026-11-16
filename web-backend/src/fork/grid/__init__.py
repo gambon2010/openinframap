@@ -1,5 +1,5 @@
 """
-Fork: the power grid's routes (schema/grid.sql's network):
+Fork: the power grid's routes (schema/fork/grid.sql's network):
 
 - route.py: paths between two stations (GET /grid/route);
 - line.py: where a clicked power line goes (GET /grid/line/<osm_id>);

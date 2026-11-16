@@ -1,12 +1,12 @@
 # shellcheck shell=bash
-# Offline maps for the scripts (scripts/satellite.py maps; docs/plans/offline-maps.md):
-# build-region.sh opens the menu to queue downloads (choose_satellite) and runs the
-# queue after the build (download_satellite); select_satellite tells the frontend
+# Offline maps for the scripts (scripts/offline-maps.py maps; docs/plans/offline-maps.md):
+# build-region.sh opens the menu to queue downloads (choose_offline_maps) and runs the
+# queue after the build (download_offline_maps); select_satellite tells the frontend
 # which imagery files there are.
 
-# Whether any satellite imagery is downloaded (data/basemap/<area>.sat-*.pmtiles).
+# Whether any satellite imagery is downloaded (data/offline-maps/<area>.sat-*.pmtiles).
 has_satellite() {
-    compgen -G "$BASEMAP_DIR/*.sat-*.pmtiles" >/dev/null
+    compgen -G "$OFFLINE_MAPS_DIR/*.sat-*.pmtiles" >/dev/null
 }
 
 # Start the satellite imagery server (the "satellite" service) if there's any.
@@ -19,14 +19,14 @@ start_satellite_if_present() {
 # "world overview, france regional, IGN photos of 2 départements (3.4 GB)": the
 # imagery there is, and its total size.
 satellite_summary() {
-    python3 -I "$REPO_ROOT/scripts/satellite.py" summary --basemap-dir "$BASEMAP_DIR"
+    python3 -I "$REPO_ROOT/scripts/offline-maps.py" summary --maps-dir "$OFFLINE_MAPS_DIR"
 }
 
 # The imagery as the frontend reads it (VITE_SATELLITE_TIERS; empty: none):
 # every imagery file, with its zooms, bounds and credit
-# (scripts/satimagery/inventory.py imagery_tiers).
+# (scripts/offline_maps/inventory.py imagery_tiers).
 satellite_tiers_value() {
-    python3 -I "$REPO_ROOT/scripts/satellite.py" tiers --basemap-dir "$BASEMAP_DIR" \
+    python3 -I "$REPO_ROOT/scripts/offline-maps.py" tiers --maps-dir "$OFFLINE_MAPS_DIR" \
         --server "http://localhost:$SATELLITE_PORT"
 }
 
@@ -50,15 +50,15 @@ select_satellite() {
     fi
 }
 
-# choose_satellite REGION — the offline maps menu (satellite.py maps), queuing
-# what's chosen: it's downloaded after the build (download_satellite), every
+# choose_offline_maps REGION — the offline maps menu (offline-maps.py maps), queuing
+# what's chosen: it's downloaded after the build (download_offline_maps), every
 # question first. Without questions (--yes): MAPS_SOURCES, the sources to queue
 # for the region (build-region.sh --maps "sentinel2 fr_ign"), else nothing.
-choose_satellite() {
+choose_offline_maps() {
     local region="$1" source menu
-    menu=(python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queue-only
-        --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" --region "$region")
-    mkdir -p "$BASEMAP_DIR"
+    menu=(python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only
+        --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" --region "$region")
+    mkdir -p "$OFFLINE_MAPS_DIR"
     if [[ -n "${MAPS_SOURCES:-}" ]]; then
         for source in $MAPS_SOURCES; do
             "${menu[@]}" --yes --source "$source" --area "$region" \
@@ -73,19 +73,19 @@ choose_satellite() {
     return 0
 }
 
-# run_maps_queue — what the offline maps menu queued (satellite.py maps
+# run_maps_queue — what the offline maps menu queued (offline-maps.py maps
 # --queued: one after the other, under its lock).
 run_maps_queue() {
-    [[ -f "$BASEMAP_DIR/queue.json" ]] || return 0
+    [[ -f "$OFFLINE_MAPS_DIR/queue.json" ]] || return 0
     section "Downloading the offline maps chosen..."
-    python3 -I "$REPO_ROOT/scripts/satellite.py" maps --queued --yes \
-        --basemap-dir "$BASEMAP_DIR" --index "$GEOFABRIK_INDEX" \
-        || warn "What was downloaded is kept. To go on: bash scripts/satellite.sh, then Resume."
+    python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queued --yes \
+        --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
+        || warn "What was downloaded is kept. To go on: bash scripts/offline-maps.sh, then Resume."
 }
 
-# download_satellite — download what was queued (choose_satellite), then point
+# download_offline_maps — download what was queued (choose_offline_maps), then point
 # the frontend at the imagery there.
-download_satellite() {
+download_offline_maps() {
     if [[ "${SATELLITE_MENU:-0}" == 1 ]]; then
         run_maps_queue
     fi

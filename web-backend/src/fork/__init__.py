@@ -31,7 +31,7 @@ routes: list[BaseRoute] = [
     *userdata.routes,
     *map_data.routes,
     *grid.routes,
-    # The background map's tiles, from every area downloaded (data/basemap/).
+    # The background map's tiles, from every area downloaded (data/offline-maps/).
     *background.routes,
     *background_buildings.routes,
 ]

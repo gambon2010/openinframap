@@ -1,6 +1,6 @@
 """Fork: offline maps. The background map (streets, places, buildings), cut out of
 Protomaps' daily world build with pmtiles (in Docker) into
-data/basemap/<area>.pmtiles, with its manifest (<area>.json: the build it came
+data/offline-maps/<area>.pmtiles, with its manifest (<area>.json: the build it came
 from), then its buildings zoomed out (<area>.buildings.pmtiles, zooms 12 to 14,
 made in the backend's image: web-backend/src/fork/background/zoomed_buildings.py).
 The backend serves them all together (web-backend/src/fork/background/).
@@ -90,7 +90,7 @@ WORLD_LOW_ZOOM = 8
 def extract_args(
     build: str, outline: Path | None, out: str, maxzoom: int | None = None
 ) -> list[str]:
-    """pmtiles extract of an outline (a file in data/basemap/, /out in Docker), or
+    """pmtiles extract of an outline (a file in data/offline-maps/, /out in Docker), or
     of the whole world (no outline), up to a zoom if one is given."""
     area = f"--region=/out/{outline.name}" if outline else WORLD_BBOX
     args = ["extract", f"{PROTOMAPS.address}/{build}", out, area]
@@ -133,10 +133,10 @@ def progress_printer(total: int):
 
 
 def command_basemap(args) -> None:
-    """The background map of an area (satellite.py basemap), full detail: cut out
+    """The background map of an area (offline-maps.py basemap), full detail: cut out
     of Protomaps' world map, or for the whole world its file itself (downloaded,
     resumable)."""
-    folder = Path(args.basemap_dir).resolve()
+    folder = Path(args.maps_dir).resolve()
     out = folder / f"{args.area}.pmtiles"
     url = f"{PROTOMAPS.address}/{args.build}"
     if args.area == "world" and not args.maxzoom:
@@ -183,7 +183,7 @@ def command_basemap(args) -> None:
             # The background map is kept; the menu offers its buildings again.
             print(
                 f"Making its buildings zoomed out failed. Again: "
-                f"python3 scripts/satellite.py zoomed-buildings --area {args.area}",
+                f"python3 scripts/offline-maps.py zoomed-buildings --area {args.area}",
                 file=sys.stderr,
             )
 
@@ -226,5 +226,5 @@ def make_zoomed_buildings(folder: Path, area: str) -> None:
 
 
 def command_zoomed_buildings(args) -> None:
-    """satellite.py zoomed-buildings --area AREA: an area already downloaded."""
-    make_zoomed_buildings(Path(args.basemap_dir), args.area)
+    """offline-maps.py zoomed-buildings --area AREA: an area already downloaded."""
+    make_zoomed_buildings(Path(args.maps_dir), args.area)

@@ -117,7 +117,7 @@ SCRIPT_NAMES = [
     "export-db.sh",
     "start.sh",
     "launch.sh",
-    "satellite.sh",
+    "offline-maps.sh",
     "number-towers.sh",
 ]
 
@@ -131,7 +131,7 @@ def test_syntax(script):
 
 
 @pytest.mark.parametrize(
-    "script", ["build-region.sh", "import-db.sh", "export-db.sh", "satellite.sh"]
+    "script", ["build-region.sh", "import-db.sh", "export-db.sh", "offline-maps.sh"]
 )
 def test_help(sandbox, script):
     result = sandbox.run(script, "--help")
@@ -141,7 +141,7 @@ def test_help(sandbox, script):
 
 
 @pytest.mark.parametrize(
-    "script", ["build-region.sh", "import-db.sh", "export-db.sh", "satellite.sh"]
+    "script", ["build-region.sh", "import-db.sh", "export-db.sh", "offline-maps.sh"]
 )
 def test_unknown_option(sandbox, script):
     result = sandbox.run(script, "--frobnicate")
@@ -268,7 +268,7 @@ def test_import_asks_before_replacing_the_database(sandbox):
 
 def test_import(sandbox):
     dump = make_export(sandbox)
-    basemap = sandbox.root / "data" / "basemap"
+    basemap = sandbox.root / "data" / "offline-maps"
     basemap.mkdir(parents=True)
     fake_pmtiles.write(basemap / "world.sat-overview.pmtiles", 0, 8)
     db = answers(
@@ -408,7 +408,7 @@ def test_start(sandbox):
 
 
 def test_start_serves_satellite_imagery_without_a_background_map(sandbox):
-    basemap = sandbox.root / "data" / "basemap"
+    basemap = sandbox.root / "data" / "offline-maps"
     basemap.mkdir(parents=True)
     fake_pmtiles.write(basemap / "world.sat-overview.pmtiles", 0, 8)
     db = answers(
@@ -563,7 +563,7 @@ def test_real_build_export_and_import(tmp_path):
         )
 
 
-# --- satellite.sh -------------------------------------------------------------------
+# --- offline-maps.sh -------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -574,7 +574,7 @@ def test_real_build_export_and_import(tmp_path):
     ],
 )
 def test_satellite_refuses_bad_options_before_doing_anything(sandbox, args, message):
-    result = sandbox.run("satellite.sh", *args)
+    result = sandbox.run("offline-maps.sh", *args)
     assert result.returncode != 0
     assert message in result.stderr + result.stdout
     assert sandbox.calls() == []
@@ -600,7 +600,7 @@ def test_number_towers(sandbox):
     # Tegola made again so the map shows them.
     result = sandbox.run("number-towers.sh")
     assert result.returncode == 0, result.stderr + result.stdout
-    assert sandbox.docker_calls("psql")  # schema/tower-numbers.sql
+    assert sandbox.docker_calls("psql")  # schema/fork/tower-numbers.sql
     assert sandbox.docker_calls("run", "src.fork.tower_numbers")
     assert sandbox.docker_calls("up", "--force-recreate", "tegola")
     assert "Towers numbered" in result.stdout

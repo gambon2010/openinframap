@@ -1,6 +1,6 @@
 # Plan: the global clean-up
 
-Status: **done but batch 8** (2026-11-12; batch 8 waits for the IGN download). Findings: `cleanup-audit.md`. Nothing
+Status: **done** (2026-11-12; batch 8 on 2026-11-16). Findings: `archive/cleanup-audit.md`. Nothing
 changes for whoever uses the map except where a line below says so.
 
 ## Rules
@@ -23,14 +23,14 @@ changes for whoever uses the map except where a line below says so.
 
 | # | Batch | Status |
 |---|---|---|
-| 1 | **The old satellite path** and what only it used: `menu.py`'s questions and plan, the `choose` / `steps` / `estimate` / `estimate-detailed` commands, the shell presets and `run_parallel`, the options `--satellite`, `--satellite-detailed`, `--area`, `--zoom`, `--sources` (replaced: `build-region.sh --maps "ID ..."`, `satellite.py maps --source ID --yes`, now also for tile-server photos); the stand-in names (`DETAILED_SOURCES`, `TIERS`, the size constants); one-time code (lower zooms added to old imagery files, the old `.sat-detailed` name, a region's own Blue Marble file, `select_basemap`'s old addresses, `import-db.sh` patching exports from before search / the grid / extra data existed: an older export now defaults to "don't import") | ✅ 2026-11-12 |
+| 1 | **The old satellite path** and what only it used: `menu.py`'s questions and plan, the `choose` / `steps` / `estimate` / `estimate-detailed` commands, the shell presets and `run_parallel`, the options `--satellite`, `--satellite-detailed`, `--area`, `--zoom`, `--sources` (replaced: `build-region.sh --maps "ID ..."`, `offline-maps.py maps --source ID --yes`, now also for tile-server photos); the stand-in names (`DETAILED_SOURCES`, `TIERS`, the size constants); one-time code (lower zooms added to old imagery files, the old `.sat-detailed` name, a region's own Blue Marble file, `select_basemap`'s old addresses, `import-db.sh` patching exports from before search / the grid / extra data existed: an older export now defaults to "don't import") | ✅ 2026-11-12 |
 | 2 | **Quick and safe:** `.gitignore` (`*.bak`); lint findings; the debug print; unused string; upstream files nothing imports (`geocoder.ts`, `search/opencage.ts`, `elements/tab-pane.ts`); the `area` re-export | ✅ 2026-11-12 |
 | 3 | **Duplicates:** one PMTiles header reader for the scripts; one "run in the backend"; one client name for downloads; one fake-PMTiles test helper; one details table (frontend); the code normaliser | ✅ 2026-11-12 |
 | 4 | **One source of truth:** the PMTiles program's version; the building sizes per zoom; each checked by a test where two languages must agree | ✅ 2026-11-12 (the building sizes: with batch 6) |
 | 5 | **Old My layers data** (layers from before accounts, old arrows, a layer's own folder, items from before fields and colours): check what the database holds, convert it once with a migration, then remove the code that handles the old forms | ✅ 2026-11-12 |
 | 6 | **Buildings: exact copies at every zoom.** Planned: the backend making the zoomed-out tiles from the background map's zoom 15 tiles (one source). Measured too slow (below), so the zoomed-out drawing stays the build step and Tegola; a copy takes the exact outline from the backend instead | ✅ 2026-11-12 (reduced) |
 | 7 | **Large files** (fork's own): `maps.py` (screens / each source's jobs), `cli.py`, `build-region.sh` (options and questions / steps), `bdortho.py`; then the frontend's (`render.ts`, `store.ts`) if reading them shows a clean cut | ✅ 2026-11-12 (the menu, the build script; the rest left: below) |
-| 8 | **Names:** `data/basemap/` → offline maps (and `BASEMAP_*`, `lib/basemap.sh`, `--basemap-dir`); the fork's SQL files told apart from upstream's; `scripts/satellite.*` → offline maps | ⏸ waits for the IGN download (it writes in `data/basemap/`, and `satellite.sh` is running) |
+| 8 | **Names:** `data/basemap/` → `data/offline-maps/` (`BASEMAP_DIR` → `OFFLINE_MAPS_DIR`, `--basemap-dir` → `--maps-dir`); the fork's SQL files in `schema/fork/`; `scripts/satellite.*` and `satimagery/` → `offline-maps.*` and `offline_maps/` (the package's re-exports for the tests removed). `BASEMAP_URL`, `--basemap`, `lib/basemap.sh` kept: "basemap" there is the background map | ✅ 2026-11-16 |
 | 9 | **CI:** one workflow running the fork's three test suites; upstream's deploy workflows off in the fork | ✅ 2026-11-12 |
 | 10 | **Docs:** `FORK_CHANGES.md` split into "how it is" and a dated history; finished plans archived; the guide trimmed; `CLAUDE.md` checked line by line | ✅ 2026-11-12 |
 | 11 | **Proof:** the real Luxembourg build → export → import test (`OIM_TEST_REAL_BUILD=1`), then the export made again | ✅ 2026-11-12 |
@@ -38,9 +38,9 @@ changes for whoever uses the map except where a line below says so.
 ## Log
 
 - **2026-11-12, batch 1.** Scripts: −1,900 lines (code and tests). New pieces:
-  `satimagery/regions.py` (Geofabrik's index), `aerial.py` (tile-server photos:
+  `offline_maps/regions.py` (Geofabrik's index), `aerial.py` (tile-server photos:
   job, file, estimate); `attribution_for` reads file names through
-  `inventory.identify` (one parser). `satellite.sh` takes no options;
+  `inventory.identify` (one parser). `offline-maps.sh` takes no options;
   `build-region.sh --maps "sentinel2 fr_ign"` queues without questions.
   Downloads from the menu run one after the other (the old path ran them side by
   side). Blue Marble is the world's file only.
@@ -50,10 +50,10 @@ changes for whoever uses the map except where a line below says so.
   icon): upstream's own type errors go from 31 to 24. Measuring's own copy of the
   distance formula and its re-export of the area go: one of each, in
   `core/geo.ts`. The debug line on a clicked feature stays (development only).
-- **2026-11-12, batch 3.** One PMTiles header reader (`satimagery/pmtiles.py`):
+- **2026-11-12, batch 3.** One PMTiles header reader (`offline_maps/pmtiles.py`):
   the shell's own (five functions with Python inside) is gone, because the list of
   imagery the map is told about (`VITE_SATELLITE_TIERS`) and its summary are now
-  made in Python (`inventory.imagery_tiers`, `imagery_summary`; `satellite.py
+  made in Python (`inventory.imagery_tiers`, `imagery_summary`; `offline-maps.py
   tiers` / `summary`), which also ends the first-zoom number kept in two
   languages. `backend_python` (`lib/db.sh`) runs every build step written in the
   backend. One client name for downloads (`netsafe.USER_AGENT`). One fake offline
@@ -86,7 +86,7 @@ changes for whoever uses the map except where a line below says so.
   buildings.py`), which joins the building's pieces from the zoom 15 tiles around
   it (45 ms for a large Paris building), at any zoom; offline from the backend,
   the pieces on screen. A cut leaving a line beside the area keeps the area only.
-- **2026-11-12, batch 7.** `satimagery/maps.py` (865 lines) → `maps.py` (the
+- **2026-11-12, batch 7.** `offline_maps/maps.py` (865 lines) → `maps.py` (the
   screens, 434), `offers.py` (what each source offers and the downloads it makes,
   417: a part `Maps` takes in) and `jobs.py` (a download, the queue: 53).
   `build-region.sh` (874) → `build-region.sh` (options, the variables the steps
@@ -109,9 +109,9 @@ changes for whoever uses the map except where a line below says so.
   Plans built, done or dropped moved to `plans/archive/` (refactor, refactor-5e,
   feature-status, satellite-imagery, my-layers-v2, my-layers-v3, graphic-labels,
   offline-maps); `sync.md`, the audit and this plan stay.
-- **Batch 8 waits.** The IGN download was resumed from the menu
-  (`bash scripts/satellite.sh`, 93 départements): renaming `data/basemap/` and the
-  scripts it runs would break it. To do once it's finished (or stopped for good).
+- **Batch 8 waited** for the IGN download (renaming the folder and the scripts it
+  runs would have broken it); done 2026-11-16 with the download stopped, then
+  restarted from the renamed folder (its queue's paths rewritten).
 - **2026-11-12, batch 11.** The real Luxembourg build → export → import
   (`OIM_TEST_REAL_BUILD=1`, its own Docker project) passed (1 min 56 s). The export
   made again after it (database: migration 003, the large buildings; images: the

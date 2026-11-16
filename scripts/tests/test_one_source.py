@@ -5,7 +5,7 @@ Compose's; the PMTiles program's version too."""
 import re
 from pathlib import Path
 
-from satimagery import extract
+from offline_maps import extract
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPOSE = (ROOT / "docker-compose.override.yml").read_text()

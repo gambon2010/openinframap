@@ -42,7 +42,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 2.7 | `launch.sh` (first time, everything) and a no-questions daily start. | ✅ `launch.sh`, `start.sh` |
 | 2.8 | Export / import a built database to share the project without internet (copy to a flash drive). Exports found by the build script replace the matching menu entry ("import Russia"). | ✅ `export-db.sh`, `import-db.sh`, `data/exports/*.oimdb` |
 | 2.9 | Backend in Docker so the project is easy to copy. | ✅ Compose service `backend` |
-| 2.10 | Build performance: per-country stats fast for big countries. | ✅ `schema/local-stats.sql` |
+| 2.10 | Build performance: per-country stats fast for big countries. | ✅ `schema/fork/local-stats.sql` |
 | 2.11 | Extra data (not from OSM) is offered in the build script for the regions it covers (e.g. France or a French sub-region), and is included in export/import. | ✅ |
 | 2.12 | Rebuilding the OSM data must not delete the extra data (it's slow to download): keep it, and keep the raw downloads to rebuild from. | ✅ `data/extra/` |
 | 2.13 | List the dependencies needed to run the project from nothing. | ✅ LOCAL_DEVELOPMENT "Prerequisites" |
@@ -59,10 +59,10 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 3.3 | Fully offline needs a local background map: build-script option to download one (full or reduced detail) for the region. | ✅ Protomaps extract, `basemap` service |
 | 3.4 | Night lights layer: disabled (online only, broke the map). | ✅ hidden |
 | 3.5 | Future: one command that sets up local tile server + local geocoder; priority local from config, fall back to online defaults, UI override showing the URL in use. | ✅ partly (local basemap, Photon optional); single command for Photon not done |
-| 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/satellite.py`, `fork/modules/satellite/`; Settings → Background |
-| 3.7 | Download satellite imagery for the region already built without losing the data (no rebuild). | ✅ `scripts/satellite.sh` |
+| 3.6 | Satellite imagery as a build-script option: NASA Blue Marble for zoom 0–8, intermediate zooms from 10 m imagery, optional high resolution; offline. | ✅ `scripts/offline-maps.py`, `fork/modules/satellite/`; Settings → Background |
+| 3.7 | Download satellite imagery for the region already built without losing the data (no rebuild). | ✅ `scripts/offline-maps.sh` |
 | 3.8 | Blue Marble for the whole world by default; a menu that explains each choice. | ✅ one shared `world.sat-overview.pmtiles` (~330 MB) |
-| 3.9 | Sentinel-2 for other countries or the whole world; high-resolution photos for more countries than France. | ✅ the offline maps menu (`satellite.py maps`), `satimagery/sources/` (14 aerial sources, 10 countries); the world end to end not run (too big to test) |
+| 3.9 | Sentinel-2 for other countries or the whole world; high-resolution photos for more countries than France. | ✅ the offline maps menu (`offline-maps.py maps`), `offline_maps/sources/` (14 aerial sources, 10 countries); the world end to end not run (too big to test) |
 
 ## 4. Search
 
@@ -72,7 +72,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 4.2 | "vianden" finds "Centrale de Vianden" (words inside names). | ✅ |
 | 4.3 | Offline place search (cities, towns, villages, hamlets, neighbourhoods) from the local database; OpenCage removed. | ✅ |
 | 4.4 | Optional Photon server for addresses, configurable in the map sources; not installed by the scripts. | ✅ |
-| 4.5 | Everything with a name is searchable (critical sites, lines, telecoms, pipelines, water, extra data...). | ✅ `schema/search.sql` |
+| 4.5 | Everything with a name is searchable (critical sites, lines, telecoms, pipelines, water, extra data...). | ✅ `schema/fork/search.sql` |
 | 4.6 | Picking a result opens its details and highlights it, like a click. | ✅ |
 
 ## 5. Map display, key and layers
@@ -145,7 +145,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 
 | # | Requirement | Status |
 |---|---|---|
-| 8.1 | Layers for infrastructure people tend to miss: airports, ports, military bases, data centres, food depots, health and emergency, government (mairie, trésorerie, CAF...), places of worship with an icon per religion, fuel and weapons, transport hubs, dams, landfills, weather stations... | ✅ `imposm/sites.py`, `schema/sites.sql`, `fork/modules/sites/` |
+| 8.1 | Layers for infrastructure people tend to miss: airports, ports, military bases, data centres, food depots, health and emergency, government (mairie, trésorerie, CAF...), places of worship with an icon per religion, fuel and weapons, transport hubs, dams, landfills, weather stations... | ✅ `imposm/sites.py`, `schema/fork/sites.sql`, `fork/modules/sites/` |
 | 8.2 | Disused military (bunkers, trenches) as its own category. | ✅ |
 | 8.3 | Pharmacies yes (not visible from far out); defibrillators and post offices no. | ✅ |
 | 8.4 | Supermarkets and wholesale (cash & carry) shown. | ✅ |

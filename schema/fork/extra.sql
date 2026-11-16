@@ -82,7 +82,7 @@ ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS osm_duplicates integer;
 ALTER TABLE extra.source ADD COLUMN IF NOT EXISTS duplicates jsonb;
 
 -- Duplicates of OpenStreetMap: the OSM data is kept as it is, and extra features it
--- already has are deleted. Distances in real metres (schema/distances.sql). Measured on a sample around Pontivy: matches are clear-cut
+-- already has are deleted. Distances in real metres (schema/fork/distances.sql). Measured on a sample around Pontivy: matches are clear-cut
 -- (overhead HTA lines are mostly 0% or 100% covered, substations are within a few
 -- metres or more than 50 m away).
 

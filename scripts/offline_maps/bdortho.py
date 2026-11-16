@@ -451,7 +451,7 @@ def have_zoom(path: Path) -> int | None:
 def command_bdortho(args) -> None:
     """Download and convert départements one after the other (bdortho --dept 67
     68), one download at a time (the offline maps' lock)."""
-    folder = Path(args.basemap_dir).resolve()
+    folder = Path(args.maps_dir).resolve()
     count = len(args.dept)
     what = f"IGN {count} département{'s' if count > 1 else ''} to zoom {args.maxzoom}"
     try:

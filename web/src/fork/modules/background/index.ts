@@ -68,7 +68,7 @@ const backgroundModule: ForkModule = {
           ? t('background.zooms', 'Imagery up to zoom {{zoom}}.', { zoom: imagery.maxzoom })
           : t(
               'background.none',
-              'No satellite imagery yet. Run "bash scripts/satellite.sh" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.'
+              'No satellite imagery yet. Run "bash scripts/offline-maps.sh" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.'
             )
       ),
       nothingHere

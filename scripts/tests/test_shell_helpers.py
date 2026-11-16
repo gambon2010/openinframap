@@ -41,7 +41,7 @@ def test_satellite_tiers_value(tmp_path):
     (tmp_path / "lux.sat-regional.pmtiles").write_bytes(fake_pmtiles.header(9, 13))
     # A region's own Blue Marble (made before the world's): not shown.
     (tmp_path / "lux.sat-overview.pmtiles").write_bytes(fake_pmtiles.header(0, 8))
-    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
     assert "|NASA Blue Marble;" in value
     value = re.sub(r"\|[^;]*", "", value)
     assert value == (
@@ -49,13 +49,17 @@ def test_satellite_tiers_value(tmp_path):
         "http://localhost:8090/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
     )
     assert (
-        bash("has_satellite && echo yes || echo no", BASEMAP_DIR=str(tmp_path)) == "yes"
+        bash("has_satellite && echo yes || echo no", OFFLINE_MAPS_DIR=str(tmp_path))
+        == "yes"
     )
     assert (
-        bash("has_satellite && echo yes || echo no", BASEMAP_DIR=str(tmp_path / "none"))
+        bash(
+            "has_satellite && echo yes || echo no",
+            OFFLINE_MAPS_DIR=str(tmp_path / "none"),
+        )
         == "no"
     )
-    assert bash("satellite_summary", BASEMAP_DIR=str(tmp_path)).startswith(
+    assert bash("satellite_summary", OFFLINE_MAPS_DIR=str(tmp_path)).startswith(
         "world overview, lux regional ("
     )
 
@@ -80,7 +84,7 @@ export_outdated && echo outdated || echo current
 
 
 def test_tiers_list_every_area_and_source(tmp_path):
-    # Each file as satellite.py writes it: its own first and last zoom in its header.
+    # Each file as offline-maps.py writes it: its own first and last zoom in its header.
     def pmtiles(name, minzoom, maxzoom, tile_format):
         fake_pmtiles.write(tmp_path / name, minzoom, maxzoom, tile_format=tile_format)
 
@@ -92,7 +96,7 @@ def test_tiers_list_every_area_and_source(tmp_path):
     pmtiles(
         "notes.sat-detailed-nobody.pmtiles", 14, 15, "jpg"
     )  # no such source: not shown
-    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
     assert "Digitaal Vlaanderen" in value
     assert re.sub(r"\|[^;]*", "", value).split(";") == [
         "http://localhost:8090/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
@@ -116,20 +120,24 @@ def test_departement_files_carry_their_bounds_and_are_summed_up(tmp_path):
             tile_format="webp",
             bounds=box,
         )
-    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
     assert (
         "http://localhost:8090/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
         "6.94000,48.12000,8.23000,49.08000|© IGN (Licence Ouverte)"
     ) in value
-    summary = bash("satellite_summary", BASEMAP_DIR=str(tmp_path))
+    summary = bash("satellite_summary", OFFLINE_MAPS_DIR=str(tmp_path))
     assert summary.startswith("IGN photos of 2 départements (")
 
 
 def test_every_schema_file_is_built_and_fingerprinted():
     built = bash('echo "${SCHEMA_FILES[@]}"').split()
     skipped = bash('echo "${SCHEMA_NOT_BUILT[@]}"').split()
-    on_disk = {p.stem for p in (SCRIPTS.parent / "schema").glob("*.sql")}
-    assert on_disk == set(built) | set(skipped), "add new schema/*.sql to SCHEMA_FILES"
+    schema = SCRIPTS.parent / "schema"
+    on_disk = {p.stem for p in [*schema.glob("*.sql"), *schema.glob("fork/*.sql")]}
+    assert on_disk == set(built) | set(skipped), "add new schema files to SCHEMA_FILES"
+    # Upstream's in schema/, the fork's in schema/fork/: found by name either way.
+    assert bash("schema_file grid").endswith("/schema/fork/grid.sql")
+    assert bash("schema_file views").endswith("/schema/views.sql")
     # build-region.sh runs them in the listed order (functions.sql and eez.sql run
     # elsewhere: at database creation, and in import_eez), with run_schema.
     script = BUILD_SCRIPT
@@ -283,22 +291,20 @@ def test_room_for(tmp_path):
 
 
 def test_distances_in_the_build_sql_are_real_metres():
-    # Map units stretch with latitude (schema/distances.sql): a distance written as
+    # Map units stretch with latitude (schema/fork/distances.sql): a distance written as
     # a bare number means something else in Norway than in France.
     raw = re.compile(
         r"ST_(DWithin|Buffer|Expand)\([^()]*(\([^()]*\)[^()]*)*,\s*[0-9.]+\s*\)"
     )
     found = []
-    for sql in sorted((SCRIPTS.parent / "schema").glob("*.sql")):
-        if sql.stem in ("functions", "views", "dev-init", "prod-init"):
-            continue  # upstream's
+    for sql in sorted((SCRIPTS.parent / "schema" / "fork").glob("*.sql")):
         found += [f"{sql.name}: {m.group(0)}" for m in raw.finditer(sql.read_text())]
-    assert found == [], "use oim_units / oim_max_stretch (schema/distances.sql)"
+    assert found == [], "use oim_units / oim_max_stretch (schema/fork/distances.sql)"
 
 
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(fake_pmtiles.header(5, 13))
-    value = bash("satellite_tiers_value", BASEMAP_DIR=str(tmp_path))
+    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
     assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value
 
 
@@ -308,20 +314,20 @@ def test_the_build_asks_with_the_offline_maps_menu_and_downloads_after(tmp_path)
     out = bash(
         f"""
 python3() {{
-    if [[ "$*" == *satellite.py\\ maps* ]]; then
+    if [[ "$*" == *offline-maps.py\\ maps* ]]; then
         echo "maps $*" >> "{calls}"
-        [[ "$*" == *--queue-only* ]] && echo '[]' > "$BASEMAP_DIR/queue.json"
-    elif [[ "$*" == *satellite.py* ]]; then :
+        [[ "$*" == *--queue-only* ]] && echo '[]' > "$OFFLINE_MAPS_DIR/queue.json"
+    elif [[ "$*" == *offline-maps.py* ]]; then :
     else command python3 "$@"; fi
 }}
 docker() {{ :; }}
 select_satellite() {{ echo "select" >> "{calls}"; }}
 ASSUME_YES=0
-choose_satellite france 2>&1
+choose_offline_maps france 2>&1
 echo "--- the build ---" >> "{calls}"
-download_satellite 2>&1
+download_offline_maps 2>&1
 """,
-        BASEMAP_DIR=str(tmp_path),
+        OFFLINE_MAPS_DIR=str(tmp_path),
         GEOFABRIK_INDEX="index.json",
     )
     made = calls.read_text().splitlines()
@@ -335,14 +341,16 @@ download_satellite 2>&1
 def test_the_background_maps_there_are(tmp_path):
     # Served together by the backend, the frontend's default: nothing to set.
     assert "background is empty" in bash(
-        "select_basemap 2>&1", BASEMAP_DIR=str(tmp_path)
+        "select_basemap 2>&1", OFFLINE_MAPS_DIR=str(tmp_path)
     )
     (tmp_path / "france.pmtiles").write_bytes(b"x")
     (tmp_path / "luxembourg.pmtiles").write_bytes(b"x")
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(b"x")  # imagery: not one
-    out = bash("select_basemap 2>&1", BASEMAP_DIR=str(tmp_path))
+    out = bash("select_basemap 2>&1", OFFLINE_MAPS_DIR=str(tmp_path))
     assert "Offline background map: france, luxembourg" in out
-    assert bash("background_areas", BASEMAP_DIR=str(tmp_path)) == "france\nluxembourg"
+    assert (
+        bash("background_areas", OFFLINE_MAPS_DIR=str(tmp_path)) == "france\nluxembourg"
+    )
 
 
 def test_a_build_without_questions_queues_the_maps_asked_for(tmp_path):
@@ -352,13 +360,13 @@ def test_a_build_without_questions_queues_the_maps_asked_for(tmp_path):
         f"""
 python3() {{ echo "$*" >> "{calls}"; }}
 ASSUME_YES=1 MAPS_SOURCES="sentinel2 fr_ign"
-choose_satellite france
+choose_offline_maps france
 echo "menu flag: $SATELLITE_MENU" >> "{calls}"
 ASSUME_YES=1 MAPS_SOURCES="" SATELLITE_MENU=0
-choose_satellite france
+choose_offline_maps france
 echo "menu flag: $SATELLITE_MENU" >> "{calls}"
 """,
-        BASEMAP_DIR=str(tmp_path),
+        OFFLINE_MAPS_DIR=str(tmp_path),
         GEOFABRIK_INDEX="index.json",
     )
     first, second, flag, none = calls.read_text().splitlines()

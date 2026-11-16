@@ -16,7 +16,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-run_with_timer "Preparing tower numbers" run_sql_file schema/tower-numbers.sql
+run_schema tower-numbers
 run_with_timer "Numbering towers along their lines" number_towers
 up_services --force-recreate tegola
 ok "Towers numbered; tile server restarted"

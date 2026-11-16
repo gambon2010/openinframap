@@ -2,7 +2,7 @@
 Fork: the search box's backend. Registered ahead of upstream's identical route
 (src/views/search.py, left as upstream has it), it adds to upstream's search:
 word matching ("vianden" finds "Centrale de Vianden"), places (imposm/places.py)
-and everything else with a name (schema/search.sql), ranked together.
+and everything else with a name (schema/fork/search.sql), ranked together.
 
 - matching.py: matching a query in SQL, accents left out;
 - stations.py, places.py, features.py, towers.py: one search per kind;

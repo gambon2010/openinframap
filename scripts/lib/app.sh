@@ -173,7 +173,7 @@ ensure_web_env() {
     cat > "$WEB_ENV" <<ENV
 VITE_TEGOLA_URL=http://localhost:$TEGOLA_PORT
 VITE_BACKEND_BASE_URL=http://localhost:$BACKEND_PORT
-# Background map: the ones downloaded (bash scripts/satellite.sh), served by the
+# Background map: the ones downloaded (bash scripts/offline-maps.sh), served by the
 # backend. Only local tiles. To use another Protomaps-schema tile server instead
 # (full {z}/{x}/{y} URL template):
 # VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt

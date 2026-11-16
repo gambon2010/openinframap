@@ -6,7 +6,7 @@ circle ringed in its category's colour, and a plain disc per category for groups
     npm pack @mapbox/maki@8.2.0 && tar xzf mapbox-maki-8.2.0.tgz
     python3 scripts/make_site_icons.py package/icons
 
-Kinds and categories are those of schema/sites.sql; the colours must match
+Kinds and categories are those of schema/fork/sites.sql; the colours must match
 web/src/fork/modules/sites/style.ts.
 """
 

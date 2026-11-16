@@ -193,7 +193,7 @@ Measured on this project's dev machine; your download speed dominates.
 ## Offline background map
 
 The background map (streets, buildings, place names) is only ever local: where
-none is downloaded the background is empty. Download it in the offline maps menu (`bash scripts/satellite.sh`, or
+none is downloaded the background is empty. Download it in the offline maps menu (`bash scripts/offline-maps.sh`, or
 in `build-region.sh`): Add, the area, *Background map*. Always full detail (to
 zoom 15, buildings included). The menu shows each area's edition (Protomaps'
 date) and offers it again only when a newer one exists. Several areas can be
@@ -203,18 +203,18 @@ zoomed out) comes by default with any download and every build. Sizes grow quick
 9.5 GB, Russia 26 GB, Europe 49 GB; the menu shows the real size, by outline.
 
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
-`data/basemap/<region>.pmtiles`. The backend serves every background map there
+`data/offline-maps/<region>.pmtiles`. The backend serves every background map there
 together (each tile from the first file that has it, so several areas show at
 once), at `/background`, the frontend's default.
 
 Buildings: Protomaps' tiles hold every building only from zoom 15. Right after an
 area is downloaded, the buildings big enough to see zoomed out (zooms 12 to 14)
-are made from them into `data/basemap/<region>.buildings.pmtiles` (France: 6 minutes,
+are made from them into `data/offline-maps/<region>.buildings.pmtiles` (France: 6 minutes,
 56 MB); the backend adds them to the background map's tiles, and *Data layers →
 Background map → Buildings* shows them. For an area downloaded before, the menu
-offers *Buildings zoomed out* (or `python3 scripts/satellite.py zoomed-buildings
+offers *Buildings zoomed out* (or `python3 scripts/offline-maps.py zoomed-buildings
 --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
-`python3 scripts/satellite.py maps --source protomaps --area france --yes`.
+`python3 scripts/offline-maps.py maps --source protomaps --area france --yes`.
 
 ## Satellite imagery (offline)
 
@@ -224,7 +224,7 @@ the build) and on its own, for the region you already have, without rebuilding
 (your map data and layers stay):
 
 ```bash
-bash scripts/satellite.sh      # the menu; then restart the frontend
+bash scripts/offline-maps.sh      # the menu; then restart the frontend
 ```
 
 ```
@@ -250,12 +250,12 @@ Offline maps                                        273 GB free
   goes on from where it was.
 - **Remove**: shows what could be freed (a file another one covers).
 - **Settings**: a speed cap (MB/s) and the aerial photos' usual zoom, kept in
-  `data/basemap/settings.json`.
+  `data/offline-maps/settings.json`.
 
 One download runs at a time; a second window shows it instead of starting another.
-What's in `data/basemap/` is listed in `data/basemap/inventory.json`, made from the
+What's in `data/offline-maps/` is listed in `data/offline-maps/inventory.json`, made from the
 files themselves each time (copy the folder and it comes along). Unattended:
-`python3 scripts/satellite.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
+`python3 scripts/offline-maps.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
 or `--resume --yes`.
 
 It's shown with
@@ -281,7 +281,7 @@ The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
 | 12 | ~47 GB | ~2.4 TB |
 | 13 | ~190 GB | ~9.4 TB |
 
-Aerial photo sources (`python3 scripts/satellite.py sources`): France (IGN, 20 cm,
+Aerial photo sources (`python3 scripts/offline-maps.py sources`): France (IGN, 20 cm,
 see below), Spain (PNOA, 25 cm), the Netherlands (PDOK, 8 cm), Luxembourg (20 cm), Austria
 (basemap.at, 30 cm), Belgium (Flanders and Wallonia, 25 cm), Germany (North
 Rhine-Westphalia 10 cm, Bavaria 40 cm, Berlin 20 cm), Czechia (ČÚZK, 20 cm), Poland
@@ -303,20 +303,20 @@ département's files at a time. The menu asks the last zoom, then which départe
 (their codes; Enter: all of the area's). Kept on disk, all of France: ~12 GB to
 zoom 15, ~130 GB to 17, ~2 TB to 19 (one département to 19: ~20–30 GB). Bas-Rhin
 to zoom 17: 1.17 GB from a 22.8 GB download. To cap the download speed (MB/s, all
-parts together): `OIM_MAX_RATE=10 bash scripts/satellite.sh`, or `--max-rate 10` on
-`python3 scripts/satellite.py bdortho …`. Each
+parts together): `OIM_MAX_RATE=10 bash scripts/offline-maps.sh`, or `--max-rate 10` on
+`python3 scripts/offline-maps.py bdortho …`. Each
 département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
 there to the zoom asked is skipped, a higher zoom makes it again.
 
-**Adding more detail later**: run `bash scripts/satellite.sh` again, Add, and
+**Adding more detail later**: run `bash scripts/offline-maps.sh` again, Add, and
 choose a higher zoom. The file is made again up to it, and what you have stays
 until the new one is finished; the menu shows what you have and offers only more.
 
-Everything in `data/basemap/` is shown, whatever area it's of; past a file's last
+Everything in `data/offline-maps/` is shown, whatever area it's of; past a file's last
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
-shows. Copy `data/basemap/` along with an export to take it with you. Without
+shows. Copy `data/offline-maps/` along with an export to take it with you. Without
 questions: `build-region.sh --maps "sentinel2 fr_ign"` (downloaded after the build),
-or `python3 scripts/satellite.py maps --source ID --yes` (`--area`, `--units`,
+or `python3 scripts/offline-maps.py maps --source ID --yes` (`--area`, `--units`,
 `--zoom`; `--help` lists the sources).
 
 ## Sharing a built database (export / import)
@@ -356,7 +356,7 @@ different version of the import mapping or views.
 |--------|----------|
 | `data/exports/` | Yes: the databases and Docker images |
 | `data/images/`, `data/wikidata_json/` | Yes, for offline popups |
-| `data/basemap/` | Yes, if you downloaded an offline background map |
+| `data/offline-maps/` | Yes, if you downloaded an offline background map |
 | `data/EEZ_*` | Yes, so future rebuilds don't need the manual download |
 | `web/node_modules/` | Yes, so the frontend starts offline |
 | `data/osm/` | No: the raw downloads (4 GB for Russia, ~95 GB for the world), only needed to rebuild |
@@ -689,7 +689,7 @@ unless you choose the newer extract (or pass `--refresh`). Then
 **A step seems stuck.** Long steps show a timer. The longest are downloading, the
 osmium filter (it reads the whole file) and the imposm import. If the per-country
 stats step takes more than a minute, check you're on the current
-`schema/local-stats.sql`: the production query took 14+ minutes on Russia.
+`schema/fork/local-stats.sql`: the production query took 14+ minutes on Russia.
 
 **"The app already seems to be running", but it isn't working.** Something else is
 on port 8001 or 5173, e.g. a backend you started by hand. Stop it, or use it.
@@ -698,9 +698,9 @@ on port 8001 or 5173, e.g. a backend you started by hand. Stop it, or use it.
 imported. Re-run `build-region.sh` with the zip in `data/`.
 
 **Route from here / to here finds nothing, or the backend says there's no network.**
-The grid network is built by `build-region.sh` (`schema/grid.sql`); databases built
+The grid network is built by `build-region.sh` (`schema/fork/grid.sql`); databases built
 or exported before that don't have it. Rebuild, or build just the network:
-`source scripts/lib/common.sh && run_sql_file schema/grid.sql` (seconds for a small
+`source scripts/lib/common.sh && run_sql_file schema/fork/grid.sql` (seconds for a small
 country, several minutes for France).
 
 **Place search doesn't find towns.** Places come from the database built after this

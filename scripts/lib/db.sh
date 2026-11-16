@@ -58,10 +58,11 @@ project_images() {
     echo "$project-tegola" "$project-backend" "$project-gate" "$project-imposm" "$project-osmium" | tr ' ' '\n'
 }
 
-# The SQL files that make a built database, in the order they run: functions.sql
-# when the database is created, eez.sql with the country boundaries, the rest in
-# build-region.sh. A test (scripts/tests) checks every schema/*.sql is either here
-# or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in this order.
+# The SQL files that make a built database, by name (schema_file finds them:
+# upstream's in schema/, the fork's in schema/fork/), in the order they run:
+# functions.sql when the database is created, eez.sql with the country boundaries,
+# the rest in build-region.sh. A test (scripts/tests) checks every schema file is
+# either here or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in order.
 SCHEMA_FILES=(functions views distances stats places sites grid tower-numbers extra search eez local-stats)
 
 # Not part of a build: database creation (dev-init, prod-init) and production jobs.
@@ -81,11 +82,21 @@ declare -A SCHEMA_LABELS=(
     [local-stats]="Computing per-country stats"
 )
 
-# run_schema NAME... — run schema/NAME.sql, each a timed step.
+# schema_file NAME — the path of schema file NAME: the fork's (schema/fork/) or
+# upstream's (schema/).
+schema_file() {
+    if [[ -f "$REPO_ROOT/schema/fork/$1.sql" ]]; then
+        echo "$REPO_ROOT/schema/fork/$1.sql"
+    else
+        echo "$REPO_ROOT/schema/$1.sql"
+    fi
+}
+
+# run_schema NAME... — run schema file NAME, each a timed step.
 run_schema() {
     local name
     for name in "$@"; do
-        run_with_timer "${SCHEMA_LABELS[$name]:-Running $name.sql}" run_sql_file "schema/$name.sql"
+        run_with_timer "${SCHEMA_LABELS[$name]:-Running $name.sql}" run_sql_file "$(schema_file "$name")"
     done
 }
 
@@ -93,7 +104,7 @@ run_schema() {
 # Stored in builds and exports; import-db.sh warns when an export's differs.
 schema_hash() {
     local files=("$REPO_ROOT"/imposm/*.py) name
-    for name in "${SCHEMA_FILES[@]}"; do files+=("$REPO_ROOT/schema/$name.sql"); done
+    for name in "${SCHEMA_FILES[@]}"; do files+=("$(schema_file "$name")"); done
     cat "${files[@]}" | md5sum | cut -c1-12
 }
 

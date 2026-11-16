@@ -29,7 +29,7 @@ When a request fails (no network, the server hanging up, a timeout, 429, 5xx):
    server down): ServerStopped at once, not 15 min of waiting for a connection
    that works (exit status SERVER_STOPPED).
 
-Standard library only (satellite.py runs with plain python3). httpx's errors are
+Standard library only (offline-maps.py runs with plain python3). httpx's errors are
 recognised by their class names, without importing httpx.
 """
 

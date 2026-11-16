@@ -55,13 +55,13 @@ services:
       - ./data/images:/data/images:z
       - ./data/wikidata_json:/data/wikidata_json:z
       # The background maps (src/fork/background/).
-      - ./data/basemap:/data/basemap:ro,z
+      - ./data/offline-maps:/data/offline-maps:ro,z
     depends_on:
       db:
         condition: service_healthy
 
-  # Offline satellite imagery: serves the imagery files in data/basemap/
-  # (<area>.sat-*.pmtiles, scripts/satellite.py) at
+  # Offline satellite imagery: serves the imagery files in data/offline-maps/
+  # (<area>.sat-*.pmtiles, scripts/offline-maps.py) at
   # http://localhost:8090/<file>/{z}/{x}/{y}.<ext>. Its image's pmtiles is also
   # used by the scripts (cutting background maps, packing imagery). The
   # background map itself is served by the backend (/background).
@@ -73,7 +73,7 @@ services:
     ports:
       - "127.0.0.1:8090:8080"
     volumes:
-      - ./data/basemap:/data:ro,z
+      - ./data/offline-maps:/data:ro,z
 
   # The gate (gate/nginx.conf): the one entry point, https://<this computer>:8800.
   # Every request needs a logged-in session (docs/plans/sync.md); the other

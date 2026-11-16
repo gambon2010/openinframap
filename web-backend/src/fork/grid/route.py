@@ -1,7 +1,7 @@
 """
 Fork: paths through the power grid between two stations (grid/__init__.py).
 
-Uses the grid_node / grid_edge tables built by schema/grid.sql (lines of 10 kV
+Uses the grid_node / grid_edge tables built by schema/fork/grid.sql (lines of 10 kV
 and more). Routes run over lines of 110 kV and more; a station only on a lower
 voltage (e.g. a wind farm on a 65 kV line) gets an "access" leg to the nearest
 station on that grid.
@@ -31,7 +31,7 @@ MAX_OVERLAP = 0.7
 # Routes run over lines of this voltage and more. A station that isn't on that
 # grid is first connected to it over lower-voltage lines (an "access" leg) of at
 # most ACCESS_MAX metres, searched within ACCESS_RADIUS metres. (Distances here are
-# real metres; schema/distances.sql turns them into map units.)
+# real metres; schema/fork/distances.sql turns them into map units.)
 BACKBONE_VOLTAGE = 110000
 ACCESS_MAX = 50000
 ACCESS_RADIUS = 40000

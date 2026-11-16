@@ -243,7 +243,7 @@ class SourceOffers:
             *units,
             "--maxzoom",
             str(zoom),
-            "--basemap-dir",
+            "--maps-dir",
             str(self.folder),
         ]
         if rate_setting:
@@ -353,7 +353,7 @@ class SourceOffers:
         size = (self.folder / f"{area}.pmtiles").stat().st_size
         job = Job(
             f"Buildings zoomed out, {self.name(area)}",
-            ["zoomed-buildings", "--area", area, "--basemap-dir", str(self.folder)],
+            ["zoomed-buildings", "--area", area, "--maps-dir", str(self.folder)],
             kept=round(size * extract.ZOOMED_BUILDINGS_SIZE),
             seconds=size * extract.ZOOMED_BUILDINGS_SECONDS_PER_BYTE,
         )
@@ -395,7 +395,7 @@ class SourceOffers:
             area,
             "--build",
             build,
-            "--basemap-dir",
+            "--maps-dir",
             str(self.folder),
         ]
         if area == "world" and maxzoom:

@@ -1,4 +1,4 @@
-"""Fork: the search box (search/__init__.py): everything else with a name (schema/search.sql)."""
+"""Fork: the search box (search/__init__.py): everything else with a name (schema/fork/search.sql)."""
 
 import json
 import re
@@ -13,7 +13,7 @@ from .matching import plain, query_params, table_exists
 async def search_features(
     database: AsyncConnection, query: str, language: str, limit: Optional[int] = 10
 ) -> list[dict]:
-    """Everything else with a name (fork: schema/search.sql): critical sites, power
+    """Everything else with a name (fork: schema/fork/search.sql): critical sites, power
     lines, telecoms, pipelines, water, and the extra data from outside OSM."""
     if not await table_exists(database, "search_feature"):
         return []  # database built before search_feature existed

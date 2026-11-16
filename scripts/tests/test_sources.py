@@ -1,4 +1,4 @@
-"""scripts/satimagery/sources/: one file per offline map source. The contract every
+"""scripts/offline_maps/sources/: one file per offline map source. The contract every
 source keeps, so the menus, sizes, inventory and the map's tiers can rely on it."""
 
 import importlib
@@ -6,8 +6,8 @@ import pkgutil
 
 import pytest
 
-from satimagery import sources
-from satimagery.sources.source import FETCH_KINDS, LAYERS, Source
+from offline_maps import sources
+from offline_maps.sources.source import FETCH_KINDS, LAYERS, Source
 
 MODULES = [m.name for m in pkgutil.iter_modules(sources.__path__) if m.name != "source"]
 
@@ -19,7 +19,7 @@ def test_every_file_is_read():
 
 @pytest.mark.parametrize("name", MODULES)
 def test_a_source_declares_what_the_menus_need(name):
-    s = importlib.import_module(f"satimagery.sources.{name}").SOURCE
+    s = importlib.import_module(f"offline_maps.sources.{name}").SOURCE
     assert isinstance(s, Source) and s.id == name
     assert s.name and s.title and s.credit
     # Credits travel in VITE_SATELLITE_TIERS, between ";" and after "|".
@@ -40,7 +40,7 @@ def test_a_source_declares_what_the_menus_need(name):
     if s.fetch == "files":
         # Downloaded unit by unit with a converter module, read whole.
         assert s.units and s.read_per_km2 > 0
-        converter = importlib.import_module(f"satimagery.{s.address}")
+        converter = importlib.import_module(f"offline_maps.{s.address}")
         # What the menu asks of a source fetched by units.
         for function in (
             "units_in",

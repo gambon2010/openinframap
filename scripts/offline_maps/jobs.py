@@ -1,4 +1,4 @@
-"""Fork: offline maps. A download the menu runs (one of satellite.py's commands),
+"""Fork: offline maps. A download the menu runs (one of offline-maps.py's commands),
 with what it keeps, downloads and takes; the queue of those left (queue.json, so
 Resume goes on after a stop)."""
 
@@ -14,7 +14,7 @@ QUEUE = "queue.json"
 @dataclass
 class Job:
     label: str  # "IGN 20 cm, 94 départements, z17"
-    argv: list[str]  # satellite.py's arguments
+    argv: list[str]  # offline-maps.py's arguments
     kept: int = 0
     download: int = 0
     seconds: float = 0

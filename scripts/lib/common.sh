@@ -14,7 +14,7 @@ EEZ_INFO_URL="https://marineregions.org/sources.php#unioneezcountry"
 BUILD_LOG="$OSM_DIR/build-history.log"
 # Offline maps: background maps (<area>.pmtiles, served by the backend) and
 # satellite imagery (<area>.sat-*.pmtiles, served by the `satellite` service).
-BASEMAP_DIR="$DATA_DIR/basemap"
+OFFLINE_MAPS_DIR="$DATA_DIR/offline-maps"
 # The services' ports on this computer (docker-compose.override.yml's: a test
 # checks they agree, with the gate's and the frontend's too).
 TEGOLA_PORT=7800
@@ -63,5 +63,5 @@ source "$REPO_ROOT/scripts/lib/app.sh"
 source "$REPO_ROOT/scripts/lib/basemap.sh"
 # shellcheck source=lib/geofabrik.sh
 source "$REPO_ROOT/scripts/lib/geofabrik.sh"
-# shellcheck source=lib/satellite.sh
-source "$REPO_ROOT/scripts/lib/satellite.sh"
+# shellcheck source=lib/offline-maps.sh
+source "$REPO_ROOT/scripts/lib/offline-maps.sh"

@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # Docker: the one way the shell scripts start Compose services and run one-off
-# containers (the Python scripts' counterpart: satimagery/docker.py).
+# containers (the Python scripts' counterpart: offline_maps/docker.py).
 # Sourced by common.sh.
 
 # up_services [OPTION...] SERVICE... — start Compose services, rebuilding their

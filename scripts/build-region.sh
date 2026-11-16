@@ -54,7 +54,7 @@ Usage: bash scripts/build-region.sh [options]
                   The world's to zoom 8 (borders, names; 560 MB) comes unless none
   --maps "ID ..."  Offline maps to download for the region after the build, without
                   questions: sentinel2, fr_ign, protomaps... (python3
-                  scripts/satellite.py maps --help lists them). Default: the
+                  scripts/offline-maps.py maps --help lists them). Default: the
                   offline maps menu (with --yes: none)
   --rebuild       Build from scratch even if data/exports/ has a ready-made export
   --no-export     Don't export the region again when its ready-made export in

@@ -32,7 +32,7 @@ save_extra_data() {
 }
 
 # restore_extra_data REGION — put saved extra data back into a fresh database,
-# before schema/extra.sql runs (which then only adds what's new).
+# before schema/fork/extra.sql runs (which then only adds what's new).
 restore_extra_data() {
     local file="$EXTRA_DIR/$1.extra.dump"
     db_psql -c "CREATE SCHEMA IF NOT EXISTS extra;" || return 1

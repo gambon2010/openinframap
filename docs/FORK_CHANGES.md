@@ -21,7 +21,7 @@ What changed when, and why: [HISTORY.md](./HISTORY.md). How to use it:
 | Don't reprocess big regions | Ready-made exports (`export-db.sh` / `import-db.sh`) restore in minutes |
 | Work without internet | Exports carry the database; the Docker images are saved alongside; the backend runs from its image |
 | Background map offline too | Optional per region: `build-region.sh` downloads it (full or reduced detail) and a small local server serves it; otherwise it comes from openinframap.org |
-| Stay mergeable with upstream | New behaviour lives in new files (`scripts/`, `schema/local-stats.sql`, `schema/eez.sql`, `tools/`) where possible; upstream files get small, commented changes |
+| Stay mergeable with upstream | New behaviour lives in new files (`scripts/`, `schema/fork/local-stats.sql`, `schema/fork/eez.sql`, `tools/`) where possible; upstream files get small, commented changes |
 
 ---
 

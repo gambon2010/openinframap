@@ -1,4 +1,4 @@
-// Fork: critical sites from OSM (imposm/sites.py, schema/sites.sql, Tegola's
+// Fork: critical sites from OSM (imposm/sites.py, schema/fork/sites.sql, Tegola's
 // "sites" map). Everything the map needs for them, as one fork module.
 import { t } from '../../core/i18n.ts'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'

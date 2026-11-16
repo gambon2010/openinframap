@@ -1,5 +1,5 @@
 // Fork: search additions. The backend also finds places (imposm/places.py) and
-// everything else with a name (schema/search.sql); these say what each result is,
+// everything else with a name (schema/fork/search.sql); these say what each result is,
 // and picking one switches on the layer that shows it.
 import { groundDistance } from '../../core/geo.ts'
 import { t } from '../../core/i18n.ts'
@@ -7,7 +7,7 @@ import { ForkModule } from '../../types.ts'
 import type { SearchResult } from '../../../search/search.ts'
 import PhotonSearch from './photon.ts'
 
-// What the named features of schema/search.sql are (critical sites: fork/sites).
+// What the named features of schema/fork/search.sql are (critical sites: fork/sites).
 function feature_kind_label(kind: string): string {
   return (
     {

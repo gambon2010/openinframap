@@ -5,7 +5,7 @@
 # ///
 """
 Import infrastructure data from outside OpenStreetMap ("extra data") into the
-extra schema (schema/extra.sql), for the region the database was built for.
+extra schema (schema/fork/extra.sql), for the region the database was built for.
 
     uv run scripts/extra_data.py list                 # sources covering the built region
     uv run scripts/extra_data.py import [SOURCE ...]  # import them (all by default)

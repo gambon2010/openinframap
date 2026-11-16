@@ -21,7 +21,7 @@ export function throughGate(url: string, origin = globalThis.location?.origin): 
 const LOCAL_BACKEND = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:8001'
 
 // Basemap (roads, buildings, water, labels) vector tiles in the Protomaps
-// schema: the background maps downloaded into data/basemap/, served together by
+// schema: the background maps downloaded into data/offline-maps/, served together by
 // the backend (/background; web-backend/src/fork/background/). Only local tiles:
 // where none was downloaded the background is empty. VITE_BASEMAP_URL can point
 // at another Protomaps-schema server; the "Map sources" panel can override it

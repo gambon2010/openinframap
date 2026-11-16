@@ -42,6 +42,6 @@ async def table_exists(database: AsyncConnection, name: str) -> bool:
 
 
 def plain(text_: str) -> str:
-    """Lower case without accents, like lower(unaccent(...)) in schema/search.sql."""
+    """Lower case without accents, like lower(unaccent(...)) in schema/fork/search.sql."""
     text_ = text_.lower().replace("œ", "oe").replace("æ", "ae").replace("ß", "ss")
     return "".join(c for c in unicodedata.normalize("NFKD", text_) if not unicodedata.combining(c))

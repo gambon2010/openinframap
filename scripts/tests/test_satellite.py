@@ -1,4 +1,4 @@
-"""scripts/satellite.py: tile maths, outlines, estimates, MBTiles and downloads."""
+"""scripts/offline-maps.py: tile maths, outlines, estimates, MBTiles and downloads."""
 
 import dataclasses
 import http.server
@@ -9,7 +9,27 @@ from typing import ClassVar
 import pytest
 
 import netsafe
-import satellite as s
+from offline_maps import cli
+from offline_maps.download import MBTiles, download_tiles
+from offline_maps.estimate import world_overview_tiles, worldcover_cells
+from offline_maps.gdal import regional_pipeline
+from offline_maps.inventory import attribution_for
+from offline_maps.sources import AERIAL, SOURCES, tile_url, worldcover_url
+from offline_maps.tiles import (
+    area_km2,
+    block_tiles,
+    box_ring,
+    box_touches_rings,
+    outline_rings,
+    point_in_rings,
+    rings_bbox,
+    segment_touches_box,
+    tile_blocks,
+    tile_bounds,
+    tile_of,
+    tiles_in_bbox,
+    tiles_in_outline,
+)
 
 LUXEMBOURG = [
     [(5.73, 49.45), (6.53, 49.45), (6.53, 50.18), (5.73, 50.18), (5.73, 49.45)]
@@ -23,18 +43,18 @@ def test_tile_of_and_bounds_agree():
         (0.0, 0.0, 3),
         (179.9, -60, 5),
     ]:
-        x, y = s.tile_of(lon, lat, z)
-        west, south, east, north = s.tile_bounds(x, y, z)
+        x, y = tile_of(lon, lat, z)
+        west, south, east, north = tile_bounds(x, y, z)
         assert west <= lon < east and south <= lat <= north
 
 
 def test_tile_of_clamps_to_the_world():
-    assert s.tile_of(180, 89.9, 2) == (3, 0)
-    assert s.tile_of(-180, -89.9, 2) == (0, 3)
+    assert tile_of(180, 89.9, 2) == (3, 0)
+    assert tile_of(-180, -89.9, 2) == (0, 3)
 
 
 def test_tiles_in_bbox():
-    assert len(list(s.tiles_in_bbox((-180, -85, 180, 85), 2))) == 16
+    assert len(list(tiles_in_bbox((-180, -85, 180, 85), 2))) == 16
 
 
 def test_outline_rings_from_geojson_kinds():
@@ -43,39 +63,39 @@ def test_outline_rings_from_geojson_kinds():
         "type": "MultiPolygon",
         "coordinates": [polygon["coordinates"], polygon["coordinates"]],
     }
-    assert len(s.outline_rings(polygon)) == 1
-    assert len(s.outline_rings(multi)) == 2
-    assert len(s.outline_rings({"type": "Feature", "geometry": polygon})) == 1
+    assert len(outline_rings(polygon)) == 1
+    assert len(outline_rings(multi)) == 2
+    assert len(outline_rings({"type": "Feature", "geometry": polygon})) == 1
     assert (
         len(
-            s.outline_rings(
+            outline_rings(
                 {"type": "FeatureCollection", "features": [{"geometry": multi}]}
             )
         )
         == 2
     )
-    assert s.outline_rings({"type": "Point", "coordinates": [0, 0]}) == []
+    assert outline_rings({"type": "Point", "coordinates": [0, 0]}) == []
 
 
 def test_point_in_rings():
-    assert s.point_in_rings(6.1, 49.6, LUXEMBOURG)
-    assert not s.point_in_rings(7.75, 48.58, LUXEMBOURG)
+    assert point_in_rings(6.1, 49.6, LUXEMBOURG)
+    assert not point_in_rings(7.75, 48.58, LUXEMBOURG)
 
 
 def test_box_touches_rings():
-    assert s.box_touches_rings((6.0, 49.0, 7.0, 50.0), LUXEMBOURG)  # overlaps
-    assert s.box_touches_rings((5.0, 49.0, 8.0, 51.0), LUXEMBOURG)  # contains it
-    assert not s.box_touches_rings((10.0, 49.0, 11.0, 50.0), LUXEMBOURG)
+    assert box_touches_rings((6.0, 49.0, 7.0, 50.0), LUXEMBOURG)  # overlaps
+    assert box_touches_rings((5.0, 49.0, 8.0, 51.0), LUXEMBOURG)  # contains it
+    assert not box_touches_rings((10.0, 49.0, 11.0, 50.0), LUXEMBOURG)
 
 
 def test_worldcover_cells_and_urls():
-    assert s.worldcover_cells(LUXEMBOURG) == [
+    assert worldcover_cells(LUXEMBOURG) == [
         "N49E005",
         "N49E006",
         "N50E005",
         "N50E006",
     ]
-    assert s.worldcover_cells(
+    assert worldcover_cells(
         [[(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5), (-0.5, -0.5)]]
     ) == [
         "S01W001",
@@ -83,44 +103,44 @@ def test_worldcover_cells_and_urls():
         "N00W001",
         "N00E000",
     ]
-    assert s.worldcover_url("N49E006").endswith(
+    assert worldcover_url("N49E006").endswith(
         "/N49/ESA_WorldCover_10m_2021_v200_N49E006_S2RGBNIR.tif"
     )
 
 
 def test_area_km2():
     # Luxembourg's bounding box: about 59 km × 81 km.
-    assert 4500 < s.area_km2(LUXEMBOURG) < 5200
+    assert 4500 < area_km2(LUXEMBOURG) < 5200
 
 
 def test_tiles_in_outline_skip_tiles_outside():
-    inside = s.tiles_in_outline(LUXEMBOURG, 10)
-    bbox = list(s.tiles_in_bbox(s.rings_bbox(LUXEMBOURG), 10))
+    inside = tiles_in_outline(LUXEMBOURG, 10)
+    bbox = list(tiles_in_bbox(rings_bbox(LUXEMBOURG), 10))
     assert 0 < len(inside) <= len(bbox)
     triangle = [[(5.73, 49.45), (6.53, 49.45), (5.73, 50.18), (5.73, 49.45)]]
-    assert len(s.tiles_in_outline(triangle, 12)) < len(
-        list(s.tiles_in_bbox(s.rings_bbox(triangle), 12))
+    assert len(tiles_in_outline(triangle, 12)) < len(
+        list(tiles_in_bbox(rings_bbox(triangle), 12))
     )
 
 
 def test_regional_pipeline():
-    script = s.regional_pipeline(12)
+    script = regional_pipeline(12)
     assert "-input_file_list cells.txt" in script
     assert "-cutline area.geojson" in script
     assert "ZOOM_LEVEL_STRATEGY=LOWER" in script
     # Lower zooms down to the tier's first (7): zooms 11 to 7.
     assert script.endswith("gdaladdo -q -r average regional.mbtiles 2 4 8 16 32")
     assert "38.218514" in script  # metres per pixel at zoom 12
-    assert s.regional_pipeline(13).endswith("2 4 8 16 32 64")
+    assert regional_pipeline(13).endswith("2 4 8 16 32 64")
     # The whole world: not cut.
-    world = s.regional_pipeline(9, cut=False)
+    world = regional_pipeline(9, cut=False)
     assert "-cutline" not in world and "-te -20037508.34" in world
     assert world.endswith("2 4")
 
 
 def test_mbtiles_rows_are_tms(tmp_path):
     out = tmp_path / "t.mbtiles"
-    writer = s.MBTiles(out, "test", "jpg", 0, 2, "me", (0, 0, 1, 1))
+    writer = MBTiles(out, "test", "jpg", 0, 2, "me", (0, 0, 1, 1))
     writer.put(2, 1, 0, b"top row")
     writer.close()
     db = sqlite3.connect(out)
@@ -162,10 +182,10 @@ def tile_server():
 
 
 def test_download_tiles(tmp_path, tile_server):
-    out = s.MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 2, "", (0, 0, 1, 1))
+    out = MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 2, "", (0, 0, 1, 1))
     tiles = [(2, x, y) for x in range(4) for y in range(2)]
     progress = []
-    found = s.download_tiles(
+    found = download_tiles(
         tiles,
         tile_server,
         out,
@@ -185,11 +205,11 @@ def test_download_tiles(tmp_path, tile_server):
 
 def test_segment_touches_box():
     box = (0.0, 0.0, 1.0, 1.0)
-    assert s.segment_touches_box((-1, 0.5, 2, 0.5), box)  # straight through
-    assert s.segment_touches_box((0.2, 0.2, 0.3, 0.3), box)  # inside
-    assert s.segment_touches_box((-0.5, 0.5, 0.5, 1.5), box)  # clips a corner
-    assert not s.segment_touches_box((-0.5, 1.2, 1.2, 2.0), box)  # passes by the corner
-    assert not s.segment_touches_box((2, 0, 3, 1), box)
+    assert segment_touches_box((-1, 0.5, 2, 0.5), box)  # straight through
+    assert segment_touches_box((0.2, 0.2, 0.3, 0.3), box)  # inside
+    assert segment_touches_box((-0.5, 0.5, 0.5, 1.5), box)  # clips a corner
+    assert not segment_touches_box((-0.5, 1.2, 1.2, 2.0), box)  # passes by the corner
+    assert not segment_touches_box((2, 0, 3, 1), box)
 
 
 def test_tiles_in_outline_matches_checking_every_tile():
@@ -197,22 +217,22 @@ def test_tiles_in_outline_matches_checking_every_tile():
     for zoom in (9, 12):
         brute = {
             (x, y)
-            for x, y in s.tiles_in_bbox(s.rings_bbox(LUXEMBOURG), zoom)
-            if s.box_touches_rings(s.tile_bounds(x, y, zoom), LUXEMBOURG)
+            for x, y in tiles_in_bbox(rings_bbox(LUXEMBOURG), zoom)
+            if box_touches_rings(tile_bounds(x, y, zoom), LUXEMBOURG)
         }
-        assert set(s.tiles_in_outline(LUXEMBOURG, zoom)) == brute
+        assert set(tiles_in_outline(LUXEMBOURG, zoom)) == brute
 
 
 def test_world_overview_tiles():
-    tiles = s.world_overview_tiles()
+    tiles = world_overview_tiles()
     assert len(tiles) == sum(4**z for z in range(9))  # zoom 0 to 8
     assert len(set(tiles)) == len(tiles)
 
 
 def test_repeated_small_tiles_are_dropped(tmp_path, tile_server):
     # A server's "no data" tile is the same bytes everywhere; imagery never is.
-    out = s.MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 3, "", (0, 0, 1, 1))
-    found = s.download_tiles(
+    out = MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 3, "", (0, 0, 1, 1))
+    found = download_tiles(
         [(3, x, 0) for x in range(6)],
         lambda z, x, y: (
             tile_server.format(z=z, x=x, y=y)
@@ -237,13 +257,13 @@ def test_repeated_small_tiles_are_dropped(tmp_path, tile_server):
 
 def test_a_stopped_download_goes_on(tmp_path, tile_server):
     path = tmp_path / "t.mbtiles"
-    first = s.MBTiles(path, "t", "jpg", 0, 2, "", (0, 0, 1, 1))
+    first = MBTiles(path, "t", "jpg", 0, 2, "", (0, 0, 1, 1))
     first.put(2, 0, 0, b"kept")
     first.close()
-    again = s.MBTiles(path, "t", "jpg", 0, 2, "", (0, 0, 1, 1), resume=True)
+    again = MBTiles(path, "t", "jpg", 0, 2, "", (0, 0, 1, 1), resume=True)
     assert again.has(2) == {(0, 0)}
     fetched = []
-    s.download_tiles(
+    download_tiles(
         [(2, 0, 0), (2, 2, 0)],
         lambda z, x, y: fetched.append((x, y)) or tile_server.format(z=z, x=x, y=y),
         again,
@@ -260,37 +280,38 @@ def test_a_stopped_download_goes_on(tmp_path, tile_server):
 
 def test_tile_blocks_inside_every_outline():
     # Luxembourg and a box over its south: only tiles in both.
-    south = s.box_ring((5.7, 49.4, 6.6, 49.6))
-    both = set(s.block_tiles(s.tile_blocks([LUXEMBOURG, south], 12), 12))
-    lux = {(12, x, y) for x, y in s.tiles_in_outline(LUXEMBOURG, 12)}
-    box = {(12, x, y) for x, y in s.tiles_in_outline(south, 12)}
+    south = box_ring((5.7, 49.4, 6.6, 49.6))
+    both = set(block_tiles(tile_blocks([LUXEMBOURG, south], 12), 12))
+    lux = {(12, x, y) for x, y in tiles_in_outline(LUXEMBOURG, 12)}
+    box = {(12, x, y) for x, y in tiles_in_outline(south, 12)}
     assert both == lux & box
     assert 0 < len(both) < len(lux)
 
 
 def test_wms_tile_url():
     wms = dataclasses.replace(
-        s.SOURCES["be_wallonia"], address="http://x/wms?BBOX={bbox}"
+        SOURCES["be_wallonia"], address="http://x/wms?BBOX={bbox}"
     )
     assert (
-        s.tile_url(wms, 1, 0, 0)
-        == "http://x/wms?BBOX=-20037508.34,0.00,0.00,20037508.34"
+        tile_url(wms, 1, 0, 0) == "http://x/wms?BBOX=-20037508.34,0.00,0.00,20037508.34"
     )
     tiles = dataclasses.replace(
-        s.SOURCES["lu_geoportail"], address="http://x/{z}/{x}/{ty}"
+        SOURCES["lu_geoportail"], address="http://x/{z}/{x}/{ty}"
     )
-    assert s.tile_url(tiles, 2, 1, 0) == "http://x/2/1/3"
+    assert tile_url(tiles, 2, 1, 0) == "http://x/2/1/3"
 
 
 def test_every_imagery_file_has_its_credit():
-    assert "NASA" in s.attribution_for("world.sat-overview.pmtiles")
-    assert "Copernicus" in s.attribution_for("data/basemap/bayern.sat-regional.pmtiles")
-    for source_id, source in s.AERIAL.items():
-        credit = s.attribution_for(f"area.sat-detailed-{source_id}.pmtiles")
+    assert "NASA" in attribution_for("world.sat-overview.pmtiles")
+    assert "Copernicus" in attribution_for(
+        "data/offline-maps/bayern.sat-regional.pmtiles"
+    )
+    for source_id, source in AERIAL.items():
+        credit = attribution_for(f"area.sat-detailed-{source_id}.pmtiles")
         assert credit == source.credit
         # Credits travel in VITE_SATELLITE_TIERS, between ";" and after "|".
         assert ";" not in credit and "|" not in credit
-    assert s.attribution_for("notes.txt") == ""
+    assert attribution_for("notes.txt") == ""
 
 
 class FlakyServer(http.server.BaseHTTPRequestHandler):
@@ -331,8 +352,8 @@ def flaky_server(monkeypatch):
 def test_a_dropped_connection_is_waited_for(tmp_path, flaky_server):
     # More failures than the quick retries: it waits for the server, then goes on.
     FlakyServer.drops = netsafe.RETRIES + 2
-    out = s.MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 1, "", (0, 0, 1, 1))
-    found = s.download_tiles([(1, 0, 0), (1, 1, 0)], flaky_server, out, threads=1)
+    out = MBTiles(tmp_path / "t.mbtiles", "t", "jpg", 0, 1, "", (0, 0, 1, 1))
+    found = download_tiles([(1, 0, 0), (1, 1, 0)], flaky_server, out, threads=1)
     out.close()
     assert found == 2
 
@@ -340,10 +361,10 @@ def test_a_dropped_connection_is_waited_for(tmp_path, flaky_server):
 def test_a_connection_that_stays_down_stops_cleanly(tmp_path, flaky_server):
     FlakyServer.drops = 10**6
     path = tmp_path / "t.mbtiles"
-    out = s.MBTiles(path, "t", "jpg", 0, 1, "", (0, 0, 1, 1))
+    out = MBTiles(path, "t", "jpg", 0, 1, "", (0, 0, 1, 1))
     out.put(1, 0, 0, b"before")
     with pytest.raises(netsafe.ConnectionLost):
-        s.download_tiles([(1, 1, 0), (1, 1, 1)], flaky_server, out, threads=2)
+        download_tiles([(1, 1, 0), (1, 1, 1)], flaky_server, out, threads=2)
     out.close()
     # What was there is kept for the next run.
     assert sqlite3.connect(path).execute("SELECT tile_data FROM tiles").fetchall() == [
@@ -355,8 +376,8 @@ def test_the_command_line_says_so_and_exits_75(tmp_path, monkeypatch, capsys):
     def lost(args):
         raise netsafe.ConnectionLost()
 
-    monkeypatch.setattr(s.cli, "command_overview", lost)
+    monkeypatch.setattr(cli, "command_overview", lost)
     with pytest.raises(SystemExit) as stop:
-        s.main(["overview", "--out", str(tmp_path / "w.pmtiles")])
+        cli.main(["overview", "--out", str(tmp_path / "w.pmtiles")])
     assert stop.value.code == 75
     assert "run again" in capsys.readouterr().err

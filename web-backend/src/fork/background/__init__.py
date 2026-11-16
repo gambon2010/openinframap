@@ -1,6 +1,6 @@
 """Fork: the background map's tiles (roads, buildings, water, place names), from
-the background maps downloaded into data/basemap/<area>.pmtiles (Protomaps'
-world map cut to an area: scripts/satimagery/extract.py).
+the background maps downloaded into data/offline-maps/<area>.pmtiles (Protomaps'
+world map cut to an area: scripts/offline_maps/extract.py).
 
 /background/{z}/{x}/{y}.mvt answers each tile from the first file that has it,
 so several areas show together. A tile along a border is in both areas' files
@@ -34,7 +34,7 @@ from starlette.routing import Route
 
 from ..paths import LOCAL_DATA_DIR
 
-BASEMAP_DIR = LOCAL_DATA_DIR / "basemap"
+OFFLINE_MAPS_DIR = LOCAL_DATA_DIR / "offline-maps"
 WORLD = "world"
 MEDIA_TYPE = "application/vnd.mapbox-vector-tile"
 CACHE_SECONDS = 3600
@@ -181,7 +181,7 @@ def unzipped(data: bytes) -> bytes:
     return gzip.decompress(data) if data[:2] == b"\x1f\x8b" else data
 
 
-ARCHIVES = Archives(BASEMAP_DIR)
+ARCHIVES = Archives(OFFLINE_MAPS_DIR)
 
 
 async def background_tile(request: Request) -> Response:

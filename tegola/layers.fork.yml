@@ -17,7 +17,7 @@ layers:
     from: tower_number
     where: label AND geometry && !BBOX!
 
-  # Fork: data from outside OpenStreetMap (schema/extra.sql, filled by
+  # Fork: data from outside OpenStreetMap (schema/fork/extra.sql, filled by
   # scripts/extra_data.py), served as its own map so it stays apart from OSM.
   - name: extra_power_line
     map:
@@ -133,7 +133,7 @@ layers:
       geometry && !BBOX! AND (kind <> 'icpe' OR !ZOOM! >= 9
         OR details ->> 'category' IN ('seveso_high', 'seveso_low'))
 
-  # Fork: critical sites (imposm/sites.py, schema/sites.sql), as their own map.
+  # Fork: critical sites (imposm/sites.py, schema/fork/sites.sql), as their own map.
   # Areas (military zones, ports, airports, landfills, hospitals...) from zoom 8,
   # 12 or 14 depending on how important they are, and one point per site (an
   # area's centroid) from zoom 4, nearby ones grouped below zoom 14
