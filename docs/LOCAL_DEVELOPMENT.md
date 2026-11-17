@@ -284,7 +284,8 @@ same at every zoom, over the map or over imagery: motorways orange, trunk roads
 each tram or metro line in its own colour, side by side where lines share a track
 (in a tunnel see-through inside its outline). Unticked, roads show light over the
 map, railways and trams as the map's own (railways from zoom 11, trams from 14). Clicking a road shows its
-name and numbers (A35, E25) at every zoom. Each entry unfolds to its kinds, each with a tick box (sidings, yards and depots
+name and numbers (A35, E25) at every zoom; clicking a tram or metro line (from zoom
+12) highlights the whole line. Each entry unfolds to its kinds, each with a tick box (sidings, yards and depots
 unticked at first).
 
 Three kinds, each adding detail to the one below (sizes are what's kept on disk):

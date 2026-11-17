@@ -42,7 +42,7 @@ export function laneWidth(): ExpressionSpecification {
 }
 
 /** LOOM's layers: the lanes, and their joins through junctions. */
-const LOOM_LAYERS = ['lines', 'inner-connections']
+export const LOOM_LAYERS = ['lines', 'inner-connections']
 
 function lanesFrom(sourceLayer: string) {
   return { source: LANES_SOURCE, sourceLayer, minzoom: LANES_FROM }

@@ -601,7 +601,10 @@ line. Railways and trams unticked show the background map's own (as the original
 railways from zoom 11, trams from 14; its railway layers filtered to trains, trams
 or both) instead of a light version. Clicking a road zoomed out showed nothing: the
 zoomed-out roads kept only what the styles read; their name and numbers come along
-now (a road's pieces still join, two roads stay apart, as Planetiler does).
+now (a road's pieces still join, two roads stay apart, as Planetiler does). France's
+zoomed-out file 449 MB (was 401). A clicked tram or metro line is highlighted whole:
+a glow and the line's own lane on LOOM's tiles, filtered to the line, so it follows
+every zoom and pan (not a copy of the pieces on screen at the click).
 
 ---
 

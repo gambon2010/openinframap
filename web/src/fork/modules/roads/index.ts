@@ -13,6 +13,7 @@ import { background, followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
 import { valueFor } from './builder.ts'
 import { LANES_SOURCE, lanesSource } from './lane-layers.ts'
+import { highlightWholeLines } from './lane-highlight.ts'
 import { roadsKey } from './key.ts'
 import { ROADS_PREFIX, roadLayers } from './layers.ts'
 import { RAILWAYS_PREFIX, TRANSIT_KINDS, TRANSIT_PREFIX } from './rail-layers.ts'
@@ -195,6 +196,7 @@ const roads: ForkModule = {
     }
     if (map.isStyleLoaded()) loaded()
     else map.once('load', loaded)
+    highlightWholeLines(map)
   }
 }
 

@@ -62,7 +62,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                Data layers entry is ticked, only the ticked ones over imagery (index.ts); layers.ts roads, borders and the order;
                rail-layers.ts railways by rank, trams and metro by kind (a plain line
                zoomed out); lane-layers.ts from zoom 12 LOOM's lanes, each line in its
-               lane and colour (source "transit"); builder.ts how a layer is made, values by look
+               lane and colour (source "transit"); lane-highlight.ts a clicked line
+               highlighted whole (cleared with ui/highlight.ts's); builder.ts how a layer is made, values by look
                and background; key.ts the kinds as key rows under each entry
                (sidings and depots hidden at first); street names white over imagery
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer

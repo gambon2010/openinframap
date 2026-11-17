@@ -2,7 +2,8 @@
  * Fork: highlight what the details panel shows. Any clicked feature: points with
  * a glowing circle, areas with an outline and a light fill, lines along their
  * length. One for the whole page (left-column.ts); modules can draw into it
- * (modules/grid/line.ts: the whole power line).
+ * (modules/grid/line.ts: the whole power line), or draw their own and clear it with
+ * this one (onClear: modules/roads/lane-highlight.ts, a whole tram line).
  */
 import {
   Map,
@@ -30,6 +31,7 @@ const PARALLEL_MIN_ZOOM = 10
 export class FeatureHighlight {
   _map: Map
   _request = 0
+  private _onClear: (() => void)[] = []
 
   constructor(map: Map) {
     this._map = map
@@ -263,6 +265,13 @@ export class FeatureHighlight {
   clear() {
     this._request++
     this.setData([])
+    for (const cleared of this._onClear) cleared()
+  }
+
+  /** Calls `cleared` whenever the highlight is cleared (the details closed, or
+   * something else picked): for a module's own highlight drawn beside this one. */
+  onClear(cleared: () => void) {
+    this._onClear.push(cleared)
   }
 
   setData(features: Feature[]) {

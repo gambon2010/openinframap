@@ -245,6 +245,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.23 | Roads drawn cleanly zoomed out, as established tools do (Planetiler): no home-made carriageway merging; round ends; tunnels dotted (no transparency); roads near a border not lost past the area. | 🚧 (2026-11-17) made; shows once the zoomed out file is made again |
 | 10.24 | Clicking a road shows its information (name, number such as A35, European number) at every zoom, zoomed out too. | ✅ (2026-11-17) `zoomed_roads.py` KEPT; needs the zoomed-out tiles rebuilt |
 | 10.25 | Trams and metro: tunnels at the same level as the lines above ground, a full outline around a see-through line; junctions clean at every zoom (no outlines across the lanes). | ✅ (2026-11-17) `lane-layers.ts` |
+| 10.26 | Clicking a tram or metro line highlights the whole line on the map. | ✅ (2026-11-17) `modules/roads/lane-highlight.ts`, from zoom 12 (LOOM's lanes) |
 
 ## 11. Quality
 
