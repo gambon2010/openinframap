@@ -77,3 +77,13 @@ export function featureRows(feature: MapGeoJSONFeature): [string, string][] {
     .map((key): [string, string] => [key, String(feature.properties[key])])
   return [...where, ...properties].filter(([, value]) => value !== '')
 }
+
+/** A feature's page on OpenStreetMap (its osm_id: a node or way, a relation when
+ * negative, as upstream's tiles give them); undefined without one. */
+export function osmUrl(properties: Record<string, unknown>): string | undefined {
+  const id = Number(properties['osm_id'])
+  if (!Number.isFinite(id) || id === 0) return undefined
+  if (id < 0) return `https://www.openstreetmap.org/relation/${-id}`
+  const type = properties['is_node'] ? 'node' : 'way'
+  return `https://www.openstreetmap.org/${type}/${id}`
+}

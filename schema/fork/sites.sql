@@ -34,13 +34,12 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type = 'place_of_worship' THEN CASE
             WHEN tags->'religion' IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh') THEN tags->'religion'
             ELSE 'worship' END
-        -- fuel and weapons (a storage tank only if it holds fuel or gas)
+        -- fuel (a storage tank only if it holds fuel or gas)
         WHEN type = 'fuel' THEN 'fuel'
         WHEN type IN ('fuel_depot', 'oil_storage') THEN 'fuel_depot'
         WHEN type = 'storage_tank' THEN CASE
             WHEN tags->'content' IN ('fuel', 'oil', 'diesel', 'petrol', 'gasoline', 'kerosene', 'gas',
                                      'natural_gas', 'lpg', 'lng', 'biogas', 'hydrocarbons') THEN 'fuel_depot' END
-        WHEN type IN ('weapons', 'gunsmith') THEN 'weapons'
         -- transport
         WHEN type = 'aerodrome' THEN 'airport'
         WHEN type = 'port' OR key = 'harbour' THEN 'port'
@@ -76,7 +75,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('townhall', 'tax', 'prefecture', 'social', 'employment', 'customs', 'national', 'government',
                       'courthouse', 'prison', 'embassy', 'university') THEN 'government'
         WHEN kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship') THEN 'religion'
-        WHEN kind IN ('fuel', 'fuel_depot', 'weapons') THEN 'fuel'
+        WHEN kind IN ('fuel', 'fuel_depot') THEN 'fuel'
         WHEN kind IN ('airport', 'port', 'border', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military') THEN 'military'
         WHEN kind = 'military_disused' THEN 'military_disused'
@@ -105,7 +104,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind = 'supermarket' THEN CASE WHEN area > 5000 THEN 1 ELSE 2 END
         -- Convenience stores: many small ones, from zoom 14.
         WHEN kind = 'convenience' THEN 2
-        WHEN kind IN ('pharmacy', 'worship', 'silo', 'military_disused', 'fuel', 'weapons')
+        WHEN kind IN ('pharmacy', 'worship', 'silo', 'military_disused', 'fuel')
           AND NOT tags ? 'wikidata' THEN 2
         ELSE 1
     END
@@ -126,14 +125,18 @@ CREATE INDEX site_feature_geometry ON site_feature USING gist (geometry);
 CREATE INDEX site_feature_importance ON site_feature (importance);
 
 -- One point per site for a tile (Tegola's sites_point), grouped below zoom 14: in
--- a grid of 12 x 12 cells per tile (~40 px), sites of the same category sharing a
--- cell become one point with their count (count > 1, kind NULL) at their average
--- position. The grid is aligned with the tiles, so a group never straddles two.
--- Lone sites stay as they are, and important ones (importance 0) from zoom 8; from
--- zoom 14 nothing is grouped.
-CREATE OR REPLACE FUNCTION site_points(bbox geometry, zoom integer)
+-- a grid of 12 x 12 cells per tile (~40 px), the sites of a category sharing a cell
+-- become one point with their count (count > 1, kind NULL) at their average
+-- position, counting only kinds with two or more there: a kind's lone site in a
+-- cell stays a site, so the map, hiding kinds, never shows a group of one. The grid
+-- is aligned with the tiles, so a group never straddles two. Important sites
+-- (importance 0) stay as they are from zoom 8; from zoom 14 nothing is grouped. A
+-- group also says how many of each kind it holds (kinds: ",fuel:12,fuel_depot:3,"),
+-- so the map can count only the kinds shown (ui/key/counted-groups.ts).
+DROP FUNCTION IF EXISTS site_points(geometry, integer);
+CREATE FUNCTION site_points(bbox geometry, zoom integer)
 RETURNS TABLE (id bigint, osm_id bigint, geometry geometry, name text, kind text, category text,
-               importance integer, tags hstore, count integer, count_label text)
+               importance integer, tags hstore, count integer, count_label text, kinds text)
 LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
     WITH p AS (
         SELECT f.id, f.osm_id, c.pt AS geometry, f.name, f.kind, f.category, f.importance, f.tags,
@@ -145,27 +148,37 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
                CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 12 AS cell) g
          WHERE f.geometry && bbox
     ), counted AS (
-        SELECT p.*, count(*) OVER (PARTITION BY p.category, p.cx, p.cy)::integer AS n FROM p
+        -- How many of its kind share its cell.
+        SELECT p.*, count(*) OVER (PARTITION BY p.category, p.kind, p.cx, p.cy)::integer AS of_kind FROM p
+    ), grouped AS (
+        SELECT counted.category, counted.cx, counted.cy, counted.kind, count(*)::integer AS n,
+               min(counted.id) AS first_id, sum(ST_X(counted.geometry)) AS sum_x, sum(ST_Y(counted.geometry)) AS sum_y
+          FROM counted WHERE counted.cx IS NOT NULL AND counted.of_kind > 1
+         GROUP BY counted.category, counted.cx, counted.cy, counted.kind
+    ), groups AS (
+        SELECT grouped.category, grouped.cx, grouped.cy, sum(grouped.n)::integer AS n, min(grouped.first_id) AS first_id,
+               sum(grouped.sum_x) / sum(grouped.n) AS x, sum(grouped.sum_y) / sum(grouped.n) AS y,
+               ',' || string_agg(grouped.kind || ':' || grouped.n, ',' ORDER BY grouped.kind) || ',' AS kinds
+          FROM grouped
+         GROUP BY grouped.category, grouped.cx, grouped.cy
     )
     SELECT counted.id, counted.osm_id, counted.geometry, counted.name, counted.kind, counted.category,
-           counted.importance, counted.tags, 1, NULL
+           counted.importance, counted.tags, 1, NULL, NULL
       FROM counted
-     WHERE cx IS NULL OR n = 1
+     WHERE cx IS NULL OR of_kind = 1
     UNION ALL
-    SELECT -min(counted.id), NULL,
-           ST_SetSRID(ST_MakePoint(avg(ST_X(counted.geometry)) + 10 * px * sin(angle),
-                                   avg(ST_Y(counted.geometry)) + 10 * px * cos(angle)), 3857),
-           NULL, NULL, counted.category, NULL, NULL, n,
-           CASE WHEN n < 1000 THEN n::text
-                WHEN n < 10000 THEN trim_scale(round(n / 1000.0, 1)) || 'k'
-                ELSE round(n / 1000.0) || 'k' END
-      FROM counted
+    SELECT -groups.first_id, NULL,
+           ST_SetSRID(ST_MakePoint(groups.x + 10 * px * sin(angle), groups.y + 10 * px * cos(angle)), 3857),
+           NULL, NULL, groups.category, NULL, NULL, groups.n,
+           CASE WHEN groups.n < 1000 THEN groups.n::text
+                WHEN groups.n < 10000 THEN trim_scale(round(groups.n / 1000.0, 1)) || 'k'
+                ELSE round(groups.n / 1000.0) || 'k' END,
+           groups.kinds
+      FROM groups
            -- Groups of different categories in one place would sit on top of each
            -- other: each category's is moved ~10 px (on a 512 px tile) its own way.
            CROSS JOIN LATERAL (SELECT 2 * pi() * (array_position(
                ARRAY['health', 'government', 'religion', 'fuel', 'transport', 'military',
-                     'military_disused', 'food', 'water_waste'], counted.category) - 1) / 9 AS angle) a
+                     'military_disused', 'food', 'water_waste'], groups.category) - 1) / 9 AS angle) a
            CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 512 AS px) s
-     WHERE cx IS NOT NULL AND n > 1
-     GROUP BY counted.category, cx, cy, n, angle, px
 $$;

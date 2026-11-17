@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { MapGeoJSONFeature } from 'maplibre-gl'
-import { describeFeatures, featureRows, scaleText } from './info.ts'
+import { describeFeatures, featureRows, osmUrl, scaleText } from './info.ts'
 
 describe('debug info', () => {
   test('scale: 1:N in the OGC pixel (0.28 mm), 3 significant digits', () => {
@@ -32,5 +32,12 @@ describe('debug info', () => {
       ['kind', 'tram'],
       ['ref', 'B']
     ])
+  })
+
+  test('a feature’s page on OpenStreetMap: way, node or relation by its id', () => {
+    expect(osmUrl({ osm_id: 42 })).toBe('https://www.openstreetmap.org/way/42')
+    expect(osmUrl({ osm_id: 42, is_node: true })).toBe('https://www.openstreetmap.org/node/42')
+    expect(osmUrl({ osm_id: -7 })).toBe('https://www.openstreetmap.org/relation/7')
+    expect(osmUrl({})).toBeUndefined()
   })
 })

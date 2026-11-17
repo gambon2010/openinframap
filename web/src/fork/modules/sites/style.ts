@@ -7,6 +7,7 @@ import { ExpressionSpecification } from 'maplibre-gl'
 import { interpolate, zoom } from '../../../style/stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { text_paint, font } from '../../../style/common.ts'
+import { COUNTS } from '../../ui/key/counted-groups.ts'
 
 // Must match scripts/make_site_icons.py.
 export const site_colours: { [category: string]: string } = {
@@ -39,7 +40,7 @@ export const site_kinds: { [category: string]: string[] } = {
     'university'
   ],
   religion: ['christian', 'muslim', 'jewish', 'buddhist', 'worship'],
-  fuel: ['fuel', 'fuel_depot', 'weapons'],
+  fuel: ['fuel', 'fuel_depot'],
   transport: ['airport', 'port', 'border', 'rail_yard'],
   military: ['military'],
   military_disused: ['military_disused'],
@@ -53,7 +54,7 @@ export function site_category_label(category: string): string {
       health: t('sites.category.health', 'Health and emergency'),
       government: t('sites.category.government', 'Government and public services'),
       religion: t('sites.category.religion', 'Places of worship'),
-      fuel: t('sites.category.fuel', 'Fuel and weapons'),
+      fuel: t('sites.category.fuel', 'Fuel'),
       transport: t('sites.category.transport', 'Transport hubs'),
       military: t('sites.category.military', 'Military'),
       military_disused: t('sites.category.military-disused', 'Disused military (bunkers, trenches...)'),
@@ -94,7 +95,6 @@ export function site_kind_label(kind: string): string {
       sikh: t('sites.kind.sikh', 'Sikh gurdwara'),
       fuel: t('sites.kind.fuel', 'Fuel station'),
       fuel_depot: t('sites.kind.fuel-depot', 'Fuel depot, storage tank'),
-      weapons: t('sites.kind.weapons', 'Gun shop, gunsmith'),
       airport: t('sites.kind.airport', 'Airport, airfield'),
       port: t('sites.kind.port', 'Port, harbour'),
       border: t('sites.kind.border', 'Border control'),
@@ -116,17 +116,20 @@ export function site_kind_label(kind: string): string {
 
 // The icon for each kind, spelled out (not concatenated) so the key's hiding can
 // match an icon name in it.
+// Hindu and Sikh temples (a dozen in France): no Maki icon, the generic one.
+const SHARED_ICONS: Record<string, string> = { hindu: 'site_worship', sikh: 'site_worship' }
+
+/** A kind's icon (its key row's too). */
+function kind_icon(kind: string): string {
+  return SHARED_ICONS[kind] ?? `site_${kind}`
+}
+
 const site_icon: ExpressionSpecification = [
   'match',
   ['get', 'kind'],
   ...Object.values(site_kinds)
     .flat()
-    .flatMap((kind) => [kind, `site_${kind}`]),
-  // Hindu and Sikh temples (a dozen in France): no Maki icon, the generic one.
-  'hindu',
-  'site_worship',
-  'sikh',
-  'site_worship',
+    .flatMap((kind) => [kind, kind_icon(kind)]),
   'site_government'
 ] as unknown as ExpressionSpecification
 
@@ -218,10 +221,12 @@ export default function layers(): LayerSpecificationWithZIndex[] {
     },
     // A group: a disc in the category's colour with how many sites it stands for,
     // larger for more (groups of different categories in one place are spread out
-    // by site_points). Clicking one zooms in (openinframap.ts).
+    // by site_points). Clicking one zooms in (openinframap.ts). Its kinds' icons: the
+    // key hiding a kind counts only the others (ui/key/counted-groups.ts).
     {
       id: `sites_${site_layer_key(category)}_group`,
       zorder: 591,
+      metadata: { [COUNTS]: Object.fromEntries(site_kinds[category].map((kind) => [kind, kind_icon(kind)])) },
       source: 'sites',
       'source-layer': 'sites_point',
       filter: ['all', ['==', ['get', 'category'], category], ['has', 'count_label']],

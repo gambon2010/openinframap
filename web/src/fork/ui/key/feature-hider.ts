@@ -4,9 +4,11 @@
 // it, every layer drawing that colour (or icon) gets a filter keeping only the
 // features it would draw differently, and the other layers of the same data
 // (casings, outlines, labels, click targets) get the same filter. Filters, not
-// visibility, so this works alongside the layer switcher.
+// visibility, so this works alongside the layer switcher. Layers of groups drawn
+// with a count (counted-groups.ts) count only the kinds shown.
 import { Map as MapLibreMap, FilterSpecification, ExpressionSpecification } from 'maplibre-gl'
 import { readJson, writeJson } from '../../core/storage.ts'
+import { countsHidden, countsOf, shownCount, withCount } from './counted-groups.ts'
 
 export type HideSpec =
   | { colour: string; types?: string[] } // layers of these types (default: line) drawn in this colour
@@ -20,7 +22,11 @@ export type StyleLayer = {
   'source-layer'?: string
   paint?: Record<string, unknown>
   layout?: Record<string, unknown>
+  metadata?: unknown
 }
+
+type LayoutProperty = Parameters<MapLibreMap['setLayoutProperty']>[1]
+type LayoutValue = Parameters<MapLibreMap['setLayoutProperty']>[2]
 
 const STORAGE_KEY = 'oim-key-hidden'
 // The rows hidden at first already hidden once: after that, the user's choice stays.
@@ -44,6 +50,8 @@ export class FeatureHider {
   map: MapLibreMap
   hidden: Set<string>
   originals = new Map<string, FilterSpecification | undefined>()
+  /** Group layers' layout values that read the count, as the style gave them. */
+  originalLayouts = new Map<string, Record<string, unknown>>()
   // Rows that matched no layer, for debugging the key.
   unmatched = new Set<string>()
 
@@ -53,6 +61,7 @@ export class FeatureHider {
     // A new style (e.g. another background map) drops the filters: re-apply them.
     map.on('style.load', () => {
       this.originals.clear()
+      this.originalLayouts.clear()
       this.apply()
     })
   }
@@ -118,6 +127,9 @@ export class FeatureHider {
       }
     }
 
+    for (const [id, condition] of this.countGroups(layers))
+      added.set(id, [...(added.get(id) || []), condition])
+
     for (const layer of layers) {
       const original = this.originals.get(layer.id)
       const extra = added.get(layer.id)
@@ -131,6 +143,34 @@ export class FeatureHider {
     if (import.meta.env.DEV && this.unmatched.size) {
       console.warn('Key rows matching no map layer:', [...this.unmatched])
     }
+  }
+
+  /** Group layers counting a hidden kind: their count of the kinds shown (layout),
+   * and the condition keeping groups with some; the others as the style gave them. */
+  countGroups(layers: StyleLayer[]): Map<string, ExpressionSpecification> {
+    const hiddenIcons = new Set<string>()
+    for (const key of this.hidden) {
+      const spec = JSON.parse(key) as HideSpec
+      if ('icon' in spec) hiddenIcons.add(spec.icon)
+    }
+    const conditions = new Map<string, ExpressionSpecification>()
+    for (const layer of layers) {
+      const counts = countsOf(layer)
+      if (!counts) continue
+      if (!this.originalLayouts.has(layer.id)) this.originalLayouts.set(layer.id, { ...layer.layout })
+      const original = this.originalLayouts.get(layer.id) ?? {}
+      const hiding = countsHidden(counts, hiddenIcons)
+      const count = shownCount(counts, hiddenIcons)
+      for (const [property, value] of Object.entries(original)) {
+        if (!JSON.stringify(value).includes('"count')) continue
+        const shown = hiding ? withCount(value, count) : value
+        const name = property as LayoutProperty
+        if (JSON.stringify(this.map.getLayoutProperty(layer.id, name)) !== JSON.stringify(shown))
+          this.map.setLayoutProperty(layer.id, name, shown as LayoutValue)
+      }
+      if (hiding) conditions.set(layer.id, ['>', count, 0])
+    }
+    return conditions
   }
 }
 

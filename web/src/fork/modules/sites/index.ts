@@ -33,7 +33,7 @@ const sites: ForkModule = {
         false
       ),
       new Layer('R', t('sites.category.religion', 'Places of worship'), 'sites_religion', false),
-      new Layer('F', t('sites.category.fuel', 'Fuel and weapons'), 'sites_fuel', false),
+      new Layer('F', t('sites.category.fuel', 'Fuel'), 'sites_fuel', false),
       new Layer('V', t('sites.category.transport', 'Transport hubs'), 'sites_transport', false),
       new Layer('M', t('sites.category.military', 'Military'), 'sites_military', false),
       // Not sites_military_disused: the switcher matches prefixes, and M would cover it.

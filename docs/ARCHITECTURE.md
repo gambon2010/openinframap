@@ -39,8 +39,9 @@ ui/        shared building blocks you see: dock (right), left column, details
            panel, highlight, panels (panel.ts, makeModal), settings (the gear),
            map buttons (map-button.ts: print, Settings, account),
            the tooltip, the right-click menu (context-menu.ts: withContextMenu),
-           line icons (icons.ts: the eye), the key's checkboxes and its rows on
-           prints (key/)
+           line icons (icons.ts: the eye, the map's buttons), the key's checkboxes
+           and its rows on prints (key/; counted-groups.ts: a group's count of the
+           kinds the key shows)
 services/  shared state and registries, nothing drawn: live updates (live.ts),
            who has the map (map-mode.ts: measuring, drawing),
            what a printed map's legend lists (legend.ts), the background map's

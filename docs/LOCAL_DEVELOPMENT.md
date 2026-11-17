@@ -548,10 +548,13 @@ by Wikidata ID, so it's shared across regions.
 
 The layer switcher's **Critical sites** group shows infrastructure from OSM that the
 other layers don't: health and emergency services, government offices (town halls,
-prefectures, tax offices, CAF...), places of worship, fuel stations and gun shops,
+prefectures, tax offices, CAF...), places of worship, fuel stations and depots,
 airports and ports, military sites (and, separately, disused bunkers and trenches),
 food supply, dams and landfills. Important ones show from zoom 8, the rest from zoom
-12 or 14. The key lists every kind; untick one to hide it.
+12 or 14; zoomed out, a disc with a number stands for several of a kind nearby (a
+lone one shows as itself). The key lists every kind; untick one to hide it, from
+the discs' numbers too. With debug on, a clicked thing's details link to its page
+on OpenStreetMap.
 
 ---
 

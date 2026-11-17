@@ -4,7 +4,8 @@
 // are drawn, and under the pointer its position and the features there (style
 // layer, tile layer, id). Bottom right above the credits, a fixed size (what changes
 // doesn't move it); updated as the map moves. While on, a clicked feature's details
-// end with a "Debug info" section: its layer, source and every property.
+// end with a "Debug info" section: its layer, source, every property and its page on
+// OpenStreetMap.
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el, mount } from 'redom'
 import { t } from '../../core/i18n.ts'
@@ -12,7 +13,7 @@ import { readText, writeText } from '../../core/storage.ts'
 import { ForkModule } from '../../types.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { addSettingsSection } from '../../ui/settings.ts'
-import { debugInfo, featureRows } from './info.ts'
+import { debugInfo, featureRows, osmUrl } from './info.ts'
 import './debug.css'
 
 const KEY = 'oim-debug'
@@ -63,15 +64,20 @@ function debugBox(map: Map) {
   }
 }
 
-/** A feature's details while debugging: marked as such, then its rows. */
+/** A feature's details while debugging: marked as such, then its rows and its page
+ * on OpenStreetMap (the panel itself has no such link: ui/details.css). */
 function debugDetails(feature: MapGeoJSONFeature): HTMLElement {
+  const url = osmUrl(feature.properties)
   return el(
     'section.oim-debug-details',
     el('h4', t('debug.details', 'Debug info')),
     el(
       'table.item_info',
       featureRows(feature).map(([key, value]) => el('tr', el('th', key), el('td', value)))
-    )
+    ),
+    ...(url
+      ? [el('a', t('debug.openstreetmap', 'View on OpenStreetMap'), { href: url, target: '_blank' })]
+      : [])
   )
 }
 

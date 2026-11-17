@@ -251,6 +251,12 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.29 | Trams and metro in tunnels drawn see-through at every zoom (zoomed out only some lanes were). | ✅ (2026-11-17) `loom_tiles.py`: tunnels widened per zoom as far as a bundle of lanes spreads |
 | 10.30 | Airports: the stand lead-in hooks (Entzheim) not drawn; the named taxiways, the stand spokes and the corners kept. | ✅ (2026-11-17) `stand_lead_ins.py`: untagged taxiway runs under 150 m with a free end, from `<area>.taxiways.osm.pbf`; checked against upstream's map (94 of the 105 pieces it lacks gone, nothing it has); the source fix (retagging them `aeroway=taxilane` in OpenStreetMap) is the owner's |
 | 10.31 | Map or satellite as a toggle among the map's buttons, not a setting; the buttons reorganised in groups; Data layers and My layers icons clearly different (no red dot). | ✅ (2026-11-17) `modules/background` (satellite button), `ui/icons.ts`, `ui/panel.css` (order) |
+| 10.32 | Trams and metro drawn at every zoom (they vanished just below 12, where some tiles were). | ✅ (2026-11-18) hand-over at 11.5 (`LANES_SHOWN_FROM`) |
+| 10.33 | Critical sites: gun shops removed (OpenStreetMap's data on them is poor); the category is *Fuel*. | ✅ (2026-11-18) `sites.sql`, `imposm/sites.py`, `modules/sites` |
+| 10.34 | Grouped markers follow the key: a hidden kind isn't counted, a group of hidden kinds goes; a kind's lone site in a group's place shows as itself. | ✅ (2026-11-18) `site_points` (counts per kind, groups of two or more of a kind), `ui/key/counted-groups.ts` |
+| 10.35 | "View on OpenStreetMap" only with debug on. | ✅ (2026-11-18) `ui/details.css`, `modules/debug` |
+| 10.36 | Every data layer fading in and out when switched, as the roads do. | ⏳ proposed |
+| 10.37 | A site in two data layers (an oil depot in Oil & Natural Gas and in Critical sites) drawn once. | ⏳ to decide (suggestion given) |
 
 ## 11. Quality
 

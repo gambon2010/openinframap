@@ -139,7 +139,7 @@
       "health": "Health and emergency",
       "government": "Government and public services",
       "religion": "Places of worship",
-      "fuel": "Fuel and weapons",
+      "fuel": "Fuel",
       "transport": "Transport hubs",
       "military": "Military",
       "military-disused": "Disused military (bunkers, trenches...)",
@@ -173,7 +173,6 @@
       "worship": "Other place of worship (Hindu, Sikh...)",
       "fuel": "Fuel station",
       "fuel-depot": "Fuel depot, storage tank",
-      "weapons": "Gun shop, gunsmith",
       "airport": "Airport, airfield",
       "port": "Port, harbour",
       "border": "Border control",
@@ -705,7 +704,8 @@
     "under": "Under the pointer",
     "title": "Debug",
     "show": "Show debug info on the map (zoom, scale, tiles, what is under the pointer)",
-    "details": "Debug info"
+    "details": "Debug info",
+    "openstreetmap": "View on OpenStreetMap"
   },
   "data-layers": {
     "title": "Data layers",

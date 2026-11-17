@@ -1,6 +1,6 @@
 """
 Critical sites: health and emergency services, government offices, places of
-worship, fuel and weapons, transport hubs, military sites, food supply, dams and
+worship, fuel, transport hubs, military sites, food supply, dams and
 landfills.
 
 Fork-only. One table for all of them (points and areas); schema/fork/sites.sql sorts
@@ -37,11 +37,10 @@ SITES = {
     "healthcare": ["hospital", "clinic", "centre", "pharmacy"],
     "emergency": ["ambulance_station", "siren"],
     "office": ["government", "diplomatic"],
-    # fuel and weapons
+    # fuel
     "industrial": ["fuel_depot", "oil_storage", "port", "slaughterhouse", "distributor"],
     "man_made": ["storage_tank", "silo", "monitoring_station"],
-    "shop": ["weapons", "wholesale", "supermarket", "convenience"],
-    "craft": ["gunsmith"],
+    "shop": ["wholesale", "supermarket", "convenience"],
     # transport
     "aeroway": ["aerodrome"],
     "harbour": ["yes"],

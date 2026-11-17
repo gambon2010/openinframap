@@ -142,3 +142,9 @@
   max-width: 100%;
   overflow: hidden;
 }
+
+/* Upstream's "View on OpenStreetMap" link: the map shows what OpenStreetMap would;
+   it's in the debug info instead (modules/debug). */
+.oim-info-panel .infobox-external-links a:has(> .osm_link) {
+  display: none;
+}

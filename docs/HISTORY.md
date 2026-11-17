@@ -659,6 +659,18 @@ is now at 11.5 (`LANES_SHOWN_FROM`), and the lanes' width follows each zoom's ti
 from half a zoom before to half after (it assumed a whole zoom after). Checked
 rendered at 11.4 to 12.6 after panning: trams drawn at every step.
 
+**Critical sites: groups follow the key, gun shops gone (2026-11-18):** the groups
+(made in the database, by category) counted every kind, so unticking fuel stations
+left groups that zoomed into nothing. A group now carries its count per kind
+(`kinds`, one string: Tegola has no per-kind fields to declare), and its layer says
+which key icon each kind has; the key's hider swaps the group's count and size for
+the shown kinds' sum and hides a group with none (`ui/key/counted-groups.ts`,
+checked with MapLibre's expression engine). Only kinds with two or more in a place
+are grouped: a lone one shows as itself. Gun shops removed (poor data); the
+category is *Fuel*. Re-running `sites.sql` on a built database needs `search.sql`
+after it (its view reads `site_feature`). "View on OpenStreetMap" moved to the
+debug info.
+
 ---
 
 ## Building outlines (2026-11-11)
