@@ -195,6 +195,10 @@ describe('roads, railways and borders', () => {
     const width = laneWidth() as unknown[]
     // At zoom 12 and just before 13 (twice the width), then 13 again: its own tiles.
     expect(width.slice(3, 9)).toEqual([12, LANE_WIDTH, 12.999, LANE_WIDTH * 2 ** 0.999, 13, LANE_WIDTH])
+    // Wider for a glow: still one zoom curve at the top (MapLibre takes no other).
+    const glow = laneWidth(10) as unknown[]
+    expect(glow[0]).toBe('interpolate')
+    expect(glow.slice(3, 5)).toEqual([12, LANE_WIDTH + 10])
   })
 
   it('draw trunk roads amber, secondary pale yellow, tertiary white (bold)', () => {

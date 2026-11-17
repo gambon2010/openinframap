@@ -3,7 +3,7 @@
 // highlight is two layers on those tiles, filtered to the line: a glow over the
 // lanes and the line's own lane over it, at every zoom the lanes show and wherever
 // the map goes. Cleared with the details panel's highlight (ui/highlight.ts).
-import type { ExpressionSpecification, FilterSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
+import type { FilterSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { leftColumn } from '../../ui/left-column.ts'
 import { LANES_FROM } from './roads.constants.ts'
@@ -32,7 +32,7 @@ function addLayers(map: Map) {
   const before = map.getLayer(`${BORDERS_PREFIX}countries_edge`)
     ? `${BORDERS_PREFIX}countries_edge`
     : undefined
-  const glowWidth: ExpressionSpecification = ['+', laneWidth(), 2 * GLOW_REACH]
+  const glowWidth = laneWidth(2 * GLOW_REACH)
   for (const sourceLayer of LOOM_LAYERS) {
     const ids = highlightIds(sourceLayer)
     if (map.getLayer(ids.glow)) continue

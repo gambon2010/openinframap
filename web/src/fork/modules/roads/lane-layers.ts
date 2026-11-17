@@ -32,12 +32,15 @@ export function lanesSource() {
 }
 
 /** A lane's width by zoom: LANE_WIDTH at each zoom's tiles, growing with the map
- * (twice as wide a zoom later) until the next zoom's tiles come. */
-export function laneWidth(): ExpressionSpecification {
+ * (twice as wide a zoom later) until the next zoom's tiles come; `plus` pixels
+ * wider throughout (a glow around it: lane-highlight.ts). One zoom curve: MapLibre
+ * takes none inside another expression, so `plus` goes into its stops. */
+export function laneWidth(plus = 0): ExpressionSpecification {
   const stops: number[] = []
-  for (let z = LANES_FROM; z < LANES_TO; z++) stops.push(z, LANE_WIDTH, z + 0.999, LANE_WIDTH * 2 ** 0.999)
+  const at = (scale: number) => LANE_WIDTH * scale + plus
+  for (let z = LANES_FROM; z < LANES_TO; z++) stops.push(z, at(1), z + 0.999, at(2 ** 0.999))
   // Past the last tiles, enlarged: the lanes spread as much as the map grows.
-  stops.push(LANES_TO, LANE_WIDTH, LANES_TO + 4, LANE_WIDTH * 2 ** 4)
+  stops.push(LANES_TO, at(1), LANES_TO + 4, at(2 ** 4))
   return ['interpolate', ['exponential', 2], ['zoom'], ...stops] as ExpressionSpecification
 }
 
