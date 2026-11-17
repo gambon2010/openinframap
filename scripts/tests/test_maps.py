@@ -10,7 +10,7 @@ import subprocess
 import pytest
 from fake_pmtiles import write as pmtiles
 
-from offline_maps import cli, extract, inventory, jobs, maps
+from offline_maps import cli, extract, inventory, jobs, maps, transit
 
 SQUARE = {
     "type": "Polygon",
@@ -303,6 +303,7 @@ def test_buildings_zoomed_out_offered_for_a_background_map_without_them(folder, 
     # Once made (newer than the background map), no longer offered.
     (folder["dir"] / "france.railways.osm.pbf").write_bytes(b"cut")
     (folder["dir"] / "france.zoomed-out.pmtiles").write_bytes(b"made")
+    (folder["dir"] / "france.transit.pmtiles").write_bytes(b"made")
     menu(folder, "1\n2\n\n\n")
     assert "Buildings, roads and railways zoomed out" not in capsys.readouterr().err
 
@@ -317,6 +318,9 @@ def test_buildings_zoomed_out_need_every_building(folder):
     # Its railways file too (cut from the extract, read by the build).
     assert extract.zoomed_out_missing(folder["dir"], "france")
     (folder["dir"] / "france.railways.osm.pbf").write_bytes(b"cut")
+    # And its trams' and metros' lanes (LOOM's).
+    assert extract.zoomed_out_missing(folder["dir"], "france")
+    transit.transit_of(folder["dir"], "france").write_bytes(b"made")
     assert not extract.zoomed_out_missing(folder["dir"], "france")
     older = (folder["dir"] / "france.pmtiles").stat().st_mtime - 10
     os.utime(companion, (older, older))
@@ -327,7 +331,9 @@ def test_a_background_map_removed_with_its_buildings_zoomed_out(folder, capsys):
     background_map(folder, "france", "20261110")
     extract.zoomed_out_of(folder["dir"], "france").write_bytes(b"made")
     (folder["dir"] / "france.railways.osm.pbf").write_bytes(b"cut")
+    transit.transit_of(folder["dir"], "france").write_bytes(b"made")
     menu(folder, "2\n5\ny\n\n")  # Remove → France, Background map (5th)
     assert not (folder["dir"] / "france.pmtiles").exists()
     assert not extract.zoomed_out_of(folder["dir"], "france").exists()
     assert not (folder["dir"] / "france.railways.osm.pbf").exists()
+    assert not transit.transit_of(folder["dir"], "france").exists()

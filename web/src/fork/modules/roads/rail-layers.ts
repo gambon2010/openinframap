@@ -1,14 +1,14 @@
-// Fork: the bold railways, trams and metro (modules/roads), from a layer of the
-// background map's tiles the backend adds (web-backend/src/fork/background/
-// zoomed_railways.py: ranked from OpenStreetMap's tags, close tracks drawn as one
-// zoomed out; transit_lines.py: each tram or metro line's strand). Railways: a line
-// with white dashes, one set of layers per rank (main lines drawn over the others),
-// so the key can hide each. Trams, metro and light rail: a plain line in its line's
-// colour, the lines sharing a track side by side, one set per kind. Sidings, yards
-// and depots of both their own set.
+// Fork: the railways, trams and metro (modules/roads), from a layer of the background
+// map's tiles the backend adds (web-backend/src/fork/background/zoomed_railways.py:
+// ranked from OpenStreetMap's tags, close tracks drawn as one). Railways: a line with
+// white dashes, one set of layers per rank (main lines drawn over the others), so the
+// key can hide each. Trams, metro and light rail zoomed out: a plain line, one set
+// per kind (from LANES_FROM, LOOM's lanes: lane-layers.ts). Sidings, yards and depots
+// of both their own set, at every zoom.
 import type { ExpressionSpecification } from 'maplibre-gl'
 import { Builder, FULL, LineFrom, fading, mapLineWidth, tunnelOpacity, resized } from './builder.ts'
 import * as look from './roads.constants.ts'
+import { LANES_FROM } from './roads.constants.ts'
 
 export const RAILWAYS_PREFIX = 'railways_'
 export const TRANSIT_PREFIX = 'transit_'
@@ -32,6 +32,9 @@ const FROM: LineFrom = { sourceLayer: RAILWAYS_LAYER }
 export interface TrackSet {
   name: string
   filter: ExpressionSpecification
+  /** Trams, metro, light rail: their kind (OpenStreetMap's railway=), whose lanes
+   * LOOM draws from LANES_FROM (lane-layers.ts). */
+  kind?: string
 }
 
 /** The railways' sets, drawn in this order (main lines on top). */
@@ -42,12 +45,16 @@ export const RAILWAY_SETS: TrackSet[] = [
   { name: 'main', filter: ['==', ['get', 'rank'], 'main'] }
 ]
 
+function transitKind(name: string, kind: string): TrackSet {
+  return { name, kind, filter: ['all', ['==', ['get', 'kind'], kind], ['!', isSiding]] }
+}
+
 /** The trams', metros' and light rails' sets (their sidings and depots apart). */
 export const TRANSIT_SETS: TrackSet[] = [
   { name: 'sidings', filter: isSiding },
-  { name: 'light_rail', filter: ['all', ['==', ['get', 'kind'], 'light_rail'], ['!', isSiding]] },
-  { name: 'metro', filter: ['all', ['==', ['get', 'kind'], 'subway'], ['!', isSiding]] },
-  { name: 'tram', filter: ['all', ['==', ['get', 'kind'], 'tram'], ['!', isSiding]] }
+  transitKind('light_rail', 'light_rail'),
+  transitKind('metro', 'subway'),
+  transitKind('tram', 'tram')
 ]
 
 /** A set's layers' ids start with this (the key's rows hide them by it). */
@@ -103,55 +110,29 @@ function addRailways(b: Builder, set: TrackSet, tunnel: boolean) {
   b.line(`${id}_dashes`, filter, dashes, FROM)
 }
 
-/** Where a line's strand goes beside the others on its track: its slot's distance
- * from the middle, in strand widths (slot and slots from the backend's strands; a
- * track without lines on it in the middle). */
-const fromTheMiddle: ExpressionSpecification = [
-  '-',
-  ['coalesce', ['get', 'slot'], 0],
-  ['/', ['-', ['coalesce', ['get', 'slots'], 1], 1], 2]
-]
-
-/** A width by zoom times each strand's place: its offset from the track. */
-export function besideTheOthers(width: ExpressionSpecification): ExpressionSpecification {
-  const [operator, curve, input, ...stops] = width
-  // Stops are zoom, width, zoom, width...: each width times the strand's place.
-  const offsets = stops.map((stop, i) => (i % 2 === 1 ? ['*', fromTheMiddle, stop] : stop))
-  return [operator, curve, input, ...offsets] as ExpressionSpecification
-}
-
-/** A set of trams, metro or light rail: a plain line in its line's colour
- * (TRAM_COLOUR without one), narrower than railways, on a light edge, the lines
- * sharing a track side by side; in a tunnel (most metro), see-through. */
+/** A set of trams, metro or light rail zoomed out (LOOM's lanes from LANES_FROM,
+ * lane-layers.ts; sidings and depots at every zoom): a plain line, narrower than
+ * railways, on an outline; in a tunnel (most metro), see-through. */
 function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
   const id = `${transitSetPrefix(set)}${tunnel ? 'tunnel' : 'ground'}`
   const width = resized(mapLineWidth('osm_rail'), look.TRAM_WIDTH_SCALE, look.TRAM_MIN_WIDTH)
-  const offset = besideTheOthers(width)
   const filter: ExpressionSpecification = ['all', railTunnel(tunnel), isTransit, set.filter]
   const opacity = fading(tunnelOpacity(FULL, tunnel))
+  const from: LineFrom = set.kind ? { ...FROM, maxzoom: LANES_FROM } : FROM
   if (!tunnel) {
     const edge = {
       'line-color': look.RAIL_EDGE_COLOUR,
       'line-gap-width': width,
       'line-width': look.EDGE_WIDTH,
-      'line-offset': offset,
       'line-opacity': opacity
     }
-    b.line(`${id}_edge`, filter, edge, FROM)
+    b.line(`${id}_edge`, filter, edge, from)
   }
-  const line = {
-    'line-color': {
-      light: look.TRAM_COLOUR.light,
-      bold: ['to-color', ['get', 'colour'], look.TRAM_COLOUR.bold] as ExpressionSpecification
-    },
-    'line-width': width,
-    'line-offset': offset,
-    'line-opacity': opacity
-  }
-  b.line(id, filter, line, FROM)
+  b.line(id, filter, { 'line-color': look.TRAM_COLOUR, 'line-width': width, 'line-opacity': opacity }, from)
 }
 
-/** Every set of railways, then of trams and metro, in a tunnel or above ground. */
+/** Every set of railways, then of trams and metro (zoomed out), in a tunnel or above
+ * ground. */
 export function addTracks(b: Builder, tunnel: boolean) {
   for (const set of RAILWAY_SETS) addRailways(b, set, tunnel)
   for (const set of TRANSIT_SETS) addTransit(b, set, tunnel)

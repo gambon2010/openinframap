@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
-import type { ExpressionSpecification } from 'maplibre-gl'
 import { resized, valueFor } from './builder.ts'
 import { roadLayers } from './layers.ts'
-import { RAILWAYS_LAYER, besideTheOthers, byRank } from './rail-layers.ts'
+import { RAILWAYS_LAYER, byRank } from './rail-layers.ts'
+import { LANES_SOURCE, LANE_WIDTH, laneWidth } from './lane-layers.ts'
 import { drawingOrder, entryOf, isMapRoadLayer, lookOf } from './index.ts'
 import {
   HIGHWAY_COLOUR,
+  LANES_FROM,
   HIGHWAY_MIN_WIDTH,
   ROAD_WIDTH_SCALE,
   SMALL_ROAD_MIN_WIDTH,
@@ -118,12 +119,8 @@ describe('roads, railways and borders', () => {
     expect(at('ground_highway')).toBeLessThan(at('railways_sidings_ground_edge'))
     expect(at('railways_branch_ground_dashes')).toBeLessThan(at('railways_main_ground_edge'))
     expect(at('railways_main_ground_dashes')).toBeLessThan(at('transit_sidings_ground_edge'))
-    expect(layers.slice(-4).map((l) => l.id)).toEqual([
-      'transit_tram_ground_edge',
-      'transit_tram_ground',
-      'boundaries_countries_edge',
-      'boundaries_countries'
-    ])
+    expect(at('transit_tram_ground')).toBeLessThan(at('transit_tram_lanes_ground'))
+    expect(layers.slice(-2).map((l) => l.id)).toEqual(['boundaries_countries_edge', 'boundaries_countries'])
   })
 
   it('draw small roads and paths alike at every zoom, their edge growing from a hairline', () => {
@@ -145,31 +142,30 @@ describe('roads, railways and borders', () => {
     )
   })
 
-  it('draw trams and metro apart from railways, a plain line in each line’s colour, without dashes', () => {
+  it('draw trams and metro apart from railways: zoomed out a plain line, then LOOM’s lanes', () => {
     const transit = '["in",["get","kind"],["literal",["tram","subway","light_rail"]]]'
     expect(JSON.stringify(layer('railways_main_ground').filter)).toContain(`["!",${transit}]`)
-    expect(JSON.stringify(layer('transit_tram_ground').filter)).toContain(transit)
-    expect(layer('transit_tram_ground').paint?.['line-color']).toBe(TRAM_COLOUR.light)
-    expect(bold('transit_tram_ground', 'line-color')).toEqual([
+    const plain = layer('transit_tram_ground')
+    expect(JSON.stringify(plain.filter)).toContain(transit)
+    expect(plain.maxzoom).toBe(LANES_FROM)
+    expect(layer('transit_sidings_ground').maxzoom).toBeUndefined() // not in LOOM's lanes
+    const lanes = layer('transit_tram_lanes_ground')
+    expect(lanes.source).toBe(LANES_SOURCE)
+    expect(lanes.minzoom).toBe(LANES_FROM)
+    expect(JSON.stringify(lanes.filter)).toContain('["==",["get","kind"],"tram"]')
+    expect(layer('transit_metro_lanes_tunnel_joins')['source-layer']).toBe('inner-connections')
+    expect(lanes.paint?.['line-color']).toBe(TRAM_COLOUR.light)
+    expect(bold('transit_tram_lanes_ground', 'line-color')).toEqual([
       'to-color',
       ['get', 'colour'],
       TRAM_COLOUR.bold
     ])
-    expect(layer('transit_tram_ground_dashes')).toBeUndefined()
   })
 
-  it('draw the lines sharing a track side by side, each a strand’s width from the next', () => {
-    const width = ['interpolate', ['linear'], ['zoom'], 12, 2, 18, 8] as ExpressionSpecification
-    const offset = besideTheOthers(width) as unknown[]
-    expect(offset.slice(0, 4)).toEqual(['interpolate', ['linear'], ['zoom'], 12])
-    // Two lines: slot 0 half a strand to the left, slot 1 half to the right.
-    const place = (offset[4] as unknown[])[1]
-    expect(place).toEqual([
-      '-',
-      ['coalesce', ['get', 'slot'], 0],
-      ['/', ['-', ['coalesce', ['get', 'slots'], 1], 1], 2]
-    ])
-    expect(layer('transit_tram_ground').paint?.['line-offset']).toBeDefined()
+  it('widen the lanes within each zoom as LOOM’s tiles are enlarged, so they keep touching', () => {
+    const width = laneWidth() as unknown[]
+    // At zoom 12 and just before 13 (twice the width), then 13 again: its own tiles.
+    expect(width.slice(3, 9)).toEqual([12, LANE_WIDTH, 12.999, LANE_WIDTH * 2 ** 0.999, 13, LANE_WIDTH])
   })
 
   it('draw trunk roads amber, secondary pale yellow, tertiary white (bold)', () => {

@@ -19,7 +19,7 @@ from pathlib import Path
 
 import netsafe
 
-from . import docker, railways, ui
+from . import docker, railways, transit, ui
 from .pmtiles import read_header
 from .sources import SOURCES
 
@@ -195,8 +195,8 @@ def zoomed_out_of(folder: Path, area: str) -> Path:
 
 def zoomed_out_missing(folder: Path, area: str) -> bool:
     """Whether an area's background map has every building (zoom 15) but not its
-    buildings, roads and railways zoomed out (or its railways file), or only older
-    ones than it."""
+    buildings, roads and railways zoomed out (or its railways file, or its trams'
+    and metros' lanes), or only older ones than it."""
     background = folder / f"{area}.pmtiles"
     header = read_header(background)
     if not header or header.maxzoom < FULL_ZOOM:
@@ -205,6 +205,7 @@ def zoomed_out_missing(folder: Path, area: str) -> bool:
     return (
         not companion.exists()
         or not railways.railways_of(folder, area).exists()
+        or not transit.transit_of(folder, area).exists()
         or companion.stat().st_mtime < background.stat().st_mtime
     )
 
@@ -213,24 +214,11 @@ def make_zoomed_out(folder: Path, area: str) -> None:
     """An area's buildings, roads and railways zoomed out: its railways cut out of its
     OpenStreetMap extract first (railways.py), then all made in the backend's image
     (its pmtiles, shapely and osmium packages; France: 17 min), as root (the image's
-    Python is root's)."""
+    Python is root's); then its trams' and metros' lanes (transit.py, 7 min)."""
     if not railways.railways_of(folder, area).exists():
         railways.make_railways(folder, area)
-    docker.run_service(
-        "backend",
-        [
-            "/app/.venv/bin/python",
-            "-m",
-            "src.fork.background.zoomed_out",
-            "--area",
-            area,
-            "--folder",
-            "/work",
-        ],
-        folder,
-        at="/work",
-        as_root=True,
-    )
+    docker.run_backend_module("zoomed_out", folder, area)
+    transit.make_transit(folder, area)
 
 
 def command_zoomed_out(args) -> None:

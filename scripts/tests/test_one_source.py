@@ -71,11 +71,36 @@ def test_the_railways_are_named_and_kinded_alike():
     assert f'f"{{background_map.stem}}{railways.RAILWAYS}"' in made
     kinds = re.search(r"KINDS = \{([^}]*)\}", made)[1]
     assert sorted(re.findall(r'"(\w+)"', kinds)) == sorted(railways.KINDS)
-    lines = (ROOT / "web-backend" / "src" / "fork" / "background" / "transit_lines.py").read_text()
+    lines = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "transit_lines.py"
+    ).read_text()
     transit = re.search(r"TRANSIT_KINDS = \(([^)]*)\)", lines)[1]
     assert re.findall(r'"(\w+)"', transit) == list(railways.ROUTES)
-    roads = (ROOT / "web" / "src" / "fork" / "modules" / "roads" / "rail-layers.ts").read_text()
+    roads = (
+        ROOT / "web" / "src" / "fork" / "modules" / "roads" / "rail-layers.ts"
+    ).read_text()
     frontend = re.search(r"TRANSIT_KINDS = \[([^\]]*)\]", roads)[1]
     assert re.findall(r"'(\w+)'", frontend) == list(railways.ROUTES)
+    tiles = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "loom_tiles.py"
+    ).read_text()
+    lanes = (
+        ROOT / "web" / "src" / "fork" / "modules" / "roads" / "lane-layers.ts"
+    ).read_text()
+    loom_layers = re.search(r"LAYERS = \(([^)]*)\)", tiles)[1]
+    drawn = re.search(r"LOOM_LAYERS = \[([^\]]*)\]", lanes)[1]
+    assert re.findall(r'"([\w-]+)"', loom_layers) == re.findall(r"'([\w-]+)'", drawn)
+    from offline_maps import transit
+
+    zooms = re.search(r"ZOOMS = range\((\d+), (\d+)\)", tiles)
+    assert range(int(zooms[1]), int(zooms[2])) == transit.LOOM_ZOOMS
+    serve = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "transit.py"
+    ).read_text()
+    assert f'TRANSIT = "{transit.TRANSIT}"' in serve
+    width = re.search(r"LANE_WIDTH = (\d+(?:\.\d+)?)", lanes)[1]
+    # transitmap's tiles: a tenth of the width given, in pixels of 256 to a tile.
+    assert float(width) == 2 * transit.LOOM_LINE_WIDTH / 10
+    assert f"LANES_TO = {transit.LOOM_ZOOMS[-1]}" in lanes
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()
     assert f'GEOFABRIK_INDEX="$OSM_DIR/{regions.GEOFABRIK_INDEX.name}"' in shell

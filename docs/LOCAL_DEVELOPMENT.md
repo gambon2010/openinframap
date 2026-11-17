@@ -219,8 +219,11 @@ drawn the way Planetiler draws them, a motorway's two carriageways overlapping i
 one road zoomed out; near a border, the background map's own roads beyond the area), and the railways at zooms 6 to 15, ranked from
 OpenStreetMap: main lines from zoom 6, branch lines from 8, trams, metro and
 industrial lines from 11, sidings and yards from 14, close tracks as one line up to
-zoom 14 (trams and metro at every zoom, from zoom 12 split into their lines, each
-in its colour). The railways come from the region's OpenStreetMap extract
+zoom 14 (trams and metro at every zoom). From zoom 12 each tram and metro line is
+drawn in its lane and colour, side by side where lines share a track, joined
+through junctions, by LOOM (University of Freiburg, built from `tools/loom`) into
+`data/offline-maps/<region>.transit.pmtiles` (France: 9 minutes, 5 MB; the build says
+which lines it couldn't draw). The railways come from the region's OpenStreetMap extract
 (`data/osm/<region>-latest.osm.pbf`, the build's, downloaded if missing: France
 5 GB), cut into `<region>.railways.osm.pbf` with the tram and metro routes (France:
 3.5 minutes, 20 MB). The backend adds them to the background

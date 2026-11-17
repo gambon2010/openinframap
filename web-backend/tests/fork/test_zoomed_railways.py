@@ -97,15 +97,6 @@ def test_ways_of_one_line_are_joined_end_to_end():
     assert sorted(zip([p["rank"] for p in props], shapely.length(lines))) == [("branch", 10), ("main", 20)]
 
 
-def test_tram_lines_side_by_side_from_their_zoom(railways):
-    lines, props = railways
-    tram = lambda z: [p for p in zr.shown(lines, props, z)[1] if p["kind"] == "tram"]  # noqa: E731
-    assert tram(zr.LINES_FROM - 1) == [{"kind": "tram", "rank": "minor"}]  # one plain line
-    strands = tram(zr.LINES_FROM)
-    assert [(p["line"], p["slot"], p["slots"]) for p in strands] == [("A", 0, 2), ("B", 1, 2)]
-    assert strands[1]["colour"] == "#00ff00"
-
-
 def test_tram_tracks_apart_in_two_tunnels_are_one_line_zoomed_in():
     y = zr.mercator(np.array([[7.74, 48.58]]))[0, 1]
     apart = zr.map_units(15, y)  # 15 m on the ground: twice "close" at zoom 15

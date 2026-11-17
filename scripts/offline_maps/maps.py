@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import coverage, extract, inventory, railways, ui
+from . import coverage, extract, inventory, railways, transit, ui
 from .inventory import Entry
 from .jobs import Job, read_queue, save_queue, work_zoom
 from .offers import SourceOffers
@@ -347,6 +347,7 @@ class Maps(SourceOffers):
                 (self.folder / f"{e.area}.json").unlink(missing_ok=True)
                 extract.zoomed_out_of(self.folder, e.area).unlink(missing_ok=True)
                 railways.railways_of(self.folder, e.area).unlink(missing_ok=True)
+                transit.transit_of(self.folder, e.area).unlink(missing_ok=True)
         ui.say(
             f"Deleted {ui.human(size)}. The map shows it once the scripts update it (start.sh)."
         )

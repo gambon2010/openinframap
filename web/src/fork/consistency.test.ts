@@ -27,8 +27,9 @@ test("every tile layer the fork adds is drawn, and every style draws one that's 
   const allTiles = new Set([...forkTiles, ...tegolaLayers('../tegola/layers.yml')])
   const used = new Set(
     forkStyleLayers
-      // Drawn from the background map's own tiles (Protomaps), not Tegola's.
-      .filter((l) => !('source' in l) || l.source !== 'basemap')
+      // Drawn from the backend's tiles (the background map's, Protomaps'; the trams'
+      // lanes, LOOM's), not Tegola's.
+      .filter((l) => !('source' in l) || !['basemap', 'transit'].includes(l.source as string))
       .map((l) => ('source-layer' in l ? l['source-layer'] : undefined))
       .filter(Boolean)
   )

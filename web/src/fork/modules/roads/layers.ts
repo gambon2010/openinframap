@@ -17,7 +17,8 @@ import {
   mapLineWidth,
   resized
 } from './builder.ts'
-import { addTracks } from './rail-layers.ts'
+import { addLanes } from './lane-layers.ts'
+import { TRANSIT_SETS, addTracks } from './rail-layers.ts'
 import * as look from './roads.constants.ts'
 import type { Looks } from './roads.constants.ts'
 
@@ -198,8 +199,10 @@ export function roadLayers(): { layers: LayerSpecificationWithZIndex[]; varying:
   const b = new Builder()
   for (const road of ROAD_KINDS) addRoad(b, road, true)
   addTracks(b, true)
+  for (const set of TRANSIT_SETS) addLanes(b, set, true)
   for (const road of ROAD_KINDS) addRoad(b, road, false)
   addTracks(b, false)
+  for (const set of TRANSIT_SETS) addLanes(b, set, false)
   addBorders(b)
   return { layers: b.layers, varying: b.varying }
 }

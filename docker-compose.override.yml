@@ -92,3 +92,9 @@ services:
   osmium:
     build: tools/osmium
     profiles: [tools]
+
+  # LOOM, for scripts/offline_maps/transit.py (the trams' and metros' lanes). Not
+  # started by `docker compose up`.
+  loom:
+    build: tools/loom
+    profiles: [tools]

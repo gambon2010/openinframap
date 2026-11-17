@@ -1,8 +1,5 @@
 """src/fork/background/transit_lines.py: tram and metro lines from OpenStreetMap's
-routes, a strand each."""
-
-import numpy as np
-import shapely
+routes."""
 
 from src.fork.background import transit_lines as tl
 
@@ -20,15 +17,3 @@ def test_a_route_is_a_line_with_its_colour_or_one_picked_by_its_name():
 def test_lines_in_order_numbers_as_numbers():
     lines = {("10", "#000"), ("2", "#000"), ("T1", "#000"), ("A", "#000")}
     assert [ref for ref, _ in tl.in_order(lines)] == ["2", "10", "A", "T1"]
-
-
-def test_a_track_once_per_line_on_it():
-    track = shapely.LineString([(0, 0), (1, 0)])
-    props = [{"kind": "tram", "lines": (("A", "#f00"), ("D", "#0f0"))}, {"kind": "tram"}]
-    lines, out = tl.strands(np.array([track, track], dtype=object), props)
-    assert len(lines) == 3
-    assert out == [
-        {"kind": "tram", "line": "A", "colour": "#f00", "slot": 0, "slots": 2},
-        {"kind": "tram", "line": "D", "colour": "#0f0", "slot": 1, "slots": 2},
-        {"kind": "tram"},
-    ]

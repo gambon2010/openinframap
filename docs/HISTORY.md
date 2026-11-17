@@ -575,6 +575,24 @@ side, their dashes out of step): railways within 8 pixels (more than a line's dr
 width with its outline; was 3) are drawn as one, so each spot has one line and its
 dashes show; the bold outline solid white; a little wider.
 
+**Trams and metro drawn by LOOM (2026-11-17):** the lines' own side-by-side strands
+(an offset per line on each track) jumped sideways where a line joined, stopped
+short at junctions and doubled around stops. Looked up the known technique: metro
+line ordering (crossing minimisation), as done by LOOM (University of Freiburg,
+GPL-3.0, Bast, Brosi, Storandt 2018): `topo` merges the tracks into one network,
+`loom` orders the lines on each stretch, `transitmap` draws each line in its lane,
+joined through junctions, into vector tiles, a set per zoom (the lanes' offsets in
+the geometry). Built in Docker from a pinned commit with the free solvers (its own
+image fetches Gurobi, licensed). Lessons: LOOM keeps a line only up to its last
+station, so stops and every dead end are stations; France at once took over ten
+minutes in `topo` alone, a network at a time (46) four minutes; transitmap takes a
+tenth of the widths given for tiles; its tiles carry the line's label, not its id.
+88 of France's 91 lines come out (the build lists the others). The lanes' tiles go
+to zoom 18 in a source of their own (`/background/transit`); within a zoom the map
+grows the lanes' width with them (twice by the next zoom) so they keep touching.
+Tunnels marked from the railways file's tunnel tracks. Zoomed out (below 12) one
+plain line as before; the strands and their offsets removed.
+
 ---
 
 ## Building outlines (2026-11-11)

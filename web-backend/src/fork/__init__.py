@@ -11,6 +11,7 @@ from starlette.staticfiles import StaticFiles
 from . import about, auth, background, circuits, grid, map_data, search, userdata, wikidata_offline
 from .auth import LoginMiddleware
 from .background import buildings as background_buildings
+from .background import transit as background_transit
 from .paths import IMAGES_DIR
 from .userdata.events import STREAMING as events_streaming
 
@@ -34,6 +35,7 @@ routes: list[BaseRoute] = [
     # The background map's tiles, from every area downloaded (data/offline-maps/).
     *background.routes,
     *background_buildings.routes,
+    *background_transit.routes,
 ]
 
 # main.py adds these after its database middleware (they need the connection).

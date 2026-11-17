@@ -11,6 +11,7 @@ import { t } from '../../core/i18n.ts'
 import { background, followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
 import { valueFor } from './builder.ts'
+import { LANES_SOURCE, lanesSource } from './lane-layers.ts'
 import { roadsKey } from './key.ts'
 import { ROADS_PREFIX, roadLayers } from './layers.ts'
 import { RAILWAYS_PREFIX, TRANSIT_PREFIX } from './rail-layers.ts'
@@ -145,6 +146,8 @@ const entryNames = () => ({
 })
 
 const roads: ForkModule = {
+  sources: () => ({ [LANES_SOURCE]: lanesSource() }),
+
   layers: () => ROADS.layers,
 
   switcherGroups: () => {

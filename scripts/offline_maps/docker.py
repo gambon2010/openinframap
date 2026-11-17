@@ -107,3 +107,17 @@ def run_service(
         check=True,
         **quiet,
     )
+
+
+def run_backend_module(module: str, folder: Path, area: str) -> None:
+    """One of the backend's build steps (python -m src.fork.background.<module>
+    --area AREA) on the offline maps folder, in the backend's image, as root (its
+    Python is root's)."""
+    args = ["/app/.venv/bin/python", "-m", f"src.fork.background.{module}"]
+    run_service(
+        "backend",
+        [*args, "--area", area, "--folder", "/work"],
+        folder,
+        at="/work",
+        as_root=True,
+    )

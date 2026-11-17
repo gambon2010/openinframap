@@ -119,6 +119,8 @@ export function growing(width: Looks<number>): Looks<ExpressionSpecification> {
 }
 
 export interface LineFrom {
+  /** By default the background map's tiles ('basemap'). */
+  source?: string
   sourceLayer?: string
   minzoom?: number
   maxzoom?: number
@@ -132,12 +134,12 @@ export class Builder {
 
   /** A line from the background map, by default its roads (`from`: another layer, zooms). */
   line(layerId: string, filter: FilterSpecification, paint: Paint, from: LineFrom = {}) {
-    const { sourceLayer = 'roads', ...zooms } = from
+    const { source = 'basemap', sourceLayer = 'roads', ...zooms } = from
     this.layers.push({
       id: layerId,
       zorder: ZORDER,
       type: 'line',
-      source: 'basemap',
+      source,
       'source-layer': sourceLayer,
       filter,
       ...zooms,

@@ -127,7 +127,7 @@ upstream's at the same URL while `views/search.py` stays upstream's. Its extra
 indexes (`fork/indexes.py`) are appended to `create_indexes.py`'s lists.
 
 **Docker Compose.** `docker-compose.yml` is upstream's; the fork's services
-(backend, basemap, osmium), ports and SELinux labels are in
+(backend, basemap, osmium, loom), ports and SELinux labels are in
 `docker-compose.override.yml`, which Compose merges automatically (`!override`
 replaces tegola's port list).
 

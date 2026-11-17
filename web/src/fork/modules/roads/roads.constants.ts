@@ -72,6 +72,9 @@ export const RAIL_EDGE_COLOUR: Looks<string> = { light: 'hsl(240, 5%, 62%)', bol
  * without one, a colour no power line has), narrower than railways. */
 export const TRAM_COLOUR: Looks<string> = { light: 'hsl(335, 35%, 60%)', bold: 'hsl(335, 85%, 68%)' }
 export const TRAM_WIDTH_SCALE = 0.9
+/** From this zoom, trams and metro are LOOM's lanes (lane-layers.ts); a plain line
+ * further out. */
+export const LANES_FROM = 12
 export const TRAM_MIN_WIDTH = 2.5
 /** Borders over imagery (over the map, the map's own): red dashes on a dark edge (the
  * same in both looks). */

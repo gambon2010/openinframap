@@ -60,8 +60,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                the same at each zoom over the map and imagery: light over the map,
                bold once their Data layers entry is ticked, only the ticked ones over
                imagery (index.ts); layers.ts roads, borders and the order;
-               rail-layers.ts railways by rank, trams and metro by kind, each line its
-               colour side by side; builder.ts how a layer is made, values by look
+               rail-layers.ts railways by rank, trams and metro by kind (a plain line
+               zoomed out); lane-layers.ts from zoom 12 LOOM's lanes, each line in its
+               lane and colour (source "transit"); builder.ts how a layer is made, values by look
                and background; key.ts the kinds as key rows under each entry
                (sidings and depots hidden at first); street names white over imagery
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
@@ -207,8 +208,11 @@ every route but logging in needs a session):
   railways at zooms 6 to 15, ranked from `<area>.railways.osm.pbf` (`zoomed_railways.py`);
   roads drawn as Planetiler draws them (snapped, joined, no carriageway merging) and,
   in tiles across the area's edge, the background map's own roads beyond it
-  (`beyond_area.py`); close tracks drawn as one zoomed out (`close_lines.py`); trams and
-  metro split into their lines from the routes, a strand each (`transit_lines.py`);
+  (`beyond_area.py`); close tracks drawn as one zoomed out (`close_lines.py`); the
+  trams' and metros' lanes, LOOM's (tools/loom, run by scripts/offline_maps/transit.py):
+  its input, a graph per network, the lines from the routes (`loom_input.py`,
+  `transit_lines.py`), its tiles packed into `<area>.transit.pmtiles` with tunnels
+  marked (`loom_tiles.py`), served at `/background/transit` (`transit.py`);
   `tiles.py` their tile geometry; `buildings.py`, a building's whole outline from the
   zoom 15 tiles, `/background/building/{id}`, for copies);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
