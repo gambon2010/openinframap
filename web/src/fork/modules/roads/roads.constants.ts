@@ -55,24 +55,27 @@ export const LINK_MIN_WIDTH = 0.75
 export const SMALL_ROAD_MIN_WIDTH = 0.75
 /** Railways by rank (zoomed_railways.py): main lines like motorways, branch lines like
  * main roads (wide enough for their dashes to show). */
-export const RAIL_MIN_WIDTH = { main: 3, branch: 2, minor: 1.5, service: 1 }
+export const RAIL_MIN_WIDTH = { main: 4, branch: 3, minor: 2, service: 1.5 }
 
-/** Tunnels: dots of the line's colour, without an edge (a dash of length 0 with a
- * round end is a dot as wide as the line; the gap in line widths). An edge can't
- * follow the dots: its dashes would be spaced by its own, larger width. */
-export const TUNNEL_DOTS = [0, 2]
+/** Tunnels: the line in its colour, see-through (this share of its opacity), without
+ * an edge: the ground shows through, as under the road. (Dashes clashed where two
+ * tunnels run side by side; dots read poorly.) */
+export const TUNNEL_OPACITY = 0.55
 
 /** Railways: a grey line with white dashes (bold black), with a light edge to part
  * it from dark ground. */
 export const RAIL_COLOUR: Looks<string> = { light: 'hsl(240, 3%, 55%)', bold: 'hsl(240, 6%, 18%)' }
 export const RAIL_DASH_COLOUR = 'hsl(0, 0%, 100%)'
 export const RAIL_DASHES = [3, 3]
+/** Zoomed out, a plain line: railways run close together there (a city's lines),
+ * and side by side their dashes fall out of step and the bundle turns white. */
+export const RAIL_DASHES_FROM = 12
 export const RAIL_EDGE_COLOUR = 'hsla(0, 0%, 100%, 0.55)'
 /** Trams and metro: a plain line, pale pink (bold: in its line's colour, pink
  * without one, a colour no power line has), narrower than railways. */
 export const TRAM_COLOUR: Looks<string> = { light: 'hsl(335, 35%, 60%)', bold: 'hsl(335, 85%, 68%)' }
-export const TRAM_WIDTH_SCALE = 0.6
-export const TRAM_MIN_WIDTH = 1.5
+export const TRAM_WIDTH_SCALE = 0.9
+export const TRAM_MIN_WIDTH = 2.5
 /** Borders over imagery (over the map, the map's own): red dashes on a dark edge (the
  * same in both looks). */
 export const BORDER_COLOUR = 'hsl(0, 90%, 62%)'

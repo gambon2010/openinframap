@@ -7,7 +7,7 @@
 // colour, the lines sharing a track side by side, one set per kind. Sidings, yards
 // and depots of both their own set.
 import type { ExpressionSpecification } from 'maplibre-gl'
-import { Builder, FULL, LineFrom, fading, mapLineWidth, resized } from './builder.ts'
+import { Builder, FULL, LineFrom, fading, mapLineWidth, tunnelOpacity, resized } from './builder.ts'
 import * as look from './roads.constants.ts'
 
 export const RAILWAYS_PREFIX = 'railways_'
@@ -69,16 +69,22 @@ export function byRank(width: ExpressionSpecification): ExpressionSpecification 
   return [operator, curve, input, ...widths] as ExpressionSpecification
 }
 
-/** A set of railways. Above ground: a light edge, a line, white dashes on it. In a
- * tunnel: dots of the line's colour, like the roads' tunnels. */
+/** A set of railways. Above ground: a light edge, a line, white dashes on it (from
+ * RAIL_DASHES_FROM: a plain line further out). In a
+ * tunnel: the line see-through, like the roads' tunnels. */
 function addRailways(b: Builder, set: TrackSet, tunnel: boolean) {
   const id = `${railwaySetPrefix(set)}${tunnel ? 'tunnel' : 'ground'}`
   const width = byRank(resized(mapLineWidth('osm_rail'), 1, 0))
   const filter: ExpressionSpecification = ['all', railTunnel(tunnel), ['!', isTransit], set.filter]
   const opacity = fading(FULL)
   if (tunnel) {
-    const dots = { 'line-color': look.RAIL_COLOUR, 'line-width': width, 'line-opacity': opacity }
-    b.line(id, filter, { ...dots, 'line-dasharray': look.TUNNEL_DOTS }, FROM)
+    const seeThrough = fading(tunnelOpacity(FULL, true))
+    b.line(
+      id,
+      filter,
+      { 'line-color': look.RAIL_COLOUR, 'line-width': width, 'line-opacity': seeThrough },
+      FROM
+    )
     return
   }
   const edge = {
@@ -95,7 +101,7 @@ function addRailways(b: Builder, set: TrackSet, tunnel: boolean) {
     'line-dasharray': look.RAIL_DASHES,
     'line-opacity': opacity
   }
-  b.line(`${id}_dashes`, filter, dashes, FROM)
+  b.line(`${id}_dashes`, filter, dashes, { ...FROM, minzoom: look.RAIL_DASHES_FROM })
 }
 
 /** Where a line's strand goes beside the others on its track: its slot's distance
@@ -117,13 +123,13 @@ export function besideTheOthers(width: ExpressionSpecification): ExpressionSpeci
 
 /** A set of trams, metro or light rail: a plain line in its line's colour
  * (TRAM_COLOUR without one), narrower than railways, on a light edge, the lines
- * sharing a track side by side; in a tunnel (most metro), dots of its colour. */
+ * sharing a track side by side; in a tunnel (most metro), see-through. */
 function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
   const id = `${transitSetPrefix(set)}${tunnel ? 'tunnel' : 'ground'}`
   const width = resized(mapLineWidth('osm_rail'), look.TRAM_WIDTH_SCALE, look.TRAM_MIN_WIDTH)
   const offset = besideTheOthers(width)
   const filter: ExpressionSpecification = ['all', railTunnel(tunnel), isTransit, set.filter]
-  const opacity = fading(FULL)
+  const opacity = fading(tunnelOpacity(FULL, tunnel))
   if (!tunnel) {
     const edge = {
       'line-color': look.RAIL_EDGE_COLOUR,
@@ -141,8 +147,7 @@ function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
     },
     'line-width': width,
     'line-offset': offset,
-    'line-opacity': opacity,
-    ...(tunnel ? { 'line-dasharray': look.TUNNEL_DOTS } : {})
+    'line-opacity': opacity
   }
   b.line(id, filter, line, FROM)
 }

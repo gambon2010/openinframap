@@ -568,7 +568,11 @@ zoom 8: the companion's roads, from France's zoom 15 tiles only, replaced the
 background map's whole roads layer; in tiles across the area's edge the background
 map's own roads beyond the area are kept now (`beyond_area.py`). Close tracks are
 still drawn as one (railways' dashes, tram lines side by side). France: 17 minutes (the
-border tiles read the background map's own roads too), 362 MB.
+border tiles read the background map's own roads too), 362 MB. Dotted tunnels read poorly:
+tunnels are now the line in its colour, see-through (55%), without an edge. Trams
+and metro wider. Railways over Paris turned white zoomed out (many lines side by
+side, their dashes out of step): a plain line until zoom 12, dashed from there; a
+little wider.
 
 ---
 

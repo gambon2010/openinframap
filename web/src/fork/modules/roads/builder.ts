@@ -54,6 +54,12 @@ export function valueFor(values: Looks<unknown>, bold: boolean, overImagery: boo
 
 export const FULL: Looks<number> = { light: 1, bold: 1 }
 
+/** An opacity in a tunnel: see-through (TUNNEL_OPACITY of it). */
+export function tunnelOpacity(opacity: Looks<number>, tunnel: boolean): Looks<number> {
+  if (!tunnel) return opacity
+  return { light: opacity.light * look.TUNNEL_OPACITY, bold: opacity.bold * look.TUNNEL_OPACITY }
+}
+
 /** A layer of the background map (its widths and borders are reused, so they stay in step). */
 export function mapLayer(id: string): LayerSpecificationWithZIndex {
   const layer = baseLayers.find((l) => l.id === id)

@@ -15,7 +15,8 @@ import {
   TERTIARY_COLOUR,
   TRAM_COLOUR,
   TRUNK_COLOUR,
-  TUNNEL_DOTS
+  RAIL_DASHES_FROM,
+  TUNNEL_OPACITY
 } from './roads.constants.ts'
 
 const { layers: all, varying } = roadLayers()
@@ -97,18 +98,18 @@ describe('roads, railways and borders', () => {
     expect(bold('boundaries_countries', 'line-opacity', true)).toBe(1)
   })
 
-  it('mark tunnels with dots of their colour, without an edge, instead of hiding them', () => {
+  it('mark tunnels see-through, without an edge, instead of hiding them', () => {
     const tunnel = layer('tunnel_major')
-    expect(tunnel.paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
-    expect(tunnel.layout?.['line-cap']).toBe('round') // a dash of length 0: a dot
     expect(JSON.stringify(tunnel.filter)).toContain('"has","is_tunnel"')
+    expect(tunnel.paint?.['line-opacity']).toBe(TUNNEL_OPACITY)
+    expect(tunnel.paint?.['line-dasharray']).toBeUndefined()
     expect(layer('tunnel_major_edge')).toBeUndefined()
-    expect(layer('tunnel_paths').paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
-    expect(layer('ground_major').paint?.['line-dasharray']).toBeUndefined()
-    expect(layer('railways_main_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
+    expect(layer('ground_major').paint?.['line-opacity']).toBe(1)
+    expect(layer('railways_main_tunnel').paint?.['line-opacity']).toBe(TUNNEL_OPACITY)
     expect(layer('railways_main_tunnel_edge')).toBeUndefined()
     expect(layer('railways_main_tunnel_dashes')).toBeUndefined()
-    expect(layer('transit_metro_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
+    expect(layer('railways_main_ground_dashes').minzoom).toBe(RAIL_DASHES_FROM) // plain further out
+    expect(layer('transit_metro_tunnel').paint?.['line-opacity']).toBe(TUNNEL_OPACITY)
   })
 
   it('draw tunnels first, then roads from the smallest up, railways, trams, borders on top', () => {

@@ -12,6 +12,7 @@ import {
   ONLY_OVER_IMAGERY,
   fading,
   growing,
+  tunnelOpacity,
   mapLayer,
   mapLineWidth,
   resized
@@ -143,13 +144,13 @@ export const roadKindPrefixes = (road: RoadKind) => [
   `${ROADS_PREFIX}ground_${road.name}`
 ]
 
-/** A kind of road above ground (its edge, then the road) or in a tunnel (dots of
- * its colour). */
+/** A kind of road above ground (its edge, then the road) or in a tunnel (the road
+ * see-through, without an edge). */
 function addRoad(b: Builder, road: RoadKind, tunnel: boolean) {
   const where = tunnel ? 'tunnel' : 'ground'
   const width = resized(mapLineWidth(road.widthFrom), look.ROAD_WIDTH_SCALE, road.minWidth)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, road.filter]
-  const dashes = tunnel ? look.TUNNEL_DOTS : road.dashes
+  const dashes = road.dashes
   if (!tunnel)
     b.line(`${ROADS_PREFIX}${where}_${road.name}_edge`, filter, {
       'line-color': look.EDGE_COLOUR,
@@ -160,7 +161,7 @@ function addRoad(b: Builder, road: RoadKind, tunnel: boolean) {
   b.line(`${ROADS_PREFIX}${where}_${road.name}`, filter, {
     'line-color': road.colour,
     'line-width': width,
-    'line-opacity': fading(road.opacity),
+    'line-opacity': fading(tunnelOpacity(road.opacity, tunnel)),
     ...(dashes ? { 'line-dasharray': dashes } : {})
   })
 }
