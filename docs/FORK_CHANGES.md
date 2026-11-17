@@ -160,7 +160,8 @@ errors in upstream's own files as before.
 | `tegola/generate_tegola_config.py`, `Dockerfile` | More than one layers file |
 | `web-backend/create_indexes.py` | Appends the fork's indexes |
 | `web-backend/src/main.py` | `pool_pre_ping`; the fork's routes first; the fork's middleware (login) after the database's; the database middleware skips the fork's streams (`streaming_paths`) |
-| `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx` |
+| `web-backend/pyproject.toml`, `uv.lock` | `networkx` (grid routes), `types-networkx`; `osmium` (reading railways for the zoomed out tiles) |
+| `web-backend/Dockerfile` | Installs `libexpat1`, which the `osmium` package needs |
 | `web/src/index.ts`, `openinframap.ts`, `style/style.ts`, `key/key.ts`, `key/svg.ts`, `popup/infopopup.ts`, `search/search.ts`, `search/openinframap.ts` | Fork hooks (above); backend and tile URLs configurable; background switch hidden; the night lights' source removed (`style.ts`; on a merge, keep it out) |
 | `openinframap.ts` (the `GeolocateControl` removed) | The "find my location" button removed (2026-11-06, asked for). On a merge, keep it out. |
 | `web/src/edit-control.ts`, `edit-control.css` (deleted), `openinframap.ts` (its import and `addControl`) | The Edit button removed: it opened OpenStreetMap's online editors (iD, JOSM), which this offline map has no use for. On a merge, keep them deleted. |

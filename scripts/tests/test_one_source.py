@@ -60,3 +60,16 @@ def test_the_zoomed_out_companion_is_named_and_zoomed_alike():
     ).read_text()
     assert f'COMPANION = "{extract.ZOOMED_OUT}"' in backend
     assert f"FULL_ZOOM = {extract.FULL_ZOOM}" in made
+
+
+def test_the_railways_are_named_and_kinded_alike():
+    from offline_maps import railways, regions
+
+    made = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "zoomed_railways.py"
+    ).read_text()
+    assert f'f"{{background_map.stem}}{railways.RAILWAYS}"' in made
+    kinds = re.search(r"KINDS = \{([^}]*)\}", made)[1]
+    assert sorted(re.findall(r'"(\w+)"', kinds)) == sorted(railways.KINDS)
+    shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()
+    assert f'GEOFABRIK_INDEX="$OSM_DIR/{regions.GEOFABRIK_INDEX.name}"' in shell

@@ -18,16 +18,18 @@ like motorways, smaller ones like main roads; tunnels marked at every zoom.
   edit); the palette's road colours (`map-sources/palette.ts`) go.
 - Street names white on a dark halo over imagery move with them.
 
-## 2. Railways from the database
+## 2. Railways ranked, from OpenStreetMap (done, 2026-11-17)
 
-- `imposm/railways.py`: railway lines (rail, light rail, narrow gauge, subway, tram,
-  funicular, monorail) with `usage`, `service`, `highspeed`, tunnel, bridge, name, ref,
-  operator; generalised copies for zooming out.
-- A Tegola layer (`tegola/layers.fork.yml`); `modules/roads` draws it: main and
-  high-speed lines like motorways from zoom 6, branch lines like main roads from 8,
-  service tracks, trams and subways from 12. The background map's railways where the
-  database has none (a region built before).
-- Tested on Luxembourg; France at its next rebuild.
+- First built in the database (an Imposm table, Tegola): dropped before committing,
+  as it was a second source of map lines and needed France rebuilt. Instead, in the
+  offline maps step like the roads: osmium cuts the area's railway lines out of its
+  OpenStreetMap extract (the region build's, downloaded if missing) into
+  `<area>.railways.osm.pbf` (scripts/offline_maps/railways.py); the zoomed out build
+  ranks them (main, branch, minor, service: from zooms 6, 8, 11, 14) and adds a
+  `railways` layer at zooms 6 to 15 (zoomed_railways.py). The map draws only it.
+- Close tracks drawn as one up to zoom 14 (close_lines.py), the same for a motorway's
+  carriageways in the roads zoomed out; only what runs alongside is left out, never
+  a crossing.
 
 ## 3. Small roads, paths and tunnel marks zoomed out (done, 2026-11-16)
 

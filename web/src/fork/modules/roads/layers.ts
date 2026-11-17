@@ -49,8 +49,9 @@ interface RoadKind {
   opacity: Both<number>
   /** Never thinner than this (pixels): the map's widths go down to nothing zoomed out. */
   minWidth: number
-  /** Small roads and paths: drawn at their size from this zoom, a thin line before. */
-  minzoom?: number
+  /** Small roads and paths: their edge comes in gradually as they widen (thin, a full
+   * edge would make them dark lines). */
+  small?: true
   dashes?: number[]
 }
 
@@ -67,7 +68,7 @@ const ROAD_KINDS: RoadKind[] = [
     widthFrom: 'osm_roads_other',
     colour: look.PATH_COLOUR,
     opacity: look.SMALLEST_OPACITY,
-    minzoom: look.SMALL_ROADS_FROM_ZOOM,
+    small: true,
     dashes: look.PATH_DASHES
   },
   {
@@ -77,7 +78,7 @@ const ROAD_KINDS: RoadKind[] = [
     widthFrom: 'osm_roads_minor_service',
     colour: look.MINOR_COLOUR,
     opacity: look.SMALLEST_OPACITY,
-    minzoom: look.SMALL_ROADS_FROM_ZOOM
+    small: true
   },
   {
     name: 'minor',
@@ -86,7 +87,7 @@ const ROAD_KINDS: RoadKind[] = [
     widthFrom: 'osm_roads_minor',
     colour: look.MINOR_COLOUR,
     opacity: look.MINOR_OPACITY,
-    minzoom: look.SMALL_ROADS_FROM_ZOOM
+    small: true
   },
   {
     name: 'links',
@@ -114,17 +115,23 @@ const ROAD_KINDS: RoadKind[] = [
   }
 ]
 
-/** Small roads and paths (a thin line zoomed out). */
-const SMALL_KINDS = ROAD_KINDS.filter((road) => road.minzoom !== undefined)
-
 const inTunnel: ExpressionSpecification = ['has', 'is_tunnel']
 const aboveGround: ExpressionSpecification = ['!', inTunnel]
-// Not the abandoned, disused or dismantled ones, platforms, turntables...: the
-// background map files all of those as kind "rail".
-const isRail: ExpressionSpecification = [
-  'all',
-  kind('rail'),
-  ['in', ['get', 'kind_detail'], ['literal', look.RAILWAYS]]
+/** The railways: a layer of the background map's tiles, added by the backend from
+ * the zoomed out file (web-backend/src/fork/background/zoomed_railways.py: ranked
+ * from OpenStreetMap's tags, close tracks drawn as one zoomed out). */
+export const RAILWAYS_LAYER = 'railways'
+/** Main lines drawn over branch lines, over the rest. */
+const RAIL_SORT_KEY: ExpressionSpecification = [
+  'match',
+  ['get', 'rank'],
+  'main',
+  3,
+  'branch',
+  2,
+  'minor',
+  1,
+  0
 ]
 
 /** A layer of the background map (its widths and borders are reused, so they stay in step). */
@@ -169,20 +176,37 @@ function fading(opacity: Both<number>): Both<number | ExpressionSpecification> {
 
 const FULL: Both<number> = { map: 1, imagery: 1 }
 
+/** An edge width growing from a hairline to its full width as small roads widen. */
+function growing(width: Both<number>): Both<ExpressionSpecification> {
+  const by = (full: number): ExpressionSpecification => [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    look.SMALL_EDGE_FROM_ZOOM,
+    look.SMALL_EDGE_HAIRLINE,
+    look.SMALL_EDGE_FULL_ZOOM,
+    full
+  ]
+  return { map: by(width.map), imagery: by(width.imagery) }
+}
+
+interface LineFrom {
+  sourceLayer?: string
+  minzoom?: number
+  maxzoom?: number
+  sortKey?: ExpressionSpecification
+}
+
 /** Builds the layers, noting each paint value that follows the background. */
 class Builder {
   layers: LayerSpecificationWithZIndex[] = []
   following: Following[] = []
 
-  /** A line from the background map's roads (`source` its other layers: borders). */
-  line(
-    id: string,
-    filter: FilterSpecification,
-    paint: Paint,
-    from: { sourceLayer?: string; minzoom?: number; maxzoom?: number } = {}
-  ) {
+  /** A line from the background map, by default its roads (`from`: another layer,
+   * zooms, a layout's sort key). */
+  line(id: string, filter: FilterSpecification, paint: Paint, from: LineFrom = {}) {
     const layerId = ROADS_PREFIX + id
-    const { sourceLayer = 'roads', ...zooms } = from
+    const { sourceLayer = 'roads', sortKey, ...zooms } = from
     this.layers.push({
       id: layerId,
       zorder: ZORDER,
@@ -191,7 +215,7 @@ class Builder {
       'source-layer': sourceLayer,
       filter,
       ...zooms,
-      layout: { 'line-join': 'round' },
+      layout: { 'line-join': 'round', ...(sortKey ? { 'line-sort-key': sortKey } : {}) },
       paint: this.overTheMap(layerId, paint)
     })
   }
@@ -215,73 +239,80 @@ function addRoad(b: Builder, road: RoadKind, tunnel: boolean) {
   const width = resized(mapLineWidth(road.widthFrom), look.ROAD_WIDTH_SCALE, road.minWidth)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, road.filter]
   const dashes = tunnel ? (road.dashes ?? look.TUNNEL_DASHES) : road.dashes
-  b.line(
-    `${where}_${road.name}_edge`,
-    filter,
-    {
-      'line-color': look.EDGE_COLOUR,
-      'line-gap-width': width,
-      'line-width': look.EDGE_WIDTH,
-      'line-opacity': fading(FULL),
-      ...(tunnel ? { 'line-dasharray': look.TUNNEL_EDGE_DASHES } : {})
-    },
-    { minzoom: road.minzoom }
-  )
-  b.line(
-    `${where}_${road.name}`,
-    filter,
-    {
-      'line-color': road.colour,
-      'line-width': width,
-      'line-opacity': fading(road.opacity),
-      ...(dashes ? { 'line-dasharray': dashes } : {})
-    },
-    { minzoom: road.minzoom }
-  )
+  b.line(`${where}_${road.name}_edge`, filter, {
+    'line-color': look.EDGE_COLOUR,
+    'line-gap-width': width,
+    'line-width': road.small ? growing(look.EDGE_WIDTH) : look.EDGE_WIDTH,
+    'line-opacity': fading(FULL),
+    ...(tunnel ? { 'line-dasharray': look.TUNNEL_EDGE_DASHES } : {})
+  })
+  b.line(`${where}_${road.name}`, filter, {
+    'line-color': road.colour,
+    'line-width': width,
+    'line-opacity': fading(road.opacity),
+    ...(dashes ? { 'line-dasharray': dashes } : {})
+  })
 }
 
-/** Railways above ground: a light edge, a line, white dashes on it. In a tunnel: the
- * edge and the line dashed, like the roads' tunnels. */
+/** A width by zoom whose minimum depends on the railway's rank (main lines never
+ * thinner than motorways, branch lines than main roads...). */
+export function byRank(width: ExpressionSpecification): ExpressionSpecification {
+  const [operator, curve, input, ...stops] = width
+  const minimum = [
+    'match',
+    ['get', 'rank'],
+    ...Object.entries(look.RAIL_MIN_WIDTH).flat(),
+    look.RAIL_MIN_WIDTH.service
+  ]
+  // Stops are zoom, width, zoom, width...: each width raised to the rank's minimum.
+  const widths = stops.map((stop, i) => (i % 2 === 1 ? ['max', stop, minimum] : stop))
+  return [operator, curve, input, ...widths] as ExpressionSpecification
+}
+
+/** The railways (RAILWAYS_LAYER). Above ground: a light edge, a line, white dashes
+ * on it. In a tunnel: the edge and the line dashed, like the roads' tunnels. The
+ * more important lines drawn over the others. */
 function addRail(b: Builder, tunnel: boolean) {
   const where = tunnel ? 'tunnel' : 'ground'
-  const width = resized(mapLineWidth('osm_rail'), 1, look.RAIL_MIN_WIDTH)
-  const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, isRail]
+  const width = byRank(resized(mapLineWidth('osm_rail'), 1, 0))
+  const filter: ExpressionSpecification = ['==', ['coalesce', ['get', 'tunnel'], false], tunnel]
+  const from: LineFrom = { sourceLayer: RAILWAYS_LAYER, sortKey: RAIL_SORT_KEY }
   const opacity = fading(FULL)
   const tunnelDashes = (dashes: number[]) => (tunnel ? { 'line-dasharray': dashes } : {})
-  b.line(`rail_${where}_edge`, filter, {
-    'line-color': look.RAIL_EDGE_COLOUR,
-    'line-gap-width': width,
-    'line-width': look.EDGE_WIDTH,
-    'line-opacity': opacity,
-    ...tunnelDashes(look.TUNNEL_EDGE_DASHES)
-  })
-  b.line(`rail_${where}`, filter, {
-    'line-color': look.RAIL_COLOUR,
-    'line-width': width,
-    'line-opacity': opacity,
-    ...tunnelDashes(look.TUNNEL_DASHES)
-  })
-  if (tunnel) return
-  b.line(`rail_${where}_dashes`, filter, {
-    'line-color': look.RAIL_DASH_COLOUR,
-    'line-width': width,
-    'line-dasharray': look.RAIL_DASHES,
-    'line-opacity': opacity
-  })
-}
-
-/** Small roads and paths before they're drawn at their size: a thin line, where the
- * background map has them (some from zoom 12, all from 14). */
-function addSmallRoadsZoomedOut(b: Builder) {
-  const small: ExpressionSpecification = ['any', ...SMALL_KINDS.map((road) => road.filter)]
   b.line(
-    'small_zoomed_out',
-    small,
+    `rail_${where}_edge`,
+    filter,
     {
-      'line-color': look.SMALL_ROADS_ZOOMED_OUT_COLOUR,
-      'line-width': look.SMALL_ROADS_ZOOMED_OUT_WIDTH
+      'line-color': look.RAIL_EDGE_COLOUR,
+      'line-gap-width': width,
+      'line-width': look.EDGE_WIDTH,
+      'line-opacity': opacity,
+      ...tunnelDashes(look.TUNNEL_EDGE_DASHES)
     },
-    { maxzoom: look.SMALL_ROADS_FROM_ZOOM }
+    from
+  )
+  b.line(
+    `rail_${where}`,
+    filter,
+    {
+      'line-color': look.RAIL_COLOUR,
+      'line-width': width,
+      'line-opacity': opacity,
+      ...tunnelDashes(look.TUNNEL_DASHES)
+    },
+    from
+  )
+  if (tunnel) return
+  b.line(
+    `rail_${where}_dashes`,
+    filter,
+    {
+      'line-color': look.RAIL_DASH_COLOUR,
+      'line-width': width,
+      'line-dasharray': look.RAIL_DASHES,
+      'line-opacity': opacity
+    },
+    from
   )
 }
 
@@ -301,11 +332,10 @@ function addBorders(b: Builder) {
   b.line('borders', border.filter, { ...border.paint, 'line-color': look.BORDER_COLOUR }, from)
 }
 
-/** Every road layer, bottom to top (small roads zoomed out, tunnels, roads, railways,
- * borders), and the paint values that follow the background. */
+/** Every road layer, bottom to top (tunnels, roads, railways, borders), and the
+ * paint values that follow the background. */
 export function roadLayers(): { layers: LayerSpecificationWithZIndex[]; following: Following[] } {
   const b = new Builder()
-  addSmallRoadsZoomedOut(b)
   for (const road of ROAD_KINDS) addRoad(b, road, true)
   addRail(b, true)
   for (const road of ROAD_KINDS) addRoad(b, road, false)

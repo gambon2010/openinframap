@@ -6,6 +6,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+OSM_DIR = Path(__file__).resolve().parents[2] / "data" / "osm"
+# The region build's copy (scripts/lib/geofabrik.sh; scripts/tests/test_one_source.py).
+GEOFABRIK_INDEX = OSM_DIR / "geofabrik-index-v1.json"
+
 
 class Index:
     """Geofabrik's index of regions: names, parents and outlines."""
@@ -27,6 +31,15 @@ class Index:
                 return True
             region = self.features.get(region, {}).get("properties", {}).get("parent")
         return False
+
+    def pbf_url(self, region: str) -> str | None:
+        """Where Geofabrik's OpenStreetMap extract of the region is."""
+        return (
+            self.features.get(region, {})
+            .get("properties", {})
+            .get("urls", {})
+            .get("pbf")
+        )
 
     def outline(self, region: str, folder: Path) -> Path | None:
         """The region's outline as a file in `folder` (written from the index)."""

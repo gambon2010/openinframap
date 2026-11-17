@@ -11,7 +11,6 @@ buildings come the block's zoom 12, 13 and 14 tiles.
 
 from __future__ import annotations
 
-import gzip
 from typing import Any
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
@@ -20,7 +19,7 @@ from shapely import unary_union
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-from .tiles import BUFFER, EXTENT, PIXELS, children, ground_stretch, in_tile_units, tile_bounds
+from .tiles import zipped, BUFFER, EXTENT, PIXELS, children, ground_stretch, in_tile_units, tile_bounds
 
 LAYER = "buildings_large"
 SOURCE_LAYER = "buildings"  # the background map's
@@ -101,7 +100,7 @@ def block_tiles(buildings: list[dict[str, Any]], bx: int, by: int) -> list[tuple
                     data = mapbox_vector_tile.encode(
                         [{"name": LAYER, "features": features}], default_options={"extents": EXTENT}
                     )
-                    out.append((zxy_to_tileid(z, x, y), gzip.compress(data, compresslevel=6, mtime=0)))
+                    out.append((zxy_to_tileid(z, x, y), zipped(data)))
     return out
 
 

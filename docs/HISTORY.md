@@ -471,6 +471,31 @@ left out, and between two others (a junction, a bridge) that's a hole; they're k
 Roads are grouped by the properties the styles read only (kind, kind_detail, tunnel,
 link): a bridge or another min_zoom parted a road into several lines.
 
+
+**Railways ranked; close lines as one (2026-11-17, plan step 2):** first built in the
+database (an Imposm table ranked by SQL, served by Tegola), then dropped before
+committing: a second source of map lines, and France would have had no railways
+until rebuilt. Instead the offline maps step cuts the area's railways out of its
+OpenStreetMap extract with osmium (`<area>.railways.osm.pbf`, France: 3.5 min, 20 MB,
+from the build's extract still in `data/osm/`), and the zoomed out build ranks them
+(main from zoom 6, branch 8, minor 11, service 14) into a `railways` layer at zooms
+6 to 15 (`zoomed_railways.py`, reading the file with the `osmium` package). Two tracks
+side by side looked white (their dashes out of step), and so did a motorway's two
+carriageways (dashed in tunnels): up to zoom 14 (railways) or 13 (roads), a line
+running alongside one kept before it is left out there (`close_lines.py`); only
+stretches longer than four times the distance, so crossings and junctions stay whole.
+Compared against what's kept rather than whole lines: a station's tracks each had
+dozens before them (the first try ran over 12 minutes for France's railways; then
+about a minute). The first France build took 63 minutes: buffering the lines near
+each line together merged their areas (90 s for zoom 6 alone); each kept piece is
+now buffered once, alone (4 s; France in 21 minutes, 401 MB). A railway's OpenStreetMap ways, with the same tags,
+are joined end to end first (a zoom 6 tile had 5,457 lines). That build also showed
+a fault from the roads' companion: where two layers share a zoom (roads and
+buildings at 12 and 13, railways with both), each wrote its own tile and only one
+was served; the tiles of one place are now merged into one. The small roads' thin line before zoom 14 went: they look the same
+at every zoom, only thinner, their edge growing from a hairline (zoom 12) to full
+(15); over imagery no longer dark.
+
 ---
 
 ## Building outlines (2026-11-11)

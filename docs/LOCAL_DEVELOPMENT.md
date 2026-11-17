@@ -212,11 +212,17 @@ once), at `/background`, the frontend's default.
 Zoomed out: Protomaps' tiles hold every building, small road and path, and the
 tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what they
 leave out zoomed out is made from its zoom 15 tiles into
-`data/offline-maps/<region>.zoomed-out.pmtiles` (France: 13 minutes, 390 MB): the
+`data/offline-maps/<region>.zoomed-out.pmtiles` (France: 21 minutes, about 400 MB): the
 buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (small
-roads from 12, paths from 13, tunnels dashed). The backend adds them to the background
+roads from 12, paths from 13, tunnels dashed, a motorway's carriageways as one), and
+the railways at zooms 6 to 15, ranked from OpenStreetMap: main lines from zoom 6,
+branch lines from 8, trams, subways and industrial lines from 11, sidings and yards
+from 14, close tracks as one line up to zoom 14. The railways come from the region's
+OpenStreetMap extract (`data/osm/<region>-latest.osm.pbf`, the build's, downloaded
+if missing: France 5 GB), cut into `<region>.railways.osm.pbf` (France: 3.5 minutes,
+20 MB). The backend adds them to the background
 map's tiles; *Data layers → Background map → Buildings* shows the buildings. For an
-area downloaded before, the menu offers *Buildings and roads zoomed out* (or
+area downloaded before, the menu offers *Buildings, roads and railways zoomed out* (or
 `python3 scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
 `python3 scripts/offline-maps.py maps --source protomaps --area france --yes`.
 

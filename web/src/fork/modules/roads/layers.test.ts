@@ -1,16 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
-import { isRoadLayer, resized, roadLayers } from './layers.ts'
+import { RAILWAYS_LAYER, byRank, isRoadLayer, resized, roadLayers } from './layers.ts'
 import { isUpstreamRoadLayer } from './index.ts'
 import {
   HIGHWAY_COLOUR,
   HIGHWAY_MIN_WIDTH,
   MAJOR_COLOUR,
   MINOR_COLOUR,
-  RAIL_MIN_WIDTH,
   ROAD_WIDTH_SCALE,
   SMALL_ROAD_MIN_WIDTH,
-  SMALL_ROADS_FROM_ZOOM,
+  SMALL_EDGE_HAIRLINE,
   TUNNEL_DASHES,
   TUNNEL_EDGE_DASHES
 } from './roads.constants.ts'
@@ -46,9 +45,7 @@ describe('roads, railways and borders', () => {
     expect(layer('tunnel_minor').paint?.['line-width']).toEqual(
       resized(mapWidth('osm_roads_minor'), ROAD_WIDTH_SCALE, SMALL_ROAD_MIN_WIDTH)
     )
-    expect(layer('rail_ground').paint?.['line-width']).toEqual(
-      resized(mapWidth('osm_rail'), 1, RAIL_MIN_WIDTH)
-    )
+    expect(layer('rail_ground').paint?.['line-width']).toEqual(byRank(resized(mapWidth('osm_rail'), 1, 0)))
   })
 
   it('resize only the widths of a width by zoom, not the zooms', () => {
@@ -92,9 +89,9 @@ describe('roads, railways and borders', () => {
     expect(layer('rail_tunnel_dashes')).toBeUndefined()
   })
 
-  it('draw the small roads zoomed out first, tunnels, then roads from the smallest up, railways, borders on top', () => {
+  it('draw tunnels first, then roads from the smallest up, railways, borders on top', () => {
     const at = (id: string) => layers.findIndex((l) => l.id === `roads_${id}`)
-    expect(at('small_zoomed_out')).toBe(0)
+    expect(at('tunnel_paths_edge')).toBe(0)
     expect(at('tunnel_highway')).toBeLessThan(at('ground_paths_edge'))
     expect(at('ground_minor')).toBeLessThan(at('ground_highway_edge'))
     expect(at('ground_highway')).toBeLessThan(at('rail_ground_edge'))
@@ -105,16 +102,19 @@ describe('roads, railways and borders', () => {
     ])
   })
 
-  it('draw small roads and paths at their size from zoom 14, a thin line before', () => {
-    for (const id of ['ground_paths', 'ground_service_edge', 'ground_minor'])
-      expect(layer(id).minzoom).toBe(SMALL_ROADS_FROM_ZOOM)
-    expect(layer('ground_major').minzoom).toBeUndefined()
-    expect(layer('small_zoomed_out').maxzoom).toBe(SMALL_ROADS_FROM_ZOOM)
+  it('draw small roads and paths alike at every zoom, their edge growing from a hairline', () => {
+    for (const id of ['ground_paths', 'ground_service', 'ground_minor', 'ground_major'])
+      expect(layer(id).minzoom).toBeUndefined()
+    const edge = layer('ground_minor_edge').paint?.['line-width']
+    expect(edge).toEqual(expect.arrayContaining(['interpolate', SMALL_EDGE_HAIRLINE]))
+    expect(typeof layer('ground_major_edge').paint?.['line-width']).toBe('number')
   })
 
-  it('draw railways in use, not their remains', () => {
-    const filter = JSON.stringify(layer('rail_ground').filter)
-    expect(filter).toContain('"light_rail"')
-    expect(filter).not.toContain('dismantled')
+  it('draw ranked railways, the more important ones wider and on top', () => {
+    const rail = layer('rail_ground')
+    expect(rail['source-layer']).toBe(RAILWAYS_LAYER)
+    expect(rail.layout?.['line-sort-key']).toBeDefined()
+    expect(JSON.stringify(rail.paint?.['line-width'])).toContain('"rank"')
+    expect(JSON.stringify(layer('rail_tunnel').filter)).toContain('"tunnel"')
   })
 })

@@ -19,20 +19,20 @@ from pathlib import Path
 
 import netsafe
 
-from . import docker, ui
+from . import docker, railways, ui
 from .pmtiles import read_header
 from .sources import SOURCES
 
 PROTOMAPS = SOURCES["protomaps"]
 BUILDS_URL = "https://build-metadata.protomaps.dev/builds.json"
 PMTILES_IMAGE = "protomaps/go-pmtiles:v1.28.0"
-# Buildings and roads zoomed out, beside a background map with everything (zoom 15):
+# Buildings, roads and railways zoomed out, beside a background map with everything (zoom 15):
 # the backend's COMPANION (scripts/tests/test_one_source.py).
 ZOOMED_OUT = ".zoomed-out.pmtiles"
 FULL_ZOOM = 15
 # Their size and time against the background map's size (France, 2026-11-16).
-ZOOMED_OUT_SIZE = 390 / 5390  # 390 MB from 5.4 GB
-ZOOMED_OUT_SECONDS_PER_BYTE = 803 / 5.39e9  # 13 min, 8 processes
+ZOOMED_OUT_SIZE = 401 / 5390  # 401 MB from 5.4 GB
+ZOOMED_OUT_SECONDS_PER_BYTE = 1274 / 5.39e9  # 21 min, 8 processes
 
 
 def latest_build() -> tuple[str, int] | None:
@@ -180,10 +180,10 @@ def command_basemap(args) -> None:
     if zoomed_out_missing(folder, args.area):
         try:
             make_zoomed_out(folder, args.area)
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, netsafe.ConnectionLost):
             # The background map is kept; the menu offers its zoomed out file again.
             print(
-                f"Making its buildings and roads zoomed out failed. Again: "
+                f"Making its buildings, roads and railways zoomed out failed. Again: "
                 f"python3 scripts/offline-maps.py zoomed-out --area {args.area}",
                 file=sys.stderr,
             )
@@ -195,20 +195,27 @@ def zoomed_out_of(folder: Path, area: str) -> Path:
 
 def zoomed_out_missing(folder: Path, area: str) -> bool:
     """Whether an area's background map has every building (zoom 15) but not its
-    buildings and roads zoomed out, or only older ones than it."""
+    buildings, roads and railways zoomed out (or its railways file), or only older
+    ones than it."""
     background = folder / f"{area}.pmtiles"
     header = read_header(background)
     if not header or header.maxzoom < FULL_ZOOM:
         return False
     companion = zoomed_out_of(folder, area)
     return (
-        not companion.exists() or companion.stat().st_mtime < background.stat().st_mtime
+        not companion.exists()
+        or not railways.railways_of(folder, area).exists()
+        or companion.stat().st_mtime < background.stat().st_mtime
     )
 
 
 def make_zoomed_out(folder: Path, area: str) -> None:
-    """An area's buildings and roads zoomed out, in the backend's image (its pmtiles and
-    shapely packages; France: 13 min), as root (the image's Python is root's)."""
+    """An area's buildings, roads and railways zoomed out: its railways cut out of its
+    OpenStreetMap extract first (railways.py), then all made in the backend's image
+    (its pmtiles, shapely and osmium packages; France: 21 min), as root (the image's
+    Python is root's)."""
+    if not railways.railways_of(folder, area).exists():
+        railways.make_railways(folder, area)
     docker.run_service(
         "backend",
         [

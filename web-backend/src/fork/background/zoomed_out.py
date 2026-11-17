@@ -4,12 +4,16 @@ appends its tiles to the background map's (background/__init__.py).
 
 - the buildings big enough to see at zooms 12 to 14 (zoomed_buildings.py);
 - the roads at zooms 8 to 13, with what Protomaps drops there: tunnel marks, small
-  roads, paths, some stretches of big roads (zoomed_roads.py).
+  roads, paths, some stretches of big roads (zoomed_roads.py);
+- the railways at zooms 6 to 15, ranked from OpenStreetMap's tags, close tracks
+  drawn as one zoomed out, from <area>.railways.osm.pbf when there is one
+  (zoomed_railways.py).
 
 The work goes one zoom 10 block at a time (its 1,024 zoom 15 tiles, in workers),
 each tile decoded once, only its buildings and roads: the block's buildings tiles
 (per zoom 12 block) and its roads tiles at zooms 10 to 13. The roads shown at zooms
-8 and 9 come back simplified, and their tiles are made at the end.
+8 and 9 come back simplified, and their tiles are made at the end. The railways,
+a zoom per worker.
 
     python -m src.fork.background.zoomed_out [--area AREA] [--folder DIR]
 
@@ -29,20 +33,22 @@ from pathlib import Path
 from typing import Any
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
+import numpy as np
 import shapely
 from pmtiles.tile import Compression, TileType, tileid_to_zxy, zxy_to_tileid
 from pmtiles.writer import Writer
 
 from . import OFFLINE_MAPS_DIR, Archive, companion_of, is_background_map, mvt, unzipped
 from . import zoomed_buildings as buildings
+from . import zoomed_railways as railways
 from . import zoomed_roads as roads
-from .tiles import EXTENT, children, tile_bounds
+from .tiles import EXTENT, children, tile_bounds, zipped
 
 FULL_ZOOM = 15
 UNIT_ZOOM = 10  # a worker's share: a zoom 10 block
 WORKERS = min(8, os.cpu_count() or 4)
 DECODED = {buildings.SOURCE_LAYER, roads.LAYER}
-MIN_ZOOM, MAX_ZOOM = roads.ZOOMS[0], buildings.ZOOMS[-1]
+MIN_ZOOM, MAX_ZOOM = railways.ZOOMS[0], railways.ZOOMS[-1]
 
 
 # --- Reading the background map ------------------------------------------------------
@@ -157,6 +163,7 @@ def make(background_map: Path, workers: int = WORKERS) -> Path | None:
     for z in roads.ZOOMS:
         if z < UNIT_ZOOM:
             tiles += roads.zoom_tiles(joined, z)
+    tiles += railway_tiles(railways.source_of(background_map), workers)
     write(partial, background_map, source, tiles)
     partial.replace(out)
     print(
@@ -166,9 +173,52 @@ def make(background_map: Path, workers: int = WORKERS) -> Path | None:
     return out
 
 
+# --- The railways (a zoom per worker) ---------------------------------------------------
+
+_railways: tuple[np.ndarray, list] | None = None
+
+
+def _read_railways(path: Path) -> None:
+    global _railways
+    _railways = railways.read(path)
+
+
+def _railway_zoom(z: int) -> list[tuple[int, bytes]]:
+    assert _railways is not None
+    lines, props = _railways
+    return railways.zoom_tiles(lines, props, z)
+
+
+def railway_tiles(source: Path, workers: int) -> list[tuple[int, bytes]]:
+    """The railways' tiles at every zoom; none without a railways file."""
+    if not source.exists():
+        return []
+    with ProcessPoolExecutor(
+        max_workers=min(workers, len(railways.ZOOMS)), initializer=_read_railways, initargs=(source,)
+    ) as pool:
+        return [tile for found in pool.map(_railway_zoom, railways.ZOOMS) for tile in found]
+
+
+def one_per_tile(tiles: list[tuple[int, bytes]]) -> list[tuple[int, bytes]]:
+    """The tiles in tile id order, those of one tile made apart (buildings, roads,
+    railways) merged into one: a vector tile is a list of layers, so two tiles'
+    bytes one after the other are one tile with the layers of both."""
+    by_id: dict[int, list[bytes]] = {}
+    for tile_id, data in tiles:
+        by_id.setdefault(tile_id, []).append(data)
+    merged = []
+    for tile_id in sorted(by_id):
+        parts = by_id[tile_id]
+        if len(parts) > 1:
+            joined = b"".join(gzip.decompress(part) for part in parts)
+            parts = [zipped(joined)]
+        merged.append((tile_id, parts[0]))
+    return merged
+
+
 def write(path: Path, background_map: Path, source: Archive, tiles: list[tuple[int, bytes]]) -> None:
-    """The tiles, in tile id order, as a PMTiles file with the source's bounds."""
-    tiles.sort(key=lambda t: t[0])
+    """The tiles, one per tile id, as a PMTiles file with the source's bounds."""
+    tiles = one_per_tile(tiles)
     if not tiles:
         # Nothing anywhere: an empty tile so the file is valid.
         tiles = [(zxy_to_tileid(MIN_ZOOM, 0, 0), gzip.compress(b"", mtime=0))]
@@ -195,25 +245,34 @@ def write(path: Path, background_map: Path, source: Archive, tiles: list[tuple[i
                         "fields": {"kind": "String", "height": "Number", "area_m2": "Number"},
                     },
                     {"id": roads.LAYER, "fields": {k: "String" for k in roads.KEPT}},
+                    {
+                        "id": railways.LAYER,
+                        "fields": {"kind": "String", "rank": "String", "tunnel": "Boolean"},
+                    },
                 ],
             },
         )
 
 
 def out_of_date(folder: Path) -> list[Path]:
-    """The background maps whose companion is missing or older than them."""
+    """The background maps whose companion is missing or older than them (or than
+    their railways file)."""
     found = []
     for path in sorted(folder.glob("*.pmtiles")):
         if not is_background_map(path):
             continue
         companion = companion_of(path)
-        if not companion.exists() or companion.stat().st_mtime < path.stat().st_mtime:
+        sources = [p for p in (path, railways.source_of(path)) if p.exists()]
+        newest = max(p.stat().st_mtime for p in sources)
+        if not companion.exists() or companion.stat().st_mtime < newest:
             found.append(path)
     return found
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Buildings and roads zoomed out, for the background maps.")
+    parser = argparse.ArgumentParser(
+        description="Buildings, roads and railways zoomed out, for the background maps."
+    )
     parser.add_argument("--area", help="one area (<area>.pmtiles); default: every one out of date")
     parser.add_argument("--folder", type=Path, default=OFFLINE_MAPS_DIR)
     args = parser.parse_args(argv)

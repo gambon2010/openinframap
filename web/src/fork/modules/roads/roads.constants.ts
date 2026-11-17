@@ -23,14 +23,12 @@ export const PATH_COLOUR: Both<string> = { map: 'hsl(240, 4%, 66%)', imagery: 'h
 export const SMALLEST_OPACITY: Both<number> = { map: 1, imagery: 0.6 }
 export const PATH_DASHES = [3, 1]
 
-/** Small roads, service roads and paths: at their size from this zoom (the background
- * map has all of them from here), a thin line before it. */
-export const SMALL_ROADS_FROM_ZOOM = 14
-export const SMALL_ROADS_ZOOMED_OUT_COLOUR: Both<string> = {
-  map: 'hsl(240, 4%, 72%)',
-  imagery: 'hsla(0, 0%, 5%, 0.7)'
-}
-export const SMALL_ROADS_ZOOMED_OUT_WIDTH = 1
+/** Small roads, service roads and paths (from zoom 12, paths 13: the zoomed out
+ * tiles) look the same at every zoom, only thinner zoomed out; their edge grows from a
+ * hairline here to its full width here, so they never turn into dark lines. */
+export const SMALL_EDGE_FROM_ZOOM = 12
+export const SMALL_EDGE_FULL_ZOOM = 15
+export const SMALL_EDGE_HAIRLINE = 0.25
 
 /** The edge on each side of every road: grey on the map; dark over imagery, so roads
  * read on fields, roofs and woods alike. */
@@ -46,7 +44,9 @@ export const HIGHWAY_MIN_WIDTH = 3
 export const MAJOR_MIN_WIDTH = 0.75
 export const LINK_MIN_WIDTH = 0.75
 export const SMALL_ROAD_MIN_WIDTH = 0.75
-export const RAIL_MIN_WIDTH = 2.5
+/** Railways by rank (zoomed_railways.py): main lines like motorways, branch lines like
+ * main roads (wide enough for their dashes to show). */
+export const RAIL_MIN_WIDTH = { main: 3, branch: 2, minor: 1.5, service: 1 }
 
 /** Tunnels: the road dashed on a dashed edge (in road widths: the minimum widths keep
  * them visible zoomed out). */
@@ -59,18 +59,6 @@ export const RAIL_COLOUR: Both<string> = { map: 'hsl(240, 3%, 55%)', imagery: 'h
 export const RAIL_DASH_COLOUR = 'hsl(0, 0%, 100%)'
 export const RAIL_DASHES = [3, 3]
 export const RAIL_EDGE_COLOUR = 'hsla(0, 0%, 100%, 0.55)'
-/** The railways drawn (the background map's kind_detail): lines in use, not their remains. */
-export const RAILWAYS = [
-  'rail',
-  'light_rail',
-  'narrow_gauge',
-  'subway',
-  'tram',
-  'funicular',
-  'monorail',
-  'preserved'
-]
-
 /** Borders: red dashes, on a dark edge over imagery. */
 export const BORDER_COLOUR: Both<string> = { map: 'hsl(0, 30%, 62%)', imagery: 'hsl(0, 90%, 62%)' }
 export const BORDER_EDGE_COLOUR: Both<string> = {

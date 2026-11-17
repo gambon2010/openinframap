@@ -296,14 +296,15 @@ def test_buildings_zoomed_out_offered_for_a_background_map_without_them(folder, 
     background_map(folder, "france", "20261110")
     menu(
         folder, "1\n2\n5\ny\n\n"
-    )  # Add → France → Buildings and roads zoomed out (5th)
-    assert "Buildings and roads zoomed out (z8–14)" in capsys.readouterr().err
+    )  # Add → France → Buildings, roads and railways zoomed out (5th)
+    assert "Buildings, roads and railways zoomed out (z6–15)" in capsys.readouterr().err
     (argv,) = folder["ran"]
     assert argv[:3] == ["zoomed-out", "--area", "france"]
     # Once made (newer than the background map), no longer offered.
+    (folder["dir"] / "france.railways.osm.pbf").write_bytes(b"cut")
     (folder["dir"] / "france.zoomed-out.pmtiles").write_bytes(b"made")
     menu(folder, "1\n2\n\n\n")
-    assert "Buildings and roads zoomed out" not in capsys.readouterr().err
+    assert "Buildings, roads and railways zoomed out" not in capsys.readouterr().err
 
 
 def test_buildings_zoomed_out_need_every_building(folder):
@@ -313,6 +314,9 @@ def test_buildings_zoomed_out_need_every_building(folder):
     assert extract.zoomed_out_missing(folder["dir"], "france")
     companion = extract.zoomed_out_of(folder["dir"], "france")
     companion.write_bytes(b"made")
+    # Its railways file too (cut from the extract, read by the build).
+    assert extract.zoomed_out_missing(folder["dir"], "france")
+    (folder["dir"] / "france.railways.osm.pbf").write_bytes(b"cut")
     assert not extract.zoomed_out_missing(folder["dir"], "france")
     older = (folder["dir"] / "france.pmtiles").stat().st_mtime - 10
     os.utime(companion, (older, older))
@@ -322,6 +326,8 @@ def test_buildings_zoomed_out_need_every_building(folder):
 def test_a_background_map_removed_with_its_buildings_zoomed_out(folder, capsys):
     background_map(folder, "france", "20261110")
     extract.zoomed_out_of(folder["dir"], "france").write_bytes(b"made")
+    (folder["dir"] / "france.railways.osm.pbf").write_bytes(b"cut")
     menu(folder, "2\n5\ny\n\n")  # Remove → France, Background map (5th)
     assert not (folder["dir"] / "france.pmtiles").exists()
     assert not extract.zoomed_out_of(folder["dir"], "france").exists()
+    assert not (folder["dir"] / "france.railways.osm.pbf").exists()

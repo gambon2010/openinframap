@@ -15,16 +15,14 @@ about a pixel, then cut into the zoom's tiles.
 
 from __future__ import annotations
 
-import gzip
 from collections import defaultdict
 from typing import Any
 
-import mapbox_vector_tile  # type: ignore[import-untyped]
 import numpy as np
 import shapely
-from pmtiles.tile import zxy_to_tileid
 
-from .tiles import BUFFER, EXTENT, PIXELS, in_tile_units, tile_bounds
+from .close_lines import one_line_where_close
+from .tiles import PIXELS, line_tiles, tile_size
 
 LAYER = "roads"
 ZOOMS = range(8, 14)
@@ -38,6 +36,9 @@ PATHS_FROM = 13
 # a few stretches of motorway 16, so they'd only be in its zoom 15 tiles).
 BIG_ROADS_BY = {"motorway": 8, "trunk": 8, "primary": 9, "secondary": 10, "tertiary": 11}
 
+# Carriageways closer than this many pixels drawn as one (close_lines.py).
+CLOSE_PIXELS = 3
+BIG_KINDS = ("highway", "major_road")  # in the order they're kept
 SNAP_DECIMALS = 2  # metres rounded to the centimetre before joining
 
 # A group of roads: the zoom they show from, and their properties (KEPT).
@@ -109,59 +110,28 @@ def simplified(roads: dict[Key, shapely.Geometry], z: int) -> tuple[np.ndarray, 
     return np.array(lines, dtype=object), props
 
 
-def tile_size(z: int) -> float:
-    west, _, east, _ = tile_bounds(z, 0, 0)
-    return east - west
-
-
 def zoom_tiles(roads: dict[Key, shapely.Geometry], z: int, tiles=None) -> list[tuple[int, bytes]]:
     """A zoom's tiles (tile id, gzip) with the roads shown there; `tiles` the (x, y)
     to make, by default every one a road reaches."""
     lines, props = simplified(roads, z)
-    if not len(lines):
-        return []
-    tree = shapely.STRtree(lines)
-    out = []
-    for x, y in tiles if tiles is not None else reached(lines, z):
-        data = encode(lines, props, tree, z, x, y)
-        if data:
-            out.append((zxy_to_tileid(z, x, y), data))
-    return out
+    lines, props = one_line_for_carriageways(lines, props, CLOSE_PIXELS * tile_size(z) / PIXELS)
+    return line_tiles(LAYER, lines, props, z, tiles)
 
 
-def reached(lines: np.ndarray, z: int) -> list[tuple[int, int]]:
-    """The tiles of a zoom that any of the lines reaches."""
-    size = tile_size(z)
-    half = size * 2**z / 2
-    found = set()
-    for west, south, east, north in shapely.bounds(lines):
-        for x in range(int((west + half) // size), int((east + half) // size) + 1):
-            for y in range(int((half - north) // size), int((half - south) // size) + 1):
-                found.add((x, y))
-    return sorted(found)
-
-
-def encode(lines: np.ndarray, props: list, tree: shapely.STRtree, z: int, x: int, y: int) -> bytes | None:
-    """One tile: the lines cut to it and its buffer, encoded and zipped."""
-    bounds = tile_bounds(z, x, y)
-    margin = BUFFER / EXTENT * (bounds[2] - bounds[0])
-    rect = (bounds[0] - margin, bounds[1] - margin, bounds[2] + margin, bounds[3] + margin)
-    found = tree.query(shapely.box(*rect))
-    if not len(found):
-        return None
-    cut = shapely.clip_by_rect(lines[found], *rect)
-    in_units = in_tile_units(cut, bounds)
-    features = [
-        {"geometry": line, "properties": props[i]}
-        for i, line in zip(found, in_units)
-        if not line.is_empty and shapely.get_type_id(line) in (1, 5)
+def one_line_for_carriageways(lines: np.ndarray, props: list, distance: float) -> tuple[np.ndarray, list]:
+    """A motorway's (or main road's) two carriageways drawn as one line where they
+    run side by side, their tunnels too: motorways kept before main roads, before
+    slip roads, then the longer line. Smaller roads are left as they are."""
+    big = [i for i, p in enumerate(props) if p.get("kind") in BIG_KINDS]
+    others = [i for i in range(len(props)) if props[i].get("kind") not in BIG_KINDS]
+    lengths = shapely.length(lines[big])
+    priority = [
+        (BIG_KINDS.index(props[i]["kind"]), bool(props[i].get("is_link")), -length)
+        for i, length in zip(big, lengths)
     ]
-    if not features:
-        return None
-    data = mapbox_vector_tile.encode(
-        [{"name": LAYER, "features": features}], default_options={"extents": EXTENT}
-    )
-    return gzip.compress(data, compresslevel=6, mtime=0)
+    kept_lines, kept_props = one_line_where_close(lines[big], [props[i] for i in big], priority, distance)
+    all_lines = np.concatenate([lines[others], kept_lines]) if len(kept_lines) else lines[others]
+    return all_lines, [props[i] for i in others] + kept_props
 
 
 def merge_into(groups: dict[Key, list], more: dict[Key, shapely.Geometry]) -> None:

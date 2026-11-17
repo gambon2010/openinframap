@@ -9,7 +9,7 @@ Protomaps edition: it's sent once, nothing is drawn twice. Files are tried
 newest edition first (the build in <area>.json), the whole world's last (the
 fallback). No file has it: 204, an empty tile, as pmtiles serve answers.
 
-At zooms 8 to 14, the tile of the area's companion, <area>.zoomed-out.pmtiles
+At zooms 6 to 15, the tile of the area's companion, <area>.zoomed-out.pmtiles
 (what the background map leaves out zoomed out, zoomed_out.py), is appended to
 it: a tile is a list of layers, so the two laid end to end are one tile with the
 layers of both. The companion's roads replace the background map's (its roads
@@ -44,7 +44,7 @@ CACHE_SECONDS = 3600
 # What the background map leaves out zoomed out: <area>.zoomed-out.pmtiles, these
 # zooms (zoomed_out.py).
 COMPANION = ".zoomed-out.pmtiles"
-COMPANION_ZOOMS = range(8, 15)
+COMPANION_ZOOMS = range(6, 16)
 
 
 def is_background_map(path: Path) -> bool:

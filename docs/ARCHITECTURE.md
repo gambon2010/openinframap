@@ -198,8 +198,10 @@ every route but logging in needs a session):
   satellite imagery is the `satellite` service's; `zoomed_out.py`, a build step run
   after each download, from the zoom 15 tiles: the buildings big enough to see at
   zooms 12 to 14 (`zoomed_buildings.py`) and the roads at zooms 8 to 13 with what
-  Protomaps drops there, tunnel marks, small roads, paths (`zoomed_roads.py`);
-  `tiles.py` their tile geometry; `buildings.py`, a building's whole outline from the
+  Protomaps drops there, tunnel marks, small roads, paths (`zoomed_roads.py`), and the
+  railways at zooms 6 to 15, ranked from `<area>.railways.osm.pbf` (`zoomed_railways.py`);
+  close tracks and carriageways drawn as one zoomed out (`close_lines.py`); `tiles.py`
+  their tile geometry; `buildings.py`, a building's whole outline from the
   zoom 15 tiles, `/background/building/{id}`, for copies);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
@@ -229,7 +231,8 @@ the schema fingerprint builds and exports carry.
   `number_towers` → search indexes → extra data, `extra`, `search` → EEZ →
   `local-stats` (a fast per-country stats snapshot) → `oim_build_info` → Tegola →
   the offline maps queued in the menu (a background map: `pmtiles extract` of the
-  area's outline from Protomaps' daily build, then its buildings and roads zoomed out;
+  area's outline from Protomaps' daily build, then its buildings, roads and railways
+  zoomed out (the railways cut from the region's OpenStreetMap extract: `offline_maps/railways.py`);
   `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). Every
   question comes before the first long step.
 - **SQL (`schema/`):** upstream's: `dev-init.sql` / `prod-init.sql` (once, when the

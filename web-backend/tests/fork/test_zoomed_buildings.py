@@ -117,3 +117,14 @@ def test_out_of_date_companions(tmp_path, paris):
 def test_the_work_list_comes_from_the_directories(paris):
     assert zoomed_out.units(Archive.open(paris)) == [(X >> 5, Y >> 5)]
     assert zxy_to_tileid(15, X, Y) in set(Archive.open(paris).tile_ids())
+
+
+def test_layers_made_apart_for_one_tile_are_merged_into_it():
+    def one_layer(name):
+        line = {"geometry": "LINESTRING(0 0,10 10)", "properties": {}}
+        return gzip.compress(mapbox_vector_tile.encode([{"name": name, "features": [line]}]))
+
+    tiles = [(7, one_layer("roads")), (3, one_layer("railways")), (7, one_layer("buildings_large"))]
+    merged = zoomed_out.one_per_tile(tiles)
+    assert [tile_id for tile_id, _ in merged] == [3, 7]
+    assert set(mapbox_vector_tile.decode(gzip.decompress(merged[1][1]))) == {"roads", "buildings_large"}

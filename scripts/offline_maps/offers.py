@@ -352,12 +352,16 @@ class SourceOffers:
         each download; offered for one made before, or if making them failed)."""
         size = (self.folder / f"{area}.pmtiles").stat().st_size
         job = Job(
-            f"Buildings and roads zoomed out, {self.name(area)}",
+            f"Buildings, roads and railways zoomed out, {self.name(area)}",
             ["zoomed-out", "--area", area, "--maps-dir", str(self.folder)],
             kept=round(size * extract.ZOOMED_OUT_SIZE),
             seconds=size * extract.ZOOMED_OUT_SECONDS_PER_BYTE,
         )
-        row = ["Buildings and roads zoomed out (z8–14)", "—", ui.human(job.kept)]
+        row = [
+            "Buildings, roads and railways zoomed out (z6–15)",
+            "—",
+            ui.human(job.kept),
+        ]
         return row, lambda: [job]
 
     def world_low_offer(self):
