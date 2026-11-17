@@ -282,8 +282,8 @@ when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
 same at every zoom, over the map or over imagery: motorways orange, trunk roads
 (voies express) amber, primary roads yellow, secondary pale yellow, smaller white;
 each tram or metro line in its own colour, side by side where lines share a track
-(in a tunnel see-through inside its outline). Unticked, roads and trams show light
-over the map and railways as the map's own (from zoom 11). Clicking a road shows its
+(in a tunnel see-through inside its outline). Unticked, roads show light over the
+map, railways and trams as the map's own (railways from zoom 11, trams from 14). Clicking a road shows its
 name and numbers (A35, E25) at every zoom. Each entry unfolds to its kinds, each with a tick box (sidings, yards and depots
 unticked at first).
 

@@ -597,8 +597,9 @@ plain line as before; the strands and their offsets removed.
 join's outline across the lanes: a set's outlines were drawn lane by lane, the
 joins' over the lanes; now every outline goes under every lane. Tunnels' lanes
 drawn with the others (not under the roads), a full outline around a see-through
-line. Railways unticked show the background map's own (as the original map, from
-zoom 11) instead of a light version. Clicking a road zoomed out showed nothing: the
+line. Railways and trams unticked show the background map's own (as the original map:
+railways from zoom 11, trams from 14; its railway layers filtered to trains, trams
+or both) instead of a light version. Clicking a road zoomed out showed nothing: the
 zoomed-out roads kept only what the styles read; their name and numbers come along
 now (a road's pieces still join, two roads stay apart, as Planetiler does).
 

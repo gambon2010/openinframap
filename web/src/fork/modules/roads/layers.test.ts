@@ -6,11 +6,12 @@ import { RAILWAYS_LAYER, byRank } from './rail-layers.ts'
 import { LANES_SOURCE, LANE_WIDTH, laneWidth } from './lane-layers.ts'
 import {
   RAILWAYS_SWITCHER_ID,
+  TRANSIT_SWITCHER_ID,
   drawingOrder,
   entryOf,
   isMapRoadLayer,
   lookOf,
-  mapLayerShown
+  mapRailFilter
 } from './index.ts'
 import {
   HIGHWAY_COLOUR,
@@ -62,13 +63,17 @@ describe('roads, railways and borders', () => {
     expect(lookOf(entryOf('boundaries_countries'), [], true)).toBe('bold') // one look
   })
 
-  it('show the map’s own railways while Railways is unticked over the map, instead of the light ones', () => {
-    const railways = entryOf('railways_main_ground')
-    expect(lookOf(railways, [], false)).toBe('hidden')
-    expect(mapLayerShown('osm_rail', [], false)).toBe(true)
-    expect(mapLayerShown('osm_rail', [RAILWAYS_SWITCHER_ID], false)).toBe(false)
-    expect(mapLayerShown('osm_rail', [], true)).toBe(false)
-    expect(mapLayerShown('osm_roads_highway', [], false)).toBe(false)
+  it('show the map’s own railways and trams while their entry is unticked over the map, not light ones', () => {
+    expect(lookOf(entryOf('railways_main_ground'), [], false)).toBe('hidden')
+    expect(lookOf(entryOf('transit_tram_lanes_ground'), [], false)).toBe('hidden')
+    expect(JSON.stringify(mapRailFilter([], false))).toBe('["==",["get","kind"],"rail"]')
+    const trainsOnly = JSON.stringify(mapRailFilter([TRANSIT_SWITCHER_ID], false))
+    expect(trainsOnly).toContain('["!",["in",["get","kind_detail"]')
+    const tramsOnly = JSON.stringify(mapRailFilter([RAILWAYS_SWITCHER_ID], false))
+    expect(tramsOnly).toContain('["in",["get","kind_detail"],["literal",["tram","subway","light_rail"]]]')
+    expect(tramsOnly).not.toContain('"!"')
+    expect(mapRailFilter([RAILWAYS_SWITCHER_ID, TRANSIT_SWITCHER_ID], false)).toBeNull()
+    expect(mapRailFilter([], true)).toBeNull() // over imagery only the ticked, bold
   })
 
   it('keep the background map’s widths, a little narrower, never too thin, with an edge around them', () => {

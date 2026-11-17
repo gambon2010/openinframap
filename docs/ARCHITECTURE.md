@@ -57,7 +57,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   background   Settings → Background: the map or imagery
   satellite    the imagery (tells services/background.ts what there is)
   roads        roads, railways, trams and metro, the fork's own (the map's hidden,
-               but its railways while Railways is unticked over the map), the same at
+               but its railways, trams, while their entry is unticked over the map), the same at
                each zoom over the map and imagery: light over the map, bold once their
                Data layers entry is ticked, only the ticked ones over imagery (index.ts); layers.ts roads, borders and the order;
                rail-layers.ts railways by rank, trams and metro by kind (a plain line

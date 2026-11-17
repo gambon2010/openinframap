@@ -3,10 +3,10 @@
 // each unfolding to its kinds (key.ts). Over the map they're in a light look (white
 // roads, grey edges) while their entry is unticked, bold once ticked; over imagery
 // only the ticked ones show, bold. The background map's own roads are hidden: a
-// second set, with other zooms; its own railways show instead of the fork's while
-// Railways is unticked over the map. Borders over imagery (layers.ts). Street
+// second set, with other zooms; its own railways (trams) show instead of the fork's
+// while Railways (Trams and metro) is unticked over the map. Borders over imagery (layers.ts). Street
 // names turn white on a dark halo over imagery.
-import type { Map } from 'maplibre-gl'
+import type { ExpressionSpecification, FilterSpecification, Map } from 'maplibre-gl'
 import { Layer, LayerGroup, type LayerSwitcher } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { background, followBackground } from '../../services/background.ts'
@@ -15,7 +15,7 @@ import { valueFor } from './builder.ts'
 import { LANES_SOURCE, lanesSource } from './lane-layers.ts'
 import { roadsKey } from './key.ts'
 import { ROADS_PREFIX, roadLayers } from './layers.ts'
-import { RAILWAYS_PREFIX, TRANSIT_PREFIX } from './rail-layers.ts'
+import { RAILWAYS_PREFIX, TRANSIT_KINDS, TRANSIT_PREFIX } from './rail-layers.ts'
 import { NAME_COLOUR, NAME_HALO_COLOUR, NAME_HALO_WIDTH } from './roads.constants.ts'
 
 const ROADS = roadLayers()
@@ -37,12 +37,20 @@ export function isMapRoadLayer(layerId: string): boolean {
   return /^osm_roads_(?!pier)|^osm_rail/.test(layerId)
 }
 
-/** Whether a layer of the background map's own roads and railways shows: its
- * railways while Railways is unticked over the map, nothing else. */
-export function mapLayerShown(layerId: string, ticked: string[], overImagery: boolean): boolean {
-  const railways = layerId.startsWith('osm_rail')
-  return railways && !overImagery && !ticked.includes(RAILWAYS_SWITCHER_ID)
+/** Which of the background map's own railways show (a filter for its railway
+ * layers), null for none: trains while Railways is unticked over the map, trams and
+ * metro while Trams and metro is (its tiles mark trams from zoom 14). */
+export function mapRailFilter(ticked: string[], overImagery: boolean): FilterSpecification | null {
+  const trains = !ticked.includes(RAILWAYS_SWITCHER_ID)
+  const trams = !ticked.includes(TRANSIT_SWITCHER_ID)
+  if (overImagery || (!trains && !trams)) return null
+  const isTram: ExpressionSpecification = ['in', ['get', 'kind_detail'], ['literal', TRANSIT_KINDS]]
+  const isRail: ExpressionSpecification = ['==', ['get', 'kind'], 'rail']
+  if (trains && trams) return isRail
+  return ['all', isRail, trams ? isTram : ['!', isTram]]
 }
+
+const isMapRailLayer = (layerId: string) => layerId.startsWith('osm_rail')
 
 /** A layer's entry (undefined: the borders, under upstream's Borders entry). */
 export function entryOf(layerId: string): string | undefined {
@@ -50,11 +58,11 @@ export function entryOf(layerId: string): string | undefined {
 }
 
 /** How a layer shows: bold once its entry is ticked (the borders always: they have
- * one look); else light over the map (railways hidden: the map's own show,
- * mapLayerShown), hidden over imagery. */
+ * one look); else light over the map (railways, trams and metro hidden: the map's
+ * own show, mapRailFilter), hidden over imagery. */
 export function lookOf(entry: string | undefined, ticked: string[], overImagery: boolean) {
   if (entry === undefined || ticked.includes(entry)) return 'bold'
-  if (overImagery || entry === RAILWAYS_SWITCHER_ID) return 'hidden'
+  if (overImagery || entry !== ROADS_SWITCHER_ID) return 'hidden'
   return 'light'
 }
 
@@ -111,11 +119,15 @@ function followEntries(map: Map, switcher: LayerSwitcher) {
       if (JSON.stringify(map.getPaintProperty(layerId, property)) !== JSON.stringify(value))
         map.setPaintProperty(layerId, property, value as never)
     }
+    const railFilter = mapRailFilter(switcher._visible, overImagery)
     for (const layer of map.getStyle()?.layers ?? []) {
       if (!isMapRoadLayer(layer.id)) continue
-      const visibility = mapLayerShown(layer.id, switcher._visible, overImagery) ? 'visible' : 'none'
+      const shown = isMapRailLayer(layer.id) && railFilter !== null
+      const visibility = shown ? 'visible' : 'none'
       if (map.getLayoutProperty(layer.id, 'visibility') !== visibility)
         map.setLayoutProperty(layer.id, 'visibility', visibility)
+      if (shown && JSON.stringify(map.getFilter(layer.id)) !== JSON.stringify(railFilter))
+        map.setFilter(layer.id, railFilter)
     }
   }
   map.on('styledata', sync)
