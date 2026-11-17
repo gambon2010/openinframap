@@ -32,11 +32,17 @@ KEPT = ("kind", "kind_detail", "is_tunnel", "is_link")
 # Small roads from zoom 12, paths and tracks from 13 (Protomaps: most from 14).
 SMALL_ROADS_FROM = 12
 PATHS_FROM = 13
-# Big roads from these zooms at the latest, whatever their min_zoom (Protomaps gives
-# a few stretches of motorway 16, so they'd only be in its zoom 15 tiles).
-BIG_ROADS_BY = {"motorway": 8, "trunk": 8, "primary": 9, "secondary": 10, "tertiary": 11}
-# And not before these (Protomaps brings many in from 9: zoomed out, a web of them).
-SMALLER_BIG_ROADS_FROM = {"secondary": 10, "tertiary": 11}
+# Big roads: the earliest and the latest zoom each shows from, whatever Protomaps'
+# min_zoom says. It gives a few stretches of motorway 16 (they'd only be in its zoom
+# 15 tiles), and brings many secondary and tertiary roads in at 9 (zoomed out, a web
+# of them). 0: no earliest.
+BIG_ROAD_ZOOMS = {
+    "motorway": (0, 8),
+    "trunk": (0, 8),
+    "primary": (0, 9),
+    "secondary": (10, 10),
+    "tertiary": (11, 11),
+}
 
 # Carriageways closer than this many pixels drawn as one (close_lines.py).
 CLOSE_PIXELS = 3
@@ -58,8 +64,8 @@ def from_zoom(props: dict[str, Any]) -> int:
         return PATHS_FROM
     if kind in ("highway", "major_road"):
         detail = str(props.get("kind_detail", "")).removesuffix("_link")
-        by_then = min(protomaps, BIG_ROADS_BY.get(detail, protomaps))
-        return max(by_then, SMALLER_BIG_ROADS_FROM.get(detail, by_then))
+        earliest, latest = BIG_ROAD_ZOOMS.get(detail, (0, protomaps))
+        return min(max(protomaps, earliest), latest)
     return protomaps
 
 
