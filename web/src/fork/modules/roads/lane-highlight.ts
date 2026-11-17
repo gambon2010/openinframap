@@ -3,7 +3,7 @@
 // highlight is two layers on those tiles, filtered to the line: a glow over the
 // lanes and the line's own lane over it, at every zoom the lanes show and wherever
 // the map goes; and its stops (the tiles' STOPS_LAYER: the backend's line_stops.py),
-// named from STOP_NAMES_FROM. Cleared with the details panel's highlight
+// each named. Cleared with the details panel's highlight
 // (ui/highlight.ts).
 import type { ExpressionSpecification, FilterSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { font } from '../../../style/common.ts'
@@ -24,8 +24,8 @@ const NOTHING: FilterSpecification = ['==', ['get', 'ref'], '']
 export const STOPS_LAYER = 'stops'
 const STOPS_ID = 'lane_highlight_stops'
 const STOP_NAMES_ID = 'lane_highlight_stop_names'
-const STOP_NAMES_FROM = 14
-const STOP_NAME_SIZE = 13
+/** A stop's name: smaller zoomed out, where the stops are close together. */
+const STOP_NAME_SIZE: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], LANES_FROM, 11, 15, 13]
 /** Ems between a dot and its name. */
 const STOP_NAME_GAP = 0.9
 const STOP_NAME_HALO = 1.5
@@ -48,7 +48,7 @@ export function stopsFilter(ref: string): FilterSpecification {
   return ['in', `,${ref},`, ['get', 'lines']]
 }
 
-/** A highlighted line's stops, a dot each over its lane, named closer in: the
+/** A highlighted line's stops, a dot each over its lane, each named: the
  * names on top of everything, so the map's own labels don't push them out (the
  * higher a label's layer, the sooner it gets its place), on whichever side of the
  * dot has room. */
@@ -73,7 +73,6 @@ function addStopLayers(map: Map, before: string | undefined) {
     ...from,
     id: STOP_NAMES_ID,
     type: 'symbol',
-    minzoom: STOP_NAMES_FROM,
     layout: {
       'text-field': ['get', 'name'],
       'text-font': font,
