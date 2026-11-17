@@ -609,7 +609,12 @@ never showed: MapLibre takes a zoom curve only at the top of an expression (the
 glow's width was "lane + 10"), and dropped the layer. Stops: from the routes' stop
 members (a route listing none, its platforms), one per name within 200 m (a stop
 position per direction), in the trams' tiles with the lines calling there by
-letter (a route's kind can differ from its tracks').
+letter (a route's kind can differ from its tracks'). Then: the highlight sat among the
+roads layers, which the roads module moves over anything between them (its drawing
+order), so the lanes covered the stops: now just above them all. Stop names drawn
+on top of everything (the higher a label's layer, the sooner it gets its place: the
+map's own labels pushed them out) on whichever side of the dot has room, with a
+thin halo (the map labels' wide blurred one made a white box).
 
 ---
 

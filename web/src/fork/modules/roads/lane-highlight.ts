@@ -6,7 +6,7 @@
 // named from STOP_NAMES_FROM. Cleared with the details panel's highlight
 // (ui/highlight.ts).
 import type { ExpressionSpecification, FilterSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
-import { font, text_paint } from '../../../style/common.ts'
+import { font } from '../../../style/common.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { leftColumn } from '../../ui/left-column.ts'
 import { LANES_FROM } from './roads.constants.ts'
@@ -25,6 +25,10 @@ export const STOPS_LAYER = 'stops'
 const STOPS_ID = 'lane_highlight_stops'
 const STOP_NAMES_ID = 'lane_highlight_stop_names'
 const STOP_NAMES_FROM = 14
+const STOP_NAME_SIZE = 13
+/** Ems between a dot and its name. */
+const STOP_NAME_GAP = 0.9
+const STOP_NAME_HALO = 1.5
 const STOP_RADIUS: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], LANES_FROM, 3, 18, 7]
 const STOP_EDGE_COLOUR = '#222222'
 const STOP_FILL = '#ffffff'
@@ -44,7 +48,10 @@ export function stopsFilter(ref: string): FilterSpecification {
   return ['in', `,${ref},`, ['get', 'lines']]
 }
 
-/** A highlighted line's stops, a dot each, named closer in; over its lane. */
+/** A highlighted line's stops, a dot each over its lane, named closer in: the
+ * names on top of everything, so the map's own labels don't push them out (the
+ * higher a label's layer, the sooner it gets its place), on whichever side of the
+ * dot has room. */
 function addStopLayers(map: Map, before: string | undefined) {
   if (map.getLayer(STOPS_ID)) return
   const from = { source: LANES_SOURCE, 'source-layer': STOPS_LAYER, minzoom: LANES_FROM, filter: NOTHING }
@@ -62,31 +69,39 @@ function addStopLayers(map: Map, before: string | undefined) {
     },
     before
   )
-  map.addLayer(
-    {
-      ...from,
-      id: STOP_NAMES_ID,
-      type: 'symbol',
-      minzoom: STOP_NAMES_FROM,
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': font,
-        'text-size': 12,
-        'text-anchor': 'left',
-        'text-offset': [0.8, 0],
-        'text-optional': true
-      },
-      paint: text_paint
+  map.addLayer({
+    ...from,
+    id: STOP_NAMES_ID,
+    type: 'symbol',
+    minzoom: STOP_NAMES_FROM,
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-font': font,
+      'text-size': STOP_NAME_SIZE,
+      'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
+      'text-radial-offset': STOP_NAME_GAP
     },
-    before
-  )
+    // A thin halo: the map's labels' wide blurred one is a white box around a name.
+    paint: {
+      'text-color': STOP_EDGE_COLOUR,
+      'text-halo-color': STOP_FILL,
+      'text-halo-width': STOP_NAME_HALO
+    }
+  })
 }
 
-/** The highlight's layers over the lanes, under the borders, matching nothing yet. */
+/** The layer just above every roads layer (the borders are the last: layers.ts),
+ * undefined if none. Not among them: the roads module keeps its layers in order by
+ * moving them (index.ts reorder), over anything in between. */
+function aboveRoads(map: Map): string | undefined {
+  const ids = (map.getStyle()?.layers ?? []).map((layer) => layer.id)
+  const last = ids.indexOf(`${BORDERS_PREFIX}countries`)
+  return last < 0 ? undefined : ids[last + 1]
+}
+
+/** The highlight's layers over every lane and border, matching nothing yet. */
 function addLayers(map: Map) {
-  const before = map.getLayer(`${BORDERS_PREFIX}countries_edge`)
-    ? `${BORDERS_PREFIX}countries_edge`
-    : undefined
+  const before = aboveRoads(map)
   const glowWidth = laneWidth(2 * GLOW_REACH)
   for (const sourceLayer of LOOM_LAYERS) {
     const ids = highlightIds(sourceLayer)
