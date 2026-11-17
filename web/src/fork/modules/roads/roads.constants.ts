@@ -62,14 +62,12 @@ export const RAIL_MIN_WIDTH = { main: 4, branch: 3, minor: 2, service: 1.5 }
  * tunnels run side by side; dots read poorly.) */
 export const TUNNEL_OPACITY = 0.55
 
-/** Railways: a grey line with white dashes (bold black), with a light edge to part
- * it from dark ground. */
+/** Railways: a grey line with white dashes (bold black), with an outline. */
 export const RAIL_COLOUR: Looks<string> = { light: 'hsl(240, 3%, 55%)', bold: 'hsl(240, 6%, 18%)' }
 export const RAIL_DASH_COLOUR = 'hsl(0, 0%, 100%)'
 export const RAIL_DASHES = [3, 3]
-/** Its outline: see-through white, bold solid (each spot has one line only: the
- * backend draws close railways as one, so outlines don't pile up). */
-export const RAIL_EDGE_COLOUR: Looks<string> = { light: 'hsla(0, 0%, 100%, 0.55)', bold: WHITE }
+/** Its outline: grey, bold near black (white ones turned bundles of lines white). */
+export const RAIL_EDGE_COLOUR: Looks<string> = { light: 'hsl(240, 5%, 62%)', bold: 'hsl(240, 6%, 12%)' }
 /** Trams and metro: a plain line, pale pink (bold: in its line's colour, pink
  * without one, a colour no power line has), narrower than railways. */
 export const TRAM_COLOUR: Looks<string> = { light: 'hsl(335, 35%, 60%)', bold: 'hsl(335, 85%, 68%)' }
