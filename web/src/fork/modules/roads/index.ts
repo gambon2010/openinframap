@@ -2,8 +2,9 @@
 // background, the same at each zoom: entries of Data layers (Roads and railways),
 // each unfolding to its kinds (key.ts). Over the map they're in a light look (white
 // roads, grey edges) while their entry is unticked, bold once ticked; over imagery
-// only the ticked ones show, bold. The background map's own roads and railways are
-// hidden: a second set, with other zooms. Borders over imagery (layers.ts). Street
+// only the ticked ones show, bold. The background map's own roads are hidden: a
+// second set, with other zooms; its own railways show instead of the fork's while
+// Railways is unticked over the map. Borders over imagery (layers.ts). Street
 // names turn white on a dark halo over imagery.
 import type { Map } from 'maplibre-gl'
 import { Layer, LayerGroup, type LayerSwitcher } from '@russss/maplibregl-layer-switcher'
@@ -36,16 +37,25 @@ export function isMapRoadLayer(layerId: string): boolean {
   return /^osm_roads_(?!pier)|^osm_rail/.test(layerId)
 }
 
+/** Whether a layer of the background map's own roads and railways shows: its
+ * railways while Railways is unticked over the map, nothing else. */
+export function mapLayerShown(layerId: string, ticked: string[], overImagery: boolean): boolean {
+  const railways = layerId.startsWith('osm_rail')
+  return railways && !overImagery && !ticked.includes(RAILWAYS_SWITCHER_ID)
+}
+
 /** A layer's entry (undefined: the borders, under upstream's Borders entry). */
 export function entryOf(layerId: string): string | undefined {
   return ENTRIES.find(([prefix]) => layerId.startsWith(prefix))?.[1]
 }
 
 /** How a layer shows: bold once its entry is ticked (the borders always: they have
- * one look); else light over the map, hidden over imagery. */
+ * one look); else light over the map (railways hidden: the map's own show,
+ * mapLayerShown), hidden over imagery. */
 export function lookOf(entry: string | undefined, ticked: string[], overImagery: boolean) {
   if (entry === undefined || ticked.includes(entry)) return 'bold'
-  return overImagery ? 'hidden' : 'light'
+  if (overImagery || entry === RAILWAYS_SWITCHER_ID) return 'hidden'
+  return 'light'
 }
 
 /** The layers in the order they're drawn: the light ones, then the bold ones over
@@ -101,9 +111,12 @@ function followEntries(map: Map, switcher: LayerSwitcher) {
       if (JSON.stringify(map.getPaintProperty(layerId, property)) !== JSON.stringify(value))
         map.setPaintProperty(layerId, property, value as never)
     }
-    for (const layer of map.getStyle()?.layers ?? [])
-      if (isMapRoadLayer(layer.id) && map.getLayoutProperty(layer.id, 'visibility') !== 'none')
-        map.setLayoutProperty(layer.id, 'visibility', 'none')
+    for (const layer of map.getStyle()?.layers ?? []) {
+      if (!isMapRoadLayer(layer.id)) continue
+      const visibility = mapLayerShown(layer.id, switcher._visible, overImagery) ? 'visible' : 'none'
+      if (map.getLayoutProperty(layer.id, 'visibility') !== visibility)
+        map.setLayoutProperty(layer.id, 'visibility', visibility)
+    }
   }
   map.on('styledata', sync)
   // A new style has the layers in their first order.

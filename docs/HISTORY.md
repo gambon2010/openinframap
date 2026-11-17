@@ -593,6 +593,15 @@ grows the lanes' width with them (twice by the next zoom) so they keep touching.
 Tunnels marked from the railways file's tunnel tracks. Zoomed out (below 12) one
 plain line as before; the strands and their offsets removed.
 
+**Lanes, railways and road clicks (2026-11-17):** junctions zoomed out showed each
+join's outline across the lanes: a set's outlines were drawn lane by lane, the
+joins' over the lanes; now every outline goes under every lane. Tunnels' lanes
+drawn with the others (not under the roads), a full outline around a see-through
+line. Railways unticked show the background map's own (as the original map, from
+zoom 11) instead of a light version. Clicking a road zoomed out showed nothing: the
+zoomed-out roads kept only what the styles read; their name and numbers come along
+now (a road's pieces still join, two roads stay apart, as Planetiler does).
+
 ---
 
 ## Building outlines (2026-11-11)

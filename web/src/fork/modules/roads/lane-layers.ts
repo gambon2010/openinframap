@@ -44,39 +44,59 @@ export function laneWidth(): ExpressionSpecification {
 /** LOOM's layers: the lanes, and their joins through junctions. */
 const LOOM_LAYERS = ['lines', 'inner-connections']
 
-/** A set's lanes (its kind's, e.g. 'tram'), in a tunnel or above ground: an outline,
- * then the lanes over it (each lane's outline under its neighbour: one around them
- * all). */
-export function addLanes(b: Builder, set: TrackSet, tunnel: boolean) {
+function lanesFrom(sourceLayer: string) {
+  return { source: LANES_SOURCE, sourceLayer, minzoom: LANES_FROM }
+}
+
+function partOf(sourceLayer: string) {
+  return sourceLayer === 'lines' ? '' : '_joins'
+}
+
+function kindIs(set: TrackSet): ExpressionSpecification {
+  return ['==', ['get', 'kind'], set.kind ?? '']
+}
+
+/** A set's outline around its lanes and joins, in a tunnel too (whole: a tunnel's
+ * lanes are see-through inside it). Every set's outlines go under every set's lanes
+ * (addLanes): an outline drawn over a lane, where a join meets it, would cut it. */
+export function addLaneEdges(b: Builder, set: TrackSet) {
   if (!set.kind) return
-  const width = laneWidth()
-  const filter: ExpressionSpecification = [
-    'all',
-    ['==', ['get', 'kind'], set.kind],
-    ['==', ['coalesce', ['get', 'tunnel'], false], tunnel]
-  ]
-  const opacity = fading(tunnelOpacity(FULL, tunnel))
-  const id = `${transitSetPrefix(set)}lanes_${tunnel ? 'tunnel' : 'ground'}`
   for (const sourceLayer of LOOM_LAYERS) {
-    const from = { source: LANES_SOURCE, sourceLayer, minzoom: LANES_FROM }
-    const part = sourceLayer === 'lines' ? '' : '_joins'
-    if (!tunnel) {
-      const edge = {
-        'line-color': look.RAIL_EDGE_COLOUR,
-        'line-gap-width': width,
-        'line-width': look.EDGE_WIDTH,
-        'line-opacity': opacity
-      }
-      b.line(`${id}${part}_edge`, filter, edge, from)
+    const edge = {
+      'line-color': look.RAIL_EDGE_COLOUR,
+      'line-gap-width': laneWidth(),
+      'line-width': look.EDGE_WIDTH,
+      'line-opacity': fading(FULL)
     }
+    b.line(
+      `${transitSetPrefix(set)}lanes${partOf(sourceLayer)}_edge`,
+      kindIs(set),
+      edge,
+      lanesFrom(sourceLayer)
+    )
+  }
+}
+
+/** A set's lanes (its kind's, e.g. 'tram') over the outlines: in a tunnel
+ * see-through, then above ground. */
+export function addLanes(b: Builder, set: TrackSet) {
+  if (!set.kind) return
+  for (const tunnel of [true, false]) {
+    const filter: ExpressionSpecification = [
+      'all',
+      kindIs(set),
+      ['==', ['coalesce', ['get', 'tunnel'], false], tunnel]
+    ]
     const lane = {
       'line-color': {
         light: look.TRAM_COLOUR.light,
         bold: ['to-color', ['get', 'colour'], look.TRAM_COLOUR.bold] as ExpressionSpecification
       },
-      'line-width': width,
-      'line-opacity': opacity
+      'line-width': laneWidth(),
+      'line-opacity': fading(tunnelOpacity(FULL, tunnel))
     }
-    b.line(`${id}${part}`, filter, lane, from)
+    const id = `${transitSetPrefix(set)}lanes_${tunnel ? 'tunnel' : 'ground'}`
+    for (const sourceLayer of LOOM_LAYERS)
+      b.line(`${id}${partOf(sourceLayer)}`, filter, lane, lanesFrom(sourceLayer))
   }
 }

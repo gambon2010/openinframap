@@ -34,7 +34,7 @@ def tile(*features) -> bytes:
 @pytest.fixture
 def paris(tmp_path):
     path = tmp_path / "paris.pmtiles"
-    tunnel = {"kind": "highway", "kind_detail": "motorway", "is_tunnel": True, "min_zoom": 4}
+    tunnel = {"kind": "highway", "kind_detail": "motorway", "is_tunnel": True, "min_zoom": 4, "ref": "A35"}
     make(
         path,
         {
@@ -100,8 +100,9 @@ def test_each_zoom_has_the_roads_shown_there_tunnels_marked(paris):
         assert ("highway", False) in kinds, z  # the stretch kept for zoom 15
         assert (("minor_road", False) in kinds) == (z >= 12), z
         assert (("path", False) in kinds) == (z >= 13), z
-    # The properties the map's styles read come along; nothing else.
+    # The properties the map's styles read and a click shows come along; nothing else.
     assert set(at[13][0]["properties"]) <= set(zr.KEPT)
+    assert any(f["properties"].get("ref") == "A35" for f in at[8])
 
 
 def test_roads_and_railways_of_one_place_are_in_one_tile(paris, tmp_path):

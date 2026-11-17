@@ -4,7 +4,14 @@ import { resized, valueFor } from './builder.ts'
 import { roadLayers } from './layers.ts'
 import { RAILWAYS_LAYER, byRank } from './rail-layers.ts'
 import { LANES_SOURCE, LANE_WIDTH, laneWidth } from './lane-layers.ts'
-import { drawingOrder, entryOf, isMapRoadLayer, lookOf } from './index.ts'
+import {
+  RAILWAYS_SWITCHER_ID,
+  drawingOrder,
+  entryOf,
+  isMapRoadLayer,
+  lookOf,
+  mapLayerShown
+} from './index.ts'
 import {
   HIGHWAY_COLOUR,
   LANES_FROM,
@@ -53,6 +60,15 @@ describe('roads, railways and borders', () => {
     expect(lookOf(roads, [], true)).toBe('hidden')
     expect(lookOf(roads, [roads ?? ''], true)).toBe('bold')
     expect(lookOf(entryOf('boundaries_countries'), [], true)).toBe('bold') // one look
+  })
+
+  it('show the map’s own railways while Railways is unticked over the map, instead of the light ones', () => {
+    const railways = entryOf('railways_main_ground')
+    expect(lookOf(railways, [], false)).toBe('hidden')
+    expect(mapLayerShown('osm_rail', [], false)).toBe(true)
+    expect(mapLayerShown('osm_rail', [RAILWAYS_SWITCHER_ID], false)).toBe(false)
+    expect(mapLayerShown('osm_rail', [], true)).toBe(false)
+    expect(mapLayerShown('osm_roads_highway', [], false)).toBe(false)
   })
 
   it('keep the background map’s widths, a little narrower, never too thin, with an edge around them', () => {
@@ -119,7 +135,11 @@ describe('roads, railways and borders', () => {
     expect(at('ground_highway')).toBeLessThan(at('railways_sidings_ground_edge'))
     expect(at('railways_branch_ground_dashes')).toBeLessThan(at('railways_main_ground_edge'))
     expect(at('railways_main_ground_dashes')).toBeLessThan(at('transit_sidings_ground_edge'))
-    expect(at('transit_tram_ground')).toBeLessThan(at('transit_tram_lanes_ground'))
+    expect(at('transit_tram_ground')).toBeLessThan(at('transit_tram_lanes_edge'))
+    // Every outline under every lane (an outline over a join would cut the lanes),
+    // tunnels' lanes with the others, under those above ground.
+    expect(at('transit_metro_lanes_joins_edge')).toBeLessThan(at('transit_tram_lanes_tunnel'))
+    expect(at('transit_tram_lanes_tunnel_joins')).toBeLessThan(at('transit_tram_lanes_ground'))
     expect(layers.slice(-2).map((l) => l.id)).toEqual(['boundaries_countries_edge', 'boundaries_countries'])
   })
 
@@ -155,6 +175,10 @@ describe('roads, railways and borders', () => {
     expect(JSON.stringify(lanes.filter)).toContain('["==",["get","kind"],"tram"]')
     expect(layer('transit_metro_lanes_tunnel_joins')['source-layer']).toBe('inner-connections')
     expect(lanes.paint?.['line-color']).toBe(TRAM_COLOUR.light)
+    // A tunnel's lanes see-through inside a whole outline.
+    expect(layer('transit_tram_lanes_tunnel').paint?.['line-opacity']).toBe(TUNNEL_OPACITY)
+    expect(layer('transit_tram_lanes_edge').paint?.['line-opacity']).toBe(1)
+    expect(JSON.stringify(layer('transit_tram_lanes_edge').filter)).not.toContain('tunnel')
     expect(bold('transit_tram_lanes_ground', 'line-color')).toEqual([
       'to-color',
       ['get', 'colour'],

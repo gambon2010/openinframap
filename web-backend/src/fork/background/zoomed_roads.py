@@ -32,9 +32,11 @@ from .tiles import PIXELS, TileLayer, layer_tiles, tile_size
 
 LAYER = "roads"
 ZOOMS = range(8, 14)
-# The properties kept: what the map's road styles read at these zooms. No more, so
-# a road's pieces join into one line (a bridge or another min_zoom would part them).
-KEPT = ("kind", "kind_detail", "is_tunnel", "is_link")
+# The properties kept: what the map's road styles read at these zooms, and what a
+# click on a road shows (its name and numbers: A35, E25). No more, so a road's pieces
+# join into one line (a bridge or another min_zoom would part them); pieces of two
+# roads, named or numbered apart, stay apart, as Planetiler keeps them.
+KEPT = ("kind", "kind_detail", "is_tunnel", "is_link", "name", "ref", "network", "shield_text")
 # Small roads from zoom 12, paths and tracks from 13 (Protomaps: most from 14).
 SMALL_ROADS_FROM = 12
 PATHS_FROM = 13
