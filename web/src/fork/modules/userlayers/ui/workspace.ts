@@ -12,6 +12,7 @@ import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { t } from '../../../core/i18n.ts'
 import { LEFT_ORDER, leftColumn } from '../../../ui/left-column.ts'
+import { pencilIcon } from '../../../ui/icons.ts'
 import { showPressed } from '../../../ui/map-button.ts'
 import { Store } from '../state/store.ts'
 import { Tools } from '../map/tools.ts'
@@ -68,7 +69,7 @@ export class Workspace implements IControl {
   }
 
   onAdd(): HTMLElement {
-    this.button = el('button.maplibregl-ctrl-icon.oim-ul-control', {
+    this.button = el('button.maplibregl-ctrl-icon.oim-map-button.oim-ul-control', pencilIcon(), {
       type: 'button',
       title: t('userlayers.title', 'My layers'),
       'aria-label': t('userlayers.title', 'My layers')

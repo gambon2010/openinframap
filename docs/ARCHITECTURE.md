@@ -44,7 +44,8 @@ ui/        shared building blocks you see: dock (right), left column, details
 services/  shared state and registries, nothing drawn: live updates (live.ts),
            who has the map (map-mode.ts: measuring, drawing),
            what a printed map's legend lists (legend.ts), the background map's
-           background: the map's colours or imagery, chosen in Settings (background.ts),
+           background: the map's colours or imagery, chosen with the satellite
+           button (background.ts),
            the 3D view on or off (view3d.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
@@ -54,7 +55,7 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   search       search descriptions, Photon
   coordinates  the cursor's position and MGRS; MGRS in search
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
-  background   Settings → Background: the map or imagery
+  background   the satellite button (top right): the map or imagery
   satellite    the imagery (tells services/background.ts what there is)
   roads        roads, railways, trams and metro, the fork's own (the map's hidden,
                but its railways, trams, while their entry is unticked over the map), the same at

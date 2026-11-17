@@ -42,6 +42,13 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
   buttons when their panel is open: `oim-pressed`.
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
+- **Icons:** one set of line icons (`ui/icons.ts`: 24-unit outlines, 2 wide, round
+  ends, in the text's colour), one picture per button, never a near-copy of another
+  button's (Data layers a stack, My layers a pencil) nor a decoration added to tell
+  two apart.
+- **The map's buttons (top right):** in groups with a gap between: what's on the map
+  (Data layers, My layers, satellite), the view (zoom, 3D), then print, Settings and
+  your account (`ui/panel.css`, by order). A mode is a button pressed, not a setting.
 - **Text:** the page font (`--oim-font-family`); monospace only for raw data
   (debug) and coordinates.
 

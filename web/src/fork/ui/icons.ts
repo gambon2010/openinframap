@@ -1,6 +1,7 @@
-// Fork: small line icons drawn in the text's colour (currentColor), for buttons
-// that need a picture rather than a character: the eye (shown / hidden), the gear
-// (settings), a person (your account), a printer.
+// Fork: small line icons drawn in the text's colour (currentColor), one set for
+// every button that needs a picture rather than a character (docs/STYLE.md): the eye
+// (shown / hidden), the map's buttons (Data layers, My layers, satellite imagery,
+// print, settings, your account). 24-unit outlines, 2 wide, round ends, as Lucide's.
 const SVG = 'http://www.w3.org/2000/svg'
 
 function icon(paths: string[], size = 16): SVGSVGElement {
@@ -62,6 +63,30 @@ export function printerIcon(size = 20): SVGSVGElement {
       'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2',
       'M6 14h12v8H6z'
     ],
+    size
+  )
+}
+
+/** A stack of sheets: Data layers. */
+export function layersIcon(size = 20): SVGSVGElement {
+  return icon(['M12 2 2 7l10 5 10-5-10-5z', 'm2 17 10 5 10-5', 'm2 12 10 5 10-5'], size)
+}
+
+/** A pencil: My layers, what you draw. */
+export function pencilIcon(size = 20): SVGSVGElement {
+  return icon(
+    [
+      'M21.2 6.8a1 1 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z',
+      'm15 5 4 4'
+    ],
+    size
+  )
+}
+
+/** A satellite: satellite imagery under the map's data. */
+export function satelliteIcon(size = 20): SVGSVGElement {
+  return icon(
+    ['M13 7 9 3 5 7l4 4', 'm17 11 4 4-4 4-4-4', 'm8 12 4 4 6-6-4-4z', 'm16 8 3-3', 'M9 21a6 6 0 0 0-6-6'],
     size
   )
 }

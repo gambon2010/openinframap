@@ -114,3 +114,7 @@
   padding-top: 8px;
   border-top: 1px solid var(--oim-grey);
 }
+
+.oim-map-sources h3 {
+  margin: 4px 0 6px;
+}

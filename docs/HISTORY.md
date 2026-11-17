@@ -641,6 +641,15 @@ replaces the background map's). Checked against upstream's tiles: 94 of 105 extr
 pieces go, none of upstream's. Tried and dropped: keeping a short run only between
 tagged taxiways (it dropped 4 of upstream's).
 
+**The map's buttons (2026-11-17):** the map or satellite imagery became a button
+(pressed: imagery; greyed where there's none, its tooltip says why), its Settings
+section gone. Data layers showed the layer switcher's squares and My layers a stack
+of sheets with a red dot added to tell them apart; now one line-icon set
+(`ui/icons.ts`): a stack for Data layers, a pencil for My layers, a satellite. The
+column in three groups: what's on the map, the view, then print, Settings, account.
+Also: the details panel restyle had been served half-written by the development
+server (edited in three quick writes): checked rendered since.
+
 ---
 
 ## Building outlines (2026-11-11)

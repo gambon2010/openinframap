@@ -712,14 +712,10 @@
     "other": "Other"
   },
   "background": {
-    "map": "Map",
-    "map-help": "Each kind of area its own shade: towns, fields, woods, water",
-    "satellite": "Satellite",
-    "satellite-help": "Imagery, with place names",
     "not-here": "No satellite imagery here: move the map to where you have some.",
-    "title": "Background",
-    "zooms": "Imagery up to zoom {{zoom}}.",
-    "none": "No satellite imagery yet. Run \"bash scripts/offline-maps.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos."
+    "none": "No satellite imagery yet. Run \"bash scripts/offline-maps.sh\" (your data stays): NASA Blue Marble for the whole world, Sentinel-2 10 m for your region, and in France IGN aerial photos.",
+    "show-map": "Show the map",
+    "show-satellite": "Show satellite imagery"
   },
   "buildings": {
     "height": "Height",

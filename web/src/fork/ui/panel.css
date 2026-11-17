@@ -214,19 +214,49 @@ html button.oim-on {
   display: block;
   margin: auto;
 }
-/* The map's buttons (top right): the map's own and the panels first, then print,
-   Settings and your account at the bottom. */
+/* The map's buttons (top right), in three groups, a wider gap between them: what's on
+   the map (Data layers, My layers, satellite imagery), the view (zoom, 3D), then
+   print, Settings and your account. Placed by order: the modules add them in any. */
 .maplibregl-ctrl-top-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group.layer-switcher {
   order: 1;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-settings-button) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-ul-control) {
   order: 2;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-account-button) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-background-button) {
   order: 3;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in) {
+  order: 4;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-3d-button) {
+  order: 5;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
+  order: 6;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-settings-button) {
+  order: 7;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-account-button) {
+  order: 8;
+}
+/* Each group's first: the gap. */
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in),
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
+  margin-top: 22px;
+}
+
+/* Data layers: the fork's icon (modules/layout), not the package's squares. */
+.maplibregl-ctrl-group.layer-switcher {
+  background-image: none;
+}
+.layer-switcher-button svg {
+  display: block;
+  margin: auto;
 }

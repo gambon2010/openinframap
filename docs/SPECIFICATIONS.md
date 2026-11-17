@@ -250,6 +250,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.28 | Details of a clicked road, railway, tram or metro line: a title a person would use ("A35 – Autoroute des Cigognes", "D392 – Route de Schirmeck", "Tram F") and the copy button, nothing else; a building without its data source note; every raw property only with debug on, marked "Debug info". | ✅ (2026-11-17) `modules/roads/popup.ts`, `modules/debug` |
 | 10.29 | Trams and metro in tunnels drawn see-through at every zoom (zoomed out only some lanes were). | ✅ (2026-11-17) `loom_tiles.py`: tunnels widened per zoom as far as a bundle of lanes spreads |
 | 10.30 | Airports: the stand lead-in hooks (Entzheim) not drawn; the named taxiways, the stand spokes and the corners kept. | ✅ (2026-11-17) `stand_lead_ins.py`: untagged taxiway runs under 150 m with a free end, from `<area>.taxiways.osm.pbf`; checked against upstream's map (94 of the 105 pieces it lacks gone, nothing it has); the source fix (retagging them `aeroway=taxilane` in OpenStreetMap) is the owner's |
+| 10.31 | Map or satellite as a toggle among the map's buttons, not a setting; the buttons reorganised in groups; Data layers and My layers icons clearly different (no red dot). | ✅ (2026-11-17) `modules/background` (satellite button), `ui/icons.ts`, `ui/panel.css` (order) |
 
 ## 11. Quality
 

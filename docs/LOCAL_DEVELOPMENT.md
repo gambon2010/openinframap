@@ -97,12 +97,15 @@ port 8800.
 - **Bottom left** (next to the scale): where the cursor is: latitude, longitude and the
   military grid reference (MGRS); press **G** with the pointer on the map to copy the
   grid reference there. The search box also finds grid references ("32T LT 725 899").
-- **Top right, the buttons:** zoom, **Data layers** (what's on the map and its key: tick a
-  category, unfold it ▸ to tick its rows), **My layers**. Click a button to open its panel next to the buttons; click it again
+- **Top right, the buttons,** in three groups. What's on the map: **Data layers** (the
+  stack: what's on the map and its key: tick a category, unfold it ▸ to tick its rows),
+  **My layers** (the pencil), **satellite** (pressed: satellite imagery under the data;
+  again: the map; greyed where there's no imagery, its tooltip says why). Click a panel's button to open it next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
-  Long panels scroll inside. At the bottom: **3D** (the map tilts and buildings rise to
+  Long panels scroll inside. Then the view: zoom, **3D** (the map tilts and buildings rise to
   their height; drag with the right mouse button, or Ctrl and drag, to tilt and turn it;
-  click again for the flat map facing north, which can't be tilted), **print** (the printer), **Settings**
+  click again for the flat map facing north, which can't be tilted). At the bottom:
+  **print** (the printer), **Settings**
   (the gear: background map and address search servers, see below; **Debug**: the
   map's zoom, scale and what is under the pointer, and a clicked thing's raw data
   under its details; admins: accounts) and **your account** (the person: who is logged in, **Log out**).
@@ -276,9 +279,9 @@ files themselves each time (copy the folder and it comes along). Unattended:
 `python3 scripts/offline-maps.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
 or `--resume --yes`.
 
-It's shown with
-**Settings → Background**: *Map* (each kind of area its own pale shade, roads white
-with a grey edge) or *Satellite* (imagery with place names and borders; buildings,
+It's shown with the
+**satellite button** (top right) off: the map (each kind of area its own pale shade,
+roads white with a grey edge); on: imagery with place names and borders (buildings,
 when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
 *Railways*, *Trams and metro*, or the heading for all three) draws them bold, the
 same at every zoom, over the map or over imagery: motorways orange, trunk roads

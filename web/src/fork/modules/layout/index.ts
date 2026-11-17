@@ -10,6 +10,7 @@ import { Map } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
 import { dock } from '../../ui/dock.ts'
 import { buildDataLayers, Switcher } from '../../ui/data-layers.ts'
+import { layersIcon } from '../../ui/icons.ts'
 import { addSettings } from '../../ui/settings.ts'
 import { moveSearchToTopBar } from './search-bar.ts'
 import { aboutInCredits } from './about.ts'
@@ -33,6 +34,8 @@ const ui: ForkModule = {
     const keyPanel = document.querySelector<HTMLElement>('.oim-key-panel')
     keyButton?.closest('.maplibregl-ctrl')?.remove()
     if (switcherButton) {
+      // The fork's own icon (ui/icons.ts), not the package's squares (ui/panel.css).
+      switcherButton.append(layersIcon())
       switcherButton.onmouseover = null
       switcherButton.title = t('data-layers.title', 'Data layers')
       switcherButton.setAttribute('aria-label', t('data-layers.title', 'Data layers'))
