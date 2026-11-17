@@ -704,7 +704,8 @@
     "pointer": "Pointer",
     "under": "Under the pointer",
     "title": "Debug",
-    "show": "Show debug info on the map (zoom, scale, tiles, what is under the pointer)"
+    "show": "Show debug info on the map (zoom, scale, tiles, what is under the pointer)",
+    "details": "Debug info"
   },
   "data-layers": {
     "title": "Data layers",
@@ -724,8 +725,7 @@
     "height": "Height",
     "starts-at": "Starts at",
     "area": "Area (on the ground)",
-    "building": "Building",
-    "source": "From the background map (OpenStreetMap, via Protomaps)."
+    "building": "Building"
   },
   "view3d": {
     "button": "3D view: tilt the map, buildings rise"
@@ -738,7 +738,12 @@
     "tertiary": "Tertiary roads",
     "links": "Slip roads",
     "small": "Small roads",
-    "paths": "Paths and tracks"
+    "paths": "Paths and tracks",
+    "road": "Road",
+    "tram": "Tram",
+    "metro": "Metro",
+    "light-rail": "Light rail",
+    "railway": "Railway"
   },
   "railways": {
     "main": "Main lines",

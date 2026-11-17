@@ -63,7 +63,7 @@ def test_loom_tiles_kept_with_our_properties_tunnels_cut_networks_merged(tmp_pat
         files.append(path)
     # Underground: the tile's east half.
     underground = shapely.box((west + east) / 2, south, east, north)
-    data = loom_tiles.repacked(files, z, x, y, loom_tiles.Around(underground, line_stops.StopIndex([])))
+    data = loom_tiles.repacked(files, z, x, y, loom_tiles.Around({z: underground}, line_stops.StopIndex([])))
     assert data is not None
     tile = mapbox_vector_tile.decode(gzip.decompress(data))
     assert set(tile) == {"lines"}  # LOOM's stations left out
@@ -109,3 +109,10 @@ def test_a_lines_stops_one_per_name_nearby_platforms_when_no_stops(tmp_path):
     layer = index.layer(tile_bounds(z, x, y))
     assert layer is not None and layer["name"] == "stops"
     assert {f["properties"]["name"] for f in layer["features"]} >= {"Homme de Fer"}
+
+
+def test_tunnels_reach_as_far_as_a_bundle_of_lanes_spreads():
+    # Zoomed out LOOM spreads the lanes further: twice as far a zoom out.
+    assert loom_tiles.bundle_spread(12) == 2 * loom_tiles.bundle_spread(13)
+    # Five lanes of 1.5 pixels (256 to a tile) at zoom 12: about 38 m a pixel.
+    assert 140 < loom_tiles.bundle_spread(12) < 160

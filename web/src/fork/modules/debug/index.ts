@@ -3,14 +3,16 @@
 // metres per pixel, whether tiles are loading, the screen, how many style layers
 // are drawn, and under the pointer its position and the features there (style
 // layer, tile layer, id). Bottom right above the credits, a fixed size (what changes
-// doesn't move it); updated as the map moves.
-import type { Map } from 'maplibre-gl'
-import { el } from 'redom'
+// doesn't move it); updated as the map moves. While on, a clicked feature's details
+// end with a "Debug info" section: its layer, source and every property.
+import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
+import { el, mount } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { readText, writeText } from '../../core/storage.ts'
 import { ForkModule } from '../../types.ts'
+import { addDetailsExtra } from '../../ui/details.ts'
 import { addSettingsSection } from '../../ui/settings.ts'
-import { debugInfo } from './info.ts'
+import { debugInfo, featureRows } from './info.ts'
 import './debug.css'
 
 const KEY = 'oim-debug'
@@ -61,6 +63,18 @@ function debugBox(map: Map) {
   }
 }
 
+/** A feature's details while debugging: marked as such, then its rows. */
+function debugDetails(feature: MapGeoJSONFeature): HTMLElement {
+  return el(
+    'section.oim-debug-details',
+    el('h4', t('debug.details', 'Debug info')),
+    el(
+      'table.item_info',
+      featureRows(feature).map(([key, value]) => el('tr', el('th', key), el('td', value)))
+    )
+  )
+}
+
 const debug: ForkModule = {
   init: ({ map }) => {
     const box = debugBox(map)
@@ -69,6 +83,9 @@ const debug: ForkModule = {
       on.checked = value
       box.show(value)
     }
+    addDetailsExtra((feature, content) => {
+      if (on.checked) mount(content, debugDetails(feature))
+    })
     on.onchange = () => {
       writeText(KEY, on.checked ? '1' : '0')
       apply(on.checked)

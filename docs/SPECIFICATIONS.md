@@ -247,6 +247,9 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.25 | Trams and metro: tunnels at the same level as the lines above ground, a full outline around a see-through line; junctions clean at every zoom (no outlines across the lanes). | ✅ (2026-11-17) `lane-layers.ts` |
 | 10.26 | Clicking a tram or metro line highlights the whole line on the map. | ✅ (2026-11-17) `modules/roads/lane-highlight.ts`, from zoom 12 (LOOM's lanes) |
 | 10.27 | A highlighted tram or metro line shows its stops. | ✅ (2026-11-17) `line_stops.py` (the routes' stops, else platforms; a stop's positions within 200 m one), `lane-highlight.ts` (each named, smaller zoomed out) |
+| 10.28 | Details of a clicked road, railway, tram or metro line: a title a person would use ("A35 – Autoroute des Cigognes", "D392 – Route de Schirmeck", "Tram F") and the copy button, nothing else; a building without its data source note; every raw property only with debug on, marked "Debug info". | ✅ (2026-11-17) `modules/roads/popup.ts`, `modules/debug` |
+| 10.29 | Trams and metro in tunnels drawn see-through at every zoom (zoomed out only some lanes were). | ✅ (2026-11-17) `loom_tiles.py`: tunnels widened per zoom as far as a bundle of lanes spreads |
+| 10.30 | Airports: small taxiway pieces drawn that the original map leaves out (Entzheim, zoom 14). | 🔍 which layer draws them, to find out |
 
 ## 11. Quality
 

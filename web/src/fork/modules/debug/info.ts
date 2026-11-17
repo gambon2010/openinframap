@@ -63,3 +63,17 @@ export function debugInfo(
     under: pointer ? describeFeatures(map.queryRenderedFeatures([pointer.x, pointer.y])) : []
   }
 }
+
+/** What a clicked feature is, for its details while debugging: where it's drawn
+ * (style layer, source, tile layer), then every property. */
+export function featureRows(feature: MapGeoJSONFeature): [string, string][] {
+  const where: [string, string][] = [
+    ['layer', feature.layer.id],
+    ['source', String(feature.source)],
+    ['source-layer', feature.sourceLayer ?? '']
+  ]
+  const properties = Object.keys(feature.properties)
+    .sort()
+    .map((key): [string, string] => [key, String(feature.properties[key])])
+  return [...where, ...properties].filter(([, value]) => value !== '')
+}

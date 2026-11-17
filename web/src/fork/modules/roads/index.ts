@@ -14,6 +14,7 @@ import { ForkModule } from '../../types.ts'
 import { valueFor } from './builder.ts'
 import { LANES_SOURCE, lanesSource } from './lane-layers.ts'
 import { highlightWholeLines } from './lane-highlight.ts'
+import { roadDetails } from './popup.ts'
 import { roadsKey } from './key.ts'
 import { ROADS_PREFIX, roadLayers } from './layers.ts'
 import { RAILWAYS_PREFIX, TRANSIT_KINDS, TRANSIT_PREFIX } from './rail-layers.ts'
@@ -188,6 +189,8 @@ const roads: ForkModule = {
   },
 
   key: async () => roadsKey(entryNames()),
+
+  popup: { html: roadDetails },
 
   init: ({ map, layerSwitcher }) => {
     const loaded = () => {

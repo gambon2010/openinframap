@@ -7,8 +7,9 @@ through junctions (its layers "lines" and "inner-connections", their offsets
 written into the geometry, one set of tiles per zoom). Kept here: the lines and
 the joins, each piece with its line ("tram:A": `kind` and `ref`), its colour, and
 `tunnel` where it runs underground (LOOM doesn't say: the tunnel tracks of the
-railways file, widened, cut each piece). Beside them the lines' stops (line_stops.py),
-shown when a line is highlighted.
+railways file, widened, cut each piece; widened as far as LOOM spreads a bundle of
+lanes at each zoom, or the outer lanes would come out above ground). Beside them
+the lines' stops (line_stops.py), shown when a line is highlighted.
 
     python -m src.fork.background.loom_tiles --area AREA [--folder DIR]
 """
@@ -32,15 +33,19 @@ from pmtiles.writer import Writer
 from . import OFFLINE_MAPS_DIR
 from .line_stops import STOPS_LAYER, StopIndex, stops
 from .loom_input import lines_in, work_of
-from .tiles import EXTENT, in_tile_units, map_units, tile_bounds, zipped
+from .tiles import EXTENT, HALF, in_tile_units, map_units, tile_bounds, zipped
 from .transit import TRANSIT
 from .transit_lines import TRANSIT_KINDS
 from .zoomed_railways import mercator, source_of
 
 LAYERS = ("lines", "inner-connections")
 ZOOMS = range(12, 19)
-# A tunnel track widened by this much on the ground: LOOM's lanes run beside it.
+# A tunnel track widened by this much on the ground (a track's own spread)...
 TUNNEL_REACH_M = 15
+# ...and by as far as LOOM spreads a bundle of lanes to one side, in its pixels (256
+# to a tile; scripts/offline_maps/transit.py: a lane 1.5 of them, five lanes 7.5).
+BUNDLE_HALF_PX = 4
+LOOM_TILE_PX = 256
 
 
 def transit_of(folder: Path, area: str) -> Path:
@@ -50,9 +55,9 @@ def transit_of(folder: Path, area: str) -> Path:
 @dataclass
 class Around:
     """What the railways file adds to LOOM's tiles: where the lines run underground
-    (web Mercator metres), and their stops."""
+    at each zoom (web Mercator metres), and their stops."""
 
-    underground: shapely.Geometry
+    underground: dict[int, shapely.Geometry]
     stops: StopIndex
 
 
@@ -72,15 +77,24 @@ class _Tunnels(osmium.SimpleHandler):
             self.lines.append(shapely.LineString(mercator(lon_lat)))
 
 
-def tunnels(railways: Path) -> shapely.Geometry:
-    """Where the trams and metro run underground, in web Mercator metres."""
+def tunnels(railways: Path) -> dict[int, shapely.Geometry]:
+    """Where the trams and metro run underground at each zoom of ZOOMS, in web
+    Mercator metres: the tunnel tracks widened by TUNNEL_REACH_M and a bundle's
+    spread there."""
     reader = _Tunnels()
     reader.apply_file(str(railways), locations=True)
     if not reader.lines:
-        return shapely.Polygon()
-    _, south, _, north = shapely.total_bounds(np.array(reader.lines, dtype=object))
-    reach = map_units(TUNNEL_REACH_M, (south + north) / 2)
-    return shapely.union_all(shapely.buffer(np.array(reader.lines, dtype=object), reach))
+        return {z: shapely.Polygon() for z in ZOOMS}
+    lines = np.array(reader.lines, dtype=object)
+    _, south, _, north = shapely.total_bounds(lines)
+    on_the_ground = map_units(TUNNEL_REACH_M, (south + north) / 2)
+    return {z: shapely.union_all(shapely.buffer(lines, on_the_ground + bundle_spread(z))) for z in ZOOMS}
+
+
+def bundle_spread(z: int) -> float:
+    """How far LOOM spreads a bundle of lanes to one side at a zoom (web Mercator
+    metres)."""
+    return BUNDLE_HALF_PX * 2 * HALF / (LOOM_TILE_PX * 2**z)
 
 
 def tile_paths(work: Path) -> dict[tuple[int, int, int], list[Path]]:
@@ -105,7 +119,7 @@ def repacked(files: list[Path], z: int, x: int, y: int, around: Around) -> bytes
         for name in LAYERS:
             layer = tile.get(name)
             for feature in layer["features"] if layer else []:
-                features[name] += pieces(feature, layer["extent"], bounds, around.underground)
+                features[name] += pieces(feature, layer["extent"], bounds, around.underground[z])
     layers = [{"name": name, "features": found} for name, found in features.items() if found]
     if not layers:
         return None

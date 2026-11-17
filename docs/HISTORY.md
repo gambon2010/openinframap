@@ -616,6 +616,17 @@ on top of everything (the higher a label's layer, the sooner it gets its place: 
 map's own labels pushed them out) on whichever side of the dot has room, with a
 thin halo (the map labels' wide blurred one made a white box).
 
+**Details panels by name, debug apart (2026-11-17):** a clicked lane's panel was
+titled with its style layer (transit_tram_lanes_ground) and listed colour, kind and
+reference; a road's its tile properties (kind_detail, network, shield_text). Now
+roads, railways and trams are titled as a person names them (the number as signed,
+then the name; the kind and letter) with only the copy button; the building's
+"from the background map" note went. With debug on, every clicked feature's
+details end with its layer, source and properties, headed "Debug info". Tunnels
+zoomed out: they were marked by cutting LOOM's lanes within 15 m of a tunnel track,
+but zoomed out LOOM spreads a bundle much wider, so only the middle lanes were
+cut; the reach now grows with the spread at each zoom.
+
 ---
 
 ## Building outlines (2026-11-11)

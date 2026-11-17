@@ -36,3 +36,22 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* A clicked feature's debug info (debug/index.ts), set apart from its details. */
+.oim-debug-details {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--oim-light-grey);
+  font-size: 12px;
+}
+.oim-debug-details h4 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+.oim-debug-details td {
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}

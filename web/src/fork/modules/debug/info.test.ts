@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { MapGeoJSONFeature } from 'maplibre-gl'
-import { describeFeatures, scaleText } from './info.ts'
+import { describeFeatures, featureRows, scaleText } from './info.ts'
 
 describe('debug info', () => {
   test('scale: 1:N in the OGC pixel (0.28 mm), 3 significant digits', () => {
@@ -16,5 +16,21 @@ describe('debug info', () => {
     const lines = describeFeatures(many)
     expect(lines).toHaveLength(7)
     expect(lines[6]).toBe('… 3 more')
+  })
+
+  test('a clicked feature: where it is drawn, then every property, sorted', () => {
+    const feature = {
+      layer: { id: 'transit_tram_lanes_ground' },
+      source: 'transit',
+      sourceLayer: 'lines',
+      properties: { ref: 'B', kind: 'tram' }
+    } as unknown as MapGeoJSONFeature
+    expect(featureRows(feature)).toEqual([
+      ['layer', 'transit_tram_lanes_ground'],
+      ['source', 'transit'],
+      ['source-layer', 'lines'],
+      ['kind', 'tram'],
+      ['ref', 'B']
+    ])
   })
 })

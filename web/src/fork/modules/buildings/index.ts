@@ -6,7 +6,6 @@
 // layers' copy tool or the details' copy button make it an area of your own.
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
-import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { formatArea } from '../../core/geo.ts'
 import {
@@ -46,18 +45,14 @@ const buildings: ForkModule = {
 function details(feature: MapGeoJSONFeature): HTMLElement {
   const p = feature.properties
   const area = groundArea(feature)
-  return detailsCard(
-    t('buildings.building', 'Building'),
+  return detailsCard(t('buildings.building', 'Building'), [
+    [t('buildings.height', 'Height'), typeof p.height === 'number' && `${Math.round(p.height)} m`],
     [
-      [t('buildings.height', 'Height'), typeof p.height === 'number' && `${Math.round(p.height)} m`],
-      [
-        t('buildings.starts-at', 'Starts at'),
-        typeof p.min_height === 'number' && p.min_height > 0 && `${Math.round(p.min_height)} m`
-      ],
-      [t('buildings.area', 'Area (on the ground)'), area ? formatArea(area) : undefined]
+      t('buildings.starts-at', 'Starts at'),
+      typeof p.min_height === 'number' && p.min_height > 0 && `${Math.round(p.min_height)} m`
     ],
-    el('p.oim-extra-notice', t('buildings.source', 'From the background map (OpenStreetMap, via Protomaps).'))
-  )
+    [t('buildings.area', 'Area (on the ground)'), area ? formatArea(area) : undefined]
+  ])
 }
 
 /** Square metres: zoomed out, measured whole when the tiles were made; closer, from

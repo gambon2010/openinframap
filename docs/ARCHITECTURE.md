@@ -63,7 +63,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                rail-layers.ts railways by rank, trams and metro by kind (a plain line
                zoomed out); lane-layers.ts from zoom 12 LOOM's lanes, each line in its
                lane and colour (source "transit"); lane-highlight.ts a clicked line
-               highlighted whole, with its stops (cleared with ui/highlight.ts's); builder.ts how a layer is made, values by look
+               highlighted whole, with its stops (cleared with ui/highlight.ts's);
+               popup.ts a clicked one's details: its title only ("A35 – Autoroute
+               des Cigognes", "Tram B"); builder.ts how a layer is made, values by look
                and background; key.ts the kinds as key rows under each entry
                (sidings and depots hidden at first); street names white over imagery
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
@@ -72,6 +74,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                mapped with parts (their parts raised instead)
   view3d       the 3D button: the map tilted, tilting and turning allowed, buildings on
   map-sources  background tiles and Photon (Settings)
+  debug        Settings → Debug: a box of the map's state (zoom, scale, tiles, what is
+               under the pointer), and a clicked feature's layer, source and every
+               property at the end of its details ("Debug info")
   layout       no header; the dock, About in the credits, the search box top left
   account      who is logged in and Log out (a map button), Settings → Accounts (admins)
   userlayers   My layers (below)
