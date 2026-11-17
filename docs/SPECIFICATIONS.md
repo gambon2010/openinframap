@@ -249,7 +249,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.27 | A highlighted tram or metro line shows its stops. | ✅ (2026-11-17) `line_stops.py` (the routes' stops, else platforms; a stop's positions within 200 m one), `lane-highlight.ts` (each named, smaller zoomed out) |
 | 10.28 | Details of a clicked road, railway, tram or metro line: a title a person would use ("A35 – Autoroute des Cigognes", "D392 – Route de Schirmeck", "Tram F") and the copy button, nothing else; a building without its data source note; every raw property only with debug on, marked "Debug info". | ✅ (2026-11-17) `modules/roads/popup.ts`, `modules/debug` |
 | 10.29 | Trams and metro in tunnels drawn see-through at every zoom (zoomed out only some lanes were). | ✅ (2026-11-17) `loom_tiles.py`: tunnels widened per zoom as far as a bundle of lanes spreads |
-| 10.30 | Airports: small taxiway pieces drawn that the original map leaves out (Entzheim, zoom 14). | 🔍 which layer draws them, to find out |
+| 10.30 | Airports: the stand lead-in hooks (Entzheim) not drawn; the named taxiways, the stand spokes and the corners kept. | 🔍 (2026-11-17) the background map's own `osm_taxiway`; in OpenStreetMap the hooks are taxiways tagged only `aeroway=taxiway` (no name, width or disused); a rule on those tags needs the build to read the airports from the extract and to rewrite the airport tiles at zooms 14–15: awaiting the owner's go-ahead |
 
 ## 11. Quality
 
