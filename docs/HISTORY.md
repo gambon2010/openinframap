@@ -604,7 +604,12 @@ zoomed-out roads kept only what the styles read; their name and numbers come alo
 now (a road's pieces still join, two roads stay apart, as Planetiler does). France's
 zoomed-out file 449 MB (was 401). A clicked tram or metro line is highlighted whole:
 a glow and the line's own lane on LOOM's tiles, filtered to the line, so it follows
-every zoom and pan (not a copy of the pieces on screen at the click).
+every zoom and pan (not a copy of the pieces on screen at the click). First version
+never showed: MapLibre takes a zoom curve only at the top of an expression (the
+glow's width was "lane + 10"), and dropped the layer. Stops: from the routes' stop
+members (a route listing none, its platforms), one per name within 200 m (a stop
+position per direction), in the trams' tiles with the lines calling there by
+letter (a route's kind can differ from its tracks').
 
 ---
 

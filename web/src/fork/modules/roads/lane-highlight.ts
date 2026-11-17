@@ -2,8 +2,11 @@
 // LOOM's lanes are tiles with each line's lanes offset beside the others, so the
 // highlight is two layers on those tiles, filtered to the line: a glow over the
 // lanes and the line's own lane over it, at every zoom the lanes show and wherever
-// the map goes. Cleared with the details panel's highlight (ui/highlight.ts).
-import type { FilterSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
+// the map goes; and its stops (the tiles' STOPS_LAYER: the backend's line_stops.py),
+// named from STOP_NAMES_FROM. Cleared with the details panel's highlight
+// (ui/highlight.ts).
+import type { ExpressionSpecification, FilterSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
+import { font, text_paint } from '../../../style/common.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { leftColumn } from '../../ui/left-column.ts'
 import { LANES_FROM } from './roads.constants.ts'
@@ -16,6 +19,15 @@ const GLOW_BLUR = 2
 /** Pixels of glow either side of the lane. */
 const GLOW_REACH = 5
 const NOTHING: FilterSpecification = ['==', ['get', 'ref'], '']
+/** The tiles' layer of stops: each with its name and the lines calling there
+ * (",A,D,"; line_stops.py's). */
+export const STOPS_LAYER = 'stops'
+const STOPS_ID = 'lane_highlight_stops'
+const STOP_NAMES_ID = 'lane_highlight_stop_names'
+const STOP_NAMES_FROM = 14
+const STOP_RADIUS: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], LANES_FROM, 3, 18, 7]
+const STOP_EDGE_COLOUR = '#222222'
+const STOP_FILL = '#ffffff'
 
 /** The highlight's layers: per LOOM layer, a glow then the lane. */
 function highlightIds(sourceLayer: string) {
@@ -25,6 +37,49 @@ function highlightIds(sourceLayer: string) {
 /** A line's lanes and joins: its kind and letter ("tram", "A"). */
 export function lineFilter(kind: string, ref: string): FilterSpecification {
   return ['all', ['==', ['get', 'kind'], kind], ['==', ['get', 'ref'], ref]]
+}
+
+/** The stops a line calls at, by its letter (a stop's lines: ",A,D,"). */
+export function stopsFilter(ref: string): FilterSpecification {
+  return ['in', `,${ref},`, ['get', 'lines']]
+}
+
+/** A highlighted line's stops, a dot each, named closer in; over its lane. */
+function addStopLayers(map: Map, before: string | undefined) {
+  if (map.getLayer(STOPS_ID)) return
+  const from = { source: LANES_SOURCE, 'source-layer': STOPS_LAYER, minzoom: LANES_FROM, filter: NOTHING }
+  map.addLayer(
+    {
+      ...from,
+      id: STOPS_ID,
+      type: 'circle',
+      paint: {
+        'circle-radius': STOP_RADIUS,
+        'circle-color': STOP_FILL,
+        'circle-stroke-color': STOP_EDGE_COLOUR,
+        'circle-stroke-width': 1.5
+      }
+    },
+    before
+  )
+  map.addLayer(
+    {
+      ...from,
+      id: STOP_NAMES_ID,
+      type: 'symbol',
+      minzoom: STOP_NAMES_FROM,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': font,
+        'text-size': 12,
+        'text-anchor': 'left',
+        'text-offset': [0.8, 0],
+        'text-optional': true
+      },
+      paint: text_paint
+    },
+    before
+  )
 }
 
 /** The highlight's layers over the lanes, under the borders, matching nothing yet. */
@@ -64,13 +119,16 @@ function addLayers(map: Map) {
       before
     )
   }
+  addStopLayers(map, before)
 }
 
-function showOnly(map: Map, filter: FilterSpecification) {
+/** Only these lanes and stops highlighted. */
+function showOnly(map: Map, lanes: FilterSpecification, stops: FilterSpecification) {
   for (const sourceLayer of LOOM_LAYERS) {
     const ids = highlightIds(sourceLayer)
-    for (const id of [ids.glow, ids.lane]) if (map.getLayer(id)) map.setFilter(id, filter)
+    for (const id of [ids.glow, ids.lane]) if (map.getLayer(id)) map.setFilter(id, lanes)
   }
+  for (const id of [STOPS_ID, STOP_NAMES_ID]) if (map.getLayer(id)) map.setFilter(id, stops)
 }
 
 function isLane(feature: MapGeoJSONFeature) {
@@ -83,11 +141,12 @@ export function highlightWholeLines(map: Map) {
   if (map.isStyleLoaded()) addLayers(map)
   else map.once('load', () => addLayers(map))
   const highlight = leftColumn.highlight
-  highlight.onClear(() => showOnly(map, NOTHING))
+  highlight.onClear(() => showOnly(map, NOTHING, NOTHING))
   addDetailsExtra((feature) => {
     if (!isLane(feature)) return
     // The details' own highlight drew the clicked piece only: the whole line instead.
     highlight.setData([])
-    showOnly(map, lineFilter(String(feature.properties['kind']), String(feature.properties['ref'])))
+    const ref = String(feature.properties['ref'])
+    showOnly(map, lineFilter(String(feature.properties['kind']), ref), stopsFilter(ref))
   })
 }

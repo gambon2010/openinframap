@@ -102,5 +102,13 @@ def test_the_railways_are_named_and_kinded_alike():
     # transitmap's tiles: a tenth of the width given, in pixels of 256 to a tile.
     assert float(width) == 2 * transit.LOOM_LINE_WIDTH / 10
     assert f"LANES_TO = {transit.LOOM_ZOOMS[-1]}" in lanes
+    stops = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "line_stops.py"
+    ).read_text()
+    highlight = (
+        ROOT / "web" / "src" / "fork" / "modules" / "roads" / "lane-highlight.ts"
+    ).read_text()
+    stops_layer = re.search(r'STOPS_LAYER = "(\w+)"', stops)[1]
+    assert f"STOPS_LAYER = '{stops_layer}'" in highlight
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()
     assert f'GEOFABRIK_INDEX="$OSM_DIR/{regions.GEOFABRIK_INDEX.name}"' in shell

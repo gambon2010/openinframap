@@ -7,7 +7,8 @@ through junctions (its layers "lines" and "inner-connections", their offsets
 written into the geometry, one set of tiles per zoom). Kept here: the lines and
 the joins, each piece with its line ("tram:A": `kind` and `ref`), its colour, and
 `tunnel` where it runs underground (LOOM doesn't say: the tunnel tracks of the
-railways file, widened, cut each piece).
+railways file, widened, cut each piece). Beside them the lines' stops (line_stops.py),
+shown when a line is highlighted.
 
     python -m src.fork.background.loom_tiles --area AREA [--folder DIR]
 """
@@ -17,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,7 @@ from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
 
 from . import OFFLINE_MAPS_DIR
+from .line_stops import STOPS_LAYER, StopIndex, stops
 from .loom_input import lines_in, work_of
 from .tiles import EXTENT, in_tile_units, map_units, tile_bounds, zipped
 from .transit import TRANSIT
@@ -42,6 +45,15 @@ TUNNEL_REACH_M = 15
 
 def transit_of(folder: Path, area: str) -> Path:
     return folder / f"{area}{TRANSIT}"
+
+
+@dataclass
+class Around:
+    """What the railways file adds to LOOM's tiles: where the lines run underground
+    (web Mercator metres), and their stops."""
+
+    underground: shapely.Geometry
+    stops: StopIndex
 
 
 class _Tunnels(osmium.SimpleHandler):
@@ -82,9 +94,10 @@ def tile_paths(work: Path) -> dict[tuple[int, int, int], list[Path]]:
     return found
 
 
-def repacked(files: list[Path], z: int, x: int, y: int, underground: shapely.Geometry) -> bytes | None:
+def repacked(files: list[Path], z: int, x: int, y: int, around: Around) -> bytes | None:
     """A tile from LOOM's tiles of it (one per network there): their lines and joins
-    only, their properties ours, cut where they go underground; None if none."""
+    only, their properties ours, cut where they go underground, and the stops there;
+    None if no lines."""
     bounds = tile_bounds(z, x, y)
     features: dict[str, list] = {name: [] for name in LAYERS}
     for path in files:
@@ -92,10 +105,13 @@ def repacked(files: list[Path], z: int, x: int, y: int, underground: shapely.Geo
         for name in LAYERS:
             layer = tile.get(name)
             for feature in layer["features"] if layer else []:
-                features[name] += pieces(feature, layer["extent"], bounds, underground)
+                features[name] += pieces(feature, layer["extent"], bounds, around.underground)
     layers = [{"name": name, "features": found} for name, found in features.items() if found]
     if not layers:
         return None
+    stops_here = around.stops.layer(bounds)
+    if stops_here:
+        layers.append(stops_here)
     return zipped(mapbox_vector_tile.encode(layers, default_options={"extents": EXTENT}))
 
 
@@ -152,7 +168,8 @@ def write(path: Path, tiles: list[tuple[int, bytes]], area: str) -> None:
                         },
                     }
                     for name in LAYERS
-                ],
+                ]
+                + [{"id": STOPS_LAYER, "fields": {"name": "String", "lines": "String"}}],
             },
         )
 
@@ -173,11 +190,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--area", required=True)
     parser.add_argument("--folder", type=Path, default=OFFLINE_MAPS_DIR)
     args = parser.parse_args(argv)
-    underground = tunnels(source_of(args.folder / f"{args.area}.pmtiles"))
+    railways = source_of(args.folder / f"{args.area}.pmtiles")
+    around = Around(tunnels(railways), StopIndex(stops(railways)))
     work = work_of(args.folder, args.area)
     tiles = []
     for (z, x, y), files in sorted(tile_paths(work).items(), key=lambda t: zxy_to_tileid(*t[0])):
-        data = repacked(files, z, x, y, underground)
+        data = repacked(files, z, x, y, around)
         if data:
             tiles.append((zxy_to_tileid(z, x, y), data))
     out = transit_of(args.folder, args.area)

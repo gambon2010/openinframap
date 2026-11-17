@@ -246,6 +246,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.24 | Clicking a road shows its information (name, number such as A35, European number) at every zoom, zoomed out too. | ✅ (2026-11-17) `zoomed_roads.py` KEPT; needs the zoomed-out tiles rebuilt |
 | 10.25 | Trams and metro: tunnels at the same level as the lines above ground, a full outline around a see-through line; junctions clean at every zoom (no outlines across the lanes). | ✅ (2026-11-17) `lane-layers.ts` |
 | 10.26 | Clicking a tram or metro line highlights the whole line on the map. | ✅ (2026-11-17) `modules/roads/lane-highlight.ts`, from zoom 12 (LOOM's lanes) |
+| 10.27 | A highlighted tram or metro line shows its stops. | ✅ (2026-11-17) `line_stops.py` (the routes' stops, else platforms; a stop's positions within 200 m one), `lane-highlight.ts` (names from zoom 14) |
 
 ## 11. Quality
 

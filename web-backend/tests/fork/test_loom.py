@@ -6,7 +6,7 @@ import gzip
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import shapely
 
-from src.fork.background import loom_input, loom_tiles
+from src.fork.background import line_stops, loom_input, loom_tiles
 from src.fork.background.tiles import tile_bounds
 
 OSM = """<?xml version="1.0" encoding="UTF-8"?>
@@ -63,10 +63,10 @@ def test_loom_tiles_kept_with_our_properties_tunnels_cut_networks_merged(tmp_pat
         files.append(path)
     # Underground: the tile's east half.
     underground = shapely.box((west + east) / 2, south, east, north)
-    data = loom_tiles.repacked(files, z, x, y, underground)
+    data = loom_tiles.repacked(files, z, x, y, loom_tiles.Around(underground, line_stops.StopIndex([])))
     assert data is not None
     tile = mapbox_vector_tile.decode(gzip.decompress(data))
-    assert set(tile) == {"lines"}  # stations left out
+    assert set(tile) == {"lines"}  # LOOM's stations left out
     props = [f["properties"] for f in tile["lines"]["features"]]
     assert {(p["kind"], p["ref"], p["colour"], p.get("tunnel", False)) for p in props} == {
         ("tram", "A", "#ff0000", False),
@@ -74,3 +74,38 @@ def test_loom_tiles_kept_with_our_properties_tunnels_cut_networks_merged(tmp_pat
         ("subway", "1", "#00ff00", False),
         ("subway", "1", "#00ff00", True),
     }
+
+
+STOPS_OSM = """<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6">
+  <node id="1" lat="48.5800" lon="7.7400"><tag k="name" v="Homme de Fer"/></node>
+  <node id="2" lat="48.5805" lon="7.7402"><tag k="name" v="Homme de Fer"/></node>
+  <node id="3" lat="48.6000" lon="7.7400"><tag k="name" v="Homme de Fer"/></node>
+  <node id="4" lat="48.5700" lon="7.7500"/><node id="5" lat="48.5700" lon="7.7510"/>
+  <way id="10"><nd ref="4"/><nd ref="5"/><tag k="name" v="Etoile"/></way>
+  <relation id="20"><member type="node" ref="1" role="stop"/>
+    <member type="node" ref="3" role="stop_exit_only"/>
+    <member type="way" ref="10" role="platform"/>
+    <tag k="type" v="route"/><tag k="route" v="tram"/><tag k="ref" v="A"/></relation>
+  <relation id="21"><member type="node" ref="2" role="stop"/>
+    <tag k="type" v="route"/><tag k="route" v="tram"/><tag k="ref" v="D"/></relation>
+  <relation id="22"><member type="way" ref="10" role="platform"/>
+    <tag k="type" v="route"/><tag k="route" v="light_rail"/><tag k="ref" v="E"/></relation>
+</osm>
+"""
+
+
+def test_a_lines_stops_one_per_name_nearby_platforms_when_no_stops(tmp_path):
+    path = tmp_path / "area.osm"
+    path.write_text(STOPS_OSM)
+    found = {(s.name, line_stops.lines_text(s.lines)) for s in line_stops.stops(path)}
+    assert found == {
+        ("Homme de Fer", ",A,D,"),  # A's and D's stops 60 m apart: one
+        ("Homme de Fer", ",A,"),  # the same name 2 km away: another
+        ("Etoile", ",E,"),  # E lists no stops: its platform (A has stops: not its platform)
+    }
+    index = line_stops.StopIndex(line_stops.stops(path))
+    z, x, y = 12, 2136, 1413  # Strasbourg's centre
+    layer = index.layer(tile_bounds(z, x, y))
+    assert layer is not None and layer["name"] == "stops"
+    assert {f["properties"]["name"] for f in layer["features"]} >= {"Homme de Fer"}
