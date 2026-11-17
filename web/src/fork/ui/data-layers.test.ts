@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { assignSections } from './data-layers.ts'
+import { assignSections, groupTick } from './data-layers.ts'
 
 const styleLayers = [
   { id: 'power_line_1', type: 'line', paint: { 'line-color': '#ff0000' } },
@@ -39,5 +39,14 @@ describe('Data layers: which entry a key section goes under', () => {
       'Damage and threats': 'S',
       'Something else': null
     })
+  })
+})
+
+describe('Data layers: a group’s tick box', () => {
+  test('ticked when all its entries are on, half when some are', () => {
+    const group = entries.slice(0, 2)
+    expect(groupTick(group, ['P', 'T'])).toEqual({ checked: true, indeterminate: false })
+    expect(groupTick(group, ['P'])).toEqual({ checked: false, indeterminate: true })
+    expect(groupTick(group, ['H'])).toEqual({ checked: false, indeterminate: false })
   })
 })

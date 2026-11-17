@@ -1,16 +1,12 @@
 // Fork: what's under the map's data, chosen in Settings → Background
-// (modules/background): the background map in its high contrast colours or its
-// original ones (applied by modules/map-sources/palette.ts), or satellite imagery,
-// alone or with the map's roads (drawn by modules/satellite, which says here what
-// imagery there is). They meet here: modules don't import each other. Kept in this
-// browser; the map in high contrast at first.
+// (modules/background): the background map (in the fork's colours:
+// modules/map-sources/palette.ts) or satellite imagery (drawn by modules/satellite,
+// which says here what imagery there is). They meet here: modules don't import each
+// other. Kept in this browser; the map at first.
 import type { Map } from 'maplibre-gl'
 import { readText, writeText } from '../core/storage.ts'
 
-export type MapColours = 'original' | 'contrast'
-export type BackgroundMode = 'map' | 'satellite' | 'hybrid'
-/** One choice of the section: the map in a colouring, or imagery. */
-export type BackgroundChoice = MapColours | Exclude<BackgroundMode, 'map'>
+export type BackgroundMode = 'map' | 'satellite'
 
 export type Bounds = [west: number, south: number, east: number, north: number]
 
@@ -18,40 +14,28 @@ export type Bounds = [west: number, south: number, east: number, north: number]
 export interface Imagery {
   /** Its last zoom. */
   maxzoom: number
-  /** Whether it covers any of a view (false: the imagery choices can't be picked). */
+  /** Whether it covers any of a view (false: imagery can't be picked). */
   covers: (view: Bounds) => Promise<boolean>
 }
 
-const COLOURS_KEY = 'oim-map-colours'
 const MODE_KEY = 'oim-background-mode'
 
-/** The map's colours and the mode as kept (anything else: the defaults). */
-export function readBackground(colours: string | null, mode: string | null) {
-  return {
-    colours: (colours === 'original' ? 'original' : 'contrast') as MapColours,
-    mode: (mode === 'satellite' || mode === 'hybrid' ? mode : 'map') as BackgroundMode
-  }
+/** The mode as kept (anything else: the map). */
+export function readMode(kept: string | null): BackgroundMode {
+  return kept === 'satellite' ? kept : 'map'
 }
 
-const kept = readBackground(readText(COLOURS_KEY), readText(MODE_KEY))
-let colours = kept.colours
-let mode = kept.mode
+let mode = readMode(readText(MODE_KEY))
 let imagery: Imagery | null = null
 const listeners: (() => void)[] = []
 
 export const background = {
-  /** The map's colouring (also kept while imagery is shown, for when the map comes back). */
-  colours: (): MapColours => colours,
-  /** The map, or imagery: only once there is some. */
+  /** What's shown: the map, or imagery once there is some. */
   mode: (): BackgroundMode => (imagery ? mode : 'map'),
-  /** What the section shows chosen. */
-  choice: (): BackgroundChoice => (background.mode() === 'map' ? colours : (mode as BackgroundChoice)),
-  choose(choice: BackgroundChoice) {
-    if (choice === 'original' || choice === 'contrast') {
-      colours = choice
-      mode = 'map'
-    } else mode = choice
-    writeText(COLOURS_KEY, colours)
+  /** What the section shows chosen (imagery may be chosen before it's known). */
+  chosen: (): BackgroundMode => mode,
+  choose(chosen: BackgroundMode) {
+    mode = chosen
     writeText(MODE_KEY, mode)
     for (const listener of listeners) listener()
   },
@@ -71,6 +55,12 @@ export const background = {
 type PaintProperty = Parameters<Map['setPaintProperty']>[1]
 type PaintValue = Parameters<Map['setPaintProperty']>[2]
 
+/** A paint value over the map, and over imagery. */
+export interface BackgroundValues {
+  map: PaintValue
+  imagery: PaintValue
+}
+
 /**
  * A paint property that follows the background: one value over the map, another
  * over imagery (e.g. dark outlines on the map, white ones on satellite photos).
@@ -80,7 +70,7 @@ export function followBackground(
   map: Map,
   layerId: string,
   property: PaintProperty,
-  values: { map: PaintValue; imagery: PaintValue }
+  values: BackgroundValues
 ) {
   const apply = () => {
     if (!map.getLayer(layerId)) return

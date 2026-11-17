@@ -1,13 +1,17 @@
 """src/fork/background/zoomed_roads.py (with zoomed_out.py): the roads zoomed out
 (zooms 8 to 13), copied down from a background map's zoom 15 tiles, with what
-Protomaps drops there (tunnel marks, small roads, paths, some big roads)."""
+Protomaps drops there (tunnel marks, small roads, paths, some big roads); in the
+same tiles as the railways."""
 
 import gzip
+import math
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
+import osmium  # type: ignore[import-untyped]
 import pytest
 
 from src.fork.background import Archive, zoomed_out
+from src.fork.background import zoomed_railways
 from src.fork.background import zoomed_roads as zr
 from tests.fork.test_background import make
 
@@ -94,3 +98,18 @@ def test_each_zoom_has_the_roads_shown_there_tunnels_marked(paris):
         assert (("path", False) in kinds) == (z >= 13), z
     # The properties the map's styles read come along; nothing else.
     assert set(at[13][0]["properties"]) <= set(zr.KEPT)
+
+
+def test_roads_and_railways_of_one_place_are_in_one_tile(paris, tmp_path):
+    # A main line across the zoom 15 tile, in degrees.
+    west, south, east, north = zoomed_out.tile_bounds(15, X, Y)
+    lat = math.degrees(math.atan(math.sinh((south + north) / 2 / zoomed_railways.HALF * math.pi)))
+    lons = [west / zoomed_railways.HALF * 180, east / zoomed_railways.HALF * 180]
+    with osmium.SimpleWriter(str(zoomed_railways.source_of(paris))) as writer:
+        for i, lon in enumerate(lons, 1):
+            writer.add_node(osmium.osm.mutable.Node(id=i, location=(lon, lat)))
+        writer.add_way(osmium.osm.mutable.Way(id=1, nodes=[1, 2], tags={"railway": "rail", "usage": "main"}))
+    companion = Archive.open(zoomed_out.make(paris, workers=1))
+    z = 12
+    data = companion.get(z, X >> (15 - z), Y >> (15 - z))
+    assert set(mapbox_vector_tile.decode(gzip.decompress(data))) == {zr.LAYER, zoomed_railways.LAYER}

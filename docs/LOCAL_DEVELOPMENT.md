@@ -269,9 +269,11 @@ files themselves each time (copy the folder and it comes along). Unattended:
 or `--resume --yes`.
 
 It's shown with
-**Settings → Background**: *Satellite* (imagery with place names) or *Satellite with
-roads* (also roads, railways and borders; buildings, when on, filled like roofs); *Map, high contrast* is the usual
-background (each kind of area its own pale shade), *Map, original colours* upstream's.
+**Settings → Background**: *Map* (each kind of area its own pale shade, its own
+light roads and railways) or *Satellite* (imagery with place names and borders;
+buildings, when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
+*Railways*, *Trams*, or the heading for all three) draws them bold, the same at
+every zoom, over the map (replacing its light ones) or over imagery.
 
 Three kinds, each adding detail to the one below (sizes are what's kept on disk):
 

@@ -5,8 +5,7 @@
 // them to VITE_SATELLITE_TIERS. Settings → Background (modules/background,
 // services/background.ts) chooses:
 //   map        the usual background map
-//   satellite  imagery instead of it (place names and infrastructure on top)
-//   hybrid     imagery with roads, railways and borders over it (modules/roads)
+//   satellite  imagery instead of it (place names, roads and infrastructure on top)
 import { Map, SourceSpecification } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'

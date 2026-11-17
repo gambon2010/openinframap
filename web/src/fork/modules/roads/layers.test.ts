@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
-import { RAILWAYS_LAYER, byRank, isRoadLayer, resized, roadLayers } from './layers.ts'
-import { isUpstreamRoadLayer } from './index.ts'
+import { RAILWAYS_LAYER, byRank, resized, roadLayers } from './layers.ts'
+import { isMapRailLayer, isMapRoadLayer, mapRailFilter } from './index.ts'
 import {
   HIGHWAY_COLOUR,
   HIGHWAY_MIN_WIDTH,
-  MAJOR_COLOUR,
-  MINOR_COLOUR,
   ROAD_WIDTH_SCALE,
   SMALL_ROAD_MIN_WIDTH,
   SMALL_EDGE_HAIRLINE,
+  TRAM_COLOUR,
   TUNNEL_DASHES,
   TUNNEL_EDGE_DASHES
 } from './roads.constants.ts'
@@ -17,25 +16,30 @@ import {
 const { layers: all, following } = roadLayers()
 type Line = Extract<(typeof all)[number], { type: 'line' }>
 const layers = all as Line[]
-const layer = (id: string) => layers.find((l) => l.id === `roads_${id}`) as Line
+/** A layer by its id (roads by theirs without the prefix). */
+const layer = (id: string) => layers.find((l) => l.id === id || l.id === `roads_${id}`) as Line
 const mapWidth = (id: string) => (baseLayers.find((l) => l.id === id) as Line).paint?.['line-width']
 /** A paint value over imagery (the layer itself has the map's). */
 const overImagery = (id: string, property: string) =>
-  following.find((f) => f.layerId === `roads_${id}` && f.property === property)?.values.imagery
+  following.find((f) => f.layerId === layer(id).id && f.property === property)?.values.imagery
 
 describe('roads, railways and borders', () => {
-  it('are the fork’s own layers, upstream’s hidden (but its piers)', () => {
-    expect(layers.every((l) => isRoadLayer(l.id))).toBe(true)
+  it('are the fork’s own layers, a set to each prefix', () => {
+    const prefixes = new Set(layers.map((l) => l.id.split('_')[0]))
+    expect(prefixes).toEqual(new Set(['roads', 'railways', 'trams', 'boundaries']))
     expect(new Set(layers.map((l) => l.id)).size).toBe(layers.length)
-    for (const id of [
-      'osm_roads_highway',
-      'osm_roads_tunnels_minor_casing',
-      'osm_rail',
-      'boundaries_country'
-    ])
-      expect(isUpstreamRoadLayer(id)).toBe(true)
-    for (const id of ['osm_roads_pier', 'osm_runway', 'osm_water', 'label_roads_major'])
-      expect(isUpstreamRoadLayer(id)).toBe(false)
+  })
+
+  it('replace the map’s own of their kind when ticked (its piers stay)', () => {
+    for (const id of ['osm_roads_highway', 'osm_roads_tunnels_minor_casing'])
+      expect(isMapRoadLayer(id)).toBe(true)
+    for (const id of ['osm_roads_pier', 'osm_runway', 'label_roads_major'])
+      expect(isMapRoadLayer(id)).toBe(false)
+    expect(isMapRailLayer('osm_rail_case')).toBe(true)
+    const shows = (filter: unknown) => JSON.stringify(filter)
+    expect(shows(mapRailFilter(false, false))).not.toContain('tram')
+    expect(shows(mapRailFilter(true, false))).toContain('["==",["get","kind_detail"],"tram"]')
+    expect(shows(mapRailFilter(false, true))).toContain('["!",["==",["get","kind_detail"],"tram"]]')
   })
 
   it('keep the background map’s widths, a little narrower, never too thin, with an edge around them', () => {
@@ -45,7 +49,9 @@ describe('roads, railways and borders', () => {
     expect(layer('tunnel_minor').paint?.['line-width']).toEqual(
       resized(mapWidth('osm_roads_minor'), ROAD_WIDTH_SCALE, SMALL_ROAD_MIN_WIDTH)
     )
-    expect(layer('rail_ground').paint?.['line-width']).toEqual(byRank(resized(mapWidth('osm_rail'), 1, 0)))
+    expect(layer('railways_ground').paint?.['line-width']).toEqual(
+      byRank(resized(mapWidth('osm_rail'), 1, 0))
+    )
   })
 
   it('resize only the widths of a width by zoom, not the zooms', () => {
@@ -64,19 +70,16 @@ describe('roads, railways and borders', () => {
     expect(() => resized(4, 1, 3)).toThrow()
   })
 
-  it('differ between the map and imagery in colours and edges only: the same roads, as wide', () => {
-    expect(layer('ground_highway').paint?.['line-color']).toBe(HIGHWAY_COLOUR.map)
-    expect(overImagery('ground_highway', 'line-color')).toBe(HIGHWAY_COLOUR.imagery)
-    expect(overImagery('ground_major', 'line-color')).toBe(MAJOR_COLOUR.imagery)
-    expect(overImagery('ground_minor', 'line-color')).toBe(MINOR_COLOUR.imagery)
-    expect(overImagery('ground_links', 'line-color')).toBe(MAJOR_COLOUR.imagery)
-    const shapes = following.filter((f) => f.property !== 'line-color' && f.property !== 'line-opacity')
-    expect(shapes.every((f) => f.property === 'line-width' && f.layerId.endsWith('_edge'))).toBe(true)
-  })
-
-  it('fade zoomed in over imagery only', () => {
+  it('are bold over the map and imagery alike, fading zoomed in over imagery only', () => {
+    expect(layer('ground_highway').paint?.['line-color']).toBe(HIGHWAY_COLOUR)
+    expect(following.every((f) => f.property === 'line-opacity')).toBe(true)
     expect(layer('ground_highway').paint?.['line-opacity']).toBe(1)
     expect(overImagery('ground_highway', 'line-opacity')).toEqual(expect.arrayContaining(['interpolate']))
+  })
+
+  it('draw borders over imagery only (the map draws its own)', () => {
+    expect(layer('boundaries_countries').paint?.['line-opacity']).toBe(0)
+    expect(overImagery('boundaries_countries', 'line-opacity')).toBe(1)
   })
 
   it('mark tunnels (dashed) instead of hiding them', () => {
@@ -85,20 +88,23 @@ describe('roads, railways and borders', () => {
     expect(JSON.stringify(edge.filter)).toContain('"has","is_tunnel"')
     expect(layer('tunnel_major').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
     expect(layer('ground_major').paint?.['line-dasharray']).toBeUndefined()
-    expect(layer('rail_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
-    expect(layer('rail_tunnel_dashes')).toBeUndefined()
+    expect(layer('railways_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+    expect(layer('railways_tunnel_dashes')).toBeUndefined()
+    expect(layer('trams_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
   })
 
-  it('draw tunnels first, then roads from the smallest up, railways, borders on top', () => {
-    const at = (id: string) => layers.findIndex((l) => l.id === `roads_${id}`)
+  it('draw tunnels first, then roads from the smallest up, railways, trams, borders on top', () => {
+    const at = (id: string) => layers.indexOf(layer(id))
     expect(at('tunnel_paths_edge')).toBe(0)
     expect(at('tunnel_highway')).toBeLessThan(at('ground_paths_edge'))
     expect(at('ground_minor')).toBeLessThan(at('ground_highway_edge'))
-    expect(at('ground_highway')).toBeLessThan(at('rail_ground_edge'))
-    expect(layers.slice(-3).map((l) => l.id)).toEqual([
-      'roads_rail_ground_dashes',
-      'roads_borders_edge',
-      'roads_borders'
+    expect(at('ground_highway')).toBeLessThan(at('railways_ground_edge'))
+    expect(layers.slice(-5).map((l) => l.id)).toEqual([
+      'railways_ground_dashes',
+      'trams_ground_edge',
+      'trams_ground',
+      'boundaries_countries_edge',
+      'boundaries_countries'
     ])
   })
 
@@ -111,10 +117,17 @@ describe('roads, railways and borders', () => {
   })
 
   it('draw ranked railways, the more important ones wider and on top', () => {
-    const rail = layer('rail_ground')
+    const rail = layer('railways_ground')
     expect(rail['source-layer']).toBe(RAILWAYS_LAYER)
     expect(rail.layout?.['line-sort-key']).toBeDefined()
     expect(JSON.stringify(rail.paint?.['line-width'])).toContain('"rank"')
-    expect(JSON.stringify(layer('rail_tunnel').filter)).toContain('"tunnel"')
+    expect(JSON.stringify(layer('railways_tunnel').filter)).toContain('"tunnel"')
+  })
+
+  it('draw trams apart from railways, a plain line without dashes', () => {
+    expect(JSON.stringify(layer('railways_ground').filter)).toContain('["!",["==",["get","kind"],"tram"]]')
+    expect(JSON.stringify(layer('trams_ground').filter)).toContain('["==",["get","kind"],"tram"]')
+    expect(layer('trams_ground').paint?.['line-color']).toBe(TRAM_COLOUR)
+    expect(layer('trams_ground_dashes')).toBeUndefined()
   })
 })

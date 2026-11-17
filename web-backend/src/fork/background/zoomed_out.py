@@ -12,8 +12,8 @@ appends its tiles to the background map's (background/__init__.py).
 The work goes one zoom 10 block at a time (its 1,024 zoom 15 tiles, in workers),
 each tile decoded once, only its buildings and roads: the block's buildings tiles
 (per zoom 12 block) and its roads tiles at zooms 10 to 13. The roads shown at zooms
-8 and 9 come back simplified, and their tiles are made at the end. The railways,
-a zoom per worker.
+8 and 9 come back simplified; at the end, their tiles and the railways' (a zoom
+per task) are made side by side in the same workers.
 
     python -m src.fork.background.zoomed_out [--area AREA] [--folder DIR]
 
@@ -46,7 +46,32 @@ from .tiles import EXTENT, children, tile_bounds, zipped
 
 FULL_ZOOM = 15
 UNIT_ZOOM = 10  # a worker's share: a zoom 10 block
-WORKERS = min(8, os.cpu_count() or 4)
+MAX_WORKERS = 8
+# A worker's memory at its busiest (a dense block, Paris: 0.6 GB; with room for
+# the area-wide roads at the end), and what's left to the rest of the computer.
+WORKER_MEMORY = 1.5e9
+KEPT_FREE = 4e9
+
+
+def worker_count() -> int:
+    """As many workers as the processors and the memory free allow (at least one):
+    too many, and the computer stops while they swap."""
+    free = available_memory()
+    by_memory = int((free - KEPT_FREE) // WORKER_MEMORY) if free else MAX_WORKERS
+    return max(1, min(MAX_WORKERS, os.cpu_count() or 4, by_memory))
+
+
+def available_memory() -> float | None:
+    """The memory free for new programs (Linux's MemAvailable), None if unknown."""
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) * 1024
+    except OSError:
+        pass  # Not Linux: the processors decide alone.
+    return None
+
+
 DECODED = {buildings.SOURCE_LAYER, roads.LAYER}
 MIN_ZOOM, MAX_ZOOM = railways.ZOOMS[0], railways.ZOOMS[-1]
 
@@ -137,9 +162,10 @@ def unit_tiles(read, ux: int, uy: int) -> tuple[list[tuple[int, bytes]], dict]:
 # --- A whole area -----------------------------------------------------------------------
 
 
-def make(background_map: Path, workers: int = WORKERS) -> Path | None:
+def make(background_map: Path, workers: int | None = None) -> Path | None:
     """The companion of one background map; None if it has no zoom 15 (the world
-    zoomed out). Written beside it under a hidden name, then renamed."""
+    zoomed out). Written beside it under a hidden name, then renamed. `workers`: by
+    default as many as the computer has room for (worker_count)."""
     source = Archive.open(background_map)
     if source is None or source.header["max_zoom"] < FULL_ZOOM:
         return None
@@ -149,7 +175,10 @@ def make(background_map: Path, workers: int = WORKERS) -> Path | None:
     started = time.monotonic()
     tiles: list[tuple[int, bytes]] = []
     zoomed_out_roads = roads.new_groups()
-    with ProcessPoolExecutor(max_workers=workers, initializer=_open, initargs=(background_map,)) as pool:
+    pool = ProcessPoolExecutor(
+        max_workers=workers or worker_count(), initializer=_open, initargs=(background_map,)
+    )
+    with pool:
         for done, (found, coarse) in enumerate(pool.map(one_unit, todo), 1):
             tiles += found
             roads.merge_into(zoomed_out_roads, coarse)
@@ -159,11 +188,7 @@ def make(background_map: Path, workers: int = WORKERS) -> Path | None:
                 file=sys.stderr,
                 flush=True,
             )
-    joined = roads.joined(zoomed_out_roads)
-    for z in roads.ZOOMS:
-        if z < UNIT_ZOOM:
-            tiles += roads.zoom_tiles(joined, z)
-    tiles += railway_tiles(railways.source_of(background_map), workers)
+        tiles += zoomed_right_out(pool, roads.joined(zoomed_out_roads), railways.source_of(background_map))
     write(partial, background_map, source, tiles)
     partial.replace(out)
     print(
@@ -173,30 +198,27 @@ def make(background_map: Path, workers: int = WORKERS) -> Path | None:
     return out
 
 
-# --- The railways (a zoom per worker) ---------------------------------------------------
+# --- The whole area at once: roads at zooms 8 and 9, the railways ----------------------
 
-_railways: tuple[np.ndarray, list] | None = None
-
-
-def _read_railways(path: Path) -> None:
-    global _railways
-    _railways = railways.read(path)
+_railways: dict[Path, tuple[np.ndarray, list]] = {}
 
 
-def _railway_zoom(z: int) -> list[tuple[int, bytes]]:
-    assert _railways is not None
-    lines, props = _railways
+def _railway_zoom(source: Path, z: int) -> list[tuple[int, bytes]]:
+    """A zoom's railway tiles, the file read once per worker."""
+    if source not in _railways:
+        _railways[source] = railways.read(source)
+    lines, props = _railways[source]
     return railways.zoom_tiles(lines, props, z)
 
 
-def railway_tiles(source: Path, workers: int) -> list[tuple[int, bytes]]:
-    """The railways' tiles at every zoom; none without a railways file."""
-    if not source.exists():
-        return []
-    with ProcessPoolExecutor(
-        max_workers=min(workers, len(railways.ZOOMS)), initializer=_read_railways, initargs=(source,)
-    ) as pool:
-        return [tile for found in pool.map(_railway_zoom, railways.ZOOMS) for tile in found]
+def zoomed_right_out(pool: ProcessPoolExecutor, joined_roads: dict, railways_source: Path) -> list:
+    """The tiles made from the whole area, each zoom a task in the workers: the
+    roads at zooms 8 and 9 (from every block's), the railways at every zoom (none
+    without a railways file)."""
+    tasks = [pool.submit(roads.zoom_tiles, joined_roads, z) for z in roads.ZOOMS if z < UNIT_ZOOM]
+    if railways_source.exists():
+        tasks += [pool.submit(_railway_zoom, railways_source, z) for z in railways.ZOOMS]
+    return [tile for task in tasks for tile in task.result()]
 
 
 def one_per_tile(tiles: list[tuple[int, bytes]]) -> list[tuple[int, bytes]]:

@@ -27,7 +27,7 @@ import osmium  # type: ignore[import-untyped]
 import shapely
 
 from .close_lines import one_line_where_close
-from .tiles import HALF, PIXELS, line_tiles, tile_size
+from .tiles import HALF, PIXELS, TileLayer, layer_tiles, tile_size
 
 LAYER = "railways"
 ZOOMS = range(6, 16)
@@ -126,7 +126,7 @@ def one_line_for_close_tracks(lines: np.ndarray, props: list, distance: float) -
 def zoom_tiles(lines: np.ndarray, props: list, z: int) -> list[tuple[int, bytes]]:
     """A zoom's railway tiles (tile id, gzip)."""
     shown_lines, shown_props = shown(lines, props, z)
-    return line_tiles(LAYER, shown_lines, shown_props, z)
+    return layer_tiles(TileLayer(LAYER, shown_lines, shown_props), z)
 
 
 def source_of(background_map: Path) -> Path:

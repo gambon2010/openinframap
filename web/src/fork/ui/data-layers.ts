@@ -1,5 +1,6 @@
 // Fork: the Data layers panel, upstream's layer list and key in one. Upstream's
-// groups (Infrastructure, Critical sites...) are headings; each of their entries
+// groups (Infrastructure, Critical sites...) are headings, with a tick box switching
+// all their entries (but a group of radio buttons); each of their entries
 // (Power, Telecoms...) is a row with its tick box (switching it on or off, through
 // upstream's layer switcher) that unfolds to the key sections of what it draws, each
 // key row with its own tick box (feature-hider.ts). A key section belongs to the
@@ -75,6 +76,15 @@ export function assignSections(
     out[section.title] = best
   }
   return out
+}
+
+/** A group's tick box: ticked when all its entries are on, half when some are. */
+export function groupTick(
+  entries: SwitcherLayer[],
+  visible: string[]
+): { checked: boolean; indeterminate: boolean } {
+  const on = entries.filter((e) => visible.includes(e.id)).length
+  return { checked: on === entries.length, indeterminate: on > 0 && on < entries.length }
 }
 
 /** The key's sections (h3 and its table), in order. */
@@ -159,8 +169,22 @@ export function buildDataLayers(map: Map, switcher: Switcher, keyPane: HTMLEleme
     )
   }
 
+  const groupBoxes: [SwitcherGroup, HTMLInputElement][] = []
+  /** A group's heading, with a tick box for all its entries (not for radio buttons:
+   * only one of them can be on). */
+  const groupHeading = (group: SwitcherGroup) => {
+    if (group.layers.some((e) => e.groupId)) return el('h3.oim-dl-group', group.title)
+    const box = el('input', { type: 'checkbox' }) as HTMLInputElement
+    box.onchange = () => {
+      for (const entry of group.layers) switcher.setVisibility(entry.id, box.checked)
+      refresh()
+    }
+    groupBoxes.push([group, box])
+    return el('h3.oim-dl-group', el('label.oim-dl-label', box, ` ${group.title}`))
+  }
+
   for (const group of groups) {
-    body.append(...(group.title ? [el('h3.oim-dl-group', group.title)] : []), ...group.layers.map(entryRow))
+    body.append(...(group.title ? [groupHeading(group)] : []), ...group.layers.map(entryRow))
   }
   // Key sections no entry draws.
   const loose = sections.filter((s) => !owner[s.title])
@@ -177,6 +201,7 @@ export function buildDataLayers(map: Map, switcher: Switcher, keyPane: HTMLEleme
   /** The tick boxes from upstream's switcher (the address may have changed it). */
   const refresh = () => {
     for (const [entry, box] of boxes) box.checked = switcher._visible.includes(entry.id)
+    for (const [group, box] of groupBoxes) Object.assign(box, groupTick(group.layers, switcher._visible))
   }
   refresh()
   window.addEventListener('hashchange', refresh)

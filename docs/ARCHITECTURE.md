@@ -54,11 +54,12 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   search       search descriptions, Photon
   coordinates  the cursor's position and MGRS; MGRS in search
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
-  background   Settings → Background: the map in high contrast or original colours, or imagery
+  background   Settings → Background: the map or imagery
   satellite    the imagery (tells services/background.ts what there is)
-  roads        roads, railways and borders, the fork's own in every mode (upstream's
-               hidden): the same at each zoom over the map and imagery, colours
-               following the background (layers.ts); street names white over imagery
+  roads        bold roads, railways and trams, Data layers entries (off at first), the
+               same at each zoom over the map and imagery (layers.ts), the map's own
+               light ones hidden where ticked; borders over imagery (upstream's
+               Borders entry); street names white over imagery
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
                to switch on (clickable: details, copy); look.ts: roofs and shadows over
                imagery, raised to their height in the 3D view; parts.ts: the buildings

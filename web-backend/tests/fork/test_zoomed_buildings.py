@@ -7,12 +7,13 @@ import os
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import pytest
+import shapely
 from pmtiles.tile import zxy_to_tileid
 
 from src.fork.background import Archive, companion_of
 from src.fork.background import zoomed_buildings as zb
 from src.fork.background import zoomed_out
-from src.fork.background.tiles import EXTENT, ground_stretch, tile_bounds
+from src.fork.background.tiles import EXTENT, drawable, ground_stretch, tile_bounds
 from tests.fork.test_background import make
 
 # Two zoom 15 tiles side by side in Paris, in one zoom 12 block.
@@ -128,3 +129,23 @@ def test_layers_made_apart_for_one_tile_are_merged_into_it():
     merged = zoomed_out.one_per_tile(tiles)
     assert [tile_id for tile_id, _ in merged] == [3, 7]
     assert set(mapbox_vector_tile.decode(gzip.decompress(merged[1][1]))) == {"roads", "buildings_large"}
+
+
+def test_what_cutting_leaves_for_a_tile():
+    square = shapely.box(0, 0, 1, 1)
+    edge = shapely.LineString([(1, 0), (2, 0)])
+    assert drawable(shapely.GeometryCollection([square, edge, shapely.Point(3, 3)])).equals(square)
+    assert drawable(shapely.GeometryCollection([shapely.Point(3, 3)])) is None
+    assert drawable(shapely.Polygon()) is None
+    assert drawable(edge).equals(edge)
+
+
+def test_as_many_workers_as_there_is_room_for(monkeypatch):
+    monkeypatch.setattr(zoomed_out.os, "cpu_count", lambda: 32)
+    room_for_three = zoomed_out.KEPT_FREE + 3 * zoomed_out.WORKER_MEMORY
+    monkeypatch.setattr(zoomed_out, "available_memory", lambda: room_for_three)
+    assert zoomed_out.worker_count() == 3
+    monkeypatch.setattr(zoomed_out, "available_memory", lambda: 1e9)
+    assert zoomed_out.worker_count() == 1
+    monkeypatch.setattr(zoomed_out, "available_memory", lambda: None)
+    assert zoomed_out.worker_count() == zoomed_out.MAX_WORKERS

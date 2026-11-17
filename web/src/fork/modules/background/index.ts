@@ -1,44 +1,31 @@
-// Fork: Settings → Background: the background map in high contrast or in its
-// original colours, or satellite imagery, alone or with the map's roads. The
-// choice is kept in services/background.ts, which the map's colours
-// (modules/map-sources/palette.ts) and the imagery (modules/satellite) follow; the
-// imagery choices only when there is some, and only where the map is.
+// Fork: Settings → Background: the background map or satellite imagery (the bold
+// roads and railways over either are data layers: modules/roads). The choice is
+// kept in services/background.ts, which the imagery (modules/satellite) follows;
+// imagery only when there is some, and only where the map is.
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
 import { addSettingsSection } from '../../ui/settings.ts'
-import { BackgroundChoice, background } from '../../services/background.ts'
+import { BackgroundMode, background } from '../../services/background.ts'
 import './background.css'
-
-const isMap = (choice: BackgroundChoice) => choice === 'original' || choice === 'contrast'
 
 const backgroundModule: ForkModule = {
   init: ({ map }) => {
-    const choices: [BackgroundChoice, string, string][] = [
+    const choices: [BackgroundMode, string, string][] = [
       [
-        'contrast',
-        t('background.map-contrast', 'Map, high contrast'),
-        t('background.map-contrast-help', 'Each kind of area its own shade: towns, fields, woods, water')
-      ],
-      [
-        'original',
-        t('background.map-original', 'Map, original colours'),
-        t('background.map-original-help', "Open Infrastructure Map's own, paler")
+        'map',
+        t('background.map', 'Map'),
+        t('background.map-help', 'Each kind of area its own shade: towns, fields, woods, water')
       ],
       [
         'satellite',
         t('background.satellite', 'Satellite'),
         t('background.satellite-help', 'Imagery, with place names')
-      ],
-      [
-        'hybrid',
-        t('background.hybrid', 'Satellite with roads'),
-        t('background.hybrid-help', 'Imagery with roads, railways and borders')
       ]
     ]
     const imagery = background.imagery()
     const radios = choices
-      .filter(([choice]) => isMap(choice) || imagery)
+      .filter(([choice]) => choice === 'map' || imagery)
       .map(([choice, label, help]) => {
         const input = el('input', {
           type: 'radio',
@@ -78,7 +65,7 @@ const backgroundModule: ForkModule = {
       const b = map.getBounds()
       const here = await imagery.covers([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()])
       for (const r of radios) {
-        if (isMap(r.choice)) continue
+        if (r.choice === 'map') continue
         r.input.disabled = !here
         r.row.classList.toggle('disabled', !here)
       }
@@ -90,7 +77,7 @@ const backgroundModule: ForkModule = {
     addSettingsSection({
       el: section,
       refresh: () => {
-        const chosen = background.choice()
+        const chosen = background.chosen()
         for (const r of radios) r.input.checked = r.choice === chosen
         void checkCoverage()
       }

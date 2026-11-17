@@ -6,11 +6,8 @@
 // shows: one palette, set on upstream's layers (a paint override; its file
 // unchanged). Zoomed out (zoom 2 to 6) each is a little darker, as upstream's are.
 // Buildings are darker than the towns around them; airports light, so their
-// runways (drawn in the major roads' grey) stand out. It's the "high contrast"
-// choice in Settings → Background (services/background.ts); "original colours"
-// puts upstream's back as they were.
+// runways (drawn in the major roads' grey) stand out. Set at each style load.
 import type { ExpressionSpecification, Map } from 'maplibre-gl'
-import { MapColours, background } from '../../services/background.ts'
 
 /** Each kind of area: [hue, saturation %, lightness % from zoom 6]. */
 export const PALETTE = {
@@ -90,9 +87,33 @@ export function paletteLayers(): [
     ['osm_water', 'fill-color', colour('water')],
     ['osm_water_stream', 'line-color', colour('water')],
     ['osm_water_river', 'line-color', colour('water')],
-    ['osm_buildings', 'fill-color', BUILDINGS]
+    ['osm_buildings', 'fill-color', BUILDINGS],
+    // Roads: upstream's are light greys on a darker town (82%), lost on this
+    // palette's lighter one; white with a grey edge stands out on every area.
+    ...ROADS.map((id): [string, 'line-color', ExpressionSpecification] => [id, 'line-color', ROAD]),
+    ...ROAD_EDGES.map((id): [string, 'line-color', ExpressionSpecification] => [id, 'line-color', ROAD_EDGE]),
+    ['osm_roads_other', 'line-color', PATH]
   ]
 }
+
+const ROADS = [
+  'osm_roads_minor',
+  'osm_roads_minor_service',
+  'osm_roads_link',
+  'osm_roads_major',
+  'osm_roads_highway'
+]
+const ROAD_EDGES = [
+  'osm_roads_minor_casing',
+  'osm_roads_minor_service_casing',
+  'osm_roads_link_casing',
+  'osm_roads_major_casing_late',
+  'osm_roads_highway_casing_late'
+]
+const ROAD: ExpressionSpecification = ['to-color', 'hsl(0, 0%, 100%)']
+const ROAD_EDGE: ExpressionSpecification = ['to-color', 'hsl(240, 5%, 74%)']
+/** Footpaths and tracks (dashed, no edge): a mid grey. */
+const PATH: ExpressionSpecification = ['to-color', 'hsl(240, 4%, 66%)']
 
 /** Buildings: upstream's warm pinkish beige, a little darker than upstream's so they
  * stand out of the towns they're in (housing 89%), more so closer in. */
@@ -107,33 +128,11 @@ export const BUILDINGS: ExpressionSpecification = [
 ]
 
 export function backgroundPalette(map: Map) {
-  // Upstream's values, kept when the palette replaces them (each style load).
-  let original: [string, 'fill-color' | 'line-color' | 'background-color', ExpressionSpecification][] = []
-  const apply = (colours: MapColours) => {
-    if (colours === 'contrast') {
-      original = []
-      for (const [id, property, value] of paletteLayers()) {
-        if (!map.getLayer(id)) continue
-        original.push([id, property, map.getPaintProperty(id, property) as ExpressionSpecification])
-        map.setPaintProperty(id, property, value)
-      }
-    } else {
-      for (const [id, property, value] of original)
-        if (map.getLayer(id)) map.setPaintProperty(id, property, value)
-      original = []
-    }
+  const apply = () => {
+    for (const [id, property, value] of paletteLayers())
+      if (map.getLayer(id)) map.setPaintProperty(id, property, value)
   }
   // A new style has upstream's colours again.
-  map.on('style.load', () => {
-    original = []
-    if (background.colours() === 'contrast') apply('contrast')
-  })
-  if (map.isStyleLoaded() && background.colours() === 'contrast') apply('contrast')
-  // Each choice in Settings → Background: the colours, when they changed.
-  let shown = background.colours()
-  background.onChange(() => {
-    if (background.colours() === shown) return
-    shown = background.colours()
-    apply(shown)
-  })
+  map.on('style.load', apply)
+  if (map.isStyleLoaded()) apply()
 }

@@ -58,7 +58,7 @@ function fakeMap() {
 describe('the look follows the background and the 3D view', () => {
   beforeEach(() => {
     background.offerImagery({ maxzoom: 17, covers: async () => true })
-    background.choose('contrast')
+    background.choose('map')
     view3d.set(false)
   })
 

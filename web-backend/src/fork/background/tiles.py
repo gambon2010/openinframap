@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import gzip
 import math
+from dataclasses import dataclass, field
+from typing import Any
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import numpy as np
@@ -51,53 +53,101 @@ def tile_size(z: int) -> float:
     return east - west
 
 
-def line_tiles(layer: str, lines: np.ndarray, props: list, z: int, tiles=None) -> list[tuple[int, bytes]]:
-    """A zoom's tiles (tile id, gzip) of one layer of lines, each with its properties;
-    `tiles` the (x, y) to make, by default every one a line reaches."""
-    if not len(lines):
+@dataclass
+class TileLayer:
+    """A layer to cut into tiles: its name, its shapes (lines or areas, in metres)
+    and each one's properties, and feature id (buildings: to join their pieces)."""
+
+    name: str
+    shapes: np.ndarray
+    props: list[dict[str, Any]]
+    ids: list[int] | None = None
+    tree: shapely.STRtree = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.tree = shapely.STRtree(self.shapes)
+
+
+def layer_tiles(layer: TileLayer, z: int, tiles=None) -> list[tuple[int, bytes]]:
+    """A zoom's tiles (tile id, gzip) of a layer; `tiles` the (x, y) to make, by
+    default every one a shape reaches. Tiles with nothing are left out."""
+    if not len(layer.shapes):
         return []
-    tree = shapely.STRtree(lines)
     out = []
-    for x, y in tiles if tiles is not None else reached(lines, z):
-        data = encode_lines(layer, lines, props, tree, z, x, y)
+    for x, y in tiles if tiles is not None else reached(layer.shapes, z):
+        data = encode_tile(layer, z, x, y)
         if data:
             out.append((zxy_to_tileid(z, x, y), data))
     return out
 
 
-def reached(lines: np.ndarray, z: int) -> list[tuple[int, int]]:
-    """The tiles of a zoom that any of the lines reaches."""
+def reached(shapes: np.ndarray, z: int) -> list[tuple[int, int]]:
+    """The tiles of a zoom that any of the shapes reaches."""
     size = tile_size(z)
     half = size * 2**z / 2
     found = set()
-    for west, south, east, north in shapely.bounds(lines):
+    for west, south, east, north in shapely.bounds(shapes):
         for x in range(int((west + half) // size), int((east + half) // size) + 1):
             for y in range(int((half - north) // size), int((half - south) // size) + 1):
                 found.add((x, y))
     return sorted(found)
 
 
-def encode_lines(
-    layer: str, lines: np.ndarray, props: list, tree: shapely.STRtree, z: int, x: int, y: int
-) -> bytes | None:
-    """One tile: the lines cut to it and its buffer, encoded and zipped."""
+# What a tile holds: lines and areas.
+DRAWN_TYPES = (
+    shapely.GeometryType.LINESTRING,
+    shapely.GeometryType.MULTILINESTRING,
+    shapely.GeometryType.POLYGON,
+    shapely.GeometryType.MULTIPOLYGON,
+)
+
+
+def cut_to(shapes: np.ndarray, rect: tuple[float, float, float, float]) -> np.ndarray:
+    """The shapes cut to a rectangle. clip_by_rect is quick but fails on some
+    polygons (a ring left with three points); then the exact intersection."""
+    try:
+        return shapely.clip_by_rect(shapes, *rect)
+    except shapely.errors.GEOSException:
+        return shapely.intersection(shapes, shapely.box(*rect))
+
+
+def drawable(shape: shapely.Geometry) -> shapely.Geometry | None:
+    """What a cut shape leaves for a tile: its lines or areas, without the points
+    and lines an exact cut can add along the edge; None if nothing."""
+    if shapely.is_empty(shape):
+        return None
+    if shapely.get_type_id(shape) in DRAWN_TYPES:
+        return shape
+    parts = shapely.get_parts(shape)
+    dimensions = shapely.get_dimensions(parts)
+    widest = dimensions.max()
+    if widest == 0:
+        return None
+    return shapely.union_all(parts[dimensions == widest])
+
+
+def encode_tile(layer: TileLayer, z: int, x: int, y: int) -> bytes | None:
+    """One tile: the layer's shapes cut to it and its buffer, encoded and zipped."""
     bounds = tile_bounds(z, x, y)
     margin = BUFFER / EXTENT * (bounds[2] - bounds[0])
     rect = (bounds[0] - margin, bounds[1] - margin, bounds[2] + margin, bounds[3] + margin)
-    found = tree.query(shapely.box(*rect))
+    found = layer.tree.query(shapely.box(*rect))
     if not len(found):
         return None
-    cut = shapely.clip_by_rect(lines[found], *rect)
-    in_units = in_tile_units(cut, bounds)
-    features = [
-        {"geometry": line, "properties": props[i]}
-        for i, line in zip(found, in_units)
-        if not line.is_empty and shapely.get_type_id(line) in (1, 5)
-    ]
+    in_units = in_tile_units(cut_to(layer.shapes[found], rect), bounds)
+    features = []
+    for i, cut in zip(found, in_units):
+        shape = drawable(cut)
+        if shape is None:
+            continue
+        feature = {"geometry": shape, "properties": layer.props[i]}
+        if layer.ids is not None:
+            feature["id"] = layer.ids[i]
+        features.append(feature)
     if not features:
         return None
     data = mapbox_vector_tile.encode(
-        [{"name": layer, "features": features}], default_options={"extents": EXTENT}
+        [{"name": layer.name, "features": features}], default_options={"extents": EXTENT}
     )
     return zipped(data)
 

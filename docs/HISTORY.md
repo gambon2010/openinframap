@@ -496,6 +496,24 @@ was served; the tiles of one place are now merged into one. The small roads' thi
 at every zoom, only thinner, their edge growing from a hairline (zoom 12) to full
 (15); over imagery no longer dark.
 
+**One map, one satellite; bold roads as data layers; trams (2026-11-17):** Settings
+→ Background is *Map* or *Satellite*: *Map, original colours* and *Satellite with
+roads* went (the high contrast palette is the map). The bold roads, railways and
+trams are Data layers entries (*Roads and railways*, J, Y, X, off at first), each
+switched alone or all at once from the group's heading (every group's heading has
+that tick box now, but radio groups). Over the map the map's own light roads and
+railways show again (its zooms; their white-with-grey-edge colours back in
+`palette.ts`); a ticked entry hides the light ones of its kind (the map's rail
+lines filtered by `kind_detail`, trams apart). Over imagery only the ticked ones
+show; the fork's borders show there only (named `boundaries_`, under upstream's
+Borders entry). Trams were drawn as railways: now a plain pink line (no power line's
+colour), narrower, no white dashes. The bold look has one set of colours; only the
+fading zoomed in over imagery follows the background.
+
+The zoomed out build filled the memory at its end: the close lines' buffers of a
+whole country's roads were all kept; each is now dropped once the last line near it
+is done, and the workers are as many as the free memory allows (`worker_count`).
+
 ---
 
 ## Building outlines (2026-11-11)

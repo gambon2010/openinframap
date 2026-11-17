@@ -8,13 +8,12 @@ import extra from './modules/extra/index.ts'
 import sites from './modules/sites/index.ts'
 import satellite from './modules/satellite/index.ts'
 import roads from './modules/roads/index.ts'
-import { isRoadLayer } from './modules/roads/layers.ts'
 import grid from './modules/grid/index.ts'
 import buildings from './modules/buildings/index.ts'
 
 const MODULES = [extra, sites, satellite, roads, grid, buildings]
 // Upstream's layer switcher entries that fork layers join (openinframap.ts).
-const UPSTREAM_PREFIXES = ['power_', 'petroleum_']
+const UPSTREAM_PREFIXES = ['power_', 'petroleum_', 'boundaries_']
 
 /** Layer names defined in a Tegola layers file (the "  - name:" entries). */
 function tegolaLayers(file: string): string[] {
@@ -44,13 +43,12 @@ test('every fork map layer can be turned off in the layer switcher', () => {
   )
   expect(prefixes.length).toBeGreaterThan(5)
   prefixes.push(...UPSTREAM_PREFIXES)
-  // Background imagery is chosen in Settings, not in the layer switcher; the roads
-  // are part of the background (map or imagery). Open data
+  // Background imagery is chosen in Settings, not in the layer switcher. Open data
   // completing a category follows that category's entry (modules/extra/follow.ts),
   // which must itself be switchable.
   for (const [, category] of FOLLOWS) expect(prefixes).toContain(category)
   const unswitched = forkStyleLayers
-    .filter((l) => !l.id.startsWith('satellite') && !isRoadLayer(l.id))
+    .filter((l) => !l.id.startsWith('satellite'))
     .filter((l) => !FOLLOWS.some(([own]) => l.id.startsWith(own)))
     .filter((l) => !prefixes.some((prefix) => l.id.startsWith(prefix)))
     .map((l) => l.id)

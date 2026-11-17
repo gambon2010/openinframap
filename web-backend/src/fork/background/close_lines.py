@@ -5,6 +5,7 @@ unclear band, their dashes (railways, tunnels) out of step."""
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 import numpy as np
@@ -27,14 +28,22 @@ def one_line_where_close(
     for i, j in zip(near_line, near_other):
         if place[j] < place[i]:
             before.setdefault(int(i), []).append(int(j))
+    # How many lines after each one are compared with it.
+    waiting = Counter(j for earlier in before.values() for j in earlier)
     kept: dict[int, list] = {}
     # Each kept piece's surroundings, made once, alone: buffering the pieces near a
-    # line together merges their areas, nearly all of the time on a big area.
+    # line together merges their areas, nearly all of the time on a big area. Only
+    # while a later line still needs them: a whole country's would fill the memory.
     surroundings: dict[int, np.ndarray] = {}
     for i in order:
         near = [area for j in before.get(i, []) for area in surroundings[j]]
         kept[i] = kept_of(lines[i], near, distance)
-        surroundings[i] = shapely.buffer(np.array(kept[i], dtype=object), distance)
+        if waiting[i]:
+            surroundings[i] = shapely.buffer(np.array(kept[i], dtype=object), distance)
+        for j in before.get(i, []):
+            waiting[j] -= 1
+            if not waiting[j]:
+                del surroundings[j]
     out_lines = [piece for i in range(len(lines)) for piece in kept[i]]
     out_props = [props[i] for i in range(len(lines)) for _ in kept[i]]
     return np.array(out_lines, dtype=object), out_props

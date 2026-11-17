@@ -12,7 +12,11 @@
     "extra-icpe": "Classified installations (ICPE)",
     "sites": "Critical sites",
     "background-map": "Background map",
-    "buildings": "Buildings"
+    "buildings": "Buildings",
+    "roads-and-railways": "Roads and railways",
+    "roads": "Roads",
+    "railways": "Railways",
+    "trams": "Trams"
   },
   "search": {
     "place": {
@@ -707,14 +711,10 @@
     "other": "Other"
   },
   "background": {
-    "map-contrast": "Map, high contrast",
-    "map-contrast-help": "Each kind of area its own shade: towns, fields, woods, water",
-    "map-original": "Map, original colours",
-    "map-original-help": "Open Infrastructure Map's own, paler",
+    "map": "Map",
+    "map-help": "Each kind of area its own shade: towns, fields, woods, water",
     "satellite": "Satellite",
     "satellite-help": "Imagery, with place names",
-    "hybrid": "Satellite with roads",
-    "hybrid-help": "Imagery with roads, railways and borders",
     "not-here": "No satellite imagery here: move the map to where you have some.",
     "title": "Background",
     "zooms": "Imagery up to zoom {{zoom}}.",

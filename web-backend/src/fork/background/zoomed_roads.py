@@ -22,7 +22,7 @@ import numpy as np
 import shapely
 
 from .close_lines import one_line_where_close
-from .tiles import PIXELS, line_tiles, tile_size
+from .tiles import PIXELS, TileLayer, layer_tiles, tile_size
 
 LAYER = "roads"
 ZOOMS = range(8, 14)
@@ -115,7 +115,7 @@ def zoom_tiles(roads: dict[Key, shapely.Geometry], z: int, tiles=None) -> list[t
     to make, by default every one a road reaches."""
     lines, props = simplified(roads, z)
     lines, props = one_line_for_carriageways(lines, props, CLOSE_PIXELS * tile_size(z) / PIXELS)
-    return line_tiles(LAYER, lines, props, z, tiles)
+    return layer_tiles(TileLayer(LAYER, lines, props), z, tiles)
 
 
 def one_line_for_carriageways(lines: np.ndarray, props: list, distance: float) -> tuple[np.ndarray, list]:
