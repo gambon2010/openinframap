@@ -212,6 +212,9 @@ every route but logging in needs a session):
   zooms 12 to 14 (`zoomed_buildings.py`) and the roads at zooms 8 to 13 with what
   Protomaps drops there, tunnel marks, small roads, paths (`zoomed_roads.py`), and the
   railways at zooms 6 to 15, ranked from `<area>.railways.osm.pbf` (`zoomed_railways.py`);
+  airports' stand lead-ins (mapped as taxiways) left out of the roads, at zooms 14
+  and 15 by a cleaned roads layer for their tiles (`stand_lead_ins.py`, from
+  `<area>.taxiways.osm.pbf`);
   roads drawn as Planetiler draws them (snapped, joined, no carriageway merging) and,
   in tiles across the area's edge, the background map's own roads beyond it
   (`beyond_area.py`); close tracks drawn as one zoomed out (`close_lines.py`); the
@@ -250,7 +253,8 @@ the schema fingerprint builds and exports carry.
   `local-stats` (a fast per-country stats snapshot) → `oim_build_info` → Tegola →
   the offline maps queued in the menu (a background map: `pmtiles extract` of the
   area's outline from Protomaps' daily build, then its buildings, roads and railways
-  zoomed out (the railways cut from the region's OpenStreetMap extract: `offline_maps/railways.py`);
+  zoomed out (the railways and taxiways cut from the region's OpenStreetMap extract:
+  `offline_maps/osm_extract.py`, `railways.py`, `taxiways.py`);
   `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). Every
   question comes before the first long step.
 - **SQL (`schema/`):** upstream's: `dev-init.sql` / `prod-init.sql` (once, when the

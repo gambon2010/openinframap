@@ -627,6 +627,20 @@ zoomed out: they were marked by cutting LOOM's lanes within 15 m of a tunnel tra
 but zoomed out LOOM spreads a bundle much wider, so only the middle lanes were
 cut; the reach now grows with the spread at each zoom.
 
+**Airport stand lead-ins (2026-11-17):** hooks over Entzheim's aprons, drawn by the
+background map as taxiways. Upstream's map (openinframap.org) has none: its
+background is a Protomaps build of March 2025, and these were mapped in August 2025
+as `aeroway=taxiway` (meant: `aeroway=taxilane`). In the tiles they can't be told
+from real taxiways (same properties, and the stand spokes are shorter); in
+OpenStreetMap they're the untagged ones ending at a stand. Each area's taxiways are
+cut from its extract (`<area>.taxiways.osm.pbf`, a second osmium pass; the extract
+code shared with the railways in `osm_extract.py`); the build drops runs of
+untagged taxiways under 150 m with a free end, at zooms 8 to 13 from its own roads
+and at 14 and 15 by rewriting the airport tiles' roads layer (the companion's
+replaces the background map's). Checked against upstream's tiles: 94 of 105 extra
+pieces go, none of upstream's. Tried and dropped: keeping a short run only between
+tagged taxiways (it dropped 4 of upstream's).
+
 ---
 
 ## Building outlines (2026-11-11)

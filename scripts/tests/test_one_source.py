@@ -110,5 +110,11 @@ def test_the_railways_are_named_and_kinded_alike():
     ).read_text()
     stops_layer = re.search(r'STOPS_LAYER = "(\w+)"', stops)[1]
     assert f"STOPS_LAYER = '{stops_layer}'" in highlight
+    from offline_maps import taxiways
+
+    lead_ins = (
+        ROOT / "web-backend" / "src" / "fork" / "background" / "stand_lead_ins.py"
+    ).read_text()
+    assert f'TAXIWAYS = "{taxiways.TAXIWAYS}"' in lead_ins
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()
     assert f'GEOFABRIK_INDEX="$OSM_DIR/{regions.GEOFABRIK_INDEX.name}"' in shell

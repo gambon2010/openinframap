@@ -7,7 +7,10 @@ appends its tiles to the background map's (background/__init__.py).
   roads, paths, some stretches of big roads (zoomed_roads.py);
 - the railways at zooms 6 to 15, ranked from OpenStreetMap's tags, close tracks
   drawn as one zoomed out, from <area>.railways.osm.pbf when there is one
-  (zoomed_railways.py).
+  (zoomed_railways.py);
+- airports' stand lead-ins (mapped as taxiways) left out of the roads at every zoom,
+  with a cleaned roads layer for the zoom 14 and 15 tiles they're in
+  (stand_lead_ins.py, from <area>.taxiways.osm.pbf).
 
 The work goes one zoom 10 block at a time (its 1,024 zoom 15 tiles, in workers),
 each tile decoded once, only its buildings and roads: the block's buildings tiles
@@ -39,7 +42,7 @@ from pmtiles.tile import Compression, TileType, tileid_to_zxy, zxy_to_tileid
 from pmtiles.writer import Writer
 
 from . import OFFLINE_MAPS_DIR, Archive, companion_of, is_background_map, mvt, unzipped
-from . import beyond_area
+from . import beyond_area, stand_lead_ins
 from . import zoomed_buildings as buildings
 from . import zoomed_railways as railways
 from . import zoomed_roads as roads
@@ -126,11 +129,13 @@ def units(archive: Archive) -> list[tuple[int, int]]:
 # --- One zoom 10 block (in a worker) ----------------------------------------------------
 
 _archive: Archive | None = None
+_lead_ins: shapely.Geometry = shapely.Polygon()
 
 
 def _open(path: Path) -> None:
-    global _archive
+    global _archive, _lead_ins
     _archive = Archive.open(path)
+    _lead_ins = stand_lead_ins.lead_ins(stand_lead_ins.source_of(path))
 
 
 def one_unit(unit: tuple[int, int]) -> tuple[list[tuple[int, bytes]], dict, shapely.Geometry]:
@@ -138,7 +143,11 @@ def one_unit(unit: tuple[int, int]) -> tuple[list[tuple[int, bytes]], dict, shap
     where its zoom 15 tiles are."""
     archive = _archive
     assert archive is not None
-    return unit_tiles(lambda x, y: decoded(archive, x, y), *unit, map_tiles=archive)
+
+    def read(x: int, y: int) -> dict[str, Any] | None:
+        return stand_lead_ins.cleaned(decoded(archive, x, y), _lead_ins)
+
+    return unit_tiles(read, *unit, map_tiles=archive)
 
 
 def unit_tiles(
@@ -205,6 +214,8 @@ def make(background_map: Path, workers: int | None = None) -> Path | None:
         tiles += zoomed_right_out(
             pool, roads.joined(zoomed_out_roads), whole_area, railways.source_of(background_map)
         )
+    lead_ins = stand_lead_ins.lead_ins(stand_lead_ins.source_of(background_map))
+    tiles += stand_lead_ins.rewritten_tiles(source.get, lead_ins)
     write(partial, background_map, source, tiles)
     partial.replace(out)
     print(

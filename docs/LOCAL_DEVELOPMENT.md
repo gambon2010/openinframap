@@ -227,7 +227,8 @@ through junctions, by LOOM (University of Freiburg, built from `tools/loom`) int
 which lines it couldn't draw). The railways come from the region's OpenStreetMap extract
 (`data/osm/<region>-latest.osm.pbf`, the build's, downloaded if missing: France
 5 GB), cut into `<region>.railways.osm.pbf` with the tram and metro routes (France:
-3.5 minutes, 20 MB). The backend adds them to the background
+3.5 minutes, 20 MB); its taxiways into `<region>.taxiways.osm.pbf`, so the stand
+lead-in lines some airports map as taxiways aren't drawn. The backend adds them to the background
 map's tiles; *Data layers → Background map → Buildings* shows the buildings. For an
 area downloaded before, the menu offers *Buildings, roads and railways zoomed out* (or
 `python3 scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
