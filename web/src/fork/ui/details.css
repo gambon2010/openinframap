@@ -24,7 +24,11 @@
   display: flex;
 }
 
-/* Feature details */
+/* Feature details: text at My layers' size (.oim-ul-sidebar). */
+.oim-info-panel {
+  font-size: 0.95rem;
+}
+
 .oim-info-panel .oim-side-panel-body {
   max-height: calc(100vh - 170px);
   overflow-x: hidden;
@@ -63,11 +67,16 @@
   font-weight: normal;
 }
 
-/* Values: quiet rows, the label light, no boxes. */
+/* Values: quiet rows, the label light, no boxes: upstream's popup tables have a
+   border and shaded rows (popup/popup.css). */
 .oim-info-panel table.item_info {
   width: 100%;
+  border: 0;
   border-collapse: collapse;
-  font-size: 0.9rem;
+}
+
+.oim-info-panel table.item_info tr {
+  background: none;
 }
 
 .oim-info-panel table.item_info th,
