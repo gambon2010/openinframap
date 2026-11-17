@@ -239,6 +239,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.17 | Roads and railways the same at each zoom over the map and over imagery; small roads, paths and railways from further out (long-distance railways like motorways, smaller like main roads); tunnels marked at every zoom. | 🚧 (2026-11-16, `docs/plans/roads-and-railways.md`) steps 1 and 3 done (one set of roads; roads zoomed out), step 2 (2026-11-17): railways ranked from OpenStreetMap in the zoomed out file, close tracks and a motorway's carriageways drawn as one |
 | 10.18 | Trams drawn differently from railways; one satellite choice, one map (the high contrast one: no original colours); bold roads, railways and trams as Data layers entries (off at first) switched alone or as a group, replacing the map's light ones where ticked, the only ones over imagery. | ✅ (2026-11-17) `fork/modules/roads/`, group tick boxes in `ui/data-layers.ts` |
 | 10.19 | Each tram line its own colour (from OpenStreetMap's route relations: ref, colour, from/to), to see where each goes. | 🗂 (asked about 2026-11-17) |
+| 10.20 | Narrow-gauge, heritage and funicular railways: today ranked minor (from zoom 11), so a long narrow-gauge line with passenger trains (Train Jaune, Chemins de fer de Provence) shows late. Options: those with passenger service as branch lines (from zoom 8); tourist and heritage lines their own look (thinner, another dash). | 🗂 (2026-11-17) |
 
 ## 11. Quality
 
