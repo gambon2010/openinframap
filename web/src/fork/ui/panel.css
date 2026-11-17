@@ -214,27 +214,27 @@ html button.oim-on {
   display: block;
   margin: auto;
 }
-/* The map's buttons (top right), in three groups, a wider gap between them: what's on
-   the map (Data layers, My layers, satellite imagery), the view (zoom, 3D), then
+/* The map's buttons (top right), in three groups, a wider gap between them: the view
+   (zoom, 3D), what's on the map (Data layers, My layers, satellite imagery), then
    print, Settings and your account. Placed by order: the modules add them in any. */
 .maplibregl-ctrl-top-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group.layer-switcher {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in) {
   order: 1;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-ul-control) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-3d-button) {
   order: 2;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-background-button) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group.layer-switcher {
   order: 3;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-ul-control) {
   order: 4;
 }
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-3d-button) {
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-background-button) {
   order: 5;
 }
 .maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
@@ -247,7 +247,7 @@ html button.oim-on {
   order: 8;
 }
 /* Each group's first: the gap. */
-.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in),
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group.layer-switcher,
 .maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
   margin-top: 22px;
 }

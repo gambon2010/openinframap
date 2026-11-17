@@ -97,14 +97,15 @@ port 8800.
 - **Bottom left** (next to the scale): where the cursor is: latitude, longitude and the
   military grid reference (MGRS); press **G** with the pointer on the map to copy the
   grid reference there. The search box also finds grid references ("32T LT 725 899").
-- **Top right, the buttons,** in three groups. What's on the map: **Data layers** (the
+- **Top right, the buttons,** in three groups: first the view (zoom, **3D**, below),
+  then what's on the map: **Data layers** (the
   stack: what's on the map and its key: tick a category, unfold it ▸ to tick its rows),
   **My layers** (the pencil), **satellite** (pressed: satellite imagery under the data;
   again: the map; greyed where there's no imagery, its tooltip says why). Click a panel's button to open it next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
-  Long panels scroll inside. Then the view: zoom, **3D** (the map tilts and buildings rise to
+  Long panels scroll inside. **3D**: the map tilts and buildings rise to
   their height; drag with the right mouse button, or Ctrl and drag, to tilt and turn it;
-  click again for the flat map facing north, which can't be tilted). At the bottom:
+  click again for the flat map facing north, which can't be tilted. At the bottom:
   **print** (the printer), **Settings**
   (the gear: background map and address search servers, see below; **Debug**: the
   map's zoom, scale and what is under the pointer, and a clicked thing's raw data
