@@ -104,7 +104,7 @@ ok "$(human_size "$(stat -c%s "$DUMP")") → data/exports/$REGION_ID.oimdb"
 
 if [[ "$SAVE_IMAGES" == 1 ]]; then
     # Make sure every image exists locally (all but db are built from this repo).
-    docker compose --progress quiet --profile tools build tegola backend imposm osmium </dev/null
+    docker compose --progress quiet --profile tools build tegola backend imposm osmium loom </dev/null
     save_images() {
         docker save "${IMAGES[@]}" | gzip -1 > "$DOCKER_IMAGES_TAR.part"
         mv "$DOCKER_IMAGES_TAR.part" "$DOCKER_IMAGES_TAR"

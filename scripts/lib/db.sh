@@ -55,7 +55,7 @@ project_images() {
     local project
     project=$(compose_project)
     docker compose config --format json </dev/null | python3 -c 'import json,sys; s=json.load(sys.stdin)["services"]; print(s["db"]["image"]); print(s["satellite"]["image"])'
-    echo "$project-tegola" "$project-backend" "$project-gate" "$project-imposm" "$project-osmium" | tr ' ' '\n'
+    echo "$project-tegola" "$project-backend" "$project-gate" "$project-imposm" "$project-osmium" "$project-loom" | tr ' ' '\n'
 }
 
 # The SQL files that make a built database, by name (schema_file finds them:
