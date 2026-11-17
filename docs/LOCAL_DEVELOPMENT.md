@@ -212,7 +212,7 @@ once), at `/background`, the frontend's default.
 Zoomed out: Protomaps' tiles hold every building, small road and path, and the
 tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what they
 leave out zoomed out is made from its zoom 15 tiles into
-`data/offline-maps/<region>.zoomed-out.pmtiles` (France: 21 minutes, about 400 MB): the
+`data/offline-maps/<region>.zoomed-out.pmtiles` (France: 11 minutes, about 390 MB): the
 buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (secondary
 roads from 10, tertiary from 11, small roads from 12, paths from 13, tunnels dashed,
 a motorway's carriageways as one), and the railways at zooms 6 to 15, ranked from
@@ -271,14 +271,15 @@ files themselves each time (copy the folder and it comes along). Unattended:
 or `--resume --yes`.
 
 It's shown with
-**Settings → Background**: *Map* (each kind of area its own pale shade, its own
-light roads and railways) or *Satellite* (imagery with place names and borders;
-buildings, when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
+**Settings → Background**: *Map* (each kind of area its own pale shade, roads white
+with a grey edge) or *Satellite* (imagery with place names and borders; buildings,
+when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
 *Railways*, *Trams and metro*, or the heading for all three) draws them bold, the
-same at every zoom, over the map (replacing its light ones) or over imagery:
-motorways orange, trunk roads (voies express) amber, primary roads yellow, secondary
-pale yellow, smaller white; each tram or metro line in its own colour, side by side
-where lines share a track.
+same at every zoom, over the map or over imagery: motorways orange, trunk roads
+(voies express) amber, primary roads yellow, secondary pale yellow, smaller white;
+each tram or metro line in its own colour, side by side where lines share a track.
+Each entry unfolds to its kinds, each with a tick box (sidings, yards and depots
+unticked at first).
 
 Three kinds, each adding detail to the one below (sizes are what's kept on disk):
 

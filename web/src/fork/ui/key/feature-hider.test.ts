@@ -65,4 +65,16 @@ describe('FeatureHider.conditions', () => {
     h.setHidden({ colour: '#c73030' }, true)
     expect(new FeatureHider(fakeMap).hidden.has(specKey({ colour: '#c73030' }))).toBe(true)
   })
+
+  test('a row hidden at first is hidden once, then left as the user sets it', () => {
+    localStorage.clear()
+    const h = new FeatureHider(fakeMap)
+    h.apply = () => undefined
+    const sidings = { layers: ['railways_sidings_'] }
+    h.hideAtFirst(sidings)
+    expect(h.isHidden(sidings)).toBe(true)
+    h.setHidden(sidings, false) // ticked by the user
+    h.hideAtFirst(sidings) // the key built again (next visit)
+    expect(h.isHidden(sidings)).toBe(false)
+  })
 })

@@ -1,68 +1,79 @@
-// Fork: bold roads, railways, trams and metro (layers.ts), entries of Data layers (Roads
-// and railways), off at first. Over the map, the map's own light roads and railways
-// show (its zooms); a ticked entry's bold lines replace the light ones of its kind,
-// the same at each zoom over the map and over imagery. Over imagery, only the
-// ticked ones show (the map is under the imagery), and the borders (layers.ts).
-// Street names turn white on a dark halo over imagery.
-import type { ExpressionSpecification, Map } from 'maplibre-gl'
-import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
+// Fork: the roads, railways, trams and metro (layers.ts), drawn by the fork over every
+// background, the same at each zoom: entries of Data layers (Roads and railways),
+// each unfolding to its kinds (key.ts). Over the map they're in a light look (white
+// roads, grey edges) while their entry is unticked, bold once ticked; over imagery
+// only the ticked ones show, bold. The background map's own roads and railways are
+// hidden: a second set, with other zooms. Borders over imagery (layers.ts). Street
+// names turn white on a dark halo over imagery.
+import type { Map } from 'maplibre-gl'
+import { Layer, LayerGroup, type LayerSwitcher } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
-import { followBackground } from '../../services/background.ts'
+import { background, followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
-import { RAILWAYS_PREFIX, ROADS_PREFIX, TRANSIT_KINDS, TRANSIT_PREFIX, roadLayers } from './layers.ts'
+import { valueFor } from './builder.ts'
+import { roadsKey } from './key.ts'
+import { ROADS_PREFIX, roadLayers } from './layers.ts'
+import { RAILWAYS_PREFIX, TRANSIT_PREFIX } from './rail-layers.ts'
 import { NAME_COLOUR, NAME_HALO_COLOUR, NAME_HALO_WIDTH } from './roads.constants.ts'
 
 const ROADS = roadLayers()
 
-/** The Data layers entries (letters no entry has used: they're in map addresses). */
+/** The Data layers entries (letters no entry has used: they're in map addresses),
+ * by the prefix of the layers each switches. */
 export const ROADS_SWITCHER_ID = 'J'
 export const RAILWAYS_SWITCHER_ID = 'Y'
 export const TRANSIT_SWITCHER_ID = 'X'
+const ENTRIES: [prefix: string, entry: string][] = [
+  [ROADS_PREFIX, ROADS_SWITCHER_ID],
+  [RAILWAYS_PREFIX, RAILWAYS_SWITCHER_ID],
+  [TRANSIT_PREFIX, TRANSIT_SWITCHER_ID]
+]
 
-/** The map's own roads (its piers stay: they're drawn as ground). */
-export const isMapRoadLayer = (layerId: string) => /^osm_roads_(?!pier)/.test(layerId)
-/** The map's own railways, trams and metro, one kind (`rail`) told apart by kind_detail. */
-export const isMapRailLayer = (layerId: string) => layerId.startsWith('osm_rail')
-
-const isTransit: ExpressionSpecification = ['in', ['get', 'kind_detail'], ['literal', TRANSIT_KINDS]]
-
-/** Which of the map's rail lines show: those whose bold ones aren't ticked (the
- * same split as the bold layers', by TRANSIT_KINDS). */
-export function mapRailFilter(railways: boolean, transit: boolean): ExpressionSpecification {
-  const kept: ExpressionSpecification[] = [['==', ['get', 'kind'], 'rail']]
-  if (railways) kept.push(isTransit)
-  if (transit) kept.push(['!', isTransit])
-  return ['all', ...kept]
+/** The background map's own roads and railways (its piers stay: they're drawn as
+ * ground). */
+export function isMapRoadLayer(layerId: string): boolean {
+  return /^osm_roads_(?!pier)|^osm_rail/.test(layerId)
 }
 
-/** Whether an entry's bold lines are switched on (their first layer shown). */
-function ticked(map: Map, prefix: string): boolean {
-  const first = ROADS.layers.find((l) => l.id.startsWith(prefix))
-  return !!first && !!map.getLayer(first.id) && map.getLayoutProperty(first.id, 'visibility') !== 'none'
+/** A layer's entry (undefined: the borders, under upstream's Borders entry). */
+export function entryOf(layerId: string): string | undefined {
+  return ENTRIES.find(([prefix]) => layerId.startsWith(prefix))?.[1]
 }
 
-/** The map's light roads and railways hidden where the bold ones are ticked. The
- * layer switcher says nothing when an entry changes: checked at each style change,
- * changing only what differs (each change is a style change). */
-function followTicks(map: Map) {
-  let applied = ''
+/** How a layer shows: bold once its entry is ticked (the borders always: they have
+ * one look); else light over the map, hidden over imagery. */
+export function lookOf(entry: string | undefined, ticked: string[], overImagery: boolean) {
+  if (entry === undefined || ticked.includes(entry)) return 'bold'
+  return overImagery ? 'hidden' : 'light'
+}
+
+/** Each layer in its look for its entry and the background. The layer switcher
+ * says nothing when an entry changes (it sets the layers' visibility): checked at
+ * each style change, changing only what differs (each change is a style change). */
+function followEntries(map: Map, switcher: LayerSwitcher) {
   const sync = () => {
-    const roads = ticked(map, ROADS_PREFIX)
-    const railFilter = mapRailFilter(ticked(map, RAILWAYS_PREFIX), ticked(map, TRANSIT_PREFIX))
-    const state = JSON.stringify([roads, railFilter])
-    if (state === applied) return
-    applied = state
-    for (const layer of map.getStyle()?.layers ?? []) {
-      if (isMapRoadLayer(layer.id)) map.setLayoutProperty(layer.id, 'visibility', roads ? 'none' : 'visible')
-      else if (isMapRailLayer(layer.id)) map.setFilter(layer.id, railFilter)
+    const overImagery = background.mode() !== 'map'
+    const looks = new globalThis.Map(
+      ROADS.layers.map((layer) => [layer.id, lookOf(entryOf(layer.id), switcher._visible, overImagery)])
+    )
+    for (const [layerId, look] of looks) {
+      if (!map.getLayer(layerId) || entryOf(layerId) === undefined) continue
+      const visibility = look === 'hidden' ? 'none' : 'visible'
+      if (map.getLayoutProperty(layerId, 'visibility') !== visibility)
+        map.setLayoutProperty(layerId, 'visibility', visibility)
     }
+    for (const { layerId, property, values } of ROADS.varying) {
+      if (!map.getLayer(layerId)) continue
+      const value = valueFor(values, looks.get(layerId) === 'bold', overImagery)
+      if (JSON.stringify(map.getPaintProperty(layerId, property)) !== JSON.stringify(value))
+        map.setPaintProperty(layerId, property, value as never)
+    }
+    for (const layer of map.getStyle()?.layers ?? [])
+      if (isMapRoadLayer(layer.id) && map.getLayoutProperty(layer.id, 'visibility') !== 'none')
+        map.setLayoutProperty(layer.id, 'visibility', 'none')
   }
   map.on('styledata', sync)
-  // A new style has the map's own layers as they were.
-  map.on('style.load', () => {
-    applied = ''
-    sync()
-  })
+  background.onChange(sync)
   sync()
 }
 
@@ -88,22 +99,32 @@ function streetNamesOverImagery(map: Map) {
   }
 }
 
+/** The entries' names: their key sections are named alike, to unfold under them. */
+const entryNames = () => ({
+  roads: t('layers.roads', 'Roads'),
+  railways: t('layers.railways', 'Railways'),
+  transit: t('layers.trams-and-metro', 'Trams and metro')
+})
+
 const roads: ForkModule = {
   layers: () => ROADS.layers,
 
-  switcherGroups: () => [
-    new LayerGroup(t('layers.roads-and-railways', 'Roads and railways'), [
-      new Layer(ROADS_SWITCHER_ID, t('layers.roads', 'Roads'), ROADS_PREFIX, false),
-      new Layer(RAILWAYS_SWITCHER_ID, t('layers.railways', 'Railways'), RAILWAYS_PREFIX, false),
-      new Layer(TRANSIT_SWITCHER_ID, t('layers.trams-and-metro', 'Trams and metro'), TRANSIT_PREFIX, false)
-    ])
-  ],
+  switcherGroups: () => {
+    const names = entryNames()
+    return [
+      new LayerGroup(t('layers.roads-and-railways', 'Roads and railways'), [
+        new Layer(ROADS_SWITCHER_ID, names.roads, ROADS_PREFIX, false),
+        new Layer(RAILWAYS_SWITCHER_ID, names.railways, RAILWAYS_PREFIX, false),
+        new Layer(TRANSIT_SWITCHER_ID, names.transit, TRANSIT_PREFIX, false)
+      ])
+    ]
+  },
 
-  init: ({ map }) => {
-    for (const { layerId, property, values } of ROADS.following)
-      followBackground(map, layerId, property, values)
+  key: async () => roadsKey(entryNames()),
+
+  init: ({ map, layerSwitcher }) => {
     const loaded = () => {
-      followTicks(map)
+      followEntries(map, layerSwitcher)
       streetNamesOverImagery(map)
     }
     if (map.isStyleLoaded()) loaded()

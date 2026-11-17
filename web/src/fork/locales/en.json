@@ -729,5 +729,25 @@
   },
   "view3d": {
     "button": "3D view: tilt the map, buildings rise"
+  },
+  "roads": {
+    "motorways": "Motorways",
+    "trunk": "Trunk roads (voies express)",
+    "primary": "Main roads",
+    "secondary": "Secondary roads",
+    "tertiary": "Tertiary roads",
+    "links": "Slip roads",
+    "small": "Small roads",
+    "paths": "Paths and tracks"
+  },
+  "railways": {
+    "main": "Main lines",
+    "branch": "Branch lines",
+    "minor": "Other lines (industrial, heritage, narrow gauge)",
+    "sidings": "Sidings and yards",
+    "tram": "Trams",
+    "metro": "Metro",
+    "light-rail": "Light rail",
+    "depots": "Sidings and depots"
   }
 }

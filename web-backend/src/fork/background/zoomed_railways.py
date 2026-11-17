@@ -31,7 +31,7 @@ import shapely
 
 from .close_lines import one_line_where_close
 from .transit_lines import LINES_FROM, Line, in_order, is_transit, line_of, strands, without_lines
-from .tiles import HALF, PIXELS, TileLayer, layer_tiles, tile_size
+from .tiles import HALF, PIXELS, TileLayer, layer_tiles, map_units, tile_size
 
 LAYER = "railways"
 ZOOMS = range(6, 16)
@@ -41,6 +41,9 @@ FROM_ZOOM = {"main": 6, "branch": 8, "minor": 11, "service": 14}
 # Close tracks drawn as one up to this zoom, closer than this many pixels.
 ONE_LINE_UNTIL = 14
 CLOSE_PIXELS = 3
+# Trams' and metros' tracks this far apart on the ground or closer are one line at
+# every zoom (two tunnels side by side, tracks parting round a platform).
+TRACKS_APART_M = 25
 # The tags kept as properties (what the map's styles and details read).
 KEPT = ("name", "ref", "usage", "service")
 
@@ -158,7 +161,11 @@ def railways_shown(lines: np.ndarray, props: list, z: int, close: float) -> tupl
 
 
 def transit_shown(lines: np.ndarray, props: list, z: int, close: float) -> tuple[np.ndarray, list]:
-    """Close tracks drawn as one at every zoom; from LINES_FROM a strand per line."""
+    """Close tracks drawn as one at every zoom (closer than `close`, or than
+    TRACKS_APART_M on the ground); from LINES_FROM a strand per line."""
+    if len(lines):
+        _, south, _, north = shapely.total_bounds(lines)
+        close = max(close, map_units(TRACKS_APART_M, (south + north) / 2))
     lines, props = one_line_for_close_tracks(lines, props, close)
     if z >= LINES_FROM:
         return strands(lines, props)

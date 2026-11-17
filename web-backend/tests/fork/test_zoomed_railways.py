@@ -104,3 +104,12 @@ def test_tram_lines_side_by_side_from_their_zoom(railways):
     strands = tram(zr.LINES_FROM)
     assert [(p["line"], p["slot"], p["slots"]) for p in strands] == [("A", 0, 2), ("B", 1, 2)]
     assert strands[1]["colour"] == "#00ff00"
+
+
+def test_tram_tracks_apart_in_two_tunnels_are_one_line_zoomed_in():
+    y = zr.mercator(np.array([[7.74, 48.58]]))[0, 1]
+    apart = zr.map_units(15, y)  # 15 m on the ground: twice "close" at zoom 15
+    track = shapely.LineString([(0, y), (2_000, y)])
+    tracks = [track, shapely.transform(track, lambda xy: xy + [0, apart])]
+    props = [{"kind": "tram", "rank": "main", "tunnel": True}] * 2
+    assert len(zr.shown(np.array(tracks, dtype=object), props, 15)[0]) == 1

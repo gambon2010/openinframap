@@ -513,6 +513,8 @@ fading zoomed in over imagery follows the background.
 The zoomed out build filled the memory at its end: the close lines' buffers of a
 whole country's roads were all kept; each is now dropped once the last line near it
 is done, and the workers are as many as the free memory allows (`worker_count`).
+With the area-wide zooms run side by side in the workers, France took 11 minutes
+(was 21), never under 16 GB of memory free.
 
 **Roads by importance; trams and metro by line (2026-11-17):** the A35 through
 Strasbourg showed yellow: it's the M 35 now, `highway=trunk`, which the background
@@ -532,6 +534,23 @@ MapLibre, same tiles and layers, same screen); likely tiles kept by the browser
 from an earlier build (an hour's cache). Tiles are now asked for again each time,
 answered "not modified" (an ETag from the files' dates and sizes) until a file
 changes.
+
+**Kinds as key rows; light roads back; tracks joined (2026-11-17):** *Roads*,
+*Railways* and *Trams and metro* unfold to their kinds, each with a tick box (key rows
+hiding their layers): railways' layers split by rank, trams' by kind (main lines drawn
+over the others by order, no sort key). Sidings, yards and depots start unticked: a
+key row can be hidden at first (`hiddenAtFirst`), once; the user's tick stays. With
+the entries unticked, the map's own roads had come back: wider, a faint edge, white
+blobs at airports. The fork's layers draw both looks now (`{ light, bold }`): light
+over the map while unticked (as this morning), bold once ticked, hidden over imagery
+unless ticked; the map's own roads and rails always hidden, and the palette's road
+colours for them removed. `layers.ts` split: `builder.ts`, `rail-layers.ts`,
+`key.ts`. Twin tram tunnels near Strasbourg station showed two lines: trams' and
+metros' tracks within 25 m on the ground are one at every zoom. Where a track (or
+carriageway) was cut beside the one kept, the cut end now carries on to meet it
+(`joined_back`): no gap at junctions, between motorway carriageways or tram lines.
+Trams missing in Strasbourg at some zooms: not reproduced (same tiles and layers in
+Chromium and Firefox draw them); asked for the browser's console.
 
 ---
 

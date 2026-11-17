@@ -56,11 +56,14 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   background   Settings → Background: the map or imagery
   satellite    the imagery (tells services/background.ts what there is)
-  roads        bold roads, railways, trams and metro (each line its colour, lines
-               sharing a track side by side), Data layers entries (off at first), the
-               same at each zoom over the map and imagery (layers.ts), the map's own
-               light ones hidden where ticked; borders over imagery (upstream's
-               Borders entry); street names white over imagery
+  roads        roads, railways, trams and metro, the fork's own (the map's hidden),
+               the same at each zoom over the map and imagery: light over the map,
+               bold once their Data layers entry is ticked, only the ticked ones over
+               imagery (index.ts); layers.ts roads, borders and the order;
+               rail-layers.ts railways by rank, trams and metro by kind, each line its
+               colour side by side; builder.ts how a layer is made, values by look
+               and background; key.ts the kinds as key rows under each entry
+               (sidings and depots hidden at first); street names white over imagery
   buildings    building outlines (every one from zoom 15, the big ones from 12), a layer
                to switch on (clickable: details, copy); look.ts: roofs and shadows over
                imagery, raised to their height in the 3D view; parts.ts: the buildings

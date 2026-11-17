@@ -74,7 +74,7 @@ def test_the_railways_are_named_and_kinded_alike():
     lines = (ROOT / "web-backend" / "src" / "fork" / "background" / "transit_lines.py").read_text()
     transit = re.search(r"TRANSIT_KINDS = \(([^)]*)\)", lines)[1]
     assert re.findall(r'"(\w+)"', transit) == list(railways.ROUTES)
-    roads = (ROOT / "web" / "src" / "fork" / "modules" / "roads" / "layers.ts").read_text()
+    roads = (ROOT / "web" / "src" / "fork" / "modules" / "roads" / "rail-layers.ts").read_text()
     frontend = re.search(r"TRANSIT_KINDS = \[([^\]]*)\]", roads)[1]
     assert re.findall(r"'(\w+)'", frontend) == list(railways.ROUTES)
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()

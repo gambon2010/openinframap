@@ -38,3 +38,11 @@ def test_where_they_part_the_rest_shows():
     lines, props = run(main, leaving)
     assert [p["n"] for p in props] == [0, 1]
     assert shapely.length(lines[1]) == pytest.approx(800, abs=20)
+
+
+def test_where_they_part_the_rest_meets_the_line_kept():
+    main = shapely.LineString([(0, 0), (1000, 0)])
+    leaving = shapely.LineString([(0, 5), (500, 5), (500, 800)])
+    lines, _ = run(main, leaving)
+    # No gap where it leaves: its first point is on the main line.
+    assert shapely.distance(shapely.Point(lines[1].coords[0]), main) == pytest.approx(0, abs=1e-6)

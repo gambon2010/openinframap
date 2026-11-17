@@ -37,7 +37,8 @@ def one_line_where_close(
     surroundings: dict[int, np.ndarray] = {}
     for i in order:
         near = [area for j in before.get(i, []) for area in surroundings[j]]
-        kept[i] = kept_of(lines[i], near, distance)
+        drawn_near = [piece for j in before.get(i, []) for piece in kept[j]]
+        kept[i] = kept_of(lines[i], near, drawn_near, distance)
         if waiting[i]:
             surroundings[i] = shapely.buffer(np.array(kept[i], dtype=object), distance)
         for j in before.get(i, []):
@@ -54,10 +55,11 @@ def one_line_where_close(
 ALONGSIDE = 4
 
 
-def kept_of(line: shapely.Geometry, near: list, distance: float) -> list:
-    """What's left of a line beside the lines drawn near it (`near`: the areas within
-    `distance` of them): its single lines, those longer than `distance` (shorter
-    ones are bits where lines meet)."""
+def kept_of(line: shapely.Geometry, near: list, drawn_near: list, distance: float) -> list:
+    """What's left of a line beside the lines drawn near it (`drawn_near`; `near`:
+    the areas within `distance` of them): its single lines, those longer than
+    `distance` (shorter ones are bits where lines meet), each joined back to the
+    line it ran beside."""
     if not near:
         return list(shapely.get_parts(line))
     bits_beside = shapely.union_all(shapely.intersection(line, near))
@@ -68,4 +70,28 @@ def kept_of(line: shapely.Geometry, near: list, distance: float) -> list:
     # A hair wider than the parts themselves, so the cut is clean.
     removed = shapely.buffer(shapely.multilinestrings(list(shapely.get_parts(alongside))), distance / 100)
     left = shapely.get_parts(shapely.difference(line, removed))
-    return [p for p in left if shapely.get_type_id(p) == 1 and shapely.length(p) > distance]
+    pieces = [p for p in left if shapely.get_type_id(p) == 1 and shapely.length(p) > distance]
+    return [joined_back(p, drawn_near, distance) for p in pieces]
+
+
+# A piece's end this many times the distance from the line it ran beside, or nearer,
+# is where it was cut: it's carried on to meet that line.
+REACH = 1.5
+
+
+def joined_back(piece: shapely.LineString, drawn_near: list, distance: float) -> shapely.LineString:
+    """A piece left where its line ran beside another, each cut end carried on to
+    the nearest point of that line: the two meet, instead of one stopping short of
+    the other (a gap where tracks or carriageways join)."""
+    others = shapely.multilinestrings(drawn_near)
+    coords = list(piece.coords)
+    for end in (0, -1):
+        cut_end = shapely.Point(coords[end])
+        if shapely.distance(cut_end, others) > REACH * distance:
+            continue
+        meeting = shapely.shortest_line(cut_end, others).coords[-1]
+        if end == 0:
+            coords.insert(0, meeting)
+        else:
+            coords.append(meeting)
+    return shapely.LineString(coords)

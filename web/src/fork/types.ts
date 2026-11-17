@@ -24,8 +24,14 @@ export interface ForkContext {
   circuitInspector: CircuitInspector
 }
 
-/** A key row: label, swatch and what unticking it hides (none: no checkbox). */
-export type KeyRow = [label: string, swatch: Element | string | undefined, hide?: HideSpec]
+/** A key row: label, swatch and what unticking it hides (none: no checkbox);
+ * `hiddenAtFirst`: unticked until the user ticks it. */
+export type KeyRow = [
+  label: string,
+  swatch: Element | string | undefined,
+  hide?: HideSpec,
+  options?: { hiddenAtFirst: true }
+]
 
 export interface KeySection {
   title: string

@@ -49,11 +49,12 @@ export function swatchSpec(swatch: Element | null): HideSpec | undefined {
 function sectionTable(rows: KeyRow[]): HTMLTableElement {
   return el(
     'table',
-    rows.map(([label, swatch, hide]) => {
+    rows.map(([label, swatch, hide, options]) => {
       const label_cell = el('td')
       label_cell.innerHTML = label
       const row = el('tr', label_cell, el('td', swatch ?? ''))
       if (hide) row.dataset.hide = JSON.stringify(hide)
+      if (options?.hiddenAtFirst) row.dataset.hiddenAtFirst = 'true'
       return row
     })
   ) as HTMLTableElement
@@ -82,6 +83,7 @@ function addToggles(pane: HTMLElement, hider: FeatureHider) {
     const cell = el('td')
     row.append(cell)
     if (!spec) continue
+    if (row.dataset.hiddenAtFirst) hider.hideAtFirst(spec)
     const box = el('input.oim-key-toggle', {
       type: 'checkbox',
       checked: !hider.isHidden(spec),

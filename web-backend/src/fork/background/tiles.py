@@ -32,6 +32,12 @@ def ground_stretch(z: int, y: int) -> float:
     return math.cos(lat)
 
 
+def map_units(metres: float, y: float) -> float:
+    """Ground metres in web Mercator metres at a north-south position (y, metres)."""
+    lat = math.atan(math.sinh(y / HALF * math.pi))
+    return metres / math.cos(lat)
+
+
 def children(z: int, x: int, y: int, at: int) -> list[tuple[int, int]]:
     """The tiles of zoom `at` inside a tile of zoom `z`."""
     n = 1 << (at - z)

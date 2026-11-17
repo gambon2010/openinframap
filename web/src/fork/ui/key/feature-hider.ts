@@ -23,6 +23,8 @@ export type StyleLayer = {
 }
 
 const STORAGE_KEY = 'oim-key-hidden'
+// The rows hidden at first already hidden once: after that, the user's choice stays.
+const HIDDEN_ONCE_KEY = 'oim-key-hidden-once'
 
 export function specKey(spec: HideSpec): string {
   return JSON.stringify(spec)
@@ -73,6 +75,15 @@ export class FeatureHider {
     else this.hidden.delete(specKey(spec))
     this.save()
     this.apply()
+  }
+
+  /** A row hidden until the user shows it: hidden the first time it's met. */
+  hideAtFirst(spec: HideSpec) {
+    const once = new Set(readJson<string[]>(HIDDEN_ONCE_KEY, []))
+    if (once.has(specKey(spec))) return
+    once.add(specKey(spec))
+    writeJson(HIDDEN_ONCE_KEY, [...once])
+    this.setHidden(spec, true)
   }
 
   showAll() {

@@ -30,9 +30,9 @@ PMTILES_IMAGE = "protomaps/go-pmtiles:v1.28.0"
 # the backend's COMPANION (scripts/tests/test_one_source.py).
 ZOOMED_OUT = ".zoomed-out.pmtiles"
 FULL_ZOOM = 15
-# Their size and time against the background map's size (France, 2026-11-16).
-ZOOMED_OUT_SIZE = 401 / 5390  # 401 MB from 5.4 GB
-ZOOMED_OUT_SECONDS_PER_BYTE = 1274 / 5.39e9  # 21 min, 8 processes
+# Their size and time against the background map's size (France, 2026-11-17).
+ZOOMED_OUT_SIZE = 391 / 5390  # 391 MB from 5.4 GB
+ZOOMED_OUT_SECONDS_PER_BYTE = 635 / 5.39e9  # 11 min, 8 processes
 
 
 def latest_build() -> tuple[str, int] | None:
@@ -212,7 +212,7 @@ def zoomed_out_missing(folder: Path, area: str) -> bool:
 def make_zoomed_out(folder: Path, area: str) -> None:
     """An area's buildings, roads and railways zoomed out: its railways cut out of its
     OpenStreetMap extract first (railways.py), then all made in the backend's image
-    (its pmtiles, shapely and osmium packages; France: 21 min), as root (the image's
+    (its pmtiles, shapely and osmium packages; France: 11 min), as root (the image's
     Python is root's)."""
     if not railways.railways_of(folder, area).exists():
         railways.make_railways(folder, area)
