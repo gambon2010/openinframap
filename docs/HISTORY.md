@@ -567,7 +567,8 @@ dashed lines that clashed side by side. Near the German border, roads vanished f
 zoom 8: the companion's roads, from France's zoom 15 tiles only, replaced the
 background map's whole roads layer; in tiles across the area's edge the background
 map's own roads beyond the area are kept now (`beyond_area.py`). Close tracks are
-still drawn as one (railways' dashes, tram lines side by side).
+still drawn as one (railways' dashes, tram lines side by side). France: 17 minutes (the
+border tiles read the background map's own roads too), 362 MB.
 
 ---
 
