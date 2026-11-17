@@ -40,7 +40,8 @@ def beyond(archive: Archive, z: int, x: int, y: int, area: shapely.Geometry) -> 
     lines, props = [], []
     for geometry, properties in map_roads(data, z, x, y):
         for line in shapely.get_parts(shapely.intersection(geometry, outside)):
-            if shapely.get_type_id(line) == 1:
+            # Not a point or an empty line where a road only touches the area's edge.
+            if shapely.get_type_id(line) == 1 and not shapely.is_empty(line):
                 lines.append(line)
                 props.append(properties)
     return lines, props

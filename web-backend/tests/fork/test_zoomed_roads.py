@@ -9,8 +9,9 @@ import math
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import osmium  # type: ignore[import-untyped]
 import pytest
+import shapely
 
-from src.fork.background import Archive, zoomed_out
+from src.fork.background import Archive, beyond_area, zoomed_out
 from src.fork.background import zoomed_railways
 from src.fork.background import zoomed_roads as zr
 from tests.fork.test_background import make
@@ -139,3 +140,13 @@ def test_past_the_area_the_background_maps_own_roads_are_kept(tmp_path):
     assert any(abs(y - (4096 - 3500)) < 3 for y in ys)
     crossing = [f for f in found if abs(f["geometry"]["coordinates"][0][1] - (4096 - 1500)) < 3]
     assert crossing and all(min(x for x, _ in f["geometry"]["coordinates"]) >= 2048 - 3 for f in crossing)
+
+
+def test_a_road_only_touching_the_area_leaves_nothing_empty(tmp_path):
+    path = tmp_path / "edge.pmtiles"
+    motorway = {"kind": "highway", "kind_detail": "motorway", "min_zoom": 4}
+    make(path, {(13, X >> 2, Y >> 2): tile(road(1, 0, 0, 2048, 0, **motorway))})
+    # The area covers the tile's left half: the road runs along its edge, inside.
+    area = shapely.box(*zoomed_out.tile_bounds(14, X >> 1, Y >> 1))
+    lines, _ = beyond_area.beyond(Archive.open(path), 13, X >> 2, Y >> 2, area)
+    assert not any(shapely.is_empty(line) for line in lines)
