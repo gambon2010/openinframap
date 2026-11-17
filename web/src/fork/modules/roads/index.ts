@@ -47,15 +47,47 @@ export function lookOf(entry: string | undefined, ticked: string[], overImagery:
   return overImagery ? 'hidden' : 'light'
 }
 
-/** Each layer in its look for its entry and the background. The layer switcher
- * says nothing when an entry changes (it sets the layers' visibility): checked at
- * each style change, changing only what differs (each change is a style change). */
+/** The layers in the order they're drawn: the light ones, then the bold ones over
+ * them (each in their usual order: tunnels, roads, railways, trams). */
+export function drawingOrder(looks: globalThis.Map<string, string>): string[] {
+  const ids = [...looks.keys()]
+  return [...ids.filter((id) => looks.get(id) !== 'bold'), ...ids.filter((id) => looks.get(id) === 'bold')]
+}
+
+/** The layers moved into their drawing order, before the style's next layer. */
+function reorder(map: Map, order: string[]) {
+  const style = (map.getStyle()?.layers ?? []).map((l) => l.id)
+  const last = Math.max(...order.map((id) => style.indexOf(id)))
+  const next = style[last + 1]
+  for (const id of order) if (map.getLayer(id)) map.moveLayer(id, next)
+}
+
+/** Calls `changed` after each change of the switcher's entries (a tick, the map's
+ * address, the start): when the layers' visibility doesn't change (light already
+ * shown), the map doesn't say so. */
+function onEntriesChange(switcher: LayerSwitcher, changed: () => void) {
+  const update = switcher._updateVisibility.bind(switcher)
+  switcher._updateVisibility = () => {
+    update()
+    changed()
+  }
+}
+
+/** Each layer in its look for its entry and the background, the bold over the
+ * light. Checked after each entry change and style change, changing only what
+ * differs (each change is a style change). */
 function followEntries(map: Map, switcher: LayerSwitcher) {
+  let ordered = ''
   const sync = () => {
     const overImagery = background.mode() !== 'map'
     const looks = new globalThis.Map(
       ROADS.layers.map((layer) => [layer.id, lookOf(entryOf(layer.id), switcher._visible, overImagery)])
     )
+    const order = drawingOrder(looks)
+    if (order.join() !== ordered) {
+      ordered = order.join()
+      reorder(map, order)
+    }
     for (const [layerId, look] of looks) {
       if (!map.getLayer(layerId) || entryOf(layerId) === undefined) continue
       const visibility = look === 'hidden' ? 'none' : 'visible'
@@ -73,7 +105,13 @@ function followEntries(map: Map, switcher: LayerSwitcher) {
         map.setLayoutProperty(layer.id, 'visibility', 'none')
   }
   map.on('styledata', sync)
+  // A new style has the layers in their first order.
+  map.on('style.load', () => {
+    ordered = ''
+    sync()
+  })
   background.onChange(sync)
+  onEntriesChange(switcher, sync)
   sync()
 }
 

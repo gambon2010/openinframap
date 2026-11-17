@@ -4,7 +4,7 @@ import type { ExpressionSpecification } from 'maplibre-gl'
 import { resized, valueFor } from './builder.ts'
 import { roadLayers } from './layers.ts'
 import { RAILWAYS_LAYER, besideTheOthers, byRank } from './rail-layers.ts'
-import { entryOf, isMapRoadLayer, lookOf } from './index.ts'
+import { drawingOrder, entryOf, isMapRoadLayer, lookOf } from './index.ts'
 import {
   HIGHWAY_COLOUR,
   HIGHWAY_MIN_WIDTH,
@@ -176,5 +176,22 @@ describe('roads, railways and borders', () => {
     expect(bold('ground_secondary', 'line-color')).toBe(SECONDARY_COLOUR.bold)
     expect(bold('ground_tertiary', 'line-color')).toBe(TERTIARY_COLOUR.bold)
     expect(JSON.stringify(layer('ground_major').filter)).toContain('"trunk","secondary","tertiary"')
+  })
+})
+
+describe('the drawing order', () => {
+  it('the bold layers over the light ones, each in their usual order', () => {
+    const looks = new Map([
+      ['roads_tunnel_minor', 'light'],
+      ['transit_metro_tunnel', 'bold'],
+      ['roads_ground_minor', 'light'],
+      ['transit_tram_ground', 'bold']
+    ])
+    expect(drawingOrder(looks)).toEqual([
+      'roads_tunnel_minor',
+      'roads_ground_minor',
+      'transit_metro_tunnel',
+      'transit_tram_ground'
+    ])
   })
 })

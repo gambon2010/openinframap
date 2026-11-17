@@ -122,6 +122,7 @@ export function besideTheOthers(width: ExpressionSpecification): ExpressionSpeci
  * (TRAM_COLOUR without one), narrower than railways, on a light edge, the lines
  * sharing a track side by side; dashed in a tunnel (most metro). */
 function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
+  const from: LineFrom = { ...FROM, roundEnds: true }
   const id = `${transitSetPrefix(set)}${tunnel ? 'tunnel' : 'ground'}`
   const width = resized(mapLineWidth('osm_rail'), look.TRAM_WIDTH_SCALE, look.TRAM_MIN_WIDTH)
   const offset = besideTheOthers(width)
@@ -135,7 +136,7 @@ function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
     'line-opacity': opacity,
     ...dashedInTunnel(tunnel, look.TUNNEL_EDGE_DASHES)
   }
-  b.line(`${id}_edge`, filter, edge, FROM)
+  b.line(`${id}_edge`, filter, edge, from)
   const line = {
     'line-color': {
       light: look.TRAM_COLOUR.light,
@@ -146,7 +147,7 @@ function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
     'line-opacity': opacity,
     ...dashedInTunnel(tunnel, look.TUNNEL_DASHES)
   }
-  b.line(id, filter, line, FROM)
+  b.line(id, filter, line, from)
 }
 
 /** Every set of railways, then of trams and metro, in a tunnel or above ground. */

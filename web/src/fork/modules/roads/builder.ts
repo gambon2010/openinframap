@@ -121,6 +121,8 @@ export interface LineFrom {
   sourceLayer?: string
   minzoom?: number
   maxzoom?: number
+  /** Round ends: a line's pieces meet without a square notch (trams' strands). */
+  roundEnds?: true
 }
 
 /** Builds the layers, noting each paint value that differs with the look or the
@@ -131,7 +133,7 @@ export class Builder {
 
   /** A line from the background map, by default its roads (`from`: another layer, zooms). */
   line(layerId: string, filter: FilterSpecification, paint: Paint, from: LineFrom = {}) {
-    const { sourceLayer = 'roads', ...zooms } = from
+    const { sourceLayer = 'roads', roundEnds, ...zooms } = from
     this.layers.push({
       id: layerId,
       zorder: ZORDER,
@@ -140,7 +142,7 @@ export class Builder {
       'source-layer': sourceLayer,
       filter,
       ...zooms,
-      layout: { 'line-join': 'round' },
+      layout: { 'line-join': 'round', ...(roundEnds ? { 'line-cap': 'round' as const } : {}) },
       paint: this.overTheMap(layerId, paint)
     })
   }
