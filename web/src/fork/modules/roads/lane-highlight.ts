@@ -9,7 +9,7 @@ import type { ExpressionSpecification, FilterSpecification, Map, MapGeoJSONFeatu
 import { font } from '../../../style/common.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { leftColumn } from '../../ui/left-column.ts'
-import { LANES_FROM } from './roads.constants.ts'
+import { LANES_FROM, LANES_SHOWN_FROM } from './roads.constants.ts'
 import { LANES_SOURCE, LOOM_LAYERS, laneWidth } from './lane-layers.ts'
 import { BORDERS_PREFIX } from './layers.ts'
 
@@ -54,7 +54,12 @@ export function stopsFilter(ref: string): FilterSpecification {
  * dot has room. */
 function addStopLayers(map: Map, before: string | undefined) {
   if (map.getLayer(STOPS_ID)) return
-  const from = { source: LANES_SOURCE, 'source-layer': STOPS_LAYER, minzoom: LANES_FROM, filter: NOTHING }
+  const from = {
+    source: LANES_SOURCE,
+    'source-layer': STOPS_LAYER,
+    minzoom: LANES_SHOWN_FROM,
+    filter: NOTHING
+  }
   map.addLayer(
     {
       ...from,
@@ -105,7 +110,12 @@ function addLayers(map: Map) {
   for (const sourceLayer of LOOM_LAYERS) {
     const ids = highlightIds(sourceLayer)
     if (map.getLayer(ids.glow)) continue
-    const from = { source: LANES_SOURCE, 'source-layer': sourceLayer, minzoom: LANES_FROM, filter: NOTHING }
+    const from = {
+      source: LANES_SOURCE,
+      'source-layer': sourceLayer,
+      minzoom: LANES_SHOWN_FROM,
+      filter: NOTHING
+    }
     const layout = { 'line-cap': 'round', 'line-join': 'round' } as const
     map.addLayer(
       {

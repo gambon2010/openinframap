@@ -650,6 +650,15 @@ column in three groups: what's on the map, the view, then print, Settings, accou
 Also: the details panel restyle had been served half-written by the development
 server (edited in three quick writes): checked rendered since.
 
+**Trams vanishing just below zoom 12 (2026-11-18):** MapLibre picks vector tiles by
+the map's zoom rounded, so zoom 12's tiles show from 11.5, and it checks a layer's
+zoom range against the tile's zoom too: the plain tram lines (to zoom 12) were left
+out of zoom 12's tiles while the lanes (from map zoom 12) weren't on yet, so from
+11.5 to 12 trams showed only where older zoom 11 tiles were still up. The hand-over
+is now at 11.5 (`LANES_SHOWN_FROM`), and the lanes' width follows each zoom's tiles
+from half a zoom before to half after (it assumed a whole zoom after). Checked
+rendered at 11.4 to 12.6 after panning: trams drawn at every step.
+
 ---
 
 ## Building outlines (2026-11-11)

@@ -15,7 +15,7 @@ import {
 } from './index.ts'
 import {
   HIGHWAY_COLOUR,
-  LANES_FROM,
+  LANES_SHOWN_FROM,
   HIGHWAY_MIN_WIDTH,
   ROAD_WIDTH_SCALE,
   SMALL_ROAD_MIN_WIDTH,
@@ -172,11 +172,11 @@ describe('roads, railways and borders', () => {
     expect(JSON.stringify(layer('railways_main_ground').filter)).toContain(`["!",${transit}]`)
     const plain = layer('transit_tram_ground')
     expect(JSON.stringify(plain.filter)).toContain(transit)
-    expect(plain.maxzoom).toBe(LANES_FROM)
+    expect(plain.maxzoom).toBe(LANES_SHOWN_FROM)
     expect(layer('transit_sidings_ground').maxzoom).toBeUndefined() // not in LOOM's lanes
     const lanes = layer('transit_tram_lanes_ground')
     expect(lanes.source).toBe(LANES_SOURCE)
-    expect(lanes.minzoom).toBe(LANES_FROM)
+    expect(lanes.minzoom).toBe(LANES_SHOWN_FROM)
     expect(JSON.stringify(lanes.filter)).toContain('["==",["get","kind"],"tram"]')
     expect(layer('transit_metro_lanes_tunnel_joins')['source-layer']).toBe('inner-connections')
     expect(lanes.paint?.['line-color']).toBe(TRAM_COLOUR.light)
@@ -193,12 +193,15 @@ describe('roads, railways and borders', () => {
 
   it('widen the lanes within each zoom as LOOM’s tiles are enlarged, so they keep touching', () => {
     const width = laneWidth() as unknown[]
-    // At zoom 12 and just before 13 (twice the width), then 13 again: its own tiles.
-    expect(width.slice(3, 9)).toEqual([12, LANE_WIDTH, 12.999, LANE_WIDTH * 2 ** 0.999, 13, LANE_WIDTH])
+    // Zoom 12's tiles show from 11.5 (reduced) to 12.5 (enlarged), then zoom 13's.
+    const half = 2 ** 0.5
+    expect(width.slice(3, 5)).toEqual([11.5, LANE_WIDTH / half])
+    expect(width[6]).toBeCloseTo(LANE_WIDTH * half, 2)
+    expect(width.slice(7, 9)).toEqual([12.5, LANE_WIDTH / half])
     // Wider for a glow: still one zoom curve at the top (MapLibre takes no other).
     const glow = laneWidth(10) as unknown[]
     expect(glow[0]).toBe('interpolate')
-    expect(glow.slice(3, 5)).toEqual([12, LANE_WIDTH + 10])
+    expect(glow.slice(3, 5)).toEqual([11.5, LANE_WIDTH / 2 ** 0.5 + 10])
   })
 
   it('draw trunk roads amber, secondary pale yellow, tertiary white (bold)', () => {

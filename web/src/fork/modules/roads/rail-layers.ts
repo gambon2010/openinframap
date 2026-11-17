@@ -3,12 +3,12 @@
 // ranked from OpenStreetMap's tags, close tracks drawn as one). Railways: a line with
 // white dashes, one set of layers per rank (main lines drawn over the others), so the
 // key can hide each. Trams, metro and light rail zoomed out: a plain line, one set
-// per kind (from LANES_FROM, LOOM's lanes: lane-layers.ts). Sidings, yards and depots
+// per kind (from LANES_SHOWN_FROM, LOOM's lanes: lane-layers.ts). Sidings, yards and depots
 // of both their own set, at every zoom.
 import type { ExpressionSpecification } from 'maplibre-gl'
 import { Builder, FULL, LineFrom, fading, mapLineWidth, tunnelOpacity, resized } from './builder.ts'
 import * as look from './roads.constants.ts'
-import { LANES_FROM } from './roads.constants.ts'
+import { LANES_SHOWN_FROM } from './roads.constants.ts'
 
 export const RAILWAYS_PREFIX = 'railways_'
 export const TRANSIT_PREFIX = 'transit_'
@@ -33,7 +33,7 @@ export interface TrackSet {
   name: string
   filter: ExpressionSpecification
   /** Trams, metro, light rail: their kind (OpenStreetMap's railway=), whose lanes
-   * LOOM draws from LANES_FROM (lane-layers.ts). */
+   * LOOM draws from LANES_SHOWN_FROM (lane-layers.ts). */
   kind?: string
 }
 
@@ -110,7 +110,7 @@ function addRailways(b: Builder, set: TrackSet, tunnel: boolean) {
   b.line(`${id}_dashes`, filter, dashes, FROM)
 }
 
-/** A set of trams, metro or light rail zoomed out (LOOM's lanes from LANES_FROM,
+/** A set of trams, metro or light rail zoomed out (LOOM's lanes from LANES_SHOWN_FROM,
  * lane-layers.ts; sidings and depots at every zoom): a plain line, narrower than
  * railways, on an outline; in a tunnel (most metro), see-through. */
 function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
@@ -118,7 +118,7 @@ function addTransit(b: Builder, set: TrackSet, tunnel: boolean) {
   const width = resized(mapLineWidth('osm_rail'), look.TRAM_WIDTH_SCALE, look.TRAM_MIN_WIDTH)
   const filter: ExpressionSpecification = ['all', railTunnel(tunnel), isTransit, set.filter]
   const opacity = fading(tunnelOpacity(FULL, tunnel))
-  const from: LineFrom = set.kind ? { ...FROM, maxzoom: LANES_FROM } : FROM
+  const from: LineFrom = set.kind ? { ...FROM, maxzoom: LANES_SHOWN_FROM } : FROM
   if (!tunnel) {
     const edge = {
       'line-color': look.RAIL_EDGE_COLOUR,
