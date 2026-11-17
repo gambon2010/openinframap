@@ -40,7 +40,12 @@ RANKS = ("main", "branch", "minor", "service")  # the order lines give way in
 FROM_ZOOM = {"main": 6, "branch": 8, "minor": 11, "service": 14}
 # Close tracks drawn as one up to this zoom, closer than this many pixels.
 ONE_LINE_UNTIL = 14
-CLOSE_PIXELS = 3
+# Railways closer than this many pixels drawn as one: more than a line's drawn width
+# with its outline (the widest, a main line: 4 + 2 × 1.5), so no two overlap and
+# turn their dashes into a white band (a city's lines side by side, zoomed out).
+RAIL_CLOSE_PIXELS = 8
+# Trams' tracks closer than this many pixels (and TRACKS_APART_M) as one.
+TRAM_CLOSE_PIXELS = 3
 # Trams' and metros' tracks this far apart on the ground or closer are one line at
 # every zoom (two tunnels side by side, tracks parting round a platform).
 TRACKS_APART_M = 25
@@ -142,8 +147,12 @@ def shown(lines: np.ndarray, props: list, z: int) -> tuple[np.ndarray, list]:
     keep = [i for i, p in enumerate(props) if FROM_ZOOM[p["rank"]] <= z]
     simple = shapely.simplify(lines[keep], pixel)
     kept_props = [props[i] for i in keep]
-    rail_lines, rail_props = railways_shown(*only(simple, kept_props, transit=False), z, CLOSE_PIXELS * pixel)
-    tram_lines, tram_props = transit_shown(*only(simple, kept_props, transit=True), z, CLOSE_PIXELS * pixel)
+    rail_lines, rail_props = railways_shown(
+        *only(simple, kept_props, transit=False), z, RAIL_CLOSE_PIXELS * pixel
+    )
+    tram_lines, tram_props = transit_shown(
+        *only(simple, kept_props, transit=True), z, TRAM_CLOSE_PIXELS * pixel
+    )
     return np.concatenate([rail_lines, tram_lines]), rail_props + tram_props
 
 

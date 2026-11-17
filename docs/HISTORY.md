@@ -571,8 +571,9 @@ still drawn as one (railways' dashes, tram lines side by side). France: 17 minut
 border tiles read the background map's own roads too), 362 MB. Dotted tunnels read poorly:
 tunnels are now the line in its colour, see-through (55%), without an edge. Trams
 and metro wider. Railways over Paris turned white zoomed out (many lines side by
-side, their dashes out of step): a plain line until zoom 12, dashed from there; a
-little wider.
+side, their dashes out of step): railways within 8 pixels (more than a line's drawn
+width with its outline; was 3) are drawn as one, so each spot has one line and its
+dashes show; the bold outline solid white; a little wider.
 
 ---
 

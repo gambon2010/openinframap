@@ -59,7 +59,7 @@ function railwayRows(): KeyRow[] {
     minor: t('railways.minor', 'Other lines (industrial, heritage, narrow gauge)'),
     sidings: t('railways.sidings', 'Sidings and yards')
   }
-  const swatch = () => lineSwatch(look.RAIL_COLOUR.bold, look.RAIL_EDGE_COLOUR)
+  const swatch = () => lineSwatch(look.RAIL_COLOUR.bold, look.RAIL_EDGE_COLOUR.bold)
   // Most important first, as the key reads.
   return [...RAILWAY_SETS]
     .reverse()
@@ -73,7 +73,7 @@ function transitRows(): KeyRow[] {
     light_rail: t('railways.light-rail', 'Light rail'),
     sidings: t('railways.depots', 'Sidings and depots')
   }
-  const swatch = () => lineSwatch(look.TRAM_COLOUR.bold, look.RAIL_EDGE_COLOUR)
+  const swatch = () => lineSwatch(look.TRAM_COLOUR.bold, look.RAIL_EDGE_COLOUR.bold)
   return [...TRANSIT_SETS]
     .reverse()
     .map((set) => trackRow(labels[set.name], swatch(), set, transitSetPrefix(set)))

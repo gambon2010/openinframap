@@ -67,10 +67,9 @@ export const TUNNEL_OPACITY = 0.55
 export const RAIL_COLOUR: Looks<string> = { light: 'hsl(240, 3%, 55%)', bold: 'hsl(240, 6%, 18%)' }
 export const RAIL_DASH_COLOUR = 'hsl(0, 0%, 100%)'
 export const RAIL_DASHES = [3, 3]
-/** Zoomed out, a plain line: railways run close together there (a city's lines),
- * and side by side their dashes fall out of step and the bundle turns white. */
-export const RAIL_DASHES_FROM = 12
-export const RAIL_EDGE_COLOUR = 'hsla(0, 0%, 100%, 0.55)'
+/** Its outline: see-through white, bold solid (each spot has one line only: the
+ * backend draws close railways as one, so outlines don't pile up). */
+export const RAIL_EDGE_COLOUR: Looks<string> = { light: 'hsla(0, 0%, 100%, 0.55)', bold: WHITE }
 /** Trams and metro: a plain line, pale pink (bold: in its line's colour, pink
  * without one, a colour no power line has), narrower than railways. */
 export const TRAM_COLOUR: Looks<string> = { light: 'hsl(335, 35%, 60%)', bold: 'hsl(335, 85%, 68%)' }

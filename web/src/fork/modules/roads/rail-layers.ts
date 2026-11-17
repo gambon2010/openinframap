@@ -69,8 +69,7 @@ export function byRank(width: ExpressionSpecification): ExpressionSpecification 
   return [operator, curve, input, ...widths] as ExpressionSpecification
 }
 
-/** A set of railways. Above ground: a light edge, a line, white dashes on it (from
- * RAIL_DASHES_FROM: a plain line further out). In a
+/** A set of railways. Above ground: a light edge, a line, white dashes on it. In a
  * tunnel: the line see-through, like the roads' tunnels. */
 function addRailways(b: Builder, set: TrackSet, tunnel: boolean) {
   const id = `${railwaySetPrefix(set)}${tunnel ? 'tunnel' : 'ground'}`
@@ -101,7 +100,7 @@ function addRailways(b: Builder, set: TrackSet, tunnel: boolean) {
     'line-dasharray': look.RAIL_DASHES,
     'line-opacity': opacity
   }
-  b.line(`${id}_dashes`, filter, dashes, { ...FROM, minzoom: look.RAIL_DASHES_FROM })
+  b.line(`${id}_dashes`, filter, dashes, FROM)
 }
 
 /** Where a line's strand goes beside the others on its track: its slot's distance

@@ -15,7 +15,6 @@ import {
   TERTIARY_COLOUR,
   TRAM_COLOUR,
   TRUNK_COLOUR,
-  RAIL_DASHES_FROM,
   TUNNEL_OPACITY
 } from './roads.constants.ts'
 
@@ -108,7 +107,6 @@ describe('roads, railways and borders', () => {
     expect(layer('railways_main_tunnel').paint?.['line-opacity']).toBe(TUNNEL_OPACITY)
     expect(layer('railways_main_tunnel_edge')).toBeUndefined()
     expect(layer('railways_main_tunnel_dashes')).toBeUndefined()
-    expect(layer('railways_main_ground_dashes').minzoom).toBe(RAIL_DASHES_FROM) // plain further out
     expect(layer('transit_metro_tunnel').paint?.['line-opacity']).toBe(TUNNEL_OPACITY)
   })
 
