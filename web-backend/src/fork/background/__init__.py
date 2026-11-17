@@ -24,6 +24,7 @@ from __future__ import annotations
 import gzip
 import json
 import mmap
+import zlib
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -40,7 +41,6 @@ from . import mvt
 OFFLINE_MAPS_DIR = LOCAL_DATA_DIR / "offline-maps"
 WORLD = "world"
 MEDIA_TYPE = "application/vnd.mapbox-vector-tile"
-CACHE_SECONDS = 3600
 # What the background map leaves out zoomed out: <area>.zoomed-out.pmtiles, these
 # zooms (zoomed_out.py).
 COMPANION = ".zoomed-out.pmtiles"
@@ -160,6 +160,12 @@ class Archives:
         archives.sort(key=lambda a: a.area == WORLD)
         return archives
 
+    def version(self) -> str:
+        """Changes when any of the files does (added, rebuilt, removed): the tiles'
+        ETag, so the browser keeps a tile only as long as its files are the same."""
+        self.ordered()
+        return f"{zlib.crc32(repr(self.seen).encode()):08x}"
+
     def tile(self, z: int, x: int, y: int) -> tuple[bytes, Archive] | None:
         archives = self.ordered()
         for archive in archives:
@@ -207,11 +213,17 @@ async def background_tile(request: Request) -> Response:
         return Response(status_code=404)
     if not (0 <= z <= 22 and 0 <= x < 2**z and 0 <= y < 2**z):
         return Response(status_code=404)
+    # Kept by the browser, but asked again each time: the same files, "not modified"
+    # (no tile read); a file rebuilt, the new tile (an hour's cache showed old
+    # tiles beside new ones after a rebuild).
+    etag = f'"{await run_in_threadpool(ARCHIVES.version)}"'
+    headers = {"Cache-Control": "no-cache", "ETag": etag}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
     found = await run_in_threadpool(ARCHIVES.tile, z, x, y)
     if not found:
         # Never kept by the browser: the area may be downloaded a minute later.
         return Response(status_code=204, headers={"Cache-Control": "no-store"})
-    headers = {"Cache-Control": f"max-age={CACHE_SECONDS}"}
     data, archive = found
     if archive.header["tile_compression"] == Compression.GZIP:
         headers["Content-Encoding"] = "gzip"

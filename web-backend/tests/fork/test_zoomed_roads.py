@@ -68,6 +68,9 @@ def roads_in(archive, z, x, y):
         ({"kind": "highway", "kind_detail": "motorway", "min_zoom": 4}, 3),
         ({"kind": "highway", "kind_detail": "motorway", "min_zoom": 16}, 8),
         ({"kind": "major_road", "kind_detail": "tertiary_link", "min_zoom": 16}, 11),
+        ({"kind": "major_road", "kind_detail": "secondary", "min_zoom": 9}, 10),
+        ({"kind": "major_road", "kind_detail": "tertiary", "min_zoom": 9}, 11),
+        ({"kind": "major_road", "kind_detail": "primary", "min_zoom": 9}, 8),
         ({"kind": "rail", "kind_detail": "rail", "min_zoom": 12}, 11),
     ],
 )

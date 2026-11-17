@@ -213,14 +213,16 @@ Zoomed out: Protomaps' tiles hold every building, small road and path, and the
 tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what they
 leave out zoomed out is made from its zoom 15 tiles into
 `data/offline-maps/<region>.zoomed-out.pmtiles` (France: 21 minutes, about 400 MB): the
-buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (small
-roads from 12, paths from 13, tunnels dashed, a motorway's carriageways as one), and
-the railways at zooms 6 to 15, ranked from OpenStreetMap: main lines from zoom 6,
-branch lines from 8, trams, subways and industrial lines from 11, sidings and yards
-from 14, close tracks as one line up to zoom 14. The railways come from the region's
-OpenStreetMap extract (`data/osm/<region>-latest.osm.pbf`, the build's, downloaded
-if missing: France 5 GB), cut into `<region>.railways.osm.pbf` (France: 3.5 minutes,
-20 MB). The backend adds them to the background
+buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (secondary
+roads from 10, tertiary from 11, small roads from 12, paths from 13, tunnels dashed,
+a motorway's carriageways as one), and the railways at zooms 6 to 15, ranked from
+OpenStreetMap: main lines from zoom 6, branch lines from 8, trams, metro and
+industrial lines from 11, sidings and yards from 14, close tracks as one line up to
+zoom 14 (trams and metro at every zoom, from zoom 12 split into their lines, each
+in its colour). The railways come from the region's OpenStreetMap extract
+(`data/osm/<region>-latest.osm.pbf`, the build's, downloaded if missing: France
+5 GB), cut into `<region>.railways.osm.pbf` with the tram and metro routes (France:
+3.5 minutes, 20 MB). The backend adds them to the background
 map's tiles; *Data layers → Background map → Buildings* shows the buildings. For an
 area downloaded before, the menu offers *Buildings, roads and railways zoomed out* (or
 `python3 scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
@@ -272,8 +274,11 @@ It's shown with
 **Settings → Background**: *Map* (each kind of area its own pale shade, its own
 light roads and railways) or *Satellite* (imagery with place names and borders;
 buildings, when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
-*Railways*, *Trams*, or the heading for all three) draws them bold, the same at
-every zoom, over the map (replacing its light ones) or over imagery.
+*Railways*, *Trams and metro*, or the heading for all three) draws them bold, the
+same at every zoom, over the map (replacing its light ones) or over imagery:
+motorways orange, trunk roads (voies express) amber, primary roads yellow, secondary
+pale yellow, smaller white; each tram or metro line in its own colour, side by side
+where lines share a track.
 
 Three kinds, each adding detail to the one below (sizes are what's kept on disk):
 

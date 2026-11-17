@@ -1,12 +1,12 @@
-// Fork: the bold roads, railways, trams and borders (modules/roads): which ones
+// Fork: the bold roads, railways, trams, metro and borders (modules/roads): which ones
 // show at each zoom, their widths, tunnels dashed, only railways in use, the same
 // over the map and over imagery. Only their opacity follows the background
 // (`{ map, imagery }`, listed in `following`, which the module hands to
 // followBackground): over imagery they fade zoomed right in, and the borders show
 // there only (over the map, the map's own). Roads at three quarters of the
 // background map's widths, never thinner than a few pixels; small roads and paths
-// alike at every zoom, thinner zoomed out; railways a line with white dashes; trams
-// a plain coloured line.
+// alike at every zoom, thinner zoomed out; railways a line with white dashes; trams and
+// metro a plain line in each line's colour, side by side where lines share a track.
 import type { ExpressionSpecification, FilterSpecification, LineLayerSpecification } from 'maplibre-gl'
 import baseLayers from '../../../style/style_base.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
@@ -17,7 +17,7 @@ import * as look from './roads.constants.ts'
  * them by it (index.ts). Borders under upstream's Borders entry, by its prefix. */
 export const ROADS_PREFIX = 'roads_'
 export const RAILWAYS_PREFIX = 'railways_'
-export const TRAMS_PREFIX = 'trams_'
+export const TRANSIT_PREFIX = 'transit_'
 export const BORDERS_PREFIX = 'boundaries_'
 
 /** Under everything else that's data (the buildings' outlines included). */
@@ -63,6 +63,13 @@ const kind = (...kinds: string[]): ExpressionSpecification => ['in', ['get', 'ki
 const isLink: ExpressionSpecification = ['has', 'is_link']
 const isService: ExpressionSpecification = ['==', ['get', 'kind_detail'], 'service']
 const isPier: ExpressionSpecification = ['==', ['get', 'kind_detail'], 'pier']
+const detail = (...details: string[]): ExpressionSpecification => [
+  'in',
+  ['get', 'kind_detail'],
+  ['literal', details]
+]
+/** Main roads with a look of their own (the rest of them, primary roads, yellow). */
+const OWN_LOOK = ['trunk', 'secondary', 'tertiary']
 
 const ROAD_KINDS: RoadKind[] = [
   {
@@ -102,11 +109,35 @@ const ROAD_KINDS: RoadKind[] = [
     opacity: FULL
   },
   {
+    name: 'tertiary',
+    minWidth: look.MAJOR_MIN_WIDTH,
+    filter: ['all', kind('major_road'), detail('tertiary'), ['!', isLink]],
+    widthFrom: 'osm_roads_major',
+    colour: look.TERTIARY_COLOUR,
+    opacity: FULL
+  },
+  {
+    name: 'secondary',
+    minWidth: look.MAJOR_MIN_WIDTH,
+    filter: ['all', kind('major_road'), detail('secondary'), ['!', isLink]],
+    widthFrom: 'osm_roads_major',
+    colour: look.SECONDARY_COLOUR,
+    opacity: FULL
+  },
+  {
     name: 'major',
     minWidth: look.MAJOR_MIN_WIDTH,
-    filter: ['all', kind('major_road'), ['!', isLink]],
+    filter: ['all', kind('major_road'), ['!', detail(...OWN_LOOK)], ['!', isLink]],
     widthFrom: 'osm_roads_major',
     colour: look.MAJOR_COLOUR,
+    opacity: FULL
+  },
+  {
+    name: 'trunk',
+    minWidth: look.TRUNK_MIN_WIDTH,
+    filter: ['all', kind('major_road'), detail('trunk'), ['!', isLink]],
+    widthFrom: 'osm_roads_major',
+    colour: look.TRUNK_COLOUR,
     opacity: FULL
   },
   {
@@ -121,11 +152,15 @@ const ROAD_KINDS: RoadKind[] = [
 
 const inTunnel: ExpressionSpecification = ['has', 'is_tunnel']
 const aboveGround: ExpressionSpecification = ['!', inTunnel]
-/** The railways and trams: a layer of the background map's tiles, added by the
+/** The railways, trams and metro: a layer of the background map's tiles, added by the
  * backend from the zoomed out file (web-backend/src/fork/background/zoomed_railways.py:
  * ranked from OpenStreetMap's tags, close tracks drawn as one zoomed out). */
 export const RAILWAYS_LAYER = 'railways'
-const isTram: ExpressionSpecification = ['==', ['get', 'kind'], 'tram']
+/** Trams, metro and light rail: drawn apart from the railways, each line in its own
+ * colour (the backend's TRANSIT_KINDS, web-backend/src/fork/background/transit_lines.py;
+ * the background map's own rail lines say the same in kind_detail). */
+export const TRANSIT_KINDS = ['tram', 'subway', 'light_rail']
+const isTransit: ExpressionSpecification = ['in', ['get', 'kind'], ['literal', TRANSIT_KINDS]]
 const railTunnel = (tunnel: boolean): ExpressionSpecification => [
   '==',
   ['coalesce', ['get', 'tunnel'], false],
@@ -282,13 +317,13 @@ export function byRank(width: ExpressionSpecification): ExpressionSpecification 
   return [operator, curve, input, ...widths] as ExpressionSpecification
 }
 
-/** The railways (RAILWAYS_LAYER, but trams). Above ground: a light edge, a line,
+/** The railways (RAILWAYS_LAYER, but trams and metro). Above ground: a light edge, a line,
  * white dashes on it. In a tunnel: the edge and the line dashed, like the roads'
  * tunnels. The more important lines drawn over the others. */
 function addRail(b: Builder, tunnel: boolean) {
   const where = tunnel ? 'tunnel' : 'ground'
   const width = byRank(resized(mapLineWidth('osm_rail'), 1, 0))
-  const filter: ExpressionSpecification = ['all', railTunnel(tunnel), ['!', isTram]]
+  const filter: ExpressionSpecification = ['all', railTunnel(tunnel), ['!', isTransit]]
   const from: LineFrom = { sourceLayer: RAILWAYS_LAYER, sortKey: RAIL_SORT_KEY }
   const opacity = fading(FULL)
   const tunnelDashes = (dashes: number[]) => (tunnel ? { 'line-dasharray': dashes } : {})
@@ -329,33 +364,54 @@ function addRail(b: Builder, tunnel: boolean) {
   )
 }
 
-/** The trams (RAILWAYS_LAYER's): a plain coloured line, narrower than railways, on
- * a light edge; dashed in a tunnel. */
-function addTram(b: Builder, tunnel: boolean) {
+/** Where a line's strand goes beside the others on its track: its slot's distance
+ * from the middle, in strand widths (slot and slots from the backend's strands; a
+ * track without lines on it in the middle). */
+const fromTheMiddle: ExpressionSpecification = [
+  '-',
+  ['coalesce', ['get', 'slot'], 0],
+  ['/', ['-', ['coalesce', ['get', 'slots'], 1], 1], 2]
+]
+
+/** A width by zoom times each strand's place: its offset from the track. */
+export function besideTheOthers(width: ExpressionSpecification): ExpressionSpecification {
+  const [operator, curve, input, ...stops] = width
+  // Stops are zoom, width, zoom, width...: each width times the strand's place.
+  const offsets = stops.map((stop, i) => (i % 2 === 1 ? ['*', fromTheMiddle, stop] : stop))
+  return [operator, curve, input, ...offsets] as ExpressionSpecification
+}
+
+/** Trams, metro and light rail (RAILWAYS_LAYER's): a plain line in its line's colour
+ * (TRAM_COLOUR without one), narrower than railways, on a light edge, the lines
+ * sharing a track side by side; dashed in a tunnel (most metro). */
+function addTransit(b: Builder, tunnel: boolean) {
   const where = tunnel ? 'tunnel' : 'ground'
   const width = resized(mapLineWidth('osm_rail'), look.TRAM_WIDTH_SCALE, look.TRAM_MIN_WIDTH)
-  const filter: ExpressionSpecification = ['all', railTunnel(tunnel), isTram]
+  const offset = besideTheOthers(width)
+  const filter: ExpressionSpecification = ['all', railTunnel(tunnel), isTransit]
   const from: LineFrom = { sourceLayer: RAILWAYS_LAYER }
   const opacity = fading(FULL)
   const tunnelDashes = (dashes: number[]) => (tunnel ? { 'line-dasharray': dashes } : {})
   b.line(
-    `${TRAMS_PREFIX}${where}_edge`,
+    `${TRANSIT_PREFIX}${where}_edge`,
     filter,
     {
       'line-color': look.RAIL_EDGE_COLOUR,
       'line-gap-width': width,
       'line-width': look.EDGE_WIDTH,
+      'line-offset': offset,
       'line-opacity': opacity,
       ...tunnelDashes(look.TUNNEL_EDGE_DASHES)
     },
     from
   )
   b.line(
-    `${TRAMS_PREFIX}${where}`,
+    `${TRANSIT_PREFIX}${where}`,
     filter,
     {
-      'line-color': look.TRAM_COLOUR,
+      'line-color': ['to-color', ['get', 'colour'], look.TRAM_COLOUR],
       'line-width': width,
+      'line-offset': offset,
       'line-opacity': opacity,
       ...tunnelDashes(look.TUNNEL_DASHES)
     },
@@ -389,16 +445,16 @@ function addBorders(b: Builder) {
   )
 }
 
-/** Every layer, bottom to top (tunnels, roads, railways, trams, borders), and the
+/** Every layer, bottom to top (tunnels, roads, railways, trams and metro, borders), and the
  * paint values that follow the background. */
 export function roadLayers(): { layers: LayerSpecificationWithZIndex[]; following: Following[] } {
   const b = new Builder()
   for (const road of ROAD_KINDS) addRoad(b, road, true)
   addRail(b, true)
-  addTram(b, true)
+  addTransit(b, true)
   for (const road of ROAD_KINDS) addRoad(b, road, false)
   addRail(b, false)
-  addTram(b, false)
+  addTransit(b, false)
   addBorders(b)
   return { layers: b.layers, following: b.following }
 }

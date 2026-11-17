@@ -7,8 +7,14 @@
 
 /** Motorways: bright orange. */
 export const HIGHWAY_COLOUR = 'hsl(30, 100%, 60%)'
-/** Main roads and slip roads: bright yellow. */
+/** Trunk roads (voies express, 2×2 roads built like motorways): amber, a little
+ * narrower than motorways. */
+export const TRUNK_COLOUR = 'hsl(42, 100%, 60%)'
+/** Primary roads and slip roads: bright yellow. */
 export const MAJOR_COLOUR = 'hsl(52, 100%, 66%)'
+/** Secondary roads: pale yellow; tertiary: white. Each step down paler. */
+export const SECONDARY_COLOUR = 'hsl(55, 90%, 80%)'
+export const TERTIARY_COLOUR = 'hsl(0, 0%, 100%)'
 /** Smaller roads and service roads: white, a little see-through. */
 export const MINOR_COLOUR = 'hsl(0, 0%, 100%)'
 export const MINOR_OPACITY = 0.8
@@ -35,6 +41,7 @@ export const ROAD_WIDTH_SCALE = 0.75
 /** Each road's width never under these (pixels): the map's go down to nothing
  * zoomed out. */
 export const HIGHWAY_MIN_WIDTH = 3
+export const TRUNK_MIN_WIDTH = 2.5
 export const MAJOR_MIN_WIDTH = 0.75
 export const LINK_MIN_WIDTH = 0.75
 export const SMALL_ROAD_MIN_WIDTH = 0.75
@@ -53,7 +60,8 @@ export const RAIL_COLOUR = 'hsl(240, 6%, 18%)'
 export const RAIL_DASH_COLOUR = 'hsl(0, 0%, 100%)'
 export const RAIL_DASHES = [3, 3]
 export const RAIL_EDGE_COLOUR = 'hsla(0, 0%, 100%, 0.55)'
-/** Trams: a plain pink line (a colour no power line has), narrower than railways. */
+/** Trams and metro: a plain line in its line's colour, pink without one (a colour no
+ * power line has), narrower than railways. */
 export const TRAM_COLOUR = 'hsl(335, 85%, 68%)'
 export const TRAM_WIDTH_SCALE = 0.6
 export const TRAM_MIN_WIDTH = 1.5

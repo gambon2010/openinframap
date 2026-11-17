@@ -21,6 +21,11 @@ OSM = """<?xml version="1.0" encoding="UTF-8"?>
   <way id="12"><nd ref="5"/><nd ref="6"/><tag k="railway" v="tram"/></way>
   <way id="13"><nd ref="7"/><nd ref="8"/><tag k="railway" v="rail"/><tag k="service" v="siding"/></way>
   <way id="14"><nd ref="7"/><nd ref="8"/><tag k="railway" v="abandoned"/></way>
+  <relation id="20"><member type="way" ref="12" role=""/>
+    <tag k="type" v="route"/><tag k="route" v="tram"/><tag k="ref" v="B"/>
+    <tag k="colour" v="#00ff00"/></relation>
+  <relation id="21"><member type="way" ref="12" role=""/>
+    <tag k="type" v="route"/><tag k="route" v="tram"/><tag k="ref" v="A"/></relation>
 </osm>
 """
 
@@ -90,3 +95,12 @@ def test_ways_of_one_line_are_joined_end_to_end():
     other = shapely.LineString([(20, 0), (30, 0)])
     lines, props = zr.joined(ways + [other], [{"rank": "main"}] * 2 + [{"rank": "branch"}])
     assert sorted(zip([p["rank"] for p in props], shapely.length(lines))) == [("branch", 10), ("main", 20)]
+
+
+def test_tram_lines_side_by_side_from_their_zoom(railways):
+    lines, props = railways
+    tram = lambda z: [p for p in zr.shown(lines, props, z)[1] if p["kind"] == "tram"]  # noqa: E731
+    assert tram(zr.LINES_FROM - 1) == [{"kind": "tram", "rank": "minor"}]  # one plain line
+    strands = tram(zr.LINES_FROM)
+    assert [(p["line"], p["slot"], p["slots"]) for p in strands] == [("A", 0, 2), ("B", 1, 2)]
+    assert strands[1]["colour"] == "#00ff00"

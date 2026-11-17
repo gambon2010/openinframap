@@ -2,7 +2,8 @@
 into <area>.railways.osm.pbf beside its background map, with osmium (in Docker).
 The backend's zoomed out build ranks them (main, branch...) and draws them
 (web-backend/src/fork/background/zoomed_railways.py): the background map's own
-railways can't tell a main line from a branch line, and start at zoom 11.
+railways can't tell a main line from a branch line, and start at zoom 11. With the
+tram, metro and light rail routes (ROUTES): each line's letter and colour.
 
 The extract is the region build's (data/osm/<area>-latest.osm.pbf), downloaded from
 Geofabrik if it isn't there (France: 5 GB, kept for the next build)."""
@@ -30,6 +31,8 @@ KINDS = (
     "monorail",
     "preserved",
 )
+# The backend's TRANSIT_KINDS (scripts/tests/test_one_source.py): their routes.
+ROUTES = ("tram", "subway", "light_rail")
 
 
 def railways_of(folder: Path, area: str) -> Path:
@@ -71,7 +74,8 @@ def downloaded_counter():
 
 
 def make_railways(folder: Path, area: str) -> None:
-    """<area>.railways.osm.pbf: the extract's railway lines (France: 3.5 min, 20 MB)."""
+    """<area>.railways.osm.pbf: the extract's railway lines and its tram and metro
+    routes (France: 3.5 min, 20 MB)."""
     extract = osm_extract(area)
     out = railways_of(folder, area)
     mount = Path(os.path.commonpath([extract.resolve().parent, folder.resolve()]))
@@ -86,6 +90,7 @@ def make_railways(folder: Path, area: str) -> None:
             "tags-filter",
             inside(extract),
             f"w/railway={','.join(KINDS)}",
+            f"r/route={','.join(ROUTES)}",
             "-o",
             inside(out),
             "--overwrite",

@@ -514,6 +514,25 @@ The zoomed out build filled the memory at its end: the close lines' buffers of a
 whole country's roads were all kept; each is now dropped once the last line near it
 is done, and the workers are as many as the free memory allows (`worker_count`).
 
+**Roads by importance; trams and metro by line (2026-11-17):** the A35 through
+Strasbourg showed yellow: it's the M 35 now, `highway=trunk`, which the background
+map counts with main roads (orange before, from Protomaps' own zoomed out tiles,
+still tagged motorway there). Trunk roads (voies express) are amber now, between
+motorways and primary roads; secondary roads pale yellow, tertiary white; zoomed
+out, secondary roads from zoom 10 and tertiary from 11 (Protomaps brings many in
+at 9). Metro and light rail were drawn as railways: *Trams and metro* takes them,
+the kinds listed once (`TRANSIT_KINDS`, checked across Python and TypeScript by
+`test_one_source.py`) for the bold layers and for hiding the map's light ones.
+Each line is read from OpenStreetMap's routes (the railways file now keeps the
+tram, metro and light rail routes): its colour as tagged, else one from a palette
+picked by its letter or number; from zoom 12 a strand per line, side by side
+(`line-offset` by slot), one line for both tracks at every zoom. Trams missing in
+Strasbourg past zoom 15: the tiles and the style drew them in a test page (headless
+MapLibre, same tiles and layers, same screen); likely tiles kept by the browser
+from an earlier build (an hour's cache). Tiles are now asked for again each time,
+answered "not modified" (an ETag from the files' dates and sizes) until a file
+changes.
+
 ---
 
 ## Building outlines (2026-11-11)

@@ -1,4 +1,4 @@
-// Fork: bold roads, railways and trams (layers.ts), entries of Data layers (Roads
+// Fork: bold roads, railways, trams and metro (layers.ts), entries of Data layers (Roads
 // and railways), off at first. Over the map, the map's own light roads and railways
 // show (its zooms); a ticked entry's bold lines replace the light ones of its kind,
 // the same at each zoom over the map and over imagery. Over imagery, only the
@@ -9,7 +9,7 @@ import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
-import { RAILWAYS_PREFIX, ROADS_PREFIX, TRAMS_PREFIX, roadLayers } from './layers.ts'
+import { RAILWAYS_PREFIX, ROADS_PREFIX, TRANSIT_KINDS, TRANSIT_PREFIX, roadLayers } from './layers.ts'
 import { NAME_COLOUR, NAME_HALO_COLOUR, NAME_HALO_WIDTH } from './roads.constants.ts'
 
 const ROADS = roadLayers()
@@ -17,20 +17,21 @@ const ROADS = roadLayers()
 /** The Data layers entries (letters no entry has used: they're in map addresses). */
 export const ROADS_SWITCHER_ID = 'J'
 export const RAILWAYS_SWITCHER_ID = 'Y'
-export const TRAMS_SWITCHER_ID = 'X'
+export const TRANSIT_SWITCHER_ID = 'X'
 
 /** The map's own roads (its piers stay: they're drawn as ground). */
 export const isMapRoadLayer = (layerId: string) => /^osm_roads_(?!pier)/.test(layerId)
-/** The map's own railways and trams, one kind (`rail`) told apart by kind_detail. */
+/** The map's own railways, trams and metro, one kind (`rail`) told apart by kind_detail. */
 export const isMapRailLayer = (layerId: string) => layerId.startsWith('osm_rail')
 
-const isTram: ExpressionSpecification = ['==', ['get', 'kind_detail'], 'tram']
+const isTransit: ExpressionSpecification = ['in', ['get', 'kind_detail'], ['literal', TRANSIT_KINDS]]
 
-/** Which of the map's rail lines show: those whose bold ones aren't ticked. */
-export function mapRailFilter(railways: boolean, trams: boolean): ExpressionSpecification {
+/** Which of the map's rail lines show: those whose bold ones aren't ticked (the
+ * same split as the bold layers', by TRANSIT_KINDS). */
+export function mapRailFilter(railways: boolean, transit: boolean): ExpressionSpecification {
   const kept: ExpressionSpecification[] = [['==', ['get', 'kind'], 'rail']]
-  if (railways) kept.push(isTram)
-  if (trams) kept.push(['!', isTram])
+  if (railways) kept.push(isTransit)
+  if (transit) kept.push(['!', isTransit])
   return ['all', ...kept]
 }
 
@@ -47,7 +48,7 @@ function followTicks(map: Map) {
   let applied = ''
   const sync = () => {
     const roads = ticked(map, ROADS_PREFIX)
-    const railFilter = mapRailFilter(ticked(map, RAILWAYS_PREFIX), ticked(map, TRAMS_PREFIX))
+    const railFilter = mapRailFilter(ticked(map, RAILWAYS_PREFIX), ticked(map, TRANSIT_PREFIX))
     const state = JSON.stringify([roads, railFilter])
     if (state === applied) return
     applied = state
@@ -94,7 +95,7 @@ const roads: ForkModule = {
     new LayerGroup(t('layers.roads-and-railways', 'Roads and railways'), [
       new Layer(ROADS_SWITCHER_ID, t('layers.roads', 'Roads'), ROADS_PREFIX, false),
       new Layer(RAILWAYS_SWITCHER_ID, t('layers.railways', 'Railways'), RAILWAYS_PREFIX, false),
-      new Layer(TRAMS_SWITCHER_ID, t('layers.trams', 'Trams'), TRAMS_PREFIX, false)
+      new Layer(TRANSIT_SWITCHER_ID, t('layers.trams-and-metro', 'Trams and metro'), TRANSIT_PREFIX, false)
     ])
   ],
 

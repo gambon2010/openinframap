@@ -67,7 +67,7 @@ def test_each_tile_from_the_file_that_has_it(client):
     # In none: an empty tile, never kept by the browser (the area may come later).
     assert got(client, 5, 0, 0)[0] == 204
     assert client.get("/background/5/0/0.mvt").headers["cache-control"] == "no-store"
-    assert "max-age" in client.get("/background/5/16/11.mvt").headers["cache-control"]
+    assert client.get("/background/5/16/11.mvt").headers["cache-control"] == "no-cache"
     assert got(client, 9, 0, 0)[0] == 204  # beyond every file's zooms
     assert got(client, 5, 40, 0)[0] == 404  # not a tile
 
@@ -142,3 +142,16 @@ def test_the_zoomed_out_companion_is_appended_from_zoom_8_to_14(client):
     assert layers_of(got(client, 13, 5, 5)[1]) == ["roads"]
     assert got(client, 13, 6, 6)[0] == 204
     assert [a.area for a in background.ARCHIVES.ordered()] == ["france"]
+
+
+def test_a_tile_kept_by_the_browser_until_a_file_changes(client):
+    client, folder = client
+    make(folder / "france.pmtiles", {(5, 16, 11): b"first"})
+    etag = client.get("/background/5/16/11.mvt").headers["etag"]
+    again = client.get("/background/5/16/11.mvt", headers={"If-None-Match": etag})
+    assert again.status_code == 304
+    replaced = folder / ".new.pmtiles"
+    make(replaced, {(5, 16, 11): b"second!"})
+    os.replace(replaced, folder / "france.pmtiles")
+    after = client.get("/background/5/16/11.mvt", headers={"If-None-Match": etag})
+    assert (after.status_code, after.content) == (200, b"second!")

@@ -71,5 +71,11 @@ def test_the_railways_are_named_and_kinded_alike():
     assert f'f"{{background_map.stem}}{railways.RAILWAYS}"' in made
     kinds = re.search(r"KINDS = \{([^}]*)\}", made)[1]
     assert sorted(re.findall(r'"(\w+)"', kinds)) == sorted(railways.KINDS)
+    lines = (ROOT / "web-backend" / "src" / "fork" / "background" / "transit_lines.py").read_text()
+    transit = re.search(r"TRANSIT_KINDS = \(([^)]*)\)", lines)[1]
+    assert re.findall(r'"(\w+)"', transit) == list(railways.ROUTES)
+    roads = (ROOT / "web" / "src" / "fork" / "modules" / "roads" / "layers.ts").read_text()
+    frontend = re.search(r"TRANSIT_KINDS = \[([^\]]*)\]", roads)[1]
+    assert re.findall(r"'(\w+)'", frontend) == list(railways.ROUTES)
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()
     assert f'GEOFABRIK_INDEX="$OSM_DIR/{regions.GEOFABRIK_INDEX.name}"' in shell

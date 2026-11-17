@@ -27,7 +27,8 @@ def test_the_railways_cut_out_of_the_builds_extract(tmp_path, monkeypatch, ran):
     assert service == "osmium" and mount == tmp_path and kwargs["at"] == "/w"
     assert args[:3] == ["osmium", "tags-filter", "/w/osm/france-latest.osm.pbf"]
     assert args[3] == "w/railway=" + ",".join(railways.KINDS)
-    assert args[4:6] == ["-o", "/w/offline-maps/france.railways.osm.pbf"]
+    assert args[4] == "r/route=" + ",".join(railways.ROUTES)
+    assert args[5:7] == ["-o", "/w/offline-maps/france.railways.osm.pbf"]
 
 
 def test_the_extract_downloaded_when_the_build_left_none(tmp_path, monkeypatch):

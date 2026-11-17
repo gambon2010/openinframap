@@ -56,7 +56,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   background   Settings → Background: the map or imagery
   satellite    the imagery (tells services/background.ts what there is)
-  roads        bold roads, railways and trams, Data layers entries (off at first), the
+  roads        bold roads, railways, trams and metro (each line its colour, lines
+               sharing a track side by side), Data layers entries (off at first), the
                same at each zoom over the map and imagery (layers.ts), the map's own
                light ones hidden where ticked; borders over imagery (upstream's
                Borders entry); street names white over imagery
@@ -201,8 +202,9 @@ every route but logging in needs a session):
   zooms 12 to 14 (`zoomed_buildings.py`) and the roads at zooms 8 to 13 with what
   Protomaps drops there, tunnel marks, small roads, paths (`zoomed_roads.py`), and the
   railways at zooms 6 to 15, ranked from `<area>.railways.osm.pbf` (`zoomed_railways.py`);
-  close tracks and carriageways drawn as one zoomed out (`close_lines.py`); `tiles.py`
-  their tile geometry; `buildings.py`, a building's whole outline from the
+  close tracks and carriageways drawn as one zoomed out (`close_lines.py`); trams and
+  metro split into their lines from the routes, a strand each (`transit_lines.py`);
+  `tiles.py` their tile geometry; `buildings.py`, a building's whole outline from the
   zoom 15 tiles, `/background/building/{id}`, for copies);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);

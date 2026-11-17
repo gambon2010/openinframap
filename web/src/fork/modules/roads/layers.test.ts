@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import baseLayers from '../../../style/style_base.ts'
-import { RAILWAYS_LAYER, byRank, resized, roadLayers } from './layers.ts'
+import type { ExpressionSpecification } from 'maplibre-gl'
+import { RAILWAYS_LAYER, besideTheOthers, byRank, resized, roadLayers } from './layers.ts'
 import { isMapRailLayer, isMapRoadLayer, mapRailFilter } from './index.ts'
 import {
   HIGHWAY_COLOUR,
@@ -8,7 +9,10 @@ import {
   ROAD_WIDTH_SCALE,
   SMALL_ROAD_MIN_WIDTH,
   SMALL_EDGE_HAIRLINE,
+  SECONDARY_COLOUR,
+  TERTIARY_COLOUR,
   TRAM_COLOUR,
+  TRUNK_COLOUR,
   TUNNEL_DASHES,
   TUNNEL_EDGE_DASHES
 } from './roads.constants.ts'
@@ -26,7 +30,7 @@ const overImagery = (id: string, property: string) =>
 describe('roads, railways and borders', () => {
   it('are the fork’s own layers, a set to each prefix', () => {
     const prefixes = new Set(layers.map((l) => l.id.split('_')[0]))
-    expect(prefixes).toEqual(new Set(['roads', 'railways', 'trams', 'boundaries']))
+    expect(prefixes).toEqual(new Set(['roads', 'railways', 'transit', 'boundaries']))
     expect(new Set(layers.map((l) => l.id)).size).toBe(layers.length)
   })
 
@@ -37,9 +41,10 @@ describe('roads, railways and borders', () => {
       expect(isMapRoadLayer(id)).toBe(false)
     expect(isMapRailLayer('osm_rail_case')).toBe(true)
     const shows = (filter: unknown) => JSON.stringify(filter)
-    expect(shows(mapRailFilter(false, false))).not.toContain('tram')
-    expect(shows(mapRailFilter(true, false))).toContain('["==",["get","kind_detail"],"tram"]')
-    expect(shows(mapRailFilter(false, true))).toContain('["!",["==",["get","kind_detail"],"tram"]]')
+    expect(shows(mapRailFilter(false, false))).not.toContain('subway')
+    const transit = '["in",["get","kind_detail"],["literal",["tram","subway","light_rail"]]]'
+    expect(shows(mapRailFilter(true, false))).toContain(transit)
+    expect(shows(mapRailFilter(false, true))).toContain(`["!",${transit}]`)
   })
 
   it('keep the background map’s widths, a little narrower, never too thin, with an edge around them', () => {
@@ -90,7 +95,7 @@ describe('roads, railways and borders', () => {
     expect(layer('ground_major').paint?.['line-dasharray']).toBeUndefined()
     expect(layer('railways_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
     expect(layer('railways_tunnel_dashes')).toBeUndefined()
-    expect(layer('trams_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+    expect(layer('transit_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
   })
 
   it('draw tunnels first, then roads from the smallest up, railways, trams, borders on top', () => {
@@ -101,8 +106,8 @@ describe('roads, railways and borders', () => {
     expect(at('ground_highway')).toBeLessThan(at('railways_ground_edge'))
     expect(layers.slice(-5).map((l) => l.id)).toEqual([
       'railways_ground_dashes',
-      'trams_ground_edge',
-      'trams_ground',
+      'transit_ground_edge',
+      'transit_ground',
       'boundaries_countries_edge',
       'boundaries_countries'
     ])
@@ -124,10 +129,36 @@ describe('roads, railways and borders', () => {
     expect(JSON.stringify(layer('railways_tunnel').filter)).toContain('"tunnel"')
   })
 
-  it('draw trams apart from railways, a plain line without dashes', () => {
-    expect(JSON.stringify(layer('railways_ground').filter)).toContain('["!",["==",["get","kind"],"tram"]]')
-    expect(JSON.stringify(layer('trams_ground').filter)).toContain('["==",["get","kind"],"tram"]')
-    expect(layer('trams_ground').paint?.['line-color']).toBe(TRAM_COLOUR)
-    expect(layer('trams_ground_dashes')).toBeUndefined()
+  it('draw trams and metro apart from railways, a plain line in each line’s colour, without dashes', () => {
+    const transit = '["in",["get","kind"],["literal",["tram","subway","light_rail"]]]'
+    expect(JSON.stringify(layer('railways_ground').filter)).toContain(`["!",${transit}]`)
+    expect(JSON.stringify(layer('transit_ground').filter)).toContain(transit)
+    expect(layer('transit_ground').paint?.['line-color']).toEqual([
+      'to-color',
+      ['get', 'colour'],
+      TRAM_COLOUR
+    ])
+    expect(layer('transit_ground_dashes')).toBeUndefined()
+  })
+
+  it('draw the lines sharing a track side by side, each a strand’s width from the next', () => {
+    const width = ['interpolate', ['linear'], ['zoom'], 12, 2, 18, 8] as ExpressionSpecification
+    const offset = besideTheOthers(width) as unknown[]
+    expect(offset.slice(0, 4)).toEqual(['interpolate', ['linear'], ['zoom'], 12])
+    // Two lines: slot 0 half a strand to the left, slot 1 half to the right.
+    const place = (offset[4] as unknown[])[1]
+    expect(place).toEqual([
+      '-',
+      ['coalesce', ['get', 'slot'], 0],
+      ['/', ['-', ['coalesce', ['get', 'slots'], 1], 1], 2]
+    ])
+    expect(layer('transit_ground').paint?.['line-offset']).toBeDefined()
+  })
+
+  it('draw trunk roads amber, secondary pale yellow, tertiary white', () => {
+    expect(layer('ground_trunk').paint?.['line-color']).toBe(TRUNK_COLOUR)
+    expect(layer('ground_secondary').paint?.['line-color']).toBe(SECONDARY_COLOUR)
+    expect(layer('ground_tertiary').paint?.['line-color']).toBe(TERTIARY_COLOUR)
+    expect(JSON.stringify(layer('ground_major').filter)).toContain('"trunk","secondary","tertiary"')
   })
 })
