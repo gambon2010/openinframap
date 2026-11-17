@@ -5,26 +5,6 @@
     center / 20px 20px no-repeat;
 }
 
-.oim-ul-button {
-  border: 1px solid #c8c8c8;
-  border-radius: 4px;
-  background: #fff;
-  padding: 3px 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.oim-ul-button:hover:not(:disabled) {
-  background: var(--oim-light-grey);
-}
-.oim-ul-button.primary {
-  background: #1565c0;
-  border-color: #1565c0;
-  color: #fff;
-}
-.oim-ul-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
 .oim-ul-hint,
 .oim-ul-credit,
 .oim-ul-step,

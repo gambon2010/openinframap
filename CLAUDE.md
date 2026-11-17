@@ -12,6 +12,7 @@ Open Infrastructure Map shows the world's infrastructure (power, telecoms, water
 - `docs/HISTORY.md`: what changed, when and why (dated notes, newest at the end of their section).
 - `docs/SPECIFICATIONS.md`: every requirement the owner asked for, with its status: add each new request when it's made, update it when done. Plans for bigger features: `docs/plans/` (finished ones in `archive/`).
 - `docs/LOCAL_DEVELOPMENT.md`: the user's guide.
+- `docs/STYLE.md`: how the application looks (panels, buttons, the map's roads, railways, trams, highlights, labels). Every new panel, control or map layer follows it; a change of look updates it first.
 
 **Keep fork code out of upstream files.** Upstream won't take the fork's changes, so merges must stay easy:
 - frontend features: a module in `web/src/fork/modules/`, added to `MODULES` in `fork/index.ts`; upstream files only call its hooks and import only `fork/index.ts`, `types.ts`, `config.ts`; modules never import each other (shared pieces: `fork/ui/`, `fork/services/`, `fork/core/`; checked by `fork/structure.test.ts`);
@@ -28,6 +29,7 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 - **Named values:** no magic numbers, paths or URLs buried in code: a named constant (`X.constants.ts`, a module constant, `lib/common.sh`) or a setting.
 - **One job per file:** split a file or class that does several (as a guide, past ~400 lines), with tests first. Names say what the thing is now.
 - **Folders as `docs/ARCHITECTURE.md` says** (`fork/structure.test.ts` checks part of it).
+- **One look, `docs/STYLE.md`:** panels and buttons from the shared pieces (`makePanel`, My layers' look), the colour tokens of `index.css`, titles a person would say (raw data only with debug on); map layers in the light and bold looks of `modules/roads`.
 - **One way for each recurring thing:** clickable areas and lines (`core/map-style.ts`), downloads (`download`/`safely`, `netsafe.py`), Docker calls (`lib/docker.sh`, `offline_maps/docker.py`), panels (`makePanel`), errors.
 - **No debris:** no commented-out code, stale TODOs, debugging `console.log`/`print`, or comments describing behaviour that has changed.
 - **Strict:** no `any` or `@ts-ignore` in fork TypeScript; Python typed; everything CI runs passes (`.github/workflows/fork-tests.yml`: eslint, prettier, tsc on `src/fork`, ruff, mypy, shellcheck, the three test suites).
