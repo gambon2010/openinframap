@@ -552,6 +552,23 @@ carriageway) was cut beside the one kept, the cut end now carries on to meet it
 Trams missing in Strasbourg at some zooms: not reproduced (same tiles and layers in
 Chromium and Firefox draw them); asked for the browser's console.
 
+**Roads drawn as Planetiler draws them (2026-11-17):** the motorways stayed choppy:
+the close-lines step cut one carriageway beside the other and joined the ends back,
+leaving steps and kinks at every junction; each fix added another. Looked up how
+it's done: merging a dual carriageway into one line has no reliable method (centre
+lines "jumble up complex junctions", OSM-dev 2019; Esri's tool excludes interchanges),
+and Planetiler, which makes the background map, doesn't: it snaps each zoom's lines to
+a sixteenth of a pixel, joins them end to end and drops loops and lines under a
+quarter of a pixel (its LoopLineMerger, 2024). The roads now do the same (only the
+simple loops: rings); the two carriageways overlap into one road zoomed out. Every
+line has round ends and joins (no notch where pieces meet). Tunnels are dots of
+their colour, without an edge (a dash of length 0 with round ends), no longer
+dashed lines that clashed side by side. Near the German border, roads vanished from
+zoom 8: the companion's roads, from France's zoom 15 tiles only, replaced the
+background map's whole roads layer; in tiles across the area's edge the background
+map's own roads beyond the area are kept now (`beyond_area.py`). Close tracks are
+still drawn as one (railways' dashes, tram lines side by side).
+
 ---
 
 ## Building outlines (2026-11-11)

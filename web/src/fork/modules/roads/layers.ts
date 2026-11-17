@@ -143,19 +143,20 @@ export const roadKindPrefixes = (road: RoadKind) => [
   `${ROADS_PREFIX}ground_${road.name}`
 ]
 
-/** A kind of road above ground or in a tunnel: its edge, then the road. */
+/** A kind of road above ground (its edge, then the road) or in a tunnel (dots of
+ * its colour). */
 function addRoad(b: Builder, road: RoadKind, tunnel: boolean) {
   const where = tunnel ? 'tunnel' : 'ground'
   const width = resized(mapLineWidth(road.widthFrom), look.ROAD_WIDTH_SCALE, road.minWidth)
   const filter: ExpressionSpecification = ['all', tunnel ? inTunnel : aboveGround, road.filter]
-  const dashes = tunnel ? (road.dashes ?? look.TUNNEL_DASHES) : road.dashes
-  b.line(`${ROADS_PREFIX}${where}_${road.name}_edge`, filter, {
-    'line-color': look.EDGE_COLOUR,
-    'line-gap-width': width,
-    'line-width': road.small ? growing(look.EDGE_WIDTH) : look.EDGE_WIDTH,
-    'line-opacity': fading(FULL),
-    ...(tunnel ? { 'line-dasharray': look.TUNNEL_EDGE_DASHES } : {})
-  })
+  const dashes = tunnel ? look.TUNNEL_DOTS : road.dashes
+  if (!tunnel)
+    b.line(`${ROADS_PREFIX}${where}_${road.name}_edge`, filter, {
+      'line-color': look.EDGE_COLOUR,
+      'line-gap-width': width,
+      'line-width': road.small ? growing(look.EDGE_WIDTH) : look.EDGE_WIDTH,
+      'line-opacity': fading(FULL)
+    })
   b.line(`${ROADS_PREFIX}${where}_${road.name}`, filter, {
     'line-color': road.colour,
     'line-width': width,

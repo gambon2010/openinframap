@@ -9,8 +9,15 @@ roads come only at zoom 14, paths too; some stretches of big roads only at 15 (t
 min_zoom says 16). Copied from zoom 15, every feature keeps its properties, and shows
 from the zoom `from_zoom` says.
 
-At each zoom a road group (same properties) is joined into long lines, simplified to
-about a pixel, then cut into the zoom's tiles.
+At each zoom a road group (same properties) is drawn as Planetiler draws roads
+zoomed out (it makes the background map; its LoopLineMerger, see
+oliverwipfli.ch/improving-linestring-merging-in-planetiler-2024-10-30): simplified to
+about a pixel, snapped to a grid of a sixteenth of one so ends that meet there are
+one point, joined end to end, what's shorter than a quarter of a pixel left out
+(specks, and a roundabout shrunk to a tiny ring; Planetiler also cuts small loops
+made of several lines, rare at these sizes). A dual carriageway stays two lines:
+zoomed out they overlap as one road (merging them is a known hard problem, no
+method keeping junctions right). Then cut into the zoom's tiles.
 """
 
 from __future__ import annotations
@@ -21,7 +28,6 @@ from typing import Any
 import numpy as np
 import shapely
 
-from .close_lines import one_line_where_close
 from .tiles import PIXELS, TileLayer, layer_tiles, tile_size
 
 LAYER = "roads"
@@ -44,9 +50,10 @@ BIG_ROAD_ZOOMS = {
     "tertiary": (11, 11),
 }
 
-# Carriageways closer than this many pixels drawn as one (close_lines.py).
-CLOSE_PIXELS = 3
-BIG_KINDS = ("highway", "major_road")  # in the order they're kept
+# Zoomed out, each zoom's lines snapped to a grid of this many points a pixel, and
+# what's shorter than this many pixels left out (Planetiler's).
+SNAP_PER_PIXEL = 16
+SMALLEST_PIXELS = 0.25
 SNAP_DECIMALS = 2  # metres rounded to the centimetre before joining
 
 # A group of roads: the zoom they show from, and their properties (KEPT).
@@ -104,43 +111,45 @@ def joined(groups: dict[Key, list]) -> dict[Key, shapely.Geometry]:
 
 
 def simplified(roads: dict[Key, shapely.Geometry], z: int) -> tuple[np.ndarray, list[dict[str, Any]]]:
-    """The roads shown at a zoom, simplified to about a pixel there: single lines and
-    their properties. Short ones too: a road's piece between two others (a junction,
-    a bridge) left out would be a hole in it."""
+    """The roads shown at a zoom, drawn for it (drawn_at): single lines and their
+    properties."""
     pixel = tile_size(z) / PIXELS
     lines, props = [], []
     for (shown_from, kept), geometry in roads.items():
         if shown_from > z:
             continue
-        properties = dict(kept)
-        for line in shapely.get_parts(shapely.simplify(geometry, pixel)):
-            lines.append(line)
-            props.append(properties)
+        drawn = drawn_at(geometry, pixel)
+        lines += drawn
+        props += [dict(kept)] * len(drawn)
     return np.array(lines, dtype=object), props
 
 
-def zoom_tiles(roads: dict[Key, shapely.Geometry], z: int, tiles=None) -> list[tuple[int, bytes]]:
-    """A zoom's tiles (tile id, gzip) with the roads shown there; `tiles` the (x, y)
-    to make, by default every one a road reaches."""
-    lines, props = simplified(roads, z)
-    lines, props = one_line_for_carriageways(lines, props, CLOSE_PIXELS * tile_size(z) / PIXELS)
-    return layer_tiles(TileLayer(LAYER, lines, props), z, tiles)
-
-
-def one_line_for_carriageways(lines: np.ndarray, props: list, distance: float) -> tuple[np.ndarray, list]:
-    """A motorway's (or main road's) two carriageways drawn as one line where they
-    run side by side, their tunnels too: motorways kept before main roads, before
-    slip roads, then the longer line. Smaller roads are left as they are."""
-    big = [i for i, p in enumerate(props) if p.get("kind") in BIG_KINDS]
-    others = [i for i in range(len(props)) if props[i].get("kind") not in BIG_KINDS]
-    lengths = shapely.length(lines[big])
-    priority = [
-        (BIG_KINDS.index(props[i]["kind"]), bool(props[i].get("is_link")), -length)
-        for i, length in zip(big, lengths)
+def drawn_at(geometry: shapely.Geometry, pixel: float) -> list:
+    """A road group's lines for a zoom (`pixel`: its pixel's size): simplified to a
+    pixel, snapped to a sixteenth of one, joined end to end, without what's
+    shorter than a quarter of a pixel."""
+    grid = pixel / SNAP_PER_PIXEL
+    snapped = shapely.transform(shapely.simplify(geometry, pixel), lambda xy: np.round(xy / grid) * grid)
+    parts = shapely.get_parts(snapped)
+    joined = shapely.get_parts(shapely.line_merge(shapely.multilinestrings(parts)))
+    return [
+        line
+        for line in joined
+        if shapely.get_type_id(line) == 1 and shapely.length(line) >= SMALLEST_PIXELS * pixel
     ]
-    kept_lines, kept_props = one_line_where_close(lines[big], [props[i] for i in big], priority, distance)
-    all_lines = np.concatenate([lines[others], kept_lines]) if len(kept_lines) else lines[others]
-    return all_lines, [props[i] for i in others] + kept_props
+
+
+def zoom_tiles(
+    roads: dict[Key, shapely.Geometry], z: int, tiles=None, beyond: tuple[list, list] = ([], [])
+) -> list[tuple[int, bytes]]:
+    """A zoom's tiles (tile id, gzip) with the roads shown there and `beyond` (lines,
+    properties: the background map's own past the area, beyond_area.py); `tiles` the
+    (x, y) to make, by default every one a road reaches."""
+    lines, props = simplified(roads, z)
+    if beyond[0]:
+        lines = np.concatenate([lines, np.array(beyond[0], dtype=object)])
+        props = props + beyond[1]
+    return layer_tiles(TileLayer(LAYER, lines, props), z, tiles)
 
 
 def merge_into(groups: dict[Key, list], more: dict[Key, shapely.Geometry]) -> None:

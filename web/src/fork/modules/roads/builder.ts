@@ -112,17 +112,10 @@ export function growing(width: Looks<number>): Looks<ExpressionSpecification> {
   return { light: by(width.light), bold: by(width.bold) }
 }
 
-/** In a tunnel, dashed (the paint's dashes); above ground as it is. */
-export function dashedInTunnel(tunnel: boolean, dashes: number[]): Paint {
-  return tunnel ? { 'line-dasharray': dashes } : {}
-}
-
 export interface LineFrom {
   sourceLayer?: string
   minzoom?: number
   maxzoom?: number
-  /** Round ends: a line's pieces meet without a square notch (trams' strands). */
-  roundEnds?: true
 }
 
 /** Builds the layers, noting each paint value that differs with the look or the
@@ -133,7 +126,7 @@ export class Builder {
 
   /** A line from the background map, by default its roads (`from`: another layer, zooms). */
   line(layerId: string, filter: FilterSpecification, paint: Paint, from: LineFrom = {}) {
-    const { sourceLayer = 'roads', roundEnds, ...zooms } = from
+    const { sourceLayer = 'roads', ...zooms } = from
     this.layers.push({
       id: layerId,
       zorder: ZORDER,
@@ -142,7 +135,9 @@ export class Builder {
       'source-layer': sourceLayer,
       filter,
       ...zooms,
-      layout: { 'line-join': 'round', ...(roundEnds ? { 'line-cap': 'round' as const } : {}) },
+      // Round ends and joins: a line's pieces meet without a notch (as styles of
+      // Planetiler's tiles draw roads); a tunnel's dashes of length 0 are dots.
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: this.overTheMap(layerId, paint)
     })
   }

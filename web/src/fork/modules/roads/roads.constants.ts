@@ -57,10 +57,10 @@ export const SMALL_ROAD_MIN_WIDTH = 0.75
  * main roads (wide enough for their dashes to show). */
 export const RAIL_MIN_WIDTH = { main: 3, branch: 2, minor: 1.5, service: 1 }
 
-/** Tunnels: the road dashed on a dashed edge (in road widths: the minimum widths keep
- * them visible zoomed out). */
-export const TUNNEL_DASHES = [2, 1.5]
-export const TUNNEL_EDGE_DASHES = [2, 2]
+/** Tunnels: dots of the line's colour, without an edge (a dash of length 0 with a
+ * round end is a dot as wide as the line; the gap in line widths). An edge can't
+ * follow the dots: its dashes would be spaced by its own, larger width. */
+export const TUNNEL_DOTS = [0, 2]
 
 /** Railways: a grey line with white dashes (bold black), with a light edge to part
  * it from dark ground. */

@@ -39,6 +39,7 @@ from pmtiles.tile import Compression, TileType, tileid_to_zxy, zxy_to_tileid
 from pmtiles.writer import Writer
 
 from . import OFFLINE_MAPS_DIR, Archive, companion_of, is_background_map, mvt, unzipped
+from . import beyond_area
 from . import zoomed_buildings as buildings
 from . import zoomed_railways as railways
 from . import zoomed_roads as roads
@@ -132,17 +133,23 @@ def _open(path: Path) -> None:
     _archive = Archive.open(path)
 
 
-def one_unit(unit: tuple[int, int]) -> tuple[list[tuple[int, bytes]], dict]:
-    """A zoom 10 block's tiles (tile id, gzip), and its roads for zooms 8 and 9."""
+def one_unit(unit: tuple[int, int]) -> tuple[list[tuple[int, bytes]], dict, shapely.Geometry]:
+    """A zoom 10 block's tiles (tile id, gzip), its roads for zooms 8 and 9, and
+    where its zoom 15 tiles are."""
     archive = _archive
     assert archive is not None
-    return unit_tiles(lambda x, y: decoded(archive, x, y), *unit)
+    return unit_tiles(lambda x, y: decoded(archive, x, y), *unit, map_tiles=archive)
 
 
-def unit_tiles(read, ux: int, uy: int) -> tuple[list[tuple[int, bytes]], dict]:
-    """`read(x, y)`: a zoom 15 tile decoded (decoded()), None where there's none."""
+def unit_tiles(
+    read, ux: int, uy: int, map_tiles: Archive | None = None
+) -> tuple[list[tuple[int, bytes]], dict, shapely.Geometry]:
+    """`read(x, y)`: a zoom 15 tile decoded (decoded()), None where there's none;
+    `map_tiles`: the background map, its own roads kept beyond the block's zoom 15
+    tiles (beyond_area.py)."""
     out: list[tuple[int, bytes]] = []
     road_groups = roads.new_groups()
+    present = []
     for bx, by in children(UNIT_ZOOM, ux, uy, buildings.BLOCK_ZOOM):
         tiles = {}
         for x, y in children(buildings.BLOCK_ZOOM, bx, by, FULL_ZOOM):
@@ -150,13 +157,17 @@ def unit_tiles(read, ux: int, uy: int) -> tuple[list[tuple[int, bytes]], dict]:
             if tile is not None:
                 tiles[(x, y)] = tile
                 roads.collect(tile, tile_bounds(FULL_ZOOM, x, y), road_groups)
+        present += list(tiles)
         if tiles:
             out += buildings.block_tiles(buildings.block_buildings(tiles, bx, by), bx, by)
     joined = roads.joined(road_groups)
+    area = beyond_area.covered(present, FULL_ZOOM)
     for z in roads.ZOOMS:
         if z >= UNIT_ZOOM:
-            out += roads.zoom_tiles(joined, z, children(UNIT_ZOOM, ux, uy, z))
-    return out, roads.coarse(joined, below=UNIT_ZOOM)
+            tiles_at = children(UNIT_ZOOM, ux, uy, z)
+            beyond = beyond_area.beyond_in(map_tiles, z, tiles_at, area) if map_tiles else ([], [])
+            out += roads.zoom_tiles(joined, z, tiles_at, beyond)
+    return out, roads.coarse(joined, below=UNIT_ZOOM), area
 
 
 # --- A whole area -----------------------------------------------------------------------
@@ -175,20 +186,25 @@ def make(background_map: Path, workers: int | None = None) -> Path | None:
     started = time.monotonic()
     tiles: list[tuple[int, bytes]] = []
     zoomed_out_roads = roads.new_groups()
+    areas = []
     pool = ProcessPoolExecutor(
         max_workers=workers or worker_count(), initializer=_open, initargs=(background_map,)
     )
     with pool:
-        for done, (found, coarse) in enumerate(pool.map(one_unit, todo), 1):
+        for done, (found, coarse, area) in enumerate(pool.map(one_unit, todo), 1):
             tiles += found
             roads.merge_into(zoomed_out_roads, coarse)
+            areas.append(area)
             print(
                 f"\r  {background_map.stem}: {done:,} / {len(todo):,} blocks",
                 end="",
                 file=sys.stderr,
                 flush=True,
             )
-        tiles += zoomed_right_out(pool, roads.joined(zoomed_out_roads), railways.source_of(background_map))
+        whole_area = shapely.union_all(areas)
+        tiles += zoomed_right_out(
+            pool, roads.joined(zoomed_out_roads), whole_area, railways.source_of(background_map)
+        )
     write(partial, background_map, source, tiles)
     partial.replace(out)
     print(
@@ -211,11 +227,23 @@ def _railway_zoom(source: Path, z: int) -> list[tuple[int, bytes]]:
     return railways.zoom_tiles(lines, props, z)
 
 
-def zoomed_right_out(pool: ProcessPoolExecutor, joined_roads: dict, railways_source: Path) -> list:
-    """The tiles made from the whole area, each zoom a task in the workers: the
-    roads at zooms 8 and 9 (from every block's), the railways at every zoom (none
-    without a railways file)."""
-    tasks = [pool.submit(roads.zoom_tiles, joined_roads, z) for z in roads.ZOOMS if z < UNIT_ZOOM]
+def _roads_zoomed_right_out(joined_roads: dict, z: int, area: shapely.Geometry) -> list[tuple[int, bytes]]:
+    """A zoom's road tiles from the whole area's roads, the background map's own kept
+    beyond the area in the tiles its edge goes through."""
+    assert _archive is not None
+    beyond = beyond_area.beyond_in(_archive, z, beyond_area.edge_tiles(z, area), area)
+    return roads.zoom_tiles(joined_roads, z, beyond=beyond)
+
+
+def zoomed_right_out(
+    pool: ProcessPoolExecutor, joined_roads: dict, area: shapely.Geometry, railways_source: Path
+) -> list:
+    """The tiles made from the whole area (`area`: where its zoom 15 tiles are), each
+    zoom a task in the workers: the roads at zooms 8 and 9 (from every block's), the
+    railways at every zoom (none without a railways file)."""
+    tasks = [
+        pool.submit(_roads_zoomed_right_out, joined_roads, z, area) for z in roads.ZOOMS if z < UNIT_ZOOM
+    ]
     if railways_source.exists():
         tasks += [pool.submit(_railway_zoom, railways_source, z) for z in railways.ZOOMS]
     return [tile for task in tasks for tile in task.result()]

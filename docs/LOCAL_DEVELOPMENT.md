@@ -214,8 +214,9 @@ tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what t
 leave out zoomed out is made from its zoom 15 tiles into
 `data/offline-maps/<region>.zoomed-out.pmtiles` (France: 11 minutes, about 390 MB): the
 buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (secondary
-roads from 10, tertiary from 11, small roads from 12, paths from 13, tunnels dashed,
-a motorway's carriageways as one), and the railways at zooms 6 to 15, ranked from
+roads from 10, tertiary from 11, small roads from 12, paths from 13, tunnels dotted;
+drawn the way Planetiler draws them, a motorway's two carriageways overlapping into
+one road zoomed out; near a border, the background map's own roads beyond the area), and the railways at zooms 6 to 15, ranked from
 OpenStreetMap: main lines from zoom 6, branch lines from 8, trams, metro and
 industrial lines from 11, sidings and yards from 14, close tracks as one line up to
 zoom 14 (trams and metro at every zoom, from zoom 12 split into their lines, each

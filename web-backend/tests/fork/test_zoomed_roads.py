@@ -116,3 +116,26 @@ def test_roads_and_railways_of_one_place_are_in_one_tile(paris, tmp_path):
     z = 12
     data = companion.get(z, X >> (15 - z), Y >> (15 - z))
     assert set(mapbox_vector_tile.decode(gzip.decompress(data))) == {zr.LAYER, zoomed_railways.LAYER}
+
+
+def test_past_the_area_the_background_maps_own_roads_are_kept(tmp_path):
+    # The area: two zoom 15 tiles; a zoom 13 tile reaching past them (a border) with
+    # the background map's own roads, one beyond the area, one crossing into it.
+    path = tmp_path / "border.pmtiles"
+    motorway = {"kind": "highway", "kind_detail": "motorway", "min_zoom": 4}
+    inside = road(1, 100, 2000, 3000, 2000, **motorway)
+    zoomed_out_tile = tile(
+        road(5, 0, 3500, 4096, 3500, **motorway),  # in the tile's bottom half: past the area
+        road(6, 0, 1500, 4096, 1500, **motorway),  # the area's row, then past it
+    )
+    make(
+        path, {(15, X, Y): tile(inside), (15, X + 1, Y): tile(inside), (13, X >> 2, Y >> 2): zoomed_out_tile}
+    )
+    companion = Archive.open(zoomed_out.make(path, workers=1))
+    found = roads_in(companion, 13, X >> 2, Y >> 2)
+    ys = sorted({round(p[1]) for f in found for p in f["geometry"]["coordinates"]})
+    # The road past the area whole; the one crossing it only beyond the area (its
+    # own roads come from the zoom 15 tiles), so nothing drawn twice.
+    assert any(abs(y - (4096 - 3500)) < 3 for y in ys)
+    crossing = [f for f in found if abs(f["geometry"]["coordinates"][0][1] - (4096 - 1500)) < 3]
+    assert crossing and all(min(x for x, _ in f["geometry"]["coordinates"]) >= 2048 - 3 for f in crossing)

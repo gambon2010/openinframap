@@ -15,8 +15,7 @@ import {
   TERTIARY_COLOUR,
   TRAM_COLOUR,
   TRUNK_COLOUR,
-  TUNNEL_DASHES,
-  TUNNEL_EDGE_DASHES
+  TUNNEL_DOTS
 } from './roads.constants.ts'
 
 const { layers: all, varying } = roadLayers()
@@ -98,20 +97,23 @@ describe('roads, railways and borders', () => {
     expect(bold('boundaries_countries', 'line-opacity', true)).toBe(1)
   })
 
-  it('mark tunnels (dashed) instead of hiding them', () => {
-    const edge = layer('tunnel_major_edge')
-    expect(edge.paint?.['line-dasharray']).toEqual(TUNNEL_EDGE_DASHES)
-    expect(JSON.stringify(edge.filter)).toContain('"has","is_tunnel"')
-    expect(layer('tunnel_major').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+  it('mark tunnels with dots of their colour, without an edge, instead of hiding them', () => {
+    const tunnel = layer('tunnel_major')
+    expect(tunnel.paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
+    expect(tunnel.layout?.['line-cap']).toBe('round') // a dash of length 0: a dot
+    expect(JSON.stringify(tunnel.filter)).toContain('"has","is_tunnel"')
+    expect(layer('tunnel_major_edge')).toBeUndefined()
+    expect(layer('tunnel_paths').paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
     expect(layer('ground_major').paint?.['line-dasharray']).toBeUndefined()
-    expect(layer('railways_main_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+    expect(layer('railways_main_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
+    expect(layer('railways_main_tunnel_edge')).toBeUndefined()
     expect(layer('railways_main_tunnel_dashes')).toBeUndefined()
-    expect(layer('transit_metro_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DASHES)
+    expect(layer('transit_metro_tunnel').paint?.['line-dasharray']).toEqual(TUNNEL_DOTS)
   })
 
   it('draw tunnels first, then roads from the smallest up, railways, trams, borders on top', () => {
     const at = (id: string) => layers.indexOf(layer(id))
-    expect(at('tunnel_paths_edge')).toBe(0)
+    expect(at('tunnel_paths')).toBe(0)
     expect(at('tunnel_highway')).toBeLessThan(at('ground_paths_edge'))
     expect(at('ground_minor')).toBeLessThan(at('ground_highway_edge'))
     expect(at('ground_highway')).toBeLessThan(at('railways_sidings_ground_edge'))

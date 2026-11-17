@@ -1,7 +1,7 @@
-"""Fork: lines running close together drawn as one (zoomed_railways.py: the tracks
-of a double-track line; zoomed_roads.py: the carriageways of a motorway). Drawn side
-by side at a zoom where they're closer than their width, two lines blur into one
-unclear band, their dashes (railways, tunnels) out of step."""
+"""Fork: tracks running close together drawn as one (zoomed_railways.py: the tracks
+of a double-track line, a tram's two). Drawn side by side at a zoom where they're
+closer than their width, two tracks blur into one unclear band, their white dashes
+out of step. (Roads aren't: zoomed_roads.py.)"""
 
 from __future__ import annotations
 
@@ -82,7 +82,7 @@ REACH = 1.5
 def joined_back(piece: shapely.LineString, drawn_near: list, distance: float) -> shapely.LineString:
     """A piece left where its line ran beside another, each cut end carried on to
     the nearest point of that line: the two meet, instead of one stopping short of
-    the other (a gap where tracks or carriageways join)."""
+    the other (a gap where tracks join)."""
     others = shapely.multilinestrings(drawn_near)
     coords = list(piece.coords)
     for end in (0, -1):
