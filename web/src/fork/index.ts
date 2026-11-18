@@ -27,6 +27,7 @@ import buildings from './modules/buildings/index.ts'
 import account from './modules/account/index.ts'
 import coordinates from './modules/coordinates/index.ts'
 import debug from './modules/debug/index.ts'
+import handovers from './modules/handovers/index.ts'
 import print from './modules/print/index.ts'
 import view3d from './modules/view3d/index.ts'
 import translations from './locales/en.json'
@@ -51,7 +52,9 @@ const MODULES: ForkModule[] = [
   view3d,
   print,
   account,
-  debug
+  debug,
+  // Last: every module's layers are in the style.
+  handovers
 ]
 
 let context: ForkContext | undefined

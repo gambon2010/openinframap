@@ -6,6 +6,8 @@
 // olive and 132 kV dark orange stay told apart), every road with a dark edge.
 
 /** A value in each look. */
+import { tilesShownFrom } from '../../core/tile-zooms.ts'
+
 export interface Looks<T> {
   light: T
   bold: T
@@ -75,12 +77,9 @@ export const TRAM_WIDTH_SCALE = 0.9
 /** The first zoom of LOOM's tiles of trams' and metros' lanes (lane-layers.ts); a
  * plain line further out. */
 export const LANES_FROM = 12
-/** MapLibre picks vector tiles by the map's zoom rounded: a zoom's tiles show from
- * half a zoom before it to half a zoom after. A layer's zoom range is checked against
- * the tile's zoom too, so a hand-over between two layers is where the tiles change. */
-export const TILES_SHOWN_EARLY = 0.5
-/** Where the plain line hands over to the lanes: where LANES_FROM's tiles show. */
-export const LANES_SHOWN_FROM = LANES_FROM - TILES_SHOWN_EARLY
+/** Where the plain line hands over to the lanes: where LANES_FROM's tiles show
+ * (core/tile-zooms.ts). */
+export const LANES_SHOWN_FROM = tilesShownFrom(LANES_FROM)
 export const TRAM_MIN_WIDTH = 2.5
 /** Borders over imagery (over the map, the map's own): red dashes on a dark edge (the
  * same in both looks). */

@@ -16,7 +16,7 @@ import type {
 import { clickableArea } from '../../core/map-style.ts'
 import {
   BUILDINGS_LAYER,
-  BUILDINGS_MINZOOM,
+  BUILDINGS_SHOWN_FROM,
   BUILDINGS_SOURCE,
   BUILDINGS_SOURCE_LAYER,
   PARTS_LAYER,
@@ -48,19 +48,19 @@ const ZOOMED_OUT: Buildings = {
   source: BUILDINGS_SOURCE,
   sourceLayer: ZOOMED_OUT_SOURCE_LAYER,
   minzoom: ZOOMED_OUT_MINZOOM,
-  maxzoom: BUILDINGS_MINZOOM
+  maxzoom: BUILDINGS_SHOWN_FROM
 }
 const WHOLE: Buildings = {
   source: BUILDINGS_SOURCE,
   sourceLayer: BUILDINGS_SOURCE_LAYER,
   filter: ['==', ['get', 'kind'], 'building'],
-  minzoom: BUILDINGS_MINZOOM
+  minzoom: BUILDINGS_SHOWN_FROM
 }
 const PARTS: Buildings = {
   source: BUILDINGS_SOURCE,
   sourceLayer: BUILDINGS_SOURCE_LAYER,
   filter: ['==', ['get', 'kind'], 'building_part'],
-  minzoom: BUILDINGS_MINZOOM
+  minzoom: BUILDINGS_SHOWN_FROM
 }
 
 function from(buildings: Buildings) {
@@ -158,7 +158,7 @@ export function followLook(map: Map) {
   view3d.onChange(apply)
   // Each time the map settles in 3D, with every building loaded: new parts?
   map.on('idle', () => {
-    if (!view3d.on() || map.getZoom() < BUILDINGS_MINZOOM) return
+    if (!view3d.on() || map.getZoom() < BUILDINGS_SHOWN_FROM) return
     if (findBuildingsWithParts(map, withParts, partsSeen)) apply()
   })
 }

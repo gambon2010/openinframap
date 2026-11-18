@@ -73,6 +73,10 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   dark outline around the bundle.
 - **Tunnels:** the same line, see-through (`TUNNEL_OPACITY`), at the same level
   as above ground; trams' tunnels keep a full outline. Never dotted.
+- **Hand-overs at the tile switch:** a zoom's vector tiles show from half a zoom
+  before it, so a layer handing over to another (zoomed out to close in) does it
+  there (`core/tile-zooms.ts`), or neither draws for half a zoom. Checked for the
+  whole style (`handovers.test.ts`).
 - **Ends and joins:** round caps and joins, so pieces meet without gaps.
 - **Order:** tunnels, then roads from the smallest up, railways, trams, borders;
   bold layers over light ones; a highlight over everything of its kind.

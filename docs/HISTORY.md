@@ -671,6 +671,14 @@ category is *Fuel*. Re-running `sites.sql` on a built database needs `search.sql
 after it (its view reads `site_feature`). "View on OpenStreetMap" moved to the
 debug info.
 
+**No gaps between zooms (2026-11-18):** after the trams, an audit of every layer
+ending at the zoom another starts: the buildings had the same gap (the zoomed out
+ones to 15, every building from 15: none from 14.5 to 15), now handing over at 14.5;
+upstream's power line labels too (low zoom to 10, the rest from 10), moved on the
+map by a fork module (upstream's file untouched). The rule is in
+`core/tile-zooms.ts`; `handovers.test.ts` checks the whole style: no fork layer on
+vector tiles ends at a whole zoom, and the upstream hand-overs are the ones moved.
+
 ---
 
 ## Building outlines (2026-11-11)

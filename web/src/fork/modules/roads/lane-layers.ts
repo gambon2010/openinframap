@@ -13,7 +13,8 @@ import { Builder, FULL, fading, tunnelOpacity } from './builder.ts'
 import type { TrackSet } from './rail-layers.ts'
 import { transitSetPrefix } from './rail-layers.ts'
 import * as look from './roads.constants.ts'
-import { LANES_FROM, LANES_SHOWN_FROM, TILES_SHOWN_EARLY } from './roads.constants.ts'
+import { TILES_SHOWN_EARLY } from '../../core/tile-zooms.ts'
+import { LANES_FROM, LANES_SHOWN_FROM } from './roads.constants.ts'
 
 export const LANES_SOURCE = 'transit'
 /** The last zoom of LOOM's tiles (loom_tiles.py's ZOOMS); further in, enlarged. */

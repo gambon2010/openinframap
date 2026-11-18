@@ -30,7 +30,8 @@ structure", "Merging from upstream"). Upstream imports only three fork files:
 index.ts, types.ts, config.ts   the module registry and hooks, the types, the URLs
 core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references),
            geo.ts (metres per pixel, degrees/radians), math.ts (clamp), colour.ts
-           (hex colours), map-style.ts (geometry-type filters; clickableArea and hitLine:
+           (hex colours), tile-zooms.ts (vector tiles show half a zoom early: where
+           hand-overs between layers go), map-style.ts (geometry-type filters; clickableArea and hitLine:
            areas clickable inside, thin lines easy to click), storage.ts (this
            browser's storage, read and written safely), author.ts, map-data.ts,
            buildings.ts (the background map's buildings: their layer, a building's
@@ -76,6 +77,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                mapped with parts (their parts raised instead)
   view3d       the 3D button: the map tilted, tilting and turning allowed, buildings on
   map-sources  background tiles and Photon (Settings)
+  handovers    upstream's layers handing over at a whole zoom moved to the tile switch
+               (core/tile-zooms.ts; handovers.test.ts checks the whole style)
   debug        Settings → Debug: a box of the map's state (zoom, scale, tiles, what is
                under the pointer), and a clicked feature's layer, source and every
                property at the end of its details ("Debug info")

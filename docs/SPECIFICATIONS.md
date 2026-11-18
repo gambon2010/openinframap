@@ -257,6 +257,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.35 | "View on OpenStreetMap" only with debug on. | ✅ (2026-11-18) `ui/details.css`, `modules/debug` |
 | 10.36 | Every data layer fading in and out when switched, as the roads do. | ⏳ proposed |
 | 10.37 | A site in two data layers (an oil depot in Oil & Natural Gas and in Critical sites) drawn once. | ⏳ to decide (suggestion given) |
+| 10.38 | No gaps when a data layer hands over to another while zooming; tests to keep it so. | ✅ (2026-11-18) `core/tile-zooms.ts`: buildings at 14.5 (were missing from 14.5 to 15), trams at 11.5; upstream's power line labels moved by `modules/handovers`; `handovers.test.ts` |
 
 ## 11. Quality
 

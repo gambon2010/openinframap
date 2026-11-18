@@ -8,6 +8,7 @@
 import polygonClipping, { type MultiPolygon, type Polygon } from 'polygon-clipping'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { groundArea } from './geo.ts'
+import { tilesShownFrom } from './tile-zooms.ts'
 
 /** The outlines' map layer (modules/buildings); its clickable inside is `<id>_hit`. */
 export const BUILDINGS_LAYER = 'buildings_outline'
@@ -26,6 +27,9 @@ export const BUILDINGS_SOURCE = 'basemap'
 export const BUILDINGS_SOURCE_LAYER = 'buildings'
 /** Every building is in the tiles from this zoom. */
 export const BUILDINGS_MINZOOM = 15
+/** Where the zoomed out buildings hand over to every building: where those tiles
+ * start showing (tile-zooms.ts). */
+export const BUILDINGS_SHOWN_FROM = tilesShownFrom(BUILDINGS_MINZOOM)
 /** Zoomed out: the buildings big enough to see, the backend's layer in the same tiles. */
 export const ZOOMED_OUT_LAYER = 'buildings_zoomed_out'
 export const ZOOMED_OUT_SOURCE_LAYER = 'buildings_large'
