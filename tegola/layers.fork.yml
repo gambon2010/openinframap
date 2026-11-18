@@ -169,7 +169,7 @@ layers:
       # A group of sites (count > 1): how many, and as shown ("1.2k").
       - name: count
       - name: count_label
-      # And how many of each kind (",fuel:12,fuel_depot:3,"): the map counts the shown.
+      # And how many of each kind (",fuel:12,storage_tank:3,"): the map counts the shown.
       - name: kinds
       - name: operator
         sql: tags -> 'operator'

@@ -3,12 +3,12 @@ import { Map as MapLibreMap } from 'maplibre-gl'
 import { COUNTS, countLabel, kindCount, shownCount, withCount } from './counted-groups.ts'
 import { FeatureHider, StyleLayer, specKey } from './feature-hider.ts'
 
-const counts = { fuel: 'site_fuel', fuel_depot: 'site_fuel_depot' }
+const counts = { fuel: 'site_fuel', storage_tank: 'site_storage_tank' }
 
 describe('groups counting only the kinds shown', () => {
   test('the count of the kinds whose icon is shown', () => {
     const count = JSON.stringify(shownCount(counts, new Set(['site_fuel'])))
-    expect(count).toContain(JSON.stringify(kindCount('fuel_depot')))
+    expect(count).toContain(JSON.stringify(kindCount('storage_tank')))
     expect(count).not.toContain(JSON.stringify(kindCount('fuel')))
     // A kind's count is read from between ",fuel:" and the next comma.
     expect(JSON.stringify(kindCount('fuel'))).toContain('",fuel:"')

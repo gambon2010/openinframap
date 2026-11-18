@@ -1,6 +1,6 @@
 // Fork: groups of features drawn as one point with a count (critical sites below
 // zoom 14: site_points in schema/fork/sites.sql). A group says how many of each kind
-// it holds (`kinds`: ",fuel:12,fuel_depot:3,"), and its layer says, in its metadata,
+// it holds (`kinds`: ",fuel:12,storage_tank:3,"), and its layer says, in its metadata,
 // which key icon each kind has (COUNTS: kind → icon). When the key hides kinds
 // (feature-hider.ts), the count shown is of the other kinds, sized by it, and a group
 // of hidden kinds only isn't drawn.

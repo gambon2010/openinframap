@@ -46,7 +46,7 @@ export const site_kinds: { [category: string]: string[] } = {
     'university'
   ],
   religion: ['christian', 'muslim', 'jewish', 'buddhist', 'worship'],
-  fuel: ['fuel', 'fuel_depot'],
+  fuel: ['fuel', 'storage_tank'],
   transport: ['airport', 'port', 'border', 'rail_yard'],
   military: ['military'],
   military_disused: ['military_disused'],
@@ -100,7 +100,7 @@ export function site_kind_label(kind: string): string {
       hindu: t('sites.kind.hindu', 'Hindu temple'),
       sikh: t('sites.kind.sikh', 'Sikh gurdwara'),
       fuel: t('sites.kind.fuel', 'Fuel station'),
-      fuel_depot: t('sites.kind.fuel-depot', 'Fuel depot, storage tank'),
+      storage_tank: t('sites.kind.storage-tank', 'Storage tank (fuel, gas)'),
       airport: t('sites.kind.airport', 'Airport, airfield'),
       port: t('sites.kind.port', 'Port, harbour'),
       border: t('sites.kind.border', 'Border control'),

@@ -173,7 +173,6 @@
       "buddhist": "Buddhist temple",
       "worship": "Other place of worship (Hindu, Sikh...)",
       "fuel": "Fuel station",
-      "fuel-depot": "Fuel depot, storage tank",
       "airport": "Airport, airfield",
       "port": "Port, harbour",
       "border": "Border control",
@@ -190,7 +189,8 @@
       "weather": "Weather station, radar",
       "hindu": "Hindu temple",
       "sikh": "Sikh gurdwara",
-      "convenience": "Convenience store"
+      "convenience": "Convenience store",
+      "storage-tank": "Storage tank (fuel, gas)"
     }
   },
   "route": {

@@ -6,7 +6,7 @@ import { el } from 'redom'
 import { MapGeoJSONFeature } from 'maplibre-gl'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { ForkModule } from '../../types.ts'
-import { detailsCard, type DetailsRow } from '../../ui/details.ts'
+import { SOURCE_NOTE, detailsCard, type DetailsRow } from '../../ui/details.ts'
 import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
 import layers, { icpe_colours, icpe_category_label } from './style.ts'
@@ -178,7 +178,7 @@ function popupHtml(feature: MapGeoJSONFeature): HTMLElement {
     title,
     rows,
     el(
-      'p.oim-extra-notice',
+      `p.oim-extra-notice.${SOURCE_NOTE}`,
       t('extra.notice', 'Not from OpenStreetMap: open data from'),
       ' ',
       source ? el('a', source.name, { href: source.url, target: '_blank' }) : p.source,

@@ -4,14 +4,14 @@
 // are drawn, and under the pointer its position and the features there (style
 // layer, tile layer, id). Bottom right above the credits, a fixed size (what changes
 // doesn't move it); updated as the map moves. While on, a clicked feature's details
-// end with a "Debug info" section: its layer, source, every property and its page on
-// OpenStreetMap.
+// end with a "Debug info" section: its layer, source, every property, its page on
+// OpenStreetMap and where its data comes from.
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el, mount } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { readText, writeText } from '../../core/storage.ts'
 import { ForkModule } from '../../types.ts'
-import { addDetailsExtra } from '../../ui/details.ts'
+import { SOURCE_NOTE, addDetailsExtra } from '../../ui/details.ts'
 import { addSettingsSection } from '../../ui/settings.ts'
 import { debugInfo, featureRows, osmUrl } from './info.ts'
 import './debug.css'
@@ -64,9 +64,10 @@ function debugBox(map: Map) {
   }
 }
 
-/** A feature's details while debugging: marked as such, then its rows and its page
- * on OpenStreetMap (the panel itself has no such link: ui/details.css). */
-function debugDetails(feature: MapGeoJSONFeature): HTMLElement {
+/** A feature's details while debugging: marked as such, then its rows, its page on
+ * OpenStreetMap and where its data comes from (the panel shows neither:
+ * ui/details.css). `sourceNote`: the panel's own note of it (modules/extra). */
+function debugDetails(feature: MapGeoJSONFeature, sourceNote: Element | null): HTMLElement {
   const url = osmUrl(feature.properties)
   return el(
     'section.oim-debug-details',
@@ -77,7 +78,8 @@ function debugDetails(feature: MapGeoJSONFeature): HTMLElement {
     ),
     ...(url
       ? [el('a', t('debug.openstreetmap', 'View on OpenStreetMap'), { href: url, target: '_blank' })]
-      : [])
+      : []),
+    ...(sourceNote ? [sourceNote] : [])
   )
 }
 
@@ -90,7 +92,7 @@ const debug: ForkModule = {
       box.show(value)
     }
     addDetailsExtra((feature, content) => {
-      if (on.checked) mount(content, debugDetails(feature))
+      if (on.checked) mount(content, debugDetails(feature, content.querySelector(`.${SOURCE_NOTE}`)))
     })
     on.onchange = () => {
       writeText(KEY, on.checked ? '1' : '0')

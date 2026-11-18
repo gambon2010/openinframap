@@ -1,10 +1,10 @@
 // Fork: Oil & Natural Gas's facilities (upstream's petroleum sites, the pipelines'
-// substations aside) in the critical sites' look, as their fuel depots: one look for
-// one thing (docs/STYLE.md). Their areas in the fuel colour (upstream's grey
+// substations aside: depots, terminals, refineries) in the critical sites' look, with
+// an icon of their own (no Critical sites key row hides it). Their areas in the fuel colour (upstream's grey
 // recoloured on the map), and an icon at every zoom from the fork's tile layer
 // petroleum_facility (tegola/layers.fork.yml). Their ids start with "petroleum_", so
 // the Oil & Natural Gas entry switches them; the key's "Petroleum facility" row shows
-// the icon and hides both. The fuel depots inside them aren't critical sites: drawn
+// the icon and hides both. The storage tanks inside them aren't critical sites: drawn
 // once (schema/fork/sites.sql).
 import type { Map } from 'maplibre-gl'
 import { t } from '../../core/i18n.ts'
@@ -16,7 +16,7 @@ import { area_opacity, site_colours } from './style.ts'
 /** Upstream's layer of the facilities' areas (style_oim_petroleum.ts). */
 const AREA_LAYER = 'petroleum_site'
 const ICON_LAYER = 'petroleum_facility_icon'
-const ICON = 'site_fuel_depot'
+const ICON = 'site_oil_facility'
 
 export function facilityLayers(): LayerSpecificationWithZIndex[] {
   return [

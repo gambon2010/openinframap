@@ -258,6 +258,9 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.36 | Every data layer fading in and out when switched, as the roads do. | ✅ (2026-11-18) `ui/fade.ts` (the layer switcher's visibility through a fade; the roads fade on their own) |
 | 10.37 | A site in two data layers (an oil depot in Oil & Natural Gas and in Critical sites) drawn once; Oil & Natural Gas's facilities in the fuel colour, with the depot icon zoomed out. | ✅ (2026-11-18) `sites.sql` (fuel depots inside or the same as a petroleum site left out: 1,408 → 755), `modules/sites/petroleum.ts`, tegola `petroleum_facility` (766 facilities, the pipelines' substations aside); the key row replaced (`KeySection.replaces`) |
 | 10.38 | No gaps when a data layer hands over to another while zooming; tests to keep it so. | ✅ (2026-11-18) `core/tile-zooms.ts`: buildings at 14.5 (were missing from 14.5 to 15), trams at 11.5; upstream's power line labels moved by `modules/handovers`; `handovers.test.ts` |
+| 10.39 | Critical sites' "Fuel depot, storage tank" is "Storage tank" with its own icon (depots are Oil & Natural Gas's); the oil and gas facilities' icon their own. | ✅ (2026-11-18) kind `storage_tank`, icons `site_storage_tank`, `site_oil_facility`; `industrial=fuel_depot/oil_storage` no longer imported as sites |
+| 10.40 | "Not from OpenStreetMap" notes (where the data comes from) only in the debug info, in every panel. | ✅ (2026-11-18) `SOURCE_NOTE` (`ui/details.ts`), moved by `modules/debug` |
+| 10.41 | Military: sub-categories; military areas (3,509) with their own key row and icon (they have none, and fall back to the government icon). | ⏳ proposed |
 
 ## 11. Quality
 

@@ -38,7 +38,7 @@ SITES = {
     "emergency": ["ambulance_station", "siren"],
     "office": ["government", "diplomatic"],
     # fuel
-    "industrial": ["fuel_depot", "oil_storage", "port", "slaughterhouse", "distributor"],
+    "industrial": ["port", "slaughterhouse", "distributor"],
     "man_made": ["storage_tank", "silo", "monitoring_station"],
     "shop": ["wholesale", "supermarket", "convenience"],
     # transport

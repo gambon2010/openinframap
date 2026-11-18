@@ -31,6 +31,10 @@ export function detailsExtras(): readonly DetailsExtra[] {
 /** A details row: its label and its value (nothing: the row is left out). */
 export type DetailsRow = [label: string, value: string | Node | null | undefined | false]
 
+/** A details panel's note of where its data comes from (not OpenStreetMap: open data
+ * from...): shown only with debug on, in its debug info (modules/debug). */
+export const SOURCE_NOTE = 'oim-source-note'
+
 /**
  * A map feature's details as the panel shows them: a title, a table of the rows
  * that have a value, and what goes under it (a source notice...). For modules

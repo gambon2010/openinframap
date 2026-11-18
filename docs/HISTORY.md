@@ -695,6 +695,15 @@ the depot icon at every zoom from a fork tile layer, one point per facility, the
 substations aside); the key's upstream row replaced by one with the icon
 (`KeySection.replaces`).
 
+**Facility icons hidden by a key row (2026-11-18):** the oil and gas facilities had
+the fuel depots' icon; the key hides by icon, and the owner had unticked fuel
+depots (kept in the browser), so the new icons were hidden too ("clearing the
+cache" brought them back: it reset the stored tick boxes). Each now has its own:
+Critical sites' row is "Storage tank (fuel, gas)" (kind `storage_tank`, a tank drawn
+for it), the facilities keep the factory. Depot areas aren't imported as sites any
+more (Oil & Natural Gas's). The rule is in docs/STYLE.md and CLAUDE.md. Source notes
+("Not from OpenStreetMap: open data from...") only in the debug info.
+
 ---
 
 ## Building outlines (2026-11-11)

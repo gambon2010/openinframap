@@ -148,3 +148,8 @@
 .oim-info-panel .infobox-external-links a:has(> .osm_link) {
   display: none;
 }
+
+/* Where a feature's data comes from: only in its debug info (modules/debug). */
+.oim-info-panel .oim-popup-content > .oim-source-note {
+  display: none;
+}

@@ -42,6 +42,10 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
   buttons when their panel is open: `oim-pressed`.
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
+- **Each key row its own icon and colour:** the key hides by icon and colour, and
+  remembers it in the browser; a new layer reusing another row's icon is hidden with
+  it (the oil and gas facilities had the fuel depots' icon: hidden while that row
+  was unticked).
 - **Icons:** one set of line icons (`ui/icons.ts`: 24-unit outlines, 2 wide, round
   ends, in the text's colour), one picture per button, never a near-copy of another
   button's (Data layers a stack, My layers a pencil) nor a decoration added to tell

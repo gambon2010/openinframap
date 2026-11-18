@@ -34,12 +34,12 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type = 'place_of_worship' THEN CASE
             WHEN tags->'religion' IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh') THEN tags->'religion'
             ELSE 'worship' END
-        -- fuel (a storage tank only if it holds fuel or gas)
+        -- fuel (a storage tank only if it holds fuel or gas; depots are Oil & Natural
+        -- Gas's: upstream's petroleum sites)
         WHEN type = 'fuel' THEN 'fuel'
-        WHEN type IN ('fuel_depot', 'oil_storage') THEN 'fuel_depot'
         WHEN type = 'storage_tank' THEN CASE
             WHEN tags->'content' IN ('fuel', 'oil', 'diesel', 'petrol', 'gasoline', 'kerosene', 'gas',
-                                     'natural_gas', 'lpg', 'lng', 'biogas', 'hydrocarbons') THEN 'fuel_depot' END
+                                     'natural_gas', 'lpg', 'lng', 'biogas', 'hydrocarbons') THEN 'storage_tank' END
         -- transport
         WHEN type = 'aerodrome' THEN 'airport'
         WHEN type = 'port' OR key = 'harbour' THEN 'port'
@@ -75,7 +75,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('townhall', 'tax', 'prefecture', 'social', 'employment', 'customs', 'national', 'government',
                       'courthouse', 'prison', 'embassy', 'university') THEN 'government'
         WHEN kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship') THEN 'religion'
-        WHEN kind IN ('fuel', 'fuel_depot') THEN 'fuel'
+        WHEN kind IN ('fuel', 'storage_tank') THEN 'fuel'
         WHEN kind IN ('airport', 'port', 'border', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military') THEN 'military'
         WHEN kind = 'military_disused' THEN 'military_disused'
@@ -95,7 +95,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
           OR (kind = 'airport' AND (tags ? 'iata' OR tags ? 'icao'))
           OR (kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship')
               AND tags->'building' IN ('cathedral', 'basilica'))
-          OR (kind IN ('port', 'landfill', 'fuel_depot') AND area > 90000) THEN 0
+          OR (kind IN ('port', 'landfill') AND area > 90000) THEN 0
         -- Churches and town halls: most French ones have a Wikidata entry, so that
         -- doesn't make them stand out (58,000 and 37,000).
         WHEN kind IN ('christian', 'townhall') THEN 2
@@ -111,9 +111,9 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
 $$;
 
 -- What Tegola serves (sites_point, sites_area): materialized, as the data only
--- changes with a rebuild. A fuel depot already drawn by the Oil & Natural Gas layer
--- (upstream's osm_petroleum_site: the same object, or a tank inside its oil or gas
--- site) is left to it: drawn once.
+-- changes with a rebuild. A storage tank already drawn by the Oil & Natural Gas layer
+-- (upstream's osm_petroleum_site: the same object, or inside its oil or gas site)
+-- is left to it: drawn once.
 DROP MATERIALIZED VIEW IF EXISTS site_feature;
 CREATE MATERIALIZED VIEW site_feature AS
 SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(kind) AS category,
@@ -123,7 +123,7 @@ SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(k
                     THEN oim_ground_area(geometry) ELSE 0 END AS area
           FROM osm_site) s
  WHERE kind IS NOT NULL
-   AND NOT (kind = 'fuel_depot' AND EXISTS (
+   AND NOT (kind = 'storage_tank' AND EXISTS (
        SELECT 1 FROM osm_petroleum_site p
         WHERE p.osm_id = s.osm_id
            OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))));
@@ -137,7 +137,7 @@ CREATE INDEX site_feature_importance ON site_feature (importance);
 -- cell stays a site, so the map, hiding kinds, never shows a group of one. The grid
 -- is aligned with the tiles, so a group never straddles two. Important sites
 -- (importance 0) stay as they are from zoom 8; from zoom 14 nothing is grouped. A
--- group also says how many of each kind it holds (kinds: ",fuel:12,fuel_depot:3,"),
+-- group also says how many of each kind it holds (kinds: ",fuel:12,storage_tank:3,"),
 -- so the map can count only the kinds shown (ui/key/counted-groups.ts).
 DROP FUNCTION IF EXISTS site_points(geometry, integer);
 CREATE FUNCTION site_points(bbox geometry, zoom integer)
