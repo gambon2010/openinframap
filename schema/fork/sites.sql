@@ -53,12 +53,19 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type = 'port' OR key = 'harbour' THEN 'port'
         WHEN type = 'border_control' THEN 'border'
         WHEN type = 'yard' THEN 'rail_yard'
-        -- police and gendarmerie: by the operator, else the name
+        -- police and gendarmerie: by police:FR (France's tag), else the operator, else
+        -- the name; a camera tagged police isn't a station
+        WHEN type = 'police' AND tags->'name' ~* 'cam[ée]ra' THEN NULL
         WHEN type = 'police' THEN CASE
+            WHEN tags->'police:FR' = 'gendarmerie' THEN 'gendarmerie'
+            WHEN tags->'police:FR' ~* 'municipale|rurale' THEN 'police_municipal'
+            WHEN tags->'police:FR' ~* '^(police|police_nationale|CRS)$' THEN 'police_national'
             WHEN is_gendarmerie(tags) OR tags->'name' ~* '^brigade|\mescadron' THEN 'gendarmerie'
-            WHEN tags->'operator' ILIKE 'police nationale' OR tags->'operator' ILIKE 'ministère de l''intérieur'
-              OR tags->'name' ~* 'commissariat|police nationale|h[ôo]tel de police' THEN 'police_national'
-            WHEN tags->'operator' ~* 'municipal|^ville |^mairie|^commune ' OR tags->'name' ~* 'municipal' THEN 'police_municipal'
+            WHEN tags->'operator' ~* '^(police nationale|ministère de l''intérieur|préfecture de police)'
+              OR tags->'name' ~* 'commissariat|police nationale|h[ôo]tel de police|pr[ée]fecture de police|police aux fronti|\mC\.?R\.?S\M|police autoroute'
+              THEN 'police_national'
+            WHEN tags->'operator' ~* 'municipal|^ville |^mairie|^commune '
+              OR tags->'name' ~* 'munici|minicipal|police rurale' THEN 'police_municipal'
             ELSE 'police' END
         -- military: in use (but the gendarmerie's), and disused fortifications
         WHEN key = 'landuse' AND type = 'military' THEN

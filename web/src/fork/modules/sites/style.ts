@@ -90,7 +90,7 @@ export function site_kind_label(kind: string): string {
       gendarmerie: t('sites.kind.gendarmerie', 'Gendarmerie'),
       police_national: t('sites.kind.police-national', 'National police (commissariat)'),
       police_municipal: t('sites.kind.police-municipal', 'Municipal police'),
-      police: t('sites.kind.police', 'Other police'),
+      police: t('sites.kind.police', 'Police (force not given)'),
       ambulance: t('sites.kind.ambulance', 'Ambulance station'),
       siren: t('sites.kind.siren', 'Warning siren'),
       national: t('sites.kind.national', 'National institution (parliament, ministry)'),

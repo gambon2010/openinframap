@@ -725,7 +725,11 @@ station's name and tags); named areas (army bases, "Quartier...") stay military,
 station inside them apart. Military areas: 1,710. Government ochre (its blue was the
 police's navy), the gendarmerie a flaming grenade (drawn). "Brigade" and "Escadron" first counted as gendarmerie
 everywhere: the air force's squadrons ("Escadron de chasse...") turned gendarmerie;
-now they count only at a police station.
+now they count only at a police station. Police sorted by `police:FR` first (France's tag: 3,276
+gendarmerie, 1,287 municipal, 640 national), then operator, then name (CRS, Police
+aux frontières, Préfecture de police national; cameras tagged police left out):
+"other police" from 282 to 211, nearly all with no name or operator, now "Police
+(force not given)".
 
 ---
 
