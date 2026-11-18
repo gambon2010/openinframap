@@ -5,6 +5,14 @@
 -- Safe to run more than once. The functions set their search_path: Postgres builds
 -- materialized views with a restricted one, where hstore's -> isn't visible.
 
+-- A site of the gendarmerie, by its operator or its name (OpenStreetMap's police=*
+-- is hardly used in France).
+CREATE OR REPLACE FUNCTION is_gendarmerie(tags hstore) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
+    SELECT coalesce(tags->'operator' ILIKE 'gendarmerie%', false)
+        OR coalesce(tags->'name' ~* '\mgendarmerie|^brigade|\mescadron', false)
+$$;
+
 CREATE OR REPLACE FUNCTION site_kind(key text, type text, tags hstore) RETURNS text
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
@@ -13,7 +21,6 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type IN ('clinic', 'centre') THEN 'clinic'
         WHEN type = 'pharmacy' THEN 'pharmacy'
         WHEN type = 'fire_station' THEN 'fire_station'
-        WHEN type = 'police' THEN 'police'
         WHEN type = 'ambulance_station' THEN 'ambulance'
         WHEN type = 'siren' THEN 'siren'
         -- government and public services
@@ -45,11 +52,20 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type = 'port' OR key = 'harbour' THEN 'port'
         WHEN type = 'border_control' THEN 'border'
         WHEN type = 'yard' THEN 'rail_yard'
-        -- military: in use, and disused fortifications
-        WHEN key = 'landuse' AND type = 'military' THEN 'military_area'
+        -- police and gendarmerie: by the operator, else the name
+        WHEN type = 'police' THEN CASE
+            WHEN is_gendarmerie(tags) THEN 'gendarmerie'
+            WHEN tags->'operator' ILIKE 'police nationale' OR tags->'operator' ILIKE 'ministère de l''intérieur'
+              OR tags->'name' ~* 'commissariat|police nationale|h[ôo]tel de police' THEN 'police_national'
+            WHEN tags->'operator' ~* 'municipal|^ville |^mairie|^commune ' OR tags->'name' ~* 'municipal' THEN 'police_municipal'
+            ELSE 'police' END
+        -- military: in use (but the gendarmerie's), and disused fortifications
+        WHEN key = 'landuse' AND type = 'military' THEN
+            CASE WHEN is_gendarmerie(tags) THEN 'gendarmerie' ELSE 'military_area' END
         WHEN key = 'military' THEN CASE
             WHEN type IN ('bunker', 'trench', 'embrasure', 'casemate', 'cupola', 'abandoned', 'battery',
                           'blockhouse', 'pillbox', 'fort', 'gun_emplacement', 'shelter') THEN 'military_disused'
+            WHEN is_gendarmerie(tags) THEN 'gendarmerie'
             WHEN type IN ('barracks', 'base', 'naval_base', 'airfield') THEN 'military_base'
             WHEN type IN ('office', 'checkpoint') THEN 'military_office'
             WHEN type IN ('ammunition', 'depot') THEN 'military_depot'
@@ -74,7 +90,8 @@ $$;
 CREATE OR REPLACE FUNCTION site_category(kind text) RETURNS text
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
-        WHEN kind IN ('hospital', 'clinic', 'pharmacy', 'fire_station', 'police', 'ambulance', 'siren') THEN 'health'
+        WHEN kind IN ('hospital', 'clinic', 'pharmacy', 'fire_station', 'ambulance', 'siren') THEN 'health'
+        WHEN kind IN ('gendarmerie', 'police_national', 'police_municipal', 'police') THEN 'police'
         WHEN kind IN ('townhall', 'tax', 'prefecture', 'social', 'employment', 'customs', 'national', 'government',
                       'courthouse', 'prison', 'embassy', 'university') THEN 'government'
         WHEN kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship') THEN 'religion'
@@ -118,19 +135,58 @@ $$;
 -- changes with a rebuild. A storage tank already drawn by the Oil & Natural Gas layer
 -- (upstream's osm_petroleum_site: the same object, or inside its oil or gas site)
 -- is left to it: drawn once.
+--
+-- A gendarmerie's compound is often mapped as a military area with its station
+-- inside: one item, the area as a gendarmerie (the station's name and tags), the
+-- station not drawn apart. An area is a compound when it has no name of its own, a
+-- gendarmerie station inside, no army site inside, and is small (under 5 ha):
+-- army bases (named, larger, or with their own sites) stay military, a station
+-- inside them apart. (A military area named for the gendarmerie is one already:
+-- site_kind.)
 DROP MATERIALIZED VIEW IF EXISTS site_feature;
 CREATE MATERIALIZED VIEW site_feature AS
+WITH s AS (
+    SELECT id AS site_id, osm_id, geometry, name, tags, site_kind(key, type, tags) AS kind,
+           CASE WHEN ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon')
+                THEN oim_ground_area(geometry) ELSE 0 END AS area
+      FROM osm_site
+), kept AS (
+    SELECT * FROM s
+     WHERE kind IS NOT NULL
+       AND NOT (kind = 'storage_tank' AND EXISTS (
+           SELECT 1 FROM osm_petroleum_site p
+            WHERE p.osm_id = s.osm_id
+               OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))))
+), station_in AS (
+    -- Each gendarmerie station inside an unnamed, small military area.
+    SELECT a.site_id AS area_id, st.site_id AS station_id
+      FROM kept a JOIN kept st ON st.kind = 'gendarmerie' AND st.site_id <> a.site_id
+       AND st.geometry && a.geometry AND ST_Intersects(a.geometry, ST_PointOnSurface(st.geometry))
+     WHERE a.kind = 'military_area' AND coalesce(a.name, '') = '' AND a.area < 50000
+), compound AS (
+    -- Those areas without an army site inside, with one of their stations.
+    SELECT i.area_id, min(i.station_id) AS station_id
+      FROM station_in i JOIN kept a ON a.site_id = i.area_id
+     WHERE NOT EXISTS (
+           SELECT 1 FROM kept m
+            WHERE m.kind IN ('military_base', 'military_office', 'military_depot', 'military_range', 'military')
+              AND m.geometry && a.geometry AND ST_Intersects(a.geometry, ST_PointOnSurface(m.geometry)))
+     GROUP BY i.area_id
+), merged AS (
+    SELECT k.osm_id, k.geometry,
+           CASE WHEN c.area_id IS NULL THEN k.name ELSE st.name END AS name,
+           CASE WHEN c.area_id IS NULL THEN k.kind ELSE 'gendarmerie' END AS kind,
+           CASE WHEN c.area_id IS NULL THEN k.tags ELSE k.tags || st.tags END AS tags,
+           k.area
+      FROM kept k
+           LEFT JOIN compound c ON c.area_id = k.site_id
+           LEFT JOIN kept st ON st.site_id = c.station_id
+     WHERE NOT EXISTS (
+           SELECT 1 FROM station_in i JOIN compound c2 ON c2.area_id = i.area_id WHERE i.station_id = k.site_id)
+)
 SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(kind) AS category,
        site_importance(kind, tags, area) AS importance, tags, area
-  FROM (SELECT osm_id, geometry, name, tags, site_kind(key, type, tags) AS kind,
-               CASE WHEN ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon')
-                    THEN oim_ground_area(geometry) ELSE 0 END AS area
-          FROM osm_site) s
- WHERE kind IS NOT NULL
-   AND NOT (kind = 'storage_tank' AND EXISTS (
-       SELECT 1 FROM osm_petroleum_site p
-        WHERE p.osm_id = s.osm_id
-           OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))));
+  FROM merged;
 CREATE INDEX site_feature_geometry ON site_feature USING gist (geometry);
 CREATE INDEX site_feature_importance ON site_feature (importance);
 
@@ -189,6 +245,6 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
            -- other: each category's is moved ~10 px (on a 512 px tile) its own way.
            CROSS JOIN LATERAL (SELECT 2 * pi() * (array_position(
                ARRAY['health', 'government', 'religion', 'fuel', 'transport', 'military',
-                     'military_disused', 'food', 'water_waste'], groups.category) - 1) / 9 AS angle) a
+                     'military_disused', 'food', 'water_waste', 'police'], groups.category) - 1) / 10 AS angle) a
            CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 512 AS px) s
 $$;

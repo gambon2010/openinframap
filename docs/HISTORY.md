@@ -714,6 +714,17 @@ scales (drawn: Maki has none). New icon files need the dev server restarted (the
 list is made when it starts). An entry with some key rows unticked shows partial (as
 group headings do); a row ticked under an entry that's off turns the entry on.
 
+**Police and gendarmerie (2026-11-18):** police stations sat in Health and emergency,
+and half the military areas (1,764 of 3,509) held a gendarmerie station: the
+gendarmerie's compounds, mapped as military areas. Now a category of its own, by
+operator, else name (police=* is hardly used in France): gendarmerie (3,864),
+national police (772), municipal police (1,403), other (282). A military area named
+for the gendarmerie is one; an unnamed one under 5 ha with a gendarmerie station and
+no army site inside is merged with the station into one item (the area, the
+station's name and tags); named areas (army bases, "Quartier...") stay military, a
+station inside them apart. Military areas: 1,710. Government ochre (its blue was the
+police's navy), the gendarmerie a flaming grenade (drawn).
+
 ---
 
 ## Building outlines (2026-11-11)

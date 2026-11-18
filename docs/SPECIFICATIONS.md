@@ -262,6 +262,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.40 | "Not from OpenStreetMap" notes (where the data comes from) only in the debug info, in every panel. | ✅ (2026-11-18) `SOURCE_NOTE` (`ui/details.ts`), moved by `modules/debug` |
 | 10.41 | Military: sub-categories; military areas (3,509) with their own key row and icon (they had none, and fell back to the government icon). Icons reworked: disused military a fort, supermarket a shopfront, courthouse scales. | ✅ (2026-11-18) kinds `military_area`, `_base`, `_office`, `_depot`, `_range`, `military` (other); `scripts/make_site_icons.py` |
 | 10.42 | A Data layers entry shown in part (some key rows unticked) marked partial; ticking a row under an entry that's off turns the entry on. | ✅ (2026-11-18) `ui/data-layers.ts` (`entryTick`) |
+| 10.43 | Police and gendarmerie a category of their own (gendarmerie, national police, municipal police, other); a gendarmerie compound mapped as a military area with its station inside one item; Government ochre, Police and gendarmerie navy. | ✅ (2026-11-18) `sites.sql` (`is_gendarmerie`, the compound merge: unnamed military areas under 5 ha with a gendarmerie station and no army site inside), grenade icon |
 
 ## 11. Quality
 

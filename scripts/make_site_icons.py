@@ -19,7 +19,8 @@ OUT = REPO_ROOT / "web" / "src" / "icons"
 
 COLOURS = {
     "health": "#D32F2F",
-    "government": "#1565C0",
+    "government": "#A67C00",
+    "police": "#1A237E",
     "religion": "#6A1B9A",
     "fuel": "#E65100",
     "transport": "#455A64",
@@ -35,9 +36,12 @@ KINDS = {
     "clinic": ("health", "doctor"),
     "pharmacy": ("health", "pharmacy"),
     "fire_station": ("health", "fire-station"),
-    "police": ("health", "police"),
     "ambulance": ("health", "emergency-phone"),
     "siren": ("health", "caution"),
+    "gendarmerie": ("police", None),  # a flaming grenade, drawn here
+    "police_national": ("police", "police"),
+    "police_municipal": ("police", "town"),
+    "police": ("police", "car"),
     "townhall": ("government", "town-hall"),
     "tax": ("government", "bank"),
     "prefecture": ("government", "building-alt1"),
@@ -83,6 +87,9 @@ KINDS = {
 
 # Glyphs Maki doesn't have, on its 15x15 grid.
 OWN = {
+    # The gendarmerie's badge: a grenade with its flame.
+    "gendarmerie": '<path d="M7.5 0.4c1.6 0.9 1.9 2.1 1.2 3 1.2-0.2 1.9-1 2-2.1 1 1.2 0.8 2.6-0.4 3.4H4.7c-1.2-0.8-1.4-2.2'
+    '-0.4-3.4 0.1 1.1 0.8 1.9 2 2.1-0.7-0.9-0.4-2.1 1.2-3z"/><path d="M6 5.3h3v1.2H6z"/><circle cx="7.5" cy="10.4" r="4.2"/>',
     # Scales: a post on a base, a beam, a pan hanging at each end.
     "courthouse": '<path d="M7 2h1v10.5H7z M4 12.5h7V14H4z M1.5 3h12v1h-12z"/>'
     '<path d="M2 4 0.5 8.5M2 4l1.5 4.5M13 4l-1.5 4.5M13 4l1.5 4.5" fill="none" stroke="currentColor" stroke-width="0.8"/>'

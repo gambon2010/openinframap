@@ -18,7 +18,8 @@ export const area_opacity = interpolate(zoom, [
 
 export const site_colours: { [category: string]: string } = {
   health: '#D32F2F',
-  government: '#1565C0',
+  government: '#A67C00',
+  police: '#1A237E',
   religion: '#6A1B9A',
   fuel: '#E65100',
   transport: '#455A64',
@@ -30,7 +31,8 @@ export const site_colours: { [category: string]: string } = {
 
 // category -> kinds (schema/fork/sites.sql), in the order the key lists them.
 export const site_kinds: { [category: string]: string[] } = {
-  health: ['hospital', 'clinic', 'pharmacy', 'fire_station', 'police', 'ambulance', 'siren'],
+  health: ['hospital', 'clinic', 'pharmacy', 'fire_station', 'ambulance', 'siren'],
+  police: ['gendarmerie', 'police_national', 'police_municipal', 'police'],
   government: [
     'national',
     'prefecture',
@@ -65,6 +67,7 @@ export function site_category_label(category: string): string {
   return (
     {
       health: t('sites.category.health', 'Health and emergency'),
+      police: t('sites.category.police', 'Police and gendarmerie'),
       government: t('sites.category.government', 'Government and public services'),
       religion: t('sites.category.religion', 'Places of worship'),
       fuel: t('sites.category.fuel', 'Fuel'),
@@ -84,7 +87,10 @@ export function site_kind_label(kind: string): string {
       clinic: t('sites.kind.clinic', 'Clinic, health centre'),
       pharmacy: t('sites.kind.pharmacy', 'Pharmacy'),
       fire_station: t('sites.kind.fire-station', 'Fire station'),
-      police: t('sites.kind.police', 'Police, gendarmerie'),
+      gendarmerie: t('sites.kind.gendarmerie', 'Gendarmerie'),
+      police_national: t('sites.kind.police-national', 'National police (commissariat)'),
+      police_municipal: t('sites.kind.police-municipal', 'Municipal police'),
+      police: t('sites.kind.police', 'Other police'),
       ambulance: t('sites.kind.ambulance', 'Ambulance station'),
       siren: t('sites.kind.siren', 'Warning siren'),
       national: t('sites.kind.national', 'National institution (parliament, ministry)'),

@@ -145,14 +145,15 @@
       "military": "Military",
       "military-disused": "Disused military (bunkers, trenches...)",
       "food": "Food supply",
-      "water-waste": "Dams, landfills, weather stations"
+      "water-waste": "Dams, landfills, weather stations",
+      "police": "Police and gendarmerie"
     },
     "kind": {
       "hospital": "Hospital",
       "clinic": "Clinic, health centre",
       "pharmacy": "Pharmacy",
       "fire-station": "Fire station",
-      "police": "Police, gendarmerie",
+      "police": "Other police",
       "ambulance": "Ambulance station",
       "siren": "Warning siren",
       "national": "National institution (parliament, ministry)",
@@ -195,7 +196,10 @@
       "military-base": "Barracks, base",
       "military-office": "Military office, checkpoint",
       "military-depot": "Ammunition, military depot",
-      "military-range": "Range, training area"
+      "military-range": "Range, training area",
+      "gendarmerie": "Gendarmerie",
+      "police-national": "National police (commissariat)",
+      "police-municipal": "Municipal police"
     }
   },
   "route": {
