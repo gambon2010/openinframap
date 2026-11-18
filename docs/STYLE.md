@@ -88,6 +88,10 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
 - **Labels:** dark text with a thin white halo (about 1.5 px), never a wide
   blurred one (it shows as a white box); over imagery white text on a dark halo.
   A label for something picked goes on top of every other label.
+- **One thing, one place:** a feature two data layers would draw is drawn by one
+  (an oil depot: Oil & Natural Gas, not Critical sites); things of one kind look alike
+  whichever layer draws them (oil and gas facilities in the fuel depots' colour and
+  icon).
 - **Leave out clutter the original map leaves out:** small pieces with no name
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).

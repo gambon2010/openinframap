@@ -2,10 +2,11 @@
 // "sites" map). Everything the map needs for them, as one fork module.
 import { t } from '../../core/i18n.ts'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
-import { ForkModule } from '../../types.ts'
+import { ForkModule, KeySection } from '../../types.ts'
 import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
 import layers, { site_kinds, site_kind_label, site_category_label } from './style.ts'
+import { facilityKey, facilityLayers, recolourFacilities } from './petroleum.ts'
 
 const oim_attribution =
   '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://openinframap.org/copyright">Open Infrastructure Map</a>'
@@ -21,7 +22,7 @@ const sites: ForkModule = {
     }
   }),
 
-  layers,
+  layers: () => [...layers(), ...facilityLayers()],
 
   switcherGroups: () => [
     new LayerGroup(t('layers.sites', 'Critical sites'), [
@@ -54,6 +55,7 @@ const sites: ForkModule = {
   ],
 
   init: ({ map, clickRouter, primaryLayers }) => {
+    recolourFacilities(map)
     // Clicking a group of sites (a numbered disc) zooms in on it.
     clickRouter.registerHandler(
       primaryLayers()
@@ -66,9 +68,9 @@ const sites: ForkModule = {
     )
   },
 
-  // One section per category, a row per kind.
-  key: async () =>
-    Object.keys(site_kinds).map((category) => ({
+  // One section per category, a row per kind; and Oil & Natural Gas's facilities.
+  key: async () => [
+    ...Object.keys(site_kinds).map((category): KeySection => ({
       title: site_category_label(category),
       rows: site_kinds[category].map((kind) => [
         site_kind_label(kind),
@@ -76,10 +78,12 @@ const sites: ForkModule = {
         { icon: `site_${kind}` }
       ])
     })),
+    facilityKey()
+  ],
 
   popup: {
     // Shown as the title and "Type" instead; id is the tile's, count only on groups.
-    hiddenKeys: ['id', 'category', 'importance', 'count', 'count_label'],
+    hiddenKeys: ['id', 'category', 'importance', 'count', 'count_label', 'kinds'],
     renderKey: (key, value) =>
       key == 'kind' ? popupRow(t('info.type'), site_kind_label(String(value))) : undefined,
     title: (feature) =>

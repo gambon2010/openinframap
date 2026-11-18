@@ -111,7 +111,9 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
 $$;
 
 -- What Tegola serves (sites_point, sites_area): materialized, as the data only
--- changes with a rebuild.
+-- changes with a rebuild. A fuel depot already drawn by the Oil & Natural Gas layer
+-- (upstream's osm_petroleum_site: the same object, or a tank inside its oil or gas
+-- site) is left to it: drawn once.
 DROP MATERIALIZED VIEW IF EXISTS site_feature;
 CREATE MATERIALIZED VIEW site_feature AS
 SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(kind) AS category,
@@ -120,7 +122,11 @@ SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(k
                CASE WHEN ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon')
                     THEN oim_ground_area(geometry) ELSE 0 END AS area
           FROM osm_site) s
- WHERE kind IS NOT NULL;
+ WHERE kind IS NOT NULL
+   AND NOT (kind = 'fuel_depot' AND EXISTS (
+       SELECT 1 FROM osm_petroleum_site p
+        WHERE p.osm_id = s.osm_id
+           OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))));
 CREATE INDEX site_feature_geometry ON site_feature USING gist (geometry);
 CREATE INDEX site_feature_importance ON site_feature (importance);
 

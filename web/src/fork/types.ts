@@ -38,6 +38,8 @@ export interface KeySection {
   rows: KeyRow[]
   /** Add the rows to the end of an existing section (its title) instead. */
   appendTo?: string
+  /** Rows of that section the new ones replace (their labels). */
+  replaces?: string[]
 }
 
 /** A search result from the backend, as search/openinframap.ts receives it. */

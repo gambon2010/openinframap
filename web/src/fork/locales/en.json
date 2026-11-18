@@ -6,7 +6,8 @@
     "show-all": "Show all",
     "show-all-title": "Show everything hidden from the key",
     "toggle": "Show on the map",
-    "gas": "Gas"
+    "gas": "Gas",
+    "petroleum": "Petroleum"
   },
   "layers": {
     "extra-icpe": "Classified installations (ICPE)",
@@ -750,5 +751,10 @@
     "metro": "Metro",
     "light-rail": "Light rail",
     "depots": "Sidings and depots"
+  },
+  "names": {
+    "petroleum": {
+      "facility": "Petroleum facility"
+    }
   }
 }

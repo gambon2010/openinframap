@@ -685,6 +685,16 @@ layer switcher sets visibility). While the switcher sets visibilities, they now 
 through a fader (`ui/fade.ts`): shown, a layer starts transparent and fades to its
 own opacity; hidden, it fades out, then goes. The roads' layers opt out.
 
+**Oil depots drawn once (2026-11-18):** Oil & Natural Gas (upstream's petroleum
+sites: 3,508 pipeline substations, 376 gas sites, 301 oil sites, refineries...) and
+Critical sites' fuel depots (1,401 tanks holding fuel, 7 oil storage areas) overlapped:
+the 7 areas in both, 653 tanks inside an oil or gas site. Those are left to Oil &
+Natural Gas (`site_feature`: 755 depots left); its facilities take the critical
+sites' look (fuel colour on the map, recoloured at load, upstream's file untouched;
+the depot icon at every zoom from a fork tile layer, one point per facility, the
+substations aside); the key's upstream row replaced by one with the icon
+(`KeySection.replaces`).
+
 ---
 
 ## Building outlines (2026-11-11)

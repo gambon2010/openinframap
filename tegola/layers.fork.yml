@@ -186,3 +186,18 @@ layers:
     id_field: id
     from: site_points(!BBOX!, !ZOOM!) AS s
 
+  # Fork: an oil or gas facility (upstream's petroleum sites but the pipelines'
+  # substations, which go with the pipelines) as one point, for its icon zoomed out
+  # (modules/sites: drawn like a fuel depot).
+  - name: petroleum_facility
+    map:
+      - openinframap
+      - petroleum
+    geometry_type: Point
+    min_zoom: 5
+    field_sets: [geom_centroid, name, wiki]
+    fields:
+      - name: type
+    id_field: osm_id
+    from: osm_petroleum_site
+    where: type <> 'substation' AND geometry && !BBOX!

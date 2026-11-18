@@ -54,7 +54,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
   extra        data from outside OSM
-  sites        critical sites
+  sites        critical sites; petroleum.ts: Oil & Natural Gas's facilities in their
+               look (areas in the fuel colour, an icon from tegola's
+               petroleum_facility, their key row)
   search       search descriptions, Photon
   coordinates  the cursor's position and MGRS; MGRS in search
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)

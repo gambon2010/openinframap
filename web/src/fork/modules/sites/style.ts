@@ -10,6 +10,12 @@ import { text_paint, font } from '../../../style/common.ts'
 import { COUNTS } from '../../ui/key/counted-groups.ts'
 
 // Must match scripts/make_site_icons.py.
+/** A site's area: light, lighter close in (its icon says what it is). */
+export const area_opacity = interpolate(zoom, [
+  [8, 0.18],
+  [16, 0.08]
+])
+
 export const site_colours: { [category: string]: string } = {
   health: '#D32F2F',
   government: '#1565C0',
@@ -170,10 +176,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       type: 'fill',
       paint: {
         'fill-color': colour,
-        'fill-opacity': interpolate(zoom, [
-          [8, 0.18],
-          [16, 0.08]
-        ]),
+        'fill-opacity': area_opacity,
         'fill-outline-color': colour
       }
     },

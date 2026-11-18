@@ -67,6 +67,10 @@ function addSections(pane: HTMLElement, sections: KeySection[]) {
       : undefined
     const table = after?.nextElementSibling
     if (table?.tagName === 'TABLE') {
+      for (const row of table.querySelectorAll('tr')) {
+        const label = row.firstElementChild?.textContent?.trim() ?? ''
+        if (section.replaces?.includes(label)) row.remove()
+      }
       const rows = sectionTable(section.rows).querySelectorAll('tr')
       ;(table.querySelector('tbody') ?? table).append(...rows)
     } else {
