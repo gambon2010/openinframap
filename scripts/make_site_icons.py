@@ -150,7 +150,9 @@ def main() -> None:
 </svg>
 """
         (OUT / f"site_group_{category}.svg").write_text(svg)
-    print(f"{len(KINDS)} icons and {len(COLOURS) - len(KIND_COLOURS_ONLY)} group icons in {OUT}")
+    print(
+        f"{len(KINDS)} icons and {len(COLOURS) - len(KIND_COLOURS_ONLY)} group icons in {OUT}"
+    )
 
 
 if __name__ == "__main__":
