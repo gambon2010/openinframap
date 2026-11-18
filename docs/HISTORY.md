@@ -723,7 +723,9 @@ for the gendarmerie is one; an unnamed one under 5 ha with a gendarmerie station
 no army site inside is merged with the station into one item (the area, the
 station's name and tags); named areas (army bases, "Quartier...") stay military, a
 station inside them apart. Military areas: 1,710. Government ochre (its blue was the
-police's navy), the gendarmerie a flaming grenade (drawn).
+police's navy), the gendarmerie a flaming grenade (drawn). "Brigade" and "Escadron" first counted as gendarmerie
+everywhere: the air force's squadrons ("Escadron de chasse...") turned gendarmerie;
+now they count only at a police station.
 
 ---
 

@@ -6,11 +6,12 @@
 -- materialized views with a restricted one, where hstore's -> isn't visible.
 
 -- A site of the gendarmerie, by its operator or its name (OpenStreetMap's police=*
--- is hardly used in France).
+-- is hardly used in France). "Brigade" and "Escadron" name gendarmerie units only
+-- at a police station: the army and air force have their own (site_kind).
 CREATE OR REPLACE FUNCTION is_gendarmerie(tags hstore) RETURNS boolean
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT coalesce(tags->'operator' ILIKE 'gendarmerie%', false)
-        OR coalesce(tags->'name' ~* '\mgendarmerie|^brigade|\mescadron', false)
+        OR coalesce(tags->'name' ~* '\mgendarmerie', false)
 $$;
 
 CREATE OR REPLACE FUNCTION site_kind(key text, type text, tags hstore) RETURNS text
@@ -54,7 +55,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN type = 'yard' THEN 'rail_yard'
         -- police and gendarmerie: by the operator, else the name
         WHEN type = 'police' THEN CASE
-            WHEN is_gendarmerie(tags) THEN 'gendarmerie'
+            WHEN is_gendarmerie(tags) OR tags->'name' ~* '^brigade|\mescadron' THEN 'gendarmerie'
             WHEN tags->'operator' ILIKE 'police nationale' OR tags->'operator' ILIKE 'ministère de l''intérieur'
               OR tags->'name' ~* 'commissariat|police nationale|h[ôo]tel de police' THEN 'police_national'
             WHEN tags->'operator' ~* 'municipal|^ville |^mairie|^commune ' OR tags->'name' ~* 'municipal' THEN 'police_municipal'
