@@ -734,6 +734,21 @@ stations) and border posts (118) joined that category, now "Police, gendarmerie,
 customs". Icons: ammunition depots three cartridges (the rocket read badly), police
 of no given force a plain badge (was a car).
 
+**Disused military inside Military (2026-11-18):** bunkers mapped as military areas
+(landuse=military + military=bunker: 231) showed as active. A military area or site
+is disused when it's a fortification, tagged disused or abandoned, named "Ancien...",
+or historic without signs of use (an in-use military type, a barracks' name, active
+sites inside: some historic forts are still the army's); a bunker inside a larger
+active military site stays military. Checked: the bunkers (WWII, Maginot), the
+historic-only ones (ouvrages, bastions, WWI craters; Mont-Valérien kept). Disused is
+now Military's last row, grey, unticked at first. The view's checks compare with the
+active military sites only (comparing with every site took 12 minutes). Site areas
+were near invisible over imagery (8% fill, 1 px outline): a 1.5 px outline in the
+category's colour, 20% fill over imagery. Prefecture a flag over a pillared building,
+social services a heart. 3D switching buildings on now switches them off again when
+it ends. A group "2" seen close in came from a rebuild: zoom 14+ tiles failed while
+site_feature was being remade, so the map stretched zoom 13's.
+
 ---
 
 ## Building outlines (2026-11-11)

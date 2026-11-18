@@ -10,11 +10,19 @@ import { text_paint, font } from '../../../style/common.ts'
 import { COUNTS } from '../../ui/key/counted-groups.ts'
 
 // Must match scripts/make_site_icons.py.
-/** A site's area: light, lighter close in (its icon says what it is). */
+/** A site's area: light, lighter close in (its icon says what it is); over imagery
+ * (whose colours would swallow it) a little more (index.ts). */
 export const area_opacity = interpolate(zoom, [
   [8, 0.18],
   [16, 0.08]
 ])
+export const AREA_OPACITY_OVER_IMAGERY = 0.2
+/** Its outline: what shows where the fill is too light to see. */
+const AREA_OUTLINE_WIDTH = 1.5
+const AREA_OUTLINE_OPACITY = 0.8
+
+/** A category's area layer (its fill: index.ts follows the background with it). */
+export const area_layer_id = (category: string) => `sites_${category}_area`
 
 export const site_colours: { [category: string]: string } = {
   health: '#D32F2F',
@@ -24,7 +32,6 @@ export const site_colours: { [category: string]: string } = {
   fuel: '#E65100',
   transport: '#455A64',
   military: '#2E7D32',
-  military_disused: '#8D8D8D',
   food: '#795548',
   water_waste: '#00838F'
 }
@@ -55,9 +62,9 @@ export const site_kinds: { [category: string]: string[] } = {
     'military_office',
     'military_depot',
     'military_range',
-    'military'
+    'military',
+    'military_disused'
   ],
-  military_disused: ['military_disused'],
   food: ['supermarket', 'convenience', 'wholesale', 'distribution', 'silo', 'slaughterhouse'],
   water_waste: ['dam', 'landfill', 'weather']
 }
@@ -72,7 +79,6 @@ export function site_category_label(category: string): string {
       fuel: t('sites.category.fuel', 'Fuel'),
       transport: t('sites.category.transport', 'Transport hubs'),
       military: t('sites.category.military', 'Military'),
-      military_disused: t('sites.category.military-disused', 'Disused military (bunkers, trenches...)'),
       food: t('sites.category.food', 'Food supply'),
       water_waste: t('sites.category.water-waste', 'Dams, landfills, weather stations')
     }[category] || category
@@ -156,11 +162,24 @@ const site_icon: ExpressionSpecification = [
   'site_government'
 ] as unknown as ExpressionSpecification
 
-// Layer ids: sites_<key> and sites_<key>_area, the key being the category except
-// for disused military, whose prefix mustn't start with sites_military (the layer
-// switcher matches prefixes).
-export function site_layer_key(category: string): string {
-  return category === 'military_disused' ? 'disused' : category
+/** Kinds drawn in a colour of their own within their category: disused military
+ * grey among the military's green (their icons too: scripts/make_site_icons.py). */
+const KIND_COLOURS: { [kind: string]: string } = { military_disused: '#8D8D8D' }
+
+/** Kinds whose key row is unticked at first: disused fortifications (many, and
+ * rarely what one looks for). */
+export const HIDDEN_AT_FIRST = ['military_disused']
+
+/** A category's areas' colour: its own, but for kinds with their own. */
+function area_colour(category: string, colour: string): string | ExpressionSpecification {
+  const own = site_kinds[category].filter((kind) => KIND_COLOURS[kind])
+  if (!own.length) return colour
+  return [
+    'match',
+    ['get', 'kind'],
+    ...own.flatMap((kind) => [kind, KIND_COLOURS[kind]]),
+    colour
+  ] as unknown as ExpressionSpecification
 }
 
 // Groups are drawn larger the more sites they stand for: their icon and text size
@@ -185,16 +204,28 @@ function by_group_size(value: (icon_size: number, text_size: number) => unknown)
 export default function layers(): LayerSpecificationWithZIndex[] {
   return Object.entries(site_colours).flatMap(([category, colour]): LayerSpecificationWithZIndex[] => [
     {
-      id: `sites_${site_layer_key(category)}_area`,
+      id: area_layer_id(category),
       zorder: 4,
       source: 'sites',
       'source-layer': 'sites_area',
       filter: ['==', ['get', 'category'], category],
       type: 'fill',
       paint: {
-        'fill-color': colour,
-        'fill-opacity': area_opacity,
-        'fill-outline-color': colour
+        'fill-color': area_colour(category, colour),
+        'fill-opacity': area_opacity
+      }
+    },
+    {
+      id: `${area_layer_id(category)}_outline`,
+      zorder: 4,
+      source: 'sites',
+      'source-layer': 'sites_area',
+      filter: ['==', ['get', 'category'], category],
+      type: 'line',
+      paint: {
+        'line-color': area_colour(category, colour),
+        'line-width': AREA_OUTLINE_WIDTH,
+        'line-opacity': AREA_OUTLINE_OPACITY
       }
     },
     // Icons, all shown (overlapping if need be): below zoom 14, nearby sites of the
@@ -202,7 +233,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
     // the _group layer. Important sites are larger and labelled; the rest are
     // labelled from zoom 15.
     {
-      id: `sites_${site_layer_key(category)}`,
+      id: `sites_${category}`,
       zorder: 590,
       source: 'sites',
       'source-layer': 'sites_point',
@@ -244,7 +275,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
     // by site_points). Clicking one zooms in (openinframap.ts). Its kinds' icons: the
     // key hiding a kind counts only the others (ui/key/counted-groups.ts).
     {
-      id: `sites_${site_layer_key(category)}_group`,
+      id: `sites_${category}_group`,
       zorder: 591,
       metadata: { [COUNTS]: Object.fromEntries(site_kinds[category].map((kind) => [kind, kind_icon(kind)])) },
       source: 'sites',

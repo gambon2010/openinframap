@@ -2,10 +2,20 @@
 // "sites" map). Everything the map needs for them, as one fork module.
 import { t } from '../../core/i18n.ts'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
-import { ForkModule, KeySection } from '../../types.ts'
+import { ForkModule, KeyRow, KeySection } from '../../types.ts'
 import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
-import layers, { site_kinds, site_kind_label, site_category_label } from './style.ts'
+import layers, {
+  AREA_OPACITY_OVER_IMAGERY,
+  HIDDEN_AT_FIRST,
+  area_layer_id,
+  area_opacity,
+  site_colours,
+  site_kinds,
+  site_kind_label,
+  site_category_label
+} from './style.ts'
+import { followBackground } from '../../services/background.ts'
 import { facilityKey, facilityLayers, recolourFacilities } from './petroleum.ts'
 
 const oim_attribution =
@@ -38,13 +48,6 @@ const sites: ForkModule = {
       new Layer('F', t('sites.category.fuel', 'Fuel'), 'sites_fuel', false),
       new Layer('V', t('sites.category.transport', 'Transport hubs'), 'sites_transport', false),
       new Layer('M', t('sites.category.military', 'Military'), 'sites_military', false),
-      // Not sites_military_disused: the switcher matches prefixes, and M would cover it.
-      new Layer(
-        'D',
-        t('sites.category.military-disused', 'Disused military (bunkers, trenches...)'),
-        'sites_disused',
-        false
-      ),
       new Layer('U', t('sites.category.food', 'Food supply'), 'sites_food', false),
       new Layer(
         'Q',
@@ -57,6 +60,16 @@ const sites: ForkModule = {
 
   init: ({ map, clickRouter, primaryLayers }) => {
     recolourFacilities(map)
+    // The areas' fill a little stronger over imagery.
+    const followImagery = () => {
+      for (const category of Object.keys(site_colours))
+        followBackground(map, area_layer_id(category), 'fill-opacity', {
+          map: area_opacity,
+          imagery: AREA_OPACITY_OVER_IMAGERY
+        })
+    }
+    if (map.isStyleLoaded()) followImagery()
+    else map.once('load', followImagery)
     // Clicking a group of sites (a numbered disc) zooms in on it.
     clickRouter.registerHandler(
       primaryLayers()
@@ -73,11 +86,14 @@ const sites: ForkModule = {
   key: async () => [
     ...Object.keys(site_kinds).map((category): KeySection => ({
       title: site_category_label(category),
-      rows: site_kinds[category].map((kind) => [
-        site_kind_label(kind),
-        keySprite(`site_${kind}`, 20),
-        { icon: `site_${kind}` }
-      ])
+      rows: site_kinds[category].map((kind): KeyRow => {
+        const label = site_kind_label(kind)
+        const sprite = keySprite(`site_${kind}`, 20)
+        const hide = { icon: `site_${kind}` }
+        return HIDDEN_AT_FIRST.includes(kind)
+          ? [label, sprite, hide, { hiddenAtFirst: true }]
+          : [label, sprite, hide]
+      })
     })),
     facilityKey()
   ],

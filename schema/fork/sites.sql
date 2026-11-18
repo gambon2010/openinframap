@@ -14,6 +14,24 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         OR coalesce(tags->'name' ~* '\mgendarmerie', false)
 $$;
 
+-- A military area or site no longer in use: a fortification (a bunker, a fort...),
+-- tagged disused or abandoned, named "Ancien..." (former), or historic, but not when
+-- it shows use (an in-use military type, a barracks' name; some historic forts are
+-- still the army's: Mont-Valérien, Nogent, Ivry; site_feature also keeps those with
+-- active sites inside).
+CREATE OR REPLACE FUNCTION is_disused_military(tags hstore) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
+    SELECT coalesce(tags->'military' IN ('bunker', 'trench', 'embrasure', 'casemate', 'cupola', 'abandoned', 'battery',
+                                         'blockhouse', 'pillbox', 'fort', 'gun_emplacement', 'shelter', 'disused'), false)
+        OR coalesce(tags->'building' = 'bunker', false)
+        OR tags ?| ARRAY['disused', 'abandoned', 'disused:military', 'abandoned:military', 'was:military']
+        OR coalesce(tags->'name' ~* '^(l'')?anciens?n?e?s?\M', false)
+        OR (tags ? 'historic'
+            AND NOT coalesce(tags->'military' IN ('barracks', 'base', 'naval_base', 'airfield', 'office', 'checkpoint',
+                                                  'ammunition', 'depot', 'range', 'training_area', 'danger_area'), false)
+            AND NOT coalesce(tags->'name' ~* 'caserne|quartier', false))
+$$;
+
 CREATE OR REPLACE FUNCTION site_kind(key text, type text, tags hstore) RETURNS text
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
@@ -70,12 +88,15 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
               OR tags->'name' ~* 'munici|minicipal|police rurale' THEN 'police_municipal'
             ELSE 'police' END
         -- military: in use (but the gendarmerie's), and disused fortifications
-        WHEN key = 'landuse' AND type = 'military' THEN
-            CASE WHEN is_gendarmerie(tags) THEN 'gendarmerie' ELSE 'military_area' END
+        WHEN key = 'landuse' AND type = 'military' THEN CASE
+            WHEN is_gendarmerie(tags) THEN 'gendarmerie'
+            WHEN is_disused_military(tags) THEN 'military_disused'
+            ELSE 'military_area' END
         WHEN key = 'military' THEN CASE
             WHEN type IN ('bunker', 'trench', 'embrasure', 'casemate', 'cupola', 'abandoned', 'battery',
                           'blockhouse', 'pillbox', 'fort', 'gun_emplacement', 'shelter') THEN 'military_disused'
             WHEN is_gendarmerie(tags) THEN 'gendarmerie'
+            WHEN is_disused_military(tags) THEN 'military_disused'
             WHEN type IN ('barracks', 'base', 'naval_base', 'airfield') THEN 'military_base'
             WHEN type IN ('office', 'checkpoint') THEN 'military_office'
             WHEN type IN ('ammunition', 'depot') THEN 'military_depot'
@@ -108,8 +129,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('fuel', 'storage_tank') THEN 'fuel'
         WHEN kind IN ('airport', 'port', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range',
-                      'military') THEN 'military'
-        WHEN kind = 'military_disused' THEN 'military_disused'
+                      'military', 'military_disused') THEN 'military'
         WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket', 'convenience') THEN 'food'
         WHEN kind IN ('dam', 'landfill', 'weather') THEN 'water_waste'
     END
@@ -153,6 +173,10 @@ $$;
 -- army bases (named, larger, or with their own sites) stay military, a station
 -- inside them apart. (A military area named for the gendarmerie is one already:
 -- site_kind.)
+--
+-- A bunker is a disused fortification (site_kind), unless it lies in a larger military
+-- site still in use (a base's, a radio station's): then it's part of that. A historic
+-- military area with a site in use inside is in use too.
 DROP MATERIALIZED VIEW IF EXISTS site_feature;
 CREATE MATERIALIZED VIEW site_feature AS
 WITH s AS (
@@ -167,6 +191,10 @@ WITH s AS (
            SELECT 1 FROM osm_petroleum_site p
             WHERE p.osm_id = s.osm_id
                OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))))
+), active AS (
+    -- The military sites in use (the checks below compare with these only).
+    SELECT site_id, geometry, area FROM kept
+     WHERE kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range', 'military')
 ), station_in AS (
     -- Each gendarmerie station inside an unnamed, small military area.
     SELECT a.site_id AS area_id, st.site_id AS station_id
@@ -185,7 +213,18 @@ WITH s AS (
 ), merged AS (
     SELECT k.osm_id, k.geometry,
            CASE WHEN c.area_id IS NULL THEN k.name ELSE st.name END AS name,
-           CASE WHEN c.area_id IS NULL THEN k.kind ELSE 'gendarmerie' END AS kind,
+           CASE WHEN c.area_id IS NOT NULL THEN 'gendarmerie'
+                WHEN k.kind = 'military_disused' AND k.tags->'military' = 'bunker'
+                 AND EXISTS (SELECT 1 FROM active m
+                              WHERE m.area > k.area
+                                AND m.geometry && k.geometry AND ST_Contains(m.geometry, ST_PointOnSurface(k.geometry)))
+                THEN 'military_area'
+                WHEN k.kind = 'military_disused' AND k.tags ? 'historic' AND k.area > 0
+                 AND EXISTS (SELECT 1 FROM active m
+                              WHERE m.site_id <> k.site_id AND m.geometry && k.geometry
+                                AND ST_Contains(k.geometry, ST_PointOnSurface(m.geometry)))
+                THEN 'military_area'
+                ELSE k.kind END AS kind,
            CASE WHEN c.area_id IS NULL THEN k.tags ELSE k.tags || st.tags END AS tags,
            k.area
       FROM kept k
@@ -255,6 +294,6 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
            -- other: each category's is moved ~10 px (on a 512 px tile) its own way.
            CROSS JOIN LATERAL (SELECT 2 * pi() * (array_position(
                ARRAY['health', 'government', 'religion', 'fuel', 'transport', 'military',
-                     'military_disused', 'food', 'water_waste', 'police'], groups.category) - 1) / 10 AS angle) a
+                     'food', 'water_waste', 'police'], groups.category) - 1) / 9 AS angle) a
            CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 512 AS px) s
 $$;

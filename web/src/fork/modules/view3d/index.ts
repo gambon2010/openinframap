@@ -2,7 +2,8 @@
 // browser, services/view3d.ts). On: the map tilts, can be tilted and turned (right
 // or Ctrl drag; two fingers), and buildings rise (modules/buildings, whose entry in
 // the layer switcher it switches on). Off: flat and facing north again, and locked
-// flat (upstream turns turning off; tilting with two fingers it left on).
+// flat (upstream turns turning off; tilting with two fingers it left on); buildings
+// off again if 3D switched them on.
 import type { Map } from 'maplibre-gl'
 import type { LayerSwitcher } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
@@ -18,6 +19,9 @@ const TILT = 55
  * gesture (two fingers on a phone included) can tilt it. */
 const MAX_TILT = 60
 
+/** Whether 3D switched the buildings on (they were off): off again when it ends. */
+let switchedBuildingsOn = false
+
 function show(map: Map, layerSwitcher: LayerSwitcher, button: HTMLButtonElement, animate: boolean) {
   const on = view3d.on()
   showPressed(button, on)
@@ -25,14 +29,22 @@ function show(map: Map, layerSwitcher: LayerSwitcher, button: HTMLButtonElement,
     map.setMaxPitch(MAX_TILT)
     map.dragRotate.enable()
     map.touchZoomRotate.enableRotation()
-    layerSwitcher.setVisibility(BUILDINGS_SWITCHER_ID, true)
-    layerSwitcher._updateList()
+    if (!layerSwitcher._visible.includes(BUILDINGS_SWITCHER_ID)) {
+      switchedBuildingsOn = true
+      layerSwitcher.setVisibility(BUILDINGS_SWITCHER_ID, true)
+      layerSwitcher._updateList()
+    }
     const view = { pitch: TILT }
     if (animate) map.easeTo(view)
     else map.jumpTo(view)
   } else {
     map.dragRotate.disable()
     map.touchZoomRotate.disableRotation()
+    if (switchedBuildingsOn) {
+      switchedBuildingsOn = false
+      layerSwitcher.setVisibility(BUILDINGS_SWITCHER_ID, false)
+      layerSwitcher._updateList()
+    }
     const view = { pitch: 0, bearing: 0 }
     // Unless switched on again meanwhile (the flattening still going).
     const lockFlat = () => {

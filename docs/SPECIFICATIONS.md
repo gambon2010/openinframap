@@ -263,6 +263,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.41 | Military: sub-categories; military areas (3,509) with their own key row and icon (they had none, and fell back to the government icon). Icons reworked: disused military a fort, supermarket a shopfront, courthouse scales. | ✅ (2026-11-18) kinds `military_area`, `_base`, `_office`, `_depot`, `_range`, `military` (other); `scripts/make_site_icons.py` |
 | 10.42 | A Data layers entry shown in part (some key rows unticked) marked partial; ticking a row under an entry that's off turns the entry on. | ✅ (2026-11-18) `ui/data-layers.ts` (`entryTick`) |
 | 10.43 | Police, gendarmerie, customs a category of their own (gendarmerie, national police, municipal police, force not given, customs, border posts); a gendarmerie compound mapped as a military area with its station inside one item; Government ochre, Police and gendarmerie navy. | ✅ (2026-11-18) `sites.sql` (`is_gendarmerie`, the compound merge: unnamed military areas under 5 ha with a gendarmerie station and no army site inside), grenade icon |
+| 10.44 | Disused fortifications a row of Military (grey, unticked at first): bunkers (but inside an active military site), forts and historic sites (but showing use), named "Ancien...", tagged disused; site areas visible over imagery (an outline, more fill); prefecture and social icons; 3D gives back buildings switched off. | ✅ (2026-11-18) `is_disused_military`, `site_feature` (active-site checks), `modules/sites`, `modules/view3d` |
 
 ## 11. Quality
 
