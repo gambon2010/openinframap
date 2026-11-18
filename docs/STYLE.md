@@ -73,6 +73,8 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   dark outline around the bundle.
 - **Tunnels:** the same line, see-through (`TUNNEL_OPACITY`), at the same level
   as above ground; trams' tunnels keep a full outline. Never dotted.
+- **Switching layers fades:** a data layer ticked fades in, unticked fades out
+  (`ui/fade.ts`, 300 ms, MapLibre's paint transition); never a jump.
 - **Hand-overs at the tile switch:** a zoom's vector tiles show from half a zoom
   before it, so a layer handing over to another (zoomed out to close in) does it
   there (`core/tile-zooms.ts`), or neither draws for half a zoom. Checked for the

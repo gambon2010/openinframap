@@ -10,6 +10,7 @@ import type { ExpressionSpecification, FilterSpecification, Map } from 'maplibre
 import { Layer, LayerGroup, type LayerSwitcher } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { background, followBackground } from '../../services/background.ts'
+import { fadesOnItsOwn } from '../../ui/fade.ts'
 import { ForkModule } from '../../types.ts'
 import { valueFor } from './builder.ts'
 import { LANES_SOURCE, lanesSource } from './lane-layers.ts'
@@ -193,6 +194,8 @@ const roads: ForkModule = {
   popup: { html: roadDetails },
 
   init: ({ map, layerSwitcher }) => {
+    // They change their own look as their entry is ticked (followEntries): no fade.
+    for (const [prefix] of ENTRIES) fadesOnItsOwn(prefix)
     const loaded = () => {
       followEntries(map, layerSwitcher)
       streetNamesOverImagery(map)

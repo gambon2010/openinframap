@@ -10,6 +10,7 @@ import { Map } from 'maplibre-gl'
 import { ForkModule } from '../../types.ts'
 import { dock } from '../../ui/dock.ts'
 import { buildDataLayers, Switcher } from '../../ui/data-layers.ts'
+import { fadeSwitcher } from '../../ui/fade.ts'
 import { layersIcon } from '../../ui/icons.ts'
 import { addSettings } from '../../ui/settings.ts'
 import { moveSearchToTopBar } from './search-bar.ts'
@@ -62,6 +63,9 @@ const ui: ForkModule = {
     // The map may still be loading its style: again on its next events.
     for (const event of ['load', 'styledata', 'idle'] as const) map.on(event, tryBuild)
     tryBuild()
+
+    // Ticking an entry fades its layers in, unticking fades them out (ui/fade.ts).
+    fadeSwitcher(map, layerSwitcher as unknown as Parameters<typeof fadeSwitcher>[1])
 
     addSettings(map)
     moveSearchToTopBar(map)

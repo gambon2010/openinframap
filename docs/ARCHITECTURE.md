@@ -40,6 +40,7 @@ ui/        shared building blocks you see: dock (right), left column, details
            panel, highlight, panels (panel.ts, makeModal), settings (the gear),
            map buttons (map-button.ts: print, Settings, account),
            the tooltip, the right-click menu (context-menu.ts: withContextMenu),
+           fade.ts (data layers fading in and out as their entry is ticked),
            line icons (icons.ts: the eye, the map's buttons), the key's checkboxes
            and its rows on prints (key/; counted-groups.ts: a group's count of the
            kinds the key shows)

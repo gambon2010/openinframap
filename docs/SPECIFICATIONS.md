@@ -255,7 +255,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.33 | Critical sites: gun shops removed (OpenStreetMap's data on them is poor); the category is *Fuel*. | ✅ (2026-11-18) `sites.sql`, `imposm/sites.py`, `modules/sites` |
 | 10.34 | Grouped markers follow the key: a hidden kind isn't counted, a group of hidden kinds goes; a kind's lone site in a group's place shows as itself. | ✅ (2026-11-18) `site_points` (counts per kind, groups of two or more of a kind), `ui/key/counted-groups.ts` |
 | 10.35 | "View on OpenStreetMap" only with debug on. | ✅ (2026-11-18) `ui/details.css`, `modules/debug` |
-| 10.36 | Every data layer fading in and out when switched, as the roads do. | ⏳ proposed |
+| 10.36 | Every data layer fading in and out when switched, as the roads do. | ✅ (2026-11-18) `ui/fade.ts` (the layer switcher's visibility through a fade; the roads fade on their own) |
 | 10.37 | A site in two data layers (an oil depot in Oil & Natural Gas and in Critical sites) drawn once. | ⏳ to decide (suggestion given) |
 | 10.38 | No gaps when a data layer hands over to another while zooming; tests to keep it so. | ✅ (2026-11-18) `core/tile-zooms.ts`: buildings at 14.5 (were missing from 14.5 to 15), trams at 11.5; upstream's power line labels moved by `modules/handovers`; `handovers.test.ts` |
 

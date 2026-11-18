@@ -679,6 +679,12 @@ map by a fork module (upstream's file untouched). The rule is in
 `core/tile-zooms.ts`; `handovers.test.ts` checks the whole style: no fork layer on
 vector tiles ends at a whole zoom, and the upstream hand-overs are the ones moved.
 
+**Data layers fade (2026-11-18):** the roads faded when ticked (their colours
+change, and MapLibre animates paint) but every other layer appeared at once (the
+layer switcher sets visibility). While the switcher sets visibilities, they now go
+through a fader (`ui/fade.ts`): shown, a layer starts transparent and fades to its
+own opacity; hidden, it fades out, then goes. The roads' layers opt out.
+
 ---
 
 ## Building outlines (2026-11-11)
