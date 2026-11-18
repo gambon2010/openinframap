@@ -41,13 +41,13 @@ KINDS = {
     "gendarmerie": ("police", None),  # a flaming grenade, drawn here
     "police_national": ("police", "police"),
     "police_municipal": ("police", "town"),
-    "police": ("police", "car"),
+    "police": ("police", None),  # a plain shield, drawn here
     "townhall": ("government", "town-hall"),
     "tax": ("government", "bank"),
     "prefecture": ("government", "building-alt1"),
     "social": ("government", "residential-community"),
     "employment": ("government", "suitcase"),
-    "customs": ("government", "toll"),
+    "customs": ("police", "toll"),
     "national": ("government", "landmark"),
     "government": ("government", "building"),
     "courthouse": ("government", None),  # scales, drawn here
@@ -65,12 +65,12 @@ KINDS = {
     "oil_facility": ("fuel", "industry"),
     "airport": ("transport", "airport"),
     "port": ("transport", "harbor"),
-    "border": ("transport", "roadblock"),
+    "border": ("police", "roadblock"),
     "rail_yard": ("transport", "rail"),
     "military_area": ("military", "fence"),
     "military_base": ("military", "star"),
     "military_office": ("military", "lift-gate"),
-    "military_depot": ("military", "rocket"),
+    "military_depot": ("military", None),  # cartridges, drawn here
     "military_range": ("military", "danger"),
     "military": ("military", "star-stroked"),
     "military_disused": ("military_disused", "castle"),
@@ -87,6 +87,14 @@ KINDS = {
 
 # Glyphs Maki doesn't have, on its 15x15 grid.
 OWN = {
+    # Police, the force not given: a plain badge.
+    "police": '<path d="M7.5 0.8 13.2 3v4.4c0 3.5-2.5 5.8-5.7 6.9-3.2-1.1-5.7-3.4-5.7-6.9V3z"/>'
+    '<path d="M7.5 3.3l1 2 2.2 0.3-1.6 1.6 0.4 2.2-2-1-2 1 0.4-2.2-1.6-1.6 2.2-0.3z" fill="#fff"/>',
+    # Ammunition: three cartridges, a pointed tip on each, standing on a rim.
+    "military_depot": '<path d="M1.6 7c0-2.6 1.4-5 1.4-5s1.4 2.4 1.4 5v5.4H1.6z'
+    'M6.1 7c0-2.6 1.4-5 1.4-5s1.4 2.4 1.4 5v5.4H6.1zM10.6 7c0-2.6 1.4-5 1.4-5s1.4 2.4 1.4 5v5.4h-2.8z"/>'
+    '<path d="M1.2 13h3.6v1.2H1.2zM5.7 13h3.6v1.2H5.7zM10.2 13h3.6v1.2h-3.6z"/>'
+    '<path d="M1.6 7.2h2.8M6.1 7.2h2.8M10.6 7.2h2.8" fill="none" stroke="#fff" stroke-width="0.6"/>',
     # The gendarmerie's badge: a grenade with its flame.
     "gendarmerie": '<path d="M7.5 0.4c1.6 0.9 1.9 2.1 1.2 3 1.2-0.2 1.9-1 2-2.1 1 1.2 0.8 2.6-0.4 3.4H4.7c-1.2-0.8-1.4-2.2'
     '-0.4-3.4 0.1 1.1 0.8 1.9 2 2.1-0.7-0.9-0.4-2.1 1.2-3z"/><path d="M6 5.3h3v1.2H6z"/><circle cx="7.5" cy="10.4" r="4.2"/>',

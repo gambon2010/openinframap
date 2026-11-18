@@ -27,7 +27,7 @@ const sites: ForkModule = {
   switcherGroups: () => [
     new LayerGroup(t('layers.sites', 'Critical sites'), [
       new Layer('H', t('sites.category.health', 'Health and emergency'), 'sites_health', false),
-      new Layer('N', t('sites.category.police', 'Police and gendarmerie'), 'sites_police', false),
+      new Layer('N', t('sites.category.police', 'Police, gendarmerie, customs'), 'sites_police', false),
       new Layer(
         'G',
         t('sites.category.government', 'Government and public services'),

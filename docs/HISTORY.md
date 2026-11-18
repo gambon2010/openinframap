@@ -729,7 +729,10 @@ now they count only at a police station. Police sorted by `police:FR` first (Fra
 gendarmerie, 1,287 municipal, 640 national), then operator, then name (CRS, Police
 aux frontières, Préfecture de police national; cameras tagged police left out):
 "other police" from 282 to 211, nearly all with no name or operator, now "Police
-(force not given)".
+(force not given)". Customs offices (124, and 7 "douanes" mapped as police
+stations) and border posts (118) joined that category, now "Police, gendarmerie,
+customs". Icons: ammunition depots three cartridges (the rocket read badly), police
+of no given force a plain badge (was a car).
 
 ---
 

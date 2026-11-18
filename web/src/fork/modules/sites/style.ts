@@ -32,7 +32,7 @@ export const site_colours: { [category: string]: string } = {
 // category -> kinds (schema/fork/sites.sql), in the order the key lists them.
 export const site_kinds: { [category: string]: string[] } = {
   health: ['hospital', 'clinic', 'pharmacy', 'fire_station', 'ambulance', 'siren'],
-  police: ['gendarmerie', 'police_national', 'police_municipal', 'police'],
+  police: ['gendarmerie', 'police_national', 'police_municipal', 'police', 'customs', 'border'],
   government: [
     'national',
     'prefecture',
@@ -40,7 +40,6 @@ export const site_kinds: { [category: string]: string[] } = {
     'tax',
     'social',
     'employment',
-    'customs',
     'government',
     'courthouse',
     'prison',
@@ -49,7 +48,7 @@ export const site_kinds: { [category: string]: string[] } = {
   ],
   religion: ['christian', 'muslim', 'jewish', 'buddhist', 'worship'],
   fuel: ['fuel', 'storage_tank'],
-  transport: ['airport', 'port', 'border', 'rail_yard'],
+  transport: ['airport', 'port', 'rail_yard'],
   military: [
     'military_area',
     'military_base',
@@ -67,7 +66,7 @@ export function site_category_label(category: string): string {
   return (
     {
       health: t('sites.category.health', 'Health and emergency'),
-      police: t('sites.category.police', 'Police and gendarmerie'),
+      police: t('sites.category.police', 'Police, gendarmerie, customs'),
       government: t('sites.category.government', 'Government and public services'),
       religion: t('sites.category.religion', 'Places of worship'),
       fuel: t('sites.category.fuel', 'Fuel'),

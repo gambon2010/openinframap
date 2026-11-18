@@ -56,6 +56,8 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         -- police and gendarmerie: by police:FR (France's tag), else the operator, else
         -- the name; a camera tagged police isn't a station
         WHEN type = 'police' AND tags->'name' ~* 'cam[ée]ra' THEN NULL
+        -- customs offices mapped as police stations (but the gendarmerie's own)
+        WHEN type = 'police' AND tags->'name' ~* '\mdouanes?\M' AND NOT is_gendarmerie(tags) THEN 'customs'
         WHEN type = 'police' THEN CASE
             WHEN tags->'police:FR' = 'gendarmerie' THEN 'gendarmerie'
             WHEN tags->'police:FR' ~* 'municipale|rurale' THEN 'police_municipal'
@@ -99,12 +101,12 @@ CREATE OR REPLACE FUNCTION site_category(kind text) RETURNS text
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
         WHEN kind IN ('hospital', 'clinic', 'pharmacy', 'fire_station', 'ambulance', 'siren') THEN 'health'
-        WHEN kind IN ('gendarmerie', 'police_national', 'police_municipal', 'police') THEN 'police'
-        WHEN kind IN ('townhall', 'tax', 'prefecture', 'social', 'employment', 'customs', 'national', 'government',
+        WHEN kind IN ('gendarmerie', 'police_national', 'police_municipal', 'police', 'customs', 'border') THEN 'police'
+        WHEN kind IN ('townhall', 'tax', 'prefecture', 'social', 'employment', 'national', 'government',
                       'courthouse', 'prison', 'embassy', 'university') THEN 'government'
         WHEN kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship') THEN 'religion'
         WHEN kind IN ('fuel', 'storage_tank') THEN 'fuel'
-        WHEN kind IN ('airport', 'port', 'border', 'rail_yard') THEN 'transport'
+        WHEN kind IN ('airport', 'port', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range',
                       'military') THEN 'military'
         WHEN kind = 'military_disused' THEN 'military_disused'
