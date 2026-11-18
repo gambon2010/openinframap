@@ -711,7 +711,8 @@ bases (star), offices and checkpoints (barrier), ammunition and depots (rocket),
 ranges and training areas (danger), other (outlined star). Also: disused military a
 fort (was a signboard), supermarkets a shopfront (two baskets before), courthouses
 scales (drawn: Maki has none). New icon files need the dev server restarted (their
-list is made when it starts).
+list is made when it starts). An entry with some key rows unticked shows partial (as
+group headings do); a row ticked under an entry that's off turns the entry on.
 
 ---
 

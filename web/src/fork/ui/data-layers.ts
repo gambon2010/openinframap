@@ -87,6 +87,12 @@ export function groupTick(
   return { checked: on === entries.length, indeterminate: on > 0 && on < entries.length }
 }
 
+/** An entry's tick box: ticked when it's on, half when some of its key rows are
+ * unticked (part of it shows). */
+export function entryTick(on: boolean, rowsShown: boolean[]): { checked: boolean; indeterminate: boolean } {
+  return { checked: on, indeterminate: on && rowsShown.some((shown) => !shown) }
+}
+
 /** The key's sections (h3 and its table), in order. */
 function keySections(pane: HTMLElement): Section[] {
   const out: Section[] = []
@@ -123,7 +129,8 @@ export function buildDataLayers(map: Map, switcher: Switcher, keyPane: HTMLEleme
     styleLayers
   )
   const open = new Set(readJson<string[]>(OPEN_KEY, []))
-  const boxes: [SwitcherLayer, HTMLInputElement][] = []
+  /** Each entry, its tick box and its key sections' tables (their rows' tick boxes). */
+  const boxes: [SwitcherLayer, HTMLInputElement, HTMLElement[]][] = []
 
   /** A row that unfolds (its caret) to what's under it. */
   const foldable = (key: string, head: HTMLElement, inside: HTMLElement[]) => {
@@ -160,8 +167,16 @@ export function buildDataLayers(map: Map, switcher: Switcher, keyPane: HTMLEleme
       switcher.setVisibility(entry.id, box.checked)
       refresh()
     }
-    boxes.push([entry, box])
     const mine = sections.filter((s) => owner[s.title] === entry.id)
+    const tables = mine.map((s) => s.table)
+    boxes.push([entry, box, tables])
+    // A key row ticked under an entry that's off: it's to be seen, so the entry on.
+    for (const table of tables)
+      table.addEventListener('change', (event) => {
+        const row = event.target as HTMLInputElement
+        if (row.checked && !switcher._visible.includes(entry.id)) switcher.setVisibility(entry.id, true)
+        refresh()
+      })
     return foldable(
       entry.id,
       el('label.oim-dl-label', box, ` ${entry.title}`),
@@ -200,7 +215,18 @@ export function buildDataLayers(map: Map, switcher: Switcher, keyPane: HTMLEleme
 
   /** The tick boxes from upstream's switcher (the address may have changed it). */
   const refresh = () => {
-    for (const [entry, box] of boxes) box.checked = switcher._visible.includes(entry.id)
+    for (const [entry, box, tables] of boxes) {
+      const rows = tables.flatMap((table) => [
+        ...table.querySelectorAll<HTMLInputElement>('input.oim-key-toggle')
+      ])
+      Object.assign(
+        box,
+        entryTick(
+          switcher._visible.includes(entry.id),
+          rows.map((row) => row.checked)
+        )
+      )
+    }
     for (const [group, box] of groupBoxes) Object.assign(box, groupTick(group.layers, switcher._visible))
   }
   refresh()

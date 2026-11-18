@@ -261,6 +261,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.39 | Critical sites' "Fuel depot, storage tank" is "Storage tank" with its own icon (depots are Oil & Natural Gas's); the oil and gas facilities' icon their own. | ✅ (2026-11-18) kind `storage_tank`, icons `site_storage_tank`, `site_oil_facility`; `industrial=fuel_depot/oil_storage` no longer imported as sites |
 | 10.40 | "Not from OpenStreetMap" notes (where the data comes from) only in the debug info, in every panel. | ✅ (2026-11-18) `SOURCE_NOTE` (`ui/details.ts`), moved by `modules/debug` |
 | 10.41 | Military: sub-categories; military areas (3,509) with their own key row and icon (they had none, and fell back to the government icon). Icons reworked: disused military a fort, supermarket a shopfront, courthouse scales. | ✅ (2026-11-18) kinds `military_area`, `_base`, `_office`, `_depot`, `_range`, `military` (other); `scripts/make_site_icons.py` |
+| 10.42 | A Data layers entry shown in part (some key rows unticked) marked partial; ticking a row under an entry that's off turns the entry on. | ✅ (2026-11-18) `ui/data-layers.ts` (`entryTick`) |
 
 ## 11. Quality
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { assignSections, groupTick } from './data-layers.ts'
+import { assignSections, entryTick, groupTick } from './data-layers.ts'
 
 const styleLayers = [
   { id: 'power_line_1', type: 'line', paint: { 'line-color': '#ff0000' } },
@@ -48,5 +48,12 @@ describe('Data layers: a group’s tick box', () => {
     expect(groupTick(group, ['P', 'T'])).toEqual({ checked: true, indeterminate: false })
     expect(groupTick(group, ['P'])).toEqual({ checked: false, indeterminate: true })
     expect(groupTick(group, ['H'])).toEqual({ checked: false, indeterminate: false })
+  })
+
+  test('an entry: ticked when on, half when some of its key rows are unticked', () => {
+    expect(entryTick(true, [true, true])).toEqual({ checked: true, indeterminate: false })
+    expect(entryTick(true, [false, true])).toEqual({ checked: true, indeterminate: true })
+    // Off: nothing of it shows, whatever its rows say.
+    expect(entryTick(false, [false, true])).toEqual({ checked: false, indeterminate: false })
   })
 })
