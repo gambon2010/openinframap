@@ -46,7 +46,7 @@ KINDS = {
     "customs": ("government", "toll"),
     "national": ("government", "landmark"),
     "government": ("government", "building"),
-    "courthouse": ("government", "town"),
+    "courthouse": ("government", None),  # scales, drawn here
     "prison": ("government", "prison"),
     "embassy": ("government", "embassy"),
     "university": ("government", "college"),
@@ -63,13 +63,18 @@ KINDS = {
     "port": ("transport", "harbor"),
     "border": ("transport", "roadblock"),
     "rail_yard": ("transport", "rail"),
-    "military": ("military", "star"),
-    "military_disused": ("military_disused", "historic"),
+    "military_area": ("military", "fence"),
+    "military_base": ("military", "star"),
+    "military_office": ("military", "lift-gate"),
+    "military_depot": ("military", "rocket"),
+    "military_range": ("military", "danger"),
+    "military": ("military", "star-stroked"),
+    "military_disused": ("military_disused", "castle"),
     "silo": ("food", "farm"),
     "slaughterhouse": ("food", "slaughterhouse"),
     "distribution": ("food", "warehouse"),
     "wholesale": ("food", "grocery"),
-    "supermarket": ("food", "shop"),
+    "supermarket": ("food", "commercial"),
     "convenience": ("food", "convenience"),
     "dam": ("water_waste", "dam"),
     "landfill": ("water_waste", "waste-basket"),
@@ -78,6 +83,10 @@ KINDS = {
 
 # Glyphs Maki doesn't have, on its 15x15 grid.
 OWN = {
+    # Scales: a post on a base, a beam, a pan hanging at each end.
+    "courthouse": '<path d="M7 2h1v10.5H7z M4 12.5h7V14H4z M1.5 3h12v1h-12z"/>'
+    '<path d="M2 4 0.5 8.5M2 4l1.5 4.5M13 4l-1.5 4.5M13 4l1.5 4.5" fill="none" stroke="currentColor" stroke-width="0.8"/>'
+    '<path d="M0 8.5h4a2 1.6 0 0 1-4 0z M11 8.5h4a2 1.6 0 0 1-4 0z"/>',
     "storage_tank": '<path d="M2.5 3.5c0-1.1 2.2-2 5-2s5 0.9 5 2v8c0 1.1-2.2 2-5 2s-5-0.9-5-2z"/>'
     '<path d="M2.5 3.5c0 1.1 2.2 2 5 2s5-0.9 5-2M2.5 8c0 1.1 2.2 2 5 2s5-0.9 5-2" fill="none" stroke="#fff" stroke-width="1"/>',
 }

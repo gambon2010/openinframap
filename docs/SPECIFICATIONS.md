@@ -260,7 +260,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.38 | No gaps when a data layer hands over to another while zooming; tests to keep it so. | ✅ (2026-11-18) `core/tile-zooms.ts`: buildings at 14.5 (were missing from 14.5 to 15), trams at 11.5; upstream's power line labels moved by `modules/handovers`; `handovers.test.ts` |
 | 10.39 | Critical sites' "Fuel depot, storage tank" is "Storage tank" with its own icon (depots are Oil & Natural Gas's); the oil and gas facilities' icon their own. | ✅ (2026-11-18) kind `storage_tank`, icons `site_storage_tank`, `site_oil_facility`; `industrial=fuel_depot/oil_storage` no longer imported as sites |
 | 10.40 | "Not from OpenStreetMap" notes (where the data comes from) only in the debug info, in every panel. | ✅ (2026-11-18) `SOURCE_NOTE` (`ui/details.ts`), moved by `modules/debug` |
-| 10.41 | Military: sub-categories; military areas (3,509) with their own key row and icon (they have none, and fall back to the government icon). | ⏳ proposed |
+| 10.41 | Military: sub-categories; military areas (3,509) with their own key row and icon (they had none, and fell back to the government icon). Icons reworked: disused military a fort, supermarket a shopfront, courthouse scales. | ✅ (2026-11-18) kinds `military_area`, `_base`, `_office`, `_depot`, `_range`, `military` (other); `scripts/make_site_icons.py` |
 
 ## 11. Quality
 

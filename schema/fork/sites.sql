@@ -50,8 +50,11 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN key = 'military' THEN CASE
             WHEN type IN ('bunker', 'trench', 'embrasure', 'casemate', 'cupola', 'abandoned', 'battery',
                           'blockhouse', 'pillbox', 'fort', 'gun_emplacement', 'shelter') THEN 'military_disused'
-            WHEN type IN ('barracks', 'office', 'range', 'training_area', 'airfield', 'naval_base', 'base',
-                          'danger_area', 'checkpoint', 'yes', 'depot', 'ammunition') THEN 'military'
+            WHEN type IN ('barracks', 'base', 'naval_base', 'airfield') THEN 'military_base'
+            WHEN type IN ('office', 'checkpoint') THEN 'military_office'
+            WHEN type IN ('ammunition', 'depot') THEN 'military_depot'
+            WHEN type IN ('range', 'training_area', 'danger_area') THEN 'military_range'
+            WHEN type = 'yes' THEN 'military'
             END
         -- food supply
         WHEN type = 'silo' THEN 'silo'
@@ -77,7 +80,8 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship') THEN 'religion'
         WHEN kind IN ('fuel', 'storage_tank') THEN 'fuel'
         WHEN kind IN ('airport', 'port', 'border', 'rail_yard') THEN 'transport'
-        WHEN kind IN ('military_area', 'military') THEN 'military'
+        WHEN kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range',
+                      'military') THEN 'military'
         WHEN kind = 'military_disused' THEN 'military_disused'
         WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket', 'convenience') THEN 'food'
         WHEN kind IN ('dam', 'landfill', 'weather') THEN 'water_waste'

@@ -190,7 +190,12 @@
       "hindu": "Hindu temple",
       "sikh": "Sikh gurdwara",
       "convenience": "Convenience store",
-      "storage-tank": "Storage tank (fuel, gas)"
+      "storage-tank": "Storage tank (fuel, gas)",
+      "military-area": "Military area",
+      "military-base": "Barracks, base",
+      "military-office": "Military office, checkpoint",
+      "military-depot": "Ammunition, military depot",
+      "military-range": "Range, training area"
     }
   },
   "route": {

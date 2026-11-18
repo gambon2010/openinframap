@@ -704,6 +704,15 @@ for it), the facilities keep the factory. Depot areas aren't imported as sites a
 more (Oil & Natural Gas's). The rule is in docs/STYLE.md and CLAUDE.md. Source notes
 ("Not from OpenStreetMap: open data from...") only in the debug info.
 
+**Military in rows, icons reworked (2026-11-18):** the military category had one row;
+its areas (landuse=military, 3,509 in France) weren't among its kinds, so they had no
+row and fell back to the government icon. Now: military area (fence), barracks and
+bases (star), offices and checkpoints (barrier), ammunition and depots (rocket),
+ranges and training areas (danger), other (outlined star). Also: disused military a
+fort (was a signboard), supermarkets a shopfront (two baskets before), courthouses
+scales (drawn: Maki has none). New icon files need the dev server restarted (their
+list is made when it starts).
+
 ---
 
 ## Building outlines (2026-11-11)
