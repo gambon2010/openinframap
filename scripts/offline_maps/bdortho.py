@@ -176,20 +176,17 @@ def jobs(folder: Path) -> list[dict]:
 # --- IGN's download service -----------------------------------------------------------
 
 
-def atom(url: str) -> ET.Element:
-    data = netsafe.fetch(url)
-    if data is None:
-        raise RuntimeError(f"Nothing at {url}")
-    return ET.fromstring(data)
-
-
 def entries(url: str) -> list[ET.Element]:
-    """Every entry of an Atom listing (it comes in pages)."""
+    """Every entry of an Atom listing (it comes in pages); none when IGN has no such
+    listing (a 404: netsafe.fetch raises when the connection is lost instead)."""
     found: list[ET.Element] = []
     page = 1
     while True:
         sep = "&" if "?" in url else "?"
-        feed = atom(f"{url}{sep}page={page}")
+        data = netsafe.fetch(f"{url}{sep}page={page}")
+        if data is None:
+            return found
+        feed = ET.fromstring(data)
         batch = feed.findall(f"{ATOM}entry")
         found += batch
         total = int(feed.get(f"{GPF}totalentries") or feed.get("totalentries") or 0)
@@ -198,8 +195,8 @@ def entries(url: str) -> list[ET.Element]:
         page += 1
 
 
-def latest_edition(code: str) -> str:
-    """The newest colour 20 cm edition of a département (its resource name)."""
+def colour_editions(code: str) -> list[str]:
+    """A département's colour 20 cm editions IGN lists (resource names), newest first."""
     zone = f"D{code.zfill(3)}"
     editions = []
     for entry in entries(f"{LISTING}?zone={zone}"):
@@ -208,9 +205,21 @@ def latest_edition(code: str) -> str:
         if match and match.group(3) == zone[1:]:
             major, minor, _, date = match.groups()
             editions.append((date, int(major), int(minor), title))
+    return [title for *_, title in sorted(editions, reverse=True)]
+
+
+def latest_edition(code: str) -> str:
+    """The newest colour 20 cm edition of a département whose archive IGN serves (its
+    resource name). IGN can list an edition it doesn't serve (Vienne's 2023 one in
+    November 2026: a 404): the one before it is taken."""
+    editions = colour_editions(code)
     if not editions:
         raise RuntimeError(f"IGN has no 20 cm colour photos of département {code}.")
-    return max(editions)[-1]
+    for resource in editions:
+        parts, _ = archive_files(resource)
+        if parts:
+            return resource
+    raise RuntimeError(f"IGN lists photos of département {code} but serves none.")
 
 
 def archive_files(resource: str) -> tuple[list[tuple[str, int]], str | None]:

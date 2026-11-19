@@ -87,6 +87,8 @@ def test_the_latest_colour_edition(monkeypatch):
     asked = []
 
     def fetch(url, **_):
+        if "zone=" not in url:
+            return feed([entry("", "https://x/a.7z.001", 10)])  # an edition's archive
         asked.append(url)
         return pages[int(url.rsplit("page=", 1)[1])]
 
@@ -100,6 +102,27 @@ def test_the_latest_colour_edition(monkeypatch):
     monkeypatch.setattr(netsafe, "fetch", lambda url, **_: feed([]))
     with pytest.raises(RuntimeError, match="no 20 cm colour photos"):
         bdortho.latest_edition("2A")
+
+
+def test_an_edition_listed_but_not_served_is_passed_over(monkeypatch):
+    # Vienne, November 2026: IGN listed its 2023 edition, whose listing was a 404.
+    newest = "BDORTHO_1-0_RVB-0M20_JP2-E080_LAMB93_D086_2023-01-01"
+    older = "BDORTHO_1-0_RVB-0M20_JP2-E080_LAMB93_D086_2020-01-01"
+
+    def fetch(url, **_):
+        if "zone=" in url:
+            return feed([entry(older), entry(newest)])
+        if newest in url:
+            return None
+        return feed([entry("", "https://x/a.7z.001", 10)])
+
+    monkeypatch.setattr(netsafe, "fetch", fetch)
+    assert bdortho.latest_edition("86") == older
+    monkeypatch.setattr(
+        netsafe, "fetch", lambda url, **_: fetch(url) if "zone=" in url else None
+    )
+    with pytest.raises(RuntimeError, match="serves none"):
+        bdortho.latest_edition("86")
 
 
 def test_the_archive_parts_in_order(monkeypatch):

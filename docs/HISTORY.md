@@ -2940,6 +2940,10 @@ export, then removes the test project (`docker compose down -v --rmi local`).
 - **`npm start`**, not `npm run dev`: upstream renamed the command and every doc was
   out of date.
 - **Docs** generally: README, `CLAUDE.md`, this file and `LOCAL_DEVELOPMENT.md`.
+- **An IGN edition listed but not served (2026-11-19).** IGN's listing gave Vienne's
+  2023 photos, but their archive's listing was a 404, and the queue stopped there.
+  `bdortho.latest_edition` now takes the newest edition whose archive IGN serves (the
+  2020 one for Vienne); a missing listing counts as empty (`entries`).
 
 ## Clean-up (2026-11-12 to 2026-11-16)
 
