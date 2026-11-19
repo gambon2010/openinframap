@@ -47,7 +47,7 @@ def test_a_kind_is_one_priority_in_every_language():
 def test_the_overrides_give_kinds_the_map_draws():
     sql = (SCHEMA / "site-overrides.sql").read_text()
     kinds = re.findall(
-        r"^\s*\(-?\d+::bigint, '(?:[^']|'')*', '([a-z_]+)'", sql, re.MULTILINE
+        r"^\s*\(-?\d+::bigint, '(?:[^']|'')*',\s*'([a-z_]+)'", sql, re.MULTILINE
     )
-    assert kinds, "the overrides' rows weren't read"
+    assert len(kinds) == sql.count("::bigint"), "an override's row wasn't read"
     assert set(kinds) <= drawn_kinds()

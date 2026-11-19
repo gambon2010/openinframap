@@ -791,6 +791,21 @@ Camp de Cercottes, the DGSE's training centre (CPES, by press reports), a school
 hand. The three "École nationale de police" are three schools (Périgueux, Essonne,
 Montbéliard), the one mapped as a police station now national police too.
 
+**The remaining generic names, looked up (2026-11-19):** 174 named military sites were
+still "Other military area". Rules added: clubs and museums left out; gendarmerie
+units (EGM, pelotons, brigades de recherches/proximité), customs ("douanes": Customs),
+misspellings ("Commisariat", "Gendarmie"); ranges ("tirs", aire de feu, place
+d'armes, village de combat, cône de sécurité); "Terrain militaire de ..." as a camp (by
+size); bases (escadre, brigade, arsenal, port militaire, appontements, mess, cercle,
+military housing, sports grounds, helipads, regiments' abbreviations: 21 RIMa, 1er
+REC...); depots (ateliers industriels de l'aéronautique, parcs, BSMAT, subsistances,
+soutien opérationnel); radio (téléport, satellite, centre d'émission, CDC, the CROSS
+rescue centres); offices (service de santé, archives, préfecture maritime, Balard);
+schools (CFIM, aguerrissement; Spanish: escuela). By hand: Mont-Agel's EAR 943 (an
+air-defence radar), the Navy's Cranou station (radio monitoring), BND Rheinhausen (the
+German service's satellite intercept station), the Lignes de Quélern (the DGSE's
+CPEOM), eu-LISA (an EU agency: Government). 74 named and 516 unnamed remain generic.
+
 ---
 
 ## Building outlines (2026-11-11)

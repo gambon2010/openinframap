@@ -22,33 +22,38 @@
 -- after changing it (a database rebuild does both).
 CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, language, pattern) AS VALUES
     -- Not military: clubs mapped as military ranges.
-    (10, 'not_military', true, 'fr', 'tir [àa] l.arc|ball[- ]?trap|club de tir|soci[ée]t[ée] de tir|tir sportif'),
+    (10, 'not_military', true, 'fr', 'tir [àa] l.arc|ball[- ]?trap|club de tir|soci[ée]t[ée] de tir|tir sportif|\marchers?\M|\marc club|mus[ée]e|\mEPIDE\M'),
     (10, 'not_military', true, 'de', 'bogensch|sch[üu]tzen(verein|haus|gilde|gesellschaft)'),
     (10, 'not_military', true, 'en', 'archery|rifle club|gun club|shooting club'),
     -- Police and gendarmerie mapped as military (their schools, CRS companies, the
     -- Garde républicaine, mountain rescue): Police, gendarmerie, customs.
-    (20, 'gendarmerie', true, 'fr', 'garde r[ée]publicaine|\mPGHM\M|\mPSIG\M'),
-    (20, 'police_national', true, 'fr', '\mpolice\M(?! militaire)|commissariat de police|\mC\.?R\.?S\M|compagnie r[ée]publicaine de s[ée]curit[ée]'),
-    (20, 'police_national', true, 'de', 'polizei'),
+    (20, 'gendarmerie', true, 'fr', 'garde r[ée]publicaine|\mPGHM\M|\mPSIG\M|\mEGM\M|gendarmie|peloton (motoris|d.autoroute)|brigade de (proximit|recherches)'),
+    (22, 'customs', true, 'fr', '\mdouanes?\M'),
+    (22, 'customs', true, 'de', '\mzoll'),
+    (21, 'police_national', true, 'fr', '\mpolice\M(?! militaire)|commissariat de police|\mcommisariat\M|\mC\.?R\.?S\M|compagnie r[ée]publicaine de s[ée]curit[ée]'),
+    (21, 'police_national', true, 'de', 'polizei'),
     -- A shooting stand.
     (30, 'shooting_stand', true, 'fr', '\mstands? de tir'),
     (30, 'shooting_stand', true, 'de', 'schie(ß|ss)(stand|anlage)'),
     (30, 'shooting_stand', true, 'en', 'shooting range|rifle range'),
     -- Schools and training establishments (before camps: Saint-Cyr Coëtquidan is the
     -- academy, on its camp).
-    (35, 'military_school', false, 'fr', '[ée]coles?\M|lyc[ée]e (militaire|de la d[ée]fense)|acad[ée]mie|prytan[ée]e|centre de formation|centre d.instruction|saint-cyr'),
+    (35, 'military_school', false, 'fr', '[ée]coles?\M|lyc[ée]e (militaire|de la d[ée]fense)|acad[ée]mie|prytan[ée]e|centre de formation|centre d.instruction|saint-cyr|\mCFIM\M|aguerrissement'),
     (35, 'military_school', false, 'de', 'schule|akademie'),
     (35, 'military_school', false, 'en', 'academy|school|college'),
+    (35, 'military_school', false, 'es', 'escuela|academia'),
     -- Ranges, training and test grounds (the DGA's test centres among them).
-    (40, 'military_range', false, 'fr', '\mtir\M|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement|\messais\M|\mDGA (essais|techniques|ma[iî]trise)'),
+    (40, 'military_range', false, 'fr', '\mtirs?\M|aire de feu|place d.armes|village de combat|c[ôo]ne de s[ée]curit|zone dangereuse|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement|\messais\M|\mDGA (essais|techniques|ma[iî]trise)'),
     (40, 'military_range', false, 'de', '[üu]bungsplatz|schie(ß|ss)platz|bombodrom|truppen[üu]bung'),
     (40, 'military_range', false, 'en', 'training area|firing range|bombing range|\mrange\M'),
-    -- Camps: "Camp de ...", "Camp militaire ..." (a camp named for a person is a base).
-    (45, 'military_camp', false, 'fr', '\mcamps? (de |du |des |d.|militaire)'),
+    -- Camps: "Camp de ...", "Camp militaire ...", "Terrain militaire de ..." (a camp
+    -- named for a person is a base).
+    (45, 'military_camp', false, 'fr', '\mcamps? (de |du |des |d.|militaire)|terrain militaire'),
+    (45, 'military_camp', false, 'es', 'campamento'),
     (45, 'military_camp', false, 'de', '\mlager\M|truppenlager'),
     (45, 'military_camp', false, 'en', '\mcamp\M'),
     -- Ammunition and supply depots.
-    (60, 'military_depot', false, 'fr', 'd[ée]p[ôo]ts?\M|munitions?\M|poudri[èe]re|entrep[ôo]ts?\M|stockage|carburants?\M|service des essences|p[ée]troli|pyrotechni|ravitaillement|logistique'),
+    (60, 'military_depot', false, 'fr', 'd[ée]p[ôo]ts?\M|munitions?\M|poudri[èe]re|entrep[ôo]ts?\M|stockage|carburants?\M|service des essences|p[ée]troli|pyrotechni|ravitaillement|logistique|soutien op[ée]rationnel|subsistances|atelier industriel|\mAIA\M|service industriel|parc d.artillerie|\mBSMAT\M|zone technique|[ée]conomat'),
     (60, 'military_depot', false, 'de', 'munition|materiallager|\mdepot\M'),
     (60, 'military_depot', false, 'en', 'ammunition|\mammo\M|\mdepot\M|storage'),
     -- Forts, Maginot line works, batteries, citadels.
@@ -56,14 +61,15 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (70, 'military_fort', false, 'de', 'festung|\mfort\M|zitadelle|schanze'),
     (70, 'military_fort', false, 'en', 'fortress|citadel|\mfort\M|battery|redoubt'),
     -- Barracks and bases (army units, air bases: "BA 901", naval air stations).
-    (80, 'military_base', false, 'fr', 'caserne|quartier|r[ée]giment|\mbases?\M|\mBA ?[0-9]|\mBAN\M|d[ée]tachement|garnison|escadron|escadrille|bataillon|a[ée]ronavale|terrain d.aviation|\mcamps?\M|l[ée]gion|commando'),
+    (80, 'military_base', false, 'fr', 'caserne|quartier|r[ée]giment|\mbases?\M|\mBA ?[0-9]|\mBAN\M|d[ée]tachement|garnison|escadron|escadrille|bataillon|a[ée]ronavale|terrain d.aviation|\mcamps?\M|l[ée]gion|commando|escadre|brigade|arsenal|port militaire|zone portuaire militaire|appontements?|\mdigue|[ée]l[ée]ment air rattach|\mmess\M|cercle (de la|militaire|mixte|des officiers)|logements militaires|\mstade|gymnase|sporti|\msports?\M|parcours|biathlon|h[ée]listation|\mDZ\M|\m[0-9]+ ?(e|er|[èé]me)? ?(R\.?A\.?|RI|RIMa|RPIMa|RPH|REC|REI|REG|RCP|RHC|RMT|RAMa|BCA|BCP|RG|RT)\M'),
+    (80, 'military_base', false, 'es', 'cuartel|acuartelamiento'),
     (80, 'military_base', false, 'de', 'kaserne|fliegerhorst|st[üu]tzpunkt|flugplatz|garnison'),
     (80, 'military_base', false, 'en', 'barracks|air ?base|naval base|air station|naval station|\mRAF\M'),
     -- Radar, radio and listening stations, signal stations (sémaphores).
-    (90, 'military_radio', false, 'fr', 'radar|s[ée]maphore|transmissions?\M|hertzien|radio|[ée]metteur|[ée]coute|\mrelais\M|antennes?\M|t[ée]l[ée]com|vigie|d[ée]tection'),
+    (90, 'military_radio', false, 'fr', 'radar|s[ée]maphore|transmissions?\M|hertzien|radio|[ée]metteur|[ée]coute|\mrelais\M|antennes?\M|t[ée]l[ée]com|vigie|d[ée]tection|t[ée]l[ée]port|satellit|[ée]mission|\mCDC\M|\mCROSS\M|surveillance et de sauvetage|signalisation maritime'),
     (90, 'military_radio', false, 'de', 'radar|funk|fernmelde|\msender\M|sendeanlage|horch'),
     (90, 'military_radio', false, 'en', 'radar|radio|\msignals?\M|transmitter|listening'),
     -- Offices: staff, recruitment, ministries.
-    (100, 'military_office', false, 'fr', 'cirfa|recrutement|[ée]tat[- ]major|\mDMD\M|d[ée]l[ée]gation|direction|bureau|minist[èe]re|commandement|centre d.information'),
+    (100, 'military_office', false, 'fr', 'cirfa|recrutement|[ée]tat[- ]major|\mDMD\M|d[ée]l[ée]gation|direction|bureau|minist[èe]re|commandement|centre d.information|service de sant[ée]|archives|commissariat de l.arm|service d.infrastructure|\mSID\M|pr[ée]fecture maritime|\mbalard\M|maison de l.arm[ée]e'),
     (100, 'military_office', false, 'de', 'kreiswehrersatzamt|karriere(center|centrum)|kommando|\mamt\M|ministerium'),
     (100, 'military_office', false, 'en', 'headquarters|\mHQ\M|recruit|ministry');

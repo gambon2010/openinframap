@@ -15,4 +15,17 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
     (22727428::bigint, 'Fort de Portzic', 'military_fort', '2026-11-19'::date,
      'Tagged historic, but still in military use (Brest, the Navy''s port).'),
     (161297197::bigint, 'Camp de Cercottes', 'military_school', '2026-11-19'::date,
-     'The DGSE''s training centre (CPES; press reports, Wikipedia: Action Division), not a range.');
+     'The DGSE''s training centre (CPES; press reports, Wikipedia: Action Division), not a range.'),
+    (-7770108::bigint, 'Lignes de Quélern', 'military_school', '2026-11-19'::date,
+     'The DGSE''s maritime training centre (CPEOM) is in the Réduit de Quélern (Brittany heritage inventory).'),
+    (167587638::bigint, 'Elément Air Rattaché 943 de Nice Mt-Agel', 'military_radio', '2026-11-19'::date,
+     'The air force''s radar station on Mont Agel (CDC 05.943, a Ground Master 406 radar).'),
+    (122578387::bigint, 'Station du Cranou', 'military_radio', '2026-11-19'::date,
+     'The Navy''s radio monitoring station of the Atlantic and North Sea (naval intelligence).'),
+    (-1558419::bigint, 'BND Aussenstelle Rheinhausen', 'military_radio', '2026-11-19'::date,
+     'The German intelligence service''s station intercepting satellite links (netzpolitik.org).'),
+    (110264552::bigint, 'Bundesnachrichtendienst Außenstelle Rheinhausen', 'military_radio', '2026-11-19'::date,
+     'The same station (another OSM object).'),
+    (49153096::bigint, 'eu-LISA (European Union Agency for the Operational Management of Large-Scale IT Systems in the Area of Freedom, Security and Justice)',
+     'government', '2026-11-19'::date,
+     'An EU agency (IT systems for borders and justice), mapped as military: not military.');
