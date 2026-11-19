@@ -7,18 +7,20 @@
 -- Safe to run more than once. The functions set their search_path: Postgres builds
 -- materialized views with a restricted one, where hstore's -> isn't visible.
 
--- A site of the gendarmerie, by its operator or its name (OpenStreetMap's police=*
--- is hardly used in France). "Brigade" and "Escadron" name gendarmerie units only
--- at a police station: the army and air force have their own (site_kind).
+-- A site of the gendarmerie, by its operator ("Groupement blindé de gendarmerie
+-- mobile" too) or its name (OpenStreetMap's police=* is hardly used in France).
+-- "Brigade" and "Escadron" name gendarmerie units only at a police station: the army
+-- and air force have their own (site_kind).
 CREATE OR REPLACE FUNCTION is_gendarmerie(tags hstore) RETURNS boolean
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
-    SELECT coalesce(tags->'operator' ILIKE 'gendarmerie%', false)
+    SELECT coalesce(tags->'operator' ~* '\mgendarmerie', false)
         OR coalesce(tags->'name' ~* '\mgendarmerie', false)
 $$;
 
 -- A military area or site no longer in use: a fortification (a bunker, a fort...),
--- tagged disused or abandoned, named "Ancien..." (former) or gone ("disparu"...), or
--- historic, but not when it shows use (an in-use military type, a barracks' name).
+-- tagged disused or abandoned, named "Ancien..." (former), gone ("disparu"...) or a
+-- bunker ("Bunker", "Unterstand", "Abri de combat"), or historic, but not when it
+-- shows use (an in-use military type, a barracks' name).
 -- Some historic forts are still the army's: site-overrides.sql says so for those
 -- known; site_feature also takes those with sites in use inside, or around them, as
 -- in use.
@@ -28,7 +30,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
                                          'blockhouse', 'pillbox', 'fort', 'gun_emplacement', 'shelter', 'disused'), false)
         OR coalesce(tags->'building' = 'bunker', false)
         OR tags ?| ARRAY['disused', 'abandoned', 'disused:military', 'abandoned:military', 'was:military']
-        OR coalesce(tags->'name' ~* '^(l'')?anciens?n?e?s?\M|\m(disparue?s?|d[ée]truite?s?|d[ée]molie?s?|en ruines?)\M', false)
+        OR coalesce(tags->'name' ~* '^(l'')?anciens?n?e?s?\M|\m(disparue?s?|d[ée]truite?s?|d[ée]molie?s?|en ruines?)\M|\mbunker|unterstand|abri de combat', false)
         OR (tags ? 'historic'
             AND NOT coalesce(tags->'military' IN ('barracks', 'base', 'naval_base', 'airfield', 'office', 'checkpoint',
                                                   'ammunition', 'depot', 'range', 'training_area', 'danger_area'), false)
@@ -151,7 +153,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('fuel', 'storage_tank') THEN 'fuel'
         WHEN kind IN ('airport', 'port', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range',
-                      'military_fort', 'military_radio', 'military_school', 'military_disused',
+                      'military_fort', 'military_radio', 'military_school', 'military_research', 'military_disused',
                       'shooting_stand', 'military_camp') THEN 'military'
         WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket', 'convenience') THEN 'food'
         WHEN kind IN ('dam', 'landfill', 'weather') THEN 'water_waste'
@@ -212,7 +214,8 @@ $$;
 --   inside is one), else is a military area in use;
 -- - down: a military area, a disused site or a shooting stand inside a site in use
 --   takes the kind of the smallest around it that says more (the areas and bunkers
---   inside a depot are the depot), else is a military area in use (a stand: a range);
+--   inside a depot are the depot), else is a military area in use (a stand: a range;
+--   a disused site stays disused: an area saying no more doesn't show it's used);
 -- - a shooting stand with nothing around it is a range when large (1 ha or more),
 --   else a club's: left out;
 -- - a camp (site-rules.sql) is a training ground from 90 ha, else a garrison (base),
@@ -278,6 +281,7 @@ WITH s AS (
            JOIN after_up i ON i.site_id = w.inner_id
                           AND i.kind IN ('military_area', 'military_disused', 'shooting_stand')
            JOIN after_up o ON o.site_id = w.outer_id AND o.kind NOT IN ('military_disused', 'shooting_stand')
+                          AND NOT (i.kind = 'military_disused' AND o.kind = 'military_area')
      ORDER BY w.inner_id, o.kind = 'military_area', w.outer_area
 ), military_final AS (
     SELECT a.site_id, CASE

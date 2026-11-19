@@ -806,6 +806,24 @@ air-defence radar), the Navy's Cranou station (radio monitoring), BND Rheinhause
 German service's satellite intercept station), the Lignes de Quélern (the DGSE's
 CPEOM), eu-LISA (an EU agency: Government). 74 named and 516 unnamed remain generic.
 
+**Research, test and weapons establishments; the last names (2026-11-19):** a new kind
+for the CEA's military sites (Valduc, Gramat, Le Ripault, CESTA, DAM Île-de-France,
+Moronvilliers), the DGA's test centres (moved from ranges), ONERA, the Franco-German
+institute of Saint-Louis, Naval Group, KNDS, the Navy's hydrographic service, the
+technical sections: 111, a flask. A disused fortification inside an area in use that
+says no more than "military area" now stays disused (20 casemates, Maginot blocks,
+batteries showed as military areas); one inside a site that says more still takes
+its kind. The rest, looked up: ELOCA (the Commissariat's logistics establishments) and
+Etamat depots, the SEO's technical expertise centre research, Centre Marine de
+Houilles a base; by hand Etamat Le Mans (closed 2018: disused), Terrain Billard (the 4e
+RMAT's detachment: depot), Gare de Sainte-Rosaline (Canjuers' military rail access:
+depot), the Lazaret at Saint-Mandrier (the Navy's schools); a gendarmerie operator
+counts anywhere in its name (Cité Delpal: the armoured mobile gendarmerie); names
+"Bunker", "Unterstand", "Abri de combat" disused. 30 named sites stay "Other military
+area": place names nothing online explains (Piste de Vergière, Bois de Nice, Plateau
+de Mesdoun, Anse Saupin, Penn an enez...), unexplained acronyms (ESCAT, E.S.C.A.G.N.,
+CPA), the civil defence's bomb disposal centres, oddities ("Obus", "effondrement").
+
 ---
 
 ## Building outlines (2026-11-11)

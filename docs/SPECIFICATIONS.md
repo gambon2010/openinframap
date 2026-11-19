@@ -270,6 +270,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.48 | Disused military grouped apart from the military in use zoomed out, in grey discs; still a row of Military in Data layers. | ✅ (2026-11-19) `site_group` (`sites.sql`), `group_icon` (`modules/sites/style.ts`) |
 | 10.49 | One thing mapped twice (same name, overlapping) drawn once, keeping the more specific kind. | ✅ (2026-11-19) `site_feature` (`twin`, `site_kind_says_little`) |
 | 10.50 | Ambiguous military names checked against what the sites are (looked up): camps by size (training ground or garrison), schools before camps, DGA test centres ranges. | ✅ (2026-11-19) `site-rules.sql`, `site-overrides.sql` (Cercottes) |
+| 10.51 | Military: a kind for research, test and weapons establishments (CEA, DGA test centres, ONERA, arms makers); disused fortifications stay disused inside an area that says no more; every remaining generic name looked up. | ✅ (2026-11-19) `military_research`, `site-rules.sql`, `site-overrides.sql` |
 
 ## 11. Quality
 

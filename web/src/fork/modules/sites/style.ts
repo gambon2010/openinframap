@@ -64,6 +64,7 @@ export const site_kinds: { [category: string]: string[] } = {
     'military_range',
     'military_fort',
     'military_radio',
+    'military_research',
     'military_area',
     'military_disused'
   ],
@@ -133,6 +134,7 @@ export function site_kind_label(kind: string): string {
       military_range: t('sites.kind.military-range', 'Range, training ground'),
       military_fort: t('sites.kind.military-fort', 'Fort, fortification in use'),
       military_radio: t('sites.kind.military-radio', 'Radar, radio, signal station'),
+      military_research: t('sites.kind.military-research', 'Research, test, weapons establishment'),
       military_disused: t('sites.kind.military-disused', 'Bunker, trench, fortification'),
       silo: t('sites.kind.silo', 'Silo'),
       slaughterhouse: t('sites.kind.slaughterhouse', 'Slaughterhouse'),

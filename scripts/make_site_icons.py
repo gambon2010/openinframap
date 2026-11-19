@@ -77,6 +77,7 @@ KINDS = {
     "military_range": ("military", "danger"),
     "military_fort": ("military", "castle"),  # in use: green; disused, the same grey
     "military_radio": ("military", "communications-tower"),
+    "military_research": ("military", None),  # a flask, drawn here
     "military_disused": ("military_disused", "castle"),
     "silo": ("food", "farm"),
     "slaughterhouse": ("food", "slaughterhouse"),
@@ -107,6 +108,8 @@ OWN = {
     "gendarmerie": '<path d="M7.5 0.4c1.6 0.9 1.9 2.1 1.2 3 1.2-0.2 1.9-1 2-2.1 1 1.2 0.8 2.6-0.4 3.4H4.7c-1.2-0.8-1.4-2.2'
     '-0.4-3.4 0.1 1.1 0.8 1.9 2 2.1-0.7-0.9-0.4-2.1 1.2-3z"/><path d="M6 5.3h3v1.2H6z"/><circle cx="7.5" cy="10.4" r="4.2"/>',
     # Scales: a post on a base, a beam, a pan hanging at each end.
+    "military_research": '<path d="M5 1h5v1.2H9.2v3.6l4.2 6.9c.5.8-.1 1.8-1 1.8H2.6c-.9 0-1.5-1-1-1.8l4.2-6.9V2.2H5z"/>'
+    '<path d="M3.6 10.5h7.8" fill="none" stroke="#fff" stroke-width="1"/>',
     "courthouse": '<path d="M7 2h1v10.5H7z M4 12.5h7V14H4z M1.5 3h12v1h-12z"/>'
     '<path d="M2 4 0.5 8.5M2 4l1.5 4.5M13 4l-1.5 4.5M13 4l1.5 4.5" fill="none" stroke="currentColor" stroke-width="0.8"/>'
     '<path d="M0 8.5h4a2 1.6 0 0 1-4 0z M11 8.5h4a2 1.6 0 0 1-4 0z"/>',

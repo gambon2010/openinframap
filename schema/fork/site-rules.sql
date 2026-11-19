@@ -42,8 +42,14 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (35, 'military_school', false, 'de', 'schule|akademie'),
     (35, 'military_school', false, 'en', 'academy|school|college'),
     (35, 'military_school', false, 'es', 'escuela|academia'),
-    -- Ranges, training and test grounds (the DGA's test centres among them).
-    (40, 'military_range', false, 'fr', '\mtirs?\M|aire de feu|place d.armes|village de combat|c[ôo]ne de s[ée]curit|zone dangereuse|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement|\messais\M|\mDGA (essais|techniques|ma[iî]trise)'),
+    -- Research, test and weapons establishments: the CEA's military sites, the DGA's
+    -- test centres, ONERA, the Franco-German institute, the arms makers (before
+    -- ranges: "DGA Essais de missiles" is a test centre).
+    (38, 'military_research', false, 'fr', '\mC\.?E\.?A\.?\M|\mDAM\M|\mDGA\M|\mD\.G\.A\.|recherches?\M|[ée]tudes scientifiques|exp[ée]rimentation|\messais\M|\mONERA\M|\minstitut\M|hydrograph|naval group|\mKNDS\M|nexter|\mMBDA\M|thal[eè]s|safran|arianegroup|expertise technique|section technique'),
+    (38, 'military_research', false, 'de', 'forschung|erprobung|wehrtechnisch|rheinmetall|krauss'),
+    (38, 'military_research', false, 'en', 'research|test (centre|center|range)|laborator'),
+    -- Ranges and training grounds.
+    (40, 'military_range', false, 'fr', '\mtirs?\M|aire de feu|place d.armes|village de combat|c[ôo]ne de s[ée]curit|zone dangereuse|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement'),
     (40, 'military_range', false, 'de', '[üu]bungsplatz|schie(ß|ss)platz|bombodrom|truppen[üu]bung'),
     (40, 'military_range', false, 'en', 'training area|firing range|bombing range|\mrange\M'),
     -- Camps: "Camp de ...", "Camp militaire ...", "Terrain militaire de ..." (a camp
@@ -53,7 +59,7 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (45, 'military_camp', false, 'de', '\mlager\M|truppenlager'),
     (45, 'military_camp', false, 'en', '\mcamp\M'),
     -- Ammunition and supply depots.
-    (60, 'military_depot', false, 'fr', 'd[ée]p[ôo]ts?\M|munitions?\M|poudri[èe]re|entrep[ôo]ts?\M|stockage|carburants?\M|service des essences|p[ée]troli|pyrotechni|ravitaillement|logistique|soutien op[ée]rationnel|subsistances|atelier industriel|\mAIA\M|service industriel|parc d.artillerie|\mBSMAT\M|zone technique|[ée]conomat'),
+    (60, 'military_depot', false, 'fr', 'd[ée]p[ôo]ts?\M|munitions?\M|poudri[èe]re|entrep[ôo]ts?\M|stockage|carburants?\M|service des essences|p[ée]troli|pyrotechni|ravitaillement|logistique|soutien op[ée]rationnel|subsistances|\mELOCA\M|[ée]tablissement logistique|\mETAMAT\M|[ée]tablissement du mat[ée]riel|atelier industriel|\mAIA\M|service industriel|parc d.artillerie|\mBSMAT\M|zone technique|[ée]conomat'),
     (60, 'military_depot', false, 'de', 'munition|materiallager|\mdepot\M'),
     (60, 'military_depot', false, 'en', 'ammunition|\mammo\M|\mdepot\M|storage'),
     -- Forts, Maginot line works, batteries, citadels.
@@ -61,7 +67,7 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (70, 'military_fort', false, 'de', 'festung|\mfort\M|zitadelle|schanze'),
     (70, 'military_fort', false, 'en', 'fortress|citadel|\mfort\M|battery|redoubt'),
     -- Barracks and bases (army units, air bases: "BA 901", naval air stations).
-    (80, 'military_base', false, 'fr', 'caserne|quartier|r[ée]giment|\mbases?\M|\mBA ?[0-9]|\mBAN\M|d[ée]tachement|garnison|escadron|escadrille|bataillon|a[ée]ronavale|terrain d.aviation|\mcamps?\M|l[ée]gion|commando|escadre|brigade|arsenal|port militaire|zone portuaire militaire|appontements?|\mdigue|[ée]l[ée]ment air rattach|\mmess\M|cercle (de la|militaire|mixte|des officiers)|logements militaires|\mstade|gymnase|sporti|\msports?\M|parcours|biathlon|h[ée]listation|\mDZ\M|\m[0-9]+ ?(e|er|[èé]me)? ?(R\.?A\.?|RI|RIMa|RPIMa|RPH|REC|REI|REG|RCP|RHC|RMT|RAMa|BCA|BCP|RG|RT)\M'),
+    (80, 'military_base', false, 'fr', 'caserne|quartier|r[ée]giment|\mbases?\M|\mBA ?[0-9]|\mBAN\M|d[ée]tachement|garnison|escadron|escadrille|bataillon|a[ée]ronavale|terrain d.aviation|\mcamps?\M|l[ée]gion|commando|escadre|brigade|centre marine|arsenal|port militaire|zone portuaire militaire|appontements?|\mdigue|[ée]l[ée]ment air rattach|\mmess\M|cercle (de la|militaire|mixte|des officiers)|logements militaires|\mstade|gymnase|sporti|\msports?\M|parcours|biathlon|h[ée]listation|\mDZ\M|\m[0-9]+ ?(e|er|[èé]me)? ?(R\.?A\.?|RI|RIMa|RPIMa|RPH|REC|REI|REG|RCP|RHC|RMT|RAMa|BCA|BCP|RG|RT)\M'),
     (80, 'military_base', false, 'es', 'cuartel|acuartelamiento'),
     (80, 'military_base', false, 'de', 'kaserne|fliegerhorst|st[üu]tzpunkt|flugplatz|garnison'),
     (80, 'military_base', false, 'en', 'barracks|air ?base|naval base|air station|naval station|\mRAF\M'),

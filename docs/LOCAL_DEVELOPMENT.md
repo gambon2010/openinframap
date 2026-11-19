@@ -556,7 +556,8 @@ the discs' numbers too. With debug on, a clicked thing's details link to its pag
 on OpenStreetMap.
 
 **Military** sites are sorted into bases, schools, offices, depots, ranges and training
-grounds, forts in use, radar and radio stations, other military areas, and disused
+grounds, forts in use, radar and radio stations, research, test and weapons
+establishments, other military areas, and disused
 fortifications (grey, their own grey discs zoomed out; unticked at first). What a
 site is comes from its OSM tags, else its name ("Dépôt de munitions" a depot,
 "Station hertzienne" radio), else the sites around it (the blocks of a Maginot

@@ -12,7 +12,8 @@ On top of upstream's power, telecoms, oil and gas, and water layers, it adds:
   gendarmerie and customs; town halls, prefectures, tax offices and other public
   services; places of worship (an icon per religion); fuel stations and storage tanks;
   airports, ports and rail yards; military sites sorted by what they are (bases,
-  schools, depots, ranges, forts, radar and radio stations, offices; disused
+  schools, depots, ranges, forts, radar and radio stations, research and test
+  centres, offices; disused
   fortifications in grey), from their tags, their names (rules in several languages)
   and the sites around them; supermarkets, wholesalers, silos and food distribution;
   dams, landfills and weather stations. Shown at every zoom: zoomed out, nearby sites
@@ -60,7 +61,7 @@ How the fork is organised: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**; e
 | **Backend** | Runs in Docker (Compose service `backend`), so it needs no Python setup and works offline |
 | **Search** | Offline place search (cities to hamlets) from the local database instead of OpenCage; everything else with a name too (critical sites, lines, telecoms, pipelines, water, ICPE...: `schema/fork/search.sql`), with its kind and town, accents optional, name + town ("mairie duppigheim"), and picking a result switches its layer on; words inside names match ("vianden" → "Centrale de Vianden"); optional Photon server for addresses (`VITE_PHOTON_URL` or Settings) |
 | **Stats pages** | Per-country stats computed at build time, with a query that's fast for countries like Russia |
-| **Critical sites** | `imposm/sites.py` + `schema/fork/sites.sql` (military names: `site-rules.sql`; corrections by hand: `site-overrides.sql`): ~208,000 sites in France in 52 kinds, shown at every zoom from 4 (nearby ones grouped into a numbered bubble below zoom 14), a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
+| **Critical sites** | `imposm/sites.py` + `schema/fork/sites.sql` (military names: `site-rules.sql`; corrections by hand: `site-overrides.sql`): ~208,000 sites in France in 53 kinds, shown at every zoom from 4 (nearby ones grouped into a numbered bubble below zoom 14), a "Critical sites" layer-switcher group with one entry per category, icons from Maki |
 | **Extra data** | `scripts/extra_data.py`: imports open data that covers the built region (French electricity and gas networks, biomethane, ICPE) into an `extra` schema; the build offers each dataset with its size; what OSM already has is left out; raw downloads and imported data are kept across rebuilds |
 | **Key** | Every row has a checkbox to hide those features; remembered per browser |
 | **My layers** | Your own layers on the map: military and emergency symbols (MIL-STD-2525C, as in ODIN), pictures, markers, lines, areas and copies of map features (which stay visible when the grid is hidden); saved in the database, with a history you can play back step by step |

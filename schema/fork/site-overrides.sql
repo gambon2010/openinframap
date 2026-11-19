@@ -28,4 +28,14 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
      'The same station (another OSM object).'),
     (49153096::bigint, 'eu-LISA (European Union Agency for the Operational Management of Large-Scale IT Systems in the Area of Freedom, Security and Justice)',
      'government', '2026-11-19'::date,
-     'An EU agency (IT systems for borders and justice), mapped as military: not military.');
+     'An EU agency (IT systems for borders and justice), mapped as military: not military.'),
+    (134244770::bigint, 'Etamat', 'military_disused', '2026-11-19'::date,
+     'The Le Mans army materiel establishment, closed in June 2018 (the city plans housing there).'),
+    (512713295::bigint, 'Terrain Billard', 'military_depot', '2026-11-19'::date,
+     'The 4e régiment du matériel''s Billard detachment (Drôme defence brochure).'),
+    (1561330550::bigint, 'Gare de Sainte-Rosaline', 'military_depot', '2026-11-19'::date,
+     'The rail station for military traffic to the Canjuers camp (La Motte-Sainte-Roseline line).'),
+    (41233994::bigint, 'Le Lazaret', 'military_school', '2026-11-19'::date,
+     'Inside the Navy''s Pôle Écoles Méditerranée at Saint-Mandrier (its schools).'),
+    (-7382430::bigint, 'Zone du Lazaret', 'military_school', '2026-11-19'::date,
+     'The same (Pôle Écoles Méditerranée, Saint-Mandrier).');
