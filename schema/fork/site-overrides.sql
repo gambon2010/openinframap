@@ -13,4 +13,6 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
     (-5658089::bigint, 'Fort d''Ivry', 'military_fort', '2026-11-19'::date,
      'Tagged historic, but the ECPAD (the defence ministry''s image agency) is there.'),
     (22727428::bigint, 'Fort de Portzic', 'military_fort', '2026-11-19'::date,
-     'Tagged historic, but still in military use (Brest, the Navy''s port).');
+     'Tagged historic, but still in military use (Brest, the Navy''s port).'),
+    (161297197::bigint, 'Camp de Cercottes', 'military_school', '2026-11-19'::date,
+     'The DGSE''s training centre (CPES; press reports, Wikipedia: Action Division), not a range.');

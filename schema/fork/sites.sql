@@ -118,7 +118,7 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
             WHEN tags->'police:FR' ~* '^(police|police_nationale|CRS)$' THEN 'police_national'
             WHEN is_gendarmerie(tags) OR tags->'name' ~* '^brigade|\mescadron' THEN 'gendarmerie'
             WHEN tags->'operator' ~* '^(police nationale|ministère de l''intérieur|préfecture de police)'
-              OR tags->'name' ~* 'commissariat|police nationale|h[ôo]tel de police|pr[ée]fecture de police|police aux fronti|\mC\.?R\.?S\M|police autoroute'
+              OR tags->'name' ~* 'commissariat|police nationale|[ée]cole nationale de police|h[ôo]tel de police|pr[ée]fecture de police|police aux fronti|\mC\.?R\.?S\M|police autoroute'
               THEN 'police_national'
             WHEN tags->'operator' ~* 'municipal|^ville |^mairie|^commune '
               OR tags->'name' ~* 'munici|minicipal|police rurale' THEN 'police_municipal'
@@ -152,10 +152,17 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('airport', 'port', 'rail_yard') THEN 'transport'
         WHEN kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range',
                       'military_fort', 'military_radio', 'military_school', 'military_disused',
-                      'shooting_stand') THEN 'military'
+                      'shooting_stand', 'military_camp') THEN 'military'
         WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket', 'convenience') THEN 'food'
         WHEN kind IN ('dam', 'landfill', 'weather') THEN 'water_waste'
     END
+$$;
+
+-- Kinds that say little within their category (the catch-alls): a twin's kind that
+-- says more is taken instead (site_feature).
+CREATE OR REPLACE FUNCTION site_kind_says_little(kind text) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
+    SELECT kind IN ('government', 'worship', 'police', 'military_area')
 $$;
 
 -- 0: from zoom 8 (national institutions, hospitals, airports with a code,
@@ -207,7 +214,14 @@ $$;
 --   takes the kind of the smallest around it that says more (the areas and bunkers
 --   inside a depot are the depot), else is a military area in use (a stand: a range);
 -- - a shooting stand with nothing around it is a range when large (1 ha or more),
---   else a club's: left out.
+--   else a club's: left out;
+-- - a camp (site-rules.sql) is a training ground from 90 ha, else a garrison (base),
+--   before any of this.
+--
+-- One thing mapped twice (a building and its grounds, a point inside its area: the
+-- same name and category, touching) is drawn once: the larger, with the other's kind
+-- when its own says little (site_kind_says_little: a prefecture mapped as an office
+-- and as government=prefecture).
 DROP MATERIALIZED VIEW IF EXISTS site_feature;
 CREATE MATERIALIZED VIEW site_feature AS
 WITH s AS (
@@ -223,13 +237,19 @@ WITH s AS (
            SELECT 1 FROM osm_petroleum_site p
             WHERE p.osm_id = s.osm_id
                OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))))
+), military_own AS (
+    -- The military sites, camps as what their size says.
+    SELECT site_id, area, CASE
+               WHEN kind <> 'military_camp' THEN kind
+               WHEN area >= 900000 THEN 'military_range'
+               ELSE 'military_base' END AS kind
+      FROM kept WHERE site_category(kind) = 'military'
 ), military AS (
-    -- The military sites: whether their own kind says more than "military area", and
-    -- whether they're in use.
+    -- Whether their own kind says more than "military area", and whether they're in use.
     SELECT site_id, kind, area,
            kind NOT IN ('military_area', 'military_disused', 'shooting_stand') AS says_more,
            kind NOT IN ('military_disused', 'shooting_stand') AS in_use
-      FROM kept WHERE site_category(kind) = 'military'
+      FROM military_own
 ), within AS (
     -- Each military site inside a larger one (found through osm_site's index).
     SELECT inner_site.site_id AS inner_id, outer_site.site_id AS outer_id, outer_site.area AS outer_area
@@ -294,11 +314,28 @@ WITH s AS (
            LEFT JOIN kept st ON st.site_id = c.station_id
      WHERE NOT EXISTS (
            SELECT 1 FROM station_in i JOIN compound c2 ON c2.area_id = i.area_id WHERE i.station_id = k.site_id)
+), numbered AS (
+    SELECT row_number() OVER () AS id, merged.*, site_category(kind) AS category
+      FROM merged WHERE kind IS NOT NULL
+), twin AS (
+    -- Each named site and another of the same name and category touching it: one
+    -- thing mapped twice. The larger (then the first) is kept.
+    SELECT a.id, b.kind AS twin_kind, (b.area, -b.id) > (a.area, -a.id) AS twin_kept
+      FROM numbered a JOIN numbered b
+        ON b.id <> a.id AND lower(b.name) = lower(a.name) AND b.category = a.category
+       AND b.geometry && a.geometry AND ST_Intersects(a.geometry, b.geometry)
+     WHERE coalesce(a.name, '') <> ''
+), better_kind AS (
+    -- A kind that says more, from a twin, for a kept site whose own says little.
+    SELECT n.id, min(t.twin_kind) AS kind
+      FROM numbered n JOIN twin t ON t.id = n.id AND NOT site_kind_says_little(t.twin_kind)
+     WHERE site_kind_says_little(n.kind)
+     GROUP BY n.id
 )
-SELECT row_number() OVER () AS id, osm_id, geometry, name, kind, site_category(kind) AS category,
-       site_importance(kind, tags, area) AS importance, tags, area
-  FROM merged
- WHERE kind IS NOT NULL;
+SELECT n.id, n.osm_id, n.geometry, n.name, coalesce(b.kind, n.kind) AS kind, n.category,
+       site_importance(coalesce(b.kind, n.kind), n.tags, n.area) AS importance, n.tags, n.area
+  FROM numbered n LEFT JOIN better_kind b ON b.id = n.id
+ WHERE NOT EXISTS (SELECT 1 FROM twin t WHERE t.id = n.id AND t.twin_kept);
 CREATE INDEX site_feature_geometry ON site_feature USING gist (geometry);
 CREATE INDEX site_feature_importance ON site_feature (importance);
 

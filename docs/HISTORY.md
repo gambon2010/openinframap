@@ -774,6 +774,23 @@ listening stations (Domme, and three named "Station d'écoute") are radio statio
 government offices (Government). Disused military is grouped apart zoomed out, in grey
 discs (`site_group`).
 
+**Twins merged, camps by size (2026-11-19):** one thing mapped twice (a building and
+its grounds, a point inside its area: same name, same category, touching) showed
+twice: 388 pairs ("Préfecture de l'Aube" as an office and as a prefecture, Super U
+buildings, a hospital's area with a clinic point). Now the larger is drawn, with the
+other's kind when its own is a catch-all (`site_kind_says_little`): 366 fewer sites.
+The ambiguous names, looked up: "Camp de ..." was always a training ground, but the
+small camps are garrisons (Camp des Loges: an army staff; des Matelots: headquarters
+in Versailles; Sainte-Marthe: a health supply establishment; Voluceau: the Paris fire
+brigade's technical services), the large ones training grounds (Mailly, Suippes,
+Poteau's 9,366 ha, Vaugine in Canjuers). A camp is now a training ground from 90 ha,
+else a base. Schools come before camps (Saint-Cyr Coëtquidan, the academy on its
+64 km² camp); the DGA's test centres ("DGA Techniques...", "DGA Essais...") are
+ranges; the English "office" rule no longer catches "Office National" (ONERA).
+Camp de Cercottes, the DGSE's training centre (CPES, by press reports), a school by
+hand. The three "École nationale de police" are three schools (Périgueux, Essonne,
+Montbéliard), the one mapped as a police station now national police too.
+
 ---
 
 ## Building outlines (2026-11-11)

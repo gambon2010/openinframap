@@ -8,7 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = REPO_ROOT / "schema" / "fork"
 STYLE = REPO_ROOT / "web" / "src" / "fork" / "modules" / "sites" / "style.ts"
 # Kinds the name rules give that sites.sql turns into others (or leaves out).
-RESOLVED_IN_SITES_SQL = {"not_military", "shooting_stand"}
+RESOLVED_IN_SITES_SQL = {"not_military", "shooting_stand", "military_camp"}
 
 
 def drawn_kinds() -> set[str]:

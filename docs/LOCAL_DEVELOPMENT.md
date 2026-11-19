@@ -561,7 +561,8 @@ fortifications (grey, their own grey discs zoomed out; unticked at first). What 
 site is comes from its OSM tags, else its name ("Dépôt de munitions" a depot,
 "Station hertzienne" radio), else the sites around it (the blocks of a Maginot
 ouvrage in use are the fort) or inside it (an unnamed area holding a depot is the
-depot). To teach it a word, in any language, add a row to
+depot). A "Camp de ..." is a training ground from 90 ha, else a garrison. A site
+mapped twice under one name (a building and its grounds) is drawn once. To teach it a word, in any language, add a row to
 `schema/fork/site-rules.sql`; to correct one site, add its OSM id, name and kind, with
 why, to `schema/fork/site-overrides.sql`. Then rebuild the sites (with no other
 database work running):

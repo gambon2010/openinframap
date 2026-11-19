@@ -268,6 +268,8 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.46 | A military site inside a larger one takes its kind when it says no more itself (the areas inside the Rozelier depot, an ouvrage's blocks); a generic area takes the kind of the more specific sites inside it. | ✅ (2026-11-19) `site_feature` (up, down) |
 | 10.47 | Sites corrected by hand where OSM misleads (Forts de Nogent, Ivry, Portzic: in use, tagged historic), in a file that tracks them. | ✅ (2026-11-19) `schema/fork/site-overrides.sql` (OSM id, name, kind, date, why) |
 | 10.48 | Disused military grouped apart from the military in use zoomed out, in grey discs; still a row of Military in Data layers. | ✅ (2026-11-19) `site_group` (`sites.sql`), `group_icon` (`modules/sites/style.ts`) |
+| 10.49 | One thing mapped twice (same name, overlapping) drawn once, keeping the more specific kind. | ✅ (2026-11-19) `site_feature` (`twin`, `site_kind_says_little`) |
+| 10.50 | Ambiguous military names checked against what the sites are (looked up): camps by size (training ground or garrison), schools before camps, DGA test centres ranges. | ✅ (2026-11-19) `site-rules.sql`, `site-overrides.sql` (Cercottes) |
 
 ## 11. Quality
 

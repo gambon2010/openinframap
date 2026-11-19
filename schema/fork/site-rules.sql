@@ -10,9 +10,12 @@
 -- tagged barracks). Otherwise the name only decides for sites tagged as no more than
 -- military.
 --
--- Two kinds here are not shown as they are: not_military (left out: an archery or
--- shooting club), and shooting_stand (part of the military site around it, a range
--- when alone and large, else a club's: left out; sites.sql).
+-- Three kinds here are not shown as they are (sites.sql resolves them):
+-- not_military (left out: an archery or shooting club), shooting_stand (part of the
+-- military site around it, a range when alone and large, else a club's: left out),
+-- and military_camp (a training ground from 90 ha, else a garrison: the big camps,
+-- Mailly, Suippes, Canjuers's Vaugine, are training grounds; the small ones, Camp des
+-- Loges, des Matelots, de Sainte-Marthe, barracks and staffs).
 --
 -- To add a word or a language: a row (or an alternative in a row's pattern) with
 -- the kind it means. Safe to run more than once; sites.sql reads it, so run sites.sql
@@ -31,15 +34,19 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (30, 'shooting_stand', true, 'fr', '\mstands? de tir'),
     (30, 'shooting_stand', true, 'de', 'schie(ß|ss)(stand|anlage)'),
     (30, 'shooting_stand', true, 'en', 'shooting range|rifle range'),
-    -- Ranges, training and test grounds ("Camp de ...": a training ground; a camp
-    -- named for a person is a base).
-    (40, 'military_range', false, 'fr', '\mtir\M|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement|\messais\M|\mcamps? (de |du |des |d.|militaire)'),
+    -- Schools and training establishments (before camps: Saint-Cyr Coëtquidan is the
+    -- academy, on its camp).
+    (35, 'military_school', false, 'fr', '[ée]coles?\M|lyc[ée]e (militaire|de la d[ée]fense)|acad[ée]mie|prytan[ée]e|centre de formation|centre d.instruction|saint-cyr'),
+    (35, 'military_school', false, 'de', 'schule|akademie'),
+    (35, 'military_school', false, 'en', 'academy|school|college'),
+    -- Ranges, training and test grounds (the DGA's test centres among them).
+    (40, 'military_range', false, 'fr', '\mtir\M|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement|\messais\M|\mDGA (essais|techniques|ma[iî]trise)'),
     (40, 'military_range', false, 'de', '[üu]bungsplatz|schie(ß|ss)platz|bombodrom|truppen[üu]bung'),
     (40, 'military_range', false, 'en', 'training area|firing range|bombing range|\mrange\M'),
-    -- Schools and training establishments.
-    (50, 'military_school', false, 'fr', '[ée]coles?\M|lyc[ée]e (militaire|de la d[ée]fense)|acad[ée]mie|prytan[ée]e|centre de formation|centre d.instruction|saint-cyr'),
-    (50, 'military_school', false, 'de', 'schule|akademie'),
-    (50, 'military_school', false, 'en', 'academy|school|college'),
+    -- Camps: "Camp de ...", "Camp militaire ..." (a camp named for a person is a base).
+    (45, 'military_camp', false, 'fr', '\mcamps? (de |du |des |d.|militaire)'),
+    (45, 'military_camp', false, 'de', '\mlager\M|truppenlager'),
+    (45, 'military_camp', false, 'en', '\mcamp\M'),
     -- Ammunition and supply depots.
     (60, 'military_depot', false, 'fr', 'd[ée]p[ôo]ts?\M|munitions?\M|poudri[èe]re|entrep[ôo]ts?\M|stockage|carburants?\M|service des essences|p[ée]troli|pyrotechni|ravitaillement|logistique'),
     (60, 'military_depot', false, 'de', 'munition|materiallager|\mdepot\M'),
@@ -59,4 +66,4 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     -- Offices: staff, recruitment, ministries.
     (100, 'military_office', false, 'fr', 'cirfa|recrutement|[ée]tat[- ]major|\mDMD\M|d[ée]l[ée]gation|direction|bureau|minist[èe]re|commandement|centre d.information'),
     (100, 'military_office', false, 'de', 'kreiswehrersatzamt|karriere(center|centrum)|kommando|\mamt\M|ministerium'),
-    (100, 'military_office', false, 'en', 'headquarters|\mHQ\M|recruit|ministry|\moffice\M');
+    (100, 'military_office', false, 'en', 'headquarters|\mHQ\M|recruit|ministry');
