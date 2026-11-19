@@ -46,6 +46,10 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   remembers it in the browser; a new layer reusing another row's icon is hidden with
   it (the oil and gas facilities had the fuel depots' icon: hidden while that row
   was unticked).
+- **A kind in a colour of its own within its category** (disused military, grey among
+  the military's green) is grouped apart zoomed out, in discs of its colour
+  (`KIND_COLOURS`, `site_group` in `sites.sql`), so its discs never hide in the
+  category's.
 - **Icons:** one set of line icons (`ui/icons.ts`: 24-unit outlines, 2 wide, round
   ends, in the text's colour), one picture per button, never a near-copy of another
   button's (Data layers a stack, My layers a pencil) nor a decoration added to tell

@@ -549,12 +549,29 @@ by Wikidata ID, so it's shared across regions.
 The layer switcher's **Critical sites** group shows infrastructure from OSM that the
 other layers don't: health and emergency services, government offices (town halls,
 prefectures, tax offices, CAF...), places of worship, fuel stations and depots,
-airports and ports, military sites (and, separately, disused bunkers and trenches),
-food supply, dams and landfills. Important ones show from zoom 8, the rest from zoom
+airports and ports, military sites, food supply, dams and landfills. Important ones show from zoom 8, the rest from zoom
 12 or 14; zoomed out, a disc with a number stands for several of a kind nearby (a
 lone one shows as itself). The key lists every kind; untick one to hide it, from
 the discs' numbers too. With debug on, a clicked thing's details link to its page
 on OpenStreetMap.
+
+**Military** sites are sorted into bases, schools, offices, depots, ranges and training
+grounds, forts in use, radar and radio stations, other military areas, and disused
+fortifications (grey, their own grey discs zoomed out; unticked at first). What a
+site is comes from its OSM tags, else its name ("Dépôt de munitions" a depot,
+"Station hertzienne" radio), else the sites around it (the blocks of a Maginot
+ouvrage in use are the fort) or inside it (an unnamed area holding a depot is the
+depot). To teach it a word, in any language, add a row to
+`schema/fork/site-rules.sql`; to correct one site, add its OSM id, name and kind, with
+why, to `schema/fork/site-overrides.sql`. Then rebuild the sites (with no other
+database work running):
+
+```bash
+(echo "DROP MATERIALIZED VIEW IF EXISTS search_feature;"; cat schema/fork/site-rules.sql \
+  schema/fork/site-overrides.sql schema/fork/sites.sql schema/fork/search.sql) \
+  | docker compose exec -T db psql -U osm -d osm -q -v ON_ERROR_STOP=1
+bash -c 'source scripts/lib/common.sh && source scripts/lib/docker.sh && up_services --force-recreate tegola'
+```
 
 ---
 

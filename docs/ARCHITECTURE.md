@@ -269,8 +269,10 @@ the schema fingerprint builds and exports carry.
   database is created: extensions, roles), `functions.sql` (before `views.sql`),
   `views.sql` (what Tegola queries), `stats.sql`, `jobs/` (upstream's production
   job). The fork's, in `schema/fork/`: `distances.sql` (real metres:
-  `oim_units`, `oim_max_stretch`, `oim_ground_area`), `places.sql`, `sites.sql`
-  (`site_feature`, `site_points`), `grid.sql` (`grid_node` / `grid_edge`, used by
+  `oim_units`, `oim_max_stretch`, `oim_ground_area`), `places.sql`, `site-rules.sql`
+  (`military_name_rule`: what a military site's name says it is, a row per language
+  and kind), `site-overrides.sql` (`site_override`: kinds set by hand, by OSM id and
+  name, with why), `sites.sql` (`site_feature`, `site_points`; reads the two before), `grid.sql` (`grid_node` / `grid_edge`, used by
   `/grid/route` and `/grid/line`), `tower-numbers.sql`, `extra.sql` (the `extra`
   schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
   `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered

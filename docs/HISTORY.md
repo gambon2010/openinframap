@@ -749,6 +749,31 @@ social services a heart. 3D switching buildings on now switches them off again w
 it ends. A group "2" seen close in came from a rebuild: zoom 14+ tiles failed while
 site_feature was being remade, so the map stretched zoom 13's.
 
+**Military sites by their names, and by the sites around them (2026-11-19):** most
+military areas are tagged no more than landuse=military, so "Dépôt de munitions de
+Neubourg", "Champ de tir 3" and "École Nationale de Police" were all "military
+area", and a shooting club's "Stand de tir" tagged military=range a range. Names are
+now read by rules, a row per kind and language (French, German, English;
+`site-rules.sql`), the first matching by priority: police and gendarmerie (CRS, Garde
+républicaine, police schools: to Police), clubs (left out), shooting stands, ranges
+and training grounds ("Camp de ..."), schools, depots (munitions, fuel, pyrotechnie),
+forts (fort, ouvrage, batterie, casemate), bases (caserne, quartier, régiment, BA 901, a
+camp named for a person), radar and radio (radar, sémaphore, station hertzienne,
+transmissions, écoute), offices (CIRFA, état-major, délégation). A name decides over
+tags that say only "military"; police, clubs and shooting stands over any. New kinds:
+forts in use, radar and radio stations, schools; "other military site"
+(military=yes, 9) is a military area. Then the sites around and inside: an area (or a
+disused one) with sites in use inside takes their commonest kind; an area, a disused
+site or a stand inside a site in use takes the smallest one's that says more (the
+Rozelier depot's areas, Hochwald's Maginot blocks inside the BA 901 ouvrage, now a
+fort); a stand alone under 1 ha is a club's. Forts tagged historic but still used
+(Nogent, Ivry, Portzic) are set by hand in `site-overrides.sql` (OSM id, name, kind,
+why). From 1,880 military areas to 700 (580 unnamed); bases 247 → 662, depots 178 →
+392, ranges 43 → 361, forts 131, radio 64, schools 28. The DGSE's and DGSI's
+listening stations (Domme, and three named "Station d'écoute") are radio stations; their headquarters are
+government offices (Government). Disused military is grouped apart zoomed out, in grey
+discs (`site_group`).
+
 ---
 
 ## Building outlines (2026-11-11)

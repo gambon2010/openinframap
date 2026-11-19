@@ -57,12 +57,14 @@ export const site_kinds: { [category: string]: string[] } = {
   fuel: ['fuel', 'storage_tank'],
   transport: ['airport', 'port', 'rail_yard'],
   military: [
-    'military_area',
     'military_base',
+    'military_school',
     'military_office',
     'military_depot',
     'military_range',
-    'military',
+    'military_fort',
+    'military_radio',
+    'military_area',
     'military_disused'
   ],
   food: ['supermarket', 'convenience', 'wholesale', 'distribution', 'silo', 'slaughterhouse'],
@@ -123,12 +125,14 @@ export function site_kind_label(kind: string): string {
       port: t('sites.kind.port', 'Port, harbour'),
       border: t('sites.kind.border', 'Border control'),
       rail_yard: t('sites.kind.rail-yard', 'Rail yard'),
-      military_area: t('sites.kind.military-area', 'Military area'),
+      military_area: t('sites.kind.military-area', 'Other military area'),
       military_base: t('sites.kind.military-base', 'Barracks, base'),
-      military_office: t('sites.kind.military-office', 'Military office, checkpoint'),
-      military_depot: t('sites.kind.military-depot', 'Ammunition, military depot'),
-      military_range: t('sites.kind.military-range', 'Range, training area'),
-      military: t('sites.kind.military', 'Other military site'),
+      military_school: t('sites.kind.military-school', 'Military school'),
+      military_office: t('sites.kind.military-office', 'Military office, recruitment, checkpoint'),
+      military_depot: t('sites.kind.military-depot', 'Ammunition, fuel, supply depot'),
+      military_range: t('sites.kind.military-range', 'Range, training ground'),
+      military_fort: t('sites.kind.military-fort', 'Fort, fortification in use'),
+      military_radio: t('sites.kind.military-radio', 'Radar, radio, signal station'),
       military_disused: t('sites.kind.military-disused', 'Bunker, trench, fortification'),
       silo: t('sites.kind.silo', 'Silo'),
       slaughterhouse: t('sites.kind.slaughterhouse', 'Slaughterhouse'),
@@ -162,8 +166,9 @@ const site_icon: ExpressionSpecification = [
   'site_government'
 ] as unknown as ExpressionSpecification
 
-/** Kinds drawn in a colour of their own within their category: disused military
- * grey among the military's green (their icons too: scripts/make_site_icons.py). */
+/** Kinds drawn in a colour of their own within their category, grouped apart (in
+ * groups of that colour: site_group in schema/fork/sites.sql): disused military grey
+ * among the military's green (their icons too: scripts/make_site_icons.py). */
 const KIND_COLOURS: { [kind: string]: string } = { military_disused: '#8D8D8D' }
 
 /** Kinds whose key row is unticked at first: disused fortifications (many, and
@@ -179,6 +184,19 @@ function area_colour(category: string, colour: string): string | ExpressionSpeci
     ['get', 'kind'],
     ...own.flatMap((kind) => [kind, KIND_COLOURS[kind]]),
     colour
+  ] as unknown as ExpressionSpecification
+}
+
+/** A group's disc: its category's, or that of the kind with its own colour it holds
+ * (such kinds are grouped apart, so a group holding one holds only it). */
+function group_icon(category: string): string | ExpressionSpecification {
+  const own = site_kinds[category].filter((kind) => KIND_COLOURS[kind])
+  if (!own.length) return `site_group_${category}`
+  const holds = (kind: string) => ['<=', 0, ['index-of', `,${kind}:`, ['coalesce', ['get', 'kinds'], '']]]
+  return [
+    'case',
+    ...own.flatMap((kind) => [holds(kind), `site_group_${kind}`]),
+    `site_group_${category}`
   ] as unknown as ExpressionSpecification
 }
 
@@ -286,7 +304,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
         'text-color': '#fff'
       },
       layout: {
-        'icon-image': `site_group_${category}`,
+        'icon-image': group_icon(category),
         'icon-size': by_group_size((icon_size) => icon_size),
         'icon-allow-overlap': true,
         'text-allow-overlap': true,
