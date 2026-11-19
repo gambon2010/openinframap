@@ -24,4 +24,26 @@ describe('the key’s sections', () => {
     expect(rows.map((row) => row.firstElementChild?.textContent)).toEqual(['Oil', 'Petroleum facility'])
     expect(rows[1].dataset.hide).toBe(JSON.stringify({ layers: ['petroleum_site'] }))
   })
+
+  it('ticks a kind listed in two sections alike in both', async () => {
+    const map = {
+      isStyleLoaded: () => false,
+      once: () => undefined,
+      on: () => undefined,
+      getStyle: () => ({ layers: [] })
+    } as unknown as Map
+    const airfield = { icon: 'site_military_airfield' }
+    const pane = el('div')
+    document.body.append(pane)
+    await extendKey(map, el('div'), pane, [
+      { title: 'Transport hubs', rows: [['Military airfield', el('img'), airfield]] },
+      { title: 'Military', rows: [['Military airfield', el('img'), airfield]] }
+    ])
+    const [transport, military] = pane.querySelectorAll<HTMLInputElement>('input.oim-key-toggle')
+    transport.checked = false
+    transport.dispatchEvent(new Event('change'))
+    expect(military.checked).toBe(false)
+    expect(military.closest('tr')?.classList.contains('oim-key-row-hidden')).toBe(true)
+    pane.remove()
+  })
 })

@@ -10,7 +10,7 @@ import { t } from '../../core/i18n.ts'
 import { el } from 'redom'
 import { Map } from 'maplibre-gl'
 import { manifest } from 'virtual:render-svg'
-import { FeatureHider, HideSpec } from './feature-hider.ts'
+import { FeatureHider, HideSpec, specKey } from './feature-hider.ts'
 import { KeyRow, KeySection } from '../../types.ts'
 import './key.css'
 
@@ -93,12 +93,24 @@ function addToggles(pane: HTMLElement, hider: FeatureHider) {
       checked: !hider.isHidden(spec),
       title: t('key.toggle', 'Show on the map')
     }) as HTMLInputElement
+    box.dataset.hide = specKey(spec)
     box.onchange = () => {
       hider.setHidden(spec, !box.checked)
-      row.classList.toggle('oim-key-row-hidden', !box.checked)
+      showTicked(spec, box.checked)
     }
     row.classList.toggle('oim-key-row-hidden', hider.isHidden(spec))
     cell.append(box)
+  }
+}
+
+/** Every row hiding the same thing (a kind listed in two sections: military
+ * airfields) ticked alike. */
+function showTicked(spec: HideSpec, shown: boolean) {
+  // Wherever the rows are (ui/data-layers.ts moves them into the Data layers panel).
+  for (const box of document.querySelectorAll<HTMLInputElement>('input.oim-key-toggle')) {
+    if (box.dataset.hide !== specKey(spec)) continue
+    box.checked = shown
+    box.closest('tr')?.classList.toggle('oim-key-row-hidden', !shown)
   }
 }
 

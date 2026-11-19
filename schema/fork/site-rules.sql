@@ -42,6 +42,20 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (35, 'military_school', false, 'de', 'schule|akademie'),
     (35, 'military_school', false, 'en', 'academy|school|college'),
     (35, 'military_school', false, 'es', 'escuela|academia'),
+    -- Military airfields: air bases ("BA 105"), the Navy's air stations, army
+    -- aviation, the air force's flying units (before schools' camps and ranges: an
+    -- "Escadron de transport et d'entraînement" flies). The aerodromes themselves:
+    -- sites.sql's site_kind.
+    (36, 'military_airfield', false, 'fr', 'base a[ée]rienne|\mBA ?[0-9]|a[ée]ronautique navale|a[ée]ronavale|\mBAN\M|escadre|escadrille|flottille|escadrons? (de chasse|de transport|de transformation|de soutien technique a[ée]ronautique|d.h[ée]licopt|de ravitaillement|de d[ée]tection|de drones|de reconnaissance|de transit)|\mRHC\M|r[ée]giment d.h[ée]licopt|\mALAT\M|aviation l[ée]g[èe]re|avions de l.arm[ée]e|h[ée]liport militaire|h[ée]listation|a[ée]rodrome|terrain d.aviation|commandos? (parachutistes? )?de l.air|artillerie de l.air|groupement a[ée]rien'),
+    (36, 'military_airfield', false, 'de', 'fliegerhorst|flugplatz|heeresflieger|marineflieger'),
+    (36, 'military_airfield', false, 'en', 'air ?base|air station|airfield|\mRAF\M'),
+    -- Naval bases: ports, arsenals, the Navy's own sites (not the army's "infanterie
+    -- de marine": "de la marine" is the Navy's; its radio stations, recruitment
+    -- offices and archives are what they are). After research: the Navy's
+    -- hydrographic service is one.
+    (39, 'military_naval_base', false, 'fr', 'base navale|arsenal|port militaire|zone portuaire militaire|appontements?|\mdigue|centre marine|fusill?iers marins|sous-marins?\M|^(?!.*(transmission|cirfa|historique)).*(de la marine|marine nationale)\M'),
+    (39, 'military_naval_base', false, 'de', 'marinest[üu]tzpunkt|marinebasis'),
+    (39, 'military_naval_base', false, 'en', 'naval (base|station)|dockyard'),
     -- Research, test and weapons establishments: the CEA's military sites, the DGA's
     -- test centres, ONERA, the Franco-German institute, the arms makers (before
     -- ranges: "DGA Essais de missiles" is a test centre).
@@ -66,11 +80,11 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (70, 'military_fort', false, 'fr', '\mforts?\M|ouvrage|citadelle|batterie|redoute|casemate|blockhaus|\mblocs?\M|forteresse|fortin|bastion'),
     (70, 'military_fort', false, 'de', 'festung|\mfort\M|zitadelle|schanze'),
     (70, 'military_fort', false, 'en', 'fortress|citadel|\mfort\M|battery|redoubt'),
-    -- Barracks and bases (army units, air bases: "BA 901", naval air stations).
-    (80, 'military_base', false, 'fr', 'caserne|quartier|r[ée]giment|\mbases?\M|\mBA ?[0-9]|\mBAN\M|d[ée]tachement|garnison|escadron|escadrille|bataillon|a[ée]ronavale|terrain d.aviation|\mcamps?\M|l[ée]gion|commando|escadre|brigade|centre marine|arsenal|port militaire|zone portuaire militaire|appontements?|\mdigue|[ée]l[ée]ment air rattach|\mmess\M|cercle (de la|militaire|mixte|des officiers)|logements militaires|\mstade|gymnase|sporti|\msports?\M|parcours|biathlon|h[ée]listation|\mDZ\M|\m[0-9]+ ?(e|er|[èé]me)? ?(R\.?A\.?|RI|RIMa|RPIMa|RPH|REC|REI|REG|RCP|RHC|RMT|RAMa|BCA|BCP|RG|RT)\M'),
+    -- Barracks and bases: the army's, and joint ones.
+    (80, 'military_base', false, 'fr', 'caserne|quartier|r[ée]giment|\mbases?\M|d[ée]tachement|garnison|escadron|bataillon|\mcamps?\M|l[ée]gion|commando|brigade|[ée]l[ée]ment air rattach|\mmess\M|cercle (militaire|mixte|des officiers)|logements militaires|\mstade|gymnase|sporti|\msports?\M|parcours|biathlon|\mDZ\M|\m[0-9]+ ?(e|er|[èé]me)? ?(R\.?A\.?|RI|RIMa|RPIMa|RPH|REC|REI|REG|RCP|RHC|RMT|RAMa|BCA|BCP|RG|RT)\M'),
     (80, 'military_base', false, 'es', 'cuartel|acuartelamiento'),
-    (80, 'military_base', false, 'de', 'kaserne|fliegerhorst|st[üu]tzpunkt|flugplatz|garnison'),
-    (80, 'military_base', false, 'en', 'barracks|air ?base|naval base|air station|naval station|\mRAF\M'),
+    (80, 'military_base', false, 'de', 'kaserne|st[üu]tzpunkt|garnison'),
+    (80, 'military_base', false, 'en', 'barracks'),
     -- Radar, radio and listening stations, signal stations (sémaphores).
     (90, 'military_radio', false, 'fr', 'radar|s[ée]maphore|transmissions?\M|hertzien|radio|[ée]metteur|[ée]coute|\mrelais\M|antennes?\M|t[ée]l[ée]com|vigie|d[ée]tection|t[ée]l[ée]port|satellit|[ée]mission|\mCDC\M|\mCROSS\M|surveillance et de sauvetage|signalisation maritime'),
     (90, 'military_radio', false, 'de', 'radar|funk|fernmelde|\msender\M|sendeanlage|horch'),

@@ -555,14 +555,17 @@ lone one shows as itself). The key lists every kind; untick one to hide it, from
 the discs' numbers too. With debug on, a clicked thing's details link to its page
 on OpenStreetMap.
 
-**Military** sites are sorted into bases, schools, offices, depots, ranges and training
-grounds, forts in use, radar and radio stations, research, test and weapons
-establishments, other military areas, and disused
+**Military** sites are sorted into military airfields, naval bases, barracks, schools,
+offices, depots, ranges and training grounds, forts in use, radar and radio stations,
+research, test and weapons establishments, other military areas, and disused
 fortifications (grey, their own grey discs zoomed out; unticked at first). What a
 site is comes from its OSM tags, else its name ("Dépôt de munitions" a depot,
 "Station hertzienne" radio), else the sites around it (the blocks of a Maginot
 ouvrage in use are the fort) or inside it (an unnamed area holding a depot is the
-depot). A "Camp de ..." is a training ground from 90 ha, else a garrison. A site
+depot), or what stands in it (a radio tower: a radio station). A "Camp de ..." is a
+training ground from 90 ha, else a garrison. Military airfields are listed under
+Transport too, with one tick box for both: Transport's airports are the civil ones
+(a civil airport's military part is a military airfield of its own). A site
 mapped twice under one name (a building and its grounds) is drawn once. To teach it a word, in any language, add a row to
 `schema/fork/site-rules.sql`; to correct one site, add its OSM id, name and kind, with
 why, to `schema/fork/site-overrides.sql`. Then rebuild the sites (with no other

@@ -271,6 +271,8 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.49 | One thing mapped twice (same name, overlapping) drawn once, keeping the more specific kind. | ✅ (2026-11-19) `site_feature` (`twin`, `site_kind_says_little`) |
 | 10.50 | Ambiguous military names checked against what the sites are (looked up): camps by size (training ground or garrison), schools before camps, DGA test centres ranges. | ✅ (2026-11-19) `site-rules.sql`, `site-overrides.sql` (Cercottes) |
 | 10.51 | Military: a kind for research, test and weapons establishments (CEA, DGA test centres, ONERA, arms makers); disused fortifications stay disused inside an area that says no more; every remaining generic name looked up. | ✅ (2026-11-19) `military_research`, `site-rules.sql`, `site-overrides.sql` |
+| 10.52 | Military bases split into air (airfields), naval and army; military airfields one row listed under both Transport and Military (one tick box), so neither menu forgets them; a civilian airport with a military part stays civil, the part in Military. | ✅ (2026-11-20) `military_airfield`, `military_naval_base` (`site-rules.sql`, `site_kind`), `shared_kinds` (`modules/sites/style.ts`), `showTicked` (`ui/key/toggles.ts`) |
+| 10.53 | The generic military areas (493) looked into and classified where something says what they are (their tags, what stands inside, the sites they touch). | ✅ (2026-11-20) 316 left: `military_kind` (landuse's military=*), `site_feature` (by_tower, by_neighbour, by_ruins) |
 
 ## 11. Quality
 

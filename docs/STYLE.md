@@ -50,6 +50,11 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   the military's green) is grouped apart zoomed out, in discs of its colour
   (`KIND_COLOURS`, `site_group` in `sites.sql`), so its discs never hide in the
   category's.
+- **A kind listed under two categories** (military airfields: Transport and Military)
+  has one tick box in both sections, ticked alike, and keeps its own category's icon
+  and colour (green under Transport too); both categories' layers draw it, so hiding
+  either still shows it, and it's never grouped (the other category's discs wouldn't
+  show it). Its fill is drawn once, its outline by both (`shared_kinds`).
 - **Icons:** one set of line icons (`ui/icons.ts`: 24-unit outlines, 2 wide, round
   ends, in the text's colour), one picture per button, never a near-copy of another
   button's (Data layers a stack, My layers a pencil) nor a decoration added to tell

@@ -70,6 +70,8 @@ KINDS = {
     "border": ("police", "roadblock"),
     "rail_yard": ("transport", "rail"),
     "military_area": ("military", "fence"),
+    "military_airfield": ("military", "airfield"),
+    "military_naval_base": ("military", None),  # an anchor, drawn here
     "military_base": ("military", "star"),
     "military_school": ("military", "school"),
     "military_office": ("military", "lift-gate"),
@@ -107,12 +109,18 @@ OWN = {
     # The gendarmerie's badge: a grenade with its flame.
     "gendarmerie": '<path d="M7.5 0.4c1.6 0.9 1.9 2.1 1.2 3 1.2-0.2 1.9-1 2-2.1 1 1.2 0.8 2.6-0.4 3.4H4.7c-1.2-0.8-1.4-2.2'
     '-0.4-3.4 0.1 1.1 0.8 1.9 2 2.1-0.7-0.9-0.4-2.1 1.2-3z"/><path d="M6 5.3h3v1.2H6z"/><circle cx="7.5" cy="10.4" r="4.2"/>',
-    # Scales: a post on a base, a beam, a pan hanging at each end.
+    # Research: a laboratory flask.
     "military_research": '<path d="M5 1h5v1.2H9.2v3.6l4.2 6.9c.5.8-.1 1.8-1 1.8H2.6c-.9 0-1.5-1-1-1.8l4.2-6.9V2.2H5z"/>'
     '<path d="M3.6 10.5h7.8" fill="none" stroke="#fff" stroke-width="1"/>',
+    # Scales: a post on a base, a beam, a pan hanging at each end.
     "courthouse": '<path d="M7 2h1v10.5H7z M4 12.5h7V14H4z M1.5 3h12v1h-12z"/>'
     '<path d="M2 4 0.5 8.5M2 4l1.5 4.5M13 4l-1.5 4.5M13 4l1.5 4.5" fill="none" stroke="currentColor" stroke-width="0.8"/>'
     '<path d="M0 8.5h4a2 1.6 0 0 1-4 0z M11 8.5h4a2 1.6 0 0 1-4 0z"/>',
+    # The Navy: an anchor (Maki's harbour is Transport's port).
+    "military_naval_base": '<circle cx="7.5" cy="2.2" r="1.4" fill="none" stroke="currentColor" stroke-width="1.1"/>'
+    '<path d="M7 3.6h1v9.6H7zM4.5 5.2h6v1.1h-6z"/>'
+    '<path d="M2.2 9.6c0.3 2.5 2.6 4 5.3 4s5-1.5 5.3-4" fill="none" stroke="currentColor" stroke-width="1.2"/>'
+    '<path d="M0.9 10.6 2.1 8.3l1.4 2.1zM14.1 10.6 12.9 8.3l-1.4 2.1z"/>',
     "storage_tank": '<path d="M2.5 3.5c0-1.1 2.2-2 5-2s5 0.9 5 2v8c0 1.1-2.2 2-5 2s-5-0.9-5-2z"/>'
     '<path d="M2.5 3.5c0 1.1 2.2 2 5 2s5-0.9 5-2M2.5 8c0 1.1 2.2 2 5 2s5-0.9 5-2" fill="none" stroke="#fff" stroke-width="1"/>',
 }

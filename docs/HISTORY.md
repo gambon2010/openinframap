@@ -824,6 +824,28 @@ area": place names nothing online explains (Piste de Vergière, Bois de Nice, Pl
 de Mesdoun, Anse Saupin, Penn an enez...), unexplained acronyms (ESCAT, E.S.C.A.G.N.,
 CPA), the civil defence's bomb disposal centres, oddities ("Obus", "effondrement").
 
+**Military airfields, naval bases; the generic areas classified (2026-11-20):** bases
+split three ways: military airfields (air force, naval and army aviation: 49, a
+green plane), naval bases (29, an anchor) and barracks (the army's and joint ones).
+An aerodrome that is the army's alone (`military=airfield`, a military landuse) is
+a military airfield, not an airport any more; its row is listed under Transport and
+Military with one tick box, drawn by both categories' layers and never grouped, so
+hiding Military doesn't lose the airfields from Transport (`shared_kinds` in
+`modules/sites/style.ts`). A civilian airport with a military part stays an
+airport, the part (Hyères's naval air base, Rennes's army aviation) a military
+site. The airfield's unnamed pieces (guard posts, plots: about 60) aren't drawn; its kind
+isn't passed on (a stand on Coëtquidan's airfield stays the school's, the Île du
+Levant range with its heliport a range). Ex-BA Dreux-Senonches and Souge's
+aerodrome (abandoned) are disused; BA 921 Taverny and 942 Mont Verdun (command
+centres, no runway) offices, Hochwald (BA 901) a fort, by hand.
+The generic areas, 493 to 316: a bug made `landuse=military` ignore its
+`military=range/barracks...` (the importer keeps one key per object: 131 sites);
+their names still come first (a "DGA Essais" tagged range is research). A radio,
+radar or signal tower inside makes an area a radio station (the Navy's sémaphores,
+mapped as its watchtowers; not mobile phone masts); touching a named site in use
+makes it that site's annex; only disused sites in or around it, disused. Names
+"ex-..." are disused. A gendarmerie compound mapped as barracks is one too.
+
 ---
 
 ## Building outlines (2026-11-11)

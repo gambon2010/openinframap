@@ -36,7 +36,9 @@ export const site_colours: { [category: string]: string } = {
   water_waste: '#00838F'
 }
 
-// category -> kinds (schema/fork/sites.sql), in the order the key lists them.
+// category -> kinds (schema/fork/sites.sql), in the order the key lists them. A kind
+// listed under two categories (military airfields: Transport and Military) has one
+// tick box in both sections and is drawn by both categories' layers (shared_kinds).
 export const site_kinds: { [category: string]: string[] } = {
   health: ['hospital', 'clinic', 'pharmacy', 'fire_station', 'ambulance', 'siren'],
   police: ['gendarmerie', 'police_national', 'police_municipal', 'police', 'customs', 'border'],
@@ -55,8 +57,10 @@ export const site_kinds: { [category: string]: string[] } = {
   ],
   religion: ['christian', 'muslim', 'jewish', 'buddhist', 'worship'],
   fuel: ['fuel', 'storage_tank'],
-  transport: ['airport', 'port', 'rail_yard'],
+  transport: ['airport', 'military_airfield', 'port', 'rail_yard'],
   military: [
+    'military_airfield',
+    'military_naval_base',
     'military_base',
     'military_school',
     'military_office',
@@ -122,12 +126,14 @@ export function site_kind_label(kind: string): string {
       sikh: t('sites.kind.sikh', 'Sikh gurdwara'),
       fuel: t('sites.kind.fuel', 'Fuel station'),
       storage_tank: t('sites.kind.storage-tank', 'Storage tank (fuel, gas)'),
-      airport: t('sites.kind.airport', 'Airport, airfield'),
+      airport: t('sites.kind.airport', 'Airport, airfield (civil)'),
       port: t('sites.kind.port', 'Port, harbour'),
       border: t('sites.kind.border', 'Border control'),
       rail_yard: t('sites.kind.rail-yard', 'Rail yard'),
       military_area: t('sites.kind.military-area', 'Other military area'),
-      military_base: t('sites.kind.military-base', 'Barracks, base'),
+      military_airfield: t('sites.kind.military-airfield', 'Military airfield, air base'),
+      military_naval_base: t('sites.kind.military-naval-base', 'Naval base, arsenal'),
+      military_base: t('sites.kind.military-base', 'Barracks, army base'),
       military_school: t('sites.kind.military-school', 'Military school'),
       military_office: t('sites.kind.military-office', 'Military office, recruitment, checkpoint'),
       military_depot: t('sites.kind.military-depot', 'Ammunition, fuel, supply depot'),
@@ -159,12 +165,27 @@ function kind_icon(kind: string): string {
   return SHARED_ICONS[kind] ?? `site_${kind}`
 }
 
+/** Every kind once (a shared kind is listed under two categories). */
+const all_kinds = [...new Set(Object.values(site_kinds).flat())]
+
+/** Kinds listed under more than one category. */
+const shared_kinds = all_kinds.filter(
+  (kind) => Object.values(site_kinds).filter((kinds) => kinds.includes(kind)).length > 1
+)
+
+/** A category's sites: its own, and the shared kinds it lists (drawn by each
+ * category listing them, so either layer shows them). */
+function of_category(category: string): ExpressionSpecification {
+  const shared = site_kinds[category].filter((kind) => shared_kinds.includes(kind))
+  const own: ExpressionSpecification = ['==', ['get', 'category'], category]
+  if (!shared.length) return own
+  return ['any', own, ['in', ['get', 'kind'], ['literal', shared]]]
+}
+
 const site_icon: ExpressionSpecification = [
   'match',
   ['get', 'kind'],
-  ...Object.values(site_kinds)
-    .flat()
-    .flatMap((kind) => [kind, kind_icon(kind)]),
+  ...all_kinds.flatMap((kind) => [kind, kind_icon(kind)]),
   'site_government'
 ] as unknown as ExpressionSpecification
 
@@ -186,6 +207,20 @@ function area_colour(category: string, colour: string): string | ExpressionSpeci
     ['get', 'kind'],
     ...own.flatMap((kind) => [kind, KIND_COLOURS[kind]]),
     colour
+  ] as unknown as ExpressionSpecification
+}
+
+/** A category's outlines' colour: its areas', and a shared kind's in its own
+ * category's (a military airfield's green under Transport too). */
+function outline_colour(category: string, colour: string): string | ExpressionSpecification {
+  const own = area_colour(category, colour)
+  if (!site_kinds[category].some((kind) => shared_kinds.includes(kind))) return own
+  const others = Object.entries(site_colours).filter(([other]) => other !== category)
+  return [
+    'match',
+    ['get', 'category'],
+    ...others.flatMap(([other, other_colour]) => [other, area_colour(other, other_colour)]),
+    own
   ] as unknown as ExpressionSpecification
 }
 
@@ -236,14 +271,16 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       }
     },
     {
+      // The outline also for the shared kinds (a military airfield's under Transport
+      // alone); the fill only once (twice would darken it).
       id: `${area_layer_id(category)}_outline`,
       zorder: 4,
       source: 'sites',
       'source-layer': 'sites_area',
-      filter: ['==', ['get', 'category'], category],
+      filter: of_category(category),
       type: 'line',
       paint: {
-        'line-color': area_colour(category, colour),
+        'line-color': outline_colour(category, colour),
         'line-width': AREA_OUTLINE_WIDTH,
         'line-opacity': AREA_OUTLINE_OPACITY
       }
@@ -257,7 +294,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       zorder: 590,
       source: 'sites',
       'source-layer': 'sites_point',
-      filter: ['all', ['==', ['get', 'category'], category], ['!', ['has', 'count_label']]],
+      filter: ['all', of_category(category), ['!', ['has', 'count_label']]],
       type: 'symbol',
       paint: text_paint,
       layout: {

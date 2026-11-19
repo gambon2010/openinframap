@@ -173,7 +173,7 @@
       "buddhist": "Buddhist temple",
       "worship": "Other place of worship (Hindu, Sikh...)",
       "fuel": "Fuel station",
-      "airport": "Airport, airfield",
+      "airport": "Airport, airfield (civil)",
       "port": "Port, harbour",
       "border": "Border control",
       "rail-yard": "Rail yard",
@@ -191,7 +191,7 @@
       "convenience": "Convenience store",
       "storage-tank": "Storage tank (fuel, gas)",
       "military-area": "Other military area",
-      "military-base": "Barracks, base",
+      "military-base": "Barracks, army base",
       "military-school": "Military school",
       "military-office": "Military office, recruitment, checkpoint",
       "military-depot": "Ammunition, fuel, supply depot",
@@ -201,7 +201,9 @@
       "military-research": "Research, test, weapons establishment",
       "gendarmerie": "Gendarmerie",
       "police-national": "National police (commissariat)",
-      "police-municipal": "Municipal police"
+      "police-municipal": "Municipal police",
+      "military-airfield": "Military airfield, air base",
+      "military-naval-base": "Naval base, arsenal"
     }
   },
   "route": {

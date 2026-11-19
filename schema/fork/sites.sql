@@ -18,7 +18,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
 $$;
 
 -- A military area or site no longer in use: a fortification (a bunker, a fort...),
--- tagged disused or abandoned, named "Ancien..." (former), gone ("disparu"...) or a
+-- tagged disused or abandoned, named "Ancien..." or "ex-..." (former), gone ("disparu"...) or a
 -- bunker ("Bunker", "Unterstand", "Abri de combat"), or historic, but not when it
 -- shows use (an in-use military type, a barracks' name).
 -- Some historic forts are still the army's: site-overrides.sql says so for those
@@ -30,21 +30,22 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
                                          'blockhouse', 'pillbox', 'fort', 'gun_emplacement', 'shelter', 'disused'), false)
         OR coalesce(tags->'building' = 'bunker', false)
         OR tags ?| ARRAY['disused', 'abandoned', 'disused:military', 'abandoned:military', 'was:military']
-        OR coalesce(tags->'name' ~* '^(l'')?anciens?n?e?s?\M|\m(disparue?s?|d[ée]truite?s?|d[ée]molie?s?|en ruines?)\M|\mbunker|unterstand|abri de combat', false)
+        OR coalesce(tags->'name' ~* '^(l'')?anciens?n?e?s?\M|^ex[- ]|\m(disparue?s?|d[ée]truite?s?|d[ée]molie?s?|en ruines?)\M|\mbunker|unterstand|abri de combat', false)
         OR (tags ? 'historic'
             AND NOT coalesce(tags->'military' IN ('barracks', 'base', 'naval_base', 'airfield', 'office', 'checkpoint',
                                                   'ammunition', 'depot', 'range', 'training_area', 'danger_area'), false)
             AND NOT coalesce(tags->'name' ~* 'caserne|quartier', false))
 $$;
 
--- A military site's kind by its tags alone: military_area when they say no more than
--- military (landuse=military, military=yes); NULL for a military=* value that isn't
--- a site (an obstacle course...).
-CREATE OR REPLACE FUNCTION military_kind_by_tags(key text, type text) RETURNS text
+-- A military site's kind by its military=* value alone: military_area when it says
+-- no more than military (yes); NULL for one that isn't a site (an obstacle course...).
+CREATE OR REPLACE FUNCTION military_kind_by_tags(type text) RETURNS text
 LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
-        WHEN key = 'landuse' OR type = 'yes' THEN 'military_area'
-        WHEN type IN ('barracks', 'base', 'naval_base', 'airfield') THEN 'military_base'
+        WHEN type = 'yes' THEN 'military_area'
+        WHEN type = 'airfield' THEN 'military_airfield'
+        WHEN type = 'naval_base' THEN 'military_naval_base'
+        WHEN type IN ('barracks', 'base') THEN 'military_base'
         WHEN type IN ('office', 'checkpoint') THEN 'military_office'
         WHEN type IN ('ammunition', 'depot') THEN 'military_depot'
         WHEN type IN ('range', 'training_area', 'danger_area') THEN 'military_range'
@@ -52,18 +53,24 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
 $$;
 
 -- A military site's kind: the gendarmerie's, disused, else what its name says
--- (site-rules.sql) where its tags say no more than military or the rule outweighs
--- them, else what its tags say. NULL: not military (a club's), or not a site.
+-- (site-rules.sql) where its tags say no more than military, it's a military
+-- landuse (whose military=* is a hint: "DGA Essais de missiles" is tagged a range) or
+-- the rule outweighs them, else what its tags say. NULL: not military (a club's), or
+-- not a site.
 CREATE OR REPLACE FUNCTION military_kind(key text, type text, tags hstore) RETURNS text
 LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
         WHEN is_gendarmerie(tags) THEN 'gendarmerie'
         WHEN is_disused_military(tags) THEN 'military_disused'
-        WHEN by_name.replaces_tags OR by_tags.kind = 'military_area'
+        WHEN by_name.replaces_tags OR by_tags.kind = 'military_area' OR key = 'landuse'
             THEN nullif(coalesce(by_name.kind, by_tags.kind), 'not_military')
         ELSE by_tags.kind
     END
-      FROM (SELECT military_kind_by_tags(key, type) AS kind) by_tags
+      FROM (SELECT military_kind_by_tags(type) AS kind WHERE key = 'military'
+            UNION ALL
+            -- landuse=military: the importer keeps one key per object, so its
+            -- military=* (range, barracks...) is read from the tags.
+            SELECT coalesce(military_kind_by_tags(tags->'military'), 'military_area') WHERE key = 'landuse') by_tags
            LEFT JOIN LATERAL (
                SELECT rule.kind, rule.replaces_tags FROM military_name_rule rule
                 WHERE tags->'name' ~* rule.pattern
@@ -105,6 +112,11 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
             WHEN tags->'content' IN ('fuel', 'oil', 'diesel', 'petrol', 'gasoline', 'kerosene', 'gas',
                                      'natural_gas', 'lpg', 'lng', 'biogas', 'hydrocarbons') THEN 'storage_tank' END
         -- transport
+        -- an aerodrome that is the army's alone (a civilian one with a military part
+        -- stays an airport; the part is a military site of its own)
+        WHEN type = 'aerodrome' AND (tags->'military' = 'airfield' OR tags->'landuse' = 'military'
+                                     OR tags->'aerodrome:type' = 'military') THEN
+            CASE WHEN is_disused_military(tags) THEN 'military_disused' ELSE 'military_airfield' END
         WHEN type = 'aerodrome' THEN 'airport'
         WHEN type = 'port' OR key = 'harbour' THEN 'port'
         WHEN type = 'border_control' THEN 'border'
@@ -152,7 +164,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
         WHEN kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship') THEN 'religion'
         WHEN kind IN ('fuel', 'storage_tank') THEN 'fuel'
         WHEN kind IN ('airport', 'port', 'rail_yard') THEN 'transport'
-        WHEN kind IN ('military_area', 'military_base', 'military_office', 'military_depot', 'military_range',
+        WHEN kind IN ('military_area', 'military_base', 'military_airfield', 'military_naval_base', 'military_office', 'military_depot', 'military_range',
                       'military_fort', 'military_radio', 'military_school', 'military_research', 'military_disused',
                       'shooting_stand', 'military_camp') THEN 'military'
         WHEN kind IN ('silo', 'slaughterhouse', 'distribution', 'wholesale', 'supermarket', 'convenience') THEN 'food'
@@ -175,7 +187,7 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT CASE
         WHEN kind IN ('national', 'prefecture', 'hospital', 'prison', 'border', 'dam')
           OR (kind LIKE 'military\_%' AND kind <> 'military_disused' AND area > 220000)
-          OR (kind = 'airport' AND (tags ? 'iata' OR tags ? 'icao'))
+          OR (kind IN ('airport', 'military_airfield') AND (tags ? 'iata' OR tags ? 'icao'))
           OR (kind IN ('christian', 'muslim', 'jewish', 'buddhist', 'hindu', 'sikh', 'worship')
               AND tags->'building' IN ('cathedral', 'basilica'))
           OR (kind IN ('port', 'landfill') AND area > 90000) THEN 0
@@ -199,7 +211,7 @@ $$;
 -- (upstream's osm_petroleum_site: the same object, or inside its oil or gas site)
 -- is left to it: drawn once.
 --
--- A gendarmerie's compound is often mapped as a military area with its station
+-- A gendarmerie's compound is often mapped as a military area (or barracks) with its station
 -- inside: one item, the area as a gendarmerie (the station's name and tags), the
 -- station not drawn apart. An area is a compound when it has no name of its own, a
 -- gendarmerie station inside, no army site inside, and is small (under 5 ha):
@@ -216,10 +228,18 @@ $$;
 --   takes the kind of the smallest around it that says more (the areas and bunkers
 --   inside a depot are the depot), else is a military area in use (a stand: a range;
 --   a disused site stays disused: an area saying no more doesn't show it's used);
+--   never an airfield's kind (nor up, nor to an annex): a shooting stand or an
+--   old shelter on one isn't an airfield (its unnamed pieces aren't drawn, below);
 -- - a shooting stand with nothing around it is a range when large (1 ha or more),
 --   else a club's: left out;
 -- - a camp (site-rules.sql) is a training ground from 90 ha, else a garrison (base),
---   before any of this.
+--   before any of this;
+-- - a military area still saying no more after this: a radio station when a radio,
+--   radar or signal tower stands in it (the Navy's sémaphores), else the annex of a
+--   named site in use it touches (of its kind), else disused when only disused sites
+--   are in it or touch it;
+-- - the unnamed pieces of a military airfield (guard posts, plots) aren't drawn: the
+--   airfield stands for them.
 --
 -- One thing mapped twice (a building and its grounds, a point inside its area: the
 -- same name and category, touching) is drawn once: the larger, with the other's kind
@@ -251,6 +271,9 @@ WITH s AS (
     -- Whether their own kind says more than "military area", and whether they're in use.
     SELECT site_id, kind, area,
            kind NOT IN ('military_area', 'military_disused', 'shooting_stand') AS says_more,
+           -- An airfield's kind isn't passed on (up, down, to an annex): a range with a
+           -- heliport, or a stand on an airfield, isn't one.
+           kind NOT IN ('military_area', 'military_disused', 'shooting_stand', 'military_airfield') AS lends_kind,
            kind NOT IN ('military_disused', 'shooting_stand') AS in_use
       FROM military_own
 ), within AS (
@@ -265,12 +288,12 @@ WITH s AS (
     -- An area, or a disused one, with sites in use inside: their commonest kind that
     -- says more, else military_area.
     SELECT DISTINCT ON (w.outer_id) w.outer_id AS site_id,
-           CASE WHEN i.says_more THEN i.kind ELSE 'military_area' END AS kind
+           CASE WHEN i.lends_kind THEN i.kind ELSE 'military_area' END AS kind
       FROM within w
            JOIN military i ON i.site_id = w.inner_id AND i.in_use
            JOIN military o ON o.site_id = w.outer_id AND NOT o.says_more AND o.kind <> 'shooting_stand'
-     GROUP BY w.outer_id, i.says_more, i.kind
-     ORDER BY w.outer_id, i.says_more DESC, count(*) DESC
+     GROUP BY w.outer_id, i.lends_kind, i.kind
+     ORDER BY w.outer_id, i.lends_kind DESC, count(*) DESC
 ), after_up AS (
     SELECT m.site_id, coalesce(u.kind, m.kind) AS kind, m.area FROM military m LEFT JOIN up u USING (site_id)
 ), down AS (
@@ -280,7 +303,8 @@ WITH s AS (
       FROM within w
            JOIN after_up i ON i.site_id = w.inner_id
                           AND i.kind IN ('military_area', 'military_disused', 'shooting_stand')
-           JOIN after_up o ON o.site_id = w.outer_id AND o.kind NOT IN ('military_disused', 'shooting_stand')
+           JOIN after_up o ON o.site_id = w.outer_id
+                          AND o.kind NOT IN ('military_disused', 'shooting_stand', 'military_airfield')
                           AND NOT (i.kind = 'military_disused' AND o.kind = 'military_area')
      ORDER BY w.inner_id, o.kind = 'military_area', w.outer_area
 ), military_final AS (
@@ -290,12 +314,60 @@ WITH s AS (
                    THEN 'military_range'
                ELSE coalesce(d.kind, a.kind) END AS kind
       FROM after_up a LEFT JOIN down d USING (site_id)
+), generic AS (
+    -- The military areas that still say no more, with their outlines (the sites they
+    -- touch are found through osm_site's index).
+    SELECT k.site_id, k.geometry
+      FROM military_final m JOIN kept k USING (site_id) WHERE m.kind = 'military_area'
+), radio_tower AS (
+    -- Radio, radar and signal towers (the Navy's watchtowers are its sémaphores), and
+    -- antennas; not a mobile phone mast standing on military land.
+    SELECT geometry FROM osm_mast
+     WHERE (type IN ('communication', 'radar') OR (type = 'watchtower' AND tags->'operator' ~* 'marine'))
+       AND NOT coalesce(tags->'communication:mobile_phone' = 'yes' OR tags->'operator' ~* 'bouygues|orange|\mSFR\M|\mfree\M', false)
+    UNION ALL
+    SELECT geometry FROM osm_telecom_antenna
+     WHERE NOT coalesce(tags->'communication:mobile_phone' = 'yes' OR tags->'operator' ~* 'bouygues|orange|\mSFR\M|\mfree\M', false)
+), by_tower AS (
+    SELECT DISTINCT g.site_id, 'military_radio' AS kind
+      FROM generic g JOIN radio_tower t ON t.geometry && g.geometry AND ST_Intersects(g.geometry, t.geometry)
+), by_neighbour AS (
+    -- Touching a named site in use: its annex, of its kind (the largest's).
+    SELECT DISTINCT ON (g.site_id) g.site_id, m.kind
+      FROM generic g
+           JOIN osm_site n ON n.geometry && g.geometry AND n.id <> g.site_id AND ST_Intersects(n.geometry, g.geometry)
+           JOIN military_final m ON m.site_id = n.id AND m.kind NOT IN ('military_area', 'military_disused', 'military_airfield')
+     WHERE coalesce(n.name, '') <> ''
+     ORDER BY g.site_id, ST_Area(n.geometry) DESC
+), by_ruins AS (
+    -- Only disused sites in it or touching it (nothing in use: up would have said):
+    -- the grounds of a battery, a fort.
+    SELECT DISTINCT g.site_id, 'military_disused' AS kind
+      FROM generic g
+           JOIN osm_site n ON n.geometry && g.geometry AND n.id <> g.site_id AND ST_Intersects(n.geometry, g.geometry)
+           JOIN military_final m ON m.site_id = n.id AND m.kind = 'military_disused'
+), military_resolved AS (
+    -- A military area still saying no more: what stands in it, or around it, says.
+    SELECT m.site_id, coalesce(t.kind, n.kind, r.kind, m.kind) AS kind
+      FROM military_final m
+           LEFT JOIN by_tower t USING (site_id)
+           LEFT JOIN by_neighbour n USING (site_id)
+           LEFT JOIN by_ruins r USING (site_id)
+), part_of_airfield AS (
+    -- The unnamed pieces of a military airfield (guard posts, fenced plots, barracks):
+    -- the airfield stands for them, they aren't drawn apart.
+    SELECT DISTINCT w.inner_id AS site_id
+      FROM within w
+           JOIN military_resolved i ON i.site_id = w.inner_id
+                                   AND i.kind IN ('military_area', 'military_base', 'military_airfield', 'military_office')
+           JOIN military_resolved o ON o.site_id = w.outer_id AND o.kind = 'military_airfield'
+           JOIN kept k ON k.site_id = w.inner_id AND coalesce(k.name, '') = ''
 ), station_in AS (
     -- Each gendarmerie station inside an unnamed, small military area.
     SELECT a.site_id AS area_id, st.site_id AS station_id
       FROM kept a JOIN kept st ON st.kind = 'gendarmerie' AND st.site_id <> a.site_id
        AND st.geometry && a.geometry AND ST_Intersects(a.geometry, ST_PointOnSurface(st.geometry))
-     WHERE a.kind = 'military_area' AND coalesce(a.name, '') = '' AND a.area < 50000
+     WHERE a.kind IN ('military_area', 'military_base') AND coalesce(a.name, '') = '' AND a.area < 50000
 ), compound AS (
     -- Those areas without an army site inside, with one of their stations.
     SELECT i.area_id, min(i.station_id) AS station_id
@@ -313,11 +385,12 @@ WITH s AS (
            CASE WHEN c.area_id IS NULL THEN k.tags ELSE k.tags || st.tags END AS tags,
            k.area
       FROM kept k
-           LEFT JOIN military_final m ON m.site_id = k.site_id
+           LEFT JOIN military_resolved m ON m.site_id = k.site_id
            LEFT JOIN compound c ON c.area_id = k.site_id
            LEFT JOIN kept st ON st.site_id = c.station_id
      WHERE NOT EXISTS (
            SELECT 1 FROM station_in i JOIN compound c2 ON c2.area_id = i.area_id WHERE i.station_id = k.site_id)
+       AND NOT EXISTS (SELECT 1 FROM part_of_airfield p WHERE p.site_id = k.site_id)
 ), numbered AS (
     SELECT row_number() OVER () AS id, merged.*, site_category(kind) AS category
       FROM merged WHERE kind IS NOT NULL
@@ -356,7 +429,9 @@ $$;
 -- position, counting only kinds with two or more there: a kind's lone site in a
 -- cell stays a site, so the map, hiding kinds, never shows a group of one. The grid
 -- is aligned with the tiles, so a group never straddles two. Important sites
--- (importance 0) stay as they are from zoom 8; from zoom 14 nothing is grouped. A
+-- (importance 0) stay as they are from zoom 8, and military airfields always (the
+-- map shows them under Transport too, which doesn't draw Military's groups:
+-- modules/sites/style.ts shared_kinds); from zoom 14 nothing is grouped. A
 -- group also says how many of each kind it holds (kinds: ",fuel:12,storage_tank:3,"),
 -- so the map can count only the kinds shown (ui/key/counted-groups.ts).
 DROP FUNCTION IF EXISTS site_points(geometry, integer);
@@ -367,7 +442,7 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
     WITH p AS (
         SELECT f.id, f.osm_id, c.pt AS geometry, f.name, f.kind, f.category, site_group(f.kind, f.category) AS grp,
                f.importance, f.tags,
-               CASE WHEN zoom < 14 AND (f.importance > 0 OR zoom < 8)
+               CASE WHEN zoom < 14 AND (f.importance > 0 OR zoom < 8) AND f.kind <> 'military_airfield'
                     THEN floor((ST_X(c.pt) + 20037508.342789244) / g.cell)::bigint END AS cx,
                floor((ST_Y(c.pt) + 20037508.342789244) / g.cell)::bigint AS cy
           FROM site_feature f

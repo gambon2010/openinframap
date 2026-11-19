@@ -38,4 +38,12 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
     (41233994::bigint, 'Le Lazaret', 'military_school', '2026-11-19'::date,
      'Inside the Navy''s Pôle Écoles Méditerranée at Saint-Mandrier (its schools).'),
     (-7382430::bigint, 'Zone du Lazaret', 'military_school', '2026-11-19'::date,
-     'The same (Pôle Écoles Méditerranée, Saint-Mandrier).');
+     'The same (Pôle Écoles Méditerranée, Saint-Mandrier).'),
+    (234878447::bigint, 'Ouvrage du Hochwald - BA901', 'military_fort', '2026-11-19'::date,
+     'The Maginot fort where the air force''s BA 901 Drachenbronn was (a detection centre, no runway): not an airfield.'),
+    (118145321::bigint, 'Camp de Viroulou (ex-Base aérienne 265 Rocamadour)', 'military_range', '2026-11-19'::date,
+     'A training ground, once an air base (ex-).'),
+    (143672583::bigint, 'Base aérienne 942 Lyon-Mont Verdun', 'military_office', '2026-11-20'::date,
+     'The air force''s command and control centre on Mont Verdun: no runway, not an airfield.'),
+    (627334828::bigint, 'Base aérienne 921 "Frères Mahé"', 'military_office', '2026-11-20'::date,
+     'Taverny''s underground command centre: no runway, not an airfield.');
