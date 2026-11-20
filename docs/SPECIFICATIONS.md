@@ -275,6 +275,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.53 | The generic military areas (493) looked into and classified where something says what they are (their tags, what stands inside, the sites they touch). | ✅ (2026-11-20) 316 left: `military_kind` (landuse's military=*), `site_feature` (by_tower, by_neighbour, by_ruins) |
 | 10.54 | Disused aerodromes shown (military under Military, not hidden with the disused fortifications; civil with the airports), a grey icon, with no extra tick box: the two airfield rows show every airfield. | ✅ (2026-11-20) `military_airfield_disused` (`was_military_airfield`), `airport_disused`, shown by the airfield rows (`KEY_ROW_OF`, a hide spec of several icons) |
 | 10.55 | What was left to clean in the sites: the air force units drawn twice on their air base, closed civil airfields drawn as airports, gendarmerie barracks drawn as army bases. | ✅ (2026-11-20) `part_of_airfield`, `airport_disused`, compounds named "Caserne ...", `part_of_gendarmerie`, `is_gendarmerie` |
+| 10.56 | The military sites nothing classifies ("Other military area", 307 on 2026-11-20) checked by hand by the owner; verdicts into `site-overrides.sql`. | 🗂 backlog (2026-11-20) list: `data/checks/military-areas.csv` |
 
 ## 11. Quality
 

@@ -232,13 +232,15 @@ $$;
 -- A gendarmerie's compound is often mapped as a military area (or barracks) with its station
 -- inside: one item, the area as a gendarmerie (its name, else the station's; the
 -- station's tags), the station not drawn apart. An area is a compound when it has a
--- gendarmerie station inside, no army site inside, and is small: unnamed and under
--- 5 ha, or a "Caserne ..." under 10 ha (the gendarmerie's barracks are casernes
--- named for a gendarme, "Caserne Capitaine Guillo"; the army's are mostly
--- "Quartier ..."). Army bases (larger, or with their own sites) stay military, a
--- station inside them apart. The unnamed military pieces inside a gendarmerie's site
--- (the buildings of its schools) aren't drawn: the site stands for them. (A
--- military area named for the gendarmerie is one already: site_kind.)
+-- gendarmerie station inside, no named army site inside, and is small: unnamed and
+-- under 5 ha, or a "Caserne ..." or "Quartier ..." under 10 ha (the gendarmerie's
+-- barracks in towns, named for a gendarme: "Caserne Capitaine Guillo", "Quartier
+-- Moncey"; the army's are larger). Its unnamed pieces (housing blocks mapped as
+-- barracks) aren't drawn. Army bases (larger, or with their own sites) stay
+-- military, a station inside them apart. The military sites inside a gendarmerie's
+-- site (the quarters of its academy), mostly over it (the same caserne mapped
+-- twice), or unnamed and touching it (its annex), aren't drawn either: the site stands for them. (A military area named for
+-- the gendarmerie is one already: site_kind.)
 --
 -- Military sites take what the sites around and inside them say (a site's own kind
 -- comes first when it says more than "military area"):
@@ -287,14 +289,14 @@ WITH s AS (
                OR (p.geometry && s.geometry AND ST_Intersects(p.geometry, ST_PointOnSurface(s.geometry)))))
 ), military_own AS (
     -- The military sites, camps as what their size says.
-    SELECT site_id, area, CASE
+    SELECT site_id, area, coalesce(name, '') <> '' AS named, CASE
                WHEN kind <> 'military_camp' THEN kind
                WHEN area >= 900000 THEN 'military_range'
                ELSE 'military_base' END AS kind
       FROM kept WHERE site_category(kind) = 'military'
 ), military AS (
     -- Whether their own kind says more than "military area", and whether they're in use.
-    SELECT site_id, kind, area,
+    SELECT site_id, kind, area, named,
            kind NOT IN ('military_area', 'military_disused', 'shooting_stand') AS says_more,
            -- An airfield's kind isn't passed on (up, down, to an annex): a range with a
            -- heliport, or a stand on an airfield, isn't one.
@@ -395,31 +397,50 @@ WITH s AS (
            JOIN military_resolved o ON o.site_id = w.outer_id AND o.kind = 'military_airfield'
            JOIN kept k ON k.site_id = w.inner_id
      WHERE coalesce(k.name, '') = '' OR (i.kind = 'military_airfield' AND k.area = 0)
-), part_of_gendarmerie AS (
-    -- The unnamed military pieces inside a gendarmerie's site (its schools' buildings).
-    SELECT DISTINCT m.site_id
-      FROM military_resolved m
-           JOIN kept k ON k.site_id = m.site_id AND coalesce(k.name, '') = ''
-           JOIN osm_site g ON g.geometry && k.geometry AND g.id <> k.site_id
-                          AND ST_Contains(g.geometry, ST_PointOnSurface(k.geometry))
-     WHERE m.kind IN ('military_area', 'military_base', 'military_office')
-       AND site_kind(g.key, g.type, g.tags) = 'gendarmerie'
-       AND oim_ground_area(g.geometry) > k.area
 ), station_in AS (
     -- Each gendarmerie station inside an unnamed, small military area.
     SELECT a.site_id AS area_id, st.site_id AS station_id
       FROM kept a JOIN kept st ON st.kind = 'gendarmerie' AND st.site_id <> a.site_id
        AND st.geometry && a.geometry AND ST_Intersects(a.geometry, ST_PointOnSurface(st.geometry))
      WHERE (a.kind IN ('military_area', 'military_base') AND coalesce(a.name, '') = '' AND a.area < 50000)
-        OR (a.kind = 'military_base' AND a.name ~* '^caserne\M' AND a.area < 100000)
+        OR (a.kind = 'military_base' AND a.name ~* '^(caserne|quartier)\M' AND a.area < 100000)
 ), compound AS (
-    -- Those areas without an army site inside, with one of their stations.
+    -- Those areas without a named army site inside, with one of their stations.
     SELECT i.area_id, min(i.station_id) AS station_id
       FROM station_in i
      WHERE NOT EXISTS (
-           SELECT 1 FROM within w JOIN military m ON m.site_id = w.inner_id AND m.says_more
+           SELECT 1 FROM within w JOIN military m ON m.site_id = w.inner_id AND m.says_more AND m.named
             WHERE w.outer_id = i.area_id)
      GROUP BY i.area_id
+), part_of_compound AS (
+    -- A compound's unnamed pieces (its housing blocks, mapped as barracks).
+    SELECT DISTINCT w.inner_id AS site_id
+      FROM within w
+           JOIN compound c ON c.area_id = w.outer_id
+           JOIN military m ON m.site_id = w.inner_id AND NOT m.named
+), gendarmerie_site AS (
+    -- The gendarmerie's sites: mapped as such, and the compounds.
+    SELECT o.id AS site_id, o.geometry FROM osm_site o
+     WHERE o.type IN ('police', 'military', 'barracks', 'office', 'school') AND site_kind(o.key, o.type, o.tags) = 'gendarmerie'
+    UNION ALL
+    SELECT k.site_id, k.geometry FROM compound c JOIN kept k ON k.site_id = c.area_id
+), part_of_gendarmerie AS (
+    -- The military sites inside a gendarmerie's site (its academy's quarters), mostly
+    -- over it (a caserne mapped twice), or unnamed and only touching it, saying no
+    -- more (its annex); not the compounds themselves.
+    SELECT DISTINCT m.site_id
+      FROM military_resolved m
+           JOIN military_final own ON own.site_id = m.site_id
+           JOIN kept k ON k.site_id = m.site_id
+           JOIN gendarmerie_site g ON g.geometry && k.geometry AND g.site_id <> k.site_id
+                                  AND ST_Intersects(g.geometry, k.geometry)
+           CROSS JOIN LATERAL (SELECT ST_Contains(g.geometry, ST_PointOnSurface(k.geometry))
+                                      AND oim_ground_area(g.geometry) > k.area AS inside,
+                                      ST_Area(ST_Intersection(g.geometry, k.geometry)) > 0.5 * ST_Area(k.geometry) AS mostly_over,
+                                      own.kind = 'military_area' AND coalesce(k.name, '') = '' AS annex) placed
+     WHERE m.kind IN ('military_area', 'military_base', 'military_office')
+       AND (placed.inside OR placed.mostly_over OR placed.annex)
+       AND NOT EXISTS (SELECT 1 FROM compound c WHERE c.area_id = k.site_id)
 ), merged AS (
     SELECT k.osm_id, k.geometry,
            CASE WHEN c.area_id IS NULL OR coalesce(k.name, '') <> '' THEN k.name ELSE st.name END AS name,
@@ -438,6 +459,7 @@ WITH s AS (
            SELECT 1 FROM station_in i JOIN compound c2 ON c2.area_id = i.area_id WHERE i.station_id = k.site_id)
        AND NOT EXISTS (SELECT 1 FROM part_of_airfield p WHERE p.site_id = k.site_id)
        AND NOT EXISTS (SELECT 1 FROM part_of_gendarmerie p WHERE p.site_id = k.site_id)
+       AND NOT EXISTS (SELECT 1 FROM part_of_compound p WHERE p.site_id = k.site_id)
 ), numbered AS (
     SELECT row_number() OVER () AS id, merged.*, site_category(kind) AS category
       FROM merged WHERE kind IS NOT NULL

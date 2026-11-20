@@ -46,4 +46,8 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
     (143672583::bigint, 'Base aérienne 942 Lyon-Mont Verdun', 'military_office', '2026-11-20'::date,
      'The air force''s command and control centre on Mont Verdun: no runway, not an airfield.'),
     (627334828::bigint, 'Base aérienne 921 "Frères Mahé"', 'military_office', '2026-11-20'::date,
-     'Taverny''s underground command centre: no runway, not an airfield.');
+     'Taverny''s underground command centre: no runway, not an airfield.'),
+    (648544517::bigint, 'Quartier Richemont', 'gendarmerie', '2026-11-20'::date,
+     'A former army caserne; Nantes''s gendarmerie brigade (BTA) is there.'),
+    (174608032::bigint, 'Quartier Foix-Lescun', 'gendarmerie', '2026-11-20'::date,
+     'A listed former army caserne in Tarbes (Mérimée PA00132876), next to the mobile gendarmerie squadron''s compound; no army unit is known there.');

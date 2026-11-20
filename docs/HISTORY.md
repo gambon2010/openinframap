@@ -855,11 +855,17 @@ use), Bapaume-Grévillers. Closed civil airfields (tagged disused or abandoned, 
 key row of its own: the airfield rows (civil, military) show and hide them too (a
 key row can hide several icons), so ticking both shows every airfield.
 Clean-ups: the flying units' points inside an air base (Ochey's squadrons, 10) no
-longer draw a second plane; gendarmerie barracks mapped as army bases (a "Caserne
-..." under 10 ha with its station inside, about 80) are gendarmerie, under the
-caserne's name, and the unnamed pieces inside a gendarmerie site (its schools'
-buildings) aren't drawn; a site saying "gendarmerie" in its other name,
-description or `military_service` is the gendarmerie's ("Quartier Savary").
+longer draw a second plane; gendarmerie barracks mapped as army bases (110) are
+the gendarmerie's: a "Caserne ..." or "Quartier ..." under 10 ha with its station
+inside and no named army site in it, under its own name (its unnamed housing blocks
+not drawn); a site saying "gendarmerie" in its other name, description or
+`military_service` ("Quartier Savary"); the military sites inside a gendarmerie
+site (Melun academy's quarters), mostly over it (Caserne Vérines mapped twice), or
+unnamed touching it aren't drawn; Quartier Richemont (Nantes's brigade) and Foix-
+Lescun (Tarbes) by hand. The one left touching a gendarmerie caserne, Rennes's
+Quartier Margueritte, is the army's defence zone staff. The compounds' check for a
+named army site inside first scanned every site per compound (15 minutes instead
+of 4): a flag on the military sites instead.
 
 ---
 
