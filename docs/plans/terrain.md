@@ -33,11 +33,14 @@ of `pmtiles extract`, 2026-11-20):
 |---|---|---|---|
 | 0–12 | 13 m | 2.3 GB | shading, contours to 20 m, 3D at a distance |
 | + 13 | 6.6 m | + 7 GB (9.3 GB) | contours to 5 m, 3D close up; matches RGE ALTI 5 m |
-| + 14 | 3.3 m | + 28 GB (≈ 38 GB) | the radio mode's finest, valleys and embankments |
-| + 15 | 1.6 m | ≈ + 120 GB | not offered (shading looks no better) |
+| + 14 | 3.3 m | + 28 GB (≈ 38 GB) | not needed (below) |
+| + 15 | 1.6 m | ≈ + 120 GB | not needed |
 
-Proposed default: zooms 0 to 13 for the region (France 9.3 GB); zoom 14 offered for
-a chosen area (a département or a box), for the radio mode later.
+Chosen (2026-11-20): zooms 0 to 13 for the region (France 9.3 GB). Zoom 14 isn't
+offered: the radio mode doesn't need it (radio models are used with 30 to 90 m
+terrain; what blocks a signal at street level is buildings, which come from their
+outlines and heights, not the terrain file). It can be added later as a choice if a
+use shows up.
 
 Considered and not taken: IGN's RGE ALTI files direct (1 m only per département,
 7 GB of text grids each: we'd convert all of France with GDAL to get what Mapterhorn
@@ -53,9 +56,9 @@ Copernicus GLO-30 direct (30 m, already inside the planet file); AWS Terrain Til
   each zoom 6 file it touches (13, and 14 if asked), merged (`pmtiles merge`) into
   `data/offline-maps/<area>.terrain-mapterhorn.pmtiles`. Sizes from the table
   (measured per km², like the other sources), md5 from `download_urls.json`.
-- `scripts/offline-maps.sh`'s menu gets "Terrain (contours, shading, 3D)" with the
-  detail to choose (13 m / 6.6 m / 3.3 m and their sizes); resumed and checked like
-  the others; the inventory lists it.
+- `scripts/offline-maps.sh`'s menu gets "Terrain (contours, shading, 3D)", zooms 0
+  to 13 (its size shown); resumed and checked like the others; the inventory lists
+  it.
 - Served by the `pmtiles serve` service that serves the imagery (same folder, same
   URL scheme): no new container. (Its name, `satellite`, then says less than it
   serves: renaming it is a clean-up to report, not part of this.)
@@ -74,11 +77,13 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
   our tiles.
 - **Hill shading**: MapLibre's `hillshade` layer (light from the north-west,
   `multidirectional` method), above the background's land cover and water, below
-  roads, buildings, labels and the infrastructure; soft over the map, lighter or off
-  over imagery (photos already show relief: to try). Light and bold looks.
+  roads, buildings, labels and the infrastructure; over the map and over imagery
+  alike (its own strength for each); whether it stays over imagery, the owner
+  decides after seeing it. Light and bold looks.
 - **Contour lines**: thin brown lines, every fifth thicker with its height in metres
-  along it; intervals by zoom (to tune by eye): 100/500 m at zoom 9–10, 50/250 m at
-  11, 20/100 m at 12, 10/50 m at 13, 5/25 m from 14. Labels avoid the
+  along it. The height between two lines (the interval) grows as the map zooms out,
+  so lines never crowd (to tune by eye): 100 m at zoom 9–10, 50 m at 11, 20 m at 12,
+  10 m at 13, 5 m from 14 (the thick ones 5 times that). Labels avoid the
   infrastructure's.
 - The layer switcher: a "Terrain" group, "Hill shading" and "Contour lines", each
   its own entry (remembered as the others). Greyed out with a hint where no terrain
@@ -90,8 +95,8 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
 ## 3. Relief in the 3D view
 
 - The 3D button (`modules/view3d`) also turns on `map.setTerrain` with the terrain
-  source (exaggeration about 1.3, to judge by eye), and a sky and haze at the
-  horizon; off again with it. Without a terrain file, 3D stays as now (flat,
+  source (true heights: exaggeration 1, the owner's choice), and a sky and haze at
+  the horizon; off again with it. Without a terrain file, 3D stays as now (flat,
   buildings rising).
 - The steepest tilt goes up from 60° to 75° in 3D (MapLibre allows 85°): looking
   along a valley needs it.
@@ -115,8 +120,8 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
 
 What it needs, and what the steps above already lay down:
 
-- **Terrain**: the elevations of step 4, from the same file; zoom 14 (3.3 m) where
-  precise results matter. Mapterhorn is bare ground (a terrain model), so:
+- **Terrain**: the elevations of step 4, from the same file (6.6 m: finer than radio
+  models are usually given). Mapterhorn is bare ground (a terrain model), so:
 - **Buildings**: heights from the background map's buildings (Protomaps' `height`
   and `min_height`, already used by the 3D view), or IGN's BD TOPO buildings (a
   height for every building in France, Licence Ouverte) if those are too often
@@ -136,9 +141,9 @@ What it needs, and what the steps above already lay down:
   one terrain file for drawing and for computing; the backend reader (step 4) as the
   only place elevations are read.
 
-## Open questions for the owner
+## Decided (2026-11-20)
 
-- Default detail: zooms 0–13 (France 9.3 GB) proposed; or 0–12 only (2.3 GB)?
-- Hill shading over satellite imagery too, or only over the map?
-- Contour intervals: as above, or other steps (25 m like IGN's 1:25,000 maps)?
-- 3D: how much exaggeration (1 is true; 1.3 to 1.5 reads better)?
+- Detail: zooms 0–13 (France 9.3 GB); no zoom 14.
+- Hill shading over the map and over imagery; over imagery to be judged once seen.
+- 3D: true heights (exaggeration 1).
+- Contour intervals: as above, to tune by eye.
