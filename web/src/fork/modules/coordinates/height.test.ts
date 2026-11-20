@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { REST_MS, formatHeight, heightFollower } from './height.ts'
+import { formatHeight } from '../../services/elevation.ts'
+import { REST_MS, heightFollower } from './height.ts'
 
 describe('the height under the cursor', () => {
   afterEach(() => {

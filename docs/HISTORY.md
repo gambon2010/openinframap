@@ -1144,7 +1144,9 @@ default). Counts are France's OSM data in October 2026.
   smoothing is now SciPy's `gaussian_filter` (was a convolution by hand: the new
   "Reuse before writing" rule, CLAUDE.md; OpenTopography's method). The coordinates
   box shows the ground's height (`/terrain/elevation`, asked when the cursor rests
-  120 ms; Mont Blanc 4806 m), and now uses the standard's tokens.
+  120 ms; Mont Blanc 4806 m), and now uses the standard's tokens. A clicked thing's
+  details get its height too (a point's; an area's at its middle when that's inside
+  it; not a line's), through `services/elevation.ts`, shared by both.
 
 ## Extra data (not from OpenStreetMap)
 

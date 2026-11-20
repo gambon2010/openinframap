@@ -1,16 +1,18 @@
 // Fork: the terrain (docs/plans/terrain.md): the elevations of every area downloaded
 // (the backend's /terrain tiles) as map sources, for the hill shading and contour
 // lines drawn here (Data layers → Terrain: Hill shading, on at first, and Contour
-// lines, made by the backend; their looks: docs/STYLE.md) and the 3D view's relief
-// (modules/view3d).
+// lines, made by the backend; their looks: docs/STYLE.md), the 3D view's relief
+// (modules/view3d), and a clicked thing's height in its details (details.ts).
 import type { Map, RasterDEMSourceSpecification } from 'maplibre-gl'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { CONTOURS_URL, TERRAIN_URL } from '../../config.ts'
 import { RELIEF_SOURCE, TERRAIN_SOURCE } from '../../core/terrain.ts'
 import { background, followBackground } from '../../services/background.ts'
+import { addDetailsExtra } from '../../ui/details.ts'
 import { ForkModule } from '../../types.ts'
 import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, LABEL_LAYER, contourLayers } from './contours.ts'
+import { heightRow } from './details.ts'
 import { terrainBefore } from './placement.ts'
 import {
   CONTOURS_MAX_ZOOM,
@@ -100,6 +102,7 @@ const terrain: ForkModule = {
     followBackground(map, HILLSHADE_LAYER, 'hillshade-exaggeration', STRENGTH)
     for (const id of CONTOUR_LINE_LAYERS) followBackground(map, id, 'line-color', CONTOUR_COLOUR)
     followBackground(map, LABEL_LAYER, 'text-color', CONTOUR_LABEL_COLOUR)
+    addDetailsExtra(heightRow)
   }
 }
 

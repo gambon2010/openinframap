@@ -777,5 +777,9 @@
   },
   "coordinates": {
     "height": "Height of the ground"
+  },
+  "terrain": {
+    "elevation-middle": "Elevation (middle)",
+    "elevation": "Elevation"
   }
 }
