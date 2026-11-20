@@ -33,9 +33,10 @@ TERRAIN = ".terrain.pmtiles"
 # Its finest zoom: 6.6 m pixels in France (512-pixel tiles).
 MAX_ZOOM = 13
 CREDIT = "Mapterhorn; IGN; Copernicus"
-# What it weighs per km² to zoom 13 (France: dry runs of its box, 2026-11-20; to
-# measure again on France's own outline).
-BYTES_PER_KM2 = 16_900
+# What it weighs per km² of an area's outline, to zoom 13 (France, 2026-11-20:
+# 5.6 GB for its 775,000 km² outline, sea margins included; hilly Luxembourg
+# twice as much per km²).
+BYTES_PER_KM2 = 7_200
 
 
 def terrain_of(folder: Path, area: str) -> Path:

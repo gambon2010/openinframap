@@ -17,7 +17,9 @@
     "roads-and-railways": "Roads and railways",
     "roads": "Roads",
     "railways": "Railways",
-    "trams-and-metro": "Trams and metro"
+    "trams-and-metro": "Trams and metro",
+    "terrain": "Terrain",
+    "hillshade": "Hill shading"
   },
   "search": {
     "place": {

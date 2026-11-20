@@ -30,6 +30,7 @@ import debug from './modules/debug/index.ts'
 import handovers from './modules/handovers/index.ts'
 import print from './modules/print/index.ts'
 import view3d from './modules/view3d/index.ts'
+import terrain from './modules/terrain/index.ts'
 import translations from './locales/en.json'
 import './fork.css'
 
@@ -38,6 +39,7 @@ const MODULES: ForkModule[] = [
   roads,
   background,
   buildings,
+  terrain,
   mapSources,
   extra,
   sites,

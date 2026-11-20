@@ -36,7 +36,7 @@ of `pmtiles extract`, 2026-11-20):
 | + 14 | 3.3 m | + 28 GB (≈ 38 GB) | not needed (below) |
 | + 15 | 1.6 m | ≈ + 120 GB | not needed |
 
-Chosen (2026-11-20): zooms 0 to 13 for the region (France 9.3 GB). Zoom 14 isn't
+Chosen (2026-11-20): zooms 0 to 13 for the region (France 9.3 GB by its box; 5.6 GB by its outline, downloaded 2026-11-20). Zoom 14 isn't
 offered: the radio mode doesn't need it (radio models are used with 30 to 90 m
 terrain; what blocks a signal at street level is buildings, which come from their
 outlines and heights, not the terrain file). It can be added later as a choice if a
@@ -54,7 +54,7 @@ Copernicus GLO-30 direct (30 m, already inside the planet file); AWS Terrain Til
   file whose bounds meet it (`planet.pmtiles` to zoom 12, the zoom 6 files at 13;
   `download_urls.json` lists them), the empty parts dropped, the rest merged
   (`pmtiles merge`, go-pmtiles 1.31) into `data/offline-maps/<area>.terrain.pmtiles`.
-  Luxembourg: 43 MB in 8 s.
+  Luxembourg: 43 MB in 8 s; France: 5.6 GB.
 - Not an option (the owner): it comes with an area's background map (`basemap`
   command, so `build-region.sh --basemap full` and the menu's background map), its
   size in the background map's estimate ("Background map and terrain"). A
@@ -65,7 +65,7 @@ Copernicus GLO-30 direct (30 m, already inside the planet file); AWS Terrain Til
   `/satellite/<area>.terrain/{z}/{x}/{y}.webp`. (Its name, `satellite`, then says
   less than it serves: a clean-up to report.)
 
-## 2. Hill shading (frontend)
+## 2. Hill shading (frontend) (done, 2026-11-20)
 
 A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` first:
 
@@ -169,7 +169,7 @@ What it needs, and what the steps above already lay down:
 
 ## Decided (2026-11-20)
 
-- Detail: zooms 0–13 (France 9.3 GB); no zoom 14.
+- Detail: zooms 0–13 (France 5.6 GB); no zoom 14.
 - Hill shading over the map and over imagery; over imagery to be judged once seen.
 - 3D: true heights (exaggeration 1).
 - Contour lines: as on US military maps (above), made in the backend as tiles are

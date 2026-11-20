@@ -276,7 +276,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.54 | Disused aerodromes shown (military under Military, not hidden with the disused fortifications; civil with the airports), a grey icon, with no extra tick box: the two airfield rows show every airfield. | ✅ (2026-11-20) `military_airfield_disused` (`was_military_airfield`), `airport_disused`, shown by the airfield rows (`KEY_ROW_OF`, a hide spec of several icons) |
 | 10.55 | What was left to clean in the sites: the air force units drawn twice on their air base, closed civil airfields drawn as airports, gendarmerie barracks drawn as army bases. | ✅ (2026-11-20) `part_of_airfield`, `airport_disused`, compounds named "Caserne ...", `part_of_gendarmerie`, `is_gendarmerie` |
 | 10.56 | The military sites nothing classifies ("Other military area", 307 on 2026-11-20) checked by hand by the owner; verdicts into `site-overrides.sql`. | 🗂 backlog (2026-11-20) list: `data/checks/military-areas.csv` |
-| 10.57 | Terrain: contour lines, hill shading, and the relief in the 3D view, offline. | 📋 planned (2026-11-20) `docs/plans/terrain.md` (Mapterhorn's terrain tiles: IGN RGE ALTI / LiDAR HD for France) |
+| 10.57 | Terrain: contour lines, hill shading, and the relief in the 3D view, offline. | 🚧 (2026-11-20) download and hill shading done; 3D relief, contour lines next: `docs/plans/terrain.md` |
 | 10.58 | Signal propagation mode: how far a radio reaches given terrain and buildings. | 🗂 backlog (2026-11-20) after 10.57; what it needs: `docs/plans/terrain.md` "Next" |
 
 ## 11. Quality

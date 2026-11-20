@@ -8,7 +8,7 @@ from starlette.middleware import Middleware
 from starlette.routing import BaseRoute, Mount
 from starlette.staticfiles import StaticFiles
 
-from . import about, auth, background, circuits, grid, map_data, search, userdata, wikidata_offline
+from . import about, auth, background, circuits, grid, map_data, search, terrain, userdata, wikidata_offline
 from .auth import LoginMiddleware
 from .background import buildings as background_buildings
 from .background import transit as background_transit
@@ -36,6 +36,8 @@ routes: list[BaseRoute] = [
     *background.routes,
     *background_buildings.routes,
     *background_transit.routes,
+    # The terrain's elevation tiles, from every area downloaded (data/offline-maps/).
+    *terrain.routes,
 ]
 
 # main.py adds these after its database middleware (they need the connection).

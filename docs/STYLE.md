@@ -108,6 +108,13 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   (an oil depot: Oil & Natural Gas, not Critical sites); things of one kind look alike
   whichever layer draws them (oil and gas facilities in the fuel depots' colour and
   icon).
+- **Hill shading** (`modules/terrain`, Data layers → Terrain → Hill shading, on at
+  first): MapLibre's `hillshade` from the terrain's elevations, light from the
+  north-west (several directions blended, so slopes away from it don't go flat),
+  soft warm-grey shadows and faint highlights, see-through. Over the map it lies on
+  the land cover and water, under roads, buildings, labels and all data; over
+  imagery right above the photos, fainter. Zoomed in past 13 it's as smooth as at
+  13 (the terrain's finest).
 - **Leave out clutter the original map leaves out:** small pieces with no name
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).

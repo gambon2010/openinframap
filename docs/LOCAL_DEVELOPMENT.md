@@ -242,9 +242,12 @@ Terrain comes with it, always: the area's elevations (for contour lines, hill
 shading and the 3D relief), cut from [Mapterhorn](https://mapterhorn.com)'s terrain
 tiles to zoom 13 into `data/offline-maps/<region>.terrain.pmtiles` (6.6 m pixels;
 in France IGN's RGE ALTI and LiDAR HD, elsewhere mostly Copernicus' 30 m; France
-about 9 GB, Luxembourg 43 MB). Its size is in the background map's. For an area
+5.6 GB, Luxembourg 43 MB). Its size is in the background map's. For an area
 downloaded before, the menu offers *Terrain* (or `python3 scripts/offline-maps.py
-terrain --area france --outline data/offline-maps/.area-france.geojson`).
+terrain --area france --outline data/offline-maps/.area-france.geojson`). The
+backend serves every area's terrain together (`/terrain`); *Data layers → Terrain →
+Hill shading* (on at first) shades the hills, over the map and, fainter, over
+imagery.
 
 ## Satellite imagery (offline)
 

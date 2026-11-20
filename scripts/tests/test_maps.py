@@ -212,7 +212,7 @@ def test_a_background_map_full_detail_with_its_edition(folder, capsys):
     assert "z0–15, 2026-11-10" in shown
     # Its terrain comes with it, in the size too (5 GB and 16,600 km² of terrain).
     assert "Background map and terrain, France, z0–15 (2026-11-10)" in shown
-    assert "5.3 GB" in shown
+    assert "5.1 GB" in shown
     (argv,) = folder["ran"]
     assert argv[:5] == ["basemap", "--area", "france", "--build", "20261110.pmtiles"]
     assert "--outline" in argv

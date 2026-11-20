@@ -1115,7 +1115,13 @@ default). Counts are France's OSM data in October 2026.
   `<area>.terrain.pmtiles` (`offline_maps/terrain.py`). Not a choice: it comes with
   every background map; the menu offers it for one made before. Merging the parts
   needs go-pmtiles 1.31 (`merge`). The dry runs' size reading moved to `pmtiles.py`
-  (`dry_run_size`), which also reads a file's tile count.
+  (`dry_run_size`), which also reads a file's tile count. France: 5.6 GB.
+- **Hill shading (2026-11-20):** the backend serves every area's terrain together
+  (`/terrain/{z}/{x}/{y}.webp`, `web-backend/src/fork/terrain/`; through the gate);
+  `modules/terrain` draws MapLibre's hill shading from it (four light directions
+  blended, the main one north-west), under the background map's roads and
+  buildings over the map, right above the photos and fainter over imagery; Data
+  layers → Terrain → Hill shading, on at first.
 
 ## Extra data (not from OpenStreetMap)
 
