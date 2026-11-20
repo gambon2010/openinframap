@@ -59,4 +59,7 @@ jobs:
       - run: uvx ruff format --check scripts
       - name: Shell
         run: uvx --from shellcheck-py shellcheck -x -S warning scripts/*.sh scripts/lib/*.sh scripts/build/*.sh
-      - run: uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests
+      - name: Type check
+        working-directory: scripts
+        run: uv run mypy --exclude tests .
+      - run: uv run --project scripts pytest scripts/tests

@@ -79,7 +79,7 @@ Before finishing any change, reread the diff as that reader and ask: could they 
 
 ## Development Setup
 
-Prerequisites: `docker`, `node`, `npm`, `curl`, `python3`, `unzip` (`uv` optional).
+Prerequisites: `docker`, `node`, `npm`, `curl`, `python3`, `unzip`, `uv` (the scripts' Python environment, `scripts/pyproject.toml`).
 
 ```bash
 bash scripts/launch.sh        # first time: build/import a region, .env files, start the app
@@ -124,13 +124,13 @@ uv run pytest tests/fork                           # The fork's tests
 
 ### Scripts and data (from the repo root)
 ```bash
-uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests   # Script tests (fake docker/curl, scripts/tests/fakes/)
-OIM_TEST_REAL_BUILD=1 uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests -k real_build   # Real Luxembourg build/export/import, its own Docker project
+uv run --project scripts pytest scripts/tests   # Script tests (fake docker/curl, scripts/tests/fakes/)
+OIM_TEST_REAL_BUILD=1 uv run --project scripts pytest scripts/tests -k real_build   # Real Luxembourg build/export/import, its own Docker project
 bash scripts/build-region.sh                               # Pick a region, wipe the DB, download + import
 bash scripts/build-region.sh --region luxembourg --yes     # Unattended (tiny test region)
 bash scripts/export-db.sh / import-db.sh FILE              # Save / restore data/exports/<region>.oimdb
 bash scripts/number-towers.sh                              # Number the towers again
-python3 scripts/offline-maps.py maps --source ID --yes     # An offline map without questions
+uv run --project scripts scripts/offline-maps.py maps --source ID --yes     # An offline map without questions
 uv run scripts/fetch_images.py [--json-only|--count]       # Offline Wikidata cache in data/
 docker compose down -v                                     # Wipe the DB and all project volumes
 cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml   # After changing a layer

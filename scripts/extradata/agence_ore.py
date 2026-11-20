@@ -105,10 +105,12 @@ class FranceAgenceORE(FrenchSource):
             url = f"{self.API}/{dataset}/records"
             query = {**where, "limit": 0}
             # Asked for before a build: retried, no waiting for the connection.
+
+            def count(url: str = url, query: dict = query) -> httpx.Response:
+                return netsafe.checked(self.http.get(url, params=query))
+
             response = netsafe.safely(
-                lambda url=url, query=query: netsafe.checked(
-                    self.http.get(url, params=query)
-                ),
+                count,
                 url,
                 wait=False,
             )

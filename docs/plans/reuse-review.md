@@ -20,6 +20,12 @@ known problem with code of our own, what exists, and what was decided (looked at
   ours: bearings 0–360 (Turf's −180–180), circles clockwise from north (the range
   rings' labels).
 
+- **The scripts' tile maths, PMTiles headers and download lock** (2026-11-20): the
+  scripts got a Python environment (`scripts/pyproject.toml`, uv), so mercantile
+  (`offline_maps/tiles.py`), the `pmtiles` package (`offline_maps/pmtiles.py`) and
+  `filelock` (`offline_maps/inventory.py`) replaced our code; mypy now checks the
+  scripts in CI.
+
 ## Backlog
 
 - **My layers' drawing and editing on the map** (`map/tools.ts`, `tools/drawing.ts`,
@@ -53,13 +59,10 @@ known problem with code of our own, what exists, and what was decided (looked at
   big enough to see (Planetiler's minimum pixel size, as an area); Planetiler's
   `mergeNearbyPolygons` merges buildings into blocks, what the background map's own
   tiles already do and what this replaces. Cited in the code.
-- **Tile maths in the scripts** (`scripts/offline_maps/tiles.py`): OpenStreetMap's
-  slippy map formulas, as mercantile writes them; the scripts use the standard
-  library only (they run before any environment is set up). Cited in the code.
 - **Retries** (`scripts/netsafe.py`): linear waits, gentler than urllib3's `Retry`
-  (exponential); same standard-library constraint. Cited in the code.
-- **The download lock** (`scripts/offline_maps/inventory.py`): `filelock` is the
-  standard; same constraint.
+  (exponential); and `safely` wraps any call (Docker runs too), not only HTTP
+  requests, waiting for a lost connection to come back: urllib3's `Retry` can't do
+  that. Cited in the code.
 - **Hiding key rows by filter** (`web/src/fork/ui/key/feature-hider.ts`): MapLibre has
   no per-value toggle; legend plugins hide whole layers only.
 - **Contour lines from coarser zooms** (maplibre-contour's `overzoom`): tried against

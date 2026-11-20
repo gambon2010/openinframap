@@ -7,6 +7,7 @@ settings."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from . import coverage, extract, inventory, terrain, ui
@@ -27,12 +28,30 @@ def short(name: str, width: int = 15) -> str:
     return name if len(name) <= width else name[: width - 1] + "…"
 
 
+# A row of the Add table, and what picking it does (the jobs to run; None: nothing
+# to add there).
+Offer = tuple[list[str], Callable[[], list[Job]] | None]
+
+
 class SourceOffers:
-    """The menu's offers and jobs, source by source (mixed into maps.Maps)."""
+    """The menu's offers and jobs, source by source (mixed into maps.Maps, which
+    gives the methods below that raise)."""
 
     folder: Path
     index: Index
     entries: list[Entry]
+
+    def within(self, a: str, b: str) -> bool:
+        raise NotImplementedError  # maps.Maps
+
+    def name(self, area: str) -> str:
+        raise NotImplementedError  # maps.Maps
+
+    def settings(self) -> dict:
+        raise NotImplementedError  # maps.Maps
+
+    def stopped(self) -> list[Entry]:
+        raise NotImplementedError  # maps.Maps
 
     def km2(self, area: str) -> float:
         if area == "world":
@@ -40,7 +59,7 @@ class SourceOffers:
         outline = self.index.outline(area, self.folder)
         return area_km2(load_rings(str(outline))) if outline else 0
 
-    def offers(self, area: str) -> list[tuple[list[str], object]]:
+    def offers(self, area: str) -> list[Offer]:
         """The table of what an area can have: (row, what picking it does)."""
         rows = []
         world_bm = self.have("blue_marble", "world")

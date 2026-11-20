@@ -66,6 +66,15 @@ WEBP_TILE_BYTES = SOURCES["fr_ign"].tile_bytes
 # --- Which département ---------------------------------------------------------
 
 
+def edition_date(resource: str) -> str:
+    """An edition's date ("2024-01-01") from its resource name (IGN's listing, as
+    EDITION reads it)."""
+    found = EDITION.match(resource)
+    if not found:
+        raise ValueError(f"Not one of IGN's BD ORTHO editions: {resource}")
+    return found.group(4)
+
+
 def area_name(code: str) -> str:
     """A département's file name: fr-67 (<area>.sat-detailed-fr_ign.pmtiles)."""
     return f"fr-{code.lower()}"
@@ -491,7 +500,7 @@ def one_departement(args, folder: Path, code: str, counter: str) -> None:
         if not images:
             print(f"{label}: looking for IGN's latest photos...", file=sys.stderr)
             resource = latest_edition(code)
-            (work / "edition").write_text(EDITION.match(resource)[4] + "\n")
+            (work / "edition").write_text(edition_date(resource) + "\n")
             print(f"{label}: downloading {resource}", file=sys.stderr)
             first = download_archive(resource, work, limit)
             print(f"{label}: extracting...", file=sys.stderr)

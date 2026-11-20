@@ -10,7 +10,6 @@ entries too ("stopped"), so the menu can offer to resume them."""
 from __future__ import annotations
 
 import contextlib
-import fcntl
 import importlib
 import json
 import os
@@ -18,6 +17,8 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
+
+from filelock import FileLock, Timeout
 
 from .extract import manifest_edition
 from .pmtiles import read_header
@@ -27,6 +28,8 @@ from .ui import human
 INVENTORY = "inventory.json"
 SETTINGS = "settings.json"
 LOCK = ".offline-maps.lock"
+# What holds the lock (a download's description), beside it.
+HOLDER = ".offline-maps.holder"
 # Settings asked once: a speed cap (MB/s, None: none), the aerial photos' zoom.
 DEFAULT_SETTINGS = {"max_rate": None, "zoom": 17}
 
@@ -141,7 +144,8 @@ def imagery_summary(folder: Path) -> str:
     files = imagery_files(folder)
     if not files:
         return "none"
-    names, units = [], {}
+    names: list[str] = []
+    units: dict[str, int] = {}
     for path, source in files:
         if source.units and identify(path.name)[2]:  # type: ignore[index]
             units[source.id] = units.get(source.id, 0) + 1
@@ -276,39 +280,35 @@ class Busy(Exception):
 @contextlib.contextmanager
 def lock(folder: Path, what: str):
     """Held while a download runs; another one meanwhile raises Busy. A command
-    the menu runs, holding it, goes ahead (OIM_MAPS_LOCK: the folder)."""
+    the menu runs, holding it, goes ahead (OIM_MAPS_LOCK: the folder). The lock is
+    filelock's (an advisory lock on LOCK); what holds it is written beside it
+    (HOLDER: filelock empties the lock file when it opens it)."""
     if os.environ.get("OIM_MAPS_LOCK") == str(folder.resolve()):
         yield
         return
-    path = folder / LOCK
-    handle = path.open("a+")
+    held = FileLock(folder / LOCK)
     try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        handle.close()
+        held.acquire(timeout=0)
+    except Timeout:
         raise Busy(running(folder) or "another download") from None
-    handle.seek(0)
-    handle.truncate()
-    handle.write(f"{what} (process {os.getpid()})")
-    handle.flush()
+    holder = folder / HOLDER
+    holder.write_text(f"{what} (process {os.getpid()})")
     try:
         yield
     finally:
-        handle.seek(0)
-        handle.truncate()
-        handle.close()
+        holder.unlink(missing_ok=True)
+        held.release()
 
 
 def running(folder: Path) -> str | None:
     """What the running download is, None if none holds the lock."""
-    path = folder / LOCK
-    if not path.exists():
-        return None
-    with path.open("a+") as handle:
+    probe = FileLock(folder / LOCK)
+    try:
+        probe.acquire(timeout=0)
+    except Timeout:
         try:
-            fcntl.flock(handle, fcntl.LOCK_SH | fcntl.LOCK_NB)
-        except BlockingIOError:
-            handle.seek(0)
-            return handle.read().strip() or "a download"
-        fcntl.flock(handle, fcntl.LOCK_UN)
+            return (folder / HOLDER).read_text().strip() or "a download"
+        except OSError:
+            return "a download"  # held by a download started before HOLDER existed
+    probe.release()
     return None

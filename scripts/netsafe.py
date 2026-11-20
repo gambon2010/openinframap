@@ -29,7 +29,8 @@ When a request fails (no network, the server hanging up, a timeout, 429, 5xx):
    server down): ServerStopped at once, not 15 min of waiting for a connection
    that works (exit status SERVER_STOPPED).
 
-Standard library only (offline-maps.py runs with plain python3). httpx's errors are
+Its own retries rather than urllib3's Retry: these wrap any call (Docker runs too),
+not only HTTP requests, and wait for a lost connection to come back. httpx's errors are
 recognised by their class names, without importing httpx.
 """
 
@@ -242,8 +243,8 @@ def safely(
                     )
             if attempt < retries:
                 # Waits growing linearly (pause, 2 × pause...), gentler than urllib3's
-                # Retry (backoff_factor × 2^attempt): the standard library only here,
-                # and the rounds below rest longer when a server stays busy.
+                # Retry (backoff_factor × 2^attempt): the rounds below rest longer
+                # when a server stays busy.
                 time.sleep(pause * attempt)
         if reachable(url):
             # The server answers: not the connection. A busy server: rest, try again.

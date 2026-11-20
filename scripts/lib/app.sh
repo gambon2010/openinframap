@@ -6,11 +6,6 @@
 # Offer to fill the Wikidata cache used by the info popups.
 offer_image_cache() {
     local counts missing_json missing_images minutes choice
-    if ! command -v uv &>/dev/null; then
-        info "Skipped: filling the cache needs uv (https://docs.astral.sh/uv/). Without it,"
-        info "popups fetch their details from Wikidata online."
-        return
-    fi
     if ! counts=$(uv run -q "$REPO_ROOT/scripts/fetch_images.py" --count 2>/dev/null | tail -1); then
         warn "Couldn't check the Wikidata cache. Fill it later with: uv run scripts/fetch_images.py"
         return

@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
 
 from . import coverage, extract, inventory, railways, taxiways, terrain, transit, ui
 from .inventory import Entry
@@ -378,7 +379,7 @@ class Maps(SourceOffers):
                 zoom = ui.ask(
                     "Zoom for aerial photos (15 to 19):", number(15, 19), "17"
                 )
-                inventory.save_settings(self.folder, {"zoom": int(zoom)})  # type: ignore[arg-type]
+                inventory.save_settings(self.folder, {"zoom": int(cast(float, zoom))})
 
     # --- No questions (the scripts' --yes) -----------------------------------------
 

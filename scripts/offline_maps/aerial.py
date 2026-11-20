@@ -21,7 +21,9 @@ def detailed_job(source_id: str, area: str, index: Index, folder: Path) -> dict 
     if area == "world" or index.within(region, area):
         return {"source": source_id, "outline": str(clip), "clip": None}
     outline = index.outline(area, folder)
-    return outline and {"source": source_id, "outline": str(outline), "clip": str(clip)}
+    if not outline:
+        return None
+    return {"source": source_id, "outline": str(outline), "clip": str(clip)}
 
 
 def detailed_file(folder: Path, area: str, source: str) -> Path:

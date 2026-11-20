@@ -1,4 +1,4 @@
-"""Fork: satellite imagery. Web-mercator tile maths and region outlines: which tiles cover an outline (in blocks, over several outlines)."""
+"""Fork: satellite imagery. Web-mercator tile maths (mercantile) and region outlines: which tiles cover an outline (in blocks, over several outlines)."""
 
 from __future__ import annotations
 
@@ -8,32 +8,23 @@ import sys
 from collections.abc import Iterator
 from pathlib import Path
 
+import mercantile  # type: ignore[import-untyped]
+
 # --- Tile maths ---------------------------------------------------------------
 
 
-# The tile formulas are OpenStreetMap's "slippy map" ones (wiki: Slippy map
-# tilenames), as Mapbox's mercantile writes them (`tile`, `bounds`): the scripts use
-# the standard library only (they run before any environment is set up), so they're
-# written out here rather than taken from mercantile.
-
-
 def tile_of(lon: float, lat: float, zoom: int) -> tuple[int, int]:
-    """The web-mercator tile (x, y) containing a point (mercantile's `tile`)."""
+    """The web-mercator tile (x, y) containing a point (mercantile; latitudes past
+    web Mercator's limit taken at it)."""
+    tile = mercantile.tile(lon, max(min(lat, 85.0511), -85.0511), zoom)
     n = 2**zoom
-    lat = max(min(lat, 85.0511), -85.0511)
-    x = int((lon + 180.0) / 360.0 * n)
-    y = int((1.0 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2.0 * n)
-    return min(max(x, 0), n - 1), min(max(y, 0), n - 1)
+    return min(max(tile.x, 0), n - 1), min(max(tile.y, 0), n - 1)
 
 
 def tile_bounds(x: int, y: int, zoom: int) -> tuple[float, float, float, float]:
-    """(west, south, east, north) of a tile, in degrees (mercantile's `bounds`)."""
-    n = 2**zoom
-
-    def lat(row: int) -> float:
-        return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * row / n))))
-
-    return x / n * 360.0 - 180.0, lat(y + 1), (x + 1) / n * 360.0 - 180.0, lat(y)
+    """(west, south, east, north) of a tile, in degrees (mercantile)."""
+    box = mercantile.bounds(x, y, zoom)
+    return box.west, box.south, box.east, box.north
 
 
 def tiles_in_bbox(

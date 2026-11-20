@@ -16,7 +16,7 @@ set -euo pipefail
 # frontend needs a restart to show new imagery. A download stopped half-way goes
 # on with Resume.
 #
-# Without questions: python3 scripts/offline-maps.py maps --source ID --yes
+# Without questions: uv run --project scripts scripts/offline-maps.py maps --source ID --yes
 # (--help lists the sources and options); start.sh then shows it on the map.
 # ---------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ ok "Region: $REGION_NAME"
 fetch_geofabrik_index || warn "Couldn't get Geofabrik's list of regions: only the whole world can be chosen."
 
 # It downloads itself; what's left of a stopped download waits for Resume.
-python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --maps-dir "$OFFLINE_MAPS_DIR" \
+scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --maps-dir "$OFFLINE_MAPS_DIR" \
     --index "$GEOFABRIK_INDEX" --region "$REGION_ID" || warn "Stopped: Resume goes on from there."
 select_basemap
 download_offline_maps

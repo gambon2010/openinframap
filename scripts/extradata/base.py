@@ -126,6 +126,9 @@ class Source:
         """Roughly how many features the areas hold (before clipping to the region)."""
         return None
 
+    # Download the source's files again rather than reuse those kept (cli.py: --refresh).
+    refresh = False
+
     # Features left out of the last run() because OpenStreetMap already has them.
     duplicates = 0
     duplicates_by: dict[str, int]  # ... per dataset (set in run())

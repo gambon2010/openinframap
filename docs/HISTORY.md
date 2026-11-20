@@ -1182,6 +1182,30 @@ default). Counts are France's OSM data in October 2026.
   call Turf's modules instead of formulas by hand ("Reuse before writing"); the
   tests passed unchanged. Terra Draw for My layers' drawing went to the backlog.
 
+## Refactors (2026-11-20)
+
+- **One PMTiles reader for the backend** (`src/fork/pmtiles_files.py`): `Archive` and
+  `ArchiveFolder` (the files of one kind, reopened when they change) for the
+  background maps, the trams' lanes and the terrain (three copies of the folder
+  cache before).
+- **`sites.sql` in three:** `site-kinds.sql` (what a site is), `sites.sql`
+  (`site_feature`), `site-points.sql` (the grouping); rebuilt, every kind's count
+  the same.
+- **My layers' renderer** (580 → 398 lines): `render-measures.ts`,
+  `render-graphics.ts`, `drafts.ts`; the store (`yoursOn` to `reconcile.ts`, the
+  measuring preferences' syncing to `personal.ts`) and the layers' definitions
+  (`overlay-layers.ts`) trimmed.
+- **`docs/HISTORY.md`** 3,167 → 1,914 lines: the one-off sections from late October
+  to 7 November in `HISTORY-ARCHIVE.md`, word for word.
+- **The scripts' Python environment** (`scripts/pyproject.toml`, uv, now required):
+  `scripts_python` (`lib/python.sh`) runs offline-maps.py and the build's Python;
+  mercantile, the `pmtiles` package and `filelock` replaced our tile maths, header
+  reader and lock (the lock file is the same, so a download started before is still
+  seen); `netsafe`'s retries stay (they wrap any call, not only HTTP). The 38 type
+  errors in the scripts fixed and mypy added to CI. The setup scripts' tests get a
+  fake `uv` that runs the scripts' own Python. The "is uv installed?" branches
+  (extra data, the Wikidata cache) removed.
+
 ## Extra data (not from OpenStreetMap)
 
 Some network operators publish their networks as open data, in far more detail than

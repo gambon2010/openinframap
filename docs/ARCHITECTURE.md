@@ -329,6 +329,10 @@ the schema fingerprint builds and exports carry.
   - `ui`: titles (`banner`, `done_banner`), messages, questions (`ask_yes_no`,
     `choose_number` for every numbered menu), `room_for` (disk space), timed steps
     (`run_with_timer`, which can show progress and stop a hung command), `duration`;
+  - `python`: `scripts_python`, Python with the scripts' packages
+    (`scripts/pyproject.toml`: mercantile, pmtiles, filelock; dev: pytest, mypy),
+    in the environment uv makes and keeps up to date (`scripts/.venv`); every script
+    that runs offline-maps.py or the build's Python goes through it;
   - `net`: **every download** goes through `download` (curl) or `safely` (another
     downloading command): tried again, waits up to 15 minutes for a lost connection,
     stops a download that hangs, ends with status 75 ("run again") when the
@@ -471,7 +475,7 @@ map features don't open their details. Example: My layers' tools
 |---|---|
 | `web/src/fork/**/*.test.ts` | `cd web && npm run test:fork` |
 | `web-backend/tests/fork/` | `cd web-backend && uv run pytest` |
-| `scripts/tests/` | `uv run --with pytest --with httpx --with psycopg2-binary pytest scripts/tests` |
+| `scripts/tests/` | `uv run --project scripts pytest scripts/tests` |
 
 The script tests run the setup scripts in a sandbox with fake Docker and network.
 Add `OIM_TEST_REAL_BUILD=1` to build, export and import Luxembourg for real, in a

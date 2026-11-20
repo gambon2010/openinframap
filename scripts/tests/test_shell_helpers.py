@@ -313,12 +313,11 @@ def test_the_build_asks_with_the_offline_maps_menu_and_downloads_after(tmp_path)
     calls = tmp_path / "calls"
     out = bash(
         f"""
-python3() {{
+scripts_python() {{
     if [[ "$*" == *offline-maps.py\\ maps* ]]; then
         echo "maps $*" >> "{calls}"
         [[ "$*" == *--queue-only* ]] && echo '[]' > "$OFFLINE_MAPS_DIR/queue.json"
-    elif [[ "$*" == *offline-maps.py* ]]; then :
-    else command python3 "$@"; fi
+    fi
 }}
 docker() {{ :; }}
 select_satellite() {{ echo "select" >> "{calls}"; }}
@@ -358,7 +357,7 @@ def test_a_build_without_questions_queues_the_maps_asked_for(tmp_path):
     calls = tmp_path / "calls"
     bash(
         f"""
-python3() {{ echo "$*" >> "{calls}"; }}
+scripts_python() {{ echo "$*" >> "{calls}"; }}
 ASSUME_YES=1 MAPS_SOURCES="sentinel2 fr_ign"
 choose_offline_maps france
 echo "menu flag: $SATELLITE_MENU" >> "{calls}"

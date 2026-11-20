@@ -178,7 +178,7 @@ def command_basemap(args) -> None:
             # The background map is kept; the menu offers its zoomed out file again.
             print(
                 f"Making its buildings, roads and railways zoomed out failed. Again: "
-                f"python3 scripts/offline-maps.py zoomed-out --area {args.area}",
+                f"uv run --project scripts scripts/offline-maps.py zoomed-out --area {args.area}",
                 file=sys.stderr,
             )
     if terrain.terrain_missing(folder, args.area):

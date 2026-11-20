@@ -19,14 +19,14 @@ start_satellite_if_present() {
 # "world overview, france regional, IGN photos of 2 départements (3.4 GB)": the
 # imagery there is, and its total size.
 satellite_summary() {
-    python3 -I "$REPO_ROOT/scripts/offline-maps.py" summary --maps-dir "$OFFLINE_MAPS_DIR"
+    scripts_python "$REPO_ROOT/scripts/offline-maps.py" summary --maps-dir "$OFFLINE_MAPS_DIR"
 }
 
 # The imagery as the frontend reads it (VITE_SATELLITE_TIERS; empty: none):
 # every imagery file, with its zooms, bounds and credit
 # (scripts/offline_maps/inventory.py imagery_tiers).
 satellite_tiers_value() {
-    python3 -I "$REPO_ROOT/scripts/offline-maps.py" tiers --maps-dir "$OFFLINE_MAPS_DIR" \
+    scripts_python "$REPO_ROOT/scripts/offline-maps.py" tiers --maps-dir "$OFFLINE_MAPS_DIR" \
         --server "http://localhost:$SATELLITE_PORT"
 }
 
@@ -56,7 +56,7 @@ select_satellite() {
 # for the region (build-region.sh --maps "sentinel2 fr_ign"), else nothing.
 choose_offline_maps() {
     local region="$1" source menu
-    menu=(python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only
+    menu=(scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only
         --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" --region "$region")
     mkdir -p "$OFFLINE_MAPS_DIR"
     if [[ -n "${MAPS_SOURCES:-}" ]]; then
@@ -78,7 +78,7 @@ choose_offline_maps() {
 run_maps_queue() {
     [[ -f "$OFFLINE_MAPS_DIR/queue.json" ]] || return 0
     section "Downloading the offline maps chosen..."
-    python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queued --yes \
+    scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --queued --yes \
         --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
         || warn "What was downloaded is kept. To go on: bash scripts/offline-maps.sh, then Resume."
 }

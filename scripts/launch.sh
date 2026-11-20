@@ -29,9 +29,9 @@ check_cmd npm     "comes with Node.js"                          || MISSING=1
 check_cmd curl    "dnf install curl  /  apt install curl"       || MISSING=1
 check_cmd python3 "dnf install python3  /  apt install python3" || MISSING=1
 check_cmd unzip   "dnf install unzip  /  apt install unzip"     || MISSING=1
+# The scripts' Python packages (scripts/pyproject.toml), extra data, the Wikidata cache.
+check_cmd uv      "https://docs.astral.sh/uv/ (curl -LsSf https://astral.sh/uv/install.sh | sh)" || MISSING=1
 [[ "$MISSING" == 0 ]] || die "Install the missing tools above, then re-run this script."
-# Optional: only needed for the Wikidata cache and to run the backend outside Docker.
-check_cmd uv      "optional — https://docs.astral.sh/uv/ (for extra data like the French networks, and the offline Wikidata cache)" || true
 
 # ---------------------------------------------------------------------------
 # 2. Frontend .env — before the database step, which may add the offline

@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -87,7 +88,7 @@ def run_service(
     built first if its code changed, the folder `mount` at `at` (the image's own
     working directory kept)."""
     compose = ["docker", "compose", "--progress", "quiet"]
-    quiet = {"cwd": REPO_ROOT, "stdin": subprocess.DEVNULL}
+    quiet: dict[str, Any] = {"cwd": REPO_ROOT, "stdin": subprocess.DEVNULL}
     subprocess.run([*compose, "build", service], check=True, **quiet)
     entry, rest = program(args, as_root)
     if not as_root:

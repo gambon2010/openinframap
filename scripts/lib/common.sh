@@ -43,6 +43,8 @@ fi
 source "$REPO_ROOT/scripts/lib/ui.sh"
 # shellcheck source=lib/net.sh
 source "$REPO_ROOT/scripts/lib/net.sh"
+# shellcheck source=lib/python.sh
+source "$REPO_ROOT/scripts/lib/python.sh"
 # shellcheck source=lib/json.sh
 source "$REPO_ROOT/scripts/lib/json.sh"
 # shellcheck source=lib/docker.sh

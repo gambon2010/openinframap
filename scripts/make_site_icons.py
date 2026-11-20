@@ -131,8 +131,10 @@ OWN = {
 def glyph(maki: Path, name: str) -> str:
     """The inside of a Maki SVG (its paths), without the <svg> wrapper."""
     svg = (maki / f"{name}.svg").read_text()
-    inner = re.search(r"<svg[^>]*>(.*)</svg>", svg, re.DOTALL).group(1)
-    return re.sub(r"\s+id=\"[^\"]*\"", "", inner).strip()
+    found = re.search(r"<svg[^>]*>(.*)</svg>", svg, re.DOTALL)
+    if not found:
+        raise ValueError(f"{name}.svg: no <svg> element")
+    return re.sub(r"\s+id=\"[^\"]*\"", "", found.group(1)).strip()
 
 
 def main() -> None:

@@ -17,7 +17,7 @@ For *what* the fork changed and *why*, see [HISTORY.md](./HISTORY.md).
 | Docker + Compose v2 | Docker 24+ | `docker compose` (not `docker-compose`). Runs the database, Tegola and the backend |
 | Node.js + npm | Node 20+ | Runs the frontend |
 | curl, python3, unzip | any | Used by the setup scripts |
-| [uv](https://docs.astral.sh/uv/) | any recent | **Optional, but needed for extra data** (French electricity/gas networks, biomethane, ICPE: `scripts/extra_data.py`), the Wikidata cache script, and running the backend outside Docker. Without it the build skips extra data |
+| [uv](https://docs.astral.sh/uv/) | any recent | **Required**: the scripts' Python environment (`scripts/pyproject.toml`: made and kept up to date by uv on first use, in `scripts/.venv`), extra data (French electricity/gas networks, biomethane, ICPE: `scripts/extra_data.py`), the Wikidata cache script, and running the backend outside Docker. Install: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | Free disk space | depends on region | The raw extract (46 MB for Luxembourg, 33 GB for Europe, ~95 GB for the world) plus the database (roughly 1 GB for Russia). The script checks before starting |
 
 `launch.sh` checks these and tells you what's missing; it never installs anything.
@@ -236,15 +236,15 @@ which lines it couldn't draw). The railways come from the region's OpenStreetMap
 lead-in lines some airports map as taxiways aren't drawn. The backend adds them to the background
 map's tiles; *Data layers → Background map → Buildings* shows the buildings. For an
 area downloaded before, the menu offers *Buildings, roads and railways zoomed out* (or
-`python3 scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
-`python3 scripts/offline-maps.py maps --source protomaps --area france --yes`.
+`uv run --project scripts scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
+`uv run --project scripts scripts/offline-maps.py maps --source protomaps --area france --yes`.
 
 Terrain comes with it, always: the area's elevations (for contour lines, hill
 shading and the 3D relief), cut from [Mapterhorn](https://mapterhorn.com)'s terrain
 tiles to zoom 13 into `data/offline-maps/<region>.terrain.pmtiles` (6.6 m pixels;
 in France IGN's RGE ALTI and LiDAR HD, elsewhere mostly Copernicus' 30 m; France
 5.6 GB, Luxembourg 43 MB). Its size is in the background map's. For an area
-downloaded before, the menu offers *Terrain* (or `python3 scripts/offline-maps.py
+downloaded before, the menu offers *Terrain* (or `uv run --project scripts scripts/offline-maps.py
 terrain --area france --outline data/offline-maps/.area-france.geojson`). The
 backend serves every area's terrain together (`/terrain`); *Data layers → Terrain →
 Hill shading* (on at first) shades the hills, over the map and, fainter, over
@@ -299,7 +299,7 @@ Offline maps                                        273 GB free
 One download runs at a time; a second window shows it instead of starting another.
 What's in `data/offline-maps/` is listed in `data/offline-maps/inventory.json`, made from the
 files themselves each time (copy the folder and it comes along). Unattended:
-`python3 scripts/offline-maps.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
+`uv run --project scripts scripts/offline-maps.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
 or `--resume --yes`.
 
 It's shown with the
@@ -334,7 +334,7 @@ The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
 | 12 | ~47 GB | ~2.4 TB |
 | 13 | ~190 GB | ~9.4 TB |
 
-Aerial photo sources (`python3 scripts/offline-maps.py sources`): France (IGN, 20 cm,
+Aerial photo sources (`uv run --project scripts scripts/offline-maps.py sources`): France (IGN, 20 cm,
 see below), Spain (PNOA, 25 cm), the Netherlands (PDOK, 8 cm), Luxembourg (20 cm), Austria
 (basemap.at, 30 cm), Belgium (Flanders and Wallonia, 25 cm), Germany (North
 Rhine-Westphalia 10 cm, Bavaria 40 cm, Berlin 20 cm), Czechia (ČÚZK, 20 cm), Poland
@@ -357,7 +357,7 @@ département's files at a time. The menu asks the last zoom, then which départe
 zoom 15, ~130 GB to 17, ~2 TB to 19 (one département to 19: ~20–30 GB). Bas-Rhin
 to zoom 17: 1.17 GB from a 22.8 GB download. To cap the download speed (MB/s, all
 parts together): `OIM_MAX_RATE=10 bash scripts/offline-maps.sh`, or `--max-rate 10` on
-`python3 scripts/offline-maps.py bdortho …`. Each
+`uv run --project scripts scripts/offline-maps.py bdortho …`. Each
 département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
 there to the zoom asked is skipped, a higher zoom makes it again.
 
@@ -369,7 +369,7 @@ Everything in `data/offline-maps/` is shown, whatever area it's of; past a file'
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
 shows. Copy `data/offline-maps/` along with an export to take it with you. Without
 questions: `build-region.sh --maps "sentinel2 fr_ign"` (downloaded after the build),
-or `python3 scripts/offline-maps.py maps --source ID --yes` (`--area`, `--units`,
+or `uv run --project scripts scripts/offline-maps.py maps --source ID --yes` (`--area`, `--units`,
 `--zoom`; `--help` lists the sources).
 
 ## Sharing a built database (export / import)

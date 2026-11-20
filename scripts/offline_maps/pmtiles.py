@@ -1,16 +1,18 @@
 """Fork: offline maps. A PMTiles v3 file's header: its zooms, what it covers, its
-tiles' format. The one reader the scripts have (the backend has the pmtiles
-package)."""
+tiles' format, how many tiles it has (decoded by the pmtiles package)."""
 
 from __future__ import annotations
 
 import re
-import struct
 from dataclasses import dataclass
 from pathlib import Path
 
+from pmtiles.tile import deserialize_header
+
 # The header's tile type byte, as the extension the tiles are served with.
 FORMATS = {1: "mvt", 2: "png", 3: "jpg", 4: "webp", 5: "avif"}
+# A PMTiles v3 header's length.
+HEADER_BYTES = 127
 
 
 @dataclass(frozen=True)
@@ -30,18 +32,19 @@ def read_header(path: Path) -> Header | None:
     """A file's header, None if it can't be read or isn't a PMTiles file."""
     try:
         with path.open("rb") as f:
-            raw = f.read(127)
+            raw = f.read(HEADER_BYTES)
     except OSError:
         return None
-    if len(raw) < 127 or raw[:7] != b"PMTiles":
+    if len(raw) < HEADER_BYTES or raw[:7] != b"PMTiles":
         return None
-    corners = struct.unpack_from("<4i", raw, 102)
+    h = deserialize_header(raw)
+    corners = (h["min_lon_e7"], h["min_lat_e7"], h["max_lon_e7"], h["max_lat_e7"])
     return Header(
-        minzoom=raw[100],
-        maxzoom=raw[101],
-        format=FORMATS.get(raw[99], ""),
+        minzoom=h["min_zoom"],
+        maxzoom=h["max_zoom"],
+        format=FORMATS.get(h["tile_type"].value, ""),
         bounds=tuple(v / 1e7 for v in corners) if any(corners) else None,  # type: ignore[arg-type]
-        tile_count=struct.unpack_from("<Q", raw, 72)[0],
+        tile_count=h["addressed_tiles_count"],
     )
 
 

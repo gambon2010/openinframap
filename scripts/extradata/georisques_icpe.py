@@ -5,6 +5,7 @@ import json
 import time
 from typing import ClassVar
 
+import httpx
 import psycopg2
 import psycopg2.extras
 
@@ -58,17 +59,19 @@ class GeorisquesICPE(FrenchSource):
 
     def fetch(self, department: str | None) -> list[dict]:
         """All the sites of a département (or of France), page by page."""
-        params = {"page_size": self.PAGE_SIZE}
+        params: dict[str, int | str] = {"page_size": self.PAGE_SIZE}
         if department:
             params["departement"] = department
         rows: list[dict] = []
         page, pages = 1, 1
         while page <= pages:
             query = {**params, "page": page}
+
+            def get_page(query: dict = query) -> httpx.Response:
+                return netsafe.checked(self.http.get(self.API, params=query))
+
             response = netsafe.safely(
-                lambda query=query: netsafe.checked(
-                    self.http.get(self.API, params=query)
-                ),
+                get_page,
                 self.API,
                 retries=3,
                 pause=10,

@@ -41,7 +41,7 @@ filter_extract() {
     [[ "$FILTER" == yes ]] || return 0
     section "Filtering the extract down to infrastructure..."
     local filtered="$OSM_DIR/$REGION_ID-filtered.osm.pbf" stamp
-    python3 "$REPO_ROOT/scripts/osm_filter.py" > "$OSM_DIR/filter.txt"
+    scripts_python "$REPO_ROOT/scripts/osm_filter.py" > "$OSM_DIR/filter.txt"
     stamp="$(stat -c '%s %Y' "$PBF_SOURCE") $(md5sum < "$OSM_DIR/filter.txt" | cut -d' ' -f1)"
     if [[ -f "$filtered" && "$(cat "$filtered.stamp" 2>/dev/null)" == "$stamp" ]]; then
         ok "Already filtered."
@@ -133,7 +133,7 @@ SQL
 # is checked against the new OSM data (which may now have some of it).
 import_extra_data() {
     local db_url="postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" args=()
-    if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_NEW" != yes ]] && command -v uv &>/dev/null; then
+    if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_NEW" != yes ]]; then
         section "Checking the kept extra data against the new OSM data..."
         uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" dedupe \
             || warn "Checking failed; the extra data is there but may overlap OSM. Retry with: uv run scripts/extra_data.py dedupe"

@@ -15,6 +15,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -31,7 +32,6 @@ RECORDED = [
     "gnome-terminal",
     "konsole",
     "xterm",
-    "uv",
     "osmium",
     "npm",
     "notify-send",
@@ -45,7 +45,7 @@ class Sandbox:
         shutil.copytree(
             SCRIPTS,
             root / "scripts",
-            ignore=shutil.ignore_patterns("tests", "__pycache__"),
+            ignore=shutil.ignore_patterns("tests", "__pycache__", ".venv"),
         )
         for folder in ("schema", "imposm"):
             shutil.copytree(
@@ -59,6 +59,7 @@ class Sandbox:
         bin_dir.mkdir()
         (bin_dir / "docker").symlink_to(FAKES / "docker")
         (bin_dir / "curl").symlink_to(FAKES / "curl")
+        (bin_dir / "uv").symlink_to(FAKES / "uv")
         for name in RECORDED:
             (bin_dir / name).symlink_to(FAKES / "recorder")
         self.log.touch()
@@ -71,6 +72,8 @@ class Sandbox:
             # The fake curl has no internet: don't wait long for it to come back.
             "NET_WAIT_SECONDS": "1",
             "NET_CHECK_EVERY": "1",
+            # The scripts' own Python (the fake uv runs it): the one the tests run in.
+            "FAKE_UV_PYTHON": sys.executable,
         }
 
     def run(

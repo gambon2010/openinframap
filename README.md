@@ -32,9 +32,9 @@ addresses need an optional Photon server.
 
 ## Getting started
 
-Needs Docker (with Compose v2), Node.js/npm, curl, python3 and unzip; plus
-[uv](https://docs.astral.sh/uv/) for the open data from outside OpenStreetMap (and the
-offline Wikidata photo cache).
+Needs Docker (with Compose v2), Node.js/npm, curl, python3, unzip and
+[uv](https://docs.astral.sh/uv/) (the scripts' Python packages, the open data from
+outside OpenStreetMap, the offline Wikidata photo cache).
 
 ```bash
 # First time: pick a region, build (or import) the database, create .env files,

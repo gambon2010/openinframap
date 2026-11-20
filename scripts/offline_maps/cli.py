@@ -1,4 +1,4 @@
-"""Fork: satellite imagery. The command line (python3 scripts/offline-maps.py <command>)."""
+"""Fork: satellite imagery. The command line (uv run --project scripts scripts/offline-maps.py <command>)."""
 
 from __future__ import annotations
 

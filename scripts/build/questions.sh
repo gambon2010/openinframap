@@ -187,15 +187,13 @@ find_kept_extra_data() {
 
 # find_extra_offer — which extra datasets cover the region (extra_data.py offer:
 # key <tab> label <tab> cost per line). EXTRA_COVERAGE: covered, none, or unknown
-# (a local file, offline, or no uv); the datasets in EXTRA_KEYS / _LABELS / _COSTS.
+# (a local file, or offline); the datasets in EXTRA_KEYS / _LABELS / _COSTS.
 find_extra_offer() {
     local offer="" status=2 key label cost
     EXTRA_COVERAGE=unknown
     EXTRA_KEYS=() EXTRA_LABELS=() EXTRA_COSTS=()
-    if command -v uv &>/dev/null; then
-        offer=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
-            && status=0 || status=$?
-    fi
+    offer=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
+        && status=0 || status=$?
     case "$status" in
         0) EXTRA_COVERAGE=covered ;;
         1) EXTRA_COVERAGE=none ;;
@@ -263,7 +261,7 @@ json.dump({"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [
 # The steps (each a function; the build runs them in order at the end)
 # ---------------------------------------------------------------------------
 
-# Docker, curl, python3, unzip (uv optional), and the osmium image.
+# Docker, curl, python3, unzip, uv, and the osmium image.
 check_prerequisites() {
     banner "build the map database"
     section "Checking prerequisites..."
@@ -272,7 +270,7 @@ check_prerequisites() {
     check_cmd curl    "dnf install curl  /  apt install curl"     || missing=1
     check_cmd python3 "dnf install python3  /  apt install python3" || missing=1
     check_cmd unzip   "dnf install unzip  /  apt install unzip"   || missing=1
-    check_cmd uv      "optional — https://docs.astral.sh/uv/ (for extra data like the French networks)" || true
+    check_cmd uv      "https://docs.astral.sh/uv/ (curl -LsSf https://astral.sh/uv/install.sh | sh)" || missing=1
     [[ "$missing" == 0 ]] || die "Install the missing tools above, then re-run this script."
     docker info >/dev/null 2>&1 || die "Docker is installed but not running (or your user can't access it)."
     docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required ('docker compose', not 'docker-compose')."
@@ -415,9 +413,7 @@ ask_boundaries_and_images() {
         info "offline use makes ~2 requests per second, so it can take hours for a"
         info "continent. You can always do it later with: uv run scripts/fetch_images.py"
         IMAGES=no
-        if ! command -v uv &>/dev/null; then
-            warn "uv isn't installed, so this step will be skipped."
-        elif ask_yes_no "Cache Wikidata images at the end of the build?" n; then
+        if ask_yes_no "Cache Wikidata images at the end of the build?" n; then
             IMAGES=yes
         fi
     fi
@@ -448,8 +444,6 @@ ask_extra_data() {
             fi
             if [[ "$ASSUME_YES" == 1 || "$EXTRA_COVERAGE" == none ]]; then
                 :  # nothing more (kept data still goes back)
-            elif ! command -v uv &>/dev/null; then
-                warn "uv isn't installed, so extra data can't be imported."
             elif [[ "$EXTRA_COVERAGE" == unknown ]]; then
                 [[ -n "$EXTRA_KEPT" ]] || section "Extra data (not from OpenStreetMap)"
                 info "Couldn't check which extra data covers this region (a local file, or no internet)."
@@ -484,14 +478,14 @@ prepare_background_map() {
     # The whole world zoomed out (to zoom 8: every country's borders and names,
     # 560 MB) comes by default, once; --basemap none leaves it out.
     if [[ "$BASEMAP_MODE" != none && ! -f "$OFFLINE_MAPS_DIR/world.pmtiles" ]]; then
-        python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only --yes \
+        scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only --yes \
             --source protomaps --area world --zoom 8 \
             --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
             || warn "Couldn't plan the world's background map (no network?)."
         SATELLITE_MENU=1
     fi
     if [[ "$BASEMAP_MODE" == full ]]; then
-        python3 -I "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only --yes \
+        scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only --yes \
             --source protomaps --area "$(maps_area)" --region "$(maps_area)" \
             --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
             || warn "Couldn't plan the background map; the build goes on without it."
