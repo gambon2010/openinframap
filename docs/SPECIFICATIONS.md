@@ -283,6 +283,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.61 | The UI pieces not yet on the standard (STYLE.md) brought to it. | 📋 planned (2026-11-20) `docs/plans/ui-standard.md` |
 | 10.62 | My layers' drawing and editing on the map by Terra Draw (a maintained library) instead of our own code. | 🗂 backlog (2026-11-20) prototype first: `docs/plans/reuse-review.md` |
 | 10.63 | My layers' KML export by `@placemarkio/tokml` (the import's sister library) instead of KML written by our own code, keeping our extra details so files come back intact. | 🗂 backlog (2026-11-20) `docs/plans/reuse-review.md` |
+| 10.64 | Sentinel-2 imagery kept up to date for a chosen area: newer images downloaded for it, and its history browsable (the same place at earlier dates). | 🗂 backlog (2026-11-20) |
 
 ## 11. Quality
 
