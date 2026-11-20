@@ -95,27 +95,29 @@ def tile_position(lon: float, lat: float, z: int) -> tuple[float, float]:
     return column, row
 
 
+def pixel_height(column: int, row: int, version: str) -> float:
+    """One terrain pixel's height at zoom 13, by its column and row across the whole
+    world; NaN where there's no terrain."""
+    tile = neighbour(FINEST_ZOOM, column // TILE_PIXELS, row // TILE_PIXELS, version)
+    return math.nan if tile is None else float(tile[row % TILE_PIXELS, column % TILE_PIXELS])
+
+
 def elevation(lon: float, lat: float) -> float | None:
     """The ground's height at a point, metres (from zoom 13's pixels, interpolated
     between the four around it), None where there's no terrain."""
     column, row = tile_position(lon, lat, FINEST_ZOOM)
-    x, y = int(column // TILE_PIXELS), int(row // TILE_PIXELS)
-    around = window(FINEST_ZOOM, x, y, margin=1)
-    if around is None:
-        return None
     # Pixel values are at pixel centres: half a pixel in from their edges.
-    gx = column - x * TILE_PIXELS + around.left - 0.5
-    gy = row - y * TILE_PIXELS + around.top - 0.5
-    return bilinear(around.heights, gx, gy)
+    gx, gy = column - 0.5, row - 0.5
+    c, r = math.floor(gx), math.floor(gy)
+    version = files.TERRAIN_FILES.version()
+    corners = np.array([[pixel_height(c + dx, r + dy, version) for dx in (0, 1)] for dy in (0, 1)])
+    return bilinear(corners, gx - c, gy - r)
 
 
-def bilinear(heights: np.ndarray, gx: float, gy: float) -> float | None:
-    """A grid's value between its points (column gx, row gy), None if any of the
-    four around it is unknown."""
-    c, r = int(math.floor(gx)), int(math.floor(gy))
-    fx, fy = gx - c, gy - r
-    corners = heights[r : r + 2, c : c + 2]
-    if corners.shape != (2, 2) or np.isnan(corners).any():
+def bilinear(corners: np.ndarray, fx: float, fy: float) -> float | None:
+    """The value a fraction (fx across, fy down) between four corners (2 x 2), None
+    if any is unknown."""
+    if np.isnan(corners).any():
         return None
     top = corners[0, 0] * (1 - fx) + corners[0, 1] * fx
     bottom = corners[1, 0] * (1 - fx) + corners[1, 1] * fx
@@ -132,14 +134,10 @@ def slope(lon: float, lat: float) -> float | None:
     the 3 x 3 pixels around it, as GDAL's gdaldem slope computes it; None where
     there's no terrain."""
     column, row = tile_position(lon, lat, FINEST_ZOOM)
-    x, y = int(column // TILE_PIXELS), int(row // TILE_PIXELS)
-    around = window(FINEST_ZOOM, x, y, margin=1)
-    if around is None:
-        return None
-    c = int(column - x * TILE_PIXELS + around.left)
-    r = int(row - y * TILE_PIXELS + around.top)
-    cells = around.heights[r - 1 : r + 2, c - 1 : c + 2]
-    if cells.shape != (3, 3) or np.isnan(cells).any():
+    c, r = int(column), int(row)
+    version = files.TERRAIN_FILES.version()
+    cells = np.array([[pixel_height(c + dx, r + dy, version) for dx in (-1, 0, 1)] for dy in (-1, 0, 1)])
+    if np.isnan(cells).any():
         return None
     return horn_slope(cells, ground_metres_per_pixel(lat, FINEST_ZOOM))
 
