@@ -41,7 +41,9 @@ class Maps(SourceOffers):
         self.refresh()
 
     def refresh(self) -> None:
+        """What's in the folder, read again; the map's imagery list with it."""
         self.entries = inventory.load(self.folder)
+        inventory.write_imagery_list(self.folder)
 
     def within(self, a: str, b: str) -> bool:
         return self.index.within(a, b)

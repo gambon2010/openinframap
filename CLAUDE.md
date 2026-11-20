@@ -141,7 +141,7 @@ cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./lay
 ## Environment Variables
 
 `launch.sh` creates both files if missing (`start.sh` refreshes the imagery list):
-- `web/.env`: `VITE_TEGOLA_URL`, `VITE_BACKEND_BASE_URL`, `VITE_BASEMAP_URL` (optional; the default is the backend's `/background`; only local tiles), `VITE_SATELLITE_TIERS` (set by the scripts), optional `VITE_PHOTON_URL`. Settings → Map sources overrides them per tab.
+- `web/.env`: `VITE_TEGOLA_URL`, `VITE_BACKEND_BASE_URL`, `VITE_BASEMAP_URL` (optional; the default is the backend's `/background`; only local tiles), optional `VITE_PHOTON_URL`. The satellite imagery isn't a setting: the map reads the list the scripts write (`data/offline-maps/imagery.json`, the backend's `/imagery`). Settings → Map sources overrides them per tab.
 - `web-backend/.env`: `DATABASE_URL` (`postgresql+asyncpg://`) for running the backend on the host.
 
 ## Gotchas

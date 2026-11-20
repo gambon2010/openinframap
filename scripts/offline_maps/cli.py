@@ -20,7 +20,7 @@ from .download import MBTiles, cell_exists, download_tiles
 from .estimate import world_cells, world_overview_tiles, worldcover_cells
 from .extract import PMTILES_IMAGE, command_basemap, command_zoomed_out
 from .gdal import regional_pipeline, to_pmtiles
-from .inventory import imagery_summary, imagery_tiers
+from .inventory import imagery_list, imagery_summary, write_imagery_list
 from .maps import command_maps
 from .sources import (
     AERIAL,
@@ -144,9 +144,11 @@ def detailed_outlines(args, source: Source) -> list[list[Ring]]:
     return outlines
 
 
-def command_tiers(args) -> None:
-    """The imagery there is, as the frontend's VITE_SATELLITE_TIERS (one line)."""
-    print(imagery_tiers(Path(args.maps_dir), args.server))
+def command_imagery(args) -> None:
+    """Write the map's imagery list (start.sh), and say how many files it has."""
+    folder = Path(args.maps_dir)
+    write_imagery_list(folder)
+    print(len(imagery_list(folder)))
 
 
 def command_summary(args) -> None:
@@ -323,11 +325,8 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     # For the scripts.
     sub.add_parser("sources", help="the aerial photo sources (JSON)")
-    p = sub.add_parser("tiers", help="the imagery there is, as VITE_SATELLITE_TIERS")
+    p = sub.add_parser("imagery", help="write the map's imagery list (imagery.json)")
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
-    p.add_argument(
-        "--server", default="http://localhost:8810", help="the imagery server"
-    )
     p = sub.add_parser("summary", help="the imagery there is, in words")
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
     args = parser.parse_args(list(argv) if argv is not None else None)
@@ -345,6 +344,6 @@ def run_command(args) -> None:
         "zoomed-out": command_zoomed_out,
         "terrain": command_terrain,
         "sources": command_sources,
-        "tiers": command_tiers,
+        "imagery": command_imagery,
         "summary": command_summary,
     }[args.command](args)

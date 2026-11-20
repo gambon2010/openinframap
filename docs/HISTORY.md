@@ -1205,6 +1205,13 @@ default). Counts are France's OSM data in October 2026.
   errors in the scripts fixed and mypy added to CI. The setup scripts' tests get a
   fake `uv` that runs the scripts' own Python. The "is uv installed?" branches
   (extra data, the Wikidata cache) removed.
+- **The imagery found at runtime:** the scripts write the imagery list as a file
+  (`data/offline-maps/imagery.json`, after each download or removal and at start);
+  the backend serves it (`/imagery`) and the map reads it when it opens, instead of
+  `VITE_SATELLITE_TIERS` baked into `web/.env` (imagery downloaded while the app
+  runs shows on a page reload, no restart). The list names files, not servers: the
+  map builds the tiles' address (`IMAGERY_URL`). Credits no longer need to avoid
+  `;` and `|`.
 
 ## Extra data (not from OpenStreetMap)
 

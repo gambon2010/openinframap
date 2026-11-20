@@ -77,6 +77,10 @@ export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
 export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
 // Contour lines the backend makes from it (vector tiles).
 export const CONTOURS_URL = `${BACKEND_BASE_URL}/terrain/contours/{z}/{x}/{y}.mvt`
+// The satellite imagery the map shows: the list the scripts write (the backend's
+// /imagery), and where its tiles are served (the `satellite` service, through the gate).
+export const IMAGERY_LIST_URL = `${BACKEND_BASE_URL}/imagery`
+export const IMAGERY_URL = throughGate('http://localhost:8810')
 // The ground's height at a point (?lon=&lat=), for the coordinates box.
 export const ELEVATION_URL = `${BACKEND_BASE_URL}/terrain/elevation`
 // The line of sight between two points (?from=lon,lat&to=lon,lat&observer=&target=).

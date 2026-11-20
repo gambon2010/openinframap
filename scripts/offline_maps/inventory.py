@@ -28,6 +28,8 @@ from .ui import human
 INVENTORY = "inventory.json"
 SETTINGS = "settings.json"
 LOCK = ".offline-maps.lock"
+# The imagery the map shows (imagery_list): read by the backend's /imagery.
+IMAGERY_LIST = "imagery.json"
 # What holds the lock (a download's description), beside it.
 HOLDER = ".offline-maps.holder"
 # Settings asked once: a speed cap (MB/s, None: none), the aerial photos' zoom.
@@ -81,13 +83,13 @@ def identify(name: str) -> tuple[str, str, str] | None:
 
 def attribution_for(name: str) -> str:
     """The credit line of an imagery file, from its name ("" if it isn't one). The
-    scripts pass it to the frontend with the file (VITE_SATELLITE_TIERS): the
-    sources' credits are the only list."""
+    scripts pass it to the frontend with the file (the imagery list,
+    IMAGERY_LIST): the sources' credits are the only list."""
     what = identify(Path(name).name)
     return SOURCES[what[0]].credit if what else ""
 
 
-# --- What the map is told (VITE_SATELLITE_TIERS) ----------------------------------
+# --- What the map is told (the imagery list) ---------------------------------------
 
 # In the order the map stacks them: Blue Marble, Sentinel-2, aerial photos.
 IMAGERY_LAYERS = ("overview", "regional", "detailed")
@@ -112,13 +114,13 @@ def imagery_files(folder: Path) -> list[tuple[Path, Source]]:
     return [(path, source) for *_, path, source in sorted(found)]
 
 
-def imagery_tiers(folder: Path, server: str) -> str:
-    """The imagery as the frontend reads it (fork/modules/satellite):
-    "URL MINZOOM MAXZOOM [W,S,E,N]|CREDIT;..." ("" if there's none). Each file over
-    the zooms its header says (Sentinel-2 never before its source's first zoom:
-    further out, Blue Marble shows), with its bounds, so the map only asks the
-    files that cover what's on screen (one per French département)."""
-    tiers = []
+def imagery_list(folder: Path) -> list[dict]:
+    """The imagery the map shows (fork/modules/satellite reads it, through the
+    backend: IMAGERY_LIST), coarsest first: each file's name (without .pmtiles), its
+    tiles' format, the zooms its header says (Sentinel-2 never before its source's
+    first zoom: further out, Blue Marble shows), its bounds (so the map only asks the
+    files that cover what's on screen: one per French département) and its credit."""
+    found = []
     for path, source in imagery_files(folder):
         header = read_header(path)
         if not header:
@@ -128,14 +130,28 @@ def imagery_tiers(folder: Path, server: str) -> str:
             if source.layer == "regional"
             else header.minzoom
         )
-        bounds = (
-            " " + ",".join(f"{v:.5f}" for v in header.bounds) if header.bounds else ""
+        found.append(
+            {
+                "file": path.stem,
+                "format": header.format or source.format,
+                "minzoom": first,
+                "maxzoom": header.maxzoom,
+                "bounds": [round(v, 5) for v in header.bounds]
+                if header.bounds
+                else None,
+                "credit": source.credit,
+            }
         )
-        ext = header.format or source.format
-        tiers.append(
-            f"{server}/{path.stem}/{{z}}/{{x}}/{{y}}.{ext} {first} {header.maxzoom}{bounds}|{source.credit}"
-        )
-    return ";".join(tiers)
+    return found
+
+
+def write_imagery_list(folder: Path) -> None:
+    """The imagery list written beside the files (IMAGERY_LIST), for the map; rewritten
+    whenever the folder is read again (after each download or removal, at start)."""
+    path = folder / IMAGERY_LIST
+    partial = path.with_suffix(".partial")
+    partial.write_text(json.dumps(imagery_list(folder), indent=1) + "\n")
+    partial.replace(path)
 
 
 def imagery_summary(folder: Path) -> str:

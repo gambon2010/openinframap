@@ -22,8 +22,6 @@ def test_a_source_declares_what_the_menus_need(name):
     s = importlib.import_module(f"offline_maps.sources.{name}").SOURCE
     assert isinstance(s, Source) and s.id == name
     assert s.name and s.title and s.credit
-    # Credits travel in VITE_SATELLITE_TIERS, between ";" and after "|".
-    assert ";" not in s.credit and "|" not in s.credit
     assert s.layer in LAYERS and s.fetch in FETCH_KINDS and s.address
     assert 0 <= s.first_zoom <= s.last_zoom <= 22
     if s.layer == "basemap":

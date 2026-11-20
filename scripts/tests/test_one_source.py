@@ -37,9 +37,9 @@ def test_ports_agree_everywhere():
         assert f":{port}/, '" in frontend, service
         if default:
             assert default.format(port) in frontend, service
-    # The imagery list's default server (offline-maps.py tiers, run by hand).
-    cli = (ROOT / "scripts" / "offline_maps" / "cli.py").read_text()
-    assert f'"http://localhost:{compose_port("satellite")}"' in cli
+    # Where the map asks for the imagery (config.ts IMAGERY_URL).
+    imagery_port = compose_port("satellite")
+    assert f"'http://localhost:{imagery_port}'" in frontend
     # The gate's own port: where the app is opened, and where the imagery says it is.
     gate_port = shell("GATE_PORT")
     assert f"listen {gate_port} ssl;" in gate

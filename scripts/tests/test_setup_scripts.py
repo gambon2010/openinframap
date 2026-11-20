@@ -296,12 +296,9 @@ def test_import(sandbox):
         < first("pg_restore", "--exit-on-error")
     )
     assert (sandbox.root / "data" / "userdata" / "userdata.dump").exists()
-    # The satellite imagery copied along is switched on.
-    env = (sandbox.root / "web" / ".env").read_text()
-    assert (
-        "VITE_SATELLITE_TIERS=http://localhost:8810/world.sat-overview/{z}/{x}/{y}.jpg 0 8"
-        in env
-    )
+    # The satellite imagery copied along is in the map's imagery list.
+    listed = json.loads((sandbox.root / "data" / "offline-maps" / "imagery.json").read_text())
+    assert [i["file"] for i in listed] == ["world.sat-overview"]
     # The tile server is recreated so it doesn't serve the old data's tiles.
     assert sandbox.docker_calls("up", "--force-recreate", "tegola")
 

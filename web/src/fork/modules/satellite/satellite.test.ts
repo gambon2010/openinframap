@@ -1,51 +1,65 @@
 import { describe, expect, it, test } from 'vitest'
-import { covers, parseTiers, tileJsonUrl } from './index.ts'
+import { covers, tiersOf } from './tiers.ts'
 
-describe('VITE_SATELLITE_TIERS', () => {
-  test('tiers, coarsest first', () => {
-    const tiers = parseTiers(
-      'http://x/lux.sat-regional/{z}/{x}/{y}.webp 9 12|Copernicus (CC BY 4.0);http://x/lux.sat-overview/{z}/{x}/{y}.jpg 0 8|NASA Blue Marble'
+describe('the imagery list', () => {
+  test('tiers, coarsest first, their tiles at the server', () => {
+    const tiers = tiersOf(
+      [
+        {
+          file: 'lux.sat-regional',
+          format: 'webp',
+          minzoom: 9,
+          maxzoom: 12,
+          bounds: null,
+          credit: 'Copernicus'
+        },
+        { file: 'world.sat-overview', format: 'jpg', minzoom: 0, maxzoom: 8, bounds: null, credit: 'NASA' }
+      ],
+      'https://h/satellite'
     )
     expect(tiers).toEqual([
       {
-        url: 'http://x/lux.sat-overview/{z}/{x}/{y}.jpg',
+        url: 'https://h/satellite/world.sat-overview/{z}/{x}/{y}.jpg',
         minzoom: 0,
         maxzoom: 8,
-        attribution: 'NASA Blue Marble'
+        attribution: 'NASA'
       },
       {
-        url: 'http://x/lux.sat-regional/{z}/{x}/{y}.webp',
+        url: 'https://h/satellite/lux.sat-regional/{z}/{x}/{y}.webp',
         minzoom: 9,
         maxzoom: 12,
-        attribution: 'Copernicus (CC BY 4.0)'
+        attribution: 'Copernicus'
       }
     ])
-    // Written before credits came with the tiers: none.
-    expect(parseTiers('http://x/a/{z}/{x}/{y}.jpg 0 8')[0].attribution).toBe('')
   })
 
-  test('nothing set, or broken entries left out', () => {
-    expect(parseTiers(undefined)).toEqual([])
-    expect(parseTiers('')).toEqual([])
-    expect(
-      parseTiers('http://no-template 0 8;http://x/{z}/{x}/{y}.jpg 9;http://x/{z}/{x}/{y}.jpg 12 9')
-    ).toEqual([])
+  test('nothing, or broken entries, left out', () => {
+    expect(tiersOf(null, 'x')).toEqual([])
+    expect(tiersOf({ not: 'a list' }, 'x')).toEqual([])
+    expect(tiersOf([{ file: 'a', format: 'jpg', minzoom: 12, maxzoom: 9 }, { format: 'jpg' }], 'x')).toEqual(
+      []
+    )
   })
 })
 
 describe('imagery coverage', () => {
-  it('reads the bounds a tier may have', () => {
-    const [tier] = parseTiers('http://x/fr-67/{z}/{x}/{y}.webp 14 17 6.9,48.1,8.3,49.1|© IGN')
+  it('reads the bounds an entry has', () => {
+    const [tier] = tiersOf(
+      [
+        {
+          file: 'fr-67',
+          format: 'webp',
+          minzoom: 14,
+          maxzoom: 17,
+          bounds: [6.9, 48.1, 8.3, 49.1],
+          credit: '© IGN'
+        }
+      ],
+      'x'
+    )
     expect(tier.bounds).toEqual([6.9, 48.1, 8.3, 49.1])
-    expect(tier.attribution).toBe('© IGN')
-    expect(parseTiers('http://x/{z}/{x}/{y}.jpg 0 8')[0].bounds).toBeUndefined()
   })
 
-  it('reads the bounds from the TileJSON next to the tiles', () => {
-    expect(tileJsonUrl('http://h:8800/satellite/luxembourg.sat-regional/{z}/{x}/{y}.webp')).toBe(
-      'http://h:8800/satellite/luxembourg.sat-regional.json'
-    )
-  })
   it('is offered only where some imagery is', () => {
     const luxembourg: [number, number, number, number] = [5.73, 49.44, 6.53, 50.18]
     expect(covers([luxembourg], [6, 49.5, 6.2, 49.7])).toBe(true)

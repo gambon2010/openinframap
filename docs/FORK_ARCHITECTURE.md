@@ -363,9 +363,11 @@ the schema fingerprint builds and exports carry.
   département at a time, never IGN's tile server, which blocks bulk downloads) as
   `<area>.sat-*.pmtiles`, background maps as `<area>.pmtiles`. Its menu is
   `offline-maps.sh` (for the region built, no rebuild; `build-region.sh` opens it
-  with `--queue-only` and downloads the queue after the build); `select_satellite`
-  writes `VITE_SATELLITE_TIERS` (every imagery file and its credit; `start.sh`
-  refreshes it). The package:
+  with `--queue-only` and downloads the queue after the build); the imagery list
+  (`data/offline-maps/imagery.json`: every imagery file, its zooms, bounds and
+  credit) is written whenever the menu reads the folder again and by
+  `select_satellite` (`start.sh`); the backend serves it (`/imagery`) and the map
+  reads it when it opens (no restart). The package:
   - `sources/`: one file per source (`SOURCE`, fields in `source.py`): Blue
     Marble, Sentinel-2, the aerial photos by country, the background map; read into
     `SOURCES`, credits;
@@ -421,7 +423,7 @@ the schema fingerprint builds and exports carry.
    `tests/test_sources.py` checks it.
 2. Check that it answers tile requests and allows offline copies.
 
-The credit reaches the map by itself (`VITE_SATELLITE_TIERS`).
+The credit reaches the map by itself (the imagery list).
 
 **Something clickable on the map:** an area clickable anywhere inside, or a thin line
 easy to hit: `clickableArea` / `hitLine` in `core/map-style.ts` (their `<id>_hit`

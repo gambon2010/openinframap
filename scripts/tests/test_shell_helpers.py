@@ -3,6 +3,7 @@
 import json
 import re
 import subprocess
+from pathlib import Path
 
 import fake_pmtiles
 from conftest import BUILD_SCRIPT, SCRIPTS
@@ -36,18 +37,29 @@ def test_set_env_line(tmp_path):
     assert env.read_text() == "B=3\nC=4\n"
 
 
-def test_satellite_tiers_value(tmp_path):
+def imagery(folder: Path) -> list[dict]:
+    """The map's imagery list, written as start.sh writes it (offline-maps.py imagery)."""
+    bash(
+        f'scripts_python "$REPO_ROOT/scripts/offline-maps.py" imagery --maps-dir "{folder}" >/dev/null'
+    )
+    return json.loads((folder / "imagery.json").read_text())
+
+
+def files_and_zooms(found: list[dict]) -> list[tuple[str, str, int, int]]:
+    return [(i["file"], i["format"], i["minzoom"], i["maxzoom"]) for i in found]
+
+
+def test_the_imagery_list(tmp_path):
     (tmp_path / "world.sat-overview.pmtiles").write_bytes(fake_pmtiles.header(0, 8))
     (tmp_path / "lux.sat-regional.pmtiles").write_bytes(fake_pmtiles.header(9, 13))
     # A region's own Blue Marble (made before the world's): not shown.
     (tmp_path / "lux.sat-overview.pmtiles").write_bytes(fake_pmtiles.header(0, 8))
-    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
-    assert "|NASA Blue Marble;" in value
-    value = re.sub(r"\|[^;]*", "", value)
-    assert value == (
-        "http://localhost:8810/world.sat-overview/{z}/{x}/{y}.jpg 0 8;"
-        "http://localhost:8810/lux.sat-regional/{z}/{x}/{y}.webp 9 13"
-    )
+    found = imagery(tmp_path)
+    assert found[0]["credit"].startswith("NASA Blue Marble")
+    assert files_and_zooms(found) == [
+        ("world.sat-overview", "jpg", 0, 8),
+        ("lux.sat-regional", "webp", 9, 13),
+    ]
     assert (
         bash("has_satellite && echo yes || echo no", OFFLINE_MAPS_DIR=str(tmp_path))
         == "yes"
@@ -83,7 +95,7 @@ export_outdated && echo outdated || echo current
     assert bash(fake, EXPORTS_DIR=str(tmp_path), BUILT="B2", EXTRA="") == "current"
 
 
-def test_tiers_list_every_area_and_source(tmp_path):
+def test_the_imagery_list_has_every_area_and_source(tmp_path):
     # Each file as offline-maps.py writes it: its own first and last zoom in its header.
     def pmtiles(name, minzoom, maxzoom, tile_format):
         fake_pmtiles.write(tmp_path / name, minzoom, maxzoom, tile_format=tile_format)
@@ -96,14 +108,14 @@ def test_tiers_list_every_area_and_source(tmp_path):
     pmtiles(
         "notes.sat-detailed-nobody.pmtiles", 14, 15, "jpg"
     )  # no such source: not shown
-    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
-    assert "Digitaal Vlaanderen" in value
-    assert re.sub(r"\|[^;]*", "", value).split(";") == [
-        "http://localhost:8810/world.sat-overview/{z}/{x}/{y}.jpg 0 8",
-        "http://localhost:8810/world.sat-regional/{z}/{x}/{y}.webp 9 10",
-        "http://localhost:8810/bayern.sat-regional/{z}/{x}/{y}.webp 9 12",
-        "http://localhost:8810/alsace.sat-detailed-fr_ign/{z}/{x}/{y}.jpg 14 15",
-        "http://localhost:8810/belgium.sat-detailed-be_flanders/{z}/{x}/{y}.png 14 17",
+    found = imagery(tmp_path)
+    assert any("Digitaal Vlaanderen" in i["credit"] for i in found)
+    assert files_and_zooms(found) == [
+        ("world.sat-overview", "jpg", 0, 8),
+        ("world.sat-regional", "webp", 9, 10),
+        ("bayern.sat-regional", "webp", 9, 12),
+        ("alsace.sat-detailed-fr_ign", "jpg", 14, 15),
+        ("belgium.sat-detailed-be_flanders", "png", 14, 17),
     ]
 
 
@@ -120,11 +132,11 @@ def test_departement_files_carry_their_bounds_and_are_summed_up(tmp_path):
             tile_format="webp",
             bounds=box,
         )
-    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
-    assert (
-        "http://localhost:8810/fr-67.sat-detailed-fr_ign/{z}/{x}/{y}.webp 14 17 "
-        "6.94000,48.12000,8.23000,49.08000|© IGN (Licence Ouverte)"
-    ) in value
+    fr67 = next(
+        i for i in imagery(tmp_path) if i["file"] == "fr-67.sat-detailed-fr_ign"
+    )
+    assert fr67["bounds"] == [6.94, 48.12, 8.23, 49.08]
+    assert fr67["credit"] == "© IGN (Licence Ouverte)"
     summary = bash("satellite_summary", OFFLINE_MAPS_DIR=str(tmp_path))
     assert summary.startswith("IGN photos of 2 départements (")
 
@@ -304,8 +316,9 @@ def test_distances_in_the_build_sql_are_real_metres():
 
 def test_sentinel_shown_from_its_first_zoom_whatever_its_file_holds(tmp_path):
     (tmp_path / "france.sat-regional.pmtiles").write_bytes(fake_pmtiles.header(5, 13))
-    value = bash("satellite_tiers_value", OFFLINE_MAPS_DIR=str(tmp_path))
-    assert "france.sat-regional/{z}/{x}/{y}.webp 7 13" in value
+    assert files_and_zooms(imagery(tmp_path)) == [
+        ("france.sat-regional", "webp", 7, 13)
+    ]
 
 
 def test_the_build_asks_with_the_offline_maps_menu_and_downloads_after(tmp_path):

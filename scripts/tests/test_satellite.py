@@ -309,8 +309,6 @@ def test_every_imagery_file_has_its_credit():
     for source_id, source in AERIAL.items():
         credit = attribution_for(f"area.sat-detailed-{source_id}.pmtiles")
         assert credit == source.credit
-        # Credits travel in VITE_SATELLITE_TIERS, between ";" and after "|".
-        assert ";" not in credit and "|" not in credit
     assert attribution_for("notes.txt") == ""
 
 

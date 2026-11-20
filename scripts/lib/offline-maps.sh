@@ -22,31 +22,17 @@ satellite_summary() {
     scripts_python "$REPO_ROOT/scripts/offline-maps.py" summary --maps-dir "$OFFLINE_MAPS_DIR"
 }
 
-# The imagery as the frontend reads it (VITE_SATELLITE_TIERS; empty: none):
-# every imagery file, with its zooms, bounds and credit
-# (scripts/offline_maps/inventory.py imagery_tiers).
-satellite_tiers_value() {
-    scripts_python "$REPO_ROOT/scripts/offline-maps.py" tiers --maps-dir "$OFFLINE_MAPS_DIR" \
-        --server "http://localhost:$SATELLITE_PORT"
-}
-
-# Point the frontend at the satellite imagery there is (or drop the setting if
-# there's none), and start the server that serves it.
+# Write the map's imagery list (data/offline-maps/imagery.json: every imagery file,
+# with its zooms, bounds and credit; the backend serves it, the map reads it when it
+# opens: scripts/offline_maps/inventory.py imagery_list), and start the server that
+# serves the imagery if there's any.
 select_satellite() {
-    local current value
-    ensure_web_env
-    current=$(grep -E '^VITE_SATELLITE_TIERS=' "$WEB_ENV" | cut -d= -f2- || true)
-    value=$(satellite_tiers_value)
-    if [[ "$current" != "$value" ]]; then
-        set_env_line "$WEB_ENV" VITE_SATELLITE_TIERS "$value"
-        BASEMAP_CHANGED=1
-    fi
-    if [[ -n "$value" ]]; then
+    local count
+    mkdir -p "$OFFLINE_MAPS_DIR"
+    count=$(scripts_python "$REPO_ROOT/scripts/offline-maps.py" imagery --maps-dir "$OFFLINE_MAPS_DIR")
+    if [[ "$count" != 0 ]]; then
         up_services satellite
-        ok "Satellite imagery: $(satellite_summary). Turn it on in Settings → Background."
-    fi
-    if [[ "${BASEMAP_CHANGED:-0}" == 1 ]] && port_in_use "$FRONTEND_PORT"; then
-        warn "Restart the frontend to use the new imagery (Ctrl+C in its window, then bash scripts/start.sh)."
+        ok "Satellite imagery: $(satellite_summary). Turn it on with the satellite button."
     fi
 }
 

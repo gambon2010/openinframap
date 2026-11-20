@@ -268,7 +268,7 @@ the build) and on its own, for the region you already have, without rebuilding
 (your map data and layers stay):
 
 ```bash
-bash scripts/offline-maps.sh      # the menu; then restart the frontend
+bash scripts/offline-maps.sh      # the menu; reload the map's page to see what's new
 ```
 
 ```
