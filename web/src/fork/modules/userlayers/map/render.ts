@@ -14,7 +14,7 @@ import { isDirection } from '../graphics/variants.ts'
 import { ensureImage, iconName } from './icons.ts'
 import { Measurement } from '../measure/features.types.ts'
 import { measurementFeatures, measurementOf } from '../measure/features.ts'
-import { measurePrefs } from '../measure/prefs.ts'
+import { measurePrefs } from '../../../services/measure-prefs.ts'
 import {
   axisControlPoints,
   axisWidth,

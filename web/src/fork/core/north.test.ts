@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { parseMgrs, toMgrs } from '../../../core/mgrs.ts'
-import { bearing } from './geo.ts'
+import { parseMgrs, toMgrs } from './mgrs.ts'
+import { bearing } from './earth.ts'
 import { declination, fromNorth, gridConvergence, offset } from './north.ts'
-import { legBearing } from './features.ts'
 
 describe('norths', () => {
   test('magnetic: about 3.4° east in Alsace (WMM2025), west in Canada', () => {
@@ -29,10 +28,5 @@ describe('norths', () => {
     // 1° true is about 357.6° magnetic (north passes 0).
     expect(magnetic).toBeGreaterThan(357)
     expect(magnetic).toBeLessThan(358.5)
-  })
-
-  test("a leg's label says which north", () => {
-    expect(legBearing([7, 47], [7, 48], 'true')).toBe('000°T (0 mils)')
-    expect(legBearing([7, 47], [7, 48], 'grid')).toMatch(/^\d{3}°G \(\d+ mils\)$/)
   })
 })

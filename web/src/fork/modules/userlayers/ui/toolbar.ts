@@ -10,7 +10,7 @@ import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
-import { measurePrefs } from '../measure/prefs.ts'
+import { measurePrefs } from '../../../services/measure-prefs.ts'
 
 /** The map toolbar's tools: [id, glyph, label, key]. */
 export const TOOLS: [string, string, string, string][] = [

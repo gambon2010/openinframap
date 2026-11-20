@@ -1,7 +1,7 @@
 // Fork: measurements drawn on the map (features.ts): its types.
-import { North } from './north.ts'
+import { North } from '../../../core/north.ts'
 import { TickView } from './ticks.types.ts'
-import { LngLat } from './geo.ts'
+import { LngLat } from '../../../core/earth.ts'
 
 export type MeasureType = 'distance' | 'area' | 'rings'
 

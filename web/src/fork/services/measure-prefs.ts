@@ -2,8 +2,10 @@
 // north bearings are measured from (set in My layers' settings), and the distances
 // new range rings get (the last set on a ring's card). Kept per account in
 // personal.ts: the store loads them here and saves what changes.
-import { North } from './north.ts'
-import { DEFAULT_RADII } from './features.ts'
+import { North } from '../core/north.ts'
+
+/** The distances new range rings get at first (metres). */
+export const DEFAULT_RADII = [1000, 5000, 10000]
 
 export interface MeasurePrefs {
   north: North

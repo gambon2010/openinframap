@@ -1,4 +1,4 @@
-import { groundDistance, toDegrees, toRadians } from '../../../core/geo.ts'
+import { groundDistance, toDegrees, toRadians } from './geo.ts'
 // Fork: distances, areas, bearings and circles on the Earth (a sphere of the mean
 // radius: within 0.5 % of the ellipsoid, enough to measure on a map). Pure.
 export type LngLat = [lng: number, lat: number]

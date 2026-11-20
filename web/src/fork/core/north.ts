@@ -3,7 +3,7 @@
 // (declination from the World Magnetic Model 2025, `magvar`, offline; valid to
 // 2030). Grid north: "up" on the UTM/MGRS grid (its convergence from true north).
 import { magvar } from 'magvar'
-import { toDegrees, toRadians } from '../../../core/geo.ts'
+import { toDegrees, toRadians } from './geo.ts'
 
 export type North = 'true' | 'magnetic' | 'grid'
 

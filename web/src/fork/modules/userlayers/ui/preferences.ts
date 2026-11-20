@@ -9,8 +9,8 @@ import { getLabelLevel, setLabelLevel } from '../map/symbols.ts'
 import { GraphicLabelChoice } from '../graphics/labels.types.ts'
 import { graphicLabelChoice, setGraphicLabelChoice } from '../graphics/labels.ts'
 import { LabelLevel } from '../model/fields.types.ts'
-import { measurePrefs } from '../measure/prefs.ts'
-import type { North } from '../measure/north.ts'
+import { measurePrefs } from '../../../services/measure-prefs.ts'
+import type { North } from '../../../core/north.ts'
 import { newItemColour, setNewItemColour } from '../map/new-colour.ts'
 
 /** A dropdown of [value, label] choices. */

@@ -11,7 +11,7 @@ import { StaleError } from './api.ts'
 import { Bases, Conflict, baseOf, changeKey, featureKey, reconcile } from './reconcile.ts'
 import { FeatureState, LayerState } from './merge.ts'
 import { PersonalSettings } from './personal.ts'
-import { measurePrefs } from '../measure/prefs.ts'
+import { measurePrefs } from '../../../services/measure-prefs.ts'
 import { UndoHistory } from './undo.ts'
 import { View } from './view.ts'
 

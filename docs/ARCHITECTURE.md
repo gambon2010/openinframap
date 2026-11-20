@@ -35,7 +35,10 @@ core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
            areas clickable inside, thin lines easy to click), storage.ts (this
            browser's storage, read and written safely), author.ts, map-data.ts,
            buildings.ts (the background map's buildings: their layer, a building's
-           pieces joined across tiles)
+           pieces joined across tiles), earth.ts (distances, bearings, circles and
+           great circles on the Earth; distances and bearings written for people),
+           north.ts (true, magnetic and grid north; magnetic declination, magvar),
+           terrain.ts (the terrain's map sources)
 ui/        shared building blocks you see: dock (right), left column, details
            panel, highlight, panels (panel.ts, makeModal), settings (the gear),
            map buttons (map-button.ts: print, Settings, account),
@@ -49,7 +52,9 @@ services/  shared state and registries, nothing drawn: live updates (live.ts),
            what a printed map's legend lists (legend.ts), the background map's
            background: the map's colours or imagery, chosen with the satellite
            button (background.ts),
-           the 3D view on or off (view3d.ts)
+           the 3D view on or off (view3d.ts), the ground's height at a point
+           (elevation.ts), your measuring preferences: the north bearings are
+           from, range rings' distances (measure-prefs.ts)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
@@ -180,8 +185,10 @@ graphics/ tactical graphics: graphics.ts (the C5ISR renderer: codes, points,
          squaring), labels.ts (plain labels, English/French), variants.ts (two
          versions of one graphic), svg.ts (drawn small, for the legend)
 io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
-measure/ measurements, pure: geo.ts (distances, areas, great circles), north.ts,
-         ticks.ts (marks along a distance), features.ts (labels, marks), prefs.ts
+measure/ measurements, pure: ticks.ts (marks along a distance), features.ts
+         (labels, marks); the Earth's geometry and the norths are core's (earth.ts,
+         north.ts), the preferences a service (measure-prefs.ts): the coordinates
+         box uses them too
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast,
          preferences.ts (My layers' part of Settings); editor/ (the card:

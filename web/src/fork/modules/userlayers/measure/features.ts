@@ -4,8 +4,9 @@
 // perimeter; range rings and their radii. Lines follow great circles, the paths the
 // distances are measured along. Pure; map/render.ts draws them.
 import { t } from '../../../core/i18n.ts'
+import { DEFAULT_RADII } from '../../../services/measure-prefs.ts'
 import { FeatureProps } from '../model/model.ts'
-import { North, fromNorth, northLetter } from './north.ts'
+import { North, fromNorth, northLetter } from '../../../core/north.ts'
 import { along, metresPerPixel, readableAngle, segmentsOf, ticksAlong } from './ticks.ts'
 import {
   LngLat,
@@ -16,12 +17,11 @@ import {
   formatDistance,
   greatCirclePath,
   pathLength
-} from './geo.ts'
+} from '../../../core/earth.ts'
 import { formatArea, groundArea, groundDistance, toRadians } from '../../../core/geo.ts'
 import type { Measurement, DrawOptions, Placement } from './features.types.ts'
 
 /** Range rings' radii when none are set (metres). */
-export const DEFAULT_RADII = [1000, 5000, 10000]
 
 /** A measure item's measurement, from its geometry (null: not one). */
 export function measurementOf(item: {

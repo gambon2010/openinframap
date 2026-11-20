@@ -3,10 +3,10 @@
 // map/render.ts from measure/features.ts; its points are moved like a drawing's.
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
-import { formatDistance, formatLength, parseDistances, parseLength } from '../measure/geo.ts'
+import { formatDistance, formatLength, parseDistances, parseLength } from '../../../core/earth.ts'
 import { Measurement } from '../measure/features.types.ts'
 import { legBearing, legsOf, measurementOf, summary, withLegLength } from '../measure/features.ts'
-import { measurePrefs } from '../measure/prefs.ts'
+import { measurePrefs } from '../../../services/measure-prefs.ts'
 import { FeatureProps } from '../model/model.ts'
 import { areaCrossesItself } from '../model/shapes.ts'
 import { ItemKind, Item } from './types.ts'

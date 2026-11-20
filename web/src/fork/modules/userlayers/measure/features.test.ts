@@ -84,7 +84,7 @@ describe('measurements', () => {
 describe("a leg's length typed over", () => {
   test('its end moves along the same bearing; the legs after keep theirs', async () => {
     const { withLegLength, legsOf } = await import('./features.ts')
-    const { bearing } = await import('./geo.ts')
+    const { bearing } = await import('../../../core/earth.ts')
     const { groundDistance } = await import('../../../core/geo.ts')
     const points: [number, number][] = [
       [7, 47],
@@ -103,7 +103,7 @@ describe("a leg's length typed over", () => {
 
 describe('lengths as written and typed', () => {
   test('to the metre; typed with units, or metres', async () => {
-    const { formatLength, parseLength } = await import('./geo.ts')
+    const { formatLength, parseLength } = await import('../../../core/earth.ts')
     expect(formatLength(18450.4)).toBe('18 km 450 m')
     expect(formatLength(18000)).toBe('18 km')
     expect(formatLength(450)).toBe('450 m')
@@ -145,5 +145,11 @@ describe('range rings zoomed out', () => {
       { zoom: 7 }
     )
     expect(far.filter((f) => f.properties?.label).map((f) => f.properties!.label)).toEqual(['Ø 20 km'])
+  })
+
+  test("a leg's label says which north", async () => {
+    const { legBearing } = await import('./features.ts')
+    expect(legBearing([7, 47], [7, 48], 'true')).toBe('000°T (0 mils)')
+    expect(legBearing([7, 47], [7, 48], 'grid')).toMatch(/^\d{3}°G \(\d+ mils\)$/)
   })
 })

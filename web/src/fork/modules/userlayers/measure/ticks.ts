@@ -11,7 +11,7 @@
 // Marks sit on the line as drawn: the great-circle path (geo.ts greatCirclePath),
 // straight on the flat map between its points, and across it as seen on screen.
 import { groundDistance } from '../../../core/geo.ts'
-import { LngLat, greatCirclePath } from './geo.ts'
+import { LngLat, greatCirclePath } from '../../../core/earth.ts'
 import { metresPerPixel, toDegrees, toRadians } from '../../../core/geo.ts'
 import { clamp } from '../../../core/math.ts'
 import type { TickView, XY, Segment } from './ticks.types.ts'

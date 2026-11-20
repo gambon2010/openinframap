@@ -7,8 +7,8 @@ import {
   formatDistance,
   parseDistances,
   pathLength
-} from './geo.ts'
-import { formatArea, groundArea, groundDistance } from '../../../core/geo.ts'
+} from './earth.ts'
+import { formatArea, groundArea, groundDistance } from './geo.ts'
 
 describe('on the sphere', () => {
   test('distances: a degree of latitude, Paris–London', () => {
