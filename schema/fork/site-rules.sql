@@ -62,8 +62,9 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (38, 'military_research', false, 'fr', '\mC\.?E\.?A\.?\M|\mDAM\M|\mDGA\M|\mD\.G\.A\.|recherches?\M|[ée]tudes scientifiques|exp[ée]rimentation|\messais\M|\mONERA\M|\minstitut\M|hydrograph|naval group|\mKNDS\M|nexter|\mMBDA\M|thal[eè]s|safran|arianegroup|expertise technique|section technique'),
     (38, 'military_research', false, 'de', 'forschung|erprobung|wehrtechnisch|rheinmetall|krauss'),
     (38, 'military_research', false, 'en', 'research|test (centre|center|range)|laborator'),
-    -- Ranges and training grounds.
-    (40, 'military_range', false, 'fr', '\mtirs?\M|aire de feu|place d.armes|village de combat|c[ôo]ne de s[ée]curit|zone dangereuse|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement'),
+    -- Ranges and training grounds. A Swiss "Place d'armes de Bure" is the army's
+    -- training ground; a French "Place d'armes" alone is a barracks' parade ground.
+    (40, 'military_range', false, 'fr', '\mtirs?\M|aire de feu|place d.armes (de|du|des|d.)|village de combat|c[ôo]ne de s[ée]curit|zone dangereuse|polygone|man[œo]e?uvres?|terrain d.exercice|entra[iî]nement'),
     (40, 'military_range', false, 'de', '[üu]bungsplatz|schie(ß|ss)platz|bombodrom|truppen[üu]bung'),
     (40, 'military_range', false, 'en', 'training area|firing range|bombing range|\mrange\M'),
     -- Camps: "Camp de ...", "Camp militaire ...", "Terrain militaire de ..." (a camp

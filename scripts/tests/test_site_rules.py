@@ -51,3 +51,25 @@ def test_the_overrides_give_kinds_the_map_draws():
     )
     assert len(kinds) == sql.count("::bigint"), "an override's row wasn't read"
     assert set(kinds) <= drawn_kinds()
+
+
+def kind_by_name(name: str) -> str | None:
+    """The kind the first matching rule gives a name, as military_kind reads them
+    (Postgres' word marks \\m and \\M are Python's \\b)."""
+    sql = (SCHEMA / "site-rules.sql").read_text()
+    rows = re.findall(
+        r"^\s*\((\d+), '([a-z_]+)', (?:true|false), '[a-z]{2}', '((?:[^']|'')*)'\)",
+        sql,
+        re.MULTILINE,
+    )
+    for _, kind, pattern in sorted(rows, key=lambda row: int(row[0])):
+        python_pattern = pattern.replace("''", "'").replace(r"\m", r"\b")
+        if re.search(python_pattern.replace(r"\M", r"\b"), name, re.IGNORECASE):
+            return kind
+    return None
+
+
+def test_a_parade_ground_is_not_a_range_but_a_swiss_training_ground_is():
+    assert kind_by_name("Place d'armes") is None
+    assert kind_by_name("Place d’armes de Bure") == "military_range"
+    assert kind_by_name("Champ de tir de Suippes") == "military_range"
