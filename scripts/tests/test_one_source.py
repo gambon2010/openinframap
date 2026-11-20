@@ -58,7 +58,7 @@ def test_the_data_folders_agree_everywhere():
         reference = getattr(data_folders, name)
         assert shell_path(name) == reference, name
         assert getattr(backend, name) == reference, name
-    for name in ("DOWNLOADS_DIR", "EXTRA_DIR"):
+    for name in ("DOWNLOADS_DIR", "EXTRA_DIR", "INSTALLERS_DIR"):
         assert shell_path(name) == getattr(data_folders, name), name
     assert shell_path("LOCAL_DIR") == backend.LOCAL_DIR
     # The backend's container sees data/map/ at the path the backend computes there

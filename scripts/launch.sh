@@ -31,7 +31,10 @@ check_cmd python3 "dnf install python3  /  apt install python3" || MISSING=1
 check_cmd unzip   "dnf install unzip  /  apt install unzip"     || MISSING=1
 # The scripts' Python packages (scripts/pyproject.toml), extra data, the Wikidata cache.
 check_cmd uv      "https://docs.astral.sh/uv/ (curl -LsSf https://astral.sh/uv/install.sh | sh)" || MISSING=1
-[[ "$MISSING" == 0 ]] || die "Install the missing tools above, then re-run this script."
+if [[ "$MISSING" != 0 ]]; then
+    point_to_installers
+    die "Install the missing tools above, then re-run this script."
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Frontend .env — before the database step, which may add the offline

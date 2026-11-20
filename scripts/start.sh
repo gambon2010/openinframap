@@ -18,7 +18,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-docker info >/dev/null 2>&1 || die "Docker isn't running. Start Docker, then re-run this script."
+require_docker
 
 section "Starting the database and tile server..."
 db_volume_exists || die "There's no map database yet. Run the first-time setup: bash scripts/launch.sh"

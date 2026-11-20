@@ -1239,6 +1239,19 @@ default). Counts are France's OSM data in October 2026.
   agree. Moved on disk the same day. A bug found doing it: the offline maps' queue
   saved full paths, so Resume downloaded into the old folder; it now saves paths
   inside the maps folder relative to it (`{maps}`), with a test.
+- **Installers for computers without the internet** (`scripts/fetch_installers.py`,
+  `data/installers/`): Docker for every supported Ubuntu, Debian, Fedora and RHEL
+  family version on Intel/AMD and ARM (Docker's documented "install from a package":
+  the newest of each package in its repository's listing), its standalone programs
+  (Docker's "install from binaries") with Compose, Buildx and Docker's own systemd
+  units for any other Linux, Docker Desktop (from its update feed) and WSL's offline
+  installer for Windows, and Node.js, uv, uv's Python builds (where
+  `UV_PYTHON_INSTALL_MIRROR` reads them) and 7-Zip for Linux and Windows. Each from
+  its project's own site; nothing invented but the choice of files.
+  `install-docker.sh` picks the packages from os-release (Rocky, Alma, CentOS on
+  RHEL's), else the standalone programs. The setup scripts point there when a tool
+  is missing; `start.sh` and `import-db.sh` now tell "not installed" from "not
+  running" (`require_docker`).
 
 ## Extra data (not from OpenStreetMap)
 

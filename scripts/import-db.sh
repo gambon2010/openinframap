@@ -43,7 +43,7 @@ EXTRA_DESC=$(json_get "$MANIFEST" extra_data)
 [[ -n "$EXTRA_DESC" ]] && info "With extra data (not from OSM): $EXTRA_DESC"
 info "$(human_size "$(stat -c%s "$DUMP")") — $DUMP"
 
-docker info >/dev/null 2>&1 || die "Docker isn't running. Start Docker, then re-run this script."
+require_docker
 
 # ---------------------------------------------------------------------------
 # Docker images — load them from the export folder when they're missing

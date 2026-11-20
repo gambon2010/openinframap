@@ -61,7 +61,10 @@ online.
 ## What you need
 
 Docker (with Compose v2), Node.js and npm, curl, python3, unzip and
-[uv](https://docs.astral.sh/uv/).
+[uv](https://docs.astral.sh/uv/). For computers without the internet, installers of
+Docker (every large Linux distribution and Windows, Intel/AMD and ARM) and of the
+development tools can be kept in `data/installers/`
+(`uv run --project scripts scripts/fetch_installers.py`).
 
 Disk space, measured (November 2026):
 

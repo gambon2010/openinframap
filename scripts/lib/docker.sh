@@ -28,3 +28,13 @@ backend_python() {
         -e ADMIN_DATABASE_URL="postgresql://$DB_USER:osm@db:5432/$DB_NAME" \
         --entrypoint /app/.venv/bin/python backend "$@" </dev/null
 }
+
+# Docker installed and running, or a message saying what to do (and where its
+# installers are kept, if they are).
+require_docker() {
+    if ! command -v docker >/dev/null 2>&1; then
+        point_to_installers
+        die "Docker isn't installed. Install it, then re-run this script."
+    fi
+    docker info >/dev/null 2>&1 || die "Docker isn't running. Start Docker, then re-run this script."
+}

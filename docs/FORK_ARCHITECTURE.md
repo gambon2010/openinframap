@@ -367,7 +367,20 @@ the schema fingerprint builds and exports carry.
   agree): `data/map/` (what the app needs: `offline-maps/`, `images/`,
   `wikidata_json/`, `exports/`), `data/local/` (this installation's own: `gate/`,
   `userdata/`, `checks/`, `logs/`), `data/downloads/` (downloaded again when needed:
-  `osm/`, `extra/`, the EEZ files).
+  `osm/`, `extra/`, the EEZ files), `data/installers/` (below).
+- **`fetch_installers.py`** and **`installers/`:** installers kept for computers
+  without the internet, in `data/installers/`: Docker's packages for each supported
+  Ubuntu, Debian, Fedora and RHEL (also Rocky, Alma, CentOS Stream) on Intel/AMD and
+  ARM, its standalone programs and systemd units for any other Linux
+  (`docker_linux.py`), Docker Desktop and WSL for Windows (`windows.py`), Node.js,
+  uv, uv's Python builds (in the layout of uv's `UV_PYTHON_INSTALL_MIRROR`) and
+  7-Zip for Linux and Windows (`dev_tools.py`); `found.py` reads the sites'
+  listings (a changed layout stops with a message, `NotFound`); `cli.py` downloads
+  what's missing (`netsafe.fetch_file`, resumable) and writes `manifest.json`
+  (addresses, sizes, checksums), `README.txt` (`readme.py`: which file for which
+  computer) and `install-docker.sh` (copied from here: the distribution's packages,
+  else the standalone programs; `DRY_RUN=1` for its tests). The setup scripts
+  point there when a tool is missing (`point_to_installers`, `require_docker`).
 - **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
   data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,

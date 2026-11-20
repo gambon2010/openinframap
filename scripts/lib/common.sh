@@ -10,10 +10,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 #   map/        what the app needs: copied to a drive, only read when running
 #   local/      this installation's own: never overwritten by an update
 #   downloads/  downloaded again when needed: can be deleted any time
+#   installers/ Docker and the development tools, for computers without the internet
 DATA_DIR="$REPO_ROOT/data"
 MAP_DIR="$DATA_DIR/map"
 LOCAL_DIR="$DATA_DIR/local"
 DOWNLOADS_DIR="$DATA_DIR/downloads"
+INSTALLERS_DIR="$DATA_DIR/installers"
 OSM_DIR="$DOWNLOADS_DIR/osm"
 EEZ_NAME="EEZ_land_union_v4_202410"
 EEZ_ZIP="$DOWNLOADS_DIR/$EEZ_NAME.zip"

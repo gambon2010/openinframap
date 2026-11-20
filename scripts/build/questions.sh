@@ -271,7 +271,10 @@ check_prerequisites() {
     check_cmd python3 "dnf install python3  /  apt install python3" || missing=1
     check_cmd unzip   "dnf install unzip  /  apt install unzip"   || missing=1
     check_cmd uv      "https://docs.astral.sh/uv/ (curl -LsSf https://astral.sh/uv/install.sh | sh)" || missing=1
-    [[ "$missing" == 0 ]] || die "Install the missing tools above, then re-run this script."
+    if [[ "$missing" != 0 ]]; then
+        point_to_installers
+        die "Install the missing tools above, then re-run this script."
+    fi
     docker info >/dev/null 2>&1 || die "Docker is installed but not running (or your user can't access it)."
     docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required ('docker compose', not 'docker-compose')."
     docker compose --progress quiet --profile tools build osmium </dev/null

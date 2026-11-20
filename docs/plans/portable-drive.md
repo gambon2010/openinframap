@@ -48,8 +48,9 @@ data/
     osm/, extra/, EEZ files, logs
 ```
 
-The drive is a copy of the project folder: the code as committed, `data/map/`, and
-its own `data/local/`. Never on the drive: `data/downloads/`, `node_modules/`, the
+The drive is a copy of the project folder: the code as committed, `data/map/`,
+`data/installers/` (Docker and the development tools for computers without the
+internet, `scripts/fetch_installers.py`), and its own `data/local/`. Never on the drive: `data/downloads/`, `node_modules/`, the
 `.venv`s, `.git`, `.env` files.
 
 **Two kinds of computer.** A development computer prepares the data (builds regions,
@@ -135,7 +136,8 @@ On the development computer:
    exFAT: only read, nothing there needs Linux owners).
 3. Warns about uncommitted changes (only committed code goes: `git ls-files`).
 4. Copies with `rsync`: the code, `data/map/` (deleting on the drive what was
-   deleted here: a removed map), never `data/local/` nor `data/downloads/`.
+   deleted here: a removed map), `data/installers/`, never `data/local/` nor
+   `data/downloads/`.
 5. Prints what was sent and how to start: `bash run.sh`.
 
 An update is the same command: `rsync` sends only what changed (the export after a

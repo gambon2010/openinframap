@@ -47,6 +47,15 @@ log_build() {
     echo "$(date '+%Y-%m-%d %H:%M')  $*" >> "$BUILD_LOG"
 }
 
+# Said when a tool is missing: the installers kept for offline use, if there are
+# (data/installers/, scripts/fetch_installers.py).
+point_to_installers() {
+    if [[ -f "$INSTALLERS_DIR/README.txt" ]]; then
+        info "Installers for these are kept in data/installers/ (README.txt there says which"
+        info "file is for your computer). Docker on Linux: bash data/installers/install-docker.sh"
+    fi
+}
+
 check_cmd() {
     local cmd="$1" hint="$2"
     if command -v "$cmd" &>/dev/null; then

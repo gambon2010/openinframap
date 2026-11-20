@@ -503,6 +503,32 @@ parts:
 | `data/map/` | what the app needs: the offline maps (`offline-maps/`), the Wikidata cache (`images/`, `wikidata_json/`), the exports (`exports/`) | yes, to run the map elsewhere |
 | `data/local/` | this computer's own: the gate's certificate, My layers' copy made during an import, checks, logs | no |
 | `data/downloads/` | what can be downloaded again: OpenStreetMap extracts, extra data's sources, sea boundaries | no: delete it any time to free space |
+| `data/installers/` | Docker and the development tools, for computers without the internet (below) | yes, with the map |
+
+### Installers for computers without the internet
+
+```bash
+uv run --project scripts scripts/fetch_installers.py          # all of them (about 5 GB)
+uv run --project scripts scripts/fetch_installers.py --list   # what it would download
+uv run --project scripts scripts/fetch_installers.py --only windows
+```
+
+It keeps, in `data/installers/`:
+
+- **Docker for Linux:** Docker's own packages for Ubuntu 22.04, 24.04, 26.04 and
+  26.10, Debian 12 and 13, Fedora 43 to 45, RHEL 8 to 10 (also Rocky, Alma, CentOS
+  Stream), each for Intel/AMD and ARM; Docker's standalone programs for any other
+  distribution. Install with `bash data/installers/install-docker.sh`: it picks the
+  right ones.
+- **Docker for Windows:** Docker Desktop and WSL, Intel/AMD and ARM (free for
+  personal use, education and small businesses; larger organisations need Docker's
+  subscription).
+- **Development tools:** Node.js, uv, Python for uv, 7-Zip, for Linux and Windows.
+
+`README.txt` there says which file is for which computer; `manifest.json` lists each
+file's address and checksum. Run it again to add newer versions (what's there stays).
+When Docker or another tool is missing, `launch.sh`, `start.sh`, `build-region.sh`
+and `import-db.sh` point there.
 
 ## What works offline
 

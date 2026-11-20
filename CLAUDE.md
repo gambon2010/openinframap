@@ -135,6 +135,7 @@ bash scripts/export-db.sh / import-db.sh FILE              # Save / restore data
 bash scripts/number-towers.sh                              # Number the towers again
 uv run --project scripts scripts/offline-maps.py maps --source ID --yes     # An offline map without questions
 uv run --project scripts scripts/fetch_images.py [--json-only|--count]       # Offline Wikidata cache in data/
+uv run --project scripts scripts/fetch_installers.py [--list] [--only linux|windows|dev]   # Installers kept for offline computers, data/installers/
 docker compose down -v                                     # Wipe the DB and all project volumes
 cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml   # After changing a layer
 ```
@@ -151,7 +152,7 @@ cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./lay
 
 - Bash reads scripts as it runs them: don't edit `scripts/*.sh` while one is running.
 - Docker mounts need `:z` (Fedora/SELinux).
-- `data/` is gitignored, in three parts (`scripts/data_folders.py`, `lib/common.sh`, the backend's `paths.py`, checked to agree): `data/map/` what the app needs (offline maps, Wikidata cache, exports; mounted read-only in the backend), `data/local/` this installation's own (gate certificate, My layers' copy during an import, checks, logs), `data/downloads/` what can be downloaded again (OSM extracts, extra data's sources, EEZ). Never commit `.env` files or `*.bak`.
+- `data/` is gitignored, in three parts (`scripts/data_folders.py`, `lib/common.sh`, the backend's `paths.py`, checked to agree): `data/map/` what the app needs (offline maps, Wikidata cache, exports; mounted read-only in the backend), `data/local/` this installation's own (gate certificate, My layers' copy during an import, checks, logs), `data/downloads/` what can be downloaded again (OSM extracts, extra data's sources, EEZ), `data/installers/` Docker and the development tools for computers without the internet. Never commit `.env` files or `*.bak`.
 - Icons (`web/src/icons/*.svg`) are listed when the dev server starts (vite-plugin-render-svg): after adding or renaming one, restart it (it's then missing from the map and the key until then).
 - Tegola's `config.toml` is generated (command above); Tegola caches tiles (to zoom 13, inside its container), so after changing a tile layer or the data under it, regenerate the config and recreate it (`up_services --force-recreate tegola`): don't ask the owner to clear caches. The browser keeps the key's tick boxes (localStorage): a new layer drawn with an icon or colour another key row hides is hidden with it, so give each new layer its own (docs/STYLE.md).
 - Build SQL must scale to a country like France (millions of rows): `ANALYZE` temp tables after creating them, join instead of `IN`/`NOT IN (subquery)`, never join on `ST_Equals`, give `ST_DWithin` a constant distance. Distances and areas are written in real metres (`schema/fork/distances.sql`: `ST_DWithin(a, b, D * oim_max_stretch()) AND ST_DWithin(a, b, oim_units(D, b))`; `oim_metres`, `oim_ground_area`): map units stretch with latitude, and a test fails on a bare number. Test new build steps on more than Luxembourg.
