@@ -1,4 +1,5 @@
-// Fork: the terrain's tiles and the hill shading's look (docs/STYLE.md, "Hill shading").
+// Fork: the terrain's tiles, and the hill shading's and contour lines' looks
+// (docs/STYLE.md, "Hill shading", "Contour lines").
 
 /** Mapterhorn's tiles: Terrarium encoded, 512 pixels, to zoom 13 (6.6 m in France;
  * scripts/offline_maps/terrain.py MAX_ZOOM). */
@@ -8,9 +9,24 @@ export const TERRAIN_TILE_SIZE = 512
 /** Every terrain layer's id starts with this (the layer switcher's prefixes too). */
 export const TERRAIN_PREFIX = 'terrain_'
 export const HILLSHADE_LAYER = `${TERRAIN_PREFIX}hillshade`
+/** Every contour layer's id starts with this. */
+export const CONTOURS_PREFIX = `${TERRAIN_PREFIX}contours`
 
 /** Data layers entries: letters never used before (they're in map addresses). */
 export const HILLSHADE_SWITCHER_ID = 'D'
+export const CONTOURS_SWITCHER_ID = 'C'
+
+/** The backend's contour tiles (web-backend/src/fork/terrain/contours.py). */
+export const CONTOURS_SOURCE = 'terrain_contours'
+export const CONTOURS_SOURCE_LAYER = 'contours'
+export const CONTOURS_MIN_ZOOM = 9
+export const CONTOURS_MAX_ZOOM = 16
+
+/** Contour brown, as on the military maps; lighter over imagery. */
+export const CONTOUR_COLOUR = { map: '#9a6a3a', imagery: '#e0b07a' }
+/** Line widths (pixels) at zooms 9 and 16: intermediate and index contours. */
+export const INTERMEDIATE_WIDTH: [number, number] = [0.5, 0.9]
+export const INDEX_WIDTH: [number, number] = [1, 1.8]
 
 /** Light from the north-west, as on paper maps, blended with three more
  * directions (MapLibre's multidirectional method: slopes facing away from the

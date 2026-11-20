@@ -19,7 +19,8 @@
     "railways": "Railways",
     "trams-and-metro": "Trams and metro",
     "terrain": "Terrain",
-    "hillshade": "Hill shading"
+    "hillshade": "Hill shading",
+    "contours": "Contour lines"
   },
   "search": {
     "place": {

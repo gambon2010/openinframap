@@ -26,6 +26,8 @@ dependencies = [
     "pmtiles>=3.8.1",
     "mapbox-vector-tile>=2.2.0",
     "osmium>=4.3.2",
+    "pillow>=13.0.0",
+    "contourpy>=1.4.0",
 ]
 
 [tool.ruff]

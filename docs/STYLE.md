@@ -115,6 +115,13 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   the land cover and water, under roads, buildings, labels and all data; over
   imagery right above the photos, fainter. Zoomed in past 13 it's as smooth as at
   13 (the terrain's finest).
+- **Contour lines** (`modules/terrain`, Data layers → Terrain → Contour lines, off at
+  first), as on US military maps (FM 3-25.26): brown; every fifth line an *index
+  contour*, heavier, its height in metres written along it in brown on a thin white
+  halo; the four between thin *intermediate contours*. The interval follows the
+  maps' scales: 100 m at zooms 9–10, 50 m at 11, 20 m at 12–13, 10 m from 14 (made
+  in the backend). They lie with the hill shading, under the roads, buildings and
+  data; over imagery a lighter brown. From zoom 9 (nothing further out).
 - **Leave out clutter the original map leaves out:** small pieces with no name
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).

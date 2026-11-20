@@ -78,8 +78,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                to switch on (clickable: details, copy); look.ts: roofs and shadows over
                imagery, raised to their height in the 3D view; parts.ts: the buildings
                mapped with parts (their parts raised instead)
-  terrain      hill shading from the terrain's elevations (Data layers → Terrain;
-               placement.ts: under the background map's roads, or over imagery)
+  terrain      hill shading from the terrain's elevations and the backend's contour
+               lines (contours.ts), Data layers → Terrain; placement.ts: under the
+               background map's roads, or over imagery
   view3d       the 3D button: the map tilted, tilting and turning allowed, the relief
                and a sky (core/terrain.ts: the terrain's sources), buildings on
   map-sources  background tiles and Photon (Settings)
@@ -236,8 +237,11 @@ every route but logging in needs a session):
   `tiles.py` their tile geometry; `buildings.py`, a building's whole outline from the
   zoom 15 tiles, `/background/building/{id}`, for copies);
 - `terrain/` (the terrain's elevation tiles, `/terrain/{z}/{x}/{y}.webp`: each from the
-  first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`; contour
-  lines and heights come later: docs/plans/terrain.md);
+  first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
+  `elevations.py`, the one reader of heights: Terrarium tiles decoded, a tile's
+  heights with its neighbours' edges; `contours.py`, contour lines as vector tiles,
+  `/terrain/contours/{z}/{x}/{y}.mvt`, traced as tiles are asked for (smoothed,
+  military maps' intervals, index lines marked), kept in memory; docs/plans/terrain.md);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:

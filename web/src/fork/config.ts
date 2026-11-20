@@ -75,6 +75,8 @@ export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
 // <area>.terrain.pmtiles in data/offline-maps/, served together by the backend
 // (web-backend/src/fork/terrain/). Only local: none downloaded, no relief.
 export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
+// Contour lines the backend makes from it (vector tiles).
+export const CONTOURS_URL = `${BACKEND_BASE_URL}/terrain/contours/{z}/{x}/{y}.mvt`
 
 // Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
 // the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online

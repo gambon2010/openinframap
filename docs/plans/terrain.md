@@ -94,7 +94,7 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
   symbols, the measuring tools, the print module (prints flat).
 - Speed: terrain costs GPU; it's on only in 3D.
 
-## 4. Elevations and contour lines in the backend
+## 4. Elevations and contour lines in the backend (done, 2026-11-20)
 
 The project computes map data before the browser (PostGIS, the backend's zoomed out
 layers); contour lines too, as tiles are asked for (decided 2026-11-20), with the

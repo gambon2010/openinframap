@@ -1126,6 +1126,15 @@ default). Counts are France's OSM data in October 2026.
   elevations (true heights, a second source as MapLibre draws relief and shading
   better from two), under a sky with haze at the horizon; tilting up to 75° (was
   60°) to look along valleys. Source names shared in `core/terrain.ts`.
+- **Contour lines (2026-11-20):** made by the backend as tiles are asked for
+  (`/terrain/contours`, `terrain/contours.py`, contourpy), as on US military maps
+  (index lines every fifth, labelled; 100/50/20/10 m by zoom); Data layers →
+  Terrain → Contour lines, off at first. Generalised like a paper map's: the heights
+  smoothed first (a Gaussian of 3 pixels: at 1.5 the LiDAR's ditches and
+  embankments left flat ground's lines ragged), lines under 8 pixels dropped,
+  points within half a pixel simplified away (tiles a quarter of the size). About
+  60 ms a tile once its heights are read. Pillow and contourpy declared in the
+  backend (bokeh had brought them).
 
 ## Extra data (not from OpenStreetMap)
 

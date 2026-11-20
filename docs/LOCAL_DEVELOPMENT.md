@@ -248,7 +248,9 @@ downloaded before, the menu offers *Terrain* (or `python3 scripts/offline-maps.p
 terrain --area france --outline data/offline-maps/.area-france.geojson`). The
 backend serves every area's terrain together (`/terrain`); *Data layers → Terrain →
 Hill shading* (on at first) shades the hills, over the map and, fainter, over
-imagery.
+imagery; *Contour lines* draws them as on military maps (every fifth line heavier
+with its height; 100 m apart zoomed out, then 50, 20 and 10 m closer in), made by
+the backend from the terrain.
 
 ## Satellite imagery (offline)
 
