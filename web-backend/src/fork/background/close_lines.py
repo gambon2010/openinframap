@@ -1,7 +1,8 @@
 """Fork: tracks running close together drawn as one (zoomed_railways.py: the tracks
 of a double-track line, a tram's two). Drawn side by side at a zoom where they're
 closer than their width, two tracks blur into one unclear band, their white dashes
-out of step. (Roads aren't: zoomed_roads.py.)"""
+out of step. (Roads aren't: zoomed_roads.py.) Planetiler has nothing for this: its
+`FeatureMerge.mergeLineStrings` joins lines end to end, not side by side."""
 
 from __future__ import annotations
 

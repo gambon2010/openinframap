@@ -24,7 +24,9 @@ LAYER = "buildings_large"
 SOURCE_LAYER = "buildings"  # the background map's
 FULL_ZOOM = 15
 BLOCK_ZOOM = 12
-# The smallest building shown at each zoom: about 4 pixels across there.
+# The smallest building shown at each zoom: about 4 pixels across there (Planetiler's
+# minimum pixel size, `setMinPixelSize`, as an area; its `mergeNearbyPolygons` would
+# merge them into blocks, which is what the background map's own tiles already do).
 MIN_AREA_M2 = {12: 10_000, 13: 2_500, 14: 600}
 ZOOMS = tuple(MIN_AREA_M2)
 

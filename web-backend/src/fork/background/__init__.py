@@ -59,7 +59,9 @@ def companion_of(background_map: Path) -> Path:
 
 class Archive:
     """One background map file, open: read through mmap, each directory of its
-    index read once (a big file's leaves: gzip, then varints)."""
+    index read once (a big file's leaves: gzip, then varints). The pmtiles package's
+    own Reader decodes them again for every tile, with no cache: 5 ms a tile against
+    0.01 ms here, measured on France's background map (2026-11-20)."""
 
     def __init__(self, path: Path, data: mmap.mmap, header: Any, stamp: tuple[float, int]):
         self.path = path

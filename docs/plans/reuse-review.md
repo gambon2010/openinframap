@@ -2,31 +2,58 @@
 
 CLAUDE.md's rule (reuse a package, else a larger project's method, before writing
 our own) came after much of the fork was written. These are the parts that solve a
-known problem with code of our own, what exists, and what to do. Nothing here is
-changed yet: each line is a candidate, to look at in this order (most to gain
-first). "To check" means the replacement hasn't been tried on our data.
+known problem with code of our own, what exists, and what was decided (looked at
+2026-11-20). Only the fork's own code is concerned: upstream's files aren't changed.
 
-## Worth replacing
+## Replaced
 
-| Part | What we wrote | What exists | Proposal | Size |
-|---|---|---|---|---|
-| Contour smoothing (`web-backend/src/fork/terrain/contours.py`, `smoothed`, `blurred`) | A Gaussian blur by hand (numpy convolutions, NaN-aware) | `scipy.ndimage.gaussian_filter` (the same normalised-convolution trick for missing heights); OpenTopography smooths the DEM with a Gaussian before contouring, maplibre-contour traces from a coarser zoom (`overzoom`) and averages pixel centres | Use SciPy (also useful to the radio mode); keep OpenTopography's method, cite it | Small (done in terrain step 5) |
-| PMTiles reading in the backend (`background/__init__.py` `Archive`, reused by `terrain/files.py`) | Our own mmap reader over the `pmtiles` package's low-level functions, directories cached | The `pmtiles` package's `Reader` with an mmap source (`pmtiles.reader`), already a dependency | Try `Reader`; keep ours only if it's measurably slower (the background map's tiles are served per request) | Small, to check |
-| Grouping nearby sites (`schema/fork/sites.sql`, `site_points`) | A grid of 12 × 12 cells per tile, counted per kind | PostGIS `ST_ClusterDBSCAN` / `ST_SnapToGrid`; Supercluster (MapLibre's own clustering, for GeoJSON sources) | Grid snapping is what Supercluster-less servers do; replace the hand-written cell maths with `ST_SnapToGrid`, keep the per-kind counts (no package keeps those) | Small |
-| Tile maths in the scripts (`scripts/offline_maps/tiles.py`) | Web Mercator tile ↔ lon/lat, tiles covering an outline | `mercantile` (Mapbox), `supermercado` (tiles covering a shape) | Scripts use the standard library only on purpose (they run before `uv`); keep, but follow mercantile's formulas and cite them; revisit if the scripts get a venv | Small |
-| Retries and resumed downloads (`scripts/netsafe.py`) | Retry rounds, waits, resuming by byte range | `urllib3`'s `Retry`, `tenacity` | Same standard-library constraint as above; compare our waits with urllib3's backoff and note it | Small |
-| The download lock (`scripts/offline_maps/inventory.py`, `lock`) | A lock file with the holder written in it | `filelock` (standard for this) | Same constraint; keep | — |
-| Railways close together drawn as one (`background/close_lines.py`) | Tracks within a distance merged | Planetiler's line merging (`FeatureMerge.mergeLineStrings`, with a minimum length and tolerance), JTS `LineMerger` | Compare with Planetiler's `mergeLineStrings` parameters (we follow Planetiler for roads already: `zoomed_roads.py`) | Medium, to check |
-| Buildings zoomed out (`background/zoomed_buildings.py`) | Big buildings kept, from zoom 15 tiles | Planetiler's `FeatureMerge.mergeNearbyPolygons` (what Protomaps' own build uses) | Compare; use its buffer-and-merge parameters if ours differ | Medium, to check |
-| Hiding key rows by filter (`web/src/fork/ui/key/feature-hider.ts`) | Filters rebuilt from each layer's icon or colour expression | MapLibre has no per-value toggle; `maplibre-gl-legend` and similar plugins hide whole layers only | Keep (nothing does it per value); note why in its header | — |
+- **Contour smoothing** (`web-backend/src/fork/terrain/contours.py`): a Gaussian
+  blur written by hand became SciPy's `gaussian_filter` (OpenTopography smooths the
+  elevations with a Gaussian before contouring); the depression and supplementary
+  contours follow the USGS's US Topo specifications and FM 3-25.26 (no package
+  draws them).
+
+## Looked at, ours kept
+
+- **PMTiles reading in the backend** (`background/__init__.py` `Archive`, reused by
+  `terrain/files.py`): the `pmtiles` package's `Reader` re-reads the header and
+  decodes the directories on every tile, with no cache: 5.2 ms a tile against 0.01
+  ms for ours, warm, on France's background map. Ours uses the package's own
+  decoding functions (`deserialize_directory`, `find_tile`); only the cache is ours.
+  Noted in `Archive`'s docstring.
+- **Grouping nearby sites** (`schema/fork/sites.sql`, `site_points`): integer grid
+  cells per tile are the standard grid clustering (`ST_SnapToGrid` would give the
+  same cells as points, then grouping by geometry); Supercluster is MapLibre's
+  browser-side, hierarchical clustering of GeoJSON, and nothing keeps our per-kind
+  counts (the key's hiding needs them).
+- **Railways close together drawn as one** (`background/close_lines.py`): Planetiler's
+  `FeatureMerge.mergeLineStrings` joins lines end to end, not side by side; nothing
+  found collapses parallel tracks. Noted in its docstring.
+- **Buildings zoomed out** (`background/zoomed_buildings.py`): we keep each building
+  big enough to see (Planetiler's minimum pixel size, as an area); Planetiler's
+  `mergeNearbyPolygons` merges buildings into blocks, what the background map's own
+  tiles already do and what this replaces. Cited in the code.
+- **Tile maths in the scripts** (`scripts/offline_maps/tiles.py`): OpenStreetMap's
+  slippy map formulas, as mercantile writes them; the scripts use the standard
+  library only (they run before any environment is set up). Cited in the code.
+- **Retries** (`scripts/netsafe.py`): linear waits, gentler than urllib3's `Retry`
+  (exponential); same standard-library constraint. Cited in the code.
+- **The download lock** (`scripts/offline_maps/inventory.py`): `filelock` is the
+  standard; same constraint.
+- **Hiding key rows by filter** (`web/src/fork/ui/key/feature-hider.ts`): MapLibre has
+  no per-value toggle; legend plugins hide whole layers only.
+- **Contour lines from coarser zooms** (maplibre-contour's `overzoom`): tried against
+  the fragments on flat ground; it changed nothing (the background map's buildings
+  were cutting the lines), so not kept.
 
 ## Already reused (no change)
 
 LOOM for tram and metro lanes; Planetiler's way of drawing roads zoomed out
 (`zoomed_roads.py`); osmium for OpenStreetMap extracts; pmtiles (go and Python) for
-tile files; `mapbox_vector_tile`; contourpy (marching squares); polygon-clipping;
+tile files; `mapbox_vector_tile`; contourpy (marching squares); SciPy; polygon-clipping;
 mgrs; magvar; togeojson; jsPDF; the armyc2 renderer for military symbols; PostGIS
-and `pg_trgm` for search; MapLibre's hillshade and terrain.
+and `pg_trgm` for search; MapLibre's hillshade and terrain; Horn's slope (GDAL's
+`gdaldem slope` method).
 
 ## Our own, nothing to reuse
 

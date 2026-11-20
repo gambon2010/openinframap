@@ -241,6 +241,9 @@ def safely(
                         flush=True,
                     )
             if attempt < retries:
+                # Waits growing linearly (pause, 2 × pause...), gentler than urllib3's
+                # Retry (backoff_factor × 2^attempt): the standard library only here,
+                # and the rounds below rest longer when a server stays busy.
                 time.sleep(pause * attempt)
         if reachable(url):
             # The server answers: not the connection. A busy server: rest, try again.

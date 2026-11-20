@@ -11,8 +11,14 @@ from pathlib import Path
 # --- Tile maths ---------------------------------------------------------------
 
 
+# The tile formulas are OpenStreetMap's "slippy map" ones (wiki: Slippy map
+# tilenames), as Mapbox's mercantile writes them (`tile`, `bounds`): the scripts use
+# the standard library only (they run before any environment is set up), so they're
+# written out here rather than taken from mercantile.
+
+
 def tile_of(lon: float, lat: float, zoom: int) -> tuple[int, int]:
-    """The web-mercator tile (x, y) containing a point."""
+    """The web-mercator tile (x, y) containing a point (mercantile's `tile`)."""
     n = 2**zoom
     lat = max(min(lat, 85.0511), -85.0511)
     x = int((lon + 180.0) / 360.0 * n)
@@ -21,7 +27,7 @@ def tile_of(lon: float, lat: float, zoom: int) -> tuple[int, int]:
 
 
 def tile_bounds(x: int, y: int, zoom: int) -> tuple[float, float, float, float]:
-    """(west, south, east, north) of a tile, in degrees."""
+    """(west, south, east, north) of a tile, in degrees (mercantile's `bounds`)."""
     n = 2**zoom
 
     def lat(row: int) -> float:
