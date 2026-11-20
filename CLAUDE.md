@@ -9,7 +9,7 @@ Open Infrastructure Map shows the world's infrastructure (power, telecoms, water
 **Where things are written down (keep each current, nothing repeated between them):**
 - `docs/ARCHITECTURE.md`: how the fork's code is organised, folder rules, every script, module and SQL file, recipes for adding things. Read it before changing the structure.
 - `docs/FORK_CHANGES.md`: every upstream file the fork changes, and how ("Fork structure", "Merging from upstream"): keep it exact.
-- `docs/HISTORY.md`: what changed, when and why (dated notes, newest at the end of their section).
+- `docs/HISTORY.md`: what changed, when and why (dated notes, newest at the end of their section); older one-off sections in `docs/HISTORY-ARCHIVE.md` (not added to).
 - `docs/SPECIFICATIONS.md`: every requirement the owner asked for, with its status: add each new request when it's made, update it when done. Plans for bigger features: `docs/plans/` (finished ones in `archive/`).
 - `docs/LOCAL_DEVELOPMENT.md`: the user's guide.
 - `docs/STYLE.md`: how the application looks (panels, buttons, the map's roads, railways, trams, highlights, labels). Every new panel, control or map layer follows it; a change of look updates it first.
