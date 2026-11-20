@@ -10,7 +10,6 @@ import { SOURCE_NOTE, detailsCard, type DetailsRow } from '../../ui/details.ts'
 import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
 import layers, { icpe_colours, icpe_category_label } from './style.ts'
-import './extra.css'
 import { followCategories } from './follow.ts'
 
 // The sources extra_data.py can import, for the popup's attribution.
@@ -170,19 +169,21 @@ function popupHtml(feature: MapGeoJSONFeature): HTMLElement {
   }
   rows.push(
     [t('info.operator'), p.operator],
-    [t('info.location'), p.location && t('location.' + p.location, p.location)],
-    [t('extra.updated', 'Source updated'), p.updated]
+    [t('info.location'), p.location && t('location.' + p.location, p.location)]
   )
   const source = extra_sources[p.source]
   return detailsCard(
     title,
     rows,
+    // Where the data comes from, and when it was updated: in the debug info only
+    // (ui/details.ts SOURCE_NOTE).
     el(
-      `p.oim-extra-notice.${SOURCE_NOTE}`,
+      `p.${SOURCE_NOTE}`,
       t('extra.notice', 'Not from OpenStreetMap: open data from'),
       ' ',
       source ? el('a', source.name, { href: source.url, target: '_blank' }) : p.source,
-      source ? ` (${source.licence})` : ''
+      source ? ` (${source.licence})` : '',
+      p.updated ? `, ${t('extra.updated-on', 'updated {{date}}', { date: p.updated })}` : ''
     )
   )
 }

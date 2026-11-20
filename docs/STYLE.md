@@ -25,8 +25,7 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   `--oim-light-grey`, `--oim-grey`, `--oim-text-color`, `--oim-text-color-light`,
   `--oim-radius-large`, `--oim-radius-small`, `--oim-drop-shadow`), and the fork's
   own where upstream has none (`ui/panel.css`): `--oim-error`, `--oim-success`,
-  `--oim-link`, `--oim-warning-background`, `--oim-note-accent` (a note's edge,
-  as on extra data's notices), `--oim-on-background`, and for the dark overlays
+  `--oim-link`, `--oim-warning-background`, `--oim-on-background`, and for the dark overlays
   (the tooltip, the debug box: dark, as tooltips are) `--oim-overlay-background`,
   `--oim-overlay-text`, `--oim-overlay-accent`. No other colours, greys, radii or
   shadows in panels and controls.
@@ -47,6 +46,9 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
   buttons when their panel is open: `oim-pressed`.
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
+- **Where data comes from** (a source, its licence, when it was updated): only in a
+  thing's debug info (Settings → Debug), never in its details (`SOURCE_NOTE`,
+  `ui/details.ts`), written there like a hint.
 - **Each key row its own icon and colour:** the key hides by icon and colour, and
   remembers it in the browser; a new layer reusing another row's icon is hidden with
   it (the oil and gas facilities had the fuel depots' icon: hidden while that row

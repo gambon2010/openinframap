@@ -1159,6 +1159,11 @@ default). Counts are France's OSM data in October 2026.
   chosen for measuring). For that the measuring helpers moved out of My layers: the
   Earth's geometry and the norths to `core/earth.ts` and `core/north.ts`, the
   measuring preferences to `services/measure-prefs.ts`.
+- **Where data comes from, in the debug info only (2026-11-20):** the extra data's
+  note (its source and licence) was already moved there, but kept its orange box;
+  it's now written like the debug info's hints, and its "Source updated" row joined
+  it (the owner: notes about a data source only in the debug part). Nothing else in
+  the details names a data source (upstream's "Source" is a plant's energy).
 
 ## Extra data (not from OpenStreetMap)
 

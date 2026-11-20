@@ -15,7 +15,7 @@ warning, so each piece picked its own red, green and blue. Added to the fork's o
 `ui/panel.css` (not upstream's `index.css`: upstream's files stay as they are):
 `--oim-error` (the reds `#b3261e`, `#c92a2a`),
 `--oim-success` (`#1b7a33`), `--oim-link` (`#1a5fb4`), `--oim-warning-background`
-(`#fff4e5`), `--oim-note-accent` (the extra data's orange edge). STYLE.md lists them.
+(`#fff4e5`). STYLE.md lists them.
 
 ## 1. The grid route panel (`modules/grid/grid-route.ts`, `grid-route.css`) (paused: grid routing is on hold)
 
@@ -42,7 +42,7 @@ tokens from 0. Small.
 
 A 3 px radius written out. Plan: `--oim-radius-small`. Small.
 
-## 5. Notes in the details (`modules/extra/extra.css`) (done, 2026-11-20: kept, its colour a token)
+## 5. Notes in the details (`modules/extra/extra.css`) (done, 2026-11-20: the owner's call: where data comes from goes in the debug info only, as a hint; the orange box and its file removed)
 
 An orange left edge and tint for notes about extra data, not in the standard. Plan:
 decide whether notes get a look of their own (then STYLE.md says so, with

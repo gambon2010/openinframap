@@ -108,7 +108,6 @@
     "line": "Distribution line",
     "voltage-class": "Voltage class",
     "kind": "Kind",
-    "updated": "Source updated",
     "notice": "Not from OpenStreetMap: open data from",
     "hta": "HTA (medium voltage, usually 20 kV)",
     "bt": "BT (low voltage, 230/400 V)",
@@ -136,7 +135,8 @@
       "last": "last",
       "commune": "Commune",
       "details": "Details"
-    }
+    },
+    "updated-on": "updated {{date}}"
   },
   "sites": {
     "category": {

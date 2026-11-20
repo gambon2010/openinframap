@@ -51,6 +51,11 @@
   letter-spacing: 0.05em;
   opacity: 0.7;
 }
+/* Where the data comes from (ui/details.ts SOURCE_NOTE), as a hint. */
+.oim-debug-details .oim-source-note {
+  margin: 6px 0 0;
+  color: var(--oim-text-color-light);
+}
 .oim-debug-details td {
   font-family: ui-monospace, monospace;
   word-break: break-all;

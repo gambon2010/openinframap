@@ -37,14 +37,13 @@
 }
 
 /* --- Fork-wide colours the standard's tokens (web/src/index.css, upstream's) don't
- * have: a state's colour (an error, a success, a link), a warning's background, a
- * note's edge, and the dark overlays (the tooltip, the debug box). docs/STYLE.md. */
+ * have: a state's colour (an error, a success, a link), a warning's background, and
+ * the dark overlays (the tooltip, the debug box). docs/STYLE.md. */
 :root {
   --oim-error: #b3261e;
   --oim-success: #1b7a33;
   --oim-link: #1a5fb4;
   --oim-warning-background: #fff4e5;
-  --oim-note-accent: #e8a33d;
   --oim-overlay-background: rgb(20 20 30 / 85%);
   --oim-overlay-text: #f2f2f2;
   --oim-overlay-accent: #ffd600;
