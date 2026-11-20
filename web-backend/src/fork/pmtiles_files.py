@@ -107,8 +107,13 @@ class ArchiveFolder:
         return old if old and old.stamp == stamp else Archive.open(path)
 
     def get(self, path: Path) -> Archive | None:
-        """A file of the folder by its path, if it's open."""
+        """A file of the folder by its path, if it's open (as of the last archives())."""
         return self.open.get(path)
+
+    def named(self, name: str) -> Archive | None:
+        """A file of the folder by its name, as the folder is now (a name that isn't
+        one of its files, such as one with a path in it, finds nothing)."""
+        return next((a for a in self.archives() if a.path.name == name), None)
 
     def version(self) -> str:
         """Changes when any of the files does (added, rebuilt, removed): the tiles'

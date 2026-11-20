@@ -46,8 +46,7 @@ async def imagery(request: Request) -> Response:
 async def imagery_tile(request: Request) -> Response:
     """A tile of one imagery file, by its name (only a file of the folder: a name
     that isn't one of them finds nothing)."""
-    IMAGERY_FILES.archives()
-    archive = IMAGERY_FILES.get(OFFLINE_MAPS_DIR / f"{request.path_params['file']}.pmtiles")
+    archive = IMAGERY_FILES.named(f"{request.path_params['file']}.pmtiles")
     if archive is None:
         return Response(status_code=404)
     tile_type = archive.header["tile_type"]
