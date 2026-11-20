@@ -1284,6 +1284,18 @@ default). Counts are France's OSM data in October 2026.
   replaces `GATE_FRONTEND`). Checked: both configs valid; the built gate on
   Compose's network beside the running one, `/login` answered by the backend by
   name, the protected routes asking for a login.
+- **The gate serves only the built page** (2026-11-21, asked: "keep only the built
+  version on docker"): one gate image, on Compose's network; the dev mode, its
+  `modes/` and `templates/` removed. Development is back to opening Vite's dev server
+  (http://localhost:5173, `start.sh` opens it), which now passes on the gate's paths
+  (`/tegola/`, the backend's routes, login) with the Host kept, so the page's
+  addresses (`config.ts`, the page's own origin) work there as through the gate; a
+  test checks the two lists agree. Checked: through Vite, the login page, Tegola,
+  and the backend asking for a session; the gate the same on 8800.
+- **"Place d'armes" no longer a range:** in France it's a barracks' parade ground
+  (three in France were drawn as ranges, two now with their barracks); "Place d'armes
+  de ..." stays one (Switzerland's training grounds, Bure). A test runs the name rules
+  on names.
 
 ## Extra data (not from OpenStreetMap)
 

@@ -82,12 +82,14 @@ port_in_use() {
 }
 
 # The app is opened through the gate (gate/nginx.conf), which asks for a login,
-# over https with its own certificate (the browser warns once);
-# the frontend dev server itself is FRONTEND_PORT.
+# over https with its own certificate (the browser warns once), the page built into
+# its image. Development opens the frontend dev server (Vite: instant reload), on
+# this computer only.
 GATE_PORT=8800
 APP_URL="https://localhost:$GATE_PORT"
 
 FRONTEND_PORT=5173
+DEV_URL="http://localhost:$FRONTEND_PORT"
 
 
 open_browser() {
@@ -122,7 +124,7 @@ start_app() {
         # Docker makes it owned by root.
         mkdir -p "$GATE_CERT_DIR"
         up_services gate
-        ok "Gate started: $APP_URL (log in there; the first time, it makes the admin account)."
+        ok "Gate started: $APP_URL, from the network too (the page as last built into it)."
         info "Its certificate is its own: the browser warns once (\"Advanced\" → \"Proceed\")."
     fi
     if port_in_use "$FRONTEND_PORT"; then
@@ -141,10 +143,10 @@ start_app() {
     done
     [[ -t 1 ]] && printf "\r\e[K"
     if port_in_use "$FRONTEND_PORT"; then
-        ok "Opening the map in your browser: $APP_URL"
-        open_browser "$APP_URL"
+        ok "Opening the map in your browser: $DEV_URL (log in there; the first time, it makes the admin account)."
+        open_browser "$DEV_URL"
     else
-        warn "The frontend hasn't answered yet — check its window, then open $APP_URL"
+        warn "The frontend hasn't answered yet — check its window, then open $DEV_URL"
     fi
     info "To stop the app, press Ctrl+C in the frontend window (or close it),"
     info "then run: docker compose stop"
@@ -159,7 +161,7 @@ print_manual_start() {
     echo "  Frontend (in a terminal you keep open):"
     echo "    cd web && npm install && npm start"
     echo ""
-    echo "  Then open: $APP_URL"
+    echo "  Then open: $DEV_URL (from the network: $APP_URL)"
 }
 
 # Create web/.env with the local-stack defaults if it doesn't exist yet.

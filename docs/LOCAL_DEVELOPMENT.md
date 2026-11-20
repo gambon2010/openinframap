@@ -40,7 +40,7 @@ bash scripts/launch.sh
 3. Creates `web/.env` and `web-backend/.env` if they don't exist.
 4. Starts the Tegola tile server.
 5. Asks **"Start the app now?"**: it starts the backend and the gate (Docker),
-   opens the frontend in a new terminal window, and opens https://localhost:8800 in
+   opens the frontend in a new terminal window, and opens http://localhost:5173 in
    your browser once it's up.
 6. Offers to fill the Wikidata cache for offline popups (with a time estimate).
 
@@ -59,8 +59,11 @@ window and the browser. Anything already running is left alone.
 
 ### Logging in
 
-The whole app is behind a login: open it at **https://localhost:8800** (from another
-computer: `https://<this computer's address>:8800`).
+The whole app is behind a login. On this computer, `start.sh` opens the frontend's
+dev server, **http://localhost:5173** (your changes show at once). From another
+computer, and on a computer without Node.js, it's the gate: **https://<this
+computer's address>:8800**, serving the page as last built into its image (the gate
+is rebuilt by `start.sh` and the export when the frontend changed).
 
 **The browser warns the first time** ("Your connection is not private"): the gate
 made its own certificate (nobody else vouches for it), so choose **Advanced →
@@ -83,9 +86,8 @@ Behind it, the **gate** (`gate/nginx.conf`, the `gate` Compose service) is the o
 way in from the network: it checks the session on every request, for the map tiles,
 the background map and the page too. The database, Tegola, the backend and the
 background map server only listen on this computer (127.0.0.1), and the backend
-refuses any call without a session too. http://localhost:5173 (the frontend dev
-server) still answers on this computer, but the map's data doesn't load there: use
-port 8800.
+refuses any call without a session too. The frontend dev server (port 5173) only
+listens on this computer; it passes the same requests to the same services.
 
 ---
 

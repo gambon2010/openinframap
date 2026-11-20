@@ -429,25 +429,18 @@ the schema fingerprint builds and exports carry.
 
 nginx, the one way in (https on 8800, every request needs a logged-in session:
 `nginx.conf` asks the backend's `/auth/check`); its certificate made on first start
-(`10-certificate.sh`, kept in `data/local/gate/`). Its `Dockerfile` makes two
-images, two Compose services (`docker-compose.override.yml`), one running at a time:
+(`10-certificate.sh`, kept in `data/local/gate/`). Its `Dockerfile` builds the
+frontend into the image (a `node:26` stage runs `npm ci` and `vite build` on
+`web/`, without `web/.env`: the page finds every service from its own address), so
+a computer running it needs no Node.js, Windows included. On Compose's network
+(Docker Desktop has no host network by default): port 8800 published, the services
+reached by name through Docker's DNS (`resolve`: found again when a container is
+recreated). The export builds and saves it.
 
-- `gate` (target `gate`, mode `dev`): the page from Vite's dev server, for
-  development (`start.sh`, instant reload); on the host's network, reaching the
-  services on 127.0.0.1 and Vite on localhost (Vite never listens beyond it);
-- `gate-built` (target `built`, mode `built`, profile `built`): the frontend built
-  into the image (a `node:26` stage runs `npm ci` and `vite build` on `web/`,
-  without `web/.env`: the page finds every service from its own address); for a
-  computer without Node.js, Windows included. On Compose's network (Docker Desktop
-  has no host network by default): port 8800 published, the services reached by
-  name through Docker's DNS (`resolve`: found again when a container is
-  recreated). The export builds and saves it.
-
-Each mode is a folder, `modes/<mode>/`: `page.conf` (how the page is served) and
-`services.conf` (where the services are). `GATE_MODE` (set by each target) picks
-it: nginx's image writes `templates/`' includes into `conf.d/` at start (its
-documented templates). `scripts/tests/test_one_source.py` checks both modes' ports
-against Compose's.
+Development opens Vite's dev server (http://localhost:5173, this computer only),
+which passes the gate's paths to the same services (`web/vite.config.ts`);
+`scripts/tests/test_one_source.py` checks the two lists of paths, and the ports,
+agree.
 
 The built page would install upstream's service worker, which answers page visits
 without the gate (the login page included) and keeps old builds: the gate answers

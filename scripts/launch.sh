@@ -101,7 +101,7 @@ ok "Running on http://localhost:$TEGOLA_PORT"
 section "Starting the app"
 STARTED=0
 if port_in_use "$BACKEND_PORT" && port_in_use "$FRONTEND_PORT"; then
-    ok "The app is already running: $APP_URL"
+    ok "The app is already running: $DEV_URL"
     STARTED=1
 elif ask_yes_no "Start the app now? (backend in Docker, frontend in a new terminal window, then your browser)" y; then
     if start_app; then
@@ -124,7 +124,7 @@ offer_image_cache
 done_banner "Setup complete!"
 echo ""
 if [[ "$STARTED" == 1 ]]; then
-    echo "The app is running at: $APP_URL"
+    echo "The app is running at: $DEV_URL (from the network: $APP_URL)"
 else
     print_manual_start
 fi

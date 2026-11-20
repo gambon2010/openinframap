@@ -95,11 +95,11 @@ Services (`docker-compose.override.yml`; all on 127.0.0.1 but the gate):
 
 | Service | Port | What |
 |---|---|---|
-| `gate` | 8800 (https) | nginx, **where the app is opened**; the one way in from the network, every request needs a logged-in session (`gate/nginx.conf`, certificate made in `data/local/gate/`); the page from Vite's dev server, or built into the image (`gate-built`, profile `built`: no Node.js needed) |
+| `gate` | 8800 (https) | nginx, **where the app is opened**; the one way in from the network, every request needs a logged-in session (`gate/nginx.conf`, certificate made in `data/local/gate/`); the page built into its image (no Node.js needed); on Compose's network, reaching the services by name |
 | `db` | 5432 | PostGIS |
 | `tegola` | 7800 | the infrastructure tiles |
 | `backend` | 8001 | API, login, search, and the offline maps from `data/map/offline-maps/`: background map (`/background`), terrain (`/terrain`), satellite imagery (`/imagery`, `/satellite`) |
-| frontend | 5173 | `cd web && npm start`, reached through the gate |
+| frontend | 5173 | `cd web && npm start`: development, this computer only (Vite passes the gate's paths on, `web/vite.config.ts`) |
 
 Stop: Ctrl+C in the frontend window, then `docker compose stop`.
 

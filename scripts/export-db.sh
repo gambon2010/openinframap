@@ -104,10 +104,10 @@ ok "$(human_size "$(stat -c%s "$DUMP")") → data/map/exports/$REGION_ID.oimdb"
 
 if [[ "$SAVE_IMAGES" == 1 ]]; then
     # Make sure every image exists locally and is current (all but db are built from
-    # this repo; gate-built builds the frontend into the gate: a minute or two when
+    # this repo; the gate builds the frontend into its image: a minute or two when
     # the frontend changed).
-    docker compose --progress quiet --profile tools --profile built \
-        build tegola backend gate gate-built imposm osmium loom </dev/null
+    docker compose --progress quiet --profile tools \
+        build tegola backend gate imposm osmium loom </dev/null
     save_images() {
         docker save "${IMAGES[@]}" | gzip -1 > "$DOCKER_IMAGES_TAR.part"
         mv "$DOCKER_IMAGES_TAR.part" "$DOCKER_IMAGES_TAR"

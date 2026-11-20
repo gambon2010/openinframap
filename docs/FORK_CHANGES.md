@@ -171,7 +171,7 @@ errors in upstream's own files as before.
 | `web/src/api.ts` | Backend URL configurable; no error when it's unreachable |
 | `web/src/style/style_base.ts`, `style_oim_power.ts`, `style_oim_petroleum.ts` | Background layers hidden; the night lights' two layers removed (`black_marble*`); a few constants exported for the fork's styles |
 | `web/src/elements/external-links.ts` | Popup crash fix |
-| `web/vite.config.ts` | Proxies backend routes (also `/userdata`) to the configured backend; PWA exclusions; larger precache limit (symbol and graphics libraries); tests exclude `src/fork/` |
+| `web/vite.config.ts` | The dev server passes the gate's paths on (`/tegola/` to Tegola, the backend's routes and login to the backend, Host kept); PWA exclusions; larger precache limit (symbol and graphics libraries); tests exclude `src/fork/` |
 | `web/package.json`, `package-lock.json` | `@syncpoint/signs` (My layers' symbols), `@armyc2.c5isr.renderer/mil-sym-ts-web` (tactical graphics), `@turf/boolean-point-in-polygon` (buildings with parts, 3D); dev: `happy-dom`; script `test:fork` |
 | `web/index.html` | "export (online)" label |
 

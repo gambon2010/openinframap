@@ -5,9 +5,15 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { renderSVG } from 'vite-plugin-render-svg'
 import i18nextLoader from 'vite-plugin-i18next-loader'
 
-// Fork: the dev server proxies backend pages to the configured backend (web/.env).
-const backendUrl =
-  loadEnv('development', process.cwd(), '').VITE_BACKEND_BASE_URL || 'https://openinframap.org'
+// Fork: the dev server (http://localhost:5173, this computer only) passes on what the
+// gate passes on (gate/nginx.conf; scripts/tests/test_one_source.py checks they
+// agree): the page sends the local services to its own address (src/fork/config.ts).
+// The Host is kept (no changeOrigin): the backend's login redirects come back here.
+const env = loadEnv('development', process.cwd(), '')
+const backendUrl = env.VITE_BACKEND_BASE_URL || 'http://localhost:8001'
+const tegolaUrl = env.VITE_TEGOLA_URL || 'http://localhost:7800'
+const BACKEND_PATHS =
+  '^/(login|auth|userdata|api|grid|background|terrain|imagery|satellite|search|stats|about|copyright|static|local-images|wikidata|sitemap\\.xml|heatmap\\.json)(/|$|\\?)'
 
 export default defineConfig({
   build: {
@@ -31,11 +37,8 @@ export default defineConfig({
       allow: ['..']
     },
     proxy: {
-      '/stats': { target: backendUrl, changeOrigin: true },
-      '/about': { target: backendUrl, changeOrigin: true },
-      '/static': { target: backendUrl, changeOrigin: true },
-      '/local-images': { target: backendUrl, changeOrigin: true },
-      '/userdata': { target: backendUrl, changeOrigin: true }
+      '/tegola/': { target: tegolaUrl, rewrite: (path) => path.replace(/^\/tegola/, '') },
+      [BACKEND_PATHS]: { target: backendUrl }
     }
   },
 

@@ -80,9 +80,6 @@ def test_the_data_folders_agree_everywhere():
 
 def test_ports_agree_everywhere():
     gate = (ROOT / "gate" / "nginx.conf").read_text()
-    modes = ROOT / "gate" / "modes"
-    on_host = (modes / "dev" / "services.conf").read_text()
-    on_network = (modes / "built" / "services.conf").read_text()
     frontend = (ROOT / "web" / "src" / "fork" / "config.ts").read_text()
     for service, in_shell, default in (
         ("backend", "BACKEND_PORT", "VITE_BACKEND_BASE_URL || 'http://localhost:{}'"),
@@ -90,10 +87,8 @@ def test_ports_agree_everywhere():
     ):
         port = compose_port(service)
         assert shell(in_shell) == port, service
-        # The gate on the host's network finds it on its published port; on
-        # Compose's network, by its name on its container's port.
-        assert f"upstream {service} {{ server 127.0.0.1:{port}; }}" in on_host
-        assert f"server {service}:{container_port(service)} resolve;" in on_network
+        # The gate, on Compose's network, finds it by name on its container's port.
+        assert f"server {service}:{container_port(service)} resolve;" in gate
         # The frontend sends a local service's address through the gate by its port.
         assert f":{port}/, '" in frontend, service
         if default:
@@ -176,3 +171,15 @@ def test_the_railways_are_named_and_kinded_alike():
     assert f'TAXIWAYS = "{taxiways.TAXIWAYS}"' in lead_ins
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()
     assert f'GEOFABRIK_INDEX="$OSM_DIR/{regions.GEOFABRIK_INDEX.name}"' in shell
+
+
+def test_the_gate_and_the_dev_server_pass_on_the_same_paths():
+    gate = (ROOT / "gate" / "nginx.conf").read_text()
+    vite = (ROOT / "web" / "vite.config.ts").read_text()
+    to_backend = re.search(r"location ~ \^/\(([^)]+)\)", gate)
+    in_vite = re.search(r"'\^/\(([^)]+)\)", vite)
+    assert to_backend and in_vite, "the backend's paths weren't found"
+    gate_paths = set(to_backend[1].split("|")) | {"login", "auth"}
+    vite_paths = set(in_vite[1].replace("\\\\", "\\").split("|"))
+    assert gate_paths == vite_paths
+    assert "location /tegola/" in gate and "'/tegola/'" in vite

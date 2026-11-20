@@ -76,18 +76,13 @@ Each step ends with every test suite passing, committed; the app works between s
 
 ### 2. The frontend in the gate's image (C) — ✅ done (2026-11-20)
 
-Done as two images from the gate's Dockerfile (targets `gate` and `built`, Compose
-services `gate` and `gate-built`): the scripts rebuild images at every start, so
-a single image with the frontend would have rebuilt it at each `start.sh` after a
-frontend change.
-
-- The gate's Dockerfile gets a build stage: `npm ci` and `vite build` (on this
+- The gate's Dockerfile has a build stage: `npm ci` and `vite build` (on this
   computer, online), the built files copied into the nginx image (Docker's documented
   multi-stage build; Vite's documented static deployment).
-- The gate runs one of two ways, chosen by a setting in Compose (nginx's image reads
-  its config from a template, its documented way of doing that):
-  - development (`start.sh`): passes the page to Vite's dev server, as now;
-  - built (`run.sh`): serves the built files.
+- The gate only serves the built page (decided 2026-11-21: first done as two gates,
+  one passing the page to Vite's dev server). Development opens Vite's dev server
+  itself (http://localhost:5173, as before the gate), which passes the gate's paths
+  to the same services.
 - One build fits every drive: the map sources and the imagery list are read when the
   page opens (`config.ts` builds addresses from the page's own).
 - The gate image is rebuilt by the export (`export-db.sh --docker-images`) whenever
@@ -95,16 +90,11 @@ frontend change.
 
 ### 3. The gate on Docker's own network — ✅ done (2026-11-20)
 
-Nothing leaves the computer and the address stays https://<this computer>:8800; only
-how the gate's container is connected changes.
-
-- The built gate (`gate-built`, what `run.sh` starts) is on Compose's network: it
-  publishes 8800 and reaches the services by name (`backend:80`, `tegola:80`).
-  Docker Desktop (Windows) only has the host's network behind an opt-in setting.
-- The development gate stays on the host's network (changed from the plan): to reach
-  Vite from Compose's network, Vite would have to listen beyond localhost, a way
-  around the login. Development is on Linux, where the host's network is there.
-- The services keep listening on 127.0.0.1 only; the gate stays the one way in.
+Nothing leaves the computer and the address stays https://<this computer>:8800.
+The gate is on Compose's network: it publishes 8800 and reaches the services by name
+(`backend:80`, `tegola:80`). Docker Desktop (Windows) only has the host's network
+behind an opt-in setting. The services keep listening on 127.0.0.1 only; the gate
+stays the one way in.
 
 ### 4. `run.sh`: Docker and bash only (B, C)
 
@@ -117,7 +107,7 @@ At the project's root, for the drive (and any computer without the developer's t
    export (the export's `<region>.json` against the database's build info). My
    layers kept, as the import does now.
 4. Starts every service from the loaded images (`docker compose up --no-build`: the
-   same Compose files, nothing built), the gate serving the built frontend.
+   same Compose files, nothing built).
 5. Opens the browser (`xdg-open` on Linux, `explorer.exe` from WSL).
 
 `run.sh stop` stops everything (before unplugging, if you want the map to close
@@ -204,7 +194,7 @@ Europe: about 16 GB of export on the drive, 53 GB of database on each computer.
 
 ## Reuse
 
-Docker's `save`/`load` and multi-stage builds, nginx's config templates, Vite's static
+Docker's `save`/`load` and multi-stage builds, Vite's static
 build, `rsync`, Docker's `host-gateway`: each the tool's documented use.
 
 ## Effort
