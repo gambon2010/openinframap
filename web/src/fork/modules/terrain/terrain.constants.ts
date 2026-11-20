@@ -12,8 +12,8 @@ export const HILLSHADE_LAYER = `${TERRAIN_PREFIX}hillshade`
 /** Every contour layer's id starts with this. */
 export const CONTOURS_PREFIX = `${TERRAIN_PREFIX}contours`
 
-/** Data layers entries: letters never used before (they're in map addresses). */
-export const HILLSHADE_SWITCHER_ID = 'D'
+/** The Contour lines entry in Data layers: a letter never used before (it's in map
+ * addresses). Hill shading's: core/terrain.ts. */
 export const CONTOURS_SWITCHER_ID = 'C'
 
 /** The backend's contour tiles (web-backend/src/fork/terrain/contours.py). */

@@ -1296,6 +1296,16 @@ default). Counts are France's OSM data in October 2026.
   (three in France were drawn as ranges, two now with their barracks); "Place d'armes
   de ..." stays one (Switzerland's training grounds, Bure). A test runs the name rules
   on names.
+- **3D turns the hill shading on over the map** (2026-11-21, asked: the relief was
+  hard to see on the map's flat colours), as it does the buildings, and off again
+  when 3D ends if it switched it on; not over imagery (photos have their own
+  shadows). The Hill shading entry's id moved to `core/terrain.ts` (modules don't
+  import each other).
+- **The Data layers panel follows every change of the entries** (bug: 3D switched the
+  buildings on and off without the panel's tick box following; search and the roads
+  the same): `followChanges` (`ui/data-layers.ts`) redraws it after every
+  `setVisibility` and every reading of the address, whoever made them. A test runs it
+  on the real layer switcher.
 
 ## Extra data (not from OpenStreetMap)
 

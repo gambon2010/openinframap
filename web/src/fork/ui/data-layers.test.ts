@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { assignSections, entryTick, groupTick } from './data-layers.ts'
+import { Layer, LayerSwitcher } from '@russss/maplibregl-layer-switcher'
+import { assignSections, entryTick, followChanges, groupTick, Switcher } from './data-layers.ts'
 
 const styleLayers = [
   { id: 'power_line_1', type: 'line', paint: { 'line-color': '#ff0000' } },
@@ -55,5 +56,28 @@ describe('Data layers: a group’s tick box', () => {
     expect(entryTick(true, [false, true])).toEqual({ checked: true, indeterminate: true })
     // Off: nothing of it shows, whatever its rows say.
     expect(entryTick(false, [false, true])).toEqual({ checked: false, indeterminate: false })
+  })
+})
+
+describe('followChanges', () => {
+  const switcherWithBuildings = () =>
+    new LayerSwitcher([new Layer('B', 'Buildings', 'buildings_', false)]) as unknown as Switcher
+
+  test('an entry switched by other code redraws the panel', () => {
+    const switcher = switcherWithBuildings()
+    let redrawn = 0
+    followChanges(switcher, () => redrawn++)
+    switcher.setVisibility('B', true)
+    expect(switcher._visible).toEqual(['B'])
+    expect(redrawn).toBe(1)
+  })
+
+  test('the entries read again from the address redraw the panel', () => {
+    const switcher = switcherWithBuildings() as Switcher & { setURLString(value: string): void }
+    let redrawn = 0
+    followChanges(switcher, () => redrawn++)
+    switcher.setURLString('B')
+    expect(switcher._visible).toEqual(['B'])
+    expect(redrawn).toBe(1)
   })
 })

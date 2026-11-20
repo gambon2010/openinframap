@@ -25,6 +25,8 @@ export interface Switcher {
   _layers: (SwitcherLayer | SwitcherGroup)[]
   _visible: string[]
   setVisibility(id: string, visible: boolean): void
+  /** Redraws its own list (after reading the address; not after setVisibility). */
+  _updateList(): void
 }
 export interface SwitcherLayer {
   id: string
@@ -230,6 +232,22 @@ export function buildDataLayers(map: Map, switcher: Switcher, keyPane: HTMLEleme
     for (const [group, box] of groupBoxes) Object.assign(box, groupTick(group.layers, switcher._visible))
   }
   refresh()
-  window.addEventListener('hashchange', refresh)
+  followChanges(switcher, refresh)
   return { panel, refresh }
+}
+
+/** Calls `changed` after every change of the switcher's entries, whoever made it (the
+ * 3D view, search, the roads, the address): an entry switched (`setVisibility`), or
+ * the entries read again from the address (it then redraws its own list). */
+export function followChanges(switcher: Switcher, changed: () => void) {
+  const setVisibility = switcher.setVisibility.bind(switcher)
+  switcher.setVisibility = (id, visible) => {
+    setVisibility(id, visible)
+    changed()
+  }
+  const redrawList = switcher._updateList.bind(switcher)
+  switcher._updateList = () => {
+    redrawList()
+    changed()
+  }
 }

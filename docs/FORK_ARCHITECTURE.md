@@ -92,7 +92,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                or over imagery (the lines go on top); details.ts: a clicked thing's
                height (services/elevation.ts, shared with the coordinates box)
   view3d       the 3D button: the map tilted, tilting and turning allowed, the relief
-               and a sky (core/terrain.ts: the terrain's sources), buildings on
+               and a sky (core/terrain.ts: the terrain's sources), buildings on, and
+               the hill shading over the map
   map-sources  background tiles and Photon (Settings)
   handovers    upstream's layers handing over at a whole zoom moved to the tile switch
                (core/tile-zooms.ts; handovers.test.ts checks the whole style)
