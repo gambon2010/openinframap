@@ -127,9 +127,10 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   *supplementary contours* at half the interval, dashed, on level ground only (from
   zoom 12); *depression contours* (closed round lower ground) with short ticks on
   their downhill side. The interval follows the maps' scales: 100 m at zooms 9–10,
-  50 m at 11, 20 m at 12–13, 10 m from 14 (made in the backend). They lie with the
-  hill shading, under the roads, buildings and data; over imagery a lighter brown.
-  From zoom 9 (nothing further out).
+  50 m at 11, 20 m at 12–13, 10 m from 14 (made in the backend). They're drawn on
+  top of everything (the owner's choice: under the background map's buildings every
+  line in a town was cut into pieces); over imagery a lighter brown. From zoom 9
+  (nothing further out).
 - **Leave out clutter the original map leaves out:** small pieces with no name
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).

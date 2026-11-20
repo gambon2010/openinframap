@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { terrainBefore } from './placement.ts'
+import { shadingBefore } from './placement.ts'
 
 const LAYERS = [
   'osm_background',
@@ -15,16 +15,16 @@ const LAYERS = [
   'label_places_locality'
 ]
 
-describe('terrainBefore', () => {
+describe('shadingBefore', () => {
   test('over the map: on the land cover and water, under the first road or building', () => {
-    expect(terrainBefore(LAYERS, false)).toBe('osm_roads_tunnels_other_casing')
+    expect(shadingBefore(LAYERS, false)).toBe('osm_roads_tunnels_other_casing')
   })
 
   test('over imagery: right above the photos, under the first data layer', () => {
-    expect(terrainBefore(LAYERS, true)).toBe('roads_minor')
+    expect(shadingBefore(LAYERS, true)).toBe('roads_minor')
   })
 
   test('nothing over it: the top', () => {
-    expect(terrainBefore(['osm_background', 'osm_water'], false)).toBeUndefined()
+    expect(shadingBefore(['osm_background', 'osm_water'], false)).toBeUndefined()
   })
 })

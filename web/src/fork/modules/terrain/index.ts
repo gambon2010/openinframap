@@ -13,7 +13,7 @@ import { addDetailsExtra } from '../../ui/details.ts'
 import { ForkModule } from '../../types.ts'
 import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, LABEL_LAYER, contourLayers } from './contours.ts'
 import { heightRow } from './details.ts'
-import { terrainBefore } from './placement.ts'
+import { shadingBefore } from './placement.ts'
 import {
   CONTOURS_MAX_ZOOM,
   CONTOURS_MIN_ZOOM,
@@ -35,9 +35,6 @@ import {
 const CREDIT =
   'Terrain: <a href="https://mapterhorn.com">Mapterhorn</a>, IGN (RGE ALTI, LiDAR HD), Copernicus DEM'
 
-/** The terrain's layers, in the order they're drawn: shading, lines, heights. */
-const TERRAIN_LAYERS = [HILLSHADE_LAYER, ...CONTOUR_LAYERS]
-
 /** A source of the terrain's elevations (Mapterhorn's tiles: Terrarium, 512 pixels). */
 const elevations: RasterDEMSourceSpecification = {
   type: 'raster-dem',
@@ -48,12 +45,15 @@ const elevations: RasterDEMSourceSpecification = {
   attribution: CREDIT
 }
 
-/** Moves the terrain's layers to their place for the background shown (placement.ts),
- * one after the other, so they keep their order. */
+/** Moves the terrain's layers to their places: the hill shading on the ground for the
+ * background shown (placement.ts); the contour lines on top of everything (the
+ * owner's choice: under the background map's buildings, every line in a town was
+ * cut into pieces), one after the other so they keep their order. */
 function place(map: Map) {
   const ids = (map.getStyle().layers ?? []).map((layer) => layer.id)
-  const before = terrainBefore(ids, background.mode() !== 'map')
-  for (const id of TERRAIN_LAYERS) if (map.getLayer(id)) map.moveLayer(id, before)
+  if (map.getLayer(HILLSHADE_LAYER))
+    map.moveLayer(HILLSHADE_LAYER, shadingBefore(ids, background.mode() !== 'map'))
+  for (const id of CONTOUR_LAYERS) if (map.getLayer(id)) map.moveLayer(id)
 }
 
 const hillshade = {
@@ -83,7 +83,7 @@ const terrain: ForkModule = {
     }
   }),
 
-  // Low among the data layers; place() puts them under the background map's roads.
+  // Low among the data layers; place() moves them (the shading down, the lines up).
   layers: () => [hillshade, ...contourLayers()].map((layer) => ({ ...layer, zorder: 1 })),
 
   switcherGroups: () => [

@@ -1147,6 +1147,11 @@ default). Counts are France's OSM data in October 2026.
   120 ms; Mont Blanc 4806 m), and now uses the standard's tokens. A clicked thing's
   details get its height too (a point's; an area's at its middle when that's inside
   it; not a line's), through `services/elevation.ts`, shared by both.
+- **Contour lines on top (2026-11-20):** in towns they came out in short pieces.
+  Tracing from a coarser zoom (maplibre-contour's `overzoom`) and a longer minimum
+  length were tried and changed nothing: the background map's buildings, drawn over
+  the lines, were cutting them. The lines now go on top of everything (the owner's
+  choice); the hill shading stays on the ground.
 
 ## Extra data (not from OpenStreetMap)
 
