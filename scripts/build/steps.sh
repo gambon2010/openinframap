@@ -93,7 +93,7 @@ import_osm() {
         if run_with_timer --keep-going "Putting back the extra data" restore_extra_data "$REGION_ID"; then
             EXTRA_RESTORED=1
         else
-            warn "Putting back the extra data failed; re-import it with: uv run scripts/extra_data.py import"
+            warn "Putting back the extra data failed; re-import it with: uv run --project scripts scripts/extra_data.py import"
             db_psql -c "DROP SCHEMA IF EXISTS extra CASCADE;"
         fi
     fi
@@ -135,16 +135,16 @@ import_extra_data() {
     local db_url="postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" args=()
     if [[ "$EXTRA_RESTORED" == 1 && "$EXTRA_NEW" != yes ]]; then
         section "Checking the kept extra data against the new OSM data..."
-        uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" dedupe \
-            || warn "Checking failed; the extra data is there but may overlap OSM. Retry with: uv run scripts/extra_data.py dedupe"
+        scripts_python "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" dedupe \
+            || warn "Checking failed; the extra data is there but may overlap OSM. Retry with: uv run --project scripts scripts/extra_data.py dedupe"
     fi
     if [[ "$EXTRA_NEW" == yes ]]; then
         section "Importing extra data (outside OpenStreetMap)..."
         [[ -n "$EXTRA_CHOOSE" ]] && args+=(--choose "$EXTRA_CHOOSE")
         # A fresh copy (asked for when there's kept data): not reusing earlier downloads.
         [[ -n "$EXTRA_KEPT" ]] && args+=(--refresh)
-        uv run "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" import "${args[@]}" \
-            || warn "Importing extra data failed; the map works without it. Retry with: uv run scripts/extra_data.py import"
+        scripts_python "$REPO_ROOT/scripts/extra_data.py" --db-url "$db_url" import "${args[@]}" \
+            || warn "Importing extra data failed; the map works without it. Retry with: uv run --project scripts scripts/extra_data.py import"
     fi
 }
 
@@ -166,8 +166,8 @@ offline_background() {
 cache_wikidata() {
     [[ "$IMAGES" == yes ]] || return 0
     section "Caching Wikidata data and images (already-cached ones are skipped)..."
-    uv run "$REPO_ROOT/scripts/fetch_images.py" \
-        || warn "Caching Wikidata images stopped; run it again to go on: uv run scripts/fetch_images.py"
+    scripts_python "$REPO_ROOT/scripts/fetch_images.py" \
+        || warn "Caching Wikidata images stopped; run it again to go on: uv run --project scripts scripts/fetch_images.py"
 }
 
 # What was built, and an out-of-date export made again.

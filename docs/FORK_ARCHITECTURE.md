@@ -330,9 +330,10 @@ the schema fingerprint builds and exports carry.
     `choose_number` for every numbered menu), `room_for` (disk space), timed steps
     (`run_with_timer`, which can show progress and stop a hung command), `duration`;
   - `python`: `scripts_python`, Python with the scripts' packages
-    (`scripts/pyproject.toml`: mercantile, pmtiles, filelock; dev: pytest, mypy),
-    in the environment uv makes and keeps up to date (`scripts/.venv`); every script
-    that runs offline-maps.py or the build's Python goes through it;
+    (`scripts/pyproject.toml`: mercantile, pmtiles, filelock, httpx, psycopg2; dev:
+    pytest, mypy), in the environment uv makes and keeps up to date (`scripts/.venv`);
+    every script runs the fork's Python through it (offline-maps.py, extra_data.py,
+    fetch_images.py, the build's helpers);
   - `net`: **every download** goes through `download` (curl) or `safely` (another
     downloading command): tried again, waits up to 15 minutes for a lost connection,
     stops a download that hangs, ends with status 75 ("run again") when the

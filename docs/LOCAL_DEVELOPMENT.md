@@ -554,9 +554,9 @@ When you click a feature with a `wikidata` tag, the popup asks the backend for
 `data/images/{id}.*` if they're cached, and only otherwise calls Wikimedia.
 
 ```bash
-uv run scripts/fetch_images.py --json-only   # text only, seconds
-uv run scripts/fetch_images.py               # text and photos, 1 photo/second
-uv run scripts/fetch_images.py --count       # how many are missing
+uv run --project scripts scripts/fetch_images.py --json-only   # text only, seconds
+uv run --project scripts scripts/fetch_images.py               # text and photos, 1 photo/second
+uv run --project scripts scripts/fetch_images.py --count       # how many are missing
 ```
 
 It follows [Wikimedia's API etiquette](https://www.mediawiki.org/wiki/API:Etiquette)
@@ -621,18 +621,18 @@ source.
 `build-region.sh` offers it when it covers the region you picked, as a menu: pick any
 of electricity, gas, biomethane and ICPE (each with its size and download time), or
 pass `--extra` (all) or `--extra-only gas,icpe`. Later:
-`uv run scripts/extra_data.py import --choose gas,icpe`.
+`uv run --project scripts scripts/extra_data.py import --choose gas,icpe`.
 Rebuilding a region keeps its extra data: it's saved to `data/extra/` before the
 database is wiped and put back afterwards, without downloading it again. The raw
 downloads are kept too (`data/extra/agence-ore/`), so importing again, or for
-another French region, reuses them; `uv run scripts/extra_data.py import --refresh`
+another French region, reuses them; `uv run --project scripts scripts/extra_data.py import --refresh`
 downloads them again.
 To do it on an existing database:
 
 ```bash
-uv run scripts/extra_data.py list      # sources that cover your region, and their size
-uv run scripts/extra_data.py import    # import them (re-running replaces, never duplicates)
-uv run scripts/extra_data.py remove fr-agence-ore
+uv run --project scripts scripts/extra_data.py list      # sources that cover your region, and their size
+uv run --project scripts scripts/extra_data.py import    # import them (re-running replaces, never duplicates)
+uv run --project scripts scripts/extra_data.py remove fr-agence-ore
 docker compose up -d --force-recreate tegola   # drop tiles cached before the import
 ```
 
@@ -641,7 +641,7 @@ All of France is 16.3 million features, about 5 GB in the database, and took abo
 département. Each finished dataset shows on the map straight away; a failed refresh
 keeps the previous copy of the datasets it didn't get to. Exports include the extra
 data. Lines and substations OpenStreetMap already has are left out (the OSM ones are
-shown); for data imported before that, run `uv run scripts/extra_data.py dedupe`.
+shown); for data imported before that, run `uv run --project scripts scripts/extra_data.py dedupe`.
 
 ---
 
@@ -765,7 +765,7 @@ layers.
 
 Re-run `bash scripts/build-region.sh` and pick the region. It reuses your download
 unless you choose the newer extract (or pass `--refresh`). Then
-`uv run scripts/fetch_images.py` picks up new Wikidata IDs.
+`uv run --project scripts scripts/fetch_images.py` picks up new Wikidata IDs.
 
 ---
 

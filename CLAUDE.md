@@ -131,7 +131,7 @@ bash scripts/build-region.sh --region luxembourg --yes     # Unattended (tiny te
 bash scripts/export-db.sh / import-db.sh FILE              # Save / restore data/exports/<region>.oimdb
 bash scripts/number-towers.sh                              # Number the towers again
 uv run --project scripts scripts/offline-maps.py maps --source ID --yes     # An offline map without questions
-uv run scripts/fetch_images.py [--json-only|--count]       # Offline Wikidata cache in data/
+uv run --project scripts scripts/fetch_images.py [--json-only|--count]       # Offline Wikidata cache in data/
 docker compose down -v                                     # Wipe the DB and all project volumes
 cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml   # After changing a layer
 ```

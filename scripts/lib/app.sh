@@ -6,13 +6,13 @@
 # Offer to fill the Wikidata cache used by the info popups.
 offer_image_cache() {
     local counts missing_json missing_images minutes choice
-    if ! counts=$(uv run -q "$REPO_ROOT/scripts/fetch_images.py" --count 2>/dev/null | tail -1); then
-        warn "Couldn't check the Wikidata cache. Fill it later with: uv run scripts/fetch_images.py"
+    if ! counts=$(scripts_python "$REPO_ROOT/scripts/fetch_images.py" --count 2>/dev/null | tail -1); then
+        warn "Couldn't check the Wikidata cache. Fill it later with: uv run --project scripts scripts/fetch_images.py"
         return
     fi
     read -r missing_json missing_images <<< "$counts"
     if [[ ! "$missing_json" =~ ^[0-9]+$ || ! "$missing_images" =~ ^[0-9]+$ ]]; then
-        warn "Couldn't check the Wikidata cache. Fill it later with: uv run scripts/fetch_images.py"
+        warn "Couldn't check the Wikidata cache. Fill it later with: uv run --project scripts scripts/fetch_images.py"
         return
     fi
     if [[ "$missing_json" -eq 0 && "$missing_images" -eq 0 ]]; then
@@ -32,14 +32,14 @@ offer_image_cache() {
     echo ""
     choice=$(choose_number 3 3)
     case "$choice" in
-        1) uv run "$REPO_ROOT/scripts/fetch_images.py" || warn "Caching stopped before the end." ;;
-        2) uv run "$REPO_ROOT/scripts/fetch_images.py" --json-only || warn "Caching stopped before the end." ;;
+        1) scripts_python "$REPO_ROOT/scripts/fetch_images.py" || warn "Caching stopped before the end." ;;
+        2) scripts_python "$REPO_ROOT/scripts/fetch_images.py" --json-only || warn "Caching stopped before the end." ;;
         *) info "Skipped." ;;
     esac
     [[ "$choice" == 1 ]] || {
         info "To cache them later (safe to stop and re-run; cached items are skipped):"
-        info "  uv run scripts/fetch_images.py              # text and images (slow)"
-        info "  uv run scripts/fetch_images.py --json-only  # text only (fast)"
+        info "  uv run --project scripts scripts/fetch_images.py              # text and images (slow)"
+        info "  uv run --project scripts scripts/fetch_images.py --json-only  # text only (fast)"
     }
 }
 

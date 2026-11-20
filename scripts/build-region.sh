@@ -46,7 +46,7 @@ Usage: bash scripts/build-region.sh [options]
                   scripts/extra_data.py). Extra data already imported for the
                   region is kept across rebuilds anyway (saved in data/extra/)
   --extra-only LIST  Only these extra datasets, e.g. gas,icpe (choices: electricity,
-                  gas, biomethane, icpe; see: uv run scripts/extra_data.py offer)
+                  gas, biomethane, icpe; see: uv run --project scripts scripts/extra_data.py offer)
   --no-extra      No extra data at all, and don't ask about it
   --no-filter     Import the extract as-is, without the osmium pre-filter
   --basemap MODE  Offline background map for the region: full or none. Default:

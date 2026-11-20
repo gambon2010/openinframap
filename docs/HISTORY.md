@@ -1212,6 +1212,9 @@ default). Counts are France's OSM data in October 2026.
   runs shows on a page reload, no restart). The list names files, not servers: the
   map builds the tiles' address (`IMAGERY_URL`). Credits no longer need to avoid
   `;` and `|`.
+- **One way to declare the scripts' packages:** `extra_data.py` and `fetch_images.py`
+  lost their inline metadata; their packages (httpx, psycopg2) are in
+  `scripts/pyproject.toml` and they run through `scripts_python` too.
 
 ## Extra data (not from OpenStreetMap)
 

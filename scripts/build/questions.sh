@@ -192,7 +192,7 @@ find_extra_offer() {
     local offer="" status=2 key label cost
     EXTRA_COVERAGE=unknown
     EXTRA_KEYS=() EXTRA_LABELS=() EXTRA_COSTS=()
-    offer=$(uv run -q "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
+    offer=$(scripts_python "$REPO_ROOT/scripts/extra_data.py" offer --region-id "$REGION_ID" </dev/null 2>/dev/null) \
         && status=0 || status=$?
     case "$status" in
         0) EXTRA_COVERAGE=covered ;;
@@ -212,7 +212,7 @@ choose_extra_datasets() {
     for i in "${!EXTRA_KEYS[@]}"; do
         printf '      %d) %s\n         %s\n' "$((i + 1))" "${EXTRA_LABELS[$i]}" "${EXTRA_COSTS[$i]}"
     done
-    info "You can also do it later with: uv run scripts/extra_data.py import --choose KEY,..."
+    info "You can also do it later with: uv run --project scripts scripts/extra_data.py import --choose KEY,..."
     EXTRA_CHOOSE=""
     while true; do
         read -r -p "    Choose (e.g. 1,3 or all; Enter = none): " answer || answer=""
@@ -411,7 +411,7 @@ ask_boundaries_and_images() {
         section "Wikidata images"
         info "Info popups can show photos and details from Wikidata. Caching them for"
         info "offline use makes ~2 requests per second, so it can take hours for a"
-        info "continent. You can always do it later with: uv run scripts/fetch_images.py"
+        info "continent. You can always do it later with: uv run --project scripts scripts/fetch_images.py"
         IMAGES=no
         if ask_yes_no "Cache Wikidata images at the end of the build?" n; then
             IMAGES=yes

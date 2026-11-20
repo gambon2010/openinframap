@@ -380,15 +380,15 @@ version = "0"
 source = { virtual = "." }
 dependencies = [
     { name = "filelock" },
+    { name = "httpx" },
     { name = "mercantile" },
     { name = "pmtiles" },
+    { name = "psycopg2-binary" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "mypy" },
-    { name = "psycopg2-binary" },
     { name = "pytest" },
     { name = "types-psycopg2" },
 ]
@@ -396,15 +396,15 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "filelock", specifier = ">=3.16" },
+    { name = "httpx" },
     { name = "mercantile", specifier = ">=1.2.1" },
     { name = "pmtiles", specifier = ">=3.8.1" },
+    { name = "psycopg2-binary" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx" },
     { name = "mypy" },
-    { name = "psycopg2-binary" },
     { name = "pytest" },
     { name = "types-psycopg2", specifier = ">=2.9.21.20261030" },
 ]

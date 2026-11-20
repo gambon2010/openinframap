@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.11"
-# dependencies = ["httpx", "psycopg2-binary"]
-# ///
 """
 Import infrastructure data from outside OpenStreetMap ("extra data") into the
 extra schema (schema/fork/extra.sql), for the region the database was built for.

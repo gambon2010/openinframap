@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.11"
-# dependencies = ["httpx", "psycopg2-binary"]
-# ///
 """
 Download Wikimedia Commons thumbnails for all OSM features in the local DB.
 
@@ -35,6 +31,8 @@ from pathlib import Path
 import httpx
 import psycopg2
 
+# netsafe is beside this file. Run as a script (python -I), Python doesn't look there.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import netsafe
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
