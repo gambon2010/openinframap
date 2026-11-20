@@ -130,7 +130,9 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   50 m at 11, 20 m at 12–13, 10 m from 14 (made in the backend). They're drawn on
   top of everything (the owner's choice: under the background map's buildings every
   line in a town was cut into pieces); over imagery a lighter brown. From zoom 9
-  (nothing further out).
+  (nothing further out). The entry unfolds into a tick box per part (index lines,
+  their heights, intermediate, supplementary, depression ticks), so the parts not
+  needed can be hidden.
 - **Leave out clutter the original map leaves out:** small pieces with no name
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).

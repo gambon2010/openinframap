@@ -781,5 +781,12 @@
   "terrain": {
     "elevation-middle": "Elevation (middle)",
     "elevation": "Elevation"
+  },
+  "contours": {
+    "index": "Index contours (every fifth)",
+    "heights": "Heights on index contours",
+    "intermediate": "Intermediate contours",
+    "supplementary": "Supplementary contours (level ground)",
+    "depressions": "Depression ticks (hollows)"
   }
 }

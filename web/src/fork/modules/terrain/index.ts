@@ -13,6 +13,7 @@ import { addDetailsExtra } from '../../ui/details.ts'
 import { ForkModule } from '../../types.ts'
 import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, LABEL_LAYER, contourLayers } from './contours.ts'
 import { heightRow } from './details.ts'
+import { contoursKey } from './key.ts'
 import { shadingBefore } from './placement.ts'
 import {
   CONTOURS_MAX_ZOOM,
@@ -34,6 +35,9 @@ import {
 
 const CREDIT =
   'Terrain: <a href="https://mapterhorn.com">Mapterhorn</a>, IGN (RGE ALTI, LiDAR HD), Copernicus DEM'
+
+/** The Contour lines entry's name (its key section takes it, to unfold under it). */
+const contoursName = () => t('layers.contours', 'Contour lines')
 
 /** A source of the terrain's elevations (Mapterhorn's tiles: Terrarium, 512 pixels). */
 const elevations: RasterDEMSourceSpecification = {
@@ -89,9 +93,12 @@ const terrain: ForkModule = {
   switcherGroups: () => [
     new LayerGroup(t('layers.terrain', 'Terrain'), [
       new Layer(HILLSHADE_SWITCHER_ID, t('layers.hillshade', 'Hill shading'), HILLSHADE_LAYER, true),
-      new Layer(CONTOURS_SWITCHER_ID, t('layers.contours', 'Contour lines'), CONTOURS_PREFIX, false)
+      new Layer(CONTOURS_SWITCHER_ID, contoursName(), CONTOURS_PREFIX, false)
     ])
   ],
+
+  // Under Contour lines, a tick box for each part of them.
+  key: async () => [contoursKey(contoursName())],
 
   init: ({ map }) => {
     const apply = () => place(map)
