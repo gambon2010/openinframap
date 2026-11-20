@@ -93,16 +93,17 @@ frontend change.
 - The gate image is rebuilt by the export (`export-db.sh --docker-images`) whenever
   the frontend changed, so the export always carries a frontend matching its code.
 
-### 3. The gate on Docker's own network
+### 3. The gate on Docker's own network — ✅ done (2026-11-20)
 
 Nothing leaves the computer and the address stays https://<this computer>:8800; only
 how the gate's container is connected changes.
 
-- Today the gate runs on the host's network (`network_mode: host`) and reaches the
-  services on 127.0.0.1. Docker Desktop (Windows) only has that behind an opt-in
-  setting. The gate moves onto Compose's own network: it publishes 8800, reaches the
-  services by name (`backend:8001`, `tegola:7800`), and in development Vite's dev
-  server on the host by `host.docker.internal` (Docker's documented `host-gateway`).
+- The built gate (`gate-built`, what `run.sh` starts) is on Compose's network: it
+  publishes 8800 and reaches the services by name (`backend:80`, `tegola:80`).
+  Docker Desktop (Windows) only has the host's network behind an opt-in setting.
+- The development gate stays on the host's network (changed from the plan): to reach
+  Vite from Compose's network, Vite would have to listen beyond localhost, a way
+  around the login. Development is on Linux, where the host's network is there.
 - The services keep listening on 127.0.0.1 only; the gate stays the one way in.
 
 ### 4. `run.sh`: Docker and bash only (B, C)

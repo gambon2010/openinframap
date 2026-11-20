@@ -1,6 +1,13 @@
 # Fork: the fork's changes to docker-compose.yml (left as upstream has it).
 # Docker Compose merges this file with docker-compose.yml automatically.
 
+# What the two gates share (below): their certificate, and coming back after a restart.
+x-gate: &gate
+  volumes:
+    # Its HTTPS certificate, made on first start (gate/10-certificate.sh).
+    - ./data/local/gate:/etc/nginx/certs:z
+  restart: unless-stopped
+
 services:
   db:
     # The database port on the host, for the web-backend when it runs outside
@@ -61,22 +68,22 @@ services:
 
   # The gate (gate/nginx.conf): the one entry point, https://<this computer>:8800.
   # Every request needs a logged-in session (docs/plans/archive/sync.md); the other
-  # services above only listen on this computer. On the host's network, to reach
-  # them and the frontend dev server (npm start) on 127.0.0.1. The page from Vite's
-  # dev server (start.sh).
-  gate: &gate
+  # services above only listen on this computer. Two of them, one running at a time
+  # (both are the entry point, port 8800); what they share is x-gate, below.
+  #
+  # For development (start.sh): the page from Vite's dev server. On the host's
+  # network, to reach Vite on localhost, where it stays out of the network's reach.
+  gate:
+    <<: *gate
     build:
       context: gate
       target: gate
     network_mode: host
-    volumes:
-      # Its HTTPS certificate, made on first start (gate/10-certificate.sh).
-      - ./data/local/gate:/etc/nginx/certs:z
-    restart: unless-stopped
 
-  # The same gate with the page built into its image (gate/Dockerfile's `built`),
-  # for a computer without Node.js (run.sh); saved by the export. One of the two
-  # runs at a time (both are the entry point, port 8800).
+  # The page built into its image (gate/Dockerfile's `built`), for a computer
+  # without Node.js (run.sh); saved by the export. On Compose's network (Docker
+  # Desktop on Windows has no host network by default): it reaches the services by
+  # name, and its port is published.
   gate-built:
     <<: *gate
     build:
@@ -84,6 +91,11 @@ services:
       target: built
       additional_contexts:
         web: ./web
+    ports:
+      - "8800:8800"
+    depends_on:
+      - backend
+      - tegola
     profiles: [built]
 
   # Helper image for scripts/build-region.sh. Not started by `docker compose up`.

@@ -1,0 +1,2 @@
+# Fork: where the gate finds the services, by its mode (GATE_MODE, gate/Dockerfile).
+include /etc/nginx/modes/${GATE_MODE}/services.conf;

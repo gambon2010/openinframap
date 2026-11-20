@@ -16,8 +16,20 @@ COMPOSE = (ROOT / "docker-compose.override.yml").read_text()
 
 def compose_port(service: str) -> str:
     """The port a service is published on (127.0.0.1:PORT:...)."""
+    return published(service)[1]
+
+
+def container_port(service: str) -> str:
+    """The port a service listens on inside its container (127.0.0.1:...:PORT)."""
+    return published(service)[2]
+
+
+def published(service: str) -> re.Match[str]:
+    """A service's "127.0.0.1:PORT:CONTAINER_PORT" in Compose."""
     block = COMPOSE.split(f"\n  {service}:\n", 1)[1].split("\n  # ", 1)[0]
-    return re.search(r'"127\.0\.0\.1:(\d+):\d+"', block)[1]
+    found = re.search(r'"127\.0\.0\.1:(\d+):(\d+)"', block)
+    assert found, f"{service} isn't published on 127.0.0.1 in Compose"
+    return found
 
 
 def shell(name: str) -> str:
@@ -68,6 +80,9 @@ def test_the_data_folders_agree_everywhere():
 
 def test_ports_agree_everywhere():
     gate = (ROOT / "gate" / "nginx.conf").read_text()
+    modes = ROOT / "gate" / "modes"
+    on_host = (modes / "dev" / "services.conf").read_text()
+    on_network = (modes / "built" / "services.conf").read_text()
     frontend = (ROOT / "web" / "src" / "fork" / "config.ts").read_text()
     for service, in_shell, default in (
         ("backend", "BACKEND_PORT", "VITE_BACKEND_BASE_URL || 'http://localhost:{}'"),
@@ -75,7 +90,10 @@ def test_ports_agree_everywhere():
     ):
         port = compose_port(service)
         assert shell(in_shell) == port, service
-        assert f"upstream {service} {{ server 127.0.0.1:{port}; }}" in gate
+        # The gate on the host's network finds it on its published port; on
+        # Compose's network, by its name on its container's port.
+        assert f"upstream {service} {{ server 127.0.0.1:{port}; }}" in on_host
+        assert f"server {service}:{container_port(service)} resolve;" in on_network
         # The frontend sends a local service's address through the gate by its port.
         assert f":{port}/, '" in frontend, service
         if default:
@@ -83,6 +101,7 @@ def test_ports_agree_everywhere():
     # The gate's own port: where the app is opened.
     gate_port = shell("GATE_PORT")
     assert f"listen {gate_port} ssl;" in gate
+    assert f'"{gate_port}:{gate_port}"' in COMPOSE
 
 
 def test_the_zoomed_out_companion_is_named_and_zoomed_alike():

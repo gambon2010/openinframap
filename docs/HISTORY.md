@@ -1272,6 +1272,18 @@ default). Counts are France's OSM data in October 2026.
   changed. Checked in Chrome: the old image's worker, then the new gate on the same
   address: within a second the worker was gone, its copy deleted, the tab reloaded
   from the gate, `/login` reaching the gate; the page's settings kept.
+- **The built gate on Compose's network** (docs/plans/portable-drive.md, step 3):
+  Docker Desktop (Windows) has no host network by default. `gate-built` publishes
+  8800 and reaches the services by name (`backend:80`, `tegola:80`, through Docker's
+  DNS with nginx's `resolve`, so a recreated container is found again). The
+  development gate stays on the host's network, not as planned: reaching Vite from
+  Compose's network (`host.docker.internal`, tried: Fedora's firewall lets it
+  through) would need Vite listening beyond localhost, a way around the login for
+  anyone who can reach that address. The gate's files are now per mode
+  (`gate/modes/<mode>/page.conf`, `services.conf`, chosen by `GATE_MODE`, which
+  replaces `GATE_FRONTEND`). Checked: both configs valid; the built gate on
+  Compose's network beside the running one, `/login` answered by the backend by
+  name, the protected routes asking for a login.
 
 ## Extra data (not from OpenStreetMap)
 
