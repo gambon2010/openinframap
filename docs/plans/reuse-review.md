@@ -46,6 +46,18 @@ known problem with code of our own, what exists, and what was decided (looked at
   the fragments on flat ground; it changed nothing (the background map's buildings
   were cutting the lines), so not kept.
 
+## Second pass (2026-11-20): candidates, not changed yet
+
+Most to gain first; each waits for the owner's go.
+
+| Part | What we wrote | What exists | Proposal | Size |
+|---|---|---|---|---|
+| The Earth's geometry (`web/src/fork/core/earth.ts`: bearing, destination, great circles, circles, path length; `core/geo.ts` `groundDistance`) | Spherical formulas by hand (mean radius 6,371,008.8 m) | Turf's modules (`@turf/bearing`, `destination`, `great-circle`, `circle`, `distance`, `length`, `along`; 7.4, maintained, same radius; `@turf/boolean-point-in-polygon` is already used) | Replace, the tests unchanged as the check; the measuring marks (`measure/ticks.ts`) then use `along` | Small |
+| KML export (`modules/userlayers/io/formats.ts`) | KML written by hand | `@placemarkio/tokml` (by togeojson's author, which we use for import; maintained) | Replace, keeping our ExtendedData; GPX stays ours (no maintained writer: `togpx` is abandoned) | Small |
+| My layers' drawing and editing on the map (`map/tools.ts`, `tools/drawing.ts`, `interactions.ts`, `geometry.ts`: about 870 lines) | Clicks, drafts, dragging points and shapes, by hand | Terra Draw (1.40, active, a MapLibre adapter: points, lines, areas, selecting, dragging points, snapping) | Prototype first: tactical graphics' control points and the symbols' placing may need Terra Draw's custom modes; worth it only if most of ours goes | Large, to check |
+| Merging others' saved changes with yours (`state/merge.ts`, `reconcile.ts`) | A field-by-field three-way merge | CRDTs (Yjs, Automerge) | Keep: a CRDT would change the whole sync design, which the owner wants to discuss first (live sharing is in the backlog) | — |
+| The tooltip and the right-click menu (`ui/tooltip.ts`, `context-menu.ts`) | Positioning by hand | Floating UI | Keep: little to gain for two small pieces | — |
+
 ## Already reused (no change)
 
 LOOM for tram and metro lanes; Planetiler's way of drawing roads zoomed out
