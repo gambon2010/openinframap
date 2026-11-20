@@ -6,8 +6,6 @@ Revalidated like the background map's tiles (an ETag from the files)."""
 
 from __future__ import annotations
 
-import zlib
-from pathlib import Path
 
 from pmtiles.tile import Compression
 from starlette.concurrency import run_in_threadpool
@@ -15,47 +13,14 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import MEDIA_TYPE, OFFLINE_MAPS_DIR, Archive
+from ..pmtiles_files import ArchiveFolder
+from . import MEDIA_TYPE, OFFLINE_MAPS_DIR
 
 # <area>.transit.pmtiles (loom_tiles.py).
 TRANSIT = ".transit.pmtiles"
 
 
-class TransitFiles:
-    """The areas' transit files in a folder, opened again when they change."""
-
-    def __init__(self, folder: Path):
-        self.folder = folder
-        self.open: dict[Path, Archive] = {}
-
-    def current(self) -> list[Archive]:
-        found = []
-        for path in sorted(self.folder.glob(f"*{TRANSIT}")):
-            if path.name.startswith("."):
-                continue  # one being written
-            stat = path.stat()
-            kept = self.open.get(path)
-            if kept is None or kept.stamp != (stat.st_mtime, stat.st_size):
-                opened = Archive.open(path)
-                if opened is None:
-                    continue
-                self.open[path] = kept = opened
-            found.append(kept)
-        return found
-
-    def version(self) -> str:
-        stamps = [(a.path.name, a.stamp) for a in self.current()]
-        return f"{zlib.crc32(repr(stamps).encode()):08x}"
-
-    def tile(self, z: int, x: int, y: int) -> tuple[bytes, Archive] | None:
-        for archive in self.current():
-            data = archive.get(z, x, y)
-            if data:
-                return data, archive
-        return None
-
-
-TRANSIT_FILES = TransitFiles(OFFLINE_MAPS_DIR)
+TRANSIT_FILES = ArchiveFolder(OFFLINE_MAPS_DIR, lambda p: p.name.endswith(TRANSIT))
 
 
 async def transit_tile(request: Request) -> Response:
@@ -67,7 +32,7 @@ async def transit_tile(request: Request) -> Response:
     headers = {"Cache-Control": "no-cache", "ETag": etag}
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
-    found = await run_in_threadpool(TRANSIT_FILES.tile, z, x, y)
+    found = await run_in_threadpool(TRANSIT_FILES.first_tile, z, x, y)
     if not found:
         return Response(status_code=204, headers={"Cache-Control": "no-store"})
     data, archive = found

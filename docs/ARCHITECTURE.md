@@ -228,6 +228,9 @@ every route but logging in needs a session):
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
+- `pmtiles_files.py` (the PMTiles files served from `data/offline-maps/`: a file open,
+  its index cached, `Archive`; the files of one kind in the folder, opened again when
+  they change, `ArchiveFolder`: the background maps, the trams' lanes, the terrain);
 - `background/` (the background map's tiles, `/background/{z}/{x}/{y}.mvt`: each from
   the first `data/offline-maps/<area>.pmtiles` that has it, so several areas show together;
   at zooms 8 to 14 with the area's `<area>.zoomed-out.pmtiles` tile appended, its

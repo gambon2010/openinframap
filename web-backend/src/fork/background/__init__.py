@@ -16,26 +16,24 @@ layers of both. The companion's roads replace the background map's (its roads
 layer is dropped, mvt.py): the same roads, with what Protomaps leaves out there.
 
 The satellite imagery files (*.sat-*.pmtiles) are served by the "satellite"
-service, not here. Files are read through mmap, each file's index cached, and
+service, not here. Files are read through mmap, each file's index cached (pmtiles_files.py), and
 picked up again when they change (no restart)."""
 
 from __future__ import annotations
 
 import gzip
 import json
-import mmap
-import zlib
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
 
-from pmtiles.tile import Compression, deserialize_directory, deserialize_header, find_tile, zxy_to_tileid
+from pmtiles.tile import Compression
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
 from ..paths import LOCAL_DATA_DIR
+from ..pmtiles_files import Archive, ArchiveFolder
 from . import mvt
 
 OFFLINE_MAPS_DIR = LOCAL_DATA_DIR / "offline-maps"
@@ -57,70 +55,6 @@ def companion_of(background_map: Path) -> Path:
     return background_map.with_name(background_map.stem + COMPANION)
 
 
-class Archive:
-    """One background map file, open: read through mmap, each directory of its
-    index read once (a big file's leaves: gzip, then varints). The pmtiles package's
-    own Reader decodes them again for every tile, with no cache: 5 ms a tile against
-    0.01 ms here, measured on France's background map (2026-11-20)."""
-
-    def __init__(self, path: Path, data: mmap.mmap, header: Any, stamp: tuple[float, int]):
-        self.path = path
-        self.data = data
-        self.header = header
-        self.stamp = stamp  # (mtime, size): changed, opened again
-        self.edition = edition_of(path)  # Protomaps' build (20261014), "" if unknown
-        self.directory = lru_cache(maxsize=2048)(self._directory)
-
-    @classmethod
-    def open(cls, path: Path) -> Archive | None:
-        try:
-            stat = path.stat()
-            with path.open("rb") as f:
-                data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            header = deserialize_header(data[:127])
-        except Exception:  # noqa: BLE001 — not a PMTiles file (yet): left out
-            return None
-        return cls(path, data, header, (stat.st_mtime, stat.st_size))
-
-    def _directory(self, offset: int, length: int) -> list:
-        return deserialize_directory(self.data[offset : offset + length])
-
-    @property
-    def area(self) -> str:
-        return self.path.stem
-
-    def get(self, z: int, x: int, y: int) -> bytes | None:
-        """A tile's bytes as stored (gzip for Protomaps' files), None if not here."""
-        h = self.header
-        if not h["min_zoom"] <= z <= h["max_zoom"]:
-            return None
-        tile_id = zxy_to_tileid(z, x, y)
-        offset, length = h["root_offset"], h["root_length"]
-        for _ in range(4):  # the most levels of directories PMTiles has
-            entry = find_tile(self.directory(offset, length), tile_id)
-            if entry is None:
-                return None
-            if entry.run_length == 0:  # a leaf directory
-                offset, length = h["leaf_directory_offset"] + entry.offset, entry.length
-                continue
-            start = h["tile_data_offset"] + entry.offset
-            return self.data[start : start + entry.length]
-        return None
-
-    def tile_ids(self):
-        """Every tile id in the file, from its directories (no tile read)."""
-        h = self.header
-
-        def walk(offset: int, length: int):
-            for entry in self.directory(offset, length):
-                if entry.run_length:
-                    yield from range(entry.tile_id, entry.tile_id + entry.run_length)
-                else:
-                    yield from walk(h["leaf_directory_offset"] + entry.offset, entry.length)
-
-        yield from walk(h["root_offset"], h["root_length"])
-
-
 def edition_of(path: Path) -> str:
     """Protomaps' build a file was cut from (its manifest: "20261014.pmtiles")."""
     try:
@@ -130,43 +64,32 @@ def edition_of(path: Path) -> str:
     return build.removesuffix(".pmtiles")
 
 
+@lru_cache(maxsize=256)
+def edition(path: Path, stamp: tuple[float, int]) -> str:
+    """A background map's edition, read once per version of the file (`stamp`)."""
+    return edition_of(path)
+
+
 class Archives:
     """The background map files in a folder, in the order they're tried, and their
     companions."""
 
     def __init__(self, folder: Path):
-        self.folder = folder
-        self.open: dict[Path, Archive] = {}
-        self.seen: tuple = ()
+        self.files = ArchiveFolder(folder, lambda p: is_background_map(p) or p.name.endswith(COMPANION))
 
     def ordered(self) -> list[Archive]:
-        try:
-            paths = sorted(
-                p for p in self.folder.iterdir() if is_background_map(p) or p.name.endswith(COMPANION)
-            )
-            listing = tuple((p, p.stat().st_mtime, p.stat().st_size) for p in paths)
-        except OSError:
-            return []
-        if listing != self.seen:
-            self.seen = listing
-            kept = {}
-            for path, mtime, size in listing:
-                old = self.open.get(path)
-                archive = old if old and old.stamp == (mtime, size) else Archive.open(path)
-                if archive:
-                    kept[path] = archive
-            self.open = kept
-        # Newest edition first (unknown last); the whole world last of all.
-        archives = sorted((a for a in self.open.values() if is_background_map(a.path)), key=lambda a: a.area)
-        archives.sort(key=lambda a: a.edition, reverse=True)
+        """The background maps (not their companions): newest edition first (unknown
+        last), the whole world last of all."""
+        archives = sorted(
+            (a for a in self.files.archives() if is_background_map(a.path)), key=lambda a: a.area
+        )
+        archives.sort(key=lambda a: edition(a.path, a.stamp), reverse=True)
         archives.sort(key=lambda a: a.area == WORLD)
         return archives
 
     def version(self) -> str:
-        """Changes when any of the files does (added, rebuilt, removed): the tiles'
-        ETag, so the browser keeps a tile only as long as its files are the same."""
-        self.ordered()
-        return f"{zlib.crc32(repr(self.seen).encode()):08x}"
+        """The tiles' ETag (ArchiveFolder.version)."""
+        return self.files.version()
 
     def tile(self, z: int, x: int, y: int) -> tuple[bytes, Archive] | None:
         archives = self.ordered()
@@ -180,7 +103,7 @@ class Archives:
             # No background tile there (Protomaps leaves a few out), the companion's
             # still: its tile alone.
             for archive in archives:
-                companion = self.open.get(companion_of(archive.path))
+                companion = self.files.get(companion_of(archive.path))
                 data = companion.get(z, x, y) if companion else None
                 if companion and data:
                     return data, companion
@@ -190,7 +113,7 @@ class Archives:
         """The tile with its area's companion tile appended (both unzipped, then
         zipped again as the area's tiles are), the companion's layers replacing the
         tile's of the same name (its roads)."""
-        companion = self.open.get(companion_of(archive.path))
+        companion = self.files.get(companion_of(archive.path))
         extra = companion.get(z, x, y) if companion else None
         if not extra:
             return data

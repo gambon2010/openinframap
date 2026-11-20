@@ -15,7 +15,8 @@ from typing import Any
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import shapely
 
-from . import Archive, mvt, unzipped
+from ..pmtiles_files import Archive
+from . import mvt, unzipped
 from . import zoomed_roads as roads
 from .tiles import EXTENT, tile_bounds, tile_size
 

@@ -41,7 +41,8 @@ import shapely
 from pmtiles.tile import Compression, TileType, tileid_to_zxy, zxy_to_tileid
 from pmtiles.writer import Writer
 
-from . import OFFLINE_MAPS_DIR, Archive, companion_of, is_background_map, mvt, unzipped
+from ..pmtiles_files import Archive
+from . import OFFLINE_MAPS_DIR, companion_of, is_background_map, mvt, unzipped
 from . import beyond_area, stand_lead_ins
 from . import zoomed_buildings as buildings
 from . import zoomed_railways as railways
