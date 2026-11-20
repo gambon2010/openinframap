@@ -142,8 +142,11 @@ elevation reader the radio mode will use.
   line, whose heights are a profile) (done, 2026-11-20), from the backend's reader;
   the box also gives the slope, the magnetic declination and the distance and
   bearing from the last click.
-- A line-of-sight check between two points, with its profile drawn (the
-  battle-tracking backlog's terrain and line of sight).
+- A line-of-sight check between two points, with its profile drawn (done,
+  2026-11-20): a My layers measurement (👁, key I), the backend's `/terrain/sight`
+  (`sight.py`, as GDAL's viewshed: curvature less refraction, 6/7; observer 2 m,
+  target 0 m); the line drawn green where the ground is seen, red where it's
+  hidden; the card: seen or hidden (where), the profile, the two heights.
 
 ## Next: signal propagation (not built now)
 

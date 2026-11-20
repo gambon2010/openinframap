@@ -1164,6 +1164,17 @@ default). Counts are France's OSM data in October 2026.
   it's now written like the debug info's hints, and its "Source updated" row joined
   it (the owner: notes about a data source only in the debug part). Nothing else in
   the details names a data source (upstream's "Source" is a plant's energy).
+- **Line of sight (2026-11-20):** a My layers measurement of two points (👁, key I):
+  the backend (`/terrain/sight`, `terrain/sight.py`) samples the ground every 6 m
+  and counts the Earth's curvature less refraction as GDAL's viewshed does (6/7 for
+  light; radio is 0.75, for the radio mode later). The line is green where the
+  ground is seen, red where it's hidden (each answer asked once per points and
+  heights, `map/render.ts`); its card says seen or hidden and where, draws the
+  profile (a plain SVG: a chart library would only wrap one polygon) and takes the
+  observer's and target's heights. The line tool got a point limit (two). Height
+  and slope are now read pixel by pixel from the cached tiles (a 3 × 3 tile mosaic
+  per point was too slow for thousands of samples). Checked: Mont Blanc seen from
+  Fourvière.
 
 ## Extra data (not from OpenStreetMap)
 

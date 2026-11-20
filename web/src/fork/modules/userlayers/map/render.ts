@@ -16,6 +16,16 @@ import { Measurement } from '../measure/features.types.ts'
 import { measurementFeatures, measurementOf } from '../measure/features.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
 import {
+  DEFAULT_OBSERVER,
+  DEFAULT_TARGET,
+  HIDDEN_COLOUR,
+  SEEN_COLOUR,
+  fetchSight,
+  sightKey,
+  sightStretches,
+  type SightResult
+} from '../measure/sight.ts'
+import {
   axisControlPoints,
   axisWidth,
   graphicsLibrary,
@@ -74,6 +84,9 @@ export class Renderer {
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
   /** Items in conflict (store.conflicts), drawn with an orange dashed ring. */
   conflicted = new Set<string>()
+  /** Lines of sight's answers by their points and heights (sightKey); null while
+   * asked, or when the backend couldn't answer. */
+  private sights = new Map<string, SightResult | null>()
   /** The layers' order, top first (the list's, ui/outliner.ts layerOrder): the top one
    * is drawn on top. */
   orderOf?: () => string[]
@@ -292,9 +305,37 @@ export class Renderer {
             }
           })
         )
+        if (m.type === 'sight') features.push(...this.sightFeatures(f, m))
       }
       source.setData({ type: 'FeatureCollection', features })
     }
+  }
+
+  /** A line of sight's stretches, green where the ground is seen, red where it's
+   * hidden (measure/sight.ts), once the backend has answered; asked once per points
+   * and heights, then the measurements drawn again. */
+  private sightFeatures(f: UserFeature, m: Measurement): GeoJSON.Feature[] {
+    const [from, to] = [m.points[0], m.points[m.points.length - 1]]
+    if (!from || !to || m.points.length < 2) return []
+    const observer = Number(f.properties.observer ?? DEFAULT_OBSERVER)
+    const target = Number(f.properties.target ?? DEFAULT_TARGET)
+    const key = sightKey(from, to, observer, target)
+    const result = this.sights.get(key)
+    if (result === undefined) {
+      this.sights.set(key, null)
+      void fetchSight(from, to, observer, target).then((answer) => {
+        if (!answer) return
+        this.sights.set(key, answer)
+        this.renderMeasures()
+      })
+      return []
+    }
+    if (!result) return []
+    return sightStretches(from, to, result).map((stretch) => ({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: stretch.points },
+      properties: { fid: f.id, color: stretch.seen ? SEEN_COLOUR : HIDDEN_COLOUR }
+    }))
   }
 
   /** Map layer ids of My layers' features (for clicks). */

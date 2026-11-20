@@ -191,7 +191,8 @@ io/      files: formats.ts (GeoJSON, KML, GPX), files.ts (choose, download)
 measure/ measurements, pure: ticks.ts (marks along a distance), features.ts
          (labels, marks); the Earth's geometry and the norths are core's (earth.ts,
          north.ts), the preferences a service (measure-prefs.ts): the coordinates
-         box uses them too
+         box uses them too; sight.ts (a line of sight: the backend's answer, its
+         stretches on the map, its profile)
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast,
          preferences.ts (My layers' part of Settings); editor/ (the card:
@@ -251,7 +252,8 @@ every route but logging in needs a session):
   first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
   `elevations.py`, the one reader of heights: Terrarium tiles decoded, a tile's
   heights with its neighbours' edges, a point's height (`/terrain/elevation`, the
-  coordinates box: also its slope, Horn's method); `contours.py`, contour lines as vector tiles,
+  coordinates box: also its slope, Horn's method); `sight.py`, the line of sight
+  between two points (`/terrain/sight`, as GDAL's viewshed); `contours.py`, contour lines as vector tiles,
   `/terrain/contours/{z}/{x}/{y}.mvt`, traced as tiles are asked for (smoothed with
   SciPy, military maps' intervals), kept in memory; `contour_marks.py`, what a line
   is: index, intermediate, supplementary on level ground, depression and its

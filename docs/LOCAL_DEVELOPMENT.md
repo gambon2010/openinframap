@@ -675,7 +675,12 @@ on the My layers workspace; click it again to close it. It has two parts:
   favourite symbols follow your account to any computer.
   **Measuring** is in My layers' toolbar: 📏 a distance (each leg's length and
   bearing, the total, marks along it like a ruler, finer as you zoom in, down to
-  10 m), ⬠ an area, ◎ range rings (their distances on the ring's card). Click
+  10 m), ⬠ an area, ◎ range rings (their distances on the ring's card), 👁 a line
+  of sight (key I: click where you stand, then what you want to see; the line turns
+  green where you see the ground and red where it's hidden, and its card says
+  whether the target is seen, draws the ground's profile and takes the heights of
+  your eyes and of the target; the Earth's curvature counted, as GDAL's viewshed;
+  needs the terrain). Click
   points; double-click or Enter to finish; right-click starts again. A measurement
   is saved and shared like any item; drag its points to change it, or type a leg's
   length on its card (the following legs keep theirs), and 🔒 Lock it on its card

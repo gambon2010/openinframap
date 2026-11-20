@@ -86,3 +86,46 @@ export function profileSvg(result: SightResult, observer: number, target: number
     ray
   )
 }
+
+/** The colours a line of sight's stretches are drawn in on the map: seen, hidden
+ * (as on its profile: the fork's success and error colours, ui/panel.css). */
+export const SEEN_COLOUR = '#1b7a33'
+export const HIDDEN_COLOUR = '#b3261e'
+
+/** The line from observer to target cut where what's seen changes: each stretch's
+ * points and whether the observer sees that ground (the backend samples the line
+ * straight between the two points: a sample a fraction of the length along it is
+ * that fraction of the way). Stretches without terrain are left out. */
+export function sightStretches(
+  from: LngLat,
+  to: LngLat,
+  result: SightResult
+): { points: LngLat[]; seen: boolean }[] {
+  const length = result.profile[result.profile.length - 1]?.[0] || 1
+  const at = (distance: number): LngLat => {
+    const f = distance / length
+    return [from[0] + (to[0] - from[0]) * f, from[1] + (to[1] - from[1]) * f]
+  }
+  const stretches: { points: LngLat[]; seen: boolean }[] = []
+  let current: { points: LngLat[]; seen: boolean } | null = null
+  for (const [distance, ground, seen] of result.profile) {
+    if (ground === null) {
+      current = null
+      continue
+    }
+    if (current && current.seen === seen) {
+      current.points.push(at(distance))
+      continue
+    }
+    // A new stretch starts where the last ended, so they meet.
+    const start: LngLat[] = current ? [current.points[current.points.length - 1]] : []
+    current = { points: [...start, at(distance)], seen }
+    stretches.push(current)
+  }
+  return stretches.filter((s) => s.points.length > 1)
+}
+
+/** What a line of sight's answer depends on: its two points and the two heights. */
+export function sightKey(from: LngLat, to: LngLat, observer: number, target: number): string {
+  return [...from, ...to, observer, target].join(',')
+}
