@@ -1,4 +1,4 @@
-// The fork's folder rules (docs/ARCHITECTURE.md):
+// The fork's folder rules (docs/FORK_ARCHITECTURE.md):
 // - modules/<name>/ may import core/, ui/, services/, the root files and its own
 //   files, never another module;
 // - ui/ imports only core/, services/ and the root files (types.ts, config.ts);

@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Open Infrastructure Map shows the world's infrastructure (power, telecoms, water, oil and gas) from OpenStreetMap: a TypeScript/MapLibre frontend, a Python/Starlette backend, a Tegola tile server, a PostGIS database and an Imposm importer. **This is a fork** that runs everything locally, and offline from an exported database, for a chosen region.
 
 **Where things are written down (keep each current, nothing repeated between them):**
-- `docs/ARCHITECTURE.md`: how the fork's code is organised, folder rules, every script, module and SQL file, recipes for adding things. Read it before changing the structure.
+- `docs/FORK_ARCHITECTURE.md`: how the fork's code is organised, folder rules, every script, module and SQL file, recipes for adding things. Read it before changing the structure.
 - `docs/FORK_CHANGES.md`: every upstream file the fork changes, and how ("Fork structure", "Merging from upstream"): keep it exact.
 - `docs/HISTORY.md`: what changed, when and why (dated notes, newest at the end of their section); older one-off sections in `docs/HISTORY-ARCHIVE.md` (not added to).
 - `docs/SPECIFICATIONS.md`: every requirement the owner asked for, with its status: add each new request when it's made, update it when done. Plans for bigger features: `docs/plans/` (finished ones in `archive/`).
@@ -28,7 +28,7 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 - **One copy of everything that must stay in step:** shared helpers in `fork/core/` (frontend), `scripts/lib/` / `offline_maps/` (scripts), never copied. A value more than one language needs (ports, zooms, paths, versions, source names) is defined once, or a test checks the copies agree (`scripts/tests/test_one_source.py`). Code that only looks alike is a different matter: see "Code is written for a human reader" (extract on the third copy).
 - **Named values:** no magic numbers, paths or URLs buried in code: a named constant (`X.constants.ts`, a module constant, `lib/common.sh`) or a setting.
 - **One job per file:** split a file or class that does several (as a guide, past ~400 lines), with tests first. Names say what the thing is now.
-- **Folders as `docs/ARCHITECTURE.md` says** (`fork/structure.test.ts` checks part of it).
+- **Folders as `docs/FORK_ARCHITECTURE.md` says** (`fork/structure.test.ts` checks part of it).
 - **One look, `docs/STYLE.md`:** panels and buttons from the shared pieces (`makePanel`, My layers' look), the colour tokens of `index.css`, titles a person would say (raw data only with debug on); map layers in the light and bold looks of `modules/roads`.
 - **One way for each recurring thing:** clickable areas and lines (`core/map-style.ts`), downloads (`download`/`safely`, `netsafe.py`), Docker calls (`lib/docker.sh`, `offline_maps/docker.py`), panels (`makePanel`), errors.
 - **No debris:** no commented-out code, stale TODOs, debugging `console.log`/`print`, or comments describing behaviour that has changed.

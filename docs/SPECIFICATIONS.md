@@ -8,7 +8,7 @@ the status when they're done.
 Status: ✅ done · 🚧 in progress · 📋 planned (plan written) · 🗂 backlog (parked,
 don't start unprompted) · ✖ dropped or replaced
 
-How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
+How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the code),
 [HISTORY.md](./HISTORY.md) (what changed and why), [FORK_CHANGES.md](./FORK_CHANGES.md)
 (upstream's files the fork changes), [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) (user guide), `docs/plans/`
 (plans for bigger features).
@@ -295,4 +295,4 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 11.6 | Dead code removed: features replaced or dropped (the typed author name, layer colours, ⋯ menus, unused strings, styles and helpers). | ✅ (2026-11-06) |
 | 11.5 | The setup scripts easier to read: repeated code made into shared functions (menus, disk space, titles, JSON files, replacing the database), the build script's steps each doing one thing, its shared variables listed and explained at the top. | ✅ (2026-11-06) |
 | 11.4 | The code tidied: no repeated logic (shared helpers in one place), long files and functions split, each file's types and constants in small files of their own (`X.types.ts`, `X.constants.ts`); exact values locked by tests first so nothing changes. | ✅ (2026-11-06) |
-| 11.3 | Easy to extend without changing the structure ("modding"): a map mode interface, My layers' item kinds as a registry, the measure and print files split. | ✅ `services/map-mode.ts`, `userlayers/kinds/`, recipes in `docs/ARCHITECTURE.md` (2026-11-02) |
+| 11.3 | Easy to extend without changing the structure ("modding"): a map mode interface, My layers' item kinds as a registry, the measure and print files split. | ✅ `services/map-mode.ts`, `userlayers/kinds/`, recipes in `docs/FORK_ARCHITECTURE.md` (2026-11-02) |

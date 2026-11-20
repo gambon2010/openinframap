@@ -2,7 +2,7 @@
 
 Dated notes, in the order features came, kept for the reasons behind them. Some
 describe things since changed or removed (each says so where it happened); the
-current state is in [ARCHITECTURE.md](./ARCHITECTURE.md), and how upstream's files
+current state is in [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md), and how upstream's files
 are changed in [FORK_CHANGES.md](./FORK_CHANGES.md). One-off changes from late
 October to 7 November 2026, and topics closed since (statuses, login and sync, the
 early refactors), are in [HISTORY-ARCHIVE.md](./HISTORY-ARCHIVE.md).

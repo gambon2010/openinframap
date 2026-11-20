@@ -197,9 +197,9 @@ working sessions.
 
 ### Phase 6: docs
 
-18. **Split the docs** (done: `docs/ARCHITECTURE.md`; `FORK_CHANGES.md` keeps its
+18. **Split the docs** (done: `docs/FORK_ARCHITECTURE.md`; `FORK_CHANGES.md` keeps its
     content as the history, with a pointer):
-    - `docs/ARCHITECTURE.md` (new): how the fork is put together, the folder rules,
+    - `docs/FORK_ARCHITECTURE.md` (new): how the fork is put together, the folder rules,
       and recipes such as "add an OSM layer", "add an outside data source", "add a
       satellite source", "add a left panel", "add a setting".
     - `FORK_CHANGES.md` becomes what changed versus upstream and the merge notes.

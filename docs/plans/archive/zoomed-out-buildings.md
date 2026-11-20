@@ -104,7 +104,7 @@ in parallel over blocks (8 processes):
 | `scripts/satimagery/inventory.py` | The companion counted with its area's background map (size, missing or present); `identify` doesn't take it for imagery |
 | `scripts/satimagery/offers.py`, `maps.py` | Offer it when missing; delete it with its area |
 | `web/src/fork/core/buildings.ts`, `modules/buildings/index.ts` | A second `clickableArea` on the same `basemap` source, source layer `buildings_large`, zooms 12–14 (no new source, no Tegola); details use `area_m2` when the tile has it, otherwise measure the outline as today; label "Buildings" |
-| `docs/…` | `ARCHITECTURE.md`, `LOCAL_DEVELOPMENT.md` (offline maps), `SPECIFICATIONS.md` 10.9, `HISTORY.md`, `CLAUDE.md` (background service line) |
+| `docs/…` | `FORK_ARCHITECTURE.md`, `LOCAL_DEVELOPMENT.md` (offline maps), `SPECIFICATIONS.md` 10.9, `HISTORY.md`, `CLAUDE.md` (background service line) |
 
 No upstream file changes. No database, Tegola, schema or export change: the
 companion lives in `data/basemap/`, copied with the rest.

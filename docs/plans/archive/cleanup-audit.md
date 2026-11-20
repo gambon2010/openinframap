@@ -144,7 +144,7 @@ Not judged by this survey (it needs reading). First places to read: the files of
 ### I. Structure
 - The folder rules are enforced by a test on the frontend only
   (`structure.test.ts`); nothing checks the backend's or the scripts'.
-- `docs/architecture.md` (upstream's, 40 lines) beside `docs/ARCHITECTURE.md` (the
+- `docs/architecture.md` (upstream's, 40 lines) beside `docs/FORK_ARCHITECTURE.md` (the
   fork's): one letter case apart, which breaks on a disk that ignores case.
 - Six local branches merged long ago (`distribution-data`, `grid-routing`,
   `local-dev-setup`, `user-layers`; `main` is a month behind `ui-rework`).

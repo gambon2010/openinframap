@@ -8,7 +8,7 @@ connection.
 
 This page is what a merge from upstream needs: the goals, what the fork's code
 may and may not touch, and every upstream file it changes. How the fork is
-organised, and recipes for adding to it: [ARCHITECTURE.md](./ARCHITECTURE.md).
+organised, and recipes for adding to it: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md).
 What changed when, and why: [HISTORY.md](./HISTORY.md). How to use it:
 [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md).
 

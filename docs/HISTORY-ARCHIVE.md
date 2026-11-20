@@ -1106,7 +1106,7 @@ drawn (`images`: prefix and maker; `map/icons.ts` adds them to the map by prefix
 replacing `ensureImage`'s list in `symbols.ts`), its thumbnail, what the card
 offers (size, colour, line width, military fields), whether it moves, its filter
 chips. The rest asks `kindOf(properties)`. No change in behaviour; a new kind is a
-file and two lines (recipe in `docs/ARCHITECTURE.md`). Left as they are: the
+file and two lines (recipe in `docs/FORK_ARCHITECTURE.md`). Left as they are: the
 toolbar's tools (they make items) and the card's MIL-STD fields (they depend on the
 symbol code, not the kind).
 
