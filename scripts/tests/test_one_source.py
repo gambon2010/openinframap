@@ -1,10 +1,13 @@
 """Values written in more than one place (Compose, the gate, the scripts, the
-frontend): one is the reference, the others must agree. Each service's port is
-Compose's; the PMTiles program's version too."""
+frontend, the backend): one is the reference, the others must agree. Each service's
+port is Compose's; the data folders are scripts/data_folders.py's."""
 
+import importlib.util
 import re
+import subprocess
 from pathlib import Path
 
+import data_folders
 from offline_maps import extract
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +23,47 @@ def compose_port(service: str) -> str:
 def shell(name: str) -> str:
     text = "".join(p.read_text() for p in (ROOT / "scripts" / "lib").glob("*.sh"))
     return re.search(rf"^{name}=(\S+)", text, re.MULTILINE)[1]
+
+
+def shell_path(name: str) -> Path:
+    """A path variable as scripts/lib/common.sh sets it."""
+    common = ROOT / "scripts" / "lib" / "common.sh"
+    found = subprocess.run(
+        ["bash", "-c", f'source "{common}" && printf %s "${name}"'],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return Path(found.stdout)
+
+
+def backend_paths():
+    """The backend's src/fork/paths.py (only pathlib: loaded on its own)."""
+    path = ROOT / "web-backend" / "src" / "fork" / "paths.py"
+    spec = importlib.util.spec_from_file_location("backend_paths", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_data_folders_agree_everywhere():
+    backend = backend_paths()
+    for name in (
+        "MAP_DIR",
+        "OFFLINE_MAPS_DIR",
+        "IMAGES_DIR",
+        "WIKIDATA_JSON_DIR",
+        "OSM_DIR",
+    ):
+        reference = getattr(data_folders, name)
+        assert shell_path(name) == reference, name
+        assert getattr(backend, name) == reference, name
+    for name in ("DOWNLOADS_DIR", "EXTRA_DIR"):
+        assert shell_path(name) == getattr(data_folders, name), name
+    assert shell_path("LOCAL_DIR") == backend.LOCAL_DIR
+    # The backend's container sees data/map/ at the path the backend computes there
+    # (its file at /app/src/fork/paths.py: /data/map).
+    assert "- ./data/map:/data/map:ro,z" in COMPOSE
 
 
 def test_ports_agree_everywhere():

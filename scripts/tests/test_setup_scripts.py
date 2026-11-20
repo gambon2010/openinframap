@@ -24,6 +24,8 @@ import pytest
 from conftest import BUILD_SCRIPT, SCRIPTS
 
 REPO = SCRIPTS.parent
+# Where the real build test finds downloads already made (scripts/data_folders.py).
+REPO_DOWNLOADS = REPO / "data" / "downloads"
 FAKES = Path(__file__).parent / "fakes"
 RECORDED = [
     "xdg-open",
@@ -208,7 +210,7 @@ def test_build_offline_with_an_unknown_region(sandbox):
 
 
 def make_export(sandbox: Sandbox, region="luxembourg", damaged=False) -> Path:
-    exports = sandbox.root / "data" / "exports"
+    exports = sandbox.root / "data" / "map" / "exports"
     exports.mkdir(parents=True, exist_ok=True)
     dump = exports / f"{region}.oimdb"
     dump.write_bytes(b"pretend this is a pg_dump")
@@ -234,7 +236,7 @@ def test_import_needs_a_file(sandbox):
 
 
 def test_import_of_a_missing_export(sandbox):
-    result = sandbox.run("import-db.sh", "data/exports/nowhere.oimdb")
+    result = sandbox.run("import-db.sh", "data/map/exports/nowhere.oimdb")
     assert result.returncode != 0
     assert "Export not found" in result.stderr + result.stdout
 
@@ -271,7 +273,7 @@ def test_import_asks_before_replacing_the_database(sandbox):
 
 def test_import(sandbox):
     dump = make_export(sandbox)
-    basemap = sandbox.root / "data" / "offline-maps"
+    basemap = sandbox.root / "data" / "map" / "offline-maps"
     basemap.mkdir(parents=True)
     fake_pmtiles.write(basemap / "world.sat-overview.pmtiles", 0, 8)
     db = answers(
@@ -295,10 +297,10 @@ def test_import(sandbox):
         < first("down", "-v")
         < first("pg_restore", "--exit-on-error")
     )
-    assert (sandbox.root / "data" / "userdata" / "userdata.dump").exists()
+    assert (sandbox.root / "data" / "local" / "userdata" / "userdata.dump").exists()
     # The satellite imagery copied along is in the map's imagery list.
     listed = json.loads(
-        (sandbox.root / "data" / "offline-maps" / "imagery.json").read_text()
+        (sandbox.root / "data" / "map" / "offline-maps" / "imagery.json").read_text()
     )
     assert [i["file"] for i in listed] == ["world.sat-overview"]
     # The tile server is recreated so it doesn't serve the old data's tiles.
@@ -339,7 +341,7 @@ def test_export(sandbox):
         FAKE_DB_ANSWERS=db,
     )
     assert result.returncode == 0, result.stderr + result.stdout
-    dump = sandbox.root / "data" / "exports" / "luxembourg.oimdb"
+    dump = sandbox.root / "data" / "map" / "exports" / "luxembourg.oimdb"
     manifest = json.loads(dump.with_suffix(".json").read_text())
     assert manifest["region_id"] == "luxembourg"
     assert manifest["sha256"] == hashlib.sha256(dump.read_bytes()).hexdigest()
@@ -372,7 +374,7 @@ def test_an_export_imports_back(sandbox):
         == 0
     )
     result = sandbox.run(
-        "import-db.sh", "data/exports/luxembourg.oimdb", "--yes", FAKE_DB_ANSWERS=db
+        "import-db.sh", "data/map/exports/luxembourg.oimdb", "--yes", FAKE_DB_ANSWERS=db
     )
     assert result.returncode == 0, result.stderr + result.stdout
     assert "damaged" not in result.stderr
@@ -410,7 +412,7 @@ def test_start(sandbox):
 
 
 def test_start_serves_satellite_imagery_without_a_background_map(sandbox):
-    basemap = sandbox.root / "data" / "offline-maps"
+    basemap = sandbox.root / "data" / "map" / "offline-maps"
     basemap.mkdir(parents=True)
     fake_pmtiles.write(basemap / "world.sat-overview.pmtiles", 0, 8)
     db = answers(
@@ -471,21 +473,22 @@ NO_PORTS = """services:
 def test_real_build_export_and_import(tmp_path):
     """End to end with real Docker, in its own Compose project ("oimtest": its own
     containers and volumes, no published ports), so the real map database and the
-    running app are left alone. Uses the Luxembourg extract in data/osm/ (downloaded
+    running app are left alone. Uses the Luxembourg extract in data/downloads/osm/ (downloaded
     if missing). Builds, exports, imports the export back, and removes everything."""
     root = tmp_path / "repo"
     shutil.copytree(REPO, root, ignore=NOT_COPIED)
-    data = root / "data"
-    (data / "osm").mkdir(parents=True)
+    downloads = root / "data" / "downloads"
+    exports = root / "data" / "map" / "exports"
+    (downloads / "osm").mkdir(parents=True)
     for name in (
         "luxembourg-latest.osm.pbf",
         "luxembourg-latest.osm.pbf.md5",
         "geofabrik-index-v1.json",
     ):
-        if (REPO / "data" / "osm" / name).exists():
-            shutil.copy2(REPO / "data" / "osm" / name, data / "osm" / name)
-    for eez in (REPO / "data").glob("EEZ_*.zip"):
-        shutil.copy2(eez, data / eez.name)
+        if (REPO_DOWNLOADS / "osm" / name).exists():
+            shutil.copy2(REPO_DOWNLOADS / "osm" / name, downloads / "osm" / name)
+    for eez in REPO_DOWNLOADS.glob("EEZ_*.zip"):
+        shutil.copy2(eez, downloads / eez.name)
     (root / "compose.test.yml").write_text(NO_PORTS)
     env = {
         **os.environ,
@@ -546,8 +549,8 @@ def test_real_build_export_and_import(tmp_path):
         )
         check_database()
         run("bash", "scripts/export-db.sh", "--yes", "--no-docker-images")
-        manifest = json.loads((data / "exports" / "luxembourg.json").read_text())
-        dump = data / "exports" / "luxembourg.oimdb"
+        manifest = json.loads((exports / "luxembourg.json").read_text())
+        dump = exports / "luxembourg.oimdb"
         assert manifest["sha256"] == hashlib.sha256(dump.read_bytes()).hexdigest()
         run("bash", "scripts/import-db.sh", str(dump), "--yes")
         check_database()

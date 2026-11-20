@@ -1,9 +1,9 @@
 # shellcheck shell=bash
-# The offline background maps (data/offline-maps/<area>.pmtiles, downloaded by
+# The offline background maps (data/map/offline-maps/<area>.pmtiles, downloaded by
 # scripts/offline-maps.py maps, served by the backend's /background).
 # Sourced by common.sh.
 
-# The background maps downloaded: data/offline-maps/<area>.pmtiles (not satellite
+# The background maps downloaded: data/map/offline-maps/<area>.pmtiles (not satellite
 # imagery, <area>.sat-*.pmtiles), their areas, one per line.
 background_areas() {
     local file name

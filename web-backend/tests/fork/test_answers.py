@@ -6,7 +6,7 @@ tower numbers. Opt-in, like the scripts' real build:
 
 The first run picks the questions from the database built (stations, lines and
 towers chosen the same way each time), records the answers in
-data/test-answers/<region>.json and skips; later runs compare. OIM_RECORD=1 records
+data/local/test-answers/<region>.json and skips; later runs compare. OIM_RECORD=1 records
 again (after a rebuild of the database, or a change meant to change the answers).
 OIM_TEST_DB_URL: the database (default: the local one).
 """
@@ -18,16 +18,17 @@ import json
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 import pytest
+
+from src.fork.paths import LOCAL_DIR
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("OIM_TEST_REAL_DB") != "1", reason="opt-in: OIM_TEST_REAL_DB=1"
 )
 
 DB_URL = os.environ.get("OIM_TEST_DB_URL", "postgresql+asyncpg://osm:osm@localhost:5432/osm")
-ANSWERS_DIR = Path(__file__).resolve().parents[3] / "data" / "test-answers"
+ANSWERS_DIR = LOCAL_DIR / "test-answers"
 
 SEARCHES = [
     "strasbourg",

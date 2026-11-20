@@ -53,7 +53,7 @@ Copernicus GLO-30 direct (30 m, already inside the planet file); AWS Terrain Til
 - `scripts/offline_maps/terrain.py`: the area's outline cut out of each Mapterhorn
   file whose bounds meet it (`planet.pmtiles` to zoom 12, the zoom 6 files at 13;
   `download_urls.json` lists them), the empty parts dropped, the rest merged
-  (`pmtiles merge`, go-pmtiles 1.31) into `data/offline-maps/<area>.terrain.pmtiles`.
+  (`pmtiles merge`, go-pmtiles 1.31) into `data/map/offline-maps/<area>.terrain.pmtiles`.
   Luxembourg: 43 MB in 8 s; France: 5.6 GB.
 - Not an option (the owner): it comes with an area's background map (`basemap`
   command, so `build-region.sh --basemap full` and the menu's background map), its

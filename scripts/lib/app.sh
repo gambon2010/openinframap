@@ -110,7 +110,7 @@ start_app() {
         ok "Backend already running."
     else
         # Create the cache folders first, or Docker creates them owned by root.
-        mkdir -p "$DATA_DIR/images" "$DATA_DIR/wikidata_json"
+        mkdir -p "$OFFLINE_MAPS_DIR" "$IMAGES_DIR" "$WIKIDATA_JSON_DIR"
         up_services backend
         ok "Backend started (Docker). Its log: docker compose logs -f backend"
     fi
@@ -120,7 +120,7 @@ start_app() {
     else
         # Where it keeps its HTTPS certificate (made on its first start); made here, or
         # Docker makes it owned by root.
-        mkdir -p "$DATA_DIR/gate"
+        mkdir -p "$GATE_CERT_DIR"
         up_services gate
         ok "Gate started: $APP_URL (log in there; the first time, it makes the admin account)."
         info "Its certificate is its own: the browser warns once (\"Advanced\" → \"Proceed\")."

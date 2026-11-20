@@ -55,7 +55,7 @@ class FranceAgenceORE(FrenchSource):
         result = []
         for key, (label, words) in self.CHOICES.items():
             datasets = [d for d in self.DATASETS if any(w in d for w in words)]
-            # Earlier downloads are reused (data/extra/agence-ore/): say so.
+            # Earlier downloads are reused (data/downloads/extra/agence-ore/): say so.
             saved = [self.cache_file(d, "all") for d in datasets]
             if all(p.exists() for p in saved):
                 cost = f"downloaded {min(downloaded_on(p) for p in saved)}, no download needed"
@@ -117,7 +117,7 @@ class FranceAgenceORE(FrenchSource):
             total += response.json()["total_count"]
         return total
 
-    # Raw downloads are kept, like the OSM extracts in data/osm/, so re-importing
+    # Raw downloads are kept, like the OSM extracts in data/downloads/osm/, so re-importing
     # (a rebuild, another region, new rules) doesn't download them again (all of
     # France takes 3-4 hours). One national file per dataset, or one per
     # département for datasets fetched that way; each row has its département, so

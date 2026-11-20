@@ -66,10 +66,10 @@ computer: `https://<this computer's address>:8800`).
 made its own certificate (nobody else vouches for it), so choose **Advanced →
 Proceed**, once per browser. The connection is encrypted all the same: passwords
 and the session don't cross the network in clear. To avoid the warning, install
-`data/gate/cert.pem` as a trusted certificate on each computer (browser or system
+`data/local/gate/cert.pem` as a trusted certificate on each computer (browser or system
 settings, "Certificates" → import). The certificate is valid 10 years, for
 `localhost` and this computer's name and network addresses when it was made; if the
-address changes, delete `data/gate/` and restart the gate (`docker compose restart
+address changes, delete `data/local/gate/` and restart the gate (`docker compose restart
 gate`) to make a new one.
 
 - **The first time**, the page asks you to create the first account: it's an admin.
@@ -146,7 +146,7 @@ boundaries, Wikidata cache, recent builds), then shows a menu:
 All questions come first; after that it runs unattended:
 
 1. **Download** from Geofabrik (or planet.openstreetmap.org for the world) to
-   `data/osm/`. Resumable and checksum-verified. If you already have the region and
+   `data/downloads/osm/`. Resumable and checksum-verified. If you already have the region and
    Geofabrik has a newer extract, it asks; the default is to keep yours.
 2. **Filter** it down to infrastructure with osmium. The filter is generated from
    the imposm mapping, so the imported data is the same, just much faster
@@ -172,7 +172,7 @@ bash scripts/build-region.sh --region russia --rebuild --yes   # ignore an expor
 bash scripts/build-region.sh --help                          # all options
 ```
 
-**Build history:** `data/osm/build-history.log` records every build, export and
+**Build history:** `data/downloads/osm/build-history.log` records every build, export and
 import, and whether it finished, failed (and at which step) or was interrupted.
 
 **Losing the internet:** every download (the region, the background map, satellite
@@ -211,14 +211,14 @@ zoomed out) comes by default with any download and every build. Sizes grow quick
 9.5 GB, Russia 26 GB, Europe 49 GB; the menu shows the real size, by outline.
 
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
-`data/offline-maps/<region>.pmtiles`. The backend serves every background map there
+`data/map/offline-maps/<region>.pmtiles`. The backend serves every background map there
 together (each tile from the first file that has it, so several areas show at
 once), at `/background`, the frontend's default.
 
 Zoomed out: Protomaps' tiles hold every building, small road and path, and the
 tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what they
 leave out zoomed out is made from its zoom 15 tiles into
-`data/offline-maps/<region>.zoomed-out.pmtiles` (France: 17 minutes, about 360 MB): the
+`data/map/offline-maps/<region>.zoomed-out.pmtiles` (France: 17 minutes, about 360 MB): the
 buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (secondary
 roads from 10, tertiary from 11, small roads from 12, paths from 13, tunnels dotted;
 drawn the way Planetiler draws them, a motorway's two carriageways overlapping into
@@ -228,9 +228,9 @@ industrial lines from 11, sidings and yards from 14, close tracks as one line up
 zoom 14 (trams and metro at every zoom). From zoom 12 each tram and metro line is
 drawn in its lane and colour, side by side where lines share a track, joined
 through junctions, by LOOM (University of Freiburg, built from `tools/loom`) into
-`data/offline-maps/<region>.transit.pmtiles` (France: 9 minutes, 5 MB; the build says
+`data/map/offline-maps/<region>.transit.pmtiles` (France: 9 minutes, 5 MB; the build says
 which lines it couldn't draw). The railways come from the region's OpenStreetMap extract
-(`data/osm/<region>-latest.osm.pbf`, the build's, downloaded if missing: France
+(`data/downloads/osm/<region>-latest.osm.pbf`, the build's, downloaded if missing: France
 5 GB), cut into `<region>.railways.osm.pbf` with the tram and metro routes (France:
 3.5 minutes, 20 MB); its taxiways into `<region>.taxiways.osm.pbf`, so the stand
 lead-in lines some airports map as taxiways aren't drawn. The backend adds them to the background
@@ -241,11 +241,11 @@ area downloaded before, the menu offers *Buildings, roads and railways zoomed ou
 
 Terrain comes with it, always: the area's elevations (for contour lines, hill
 shading and the 3D relief), cut from [Mapterhorn](https://mapterhorn.com)'s terrain
-tiles to zoom 13 into `data/offline-maps/<region>.terrain.pmtiles` (6.6 m pixels;
+tiles to zoom 13 into `data/map/offline-maps/<region>.terrain.pmtiles` (6.6 m pixels;
 in France IGN's RGE ALTI and LiDAR HD, elsewhere mostly Copernicus' 30 m; France
 5.6 GB, Luxembourg 43 MB). Its size is in the background map's. For an area
 downloaded before, the menu offers *Terrain* (or `uv run --project scripts scripts/offline-maps.py
-terrain --area france --outline data/offline-maps/.area-france.geojson`). The
+terrain --area france --outline data/map/offline-maps/.area-france.geojson`). The
 backend serves every area's terrain together (`/terrain`); *Data layers → Terrain →
 Hill shading* (on at first) shades the hills, over the map and, fainter, over
 imagery; *Contour lines* draws them as on military maps (every fifth line heavier
@@ -294,10 +294,10 @@ Offline maps                                        273 GB free
   goes on from where it was.
 - **Remove**: shows what could be freed (a file another one covers).
 - **Settings**: a speed cap (MB/s) and the aerial photos' usual zoom, kept in
-  `data/offline-maps/settings.json`.
+  `data/map/offline-maps/settings.json`.
 
 One download runs at a time; a second window shows it instead of starting another.
-What's in `data/offline-maps/` is listed in `data/offline-maps/inventory.json`, made from the
+What's in `data/map/offline-maps/` is listed in `data/map/offline-maps/inventory.json`, made from the
 files themselves each time (copy the folder and it comes along). Unattended:
 `uv run --project scripts scripts/offline-maps.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
 or `--resume --yes`.
@@ -365,9 +365,9 @@ there to the zoom asked is skipped, a higher zoom makes it again.
 choose a higher zoom. The file is made again up to it, and what you have stays
 until the new one is finished; the menu shows what you have and offers only more.
 
-Everything in `data/offline-maps/` is shown, whatever area it's of; past a file's last
+Everything in `data/map/offline-maps/` is shown, whatever area it's of; past a file's last
 zoom its imagery is stretched (blurry), and where a file has nothing the one below
-shows. Copy `data/offline-maps/` along with an export to take it with you. Without
+shows. Copy `data/map/offline-maps/` along with an export to take it with you. Without
 questions: `build-region.sh --maps "sentinel2 fr_ign"` (downloaded after the build),
 or `uv run --project scripts scripts/offline-maps.py maps --source ID --yes` (`--area`, `--units`,
 `--zoom`; `--help` lists the sources).
@@ -381,9 +381,9 @@ bash scripts/export-db.sh
 ```
 
 This writes:
-- `data/exports/<region>.oimdb`: the database, compressed (Luxembourg: 23 MB).
-- `data/exports/<region>.json`: region, OSM data date, checksum.
-- Optionally `data/exports/docker-images.tar.gz` (~460 MB, shared by all exports):
+- `data/map/exports/<region>.oimdb`: the database, compressed (Luxembourg: 23 MB).
+- `data/map/exports/<region>.json`: region, OSM data date, checksum.
+- Optionally `data/map/exports/docker-images.tar.gz` (~460 MB, shared by all exports):
   the project's Docker images, so a computer **without internet** can run it.
 
 Once a region has an export, it's kept up to date: when the database no longer
@@ -397,7 +397,7 @@ On another computer, copy the project folder (e.g. to a USB drive) and run
 seconds to minutes instead of rebuilding. You can import directly too:
 
 ```bash
-bash scripts/import-db.sh data/exports/russia.oimdb
+bash scripts/import-db.sh data/map/exports/russia.oimdb
 ```
 
 The import checks the file isn't damaged and warns if the export was made with a
@@ -407,12 +407,12 @@ different version of the import mapping or views.
 
 | Folder | Copy it? |
 |--------|----------|
-| `data/exports/` | Yes: the databases and Docker images |
-| `data/images/`, `data/wikidata_json/` | Yes, for offline popups |
-| `data/offline-maps/` | Yes, if you downloaded an offline background map |
-| `data/EEZ_*` | Yes, so future rebuilds don't need the manual download |
+| `data/map/exports/` | Yes: the databases and Docker images |
+| `data/map/images/`, `data/map/wikidata_json/` | Yes, for offline popups |
+| `data/map/offline-maps/` | Yes, if you downloaded an offline background map |
+| `data/downloads/EEZ_*` | Yes, so future rebuilds don't need the manual download |
 | `web/node_modules/` | Yes, so the frontend starts offline |
-| `data/osm/` | No: the raw downloads (4 GB for Russia, ~95 GB for the world), only needed to rebuild |
+| `data/downloads/osm/` | No: the raw downloads (4 GB for Russia, ~95 GB for the world), only needed to rebuild |
 
 ---
 
@@ -493,6 +493,17 @@ DATABASE_URL=postgresql+asyncpg://osm:osm@localhost:5432/osm
 
 ---
 
+## Where the data is
+
+Everything the scripts download or make is in `data/` (never in git), in three
+parts:
+
+| Folder | What | Copy it? |
+|---|---|---|
+| `data/map/` | what the app needs: the offline maps (`offline-maps/`), the Wikidata cache (`images/`, `wikidata_json/`), the exports (`exports/`) | yes, to run the map elsewhere |
+| `data/local/` | this computer's own: the gate's certificate, My layers' copy made during an import, checks, logs | no |
+| `data/downloads/` | what can be downloaded again: OpenStreetMap extracts, extra data's sources, sea boundaries | no: delete it any time to free space |
+
 ## What works offline
 
 | Feature | Offline? |
@@ -550,8 +561,8 @@ details the same way. Needs a database built with this feature
 ## Wikidata image cache
 
 When you click a feature with a `wikidata` tag, the popup asks the backend for
-`/wikidata/{id}`. The backend serves `data/wikidata_json/{id}.json` and
-`data/images/{id}.*` if they're cached, and only otherwise calls Wikimedia.
+`/wikidata/{id}`. The backend serves `data/map/wikidata_json/{id}.json` and
+`data/map/images/{id}.*` if they're cached, and only otherwise calls Wikimedia.
 
 ```bash
 uv run --project scripts scripts/fetch_images.py --json-only   # text only, seconds
@@ -622,9 +633,9 @@ source.
 of electricity, gas, biomethane and ICPE (each with its size and download time), or
 pass `--extra` (all) or `--extra-only gas,icpe`. Later:
 `uv run --project scripts scripts/extra_data.py import --choose gas,icpe`.
-Rebuilding a region keeps its extra data: it's saved to `data/extra/` before the
+Rebuilding a region keeps its extra data: it's saved to `data/downloads/extra/` before the
 database is wiped and put back afterwards, without downloading it again. The raw
-downloads are kept too (`data/extra/agence-ore/`), so importing again, or for
+downloads are kept too (`data/downloads/extra/agence-ore/`), so importing again, or for
 another French region, reuses them; `uv run --project scripts scripts/extra_data.py import --refresh`
 downloads them again.
 To do it on an existing database:
@@ -808,5 +819,5 @@ If you add your own mounts, add `:z` too.
 
 **Not enough disk space.** Docker keeps its data in `/var/lib/docker` by default,
 often on the system disk. The script shows the estimate before starting. Downloads
-and filtered files in `data/osm/` are reused, so after freeing space just re-run.
+and filtered files in `data/downloads/osm/` are reused, so after freeing space just re-run.
 

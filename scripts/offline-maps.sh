@@ -11,7 +11,7 @@ set -euo pipefail
 # area (this region, another country, the world), NASA Blue Marble, Sentinel-2
 # 10 m, aerial photos (8 to 60 cm) where a country publishes them, and the
 # background map, with sizes: only what isn't there yet and makes sense. Downloads
-# into data/offline-maps/ and points the map at everything there (Settings →
+# into data/map/offline-maps/ and points the map at everything there (Settings →
 # Background). Your map data and your own layers are left as they are; the
 # frontend needs a restart to show new imagery. A download stopped half-way goes
 # on with Resume.

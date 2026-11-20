@@ -52,11 +52,18 @@ The drive is a copy of the project folder: the code as committed, `data/map/`, a
 its own `data/local/`. Never on the drive: `data/downloads/`, `node_modules/`, the
 `.venv`s, `.git`, `.env` files.
 
+**Two kinds of computer.** A development computer prepares the data (builds regions,
+downloads maps: it keeps uv, Node.js, the internet); a computer that only runs the
+app needs Docker and bash. Every script stays and keeps working on a development
+computer. The drive gets the whole code, the data scripts included: with an
+internet connection and uv installed, a computer running from the drive can add
+data too (decided 2026-11-20).
+
 ## Steps
 
 Each step ends with every test suite passing, committed; the app works between steps.
 
-### 1. The data folders (A)
+### 1. The data folders (A) — ✅ done (2026-11-20)
 
 - Tests first: the scripts' tests use the new paths; a test lists what each folder
   may hold.
@@ -80,7 +87,10 @@ Each step ends with every test suite passing, committed; the app works between s
 - The gate image is rebuilt by the export (`export-db.sh --docker-images`) whenever
   the frontend changed, so the export always carries a frontend matching its code.
 
-### 3. The gate without host networking
+### 3. The gate on Docker's own network
+
+Nothing leaves the computer and the address stays https://<this computer>:8800; only
+how the gate's container is connected changes.
 
 - Today the gate runs on the host's network (`network_mode: host`) and reaches the
   services on 127.0.0.1. Docker Desktop (Windows) only has that behind an opt-in

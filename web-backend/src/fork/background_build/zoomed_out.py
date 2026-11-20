@@ -42,7 +42,8 @@ from pmtiles.tile import Compression, TileType, tileid_to_zxy, zxy_to_tileid
 from pmtiles.writer import Writer
 
 from ..pmtiles_files import Archive
-from ..background import OFFLINE_MAPS_DIR, companion_of, is_background_map, mvt, unzipped
+from ..background import companion_of, is_background_map, mvt, unzipped
+from ..paths import OFFLINE_MAPS_DIR
 from . import beyond_area, stand_lead_ins
 from . import zoomed_buildings as buildings
 from . import zoomed_railways as railways

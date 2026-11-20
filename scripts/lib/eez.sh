@@ -7,7 +7,7 @@
 ensure_eez_zip() {
     if [[ ! -f "$EEZ_ZIP" && -f "$HOME/Downloads/$EEZ_NAME.zip" ]]; then
         info "Found $EEZ_NAME.zip in ~/Downloads — copying to data/."
-        mkdir -p "$DATA_DIR"
+        mkdir -p "$DOWNLOADS_DIR"
         cp "$HOME/Downloads/$EEZ_NAME.zip" "$EEZ_ZIP"
     fi
     [[ -f "$EEZ_ZIP" ]] && return 0
@@ -42,7 +42,7 @@ ensure_eez_zip() {
             return 1
         fi
         if [[ -f "$HOME/Downloads/$EEZ_NAME.zip" && ! -f "$EEZ_ZIP" ]]; then
-            mkdir -p "$DATA_DIR"
+            mkdir -p "$DOWNLOADS_DIR"
             cp "$HOME/Downloads/$EEZ_NAME.zip" "$EEZ_ZIP"
         fi
         [[ -f "$EEZ_ZIP" ]] && return 0
@@ -52,7 +52,7 @@ ensure_eez_zip() {
 
 # Import $EEZ_ZIP into the countries schema (see ensure_eez_zip).
 import_eez() {
-    local eez_dir="$DATA_DIR/$EEZ_NAME"
+    local eez_dir="$DOWNLOADS_DIR/$EEZ_NAME"
     local shp
     shp=$(find "$eez_dir" -name "$EEZ_NAME.shp" 2>/dev/null | head -1 || true)
     if [[ -z "$shp" ]]; then

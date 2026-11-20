@@ -20,7 +20,7 @@ export function throughGate(url: string, origin = globalThis.location?.origin): 
 const LOCAL_BACKEND = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:8001'
 
 // Basemap (roads, buildings, water, labels) vector tiles in the Protomaps
-// schema: the background maps downloaded into data/offline-maps/, served together by
+// schema: the background maps downloaded into data/map/offline-maps/, served together by
 // the backend (/background; web-backend/src/fork/background/). Only local tiles:
 // where none was downloaded the background is empty. VITE_BASEMAP_URL can point
 // at another Protomaps-schema server; the "Map sources" panel can override it
@@ -71,7 +71,7 @@ export function getPhotonUrl(): string {
 export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
 
 // The terrain's elevation tiles (hill shading, the 3D relief): every area's
-// <area>.terrain.pmtiles in data/offline-maps/, served together by the backend
+// <area>.terrain.pmtiles in data/map/offline-maps/, served together by the backend
 // (web-backend/src/fork/terrain/). Only local: none downloaded, no relief.
 export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
 // Contour lines the backend makes from it (vector tiles).

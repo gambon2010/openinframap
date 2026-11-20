@@ -6,7 +6,7 @@
 # Helpers for the steps
 # ---------------------------------------------------------------------------
 
-# Run osmium (Docker) with the source extract at /src.osm.pbf and data/osm at /osm.
+# Run osmium (Docker) with the source extract at /src.osm.pbf and data/downloads/osm at /osm.
 osmium() {
     compose_run --user "$(id -u):$(id -g)" \
         -v "$PBF_SOURCE:/src.osm.pbf:ro,z" -v "$OSM_DIR:/osm:z" osmium "$@"
@@ -29,7 +29,7 @@ export_manifest() {
     [[ -f "$manifest" && -f "$EXPORTS_DIR/$1.oimdb" ]] && echo "$manifest"
 }
 
-# Ids of regions with a ready-made export in data/exports/.
+# Ids of regions with a ready-made export in data/map/exports/.
 exported_regions() {
     local f
     for f in $(list_exports); do
@@ -60,7 +60,7 @@ show_local_files() {
         ok "$(printf '%-22s %7s  extract from %s%s' "$id" "$(human_size "$(stat -c%s "$f")")" "$(file_date "$f")" \
             "$([[ -f "$OSM_DIR/$id-filtered.osm.pbf" ]] && echo ', filtered')")"
     done
-    [[ "$found" == 1 ]] || info "No region downloads yet (they're kept in data/osm/)."
+    [[ "$found" == 1 ]] || info "No region downloads yet (they're kept in data/downloads/osm/)."
     for f in "$OFFLINE_MAPS_DIR"/*.pmtiles; do
         [[ -f "$f" ]] || continue
         ok "$(printf '%-22s %7s  offline background map, %s detail' "$(basename "$f" .pmtiles)" \
@@ -72,13 +72,13 @@ show_local_files() {
         info "EEZ country boundaries: not downloaded yet"
     fi
     # No cache folder on a fresh checkout: find fails, which mustn't stop the script.
-    cached=$({ find "$DATA_DIR/wikidata_json" -name '*.json' 2>/dev/null || true; } | wc -l)
+    cached=$({ find "$WIKIDATA_JSON_DIR" -name '*.json' 2>/dev/null || true; } | wc -l)
     if [[ "$cached" -gt 0 ]]; then
-        ok "Wikidata cache: $cached entries, $(find "$DATA_DIR/images" -type f 2>/dev/null | wc -l) images"
+        ok "Wikidata cache: $cached entries, $(find "$IMAGES_DIR" -type f 2>/dev/null | wc -l) images"
     fi
     if [[ -s "$BUILD_LOG" ]]; then
         info ""
-        info "Recent builds (data/osm/build-history.log):"
+        info "Recent builds (data/downloads/osm/build-history.log):"
         tail -n 5 "$BUILD_LOG" | sed "s/^/      ${DIM}/; s/$/${RESET}/"
     fi
 }
@@ -176,7 +176,7 @@ find_kept_extra_data() {
     local saved="$EXTRA_DIR/$REGION_ID.extra.json"
     EXTRA_KEPT=""
     if [[ "$EXTRA_KEEP" == no ]]; then
-        return 0  # --no-extra: none at all (a saved copy stays in data/extra/)
+        return 0  # --no-extra: none at all (a saved copy stays in data/downloads/extra/)
     fi
     if [[ "$EXISTING_REGION_ID" == "$REGION_ID" && "$EXISTING_EXTRA" -gt 0 ]]; then
         EXTRA_KEPT="$(printf "%'d" "$EXISTING_EXTRA") features in the current database"
@@ -238,7 +238,7 @@ choose_extra_datasets() {
 # --- The background map --------------------------------------------------------------
 
 # region_outline — the region's outline for the offline maps menu
-# (data/offline-maps/.area-<region>.geojson, where it looks first): Geofabrik's, else
+# (data/map/offline-maps/.area-<region>.geojson, where it looks first): Geofabrik's, else
 # the local file's bounding box as a rectangle.
 region_outline() {
     local outline="$OFFLINE_MAPS_DIR/.area-$REGION_ID.geojson" bbox
@@ -331,7 +331,7 @@ find_region_source() {
         warn "          connection, 2–3 hours at 10 MB/s. It resumes if interrupted."
         warn "Filtering: roughly 30–60 min (osmium reads the whole file once)."
         warn "Import, views and stats: probably under an hour."
-        warn "Disk: ~100 GB in data/osm/ plus 30–50 GB for the database (checked below)."
+        warn "Disk: ~100 GB in data/downloads/osm/ plus 30–50 GB for the database (checked below)."
         info "Everything runs unattended after the questions, and finished steps aren't"
         info "repeated if you re-run, so it's fine to leave it overnight."
         ask_yes_no "Build the whole world?" y || die "Aborted — nothing was changed."
@@ -370,7 +370,7 @@ check_space() {
     mkdir -p "$OSM_DIR"
     need=$(( DOWNLOAD_SIZE * 115 / 100 ))
     [[ "$DOWNLOAD" == no && -f "$PBF_SOURCE" ]] && need=$(( $(stat -c%s "$PBF_SOURCE") * 15 / 100 ))
-    room_for "$need" "$OSM_DIR" "data/osm/" || die "Not enough disk space in $OSM_DIR."
+    room_for "$need" "$OSM_DIR" "data/downloads/osm/" || die "Not enough disk space in $OSM_DIR."
     DOCKER_ROOT=$(docker info -f '{{.DockerRootDir}}' 2>/dev/null || true)
     if [[ -n "$DOCKER_ROOT" ]] && free_bytes "$DOCKER_ROOT" >/dev/null 2>&1; then
         raw=$DOWNLOAD_SIZE

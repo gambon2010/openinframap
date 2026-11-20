@@ -1,5 +1,5 @@
 """scripts/offline_maps/maps.py: the offline maps menu, driven by typed answers in a
-temporary data/offline-maps/ (the downloads it starts are recorded, not run)."""
+temporary data/map/offline-maps/ (the downloads it starts are recorded, not run)."""
 
 import io
 import json

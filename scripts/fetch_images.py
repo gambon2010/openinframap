@@ -5,7 +5,7 @@ Download Wikimedia Commons thumbnails for all OSM features in the local DB.
 Queries every table that carries a wikidata tag, then for each ID:
   1. Batch-fetches the P18 (image) claim from the Wikidata API (50 IDs/request)
   2. Batch-fetches thumbnail URLs from the Wikimedia Commons API (50 files/request)
-  3. Downloads each thumbnail image to data/images/<wikidata_id>.<ext>
+  3. Downloads each thumbnail image to data/map/images/<wikidata_id>.<ext>
 
 Already-cached images are skipped on re-runs.
 
@@ -31,13 +31,14 @@ from pathlib import Path
 import httpx
 import psycopg2
 
-# netsafe is beside this file. Run as a script (python -I), Python doesn't look there.
+# netsafe and data_folders are beside this file. Run as a script (python -I), Python
+# doesn't look there.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import data_folders
 import netsafe
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-IMAGES_DIR = REPO_ROOT / "data" / "images"
-WIKIDATA_JSON_DIR = REPO_ROOT / "data" / "wikidata_json"
+IMAGES_DIR = data_folders.IMAGES_DIR
+WIKIDATA_JSON_DIR = data_folders.WIKIDATA_JSON_DIR
 
 THUMBNAIL_WIDTH = 300
 API_DELAY = 1.1  # seconds between MediaWiki API calls (Wikidata / Commons)
@@ -109,7 +110,7 @@ def chunks(lst: list, n: int):
 def fetch_entity_data(client: httpx.Client, ids: list[str]) -> dict[str, dict]:
     """
     Batch-fetch labels, sitelinks and claims from Wikidata for up to 50 IDs.
-    Saves each entity to data/wikidata_json/<id>.json for offline use.
+    Saves each entity to data/map/wikidata_json/<id>.json for offline use.
     Returns {wikidata_id: entity_dict}.
     """
     url = "https://www.wikidata.org/w/api.php"
@@ -266,7 +267,7 @@ def step_entities(
     client: httpx.Client, todo: list[str], steps: str
 ) -> tuple[dict[str, dict], dict[str, str]]:
     """Step 1: the entities' data from Wikidata (50 IDs a request), saved to
-    data/wikidata_json/ (those already there are read from it), then the ones they
+    data/map/wikidata_json/ (those already there are read from it), then the ones they
     are part of (P361), one level deep, for the popup's "part of" offline. Returns
     the entities, and the image file of each ID that has none here yet."""
     fetched: dict[str, dict] = {}

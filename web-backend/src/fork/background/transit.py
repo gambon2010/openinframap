@@ -1,6 +1,6 @@
 """Fork: /background/transit/{z}/{x}/{y}.mvt, the trams' and metros' lanes (each
 line in its lane, LOOM's: background_build/loom_tiles.py), from
-data/offline-maps/<area>.transit.pmtiles, the first file that has the tile. A source
+data/map/offline-maps/<area>.transit.pmtiles, the first file that has the tile. A source
 of its own: its tiles go to zoom 18 (the lanes' offsets are written per zoom), the
 background map's stop at 15. Answered like the background map's tiles
 (tile_answers.py)."""
@@ -13,7 +13,8 @@ from starlette.routing import Route
 
 from ..pmtiles_files import ArchiveFolder
 from ..tile_answers import tile_response
-from . import MEDIA_TYPE, OFFLINE_MAPS_DIR
+from ..paths import OFFLINE_MAPS_DIR
+from . import MEDIA_TYPE
 
 # <area>.transit.pmtiles (background_build/loom_tiles.py).
 TRANSIT = ".transit.pmtiles"

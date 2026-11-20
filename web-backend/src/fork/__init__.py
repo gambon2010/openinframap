@@ -44,11 +44,11 @@ routes: list[BaseRoute] = [
     *userdata.routes,
     *map_data.routes,
     *grid.routes,
-    # The background map's tiles, from every area downloaded (data/offline-maps/).
+    # The background map's tiles, from every area downloaded (data/map/offline-maps/).
     *background.routes,
     *background_buildings.routes,
     *background_transit.routes,
-    # The terrain's elevation tiles, from every area downloaded (data/offline-maps/).
+    # The terrain's elevation tiles, from every area downloaded (data/map/offline-maps/).
     *terrain.routes,
     # The satellite imagery the map shows (the list the scripts write).
     *imagery.routes,

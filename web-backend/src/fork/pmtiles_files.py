@@ -1,4 +1,4 @@
-"""Fork: the PMTiles files the backend serves from data/offline-maps/ (the background
+"""Fork: the PMTiles files the backend serves from data/map/offline-maps/ (the background
 maps and their companions, the trams' lanes, the terrain): a file open (Archive),
 and the files of one kind in the folder (ArchiveFolder), opened again when they
 change, so a download shows without a restart."""

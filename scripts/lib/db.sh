@@ -133,12 +133,12 @@ fresh_database() {
             run_with_timer --keep-going "Saving the extra data ($(printf "%'d" "$count") features)" \
                 save_extra_data "$extra_region" \
                 || die "Saving the extra data failed, so the database was left as it was."
-            ok "Saved to data/extra/$extra_region.extra.dump"
+            ok "Saved to data/downloads/extra/$extra_region.extra.dump"
         fi
         if [[ "$(user_data_saves)" -gt 0 ]]; then
             run_with_timer --keep-going "Saving My layers" save_user_data \
                 || die "Saving My layers failed, so the database was left as it was."
-            ok "Saved to data/userdata/userdata.dump"
+            ok "Saved to data/local/userdata/userdata.dump"
         fi
     fi
     # -v removes this project's volumes only (database, imposm cache).
@@ -153,7 +153,7 @@ fresh_database() {
 put_back_my_layers() {
     if [[ -f "$USERDATA_DUMP" ]]; then
         run_with_timer --keep-going "Putting back My layers" restore_user_data \
-            || warn "Putting back My layers failed; they're still in data/userdata/userdata.dump"
+            || warn "Putting back My layers failed; they're still in data/local/userdata/userdata.dump"
     fi
     run_with_timer --keep-going "Numbering towers along their lines" number_towers \
         || warn "Numbering towers failed; towers have no numbers. Retry: bash scripts/number-towers.sh"

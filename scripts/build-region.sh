@@ -19,7 +19,7 @@ set -euo pipefail
 # boundaries → extra data → Tegola → background map and satellite imagery →
 # Wikidata images → export again if the ready-made one is out of date.
 #
-# Downloads and filtered extracts are kept in data/osm/ and reused. Downloads
+# Downloads and filtered extracts are kept in data/downloads/osm/ and reused. Downloads
 # wait for a lost connection (scripts/lib/net.sh). The steps are the functions
 # below, run in order at the end of the file.
 # ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ Usage: bash scripts/build-region.sh [options]
   --extra         Also download open data from outside OpenStreetMap that covers
                   the region (e.g. French distribution networks; see
                   scripts/extra_data.py). Extra data already imported for the
-                  region is kept across rebuilds anyway (saved in data/extra/)
+                  region is kept across rebuilds anyway (saved in data/downloads/extra/)
   --extra-only LIST  Only these extra datasets, e.g. gas,icpe (choices: electricity,
                   gas, biomethane, icpe; see: uv run --project scripts scripts/extra_data.py offer)
   --no-extra      No extra data at all, and don't ask about it
@@ -56,9 +56,9 @@ Usage: bash scripts/build-region.sh [options]
                   questions: sentinel2, fr_ign, protomaps... (uv run --project
                   scripts scripts/offline-maps.py maps --help lists them). Default: the
                   offline maps menu (with --yes: none)
-  --rebuild       Build from scratch even if data/exports/ has a ready-made export
+  --rebuild       Build from scratch even if data/map/exports/ has a ready-made export
   --no-export     Don't export the region again when its ready-made export in
-                  data/exports/ is out of date (by default it is, at the end)
+                  data/map/exports/ is out of date (by default it is, at the end)
   --refresh       Download a newer Geofabrik extract if there is one (by default
                   an extract you already downloaded is reused, and you're asked)
   --yes, -y       Don't ask questions; accept the defaults (wipes the database!)
@@ -74,7 +74,7 @@ EOF
 # The region
 REGION_ID=""          # Geofabrik id, or the local file's name (--pbf)
 REGION_NAME=""        # shown, and stored in oim_build_info
-PBF_SOURCE=""         # the .osm.pbf read: data/osm/<id>-latest.osm.pbf, or --pbf
+PBF_SOURCE=""         # the .osm.pbf read: data/downloads/osm/<id>-latest.osm.pbf, or --pbf
 PBF_URL=""            # where it's downloaded from ("" for a local file)
 DOWNLOAD_SIZE=0       # bytes to download (0: nothing to download)
 DOWNLOAD=no           # yes: download the extract (missing, or a newer one)
@@ -134,7 +134,7 @@ case "$BASEMAP_MODE" in
     *) die "--basemap must be full or none." ;;
 esac
 
-# Unfinished builds are noted in data/osm/build-history.log.
+# Unfinished builds are noted in data/downloads/osm/build-history.log.
 BUILD_STARTED=0
 BUILD_DONE=0
 trap 'echo; warn "Interrupted. Re-run the script to continue — downloads resume where they stopped."; exit 130' INT

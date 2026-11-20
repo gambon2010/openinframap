@@ -1,4 +1,4 @@
-"""Fork: the terrain files downloaded into data/offline-maps/<area>.terrain.pmtiles
+"""Fork: the terrain files downloaded into data/map/offline-maps/<area>.terrain.pmtiles
 (Mapterhorn's elevation tiles cut to an area: scripts/offline_maps/terrain.py), open
 and kept open, picked up again when they change (no restart)."""
 
@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..background import OFFLINE_MAPS_DIR
+from ..paths import OFFLINE_MAPS_DIR
 from ..pmtiles_files import ArchiveFolder
 
 SUFFIX = ".terrain.pmtiles"

@@ -12,6 +12,7 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import data_folders
 import netsafe
 
 from . import docker
@@ -227,7 +228,7 @@ def command_detailed(args) -> None:
     print(f"{found:,} tiles -> {out}")
 
 
-OFFLINE_MAPS_DIR = str(Path(__file__).resolve().parents[2] / "data" / "offline-maps")
+OFFLINE_MAPS_DIR = str(data_folders.OFFLINE_MAPS_DIR)
 
 
 def main(argv: Iterable[str] | None = None) -> None:

@@ -2,7 +2,7 @@
 # Fork: the gate's HTTPS certificate, made here the first time (nginx's image runs
 # the scripts in /docker-entrypoint.d before starting). Self-signed: nobody else
 # signs it, so each browser warns once; the traffic is encrypted all the same.
-# Kept in data/gate/ (mounted at /etc/nginx/certs); delete it to make a new one
+# Kept in data/local/gate/ (mounted at /etc/nginx/certs); delete it to make a new one
 # (e.g. after this computer's address changed).
 set -eu
 dir=/etc/nginx/certs

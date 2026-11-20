@@ -1,5 +1,5 @@
 """Fork: the background map's tiles (roads, buildings, water, place names), from
-the background maps downloaded into data/offline-maps/<area>.pmtiles (Protomaps'
+the background maps downloaded into data/map/offline-maps/<area>.pmtiles (Protomaps'
 world map cut to an area: scripts/offline_maps/extract.py).
 
 /background/{z}/{x}/{y}.mvt answers each tile from the first file that has it,
@@ -31,12 +31,11 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from ..paths import LOCAL_DATA_DIR
+from ..paths import OFFLINE_MAPS_DIR
 from ..pmtiles_files import Archive, ArchiveFolder
 from ..tile_answers import tile_response
 from . import mvt
 
-OFFLINE_MAPS_DIR = LOCAL_DATA_DIR / "offline-maps"
 WORLD = "world"
 MEDIA_TYPE = "application/vnd.mapbox-vector-tile"
 # What the background map leaves out zoomed out: <area>.zoomed-out.pmtiles, these

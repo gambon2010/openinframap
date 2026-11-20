@@ -1,6 +1,6 @@
 """Fork: offline maps. An area's terrain (elevations, for the map's contour lines,
 hill shading and 3D relief: docs/plans/terrain.md), cut out of Mapterhorn's terrain
-tiles into data/offline-maps/<area>.terrain.pmtiles.
+tiles into data/map/offline-maps/<area>.terrain.pmtiles.
 
 Mapterhorn (https://mapterhorn.com) publishes the world's terrain as PMTiles:
 512-pixel tiles of elevations, Terrarium encoded, lossless WebP; in France IGN's RGE

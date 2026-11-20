@@ -5,7 +5,7 @@
 # import-db.sh.
 # Sourced by common.sh.
 
-USERDATA_DUMP="$DATA_DIR/userdata/userdata.dump"
+USERDATA_DUMP="$LOCAL_DIR/userdata/userdata.dump"
 
 # user_data_saves — how many times "My layers" were saved, plus the towers in the
 # register of tower numbers (also in userdata); 0: nothing to keep.

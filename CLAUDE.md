@@ -95,10 +95,10 @@ Services (`docker-compose.override.yml`; all on 127.0.0.1 but the gate):
 
 | Service | Port | What |
 |---|---|---|
-| `gate` | 8800 (https) | nginx, **where the app is opened**; the one way in from the network, every request needs a logged-in session (`gate/nginx.conf`, certificate made in `data/gate/`) |
+| `gate` | 8800 (https) | nginx, **where the app is opened**; the one way in from the network, every request needs a logged-in session (`gate/nginx.conf`, certificate made in `data/local/gate/`) |
 | `db` | 5432 | PostGIS |
 | `tegola` | 7800 | the infrastructure tiles |
-| `backend` | 8001 | API, login, search, and the offline maps from `data/offline-maps/`: background map (`/background`), terrain (`/terrain`), satellite imagery (`/imagery`, `/satellite`) |
+| `backend` | 8001 | API, login, search, and the offline maps from `data/map/offline-maps/`: background map (`/background`), terrain (`/terrain`), satellite imagery (`/imagery`, `/satellite`) |
 | frontend | 5173 | `cd web && npm start`, reached through the gate |
 
 Stop: Ctrl+C in the frontend window, then `docker compose stop`.
@@ -131,7 +131,7 @@ uv run --project scripts pytest scripts/tests   # Script tests (fake docker/curl
 OIM_TEST_REAL_BUILD=1 uv run --project scripts pytest scripts/tests -k real_build   # Real Luxembourg build/export/import, its own Docker project
 bash scripts/build-region.sh                               # Pick a region, wipe the DB, download + import
 bash scripts/build-region.sh --region luxembourg --yes     # Unattended (tiny test region)
-bash scripts/export-db.sh / import-db.sh FILE              # Save / restore data/exports/<region>.oimdb
+bash scripts/export-db.sh / import-db.sh FILE              # Save / restore data/map/exports/<region>.oimdb
 bash scripts/number-towers.sh                              # Number the towers again
 uv run --project scripts scripts/offline-maps.py maps --source ID --yes     # An offline map without questions
 uv run --project scripts scripts/fetch_images.py [--json-only|--count]       # Offline Wikidata cache in data/
@@ -144,14 +144,14 @@ cd tegola && python3 ./generate_tegola_config.py ./tegola.yml ./layers.yml ./lay
 ## Environment Variables
 
 `launch.sh` creates both files if missing (`start.sh` refreshes the imagery list):
-- `web/.env`: `VITE_TEGOLA_URL`, `VITE_BACKEND_BASE_URL`, `VITE_BASEMAP_URL` (optional; the default is the backend's `/background`; only local tiles), optional `VITE_PHOTON_URL`. The satellite imagery isn't a setting: the map reads the list the scripts write (`data/offline-maps/imagery.json`, the backend's `/imagery`). Settings → Map sources overrides them per tab.
+- `web/.env`: `VITE_TEGOLA_URL`, `VITE_BACKEND_BASE_URL`, `VITE_BASEMAP_URL` (optional; the default is the backend's `/background`; only local tiles), optional `VITE_PHOTON_URL`. The satellite imagery isn't a setting: the map reads the list the scripts write (`data/map/offline-maps/imagery.json`, the backend's `/imagery`). Settings → Map sources overrides them per tab.
 - `web-backend/.env`: `DATABASE_URL` (`postgresql+asyncpg://`) for running the backend on the host.
 
 ## Gotchas
 
 - Bash reads scripts as it runs them: don't edit `scripts/*.sh` while one is running.
 - Docker mounts need `:z` (Fedora/SELinux).
-- `data/` is gitignored: downloads, exports, offline maps, caches. Never commit `.env` files or `*.bak`.
+- `data/` is gitignored, in three parts (`scripts/data_folders.py`, `lib/common.sh`, the backend's `paths.py`, checked to agree): `data/map/` what the app needs (offline maps, Wikidata cache, exports; mounted read-only in the backend), `data/local/` this installation's own (gate certificate, My layers' copy during an import, checks, logs), `data/downloads/` what can be downloaded again (OSM extracts, extra data's sources, EEZ). Never commit `.env` files or `*.bak`.
 - Icons (`web/src/icons/*.svg`) are listed when the dev server starts (vite-plugin-render-svg): after adding or renaming one, restart it (it's then missing from the map and the key until then).
 - Tegola's `config.toml` is generated (command above); Tegola caches tiles (to zoom 13, inside its container), so after changing a tile layer or the data under it, regenerate the config and recreate it (`up_services --force-recreate tegola`): don't ask the owner to clear caches. The browser keeps the key's tick boxes (localStorage): a new layer drawn with an icon or colour another key row hides is hidden with it, so give each new layer its own (docs/STYLE.md).
 - Build SQL must scale to a country like France (millions of rows): `ANALYZE` temp tables after creating them, join instead of `IN`/`NOT IN (subquery)`, never join on `ST_Equals`, give `ST_DWithin` a constant distance. Distances and areas are written in real metres (`schema/fork/distances.sql`: `ST_DWithin(a, b, D * oim_max_stretch()) AND ST_DWithin(a, b, oim_units(D, b))`; `oim_metres`, `oim_ground_area`): map units stretch with latitude, and a test fails on a bare number. Test new build steps on more than Luxembourg.

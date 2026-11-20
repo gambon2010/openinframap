@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # Geofabrik's regions: its index (names, download links, outlines), and the
-# extracts already downloaded to data/osm/.
+# extracts already downloaded to data/downloads/osm/.
 # Sourced by common.sh.
 
 # Full index: includes each region's outline, used to cut its background map.
@@ -10,7 +10,7 @@ GEOFABRIK_INDEX="$OSM_DIR/geofabrik-index-v1.json"
 PLANET_ID=planet
 PLANET_URL="https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf"
 
-# fetch_geofabrik_index — the index in data/osm/, refreshed once a day; offline,
+# fetch_geofabrik_index — the index in data/downloads/osm/, refreshed once a day; offline,
 # the copy there (false if there's none).
 fetch_geofabrik_index() {
     mkdir -p "$OSM_DIR"
@@ -54,10 +54,10 @@ for feature in json.load(open(index))["features"]:
 sys.exit(1)' "$GEOFABRIK_INDEX" "$1" "$2"
 }
 
-# The extract of region $1 in data/osm/ (downloaded, or to download to).
+# The extract of region $1 in data/downloads/osm/ (downloaded, or to download to).
 extract_file() { echo "$OSM_DIR/$1-latest.osm.pbf"; }
 
-# Ids of regions already downloaded to data/osm/.
+# Ids of regions already downloaded to data/downloads/osm/.
 downloaded_regions() {
     local f
     for f in "$OSM_DIR"/*-latest.osm.pbf; do

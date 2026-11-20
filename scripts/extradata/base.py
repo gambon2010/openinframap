@@ -6,9 +6,11 @@ import time
 from pathlib import Path
 from typing import ClassVar
 
+import data_folders
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-EXTRA_DIR = REPO_ROOT / "data" / "extra"
-GEOFABRIK_INDEX = REPO_ROOT / "data" / "osm" / "geofabrik-index-v1.json"
+EXTRA_DIR = data_folders.EXTRA_DIR
+GEOFABRIK_INDEX = data_folders.OSM_DIR / "geofabrik-index-v1.json"
 
 
 def region_geojson(cur) -> tuple[str, str]:

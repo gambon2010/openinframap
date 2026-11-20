@@ -30,7 +30,7 @@ import numpy as np
 import osmium  # type: ignore[import-untyped]
 import shapely
 
-from ..background import OFFLINE_MAPS_DIR
+from ..paths import OFFLINE_MAPS_DIR
 from .tiles import map_units
 from .transit_lines import TRANSIT_KINDS, Line, in_order, line_of
 from .zoomed_railways import mercator, source_of

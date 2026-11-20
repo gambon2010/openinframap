@@ -41,7 +41,7 @@ duration() {
     fi
 }
 
-# Append a line to data/osm/build-history.log, which survives database wipes.
+# Append a line to data/downloads/osm/build-history.log, which survives database wipes.
 log_build() {
     mkdir -p "$OSM_DIR"
     echo "$(date '+%Y-%m-%d %H:%M')  $*" >> "$BUILD_LOG"

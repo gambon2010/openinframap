@@ -11,7 +11,7 @@ set -euo pipefail
 # for a login) once it's up.
 # Anything already running is left alone. Needs a database built by
 # scripts/launch.sh (first-time setup) or scripts/build-region.sh. If the
-# region's export in data/exports/ is out of date, it's exported again.
+# region's export in data/map/exports/ is out of date, it's exported again.
 # ---------------------------------------------------------------------------
 
 # shellcheck source=lib/common.sh

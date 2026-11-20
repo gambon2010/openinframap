@@ -1,5 +1,5 @@
 """Fork: the satellite imagery the map shows, from the files downloaded into
-data/offline-maps/<area>.sat-*.pmtiles (scripts/offline-maps.py): their list, at
+data/map/offline-maps/<area>.sat-*.pmtiles (scripts/offline-maps.py): their list, at
 /imagery (the one the scripts write beside them, imagery.json: each file, its
 tiles' format, zooms, bounds and credit; the map reads it when it opens), and
 their tiles, at /satellite/<file>/{z}/{x}/{y}.<format>."""
@@ -14,7 +14,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from .background import OFFLINE_MAPS_DIR
+from .paths import OFFLINE_MAPS_DIR
 from .pmtiles_files import ArchiveFolder
 from .tile_answers import tile_response
 

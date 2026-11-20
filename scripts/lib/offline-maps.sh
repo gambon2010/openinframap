@@ -4,7 +4,7 @@
 # queue after the build (download_offline_maps); select_satellite writes the map's
 # imagery list.
 
-# Whether any satellite imagery is downloaded (data/offline-maps/<area>.sat-*.pmtiles).
+# Whether any satellite imagery is downloaded (data/map/offline-maps/<area>.sat-*.pmtiles).
 has_satellite() {
     compgen -G "$OFFLINE_MAPS_DIR/*.sat-*.pmtiles" >/dev/null
 }
@@ -15,7 +15,7 @@ satellite_summary() {
     scripts_python "$REPO_ROOT/scripts/offline-maps.py" summary --maps-dir "$OFFLINE_MAPS_DIR"
 }
 
-# Write the map's imagery list (data/offline-maps/imagery.json: every imagery file,
+# Write the map's imagery list (data/map/offline-maps/imagery.json: every imagery file,
 # with its zooms, bounds and credit; the backend serves it, the map reads it when it
 # opens: scripts/offline_maps/inventory.py imagery_list).
 select_satellite() {

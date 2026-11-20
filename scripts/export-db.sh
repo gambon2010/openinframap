@@ -6,12 +6,12 @@ set -euo pipefail
 #
 #   bash scripts/export-db.sh
 #
-# Writes data/exports/<region>.oimdb (the database) and <region>.json (what's
+# Writes data/map/exports/<region>.oimdb (the database) and <region>.json (what's
 # in it). Copy the project folder to another computer and build-region.sh /
 # launch.sh offer "Import ready-made" for that region: restoring takes minutes
 # instead of re-downloading and re-processing the data.
 #
-# It can also save the project's Docker images (data/exports/docker-images.tar.gz)
+# It can also save the project's Docker images (data/map/exports/docker-images.tar.gz)
 # so a computer without internet access can start everything.
 #
 #   --docker-images      also save the Docker images (default: ask)
@@ -54,7 +54,7 @@ if [[ -f "$MANIFEST" ]]; then
     info "Replaces the existing export from $(json_get "$MANIFEST" exported_at)."
 fi
 # The compressed export is usually well under half the database size.
-room_for $(( DB_SIZE / 2 )) "$EXPORTS_DIR" "data/exports/" || die "Aborted."
+room_for $(( DB_SIZE / 2 )) "$EXPORTS_DIR" "data/map/exports/" || die "Aborted."
 
 IMAGES=()
 while read -r image; do IMAGES+=("$image"); done < <(project_images)
@@ -100,7 +100,7 @@ json_write "$MANIFEST" \
     size:="$(stat -c%s "$DUMP")" \
     sha256="$(cat "$DUMP.sha256.tmp")"
 rm -f "$DUMP.sha256.tmp"
-ok "$(human_size "$(stat -c%s "$DUMP")") → data/exports/$REGION_ID.oimdb"
+ok "$(human_size "$(stat -c%s "$DUMP")") → data/map/exports/$REGION_ID.oimdb"
 
 if [[ "$SAVE_IMAGES" == 1 ]]; then
     # Make sure every image exists locally (all but db are built from this repo).
@@ -110,10 +110,10 @@ if [[ "$SAVE_IMAGES" == 1 ]]; then
         mv "$DOCKER_IMAGES_TAR.part" "$DOCKER_IMAGES_TAR"
     }
     run_with_timer "Saving the Docker images" save_images
-    ok "$(human_size "$(stat -c%s "$DOCKER_IMAGES_TAR")") → data/exports/$(basename "$DOCKER_IMAGES_TAR")"
+    ok "$(human_size "$(stat -c%s "$DOCKER_IMAGES_TAR")") → data/map/exports/$(basename "$DOCKER_IMAGES_TAR")"
 fi
 
-log_build "$REGION_ID  exported to data/exports/$REGION_ID.oimdb"
+log_build "$REGION_ID  exported to data/map/exports/$REGION_ID.oimdb"
 
 # ---------------------------------------------------------------------------
 # Done
@@ -122,14 +122,14 @@ done_banner "Exported $REGION_NAME"
 echo ""
 echo "To use it on another computer, copy this project folder (e.g. to a USB drive)"
 echo "and run bash scripts/launch.sh there — it will offer \"Import ready-made\" for"
-echo "$REGION_NAME. You can leave out data/osm/ (the raw downloads, $(du -sh "$OSM_DIR" 2>/dev/null | cut -f1)); it's only"
+echo "$REGION_NAME. You can leave out data/downloads/osm/ (the raw downloads, $(du -sh "$OSM_DIR" 2>/dev/null | cut -f1)); it's only"
 echo "needed to rebuild from scratch."
 if [[ -f "$OFFLINE_MAPS_DIR/$REGION_ID.pmtiles" ]]; then
     echo ""
-    echo "Keep data/offline-maps/ in the copy too: it holds the offline background map"
+    echo "Keep data/map/offline-maps/ in the copy too: it holds the offline background map"
     echo "for $REGION_NAME ($(human_size "$(stat -c%s "$OFFLINE_MAPS_DIR/$REGION_ID.pmtiles")"))."
 fi
 if has_satellite; then
-    echo "data/offline-maps/ also holds its satellite imagery: $(satellite_summary)."
+    echo "data/map/offline-maps/ also holds its satellite imagery: $(satellite_summary)."
 fi
 echo ""

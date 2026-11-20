@@ -2,7 +2,7 @@
 with osmium (in Docker) beside its background map, for the backend's zoomed out
 build: its railways (railways.py), its taxiways (taxiways.py).
 
-The extract is the region build's (data/osm/<area>-latest.osm.pbf), downloaded from
+The extract is the region build's (data/downloads/osm/<area>-latest.osm.pbf), downloaded from
 Geofabrik if it isn't there (France: 5 GB, kept for the next build)."""
 
 from __future__ import annotations

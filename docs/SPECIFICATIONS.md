@@ -35,16 +35,16 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 |---|---|---|
 | 2.1 | Interactive script that builds the data for a chosen region (continents, countries, sub-regions from Geofabrik). | ✅ `scripts/build-region.sh` |
 | 2.2 | An option for the whole world, with a warning that it takes long. | ✅ |
-| 2.3 | Keep downloads and show which files are already present; don't re-download (e.g. Russia). Keep a log of builds. | ✅ `data/osm/`, build log |
+| 2.3 | Keep downloads and show which files are already present; don't re-download (e.g. Russia). Keep a log of builds. | ✅ `data/downloads/osm/`, build log |
 | 2.4 | EEZ boundaries: explain them; ask the user to download them (with the link) or skip; show progress so the script never looks frozen. | ✅ |
 | 2.5 | At the end, offer to fill the Wikidata image cache, warning it can take long and naming the script to run later. | ✅ `scripts/fetch_images.py` |
 | 2.6 | Offer to start the frontend/backend in a new terminal window; open the browser on the map when ready. | ✅ `start_app`, `open_in_terminal` |
 | 2.7 | `launch.sh` (first time, everything) and a no-questions daily start. | ✅ `launch.sh`, `start.sh` |
-| 2.8 | Export / import a built database to share the project without internet (copy to a flash drive). Exports found by the build script replace the matching menu entry ("import Russia"). | ✅ `export-db.sh`, `import-db.sh`, `data/exports/*.oimdb` |
+| 2.8 | Export / import a built database to share the project without internet (copy to a flash drive). Exports found by the build script replace the matching menu entry ("import Russia"). | ✅ `export-db.sh`, `import-db.sh`, `data/map/exports/*.oimdb` |
 | 2.9 | Backend in Docker so the project is easy to copy. | ✅ Compose service `backend` |
 | 2.10 | Build performance: per-country stats fast for big countries. | ✅ `schema/fork/local-stats.sql` |
 | 2.11 | Extra data (not from OSM) is offered in the build script for the regions it covers (e.g. France or a French sub-region), and is included in export/import. | ✅ |
-| 2.12 | Rebuilding the OSM data must not delete the extra data (it's slow to download): keep it, and keep the raw downloads to rebuild from. | ✅ `data/extra/` |
+| 2.12 | Rebuilding the OSM data must not delete the extra data (it's slow to download): keep it, and keep the raw downloads to rebuild from. | ✅ `data/downloads/extra/` |
 | 2.13 | List the dependencies needed to run the project from nothing. | ✅ LOCAL_DEVELOPMENT "Prerequisites" |
 | 2.14 | Rebuilds and imports keep My layers (they belong to the computer). | ✅ |
 | 2.15 | Should the setup scripts have tests? (asked 2026-10-30) | ✅ yes: every setup script and Python tool is tested (11.2), the last ones added 2026-11-07 (`number-towers.sh`, `fetch_images.py`) |
@@ -120,7 +120,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 6.6 | Highlight a power line when selected to see where it goes. | ✅ |
 | 6.7 | Works on a country the size of France. | ✅ (build ~2 min) |
 | 6.8 | A selected line follows only the line it is (its name, circuit number, way), not lines branching off or sharing pylons; on a way with two voltages only its own circuit is highlighted; it's drawn into the substations. | ✅ `web-backend/src/fork/line_trace.py` |
-| 6.9 | Large lines should end at something; where they don't, list them as probable data errors. | ✅ `grid_check.py` → `data/grid-check.csv` (asked 2026-10-31) |
+| 6.9 | Large lines should end at something; where they don't, list them as probable data errors. | ✅ `grid_check.py` → `data/local/grid-check.csv` (asked 2026-10-31) |
 | 6.10 | A circuit opened from a substation's details shows below them, the details staying open (shrunk if needed), not at the bottom right. | ✅ `fork/modules/details/circuit.ts` (asked 2026-10-31) |
 | 6.11 | Towers numbered along their line ("tower 23 of 61 on A – B, counted from A"): in a tower's details, as its label from zoom 16 when it has no ref, and found by the search ("23 marlenheim"). | ✅ `web-backend/src/fork/tower_numbers.py`, `fork/modules/grid/towers.ts` (asked 2026-10-31) |
 | 6.12 | Routes change voltage only at stations (not at a pylon), and a way with two voltages carries each. | ✅ `grid.py` (2026-10-31) |
@@ -275,7 +275,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.53 | The generic military areas (493) looked into and classified where something says what they are (their tags, what stands inside, the sites they touch). | ✅ (2026-11-20) 316 left: `military_kind` (landuse's military=*), `site_feature` (by_tower, by_neighbour, by_ruins) |
 | 10.54 | Disused aerodromes shown (military under Military, not hidden with the disused fortifications; civil with the airports), a grey icon, with no extra tick box: the two airfield rows show every airfield. | ✅ (2026-11-20) `military_airfield_disused` (`was_military_airfield`), `airport_disused`, shown by the airfield rows (`KEY_ROW_OF`, a hide spec of several icons) |
 | 10.55 | What was left to clean in the sites: the air force units drawn twice on their air base, closed civil airfields drawn as airports, gendarmerie barracks drawn as army bases. | ✅ (2026-11-20) `part_of_airfield`, `airport_disused`, compounds named "Caserne ...", `part_of_gendarmerie`, `is_gendarmerie` |
-| 10.56 | The military sites nothing classifies ("Other military area", 307 on 2026-11-20) checked by hand by the owner; verdicts into `site-overrides.sql`. | 🗂 backlog (2026-11-20) list: `data/checks/military-areas.csv` |
+| 10.56 | The military sites nothing classifies ("Other military area", 307 on 2026-11-20) checked by hand by the owner; verdicts into `site-overrides.sql`. | 🗂 backlog (2026-11-20) list: `data/local/checks/military-areas.csv` |
 | 10.57 | Terrain: contour lines, hill shading, and the relief in the 3D view, offline. | ✅ (2026-11-20) download, hill shading, 3D relief, contour lines (supplementary, depressions, a tick box per part), heights and slope, line of sight: `docs/plans/terrain.md` |
 | 10.58 | Signal propagation mode: how far a radio reaches given terrain and buildings. | 🗂 backlog (2026-11-20) after 10.57; what it needs: `docs/plans/terrain.md` "Next" |
 | 10.59 | Reuse before writing: look up how open source projects do a known problem; use a package or plugin, else a larger project's method, before writing our own; list earlier parts that would benefit. | ✅ (2026-11-20) rule in `CLAUDE.md`; candidates: `docs/plans/reuse-review.md` |
@@ -284,7 +284,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.62 | My layers' drawing and editing on the map by Terra Draw (a maintained library) instead of our own code. | 🗂 backlog (2026-11-20) prototype first: `docs/plans/reuse-review.md` |
 | 10.63 | My layers' KML export by `@placemarkio/tokml` (the import's sister library) instead of KML written by our own code, keeping our extra details so files come back intact. | 🗂 backlog (2026-11-20) `docs/plans/reuse-review.md` |
 | 10.64 | Sentinel-2 imagery kept up to date for a chosen area: newer images downloaded for it, and its history browsable (the same place at earlier dates). | 🗂 backlog (2026-11-20) |
-| 10.65 | Satellite imagery found while the app runs (no frontend restart after a download). | ✅ the imagery list (`data/offline-maps/imagery.json`, the backend's `/imagery`) (2026-11-20) |
+| 10.65 | Satellite imagery found while the app runs (no frontend restart after a download). | ✅ the imagery list (`data/map/offline-maps/imagery.json`, the backend's `/imagery`) (2026-11-20) |
 | 10.66 | The satellite imagery served by the backend, by a known good package (Protomaps' `pmtiles`), without the go-pmtiles server. | ✅ `/satellite`, `imagery.py`; measured as fast (2026-11-20) |
 | 10.67 | The whole project on an external drive: on a Linux or Windows computer, install Docker, plug the drive in, run one script, and the app runs 100% offline, reading the maps from the drive (the Docker images and the map database loaded into Docker); pulling the drive out damages nothing. | 📋 planned (2026-11-20) `docs/plans/portable-drive.md` |
 | 10.68 | My layers and accounts in a database of their own, so a map update never touches them. | ⏸ not needed (2026-11-20): the map database stays in Docker, and the import already keeps them |

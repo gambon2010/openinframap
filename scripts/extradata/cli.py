@@ -61,7 +61,7 @@ def parse_args() -> argparse.Namespace:
     imp.add_argument(
         "--refresh",
         action="store_true",
-        help="download again rather than reuse earlier downloads (data/extra/)",
+        help="download again rather than reuse earlier downloads (data/downloads/extra/)",
     )
     imp.add_argument(
         "--choose",

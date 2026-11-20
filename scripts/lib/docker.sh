@@ -6,7 +6,7 @@
 # up_services [OPTION...] SERVICE... — start Compose services, rebuilding their
 # images first so code changes are picked up (fast when nothing changed). Offline
 # the build fails, so the existing images are used (e.g. loaded from
-# data/exports/docker-images.tar.gz). Options go to `up` (--force-recreate).
+# data/map/exports/docker-images.tar.gz). Options go to `up` (--force-recreate).
 up_services() {
     docker compose --progress quiet up -d --build "$@" </dev/null 2>/dev/null \
         || docker compose --progress quiet up -d "$@" </dev/null

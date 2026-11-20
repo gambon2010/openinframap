@@ -51,11 +51,10 @@ services:
     ports:
       - "127.0.0.1:8001:80"
     volumes:
-      # Offline Wikidata cache filled by scripts/fetch_images.py on the host.
-      - ./data/images:/data/images:z
-      - ./data/wikidata_json:/data/wikidata_json:z
-      # The offline maps: background maps, terrain, satellite imagery (src/fork/).
-      - ./data/offline-maps:/data/offline-maps:ro,z
+      # What the app needs, read-only (src/fork/paths.py): the offline maps
+      # (background maps, terrain, satellite imagery) and the Wikidata cache
+      # (scripts/fetch_images.py).
+      - ./data/map:/data/map:ro,z
     depends_on:
       db:
         condition: service_healthy
@@ -70,7 +69,7 @@ services:
     volumes:
       - ./gate/nginx.conf:/etc/nginx/nginx.conf:ro,z
       # Its HTTPS certificate, made on first start (gate/10-certificate.sh).
-      - ./data/gate:/etc/nginx/certs:z
+      - ./data/local/gate:/etc/nginx/certs:z
     restart: unless-stopped
 
   # Helper image for scripts/build-region.sh. Not started by `docker compose up`.

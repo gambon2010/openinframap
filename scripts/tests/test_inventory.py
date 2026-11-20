@@ -1,4 +1,4 @@
-"""scripts/offline_maps/inventory.py (what's in data/offline-maps/, the lock, the
+"""scripts/offline_maps/inventory.py (what's in data/map/offline-maps/, the lock, the
 settings) and coverage.py (what's worth offering)."""
 
 import json

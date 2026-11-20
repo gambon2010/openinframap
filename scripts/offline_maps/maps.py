@@ -5,7 +5,7 @@ through coverage.py, so nothing pointless or already there is offered.
 
 Downloads run one after the other as offline-maps.py's own commands (bdortho,
 regional, overview, detailed, basemap), holding the offline maps' lock; what's
-left of them is kept in data/offline-maps/queue.json, so Resume goes on after a stop.
+left of them is kept in data/map/offline-maps/queue.json, so Resume goes on after a stop.
 docs/plans/offline-maps.md."""
 
 from __future__ import annotations

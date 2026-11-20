@@ -46,9 +46,9 @@ feature popups work without an internet connection.
 
 **How it works:**
 
-- `GET /wikidata/{id}` checks `data/wikidata_json/{id}.json` before calling the Wikidata API.
+- `GET /wikidata/{id}` checks `data/map/wikidata_json/{id}.json` before calling the Wikidata API.
   If the file exists, no network request is made.
-- If a local image exists at `data/images/{id}.*`, it is served via the `/local-images/`
+- If a local image exists at `data/map/images/{id}.*`, it is served via the `/local-images/`
   static endpoint instead of the Wikimedia CDN URL.
 - If no local cache exists and the network is unavailable, the endpoint returns 404 (the
   popup opens without image or links, rather than crashing).

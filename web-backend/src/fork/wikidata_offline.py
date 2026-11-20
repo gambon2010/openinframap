@@ -1,7 +1,7 @@
 """
 Fork: Wikidata offline. Upstream's popups ask Wikidata and Wikimedia Commons for a
 feature's details and picture; here they come from the cache scripts/fetch_images.py
-fills (data/wikidata_json/, data/images/), and without a network the popup just
+fills (data/map/wikidata_json/, data/map/images/), and without a network the popup just
 has less instead of an error. Upstream's files stay as they are: `install()` wraps
 their functions, where they're defined (data.py) and where they're imported
 (views/wikidata.py, views/area.py), when the fork's routes load.

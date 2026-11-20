@@ -234,7 +234,7 @@ every route but logging in needs a session):
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
   (towers numbered along their lines, a build step);
 - `map_data.py` (a map feature's full geometry);
-- `pmtiles_files.py` (the PMTiles files served from `data/offline-maps/`: a file open,
+- `pmtiles_files.py` (the PMTiles files served from `data/map/offline-maps/`: a file open,
   its index cached, `Archive`; the files of one kind in the folder, opened again when
   they change, `ArchiveFolder`: the background maps, the trams' lanes, the terrain,
   the imagery; Protomaps' `pmtiles` package decodes them); `tile_answers.py` (how a
@@ -243,7 +243,7 @@ every route but logging in needs a session):
 - `imagery.py` (the satellite imagery: its list, `/imagery`, the `imagery.json`
   the scripts write; each file's tiles, `/satellite/<file>/{z}/{x}/{y}.<format>`);
 - `background/` (serving: the background map's tiles, `/background/{z}/{x}/{y}.mvt`:
-  each from the first `data/offline-maps/<area>.pmtiles` that has it, so several areas
+  each from the first `data/map/offline-maps/<area>.pmtiles` that has it, so several areas
   show together; at zooms 6 to 15 with the area's `<area>.zoomed-out.pmtiles` tile
   appended, its roads replacing the background map's (`mvt.py`: a tile's layers,
   undecoded); the trams' and metros' lanes at `/background/transit` (`transit.py`);
@@ -265,7 +265,7 @@ every route but logging in needs a session):
   `<area>.transit.pmtiles` with tunnels marked (`loom_tiles.py`) and each line's stops
   (`line_stops.py`); `tiles.py` their tile geometry);
 - `terrain/` (the terrain's elevation tiles, `/terrain/{z}/{x}/{y}.webp`: each from the
-  first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
+  first `data/map/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
   `elevations.py`, the one reader of heights: Terrarium tiles decoded, a tile's
   heights with its neighbours' edges, a point's height (`/terrain/elevation`, the
   coordinates box: also its slope, Horn's method); `sight.py`, the line of sight
@@ -275,7 +275,9 @@ every route but logging in needs a session):
   is: index, intermediate, supplementary on level ground, depression and its
   downhill side; docs/plans/terrain.md);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
-  upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
+  upstream's functions: upstream's files stay untouched) and `paths.py` (where the
+  data is: `data/map/` mounted read-only in the container, the offline maps and the
+  Wikidata cache; the same folders as `scripts/data_folders.py`);
 - `userdata/`, My layers:
   - `schema.py` and `migrations/` (numbered, run once each: `userdata.schema_version`);
   - `changes.py` (applying and logging, no HTTP);
@@ -285,7 +287,7 @@ every route but logging in needs a session):
 
 The backend runs in Docker from its image (`web-backend/Dockerfile`; Compose starts
 `/app/.venv/bin/uvicorn` directly, so `uv run` doesn't sync at startup), with
-`data/images`, `data/wikidata_json` and `data/offline-maps` mounted: after changing
+`data/map/images`, `data/map/wikidata_json` and `data/map/offline-maps` mounted: after changing
 it, run `docker compose up -d --build backend`.
 
 ## Data and build: `scripts/`, `schema/`, `imposm/`, `tegola/`
@@ -296,7 +298,7 @@ and `sites.py`, `osm_site`, critical sites) → PostGIS → the SQL steps → Te
 (vector tiles) → the frontend. Changing the mapping changes the osmium filter and
 the schema fingerprint builds and exports carry.
 
-- **The build's steps, in order:** region menu → download to `data/osm/` → osmium
+- **The build's steps, in order:** region menu → download to `data/downloads/osm/` → osmium
   filter → `docker compose down -v` → imposm import → `views`, `distances`, `stats`,
   `places`, `sites`, `grid` (the power grid network), `tower-numbers` +
   `number_towers` → search indexes → extra data, `extra`, `search` → EEZ →
@@ -360,18 +362,24 @@ the schema fingerprint builds and exports carry.
   - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap` (`select_basemap`: the
     frontend pointed at the backend's background map), `geofabrik` (the index, region lookups,
     extracts), `offline-maps` (the imagery list, the menu during a build).
+- **`data_folders.py`:** where the scripts keep their data, for the Python ones
+  (`lib/common.sh` for the shell; the backend's `paths.py`; a test checks the three
+  agree): `data/map/` (what the app needs: `offline-maps/`, `images/`,
+  `wikidata_json/`, `exports/`), `data/local/` (this installation's own: `gate/`,
+  `userdata/`, `checks/`, `logs/`), `data/downloads/` (downloaded again when needed:
+  `osm/`, `extra/`, the EEZ files).
 - **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
   data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,
   `NET_CHECK_EVERY`).
 - **`offline-maps.py`** is the command line for `offline_maps/`, the offline maps
-  into `data/offline-maps/`: Blue Marble for the world, Sentinel-2 10 m for an area
+  into `data/map/offline-maps/`: Blue Marble for the world, Sentinel-2 10 m for an area
   or the world, aerial photos by country (France's as IGN's BD ORTHO files, one
   département at a time, never IGN's tile server, which blocks bulk downloads) as
   `<area>.sat-*.pmtiles`, background maps as `<area>.pmtiles`. Its menu is
   `offline-maps.sh` (for the region built, no rebuild; `build-region.sh` opens it
   with `--queue-only` and downloads the queue after the build); the imagery list
-  (`data/offline-maps/imagery.json`: every imagery file, its zooms, bounds and
+  (`data/map/offline-maps/imagery.json`: every imagery file, its zooms, bounds and
   credit) is written whenever the menu reads the folder again and by
   `select_satellite` (`start.sh`); the backend serves it (`/imagery`) and the map
   reads it when it opens (no restart). The package:
@@ -382,7 +390,7 @@ the schema fingerprint builds and exports carry.
     `netsafe`), `gdal.py`, `docker.py` (every Docker call);
   - `bdortho.py`: France's photos as IGN's files, one département at a time
     (`departements.py`: their codes, names, areas, bounds and regions);
-  - `inventory.py`: what's in `data/offline-maps/` (`inventory.json`, made from the
+  - `inventory.py`: what's in `data/map/offline-maps/` (`inventory.json`, made from the
     files), stopped jobs, `settings.json`, the one-download lock;
   - `coverage.py`: what's worth offering (zooms another source takes over, areas
     inside areas, what could be freed);

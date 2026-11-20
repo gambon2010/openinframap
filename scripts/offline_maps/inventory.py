@@ -1,4 +1,4 @@
-"""Fork: offline maps. What's in data/offline-maps/: the inventory (inventory.json), the
+"""Fork: offline maps. What's in data/map/offline-maps/: the inventory (inventory.json), the
 settings (settings.json) and the lock a running download holds.
 
 Files are the truth, the inventory is notes: it's made again from the files on
@@ -40,7 +40,7 @@ DEFAULT_SETTINGS = {"max_rate": None, "zoom": 17}
 class Entry:
     source: str  # its id (sources/<id>.py)
     area: str  # a Geofabrik region, or "world"
-    file: str  # in data/offline-maps/ (a job: its work folder)
+    file: str  # in data/map/offline-maps/ (a job: its work folder)
     unit: str = ""  # a source fetched by unit: which (a département's code)
     zooms: list[int] = field(default_factory=list)  # [first, last]
     bytes: int = 0
@@ -58,7 +58,7 @@ def converter(source: Source):
 
 
 def identify(name: str) -> tuple[str, str, str] | None:
-    """(source, area, unit) of a file in data/offline-maps/, from its name, None if it
+    """(source, area, unit) of a file in data/map/offline-maps/, from its name, None if it
     isn't an offline map: <area>.pmtiles (the background map),
     <area>.sat-overview / -regional / -detailed-<source>.pmtiles."""
     if not name.endswith(".pmtiles") or name.startswith("."):
@@ -177,7 +177,7 @@ def imagery_summary(folder: Path) -> str:
 
 
 def scan(folder: Path) -> list[Entry]:
-    """What the files in data/offline-maps/ are, and the jobs stopped half-way."""
+    """What the files in data/map/offline-maps/ are, and the jobs stopped half-way."""
     entries = []
     for path in sorted(folder.glob("*.pmtiles")):
         what = identify(path.name)

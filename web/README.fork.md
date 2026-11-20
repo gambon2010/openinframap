@@ -14,7 +14,7 @@ cp .env.example .env
 
 and set `VITE_BACKEND_BASE_URL=http://localhost:8001` (local backend) and
 `VITE_TEGOLA_URL=http://localhost:7800` (local Tegola). The background map comes from
-the backend (`/background`: the background maps downloaded into `data/offline-maps/`)
+the backend (`/background`: the background maps downloaded into `data/map/offline-maps/`)
 unless `VITE_BASEMAP_URL` points at another Protomaps-schema tile server. Only
 local tiles: `VITE_TILE_BASE_URL` in upstream's `.env.example` isn't read.
 

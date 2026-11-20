@@ -7,7 +7,7 @@ on outside); anywhere else is a loose end: the line's data in OpenStreetMap is
 probably wrong there, or the rules connecting lines are. Prints counts by reason
 and writes every loose end to a CSV with a map link.
 
-    uv run python -m src.fork.grid_check [--min-kv 63] [--csv data/grid-check.csv]
+    uv run python -m src.fork.grid_check [--min-kv 63] [--csv data/local/grid-check.csv]
 
 Uses DATABASE_URL (postgresql+asyncpg://...), else the local database.
 """
@@ -26,8 +26,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 
 from .line_trace import GridIndex, load_index, trace_line
+from .paths import LOCAL_DIR, OSM_DIR
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_URL = "postgresql+asyncpg://osm:osm@localhost:5432/osm"
 # A line end this close to the region's outline leaves the region (metres).
 REGION_EDGE = 2000
@@ -46,7 +46,7 @@ def kind(reason: str) -> str:
 async def region_outline(database: AsyncConnection) -> str | None:
     """The built region's outline (GeoJSON), from Geofabrik's index."""
     row = (await database.execute(text("SELECT value FROM oim_build_info WHERE key = 'region_id'"))).first()
-    index = REPO_ROOT / "data" / "osm" / "geofabrik-index-v1.json"
+    index = OSM_DIR / "geofabrik-index-v1.json"
     if not row or not index.exists():
         return None
     for feature in json.loads(index.read_text())["features"]:
@@ -150,6 +150,6 @@ if __name__ == "__main__":
         description="Check the power grid network for lines that stop at nothing."
     )
     parser.add_argument("--min-kv", type=int, default=63)
-    parser.add_argument("--csv", type=Path, default=REPO_ROOT / "data" / "grid-check.csv")
+    parser.add_argument("--csv", type=Path, default=LOCAL_DIR / "grid-check.csv")
     args = parser.parse_args()
     asyncio.run(main(args.min_kv, args.csv))

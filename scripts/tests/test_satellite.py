@@ -304,7 +304,7 @@ def test_wms_tile_url():
 def test_every_imagery_file_has_its_credit():
     assert "NASA" in attribution_for("world.sat-overview.pmtiles")
     assert "Copernicus" in attribution_for(
-        "data/offline-maps/bayern.sat-regional.pmtiles"
+        "data/map/offline-maps/bayern.sat-regional.pmtiles"
     )
     for source_id, source in AERIAL.items():
         credit = attribution_for(f"area.sat-detailed-{source_id}.pmtiles")

@@ -4,11 +4,11 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # import-db.sh — load a ready-made export instead of building from scratch
 #
-#   bash scripts/import-db.sh data/exports/russia.oimdb
+#   bash scripts/import-db.sh data/map/exports/russia.oimdb
 #
 # Exports are made by scripts/export-db.sh. build-region.sh and launch.sh list
-# the ones in data/exports/ and call this script, so you rarely run it directly.
-# Works without internet access if data/exports/docker-images.tar.gz is there.
+# the ones in data/map/exports/ and call this script, so you rarely run it directly.
+# Works without internet access if data/map/exports/docker-images.tar.gz is there.
 #
 #   --yes, -y   don't ask before replacing the current database
 # ---------------------------------------------------------------------------
@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
         *)         DUMP="$1"; shift ;;
     esac
 done
-[[ -n "$DUMP" ]] || die "Usage: bash scripts/import-db.sh data/exports/<region>.oimdb"
+[[ -n "$DUMP" ]] || die "Usage: bash scripts/import-db.sh data/map/exports/<region>.oimdb"
 DUMP="${DUMP%.json}"; DUMP="${DUMP%.oimdb}.oimdb"
 MANIFEST="${DUMP%.oimdb}.json"
 [[ -f "$DUMP" ]] || die "Export not found: $DUMP"
@@ -58,7 +58,7 @@ if [[ "$MISSING_IMAGES" == 1 && -f "$DOCKER_IMAGES_TAR" ]]; then
     load_images() {
         gunzip -c "$DOCKER_IMAGES_TAR" | docker load
     }
-    run_with_timer "Loading Docker images from data/exports/" load_images
+    run_with_timer "Loading Docker images from data/map/exports/" load_images
 fi
 
 

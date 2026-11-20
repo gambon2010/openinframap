@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Offline maps into data/offline-maps/: satellite imagery, aerial photos and
+Offline maps into data/map/offline-maps/: satellite imagery, aerial photos and
 background maps (the code: scripts/offline_maps/). Usually run from the menu,
 bash scripts/offline-maps.sh, or by build-region.sh.
 

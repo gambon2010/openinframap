@@ -1,9 +1,9 @@
 # shellcheck shell=bash
-# Ready-made exports in data/exports/ (export-db.sh, import-db.sh): their
+# Ready-made exports in data/map/exports/ (export-db.sh, import-db.sh): their
 # manifests, and exporting again when out of date.
 # Sourced by common.sh.
 
-# export_outdated — true when data/exports/ has an export of the database's region
+# export_outdated — true when data/map/exports/ has an export of the database's region
 # that doesn't match it any more (rebuilt, another schema, other extra data).
 # "My layers" don't count: they're kept per computer (see save_user_data).
 export_outdated() {
@@ -28,7 +28,7 @@ reexport_if_outdated() {
         || warn "Exporting failed; run it again with: bash scripts/export-db.sh"
 }
 
-# Manifests of the exports in data/exports/, one path per line.
+# Manifests of the exports in data/map/exports/, one path per line.
 list_exports() {
     local f
     for f in "$EXPORTS_DIR"/*.json; do

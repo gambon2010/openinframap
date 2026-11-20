@@ -1,4 +1,4 @@
-"""Fork: offline maps. Geofabrik's index of regions (data/osm/geofabrik-index-v1.json):
+"""Fork: offline maps. Geofabrik's index of regions (data/downloads/osm/geofabrik-index-v1.json):
 their names, which is inside which, their outlines."""
 
 from __future__ import annotations
@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-OSM_DIR = Path(__file__).resolve().parents[2] / "data" / "osm"
+import data_folders
+
+OSM_DIR = data_folders.OSM_DIR
 # The region build's copy (scripts/lib/geofabrik.sh; scripts/tests/test_one_source.py).
 GEOFABRIK_INDEX = OSM_DIR / "geofabrik-index-v1.json"
 

@@ -1,6 +1,6 @@
 """Fork: offline maps. The background map (streets, places, buildings), cut out of
 Protomaps' daily world build with pmtiles (in Docker) into
-data/offline-maps/<area>.pmtiles, with its manifest (<area>.json: the build it came
+data/map/offline-maps/<area>.pmtiles, with its manifest (<area>.json: the build it came
 from), then what it leaves out zoomed out, buildings and roads
 (<area>.zoomed-out.pmtiles, zooms 8 to 14, made in the backend's image:
 web-backend/src/fork/background_build/zoomed_out.py), and its terrain (terrain.py).
@@ -90,7 +90,7 @@ WORLD_LOW_ZOOM = 8
 def extract_args(
     build: str, outline: Path | None, out: str, maxzoom: int | None = None
 ) -> list[str]:
-    """pmtiles extract of an outline (a file in data/offline-maps/, /out in Docker), or
+    """pmtiles extract of an outline (a file in data/map/offline-maps/, /out in Docker), or
     of the whole world (no outline), up to a zoom if one is given."""
     area = f"--region=/out/{outline.name}" if outline else WORLD_BBOX
     args = ["extract", f"{PROTOMAPS.address}/{build}", out, area]

@@ -30,7 +30,7 @@ import shapely
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
 
-from ..background import OFFLINE_MAPS_DIR
+from ..paths import OFFLINE_MAPS_DIR
 from .line_stops import STOPS_LAYER, StopIndex, stops
 from .loom_input import lines_in, work_of
 from .tiles import EXTENT, HALF, in_tile_units, map_units, tile_bounds, zipped

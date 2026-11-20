@@ -1230,6 +1230,15 @@ default). Counts are France's OSM data in October 2026.
   imagery) share one way of answering (`tile_answers.py`). The scripts keep the
   go-pmtiles image for cutting and converting files; an export no longer carries it
   (nothing offline runs it).
+- **`data/` in three parts** (docs/plans/portable-drive.md, step 1): `data/map/` (what
+  the app needs: offline maps, Wikidata cache, exports; the backend mounts it
+  read-only), `data/local/` (this installation's: gate certificate, My layers' copy
+  during an import, checks, logs), `data/downloads/` (downloaded again when needed:
+  OSM extracts, extra data, EEZ). The names once per language (`lib/common.sh`, the
+  new `scripts/data_folders.py`, the backend's `paths.py`), a test checking they
+  agree. Moved on disk the same day. A bug found doing it: the offline maps' queue
+  saved full paths, so Resume downloaded into the old folder; it now saves paths
+  inside the maps folder relative to it (`{maps}`), with a test.
 
 ## Extra data (not from OpenStreetMap)
 

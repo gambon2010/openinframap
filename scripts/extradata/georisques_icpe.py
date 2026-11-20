@@ -84,7 +84,7 @@ class GeorisquesICPE(FrenchSource):
         return rows
 
     def sites(self, areas: list[str]) -> list[dict]:
-        """The downloaded sites covering `areas` (kept in data/extra/georisques-icpe/)."""
+        """The downloaded sites covering `areas` (kept in data/downloads/extra/georisques-icpe/)."""
         national = len(areas) >= self.NATIONAL_FROM
         # A national download covers any smaller region too (sites outside it are
         # left out by the region outline).
