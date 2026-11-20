@@ -168,9 +168,11 @@ state/   store.ts (the Store the UI uses) on top of:
            changes.ts    pure: applying changes, steps, revertFields, differences
            undo.ts       undo / redo, including undo after Save
            merge.ts      field-by-field merge (yours, theirs, the base)
-           reconcile.ts  your unsaved changes brought onto the server's layers
+           reconcile.ts  your unsaved changes brought onto the server's layers (yoursOn:
+                         them on the layers they started from)
            local.ts      what's kept in the browser (unsaved changes: IndexedDB)
-           personal.ts   yours only, per account (folders, hidden, draw into, favourites)
+           personal.ts   yours only, per account (folders, hidden, draw into, favourites,
+                         the measuring preferences: keepMeasurePrefs)
            transport.ts  load and Save (live sync will plug in here)
            view.ts       store.view: live, a situation or a history step;
                          canEdit(layer) is the one "may this be changed now?"
@@ -181,7 +183,8 @@ kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
 map/     render.ts (the Renderer: sources, selection, handles; the measurements'
          features in render-measures.ts, with the lines of sight's answers; the
          graphics' in render-graphics.ts; drafts.ts what the tools draw before
-         anything is put down: renderer.drafts), layers.ts (the map
+         anything is put down: renderer.drafts), overlay-layers.ts (the
+         selection's, drafts' and ghost's map layers), layers.ts (the map
          style layers, as functions), geometry.ts (pure: control points, moving,
          boxes), symbols.ts (drawing the images), icons.ts (adding them to the
          map, by the kinds' prefixes), tools.ts (what a click does: wires the

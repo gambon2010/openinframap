@@ -4,6 +4,7 @@
 // the server's layers as the new saved ones, your changes rewritten on top of them,
 // new bases (the server's versions), and the conflicts left to resolve. Pure.
 import { Change, UserFeature, UserLayer } from '../model/model.ts'
+import { applyChange, cloneLayers } from './changes.ts'
 import { FeatureState, LayerState, mergeFeature, mergeLayer } from './merge.ts'
 
 /** How an item or layer was when your changes to it started: its version and state. */
@@ -160,4 +161,34 @@ export function reconcile(
     (c) => !c.op.startsWith('feature_') || c.op === 'feature_delete' || layers.has(c.layer_id)
   )
   return { pending: kept, bases: newBases, conflicts }
+}
+
+/**
+ * Your changes as they'd be on the layers they started from (the bases put back
+ * into the server's layers): what reconcile calls yours (store.ts: your bases, your pending changes).
+ */
+export function yoursOn(
+  fresh: Map<string, UserLayer>,
+  bases: Bases,
+  pending: Change[]
+): Map<string, UserLayer> {
+  const layers = cloneLayers(fresh)
+  const shell = (id: string) => {
+    if (!layers.has(id)) layers.set(id, { id, name: '', style: {}, features: new Map() })
+    return layers.get(id)!
+  }
+  for (const [key, base] of Object.entries(bases)) {
+    const id = key.slice(key.indexOf(':') + 1)
+    if (key.startsWith('layer:')) {
+      const state = base.state as LayerState | null
+      if (!state) layers.delete(id)
+      else Object.assign(shell(id), { name: state.name, style: { ...state.style } })
+    } else {
+      for (const layer of layers.values()) layer.features.delete(id)
+      const state = base.state as FeatureState | null
+      if (state) shell(state.layerId).features.set(id, state.feature)
+    }
+  }
+  for (const change of pending) applyChange(layers, change)
+  return layers
 }

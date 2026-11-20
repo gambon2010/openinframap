@@ -8,10 +8,8 @@ import { applyChange, cloneLayers, differences } from './changes.ts'
 import { local } from './local.ts'
 import { loadSaved, send } from './transport.ts'
 import { StaleError } from './api.ts'
-import { Bases, Conflict, baseOf, changeKey, featureKey, reconcile } from './reconcile.ts'
-import { FeatureState, LayerState } from './merge.ts'
+import { Bases, Conflict, baseOf, changeKey, featureKey, reconcile, yoursOn } from './reconcile.ts'
 import { PersonalSettings } from './personal.ts'
-import { measurePrefs } from '../../../services/measure-prefs.ts'
 import { UndoHistory } from './undo.ts'
 import { View } from './view.ts'
 
@@ -53,30 +51,12 @@ export class Store {
     // Your settings from the server (another computer may have changed them).
     this.personal.onChange(() => {
       this.hidden = new Set(this.personal.data.hidden)
-      this.usePrefs()
       this.notify()
     })
-    this.usePrefs()
-    // Measuring preferences changed (settings, a ring's card): kept for your account.
-    measurePrefs.onChange(() => {
-      const { north, radii } = measurePrefs
-      if (
-        this.personal.data.north === north &&
-        JSON.stringify(this.personal.data.radii) === JSON.stringify(radii)
-      )
-        return
-      this.personal.data.north = north
-      this.personal.data.radii = radii
-      this.personal.save()
-    })
+    // Your measuring preferences follow your account (personal.ts).
+    this.personal.keepMeasurePrefs()
     // The unsaved changes can't be kept in this browser (or can again): the page says so.
     local.onTrouble(() => this.notify())
-  }
-
-  /** Your measuring preferences, from your settings. */
-  private usePrefs() {
-    const { north, radii } = this.personal.data
-    measurePrefs.set({ ...(north ? { north } : {}), ...(radii?.length ? { radii } : {}) })
   }
 
   /** Why the unsaved changes can't be kept in this browser (null: they are). */
@@ -128,32 +108,6 @@ export class Store {
   }
 
   /**
-   * Your changes as they'd be on the layers they started from (the bases put back
-   * into the server's layers): what reconcile calls yours.
-   */
-  private yours(fresh: Map<string, UserLayer>): Map<string, UserLayer> {
-    const layers = cloneLayers(fresh)
-    const shell = (id: string) => {
-      if (!layers.has(id)) layers.set(id, { id, name: '', style: {}, features: new Map() })
-      return layers.get(id)!
-    }
-    for (const [key, base] of Object.entries(this.bases)) {
-      const id = key.slice(key.indexOf(':') + 1)
-      if (key.startsWith('layer:')) {
-        const state = base.state as LayerState | null
-        if (!state) layers.delete(id)
-        else Object.assign(shell(id), { name: state.name, style: { ...state.style } })
-      } else {
-        for (const layer of layers.values()) layer.features.delete(id)
-        const state = base.state as FeatureState | null
-        if (state) shell(state.layerId).features.set(id, state.feature)
-      }
-    }
-    for (const change of this.pending) applyChange(layers, change)
-    return layers
-  }
-
-  /**
    * Someone saved something you can see (a live update, ui/live.ts): fetch the
    * layers again. With no unsaved changes, they're simply shown; with some, they're
    * merged with yours (conflicts not yet resolved stay).
@@ -188,7 +142,7 @@ export class Store {
 
   /** Bring the pending changes onto the server's layers, merged; conflicts noted. */
   private bringUpToDate(fresh: Map<string, UserLayer>) {
-    const out = reconcile(this.bases, this.pending, this.yours(fresh), fresh)
+    const out = reconcile(this.bases, this.pending, yoursOn(fresh, this.bases, this.pending), fresh)
     this.saved = fresh
     this.bases = out.bases
     // Conflicts not resolved yet stay, while you still have changes to them (their

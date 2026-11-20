@@ -15,6 +15,7 @@ import { measurePrefs } from '../../../services/measure-prefs.ts'
 import { MeasureDrawer, type MeasureView } from './render-measures.ts'
 import { graphicFeatures, type GraphicsView } from './render-graphics.ts'
 import { Drafts } from './drafts.ts'
+import { overlayLayers } from './overlay-layers.ts'
 import { graphicsLibrary, mapScale } from '../graphics/graphics.ts'
 import { pointOf } from '../model/shapes.ts'
 import { DRAFT, GHOST, OUTLINE_PAD_PX, SELECTION } from './render.constants.ts'
@@ -35,7 +36,6 @@ import {
   highlightFilter,
   measureLayers,
   measureSourceId,
-  overlayLayers,
   ownLayers,
   sourceId
 } from './layers.ts'

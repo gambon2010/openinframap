@@ -1,4 +1,5 @@
 import { readJson, writeJson } from '../../../core/storage.ts'
+import { measurePrefs } from '../../../services/measure-prefs.ts'
 // Fork: what's personal in My layers (docs/plans/archive/sync.md, phase 5): each layer's
 // folder, the layers hidden from the map, those open and the folders and groups of
 // items folded in the list, folders made but still empty, the layer you draw into, your favourite and
@@ -142,5 +143,24 @@ export class PersonalSettings {
     else set.delete(value)
     this.data[list] = [...set]
     this.save()
+  }
+
+  /** Your measuring preferences (the north, range rings' distances: the measuring
+   * tools' service) kept with your account: set from it now and when it changes on
+   * the server, saved to it when changed here (settings, a ring's card). */
+  keepMeasurePrefs() {
+    const useMine = () => {
+      const { north, radii } = this.data
+      measurePrefs.set({ ...(north ? { north } : {}), ...(radii?.length ? { radii } : {}) })
+    }
+    useMine()
+    this.onChange(useMine)
+    measurePrefs.onChange(() => {
+      const { north, radii } = measurePrefs
+      if (this.data.north === north && JSON.stringify(this.data.radii) === JSON.stringify(radii)) return
+      this.data.north = north
+      this.data.radii = radii
+      this.save()
+    })
   }
 }
