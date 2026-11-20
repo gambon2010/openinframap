@@ -1,7 +1,5 @@
 // Fork: the terrain's tiles and the hill shading's look (docs/STYLE.md, "Hill shading").
 
-/** The map source of the terrain's elevations (hill shading; the 3D relief later). */
-export const TERRAIN_SOURCE = 'terrain'
 /** Mapterhorn's tiles: Terrarium encoded, 512 pixels, to zoom 13 (6.6 m in France;
  * scripts/offline_maps/terrain.py MAX_ZOOM). */
 export const TERRAIN_MAX_ZOOM = 13

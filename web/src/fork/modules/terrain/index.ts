@@ -1,11 +1,12 @@
-// Fork: the terrain (docs/plans/terrain.md): hill shading from the elevations of every
-// area downloaded (the backend's /terrain tiles), an entry of Data layers (Terrain →
-// Hill shading, on at first). Its look: docs/STYLE.md, "Hill shading". The 3D relief
-// and the contour lines come later.
-import type { Map } from 'maplibre-gl'
+// Fork: the terrain (docs/plans/terrain.md): the elevations of every area downloaded
+// (the backend's /terrain tiles) as map sources, for the hill shading drawn here (an
+// entry of Data layers: Terrain → Hill shading, on at first; its look: docs/STYLE.md,
+// "Hill shading") and the 3D view's relief (modules/view3d). Contour lines later.
+import type { Map, RasterDEMSourceSpecification } from 'maplibre-gl'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { TERRAIN_URL } from '../../config.ts'
+import { RELIEF_SOURCE, TERRAIN_SOURCE } from '../../core/terrain.ts'
 import { background, followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
 import { hillshadeBefore } from './placement.ts'
@@ -17,7 +18,6 @@ import {
   SHADOW_COLOUR,
   STRENGTH,
   TERRAIN_MAX_ZOOM,
-  TERRAIN_SOURCE,
   TERRAIN_TILE_SIZE
 } from './terrain.constants.ts'
 
@@ -25,6 +25,16 @@ const CREDIT =
   'Terrain: <a href="https://mapterhorn.com">Mapterhorn</a>, IGN (RGE ALTI, LiDAR HD), Copernicus DEM'
 
 /** Moves the hill shading to its place for the background shown (placement.ts). */
+/** A source of the terrain's elevations (Mapterhorn's tiles: Terrarium, 512 pixels). */
+const elevations: RasterDEMSourceSpecification = {
+  type: 'raster-dem',
+  tiles: [TERRAIN_URL],
+  encoding: 'terrarium',
+  tileSize: TERRAIN_TILE_SIZE,
+  maxzoom: TERRAIN_MAX_ZOOM,
+  attribution: CREDIT
+}
+
 function place(map: Map) {
   if (!map.getLayer(HILLSHADE_LAYER)) return
   const ids = (map.getStyle().layers ?? []).map((layer) => layer.id).filter((id) => id !== HILLSHADE_LAYER)
@@ -33,16 +43,7 @@ function place(map: Map) {
 }
 
 const terrain: ForkModule = {
-  sources: () => ({
-    [TERRAIN_SOURCE]: {
-      type: 'raster-dem',
-      tiles: [TERRAIN_URL],
-      encoding: 'terrarium',
-      tileSize: TERRAIN_TILE_SIZE,
-      maxzoom: TERRAIN_MAX_ZOOM,
-      attribution: CREDIT
-    }
-  }),
+  sources: () => ({ [TERRAIN_SOURCE]: elevations, [RELIEF_SOURCE]: elevations }),
 
   // Low among the data layers; place() puts it under the background map's roads.
   layers: () => [

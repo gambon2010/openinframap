@@ -103,7 +103,8 @@ port 8800.
   **My layers** (the pencil), **satellite** (pressed: satellite imagery under the data;
   again: the map; greyed where there's no imagery, its tooltip says why). Click a panel's button to open it next to the buttons; click it again
   (or ×) to close it. Only one is open at a time; the open one's button is outlined.
-  Long panels scroll inside. **3D**: the map tilts and buildings rise to
+  Long panels scroll inside. **3D**: the map tilts, the ground takes its relief
+  (true heights, where terrain is downloaded) under a sky, and buildings rise to
   their height; drag with the right mouse button, or Ctrl and drag, to tilt and turn it;
   click again for the flat map facing north, which can't be tilted. At the bottom:
   **print** (the printer), **Settings**

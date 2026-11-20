@@ -1122,6 +1122,10 @@ default). Counts are France's OSM data in October 2026.
   blended, the main one north-west), under the background map's roads and
   buildings over the map, right above the photos and fainter over imagery; Data
   layers → Terrain → Hill shading, on at first.
+- **3D relief (2026-11-20):** the 3D button raises the ground from the same
+  elevations (true heights, a second source as MapLibre draws relief and shading
+  better from two), under a sky with haze at the horizon; tilting up to 75° (was
+  60°) to look along valleys. Source names shared in `core/terrain.ts`.
 
 ## Extra data (not from OpenStreetMap)
 

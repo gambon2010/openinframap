@@ -81,7 +81,7 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
 - Credit in the map's attribution while shown; Settings → Map sources: the terrain
   file's URL, like the imagery's.
 
-## 3. Relief in the 3D view
+## 3. Relief in the 3D view (done, 2026-11-20)
 
 - The 3D button (`modules/view3d`) also turns on `map.setTerrain` with the terrain
   source (true heights: exaggeration 1, the owner's choice), and a sky and haze at
