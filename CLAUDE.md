@@ -94,8 +94,7 @@ Services (`docker-compose.override.yml`; all on 127.0.0.1 but the gate):
 | `gate` | 8800 (https) | nginx, **where the app is opened**; the one way in from the network, every request needs a logged-in session (`gate/nginx.conf`, certificate made in `data/gate/`) |
 | `db` | 5432 | PostGIS |
 | `tegola` | 7800 | the infrastructure tiles |
-| `backend` | 8001 | API, login, search, and the background map (`/background`, from `data/offline-maps/`) |
-| `satellite` | 8810 | satellite imagery (`pmtiles serve` of `data/offline-maps/*.sat-*.pmtiles`) |
+| `backend` | 8001 | API, login, search, and the offline maps from `data/offline-maps/`: background map (`/background`), terrain (`/terrain`), satellite imagery (`/imagery`, `/satellite`) |
 | frontend | 5173 | `cd web && npm start`, reached through the gate |
 
 Stop: Ctrl+C in the frontend window, then `docker compose stop`.

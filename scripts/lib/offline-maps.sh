@@ -1,19 +1,12 @@
 # shellcheck shell=bash
 # Offline maps for the scripts (scripts/offline-maps.py maps; docs/plans/offline-maps.md):
 # build-region.sh opens the menu to queue downloads (choose_offline_maps) and runs the
-# queue after the build (download_offline_maps); select_satellite tells the frontend
-# which imagery files there are.
+# queue after the build (download_offline_maps); select_satellite writes the map's
+# imagery list.
 
 # Whether any satellite imagery is downloaded (data/offline-maps/<area>.sat-*.pmtiles).
 has_satellite() {
     compgen -G "$OFFLINE_MAPS_DIR/*.sat-*.pmtiles" >/dev/null
-}
-
-# Start the satellite imagery server (the "satellite" service) if there's any.
-start_satellite_if_present() {
-    if has_satellite; then
-        up_services satellite
-    fi
 }
 
 # "world overview, france regional, IGN photos of 2 départements (3.4 GB)": the
@@ -24,14 +17,12 @@ satellite_summary() {
 
 # Write the map's imagery list (data/offline-maps/imagery.json: every imagery file,
 # with its zooms, bounds and credit; the backend serves it, the map reads it when it
-# opens: scripts/offline_maps/inventory.py imagery_list), and start the server that
-# serves the imagery if there's any.
+# opens: scripts/offline_maps/inventory.py imagery_list).
 select_satellite() {
     local count
     mkdir -p "$OFFLINE_MAPS_DIR"
     count=$(scripts_python "$REPO_ROOT/scripts/offline-maps.py" imagery --maps-dir "$OFFLINE_MAPS_DIR")
     if [[ "$count" != 0 ]]; then
-        up_services satellite
         ok "Satellite imagery: $(satellite_summary). Turn it on with the satellite button."
     fi
 }

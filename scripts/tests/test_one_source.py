@@ -28,7 +28,6 @@ def test_ports_agree_everywhere():
     for service, in_shell, default in (
         ("backend", "BACKEND_PORT", "VITE_BACKEND_BASE_URL || 'http://localhost:{}'"),
         ("tegola", "TEGOLA_PORT", "VITE_TEGOLA_URL || 'http://localhost:{}'"),
-        ("satellite", "SATELLITE_PORT", None),
     ):
         port = compose_port(service)
         assert shell(in_shell) == port, service
@@ -37,18 +36,9 @@ def test_ports_agree_everywhere():
         assert f":{port}/, '" in frontend, service
         if default:
             assert default.format(port) in frontend, service
-    # Where the map asks for the imagery (config.ts IMAGERY_URL).
-    imagery_port = compose_port("satellite")
-    assert f"'http://localhost:{imagery_port}'" in frontend
-    # The gate's own port: where the app is opened, and where the imagery says it is.
+    # The gate's own port: where the app is opened.
     gate_port = shell("GATE_PORT")
     assert f"listen {gate_port} ssl;" in gate
-    assert f"--public-url=https://localhost:{gate_port}/satellite" in COMPOSE
-
-
-def test_the_pmtiles_program_is_one_version():
-    image = re.search(r"image: (protomaps/go-pmtiles:\S+)", COMPOSE)[1]
-    assert image == extract.PMTILES_IMAGE
 
 
 def test_the_zoomed_out_companion_is_named_and_zoomed_alike():
@@ -66,7 +56,12 @@ def test_the_railways_are_named_and_kinded_alike():
     from offline_maps import railways, regions
 
     made = (
-        ROOT / "web-backend" / "src" / "fork" / "background_build" / "zoomed_railways.py"
+        ROOT
+        / "web-backend"
+        / "src"
+        / "fork"
+        / "background_build"
+        / "zoomed_railways.py"
     ).read_text()
     assert f'f"{{background_map.stem}}{railways.RAILWAYS}"' in made
     kinds = re.search(r"KINDS = \{([^}]*)\}", made)[1]

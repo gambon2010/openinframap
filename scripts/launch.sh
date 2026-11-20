@@ -91,7 +91,6 @@ fi
 section "Starting the Tegola tile server..."
 up_services tegola
 ok "Running on http://localhost:$TEGOLA_PORT"
-start_satellite_if_present
 
 # ---------------------------------------------------------------------------
 # 6. Start the app — each server in its own terminal window

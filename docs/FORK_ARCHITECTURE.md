@@ -236,15 +236,19 @@ every route but logging in needs a session):
 - `map_data.py` (a map feature's full geometry);
 - `pmtiles_files.py` (the PMTiles files served from `data/offline-maps/`: a file open,
   its index cached, `Archive`; the files of one kind in the folder, opened again when
-  they change, `ArchiveFolder`: the background maps, the trams' lanes, the terrain);
+  they change, `ArchiveFolder`: the background maps, the trams' lanes, the terrain,
+  the imagery; Protomaps' `pmtiles` package decodes them); `tile_answers.py` (how a
+  tile request is answered, for all of them: revalidated by an ETag from the files,
+  204 where there's nothing, gzipped tiles sent as they are);
+- `imagery.py` (the satellite imagery: its list, `/imagery`, the `imagery.json`
+  the scripts write; each file's tiles, `/satellite/<file>/{z}/{x}/{y}.<format>`);
 - `background/` (serving: the background map's tiles, `/background/{z}/{x}/{y}.mvt`:
   each from the first `data/offline-maps/<area>.pmtiles` that has it, so several areas
   show together; at zooms 6 to 15 with the area's `<area>.zoomed-out.pmtiles` tile
   appended, its roads replacing the background map's (`mvt.py`: a tile's layers,
   undecoded); the trams' and metros' lanes at `/background/transit` (`transit.py`);
   `buildings.py`, a building's whole outline from the zoom 15 tiles,
-  `/background/building/{id}`, for copies; satellite imagery is the `satellite`
-  service's);
+  `/background/building/{id}`, for copies);
 - `background_build/` (made once after a download, not served: run by
   scripts/offline_maps/ in the backend's image, `python -m
   src.fork.background_build.<module>`): `zoomed_out.py`, from the zoom 15 tiles, the
@@ -355,7 +359,7 @@ the schema fingerprint builds and exports carry.
     `put_back_my_layers`, `restart_map_services`;
   - `eez`, `extra`, `userdata`, `exports`, `app`, `basemap` (`select_basemap`: the
     frontend pointed at the backend's background map), `geofabrik` (the index, region lookups,
-    extracts), `offline-maps` (the imagery server, the menu during a build).
+    extracts), `offline-maps` (the imagery list, the menu during a build).
 - **`netsafe.py`:** the same for the Python downloads (satellite imagery, extra
   data, the Wikidata cache): `safely(call, url)`, `fetch(url)`, `fetch_file(url, path)`,
   `run_until_connected(main)`. Same settings (`NET_WAIT_SECONDS`,

@@ -420,7 +420,6 @@ def test_start_serves_satellite_imagery_without_a_background_map(sandbox):
         "start.sh", FAKE_DB_EXISTS="1", FAKE_DB_ANSWERS=db, FAKE_PORTS_UP="8001 5173"
     )
     assert result.returncode == 0, result.stderr + result.stdout
-    assert sandbox.docker_calls("up", "satellite")
     assert "Satellite imagery" in result.stdout
 
 
@@ -461,8 +460,6 @@ NO_PORTS = """services:
   tegola:
     ports: !reset []
   backend:
-    ports: !reset []
-  satellite:
     ports: !reset []
 """
 

@@ -1,7 +1,7 @@
 // Fork: offline satellite imagery as the background (scripts/offline-maps.py, chosen in
 // scripts/build-region.sh or scripts/offline-maps.sh). Each file (NASA Blue Marble for
 // the world to zoom 8, Sentinel-2 10 m for an area or the world, aerial photos by
-// country) is a raster source served by the `satellite` service, listed by the
+// country) is a raster source served by the backend (/satellite), listed by the
 // scripts (the backend's /imagery: tiers.ts), read when the map opens. The satellite
 // button (modules/background, services/background.ts) chooses:
 //   map        the usual background map

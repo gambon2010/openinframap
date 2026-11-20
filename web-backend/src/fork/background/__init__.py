@@ -15,8 +15,8 @@ it: a tile is a list of layers, so the two laid end to end are one tile with the
 layers of both. The companion's roads replace the background map's (its roads
 layer is dropped, mvt.py): the same roads, with what Protomaps leaves out there.
 
-The satellite imagery files (*.sat-*.pmtiles) are served by the "satellite"
-service, not here. Files are read through mmap, each file's index cached (pmtiles_files.py), and
+The satellite imagery files (*.sat-*.pmtiles) are served by imagery.py. Files are
+read through mmap, each file's index cached (pmtiles_files.py), and
 picked up again when they change (no restart)."""
 
 from __future__ import annotations
@@ -27,13 +27,13 @@ from functools import lru_cache
 from pathlib import Path
 
 from pmtiles.tile import Compression
-from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
 from ..paths import LOCAL_DATA_DIR
 from ..pmtiles_files import Archive, ArchiveFolder
+from ..tile_answers import tile_response
 from . import mvt
 
 OFFLINE_MAPS_DIR = LOCAL_DATA_DIR / "offline-maps"
@@ -131,28 +131,13 @@ def unzipped(data: bytes) -> bytes:
 ARCHIVES = Archives(OFFLINE_MAPS_DIR)
 
 
+def background_tile_data(z: int, x: int, y: int) -> bytes | None:
+    found = ARCHIVES.tile(z, x, y)
+    return found[0] if found else None
+
+
 async def background_tile(request: Request) -> Response:
-    try:
-        z, x, y = (int(request.path_params[k]) for k in ("z", "x", "y"))
-    except ValueError:
-        return Response(status_code=404)
-    if not (0 <= z <= 22 and 0 <= x < 2**z and 0 <= y < 2**z):
-        return Response(status_code=404)
-    # Kept by the browser, but asked again each time: the same files, "not modified"
-    # (no tile read); a file rebuilt, the new tile (an hour's cache showed old
-    # tiles beside new ones after a rebuild).
-    etag = f'"{await run_in_threadpool(ARCHIVES.version)}"'
-    headers = {"Cache-Control": "no-cache", "ETag": etag}
-    if request.headers.get("if-none-match") == etag:
-        return Response(status_code=304, headers=headers)
-    found = await run_in_threadpool(ARCHIVES.tile, z, x, y)
-    if not found:
-        # Never kept by the browser: the area may be downloaded a minute later.
-        return Response(status_code=204, headers={"Cache-Control": "no-store"})
-    data, archive = found
-    if archive.header["tile_compression"] == Compression.GZIP:
-        headers["Content-Encoding"] = "gzip"
-    return Response(data, media_type=MEDIA_TYPE, headers=headers)
+    return await tile_response(request, ARCHIVES.version, background_tile_data, MEDIA_TYPE)
 
 
 routes = [Route("/background/{z}/{x}/{y}.mvt", background_tile)]

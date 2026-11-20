@@ -1220,6 +1220,16 @@ default). Counts are France's OSM data in October 2026.
   from `background/` to `background_build/`; `background/` keeps what answers
   requests (the tiles, the tram lanes, building outlines). They still run in the
   backend's image (shapely, osmium), now as `python -m src.fork.background_build.<module>`.
+- **The satellite imagery served by the backend; the `satellite` service removed:**
+  go-pmtiles' `pmtiles serve` (its own container, port 8810, a gate route) replaced
+  by `/satellite/<file>/{z}/{x}/{y}.<format>` in the backend (`imagery.py`), on the
+  same reader as the background map and terrain (`pmtiles_files.py`: Protomaps'
+  `pmtiles` package decoding, our directory cache). Measured on 300 tiles (IGN zoom
+  15, Sentinel-2 zoom 11), warm: 0.42–0.53 ms a tile against go-pmtiles' 0.41–1.12 ms,
+  the same bytes. The four tile routes (background, trams' lanes, terrain,
+  imagery) share one way of answering (`tile_answers.py`). The scripts keep the
+  go-pmtiles image for cutting and converting files; an export no longer carries it
+  (nothing offline runs it).
 
 ## Extra data (not from OpenStreetMap)
 

@@ -12,14 +12,13 @@ EEZ_ZIP="$DATA_DIR/$EEZ_NAME.zip"
 EEZ_DOWNLOAD_URL="https://marineregions.org/download_file.php?name=$EEZ_NAME.zip"
 EEZ_INFO_URL="https://marineregions.org/sources.php#unioneezcountry"
 BUILD_LOG="$OSM_DIR/build-history.log"
-# Offline maps: background maps (<area>.pmtiles, served by the backend) and
-# satellite imagery (<area>.sat-*.pmtiles, served by the `satellite` service).
+# Offline maps: background maps (<area>.pmtiles), terrain and satellite imagery
+# (<area>.sat-*.pmtiles), all served by the backend.
 OFFLINE_MAPS_DIR="$DATA_DIR/offline-maps"
 # The services' ports on this computer (docker-compose.override.yml's: a test
 # checks they agree, with the gate's and the frontend's too).
 TEGOLA_PORT=7800
 BACKEND_PORT=8001
-SATELLITE_PORT=8810
 WEB_ENV="$REPO_ROOT/web/.env"
 # Ready-made databases made by scripts/export-db.sh, imported by import-db.sh.
 EXPORTS_DIR="$DATA_DIR/exports"

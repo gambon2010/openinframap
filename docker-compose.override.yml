@@ -54,26 +54,11 @@ services:
       # Offline Wikidata cache filled by scripts/fetch_images.py on the host.
       - ./data/images:/data/images:z
       - ./data/wikidata_json:/data/wikidata_json:z
-      # The background maps (src/fork/background/).
+      # The offline maps: background maps, terrain, satellite imagery (src/fork/).
       - ./data/offline-maps:/data/offline-maps:ro,z
     depends_on:
       db:
         condition: service_healthy
-
-  # Offline satellite imagery: serves the imagery files in data/offline-maps/
-  # (<area>.sat-*.pmtiles, scripts/offline-maps.py) at
-  # http://localhost:8810/<file>/{z}/{x}/{y}.<ext>. Its image's pmtiles is also
-  # used by the scripts (cutting background maps, packing imagery). The
-  # background map itself is served by the backend (/background).
-  satellite:
-    image: protomaps/go-pmtiles:v1.28.0
-    # --public-url: its TileJSON (/<name>.json) then answers, with each file's bounds
-    # (the frontend greys out satellite imagery where there's none).
-    command: ["serve", "/data", "--cors=*", "--public-url=https://localhost:8800/satellite"]
-    ports:
-      - "127.0.0.1:8810:8080"
-    volumes:
-      - ./data/offline-maps:/data:ro,z
 
   # The gate (gate/nginx.conf): the one entry point, https://<this computer>:8800.
   # Every request needs a logged-in session (docs/plans/archive/sync.md); the other

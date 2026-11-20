@@ -14,6 +14,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
+from ..tile_answers import tile_response
 from . import contours, elevations, files, sight
 
 MEDIA_TYPE = "image/webp"
@@ -21,25 +22,10 @@ VECTOR_TILE = "application/vnd.mapbox-vector-tile"
 
 
 def tile_handler(make: Callable[[int, int, int], bytes | None], media_type: str):
-    """A route answering a tile from the terrain files: kept by the browser but asked
-    again each time, as the background map's ("not modified" while the files are
-    the same); 204 where there's nothing, never kept (an area may come later)."""
+    """A route answering a tile made from the terrain files (tile_answers.py)."""
 
     async def answer(request: Request) -> Response:
-        try:
-            z, x, y = (int(request.path_params[k]) for k in ("z", "x", "y"))
-        except ValueError:
-            return Response(status_code=404)
-        if not (0 <= z <= 22 and 0 <= x < 2**z and 0 <= y < 2**z):
-            return Response(status_code=404)
-        etag = f'"{await run_in_threadpool(files.TERRAIN_FILES.version)}"'
-        headers = {"Cache-Control": "no-cache", "ETag": etag}
-        if request.headers.get("if-none-match") == etag:
-            return Response(status_code=304, headers=headers)
-        data = await run_in_threadpool(make, z, x, y)
-        if not data:
-            return Response(status_code=204, headers={"Cache-Control": "no-store"})
-        return Response(data, media_type=media_type, headers=headers)
+        return await tile_response(request, files.TERRAIN_FILES.version, make, media_type)
 
     return answer
 

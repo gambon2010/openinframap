@@ -4,8 +4,7 @@
 // at the page's own address. Other addresses are left as they are.
 const THROUGH_GATE: [RegExp, string][] = [
   [/^https?:\/\/(localhost|127\.0\.0\.1):7800/, '/tegola'],
-  [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, ''],
-  [/^https?:\/\/(localhost|127\.0\.0\.1):8810/, '/satellite']
+  [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, '']
 ]
 
 /** A local service's address as reached through the gate, from this page. */
@@ -77,10 +76,10 @@ export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
 export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
 // Contour lines the backend makes from it (vector tiles).
 export const CONTOURS_URL = `${BACKEND_BASE_URL}/terrain/contours/{z}/{x}/{y}.mvt`
-// The satellite imagery the map shows: the list the scripts write (the backend's
-// /imagery), and where its tiles are served (the `satellite` service, through the gate).
+// The satellite imagery the map shows: the list the scripts write, and the files'
+// tiles (the backend's /imagery and /satellite, web-backend/src/fork/imagery.py).
 export const IMAGERY_LIST_URL = `${BACKEND_BASE_URL}/imagery`
-export const IMAGERY_URL = throughGate('http://localhost:8810')
+export const IMAGERY_URL = `${BACKEND_BASE_URL}/satellite`
 // The ground's height at a point (?lon=&lat=), for the coordinates box.
 export const ELEVATION_URL = `${BACKEND_BASE_URL}/terrain/elevation`
 // The line of sight between two points (?from=lon,lat&to=lon,lat&observer=&target=).
