@@ -1,0 +1,2 @@
+# Fork: how the gate serves the page, chosen by GATE_FRONTEND (gate/Dockerfile).
+include /etc/nginx/frontend/${GATE_FRONTEND}.conf;

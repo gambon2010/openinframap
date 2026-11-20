@@ -425,6 +425,25 @@ the schema fingerprint builds and exports carry.
   window (`open_in_terminal`). **`fetch_images.py`:** the offline Wikidata cache
   (entity JSON, Commons thumbnails) in `data/`.
 
+## The gate: `gate/`
+
+nginx, the one way in (https on 8800, every request needs a logged-in session:
+`nginx.conf` asks the backend's `/auth/check`); its certificate made on first start
+(`10-certificate.sh`, kept in `data/local/gate/`). Its `Dockerfile` makes two
+images, two Compose services (`docker-compose.override.yml`), one running at a time:
+
+- `gate` (target `gate`): the page from Vite's dev server (`frontend/dev.conf`),
+  for development (`start.sh`, instant reload);
+- `gate-built` (target `built`, profile `built`): the frontend built into the
+  image (a `node:26` stage runs `npm ci` and `vite build` on `web/`, without
+  `web/.env`: the page finds every service from its own address), served by
+  `frontend/built.conf`; for a computer without Node.js. The export builds and
+  saves it.
+
+Which page config is used: `GATE_FRONTEND` (`dev`, `built`), written into
+`conf.d/frontend.conf` at start by nginx's image (`frontend.conf.template`, its
+documented templates).
+
 ## Recipes
 
 **A map layer from OSM** (e.g. airports):

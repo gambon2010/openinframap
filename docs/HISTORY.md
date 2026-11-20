@@ -1252,6 +1252,16 @@ default). Counts are France's OSM data in October 2026.
   RHEL's), else the standalone programs. The setup scripts point there when a tool
   is missing; `start.sh` and `import-db.sh` now tell "not installed" from "not
   running" (`require_docker`).
+- **The frontend built into the gate's image** (docs/plans/portable-drive.md, step 2):
+  the gate's Dockerfile has two targets, `gate` (the page from Vite's dev server, as
+  before) and `built` (a `node:26` stage runs `vite build`, nginx serves the files:
+  no Node.js needed), as two Compose services (`gate`, and `gate-built` in profile
+  `built`); `GATE_FRONTEND` picks the page config through nginx's templates. Two
+  images rather than one because `up_services` rebuilds at every start: one image
+  would have run `vite build` at each `start.sh` after a frontend change. The export
+  now builds and saves both gates (it didn't build the gate before). Checked: both
+  configs valid, the built page rendered with no errors (a throwaway copy on another
+  port, the login check off).
 
 ## Extra data (not from OpenStreetMap)
 

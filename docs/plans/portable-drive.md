@@ -74,7 +74,12 @@ Each step ends with every test suite passing, committed; the app works between s
 - One-time move of the folders on this computer (the same disk: instant), asked
   before it runs.
 
-### 2. The frontend in the gate's image (C)
+### 2. The frontend in the gate's image (C) — ✅ done (2026-11-20)
+
+Done as two images from the gate's Dockerfile (targets `gate` and `built`, Compose
+services `gate` and `gate-built`): the scripts rebuild images at every start, so
+a single image with the frontend would have rebuilt it at each `start.sh` after a
+frontend change.
 
 - The gate's Dockerfile gets a build stage: `npm ci` and `vite build` (on this
   computer, online), the built files copied into the nginx image (Docker's documented

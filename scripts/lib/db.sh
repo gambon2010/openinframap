@@ -50,12 +50,13 @@ db_volume_exists() {
     docker volume inspect "$(compose_project)_postgres_data" >/dev/null 2>&1
 }
 
-# Docker images needed to run (db, tegola, backend, gate) and build (imposm, osmium) offline.
+# Docker images needed to run (db, tegola, backend, the gate in both kinds) and build
+# (imposm, osmium, loom) offline.
 project_images() {
     local project
     project=$(compose_project)
     docker compose config --format json </dev/null | python3 -c 'import json,sys; s=json.load(sys.stdin)["services"]; print(s["db"]["image"])'
-    echo "$project-tegola" "$project-backend" "$project-gate" "$project-imposm" "$project-osmium" "$project-loom" | tr ' ' '\n'
+    echo "$project-tegola" "$project-backend" "$project-gate" "$project-gate-built" "$project-imposm" "$project-osmium" "$project-loom" | tr ' ' '\n'
 }
 
 # The SQL files that make a built database, by name (schema_file finds them:
