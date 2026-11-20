@@ -1175,6 +1175,10 @@ default). Counts are France's OSM data in October 2026.
   and slope are now read pixel by pixel from the cached tiles (a 3 × 3 tile mosaic
   per point was too slow for thousands of samples). Checked: Mont Blanc seen from
   Fourvière.
+- **Turf for the Earth's geometry (2026-11-20):** `core/earth.ts` and `core/geo.ts`
+  (bearings, destinations, great circles, circles, lengths, distances, areas) now
+  call Turf's modules instead of formulas by hand ("Reuse before writing"); the
+  tests passed unchanged. Terra Draw for My layers' drawing went to the backlog.
 
 ## Extra data (not from OpenStreetMap)
 

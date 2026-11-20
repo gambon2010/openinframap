@@ -1,57 +1,37 @@
-import { groundDistance, toDegrees, toRadians } from './geo.ts'
-// Fork: distances, areas, bearings and circles on the Earth (a sphere of the mean
-// radius: within 0.5 % of the ellipsoid, enough to measure on a map). Pure.
-export type LngLat = [lng: number, lat: number]
+// Fork: distances, areas, bearings and circles on the Earth (Turf's, on a sphere of
+// the mean radius: within 0.5 % of the ellipsoid, enough to measure on a map), and
+// distances and bearings written for people. Pure.
+import turfBearing from '@turf/bearing'
+import turfCircle from '@turf/circle'
+import turfDestination from '@turf/destination'
+import greatCircle from '@turf/great-circle'
+import { lineString } from '@turf/helpers'
+import turfLength from '@turf/length'
+import { groundDistance } from './geo.ts'
 
-const R = 6371008.8
+export type LngLat = [lng: number, lat: number]
 
 /** Metres in each distance unit people type (nautical miles: 1852 m). */
 const UNIT_METRES = { m: 1, km: 1000, nm: 1852 } as const
 type DistanceUnit = keyof typeof UNIT_METRES
-const rad = toRadians
-const deg = toDegrees
 
 /** Metres along a path. */
 export function pathLength(points: LngLat[]): number {
-  let total = 0
-  for (let i = 1; i < points.length; i++) total += groundDistance(points[i - 1], points[i])
-  return total
+  if (points.length < 2) return 0
+  return turfLength(lineString(points), { units: 'meters' })
 }
 
-/** The initial bearing from one point to another: degrees from true north, 0–360. */
-export function bearing([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {
-  const y = Math.sin(rad(lng2 - lng1)) * Math.cos(rad(lat2))
-  const x =
-    Math.cos(rad(lat1)) * Math.sin(rad(lat2)) -
-    Math.sin(rad(lat1)) * Math.cos(rad(lat2)) * Math.cos(rad(lng2 - lng1))
-  return (deg(Math.atan2(y, x)) + 360) % 360
+/** The initial bearing from one point to another: degrees from true north, 0–360
+ * (Turf's run from -180 to 180). */
+export function bearing(from: LngLat, to: LngLat): number {
+  return (turfBearing(from, to) + 360) % 360
 }
 
-/** The point a distance (metres) away on a bearing (degrees). */
-export function destination([lng, lat]: LngLat, metres: number, bearingDeg: number): LngLat {
-  const d = metres / R
-  const b = rad(bearingDeg)
-  const lat2 = Math.asin(Math.sin(rad(lat)) * Math.cos(d) + Math.cos(rad(lat)) * Math.sin(d) * Math.cos(b))
-  const lng2 =
-    rad(lng) +
-    Math.atan2(
-      Math.sin(b) * Math.sin(d) * Math.cos(rad(lat)),
-      Math.cos(d) - Math.sin(rad(lat)) * Math.sin(lat2)
-    )
-  return [((deg(lng2) + 540) % 360) - 180, deg(lat2)]
-}
-
-/** The point a fraction of the way from a to b along the great circle. */
-export function intermediate([lng1, lat1]: LngLat, [lng2, lat2]: LngLat, f: number): LngLat {
-  const d = groundDistance([lng1, lat1], [lng2, lat2]) / R
-  if (d === 0) return [lng1, lat1]
-  const A = Math.sin((1 - f) * d) / Math.sin(d)
-  const B = Math.sin(f * d) / Math.sin(d)
-  const [φ1, λ1, φ2, λ2] = [rad(lat1), rad(lng1), rad(lat2), rad(lng2)]
-  const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2)
-  const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2)
-  const z = A * Math.sin(φ1) + B * Math.sin(φ2)
-  return [deg(Math.atan2(y, x)), deg(Math.atan2(z, Math.sqrt(x * x + y * y)))]
+/** The point a distance (metres) away on a bearing (degrees), its longitude within
+ * -180 to 180. */
+export function destination(from: LngLat, metres: number, bearingDeg: number): LngLat {
+  const [lng, lat] = turfDestination(from, metres, bearingDeg, { units: 'meters' }).geometry.coordinates
+  return [((lng + 540) % 360) - 180, lat]
 }
 
 // Legs longer than this are drawn through points along their great circle (close
@@ -67,18 +47,26 @@ export function greatCirclePath(points: LngLat[]): LngLat[] {
   for (let i = 1; i < points.length; i++) {
     const [a, b] = [points[i - 1], points[i]]
     const n = Math.min(2000, Math.ceil(groundDistance(a, b) / SEGMENT))
-    for (let k = 1; k < n; k++) out.push(intermediate(a, b, k / n))
-    out.push(b)
+    out.push(...greatCircleLeg(a, b, n).slice(1))
   }
   return out
 }
 
-/** A circle of a radius (metres) round a centre, as a closed ring. */
+/** A leg's great circle in `pieces` straight pieces (its two ends included). */
+function greatCircleLeg(a: LngLat, b: LngLat, pieces: number): LngLat[] {
+  if (pieces <= 1 || (a[0] === b[0] && a[1] === b[1])) return [a, b]
+  const arc = greatCircle(a, b, { npoints: pieces + 1 }).geometry
+  // A leg across the antimeridian comes as two lines: kept end to end.
+  const coordinates = arc.type === 'LineString' ? arc.coordinates : arc.coordinates.flat()
+  return [a, ...(coordinates.slice(1, -1) as LngLat[]), b]
+}
+
+/** A circle of a radius (metres) round a centre, as a closed ring: clockwise from
+ * north (Turf's runs the other way: the range rings' labels are placed north, east,
+ * south and west by their quarter points). */
 export function circle(centre: LngLat, metres: number, steps = 96): LngLat[] {
-  const ring: LngLat[] = []
-  for (let i = 0; i < steps; i++) ring.push(destination(centre, metres, (i * 360) / steps))
-  ring.push(ring[0])
-  return ring
+  const ring = turfCircle(centre, metres, { units: 'meters', steps }).geometry.coordinates[0] as LngLat[]
+  return ring.reverse()
 }
 
 /** A number with at most `decimals` decimals (none trailing) and thousands separated. */

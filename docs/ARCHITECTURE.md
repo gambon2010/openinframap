@@ -36,7 +36,8 @@ core/      no UI, imported by anything: i18n.ts (t()), mgrs.ts (grid references)
            browser's storage, read and written safely), author.ts, map-data.ts,
            buildings.ts (the background map's buildings: their layer, a building's
            pieces joined across tiles), earth.ts (distances, bearings, circles and
-           great circles on the Earth; distances and bearings written for people),
+           great circles on the Earth, Turf's; distances and bearings written for
+           people; geo.ts's distance and area are Turf's too),
            north.ts (true, magnetic and grid north; magnetic declination, magvar),
            terrain.ts (the terrain's map sources)
 ui/        shared building blocks you see: dock (right), left column, details
