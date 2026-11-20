@@ -10,7 +10,7 @@ import { CONTOURS_URL, TERRAIN_URL } from '../../config.ts'
 import { RELIEF_SOURCE, TERRAIN_SOURCE } from '../../core/terrain.ts'
 import { background, followBackground } from '../../services/background.ts'
 import { ForkModule } from '../../types.ts'
-import { CONTOUR_LAYERS, INDEX_LAYER, INTERMEDIATE_LAYER, LABEL_LAYER, contourLayers } from './contours.ts'
+import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, LABEL_LAYER, contourLayers } from './contours.ts'
 import { terrainBefore } from './placement.ts'
 import {
   CONTOURS_MAX_ZOOM,
@@ -19,6 +19,7 @@ import {
   CONTOURS_SOURCE,
   CONTOURS_SWITCHER_ID,
   CONTOUR_COLOUR,
+  CONTOUR_LABEL_COLOUR,
   HIGHLIGHT_COLOUR,
   HILLSHADE_LAYER,
   HILLSHADE_SWITCHER_ID,
@@ -97,9 +98,8 @@ const terrain: ForkModule = {
     else map.once('load', apply)
     background.onChange(apply)
     followBackground(map, HILLSHADE_LAYER, 'hillshade-exaggeration', STRENGTH)
-    followBackground(map, INTERMEDIATE_LAYER, 'line-color', CONTOUR_COLOUR)
-    followBackground(map, INDEX_LAYER, 'line-color', CONTOUR_COLOUR)
-    followBackground(map, LABEL_LAYER, 'text-color', CONTOUR_COLOUR)
+    for (const id of CONTOUR_LINE_LAYERS) followBackground(map, id, 'line-color', CONTOUR_COLOUR)
+    followBackground(map, LABEL_LAYER, 'text-color', CONTOUR_LABEL_COLOUR)
   }
 }
 

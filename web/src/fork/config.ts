@@ -77,6 +77,8 @@ export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
 export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
 // Contour lines the backend makes from it (vector tiles).
 export const CONTOURS_URL = `${BACKEND_BASE_URL}/terrain/contours/{z}/{x}/{y}.mvt`
+// The ground's height at a point (?lon=&lat=), for the coordinates box.
+export const ELEVATION_URL = `${BACKEND_BASE_URL}/terrain/elevation`
 
 // Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
 // the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online

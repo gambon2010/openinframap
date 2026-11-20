@@ -239,9 +239,12 @@ every route but logging in needs a session):
 - `terrain/` (the terrain's elevation tiles, `/terrain/{z}/{x}/{y}.webp`: each from the
   first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
   `elevations.py`, the one reader of heights: Terrarium tiles decoded, a tile's
-  heights with its neighbours' edges; `contours.py`, contour lines as vector tiles,
-  `/terrain/contours/{z}/{x}/{y}.mvt`, traced as tiles are asked for (smoothed,
-  military maps' intervals, index lines marked), kept in memory; docs/plans/terrain.md);
+  heights with its neighbours' edges, a point's height (`/terrain/elevation`, the
+  coordinates box); `contours.py`, contour lines as vector tiles,
+  `/terrain/contours/{z}/{x}/{y}.mvt`, traced as tiles are asked for (smoothed with
+  SciPy, military maps' intervals), kept in memory; `contour_marks.py`, what a line
+  is: index, intermediate, supplementary on level ground, depression and its
+  downhill side; docs/plans/terrain.md);
 - `wikidata_offline.py` (popups from the offline Wikidata cache, by wrapping
   upstream's functions: upstream's files stay untouched) and `paths.py` (the caches);
 - `userdata/`, My layers:

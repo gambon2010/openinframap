@@ -1,7 +1,8 @@
 """Fork: the terrain (docs/plans/terrain.md): the elevation tiles of every area
 downloaded, served together at /terrain/{z}/{x}/{y}.webp (Terrarium encoded,
 512-pixel, lossless WebP: the map's hill shading and 3D relief), and contour lines
-made from them at /terrain/contours/{z}/{x}/{y}.mvt (contours.py)."""
+made from them at /terrain/contours/{z}/{x}/{y}.mvt (contours.py); the height at a
+point at /terrain/elevation?lon=&lat= (the coordinates box)."""
 
 from __future__ import annotations
 
@@ -9,10 +10,10 @@ from collections.abc import Callable
 
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from . import contours, files
+from . import contours, elevations, files
 
 MEDIA_TYPE = "image/webp"
 VECTOR_TILE = "application/vnd.mapbox-vector-tile"
@@ -46,7 +47,20 @@ def elevation_tile(z: int, x: int, y: int) -> bytes | None:
     return files.TERRAIN_FILES.tile(z, x, y)
 
 
+async def elevation_at(request: Request) -> Response:
+    """{"elevation": metres, or null where there's no terrain}."""
+    try:
+        lon, lat = float(request.query_params["lon"]), float(request.query_params["lat"])
+    except (KeyError, ValueError):
+        return Response(status_code=400)
+    if not (-180 <= lon <= 180 and -90 <= lat <= 90):
+        return Response(status_code=400)
+    height = await run_in_threadpool(elevations.elevation, lon, lat)
+    return JSONResponse({"elevation": None if height is None else round(height, 1)})
+
+
 routes = [
+    Route("/terrain/elevation", elevation_at),
     Route("/terrain/contours/{z}/{x}/{y}.mvt", tile_handler(contours.tile, VECTOR_TILE)),
     Route("/terrain/{z}/{x}/{y}.webp", tile_handler(elevation_tile, MEDIA_TYPE)),
 ]

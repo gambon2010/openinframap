@@ -120,7 +120,7 @@ elevation reader the radio mode will use.
 - Tests: decoding a Terrarium tile (a small fixture), contours of a known cone
   (rings, heights, index levels), the interval by zoom.
 
-## 5. Supplementary and depression contours (backend)
+## 5. Supplementary and depression contours (backend) (done, 2026-11-20)
 
 - **Supplementary contours**: lines at half the interval, kept only where the ground
   is flat (the slope from the same elevations: regular lines there would be more
@@ -137,8 +137,8 @@ elevation reader the radio mode will use.
 
 ## 6. Heights on the map
 
-- The height under the cursor in the coordinates box, and in popups ("Elevation
-  312 m"), from the backend's reader.
+- The height under the cursor in the coordinates box (done, 2026-11-20), from the
+  backend's reader; in popups ("Elevation 312 m") later.
 - A line-of-sight check between two points, with its profile drawn (the
   battle-tracking backlog's terrain and line of sight).
 

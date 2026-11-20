@@ -7,6 +7,7 @@ The one place the backend reads elevations (contours.py; the radio mode planned)
 from __future__ import annotations
 
 import io
+import math
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -81,3 +82,40 @@ def neighbour(z: int, x: int, y: int, version: str) -> np.ndarray | None:
     if not 0 <= y < 2**z:
         return None
     return tile_heights(z, x % 2**z, y, version)
+
+
+def tile_position(lon: float, lat: float, z: int) -> tuple[float, float]:
+    """Where a point is in the terrain's pixels at a zoom, across the whole world
+    (web Mercator: column and row, fractional)."""
+    pixels = TILE_PIXELS * 2**z
+    column = (lon + 180) / 360 * pixels
+    sin = math.sin(math.radians(max(-85.0511, min(85.0511, lat))))
+    row = (0.5 - math.log((1 + sin) / (1 - sin)) / (4 * math.pi)) * pixels
+    return column, row
+
+
+def elevation(lon: float, lat: float) -> float | None:
+    """The ground's height at a point, metres (from zoom 13's pixels, interpolated
+    between the four around it), None where there's no terrain."""
+    column, row = tile_position(lon, lat, FINEST_ZOOM)
+    x, y = int(column // TILE_PIXELS), int(row // TILE_PIXELS)
+    around = window(FINEST_ZOOM, x, y, margin=1)
+    if around is None:
+        return None
+    # Pixel values are at pixel centres: half a pixel in from their edges.
+    gx = column - x * TILE_PIXELS + around.left - 0.5
+    gy = row - y * TILE_PIXELS + around.top - 0.5
+    return bilinear(around.heights, gx, gy)
+
+
+def bilinear(heights: np.ndarray, gx: float, gy: float) -> float | None:
+    """A grid's value between its points (column gx, row gy), None if any of the
+    four around it is unknown."""
+    c, r = int(math.floor(gx)), int(math.floor(gy))
+    fx, fy = gx - c, gy - r
+    corners = heights[r : r + 2, c : c + 2]
+    if corners.shape != (2, 2) or np.isnan(corners).any():
+        return None
+    top = corners[0, 0] * (1 - fx) + corners[0, 1] * fx
+    bottom = corners[1, 0] * (1 - fx) + corners[1, 1] * fx
+    return float(top * (1 - fy) + bottom * fy)

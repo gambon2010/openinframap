@@ -22,11 +22,21 @@ export const CONTOURS_SOURCE_LAYER = 'contours'
 export const CONTOURS_MIN_ZOOM = 9
 export const CONTOURS_MAX_ZOOM = 16
 
-/** Contour brown, as on the military maps; lighter over imagery. */
-export const CONTOUR_COLOUR = { map: '#9a6a3a', imagery: '#e0b07a' }
-/** Line widths (pixels) at zooms 9 and 16: intermediate and index contours. */
+/** Contour browns (the USGS's US Topo specifications): the lines, and the darker
+ * heights written on index contours; lighter over imagery. */
+export const CONTOUR_COLOUR = { map: '#b38659', imagery: '#e0b07a' }
+export const CONTOUR_LABEL_COLOUR = { map: '#834225', imagery: '#f0c890' }
+/** Line widths (pixels) at zooms 9 and 16: intermediate (and supplementary) and
+ * index contours. */
 export const INTERMEDIATE_WIDTH: [number, number] = [0.5, 0.9]
 export const INDEX_WIDTH: [number, number] = [1, 1.8]
+/** Supplementary contours' dashes, in line widths (dash, gap). */
+export const SUPPLEMENTARY_DASHES = [4, 3]
+/** Depression ticks: drawn as a wide dashed line beside the contour, on its downhill
+ * side (the backend puts that side on the right): the width is the ticks' length,
+ * the dashes (in widths) their thickness and spacing. */
+export const TICK_LENGTH = 4
+export const TICK_DASHES = [0.3, 2.5]
 
 /** Light from the north-west, as on paper maps, blended with three more
  * directions (MapLibre's multidirectional method: slopes facing away from the

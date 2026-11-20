@@ -249,8 +249,10 @@ terrain --area france --outline data/offline-maps/.area-france.geojson`). The
 backend serves every area's terrain together (`/terrain`); *Data layers → Terrain →
 Hill shading* (on at first) shades the hills, over the map and, fainter, over
 imagery; *Contour lines* draws them as on military maps (every fifth line heavier
-with its height; 100 m apart zoomed out, then 50, 20 and 10 m closer in), made by
-the backend from the terrain.
+with its height; 100 m apart zoomed out, then 50, 20 and 10 m closer in; dashed
+supplementary lines at half the interval on level ground; ticks inside hollows),
+made by the backend from the terrain. The coordinates box at the bottom left shows
+the ground's height under the cursor.
 
 ## Satellite imagery (offline)
 

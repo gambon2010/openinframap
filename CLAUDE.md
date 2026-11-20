@@ -39,6 +39,24 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 - **Docs current:** they describe what is, not what was (history goes in `docs/HISTORY.md`); no section repeated in two files.
 - **Clean-ups in this order:** tests, then deletions, then merging duplicates, then structure (splits, renames, folders), docs last.
 
+## Reuse before writing
+
+Before writing an algorithm or a feature that's a known problem (contour lines,
+clustering, line smoothing, label placement, tile serving, retries, file locks,
+parsing a format...), look up how open source projects do it, and reuse rather than
+invent:
+
+1. **A package or plugin that does it**, maintained and fitting our stack: use it
+   (add it as a dependency, named in the docs); a small wrapper is fine.
+2. **None fits**: find how larger projects do it (MapLibre, Planetiler, GDAL, QGIS,
+   OpenTopoMap, Protomaps, OpenStreetMap's tools...) and follow their method and
+   parameters, saying in a comment where it comes from (project, file or doc).
+3. **Only then** write our own, and say in the plan or the commit why nothing could
+   be reused.
+
+Write down what was looked at (the plan, or `docs/HISTORY.md`), so the next person
+doesn't search again. Parts written before this rule: `docs/plans/reuse-review.md`.
+
 ## Code is written for a human reader
 
 The reader is one person maintaining this project, reading a file cold, months later, without you there to explain it. Optimise for that person, not for brevity or cleverness.

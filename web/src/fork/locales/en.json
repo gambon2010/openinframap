@@ -774,5 +774,8 @@
     "petroleum": {
       "facility": "Petroleum facility"
     }
+  },
+  "coordinates": {
+    "height": "Height of the ground"
   }
 }

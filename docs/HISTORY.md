@@ -1135,6 +1135,16 @@ default). Counts are France's OSM data in October 2026.
   points within half a pixel simplified away (tiles a quarter of the size). About
   60 ms a tile once its heights are read. Pillow and contourpy declared in the
   backend (bokeh had brought them).
+- **Supplementary and depression contours, the height under the cursor
+  (2026-11-20):** supplementary contours (half the interval, dashed) on level ground
+  from zoom 12, where the regular lines would be more than an inch (96 px) apart;
+  depression contours (closed round lower ground) ticked on their downhill side, the
+  ticks a wide dashed line pushed off the contour (no icon: it takes the
+  background's colours); the browns are the USGS US Topo specifications'. The
+  smoothing is now SciPy's `gaussian_filter` (was a convolution by hand: the new
+  "Reuse before writing" rule, CLAUDE.md; OpenTopography's method). The coordinates
+  box shows the ground's height (`/terrain/elevation`, asked when the cursor rests
+  120 ms; Mont Blanc 4806 m), and now uses the standard's tokens.
 
 ## Extra data (not from OpenStreetMap)
 
