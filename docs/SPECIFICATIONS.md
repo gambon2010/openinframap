@@ -286,6 +286,8 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.64 | Sentinel-2 imagery kept up to date for a chosen area: newer images downloaded for it, and its history browsable (the same place at earlier dates). | 🗂 backlog (2026-11-20) |
 | 10.65 | Satellite imagery found while the app runs (no frontend restart after a download). | ✅ the imagery list (`data/offline-maps/imagery.json`, the backend's `/imagery`) (2026-11-20) |
 | 10.66 | The satellite imagery served by the backend, by a known good package (Protomaps' `pmtiles`), without the go-pmtiles server. | ✅ `/satellite`, `imagery.py`; measured as fast (2026-11-20) |
+| 10.67 | The whole project on an external drive: on any computer, install Docker, plug the drive in, and the app runs from it 100% offline, serving the maps and the database from the drive (only the Docker images loaded into Docker). | 📋 planned (2026-11-20) `docs/plans/portable-drive.md` |
+| 10.68 | My layers and accounts in a database of their own, so a map update never touches them. | 📋 planned (2026-11-20) `docs/plans/portable-drive.md` step 2 |
 
 ## 11. Quality
 
