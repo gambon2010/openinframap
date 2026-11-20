@@ -12,11 +12,13 @@ def header(
     maxzoom: int = 8,
     tile_format: str = "",
     bounds: tuple[float, float, float, float] | None = None,
+    tile_count: int = 1,
 ) -> bytes:
     raw = bytearray(127)
     raw[:7], raw[7] = b"PMTiles", 3
     raw[99] = TILE_TYPES.get(tile_format, 0)
     raw[100], raw[101] = minzoom, maxzoom
+    struct.pack_into("<Q", raw, 72, tile_count)
     if bounds:
         struct.pack_into("<4i", raw, 102, *(round(v * 1e7) for v in bounds))
     return bytes(raw)

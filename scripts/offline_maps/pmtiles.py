@@ -4,6 +4,7 @@ package)."""
 
 from __future__ import annotations
 
+import re
 import struct
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +19,7 @@ class Header:
     maxzoom: int
     format: str  # mvt, png, jpg, webp, avif ("" if it doesn't say)
     bounds: tuple[float, float, float, float] | None  # west, south, east, north
+    tile_count: int  # tiles it addresses (0: empty)
 
     @property
     def zooms(self) -> tuple[int, int]:
@@ -39,4 +41,16 @@ def read_header(path: Path) -> Header | None:
         maxzoom=raw[101],
         format=FORMATS.get(raw[99], ""),
         bounds=tuple(v / 1e7 for v in corners) if any(corners) else None,  # type: ignore[arg-type]
+        tile_count=struct.unpack_from("<Q", raw, 72)[0],
     )
+
+
+# What `pmtiles extract --dry-run` says a cut-out would weigh.
+DRY_RUN_SIZE = re.compile(r"archive size of ([0-9.]+) ([kMGT]?)B")
+UNITS = {"": 1, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12}
+
+
+def dry_run_size(output: str) -> int | None:
+    """The size a dry run printed, in bytes, None if it didn't say."""
+    found = DRY_RUN_SIZE.findall(output)
+    return int(float(found[-1][0]) * UNITS[found[-1][1]]) if found else None

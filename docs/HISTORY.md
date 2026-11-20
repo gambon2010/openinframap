@@ -1107,6 +1107,16 @@ default). Counts are France's OSM data in October 2026.
 - **Left out on purpose:** defibrillators (28,000), post offices, doctors' and
   dentists' surgeries.
 
+## Terrain (docs/plans/terrain.md)
+
+- **Downloaded with the background map (2026-11-20):** the area's elevations cut
+  out of Mapterhorn's terrain tiles (IGN's RGE ALTI and LiDAR HD in France,
+  Copernicus elsewhere; lossless, so good for computing too) to zoom 13 into
+  `<area>.terrain.pmtiles` (`offline_maps/terrain.py`). Not a choice: it comes with
+  every background map; the menu offers it for one made before. Merging the parts
+  needs go-pmtiles 1.31 (`merge`). The dry runs' size reading moved to `pmtiles.py`
+  (`dry_run_size`), which also reads a file's tile count.
+
 ## Extra data (not from OpenStreetMap)
 
 Some network operators publish their networks as open data, in far more detail than

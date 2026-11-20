@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import coverage, extract, inventory, railways, taxiways, transit, ui
+from . import coverage, extract, inventory, railways, taxiways, terrain, transit, ui
 from .inventory import Entry
 from .jobs import Job, read_queue, save_queue, work_zoom
 from .offers import SourceOffers
@@ -349,6 +349,7 @@ class Maps(SourceOffers):
                 railways.railways_of(self.folder, e.area).unlink(missing_ok=True)
                 taxiways.taxiways_of(self.folder, e.area).unlink(missing_ok=True)
                 transit.transit_of(self.folder, e.area).unlink(missing_ok=True)
+                terrain.terrain_of(self.folder, e.area).unlink(missing_ok=True)
         ui.say(
             f"Deleted {ui.human(size)}. The map shows it once the scripts update it (start.sh)."
         )

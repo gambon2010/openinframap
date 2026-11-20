@@ -3,14 +3,13 @@ Protomaps' daily world build with pmtiles (in Docker) into
 data/offline-maps/<area>.pmtiles, with its manifest (<area>.json: the build it came
 from), then what it leaves out zoomed out, buildings and roads
 (<area>.zoomed-out.pmtiles, zooms 8 to 14, made in the backend's image:
-web-backend/src/fork/background/zoomed_out.py).
+web-backend/src/fork/background/zoomed_out.py), and its terrain (terrain.py).
 The backend serves them all together (web-backend/src/fork/background/).
 Full detail only."""
 
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import sys
 import urllib.request
@@ -19,8 +18,8 @@ from pathlib import Path
 
 import netsafe
 
-from . import docker, railways, taxiways, transit, ui
-from .pmtiles import read_header
+from . import docker, railways, taxiways, terrain, transit, ui
+from .pmtiles import dry_run_size, read_header
 from .sources import SOURCES
 
 PROTOMAPS = SOURCES["protomaps"]
@@ -98,10 +97,6 @@ def extract_args(
     return args + [f"--maxzoom={maxzoom}"] if maxzoom is not None else args
 
 
-SIZE = re.compile(r"archive size of ([0-9.]+) ([kMGT]?)B")
-UNITS = {"": 1, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12}
-
-
 def size(
     folder: Path, build: str, outline: Path | None, maxzoom: int | None = None
 ) -> int | None:
@@ -113,8 +108,7 @@ def size(
         check=False,
         capture=True,
     )
-    found = SIZE.findall(run.stdout + run.stderr)
-    return int(float(found[-1][0]) * UNITS[found[-1][1]]) if found else None
+    return dry_run_size(run.stdout + run.stderr)
 
 
 def progress_printer(total: int):
@@ -185,6 +179,15 @@ def command_basemap(args) -> None:
             print(
                 f"Making its buildings, roads and railways zoomed out failed. Again: "
                 f"python3 scripts/offline-maps.py zoomed-out --area {args.area}",
+                file=sys.stderr,
+            )
+    if terrain.terrain_missing(folder, args.area):
+        try:
+            terrain.make_terrain(folder, args.area, Path(args.outline).resolve())
+        except (subprocess.CalledProcessError, netsafe.ConnectionLost):
+            # The background map is kept; the menu offers its terrain again.
+            print(
+                "Downloading its terrain failed: the menu offers it again.",
                 file=sys.stderr,
             )
 

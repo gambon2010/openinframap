@@ -238,6 +238,14 @@ area downloaded before, the menu offers *Buildings, roads and railways zoomed ou
 `python3 scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
 `python3 scripts/offline-maps.py maps --source protomaps --area france --yes`.
 
+Terrain comes with it, always: the area's elevations (for contour lines, hill
+shading and the 3D relief), cut from [Mapterhorn](https://mapterhorn.com)'s terrain
+tiles to zoom 13 into `data/offline-maps/<region>.terrain.pmtiles` (6.6 m pixels;
+in France IGN's RGE ALTI and LiDAR HD, elsewhere mostly Copernicus' 30 m; France
+about 9 GB, Luxembourg 43 MB). Its size is in the background map's. For an area
+downloaded before, the menu offers *Terrain* (or `python3 scripts/offline-maps.py
+terrain --area france --outline data/offline-maps/.area-france.geojson`).
+
 ## Satellite imagery (offline)
 
 One menu for offline maps (satellite imagery, aerial photos, background maps), in

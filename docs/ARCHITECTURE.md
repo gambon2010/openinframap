@@ -262,7 +262,9 @@ the schema fingerprint builds and exports carry.
   the offline maps queued in the menu (a background map: `pmtiles extract` of the
   area's outline from Protomaps' daily build, then its buildings, roads and railways
   zoomed out (the railways and taxiways cut from the region's OpenStreetMap extract:
-  `offline_maps/osm_extract.py`, `railways.py`, `taxiways.py`);
+  `offline_maps/osm_extract.py`, `railways.py`, `taxiways.py`), and its terrain
+  (`offline_maps/terrain.py`: the outline cut out of Mapterhorn's terrain tiles to
+  zoom 13, into `<area>.terrain.pmtiles`; docs/plans/terrain.md);
   `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). Every
   question comes before the first long step.
 - **SQL (`schema/`):** upstream's: `dev-init.sql` / `prod-init.sql` (once, when the

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import coverage, extract, inventory, ui
+from . import coverage, extract, inventory, terrain, ui
 from .aerial import detailed_file, detailed_job, job_estimate
 from .bdortho import DOWNLOAD_BYTES_PER_SECOND
 from .inventory import Entry
@@ -82,6 +82,8 @@ class SourceOffers:
         rows.append(self.basemap_offer(area))
         if extract.zoomed_out_missing(self.folder, area):
             rows.append(self.zoomed_out_offer(area))
+        if terrain.terrain_missing(self.folder, area):
+            rows.append(self.terrain_offer(area))
         return rows
 
     def have(self, source: str, area: str) -> Entry | None:
@@ -364,6 +366,34 @@ class SourceOffers:
         ]
         return row, lambda: [job]
 
+    def terrain_offer(self, area: str):
+        """The terrain of a background map already there (it comes with each
+        download; offered for one made before, or if downloading it failed)."""
+        outline = self.index.outline(area, self.folder)
+        job = Job(
+            f"Terrain, {self.name(area)}",
+            [
+                "terrain",
+                "--area",
+                area,
+                "--outline",
+                str(outline),
+                "--maps-dir",
+                str(self.folder),
+            ],
+            kept=self.terrain_bytes(area),
+            download=self.terrain_bytes(area),
+        )
+        row = [
+            f"Terrain (contours, shading, 3D; z0–{terrain.MAX_ZOOM})",
+            "—",
+            ui.human(job.kept),
+        ]
+        return row, lambda: [job]
+
+    def terrain_bytes(self, area: str) -> int:
+        return round(self.km2(area) * terrain.BYTES_PER_KM2)
+
     def world_low_offer(self):
         """The whole world's background map zoomed out (to zoom 8): every
         country's borders and names, small (like Blue Marble for imagery)."""
@@ -415,11 +445,15 @@ class SourceOffers:
                 ui.say(f"No outline for {self.name(area)} in Geofabrik's index.")
                 return None
             ui.say("Working out its size...")
-            size = extract.size(self.folder, build, outline) or 0
+            # Its terrain comes with it (terrain.py).
+            size = (
+                extract.size(self.folder, build, outline) or 0
+            ) + self.terrain_bytes(area)
             argv += ["--outline", str(outline)]
+        with_terrain = " and terrain" if area != "world" else ""
         return [
             Job(
-                f"Background map, {self.name(area)}, z0–{maxzoom or 15}"
+                f"Background map{with_terrain}, {self.name(area)}, z0–{maxzoom or 15}"
                 f" ({extract.edition_date(extract.edition(build))})",
                 argv,
                 kept=size,

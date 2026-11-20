@@ -48,62 +48,38 @@ already made from them); BD ALTI 25 m (coarser than the planet file's zoom 12);
 Copernicus GLO-30 direct (30 m, already inside the planet file); AWS Terrain Tiles
 (older, coarser).
 
-## 1. Download it offline (scripts)
+## 1. Download it offline (scripts) (done, 2026-11-20)
 
-- A source file `scripts/offline_maps/sources/mapterhorn.py`: a new layer "terrain"
-  (beside overview, regional, detailed, basemap), fetched as "extract" like the
-  background map: the area's box cut out of `planet.pmtiles` (zooms 0–12) and of
-  each zoom 6 file it touches (13), merged (`pmtiles merge`) into
-  `data/offline-maps/<area>.terrain-mapterhorn.pmtiles`. Sizes from the table
-  (measured per km², like the other sources), md5 from `download_urls.json`.
-- Not an option (the owner, 2026-11-20): downloading a region's offline maps
-  downloads its terrain too, always, zooms 0 to 13. It comes with the region's
-  background map (`build-region.sh`'s `--basemap full`, the offline maps menu's
-  background map step): no menu line or question of its own; its size is added to
-  the background map's in the estimates. Resumed and checked like the others; the
-  inventory lists it.
-- Served by the `pmtiles serve` service that serves the imagery (same folder, same
-  URL scheme): no new container. (Its name, `satellite`, then says less than it
-  serves: renaming it is a clean-up to report, not part of this.)
-- The export/import scripts copy nothing new (`data/offline-maps/` is copied apart).
-- Tests: the source's sizes and zooms, the menu's line, the extract's commands with
-  the fake docker.
+- `scripts/offline_maps/terrain.py`: the area's outline cut out of each Mapterhorn
+  file whose bounds meet it (`planet.pmtiles` to zoom 12, the zoom 6 files at 13;
+  `download_urls.json` lists them), the empty parts dropped, the rest merged
+  (`pmtiles merge`, go-pmtiles 1.31) into `data/offline-maps/<area>.terrain.pmtiles`.
+  Luxembourg: 43 MB in 8 s.
+- Not an option (the owner): it comes with an area's background map (`basemap`
+  command, so `build-region.sh --basemap full` and the menu's background map), its
+  size in the background map's estimate ("Background map and terrain"). A
+  background map without terrain (made before, or the download failed) gets a
+  "Terrain" line in Add, like the zoomed out buildings; removing the background map
+  removes it.
+- Served by the `pmtiles serve` service that serves the imagery (same folder):
+  `/satellite/<area>.terrain/{z}/{x}/{y}.webp`. (Its name, `satellite`, then says
+  less than it serves: a clean-up to report.)
 
-## 2. Hill shading and contour lines (frontend)
+## 2. Hill shading (frontend)
 
 A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` first:
 
-- One `raster-dem` source, the terrain file, through **maplibre-contour**
-  (onthegomap, `DemSource`): it fetches each elevation tile once and shares it
-  between the shading, the 3D relief and the contours (`sharedDemProtocolUrl`),
-  computing contour lines into vector tiles in a web worker. Offline: it reads only
-  our tiles.
-- **Hill shading**: MapLibre's `hillshade` layer (light from the north-west,
-  `multidirectional` method), above the background's land cover and water, below
-  roads, buildings, labels and the infrastructure; over the map and over imagery
-  alike (its own strength for each); whether it stays over imagery, the owner
-  decides after seeing it. Light and bold looks.
-- **Contour lines, as on US military maps** (FM 3-25.26 / TC 3-25.26, Map Reading
-  and Land Navigation, ch. 10; the US Army's 1:50,000 topographic line maps):
-  - brown;
-  - **index contours**: every fifth line, heavier, its height written on it
-    (metres), the number's top facing uphill where MapLibre allows;
-  - **intermediate contours**: the four fine lines between, no number;
-  - the interval (height between two lines) as on the maps' scales: 20 m around
-    zoom 12–13 (the 1:50,000 sheets' usual interval; index lines every 100 m), 10 m
-    from zoom 14 (1:25,000), 50 m at zoom 11, 100 m at zooms 9–10 (1:250,000);
-  - **supplementary contours** (dashed, half the interval, for flat ground) and
-    **depression contours** (closed lines with ticks pointing downhill): wanted
-    too, but maplibre-contour draws neither; dashed half-interval lines from zoom 14
-    are easy, depressions would need the lines' direction (a later step, possibly
-    in the backend);
-  - labels avoid the infrastructure's.
-- The layer switcher: a "Terrain" group, "Hill shading" and "Contour lines", each
-  its own entry (remembered as the others). Greyed out with a hint where no terrain
-  file covers the view (as imagery does).
-- Credit in the map's attribution while either is shown.
-- Settings → Map sources: the terrain file's URL, like the imagery's.
-- Tests: the contour intervals by zoom, the layer order helper, the source's URL.
+- A `raster-dem` source (Terrarium, 512-pixel tiles, to zoom 13), the terrain file;
+  the same source for the 3D relief.
+- MapLibre's `hillshade` layer, drawn by the graphics card from the elevations
+  (light from the north-west, `multidirectional`), above the background's land cover
+  and water, below roads, buildings, labels and the infrastructure; over the map and
+  over imagery alike (its own strength for each); whether it stays over imagery,
+  the owner decides after seeing it. Light and bold looks.
+- The layer switcher: a "Terrain" group with "Hill shading" (and "Contour lines",
+  step 4), remembered as the others; greyed out where no terrain file covers the view.
+- Credit in the map's attribution while shown; Settings → Map sources: the terrain
+  file's URL, like the imagery's.
 
 ## 3. Relief in the 3D view
 
@@ -118,22 +94,59 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
   symbols, the measuring tools, the print module (prints flat).
 - Speed: terrain costs GPU; it's on only in 3D.
 
-## 4. Elevations in the backend (also the radio mode's base)
+## 4. Elevations and contour lines in the backend
 
-- `web-backend/src/fork/terrain/`: reads the same PMTiles (the file, not the HTTP
-  service), decodes the WebP tiles (Pillow) into elevation grids, cached:
-  `elevation(lon, lat)` and `profile(a, b, step)` (elevations along a line).
-- First uses: the height under the cursor in the coordinates box, and in popups
-  ("Elevation 312 m"); a line-of-sight check between two points, with its profile
-  drawn (it's in the battle-tracking backlog: terrain and line of sight).
-- Tests: decoding a terrarium tile (a small fixture), a profile across a known
-  slope.
+The project computes map data before the browser (PostGIS, the backend's zoomed out
+layers); contour lines too, as tiles are asked for (decided 2026-11-20), with the
+elevation reader the radio mode will use.
+
+- `web-backend/src/fork/terrain/`: reads the terrain file (the PMTiles package),
+  decodes its WebP tiles (Pillow) into elevation grids (numpy), cached:
+  `elevation(lon, lat)`, `profile(a, b)`, and a tile with its neighbours' edges.
+- **Contour tiles** (`/terrain/contours/{z}/{x}/{y}.mvt`, zoom 9 to 16, past 13 from
+  zoom 13's elevations): marching squares on the tile and a margin of its
+  neighbours, the lines clipped to the tile, kept in a cache folder; served through
+  the gate like the background map.
+- **As on US military maps** (FM 3-25.26 / TC 3-25.26, Map Reading and Land
+  Navigation, ch. 10; the Army's 1:50,000 topographic line maps):
+  - brown;
+  - **index contours**: every fifth line, heavier, its height in metres written on
+    it, the number's top facing uphill where MapLibre allows;
+  - **intermediate contours**: the four fine lines between, no number;
+  - the interval as on the maps' scales: 100 m at zooms 9–10 (1:250,000), 50 m at
+    11, 20 m at 12–13 (1:50,000; index lines every 100 m), 10 m from 14 (1:25,000).
+- Drawn by the terrain module, "Contour lines" in its group; labels avoid the
+  infrastructure's.
+- Tests: decoding a Terrarium tile (a small fixture), contours of a known cone
+  (rings, heights, index levels), the interval by zoom.
+
+## 5. Supplementary and depression contours (backend)
+
+- **Supplementary contours**: lines at half the interval, kept only where the ground
+  is flat (the slope from the same elevations: regular lines there would be more
+  than about 60–80 px apart on screen), cut where it steepens, short scraps dropped;
+  drawn dashed. Threshold tuned by eye.
+- **Depression contours**: a line's lower side is known from the marching squares'
+  direction; a closed line with its lower side inside is a depression (a doline, a
+  quarry, a crater). Drawn with ticks on its downhill side (an icon along the line,
+  pushed off it: MapLibre turns the offset with the line), index ones too. Seen
+  whole when they fit in the tile and its margin (about a tile wide); bigger ones
+  stay ordinary lines.
+- Tests: a bowl (a depression ring, ticks inward), a plain with a gentle rise
+  (supplementary lines only on the flat).
+
+## 6. Heights on the map
+
+- The height under the cursor in the coordinates box, and in popups ("Elevation
+  312 m"), from the backend's reader.
+- A line-of-sight check between two points, with its profile drawn (the
+  battle-tracking backlog's terrain and line of sight).
 
 ## Next: signal propagation (not built now)
 
 What it needs, and what the steps above already lay down:
 
-- **Terrain**: the elevations of step 4, from the same file (6.6 m: finer than radio
+- **Terrain**: the backend's elevation reader (step 4), from the same file (6.6 m: finer than radio
   models are usually given). Mapterhorn is bare ground (a terrain model), so:
 - **Buildings**: heights from the background map's buildings (Protomaps' `height`
   and `min_height`, already used by the 3D view), or IGN's BD TOPO buildings (a
@@ -152,12 +165,14 @@ What it needs, and what the steps above already lay down:
   style so it can be kept. Fits the big picture's radio emulator.
 - Decisions now that keep this open: lossless elevation tiles (Mapterhorn's are);
   one terrain file for drawing and for computing; the backend reader (step 4) as the
-  only place elevations are read.
+  only place elevations are read in Python.
 
 ## Decided (2026-11-20)
 
 - Detail: zooms 0–13 (France 9.3 GB); no zoom 14.
 - Hill shading over the map and over imagery; over imagery to be judged once seen.
 - 3D: true heights (exaggeration 1).
-- Contour lines: as on US military maps (above).
+- Contour lines: as on US military maps (above), made in the backend as tiles are
+  asked for (not in the browser: the project computes map data before it).
+- Hill shading and 3D relief: MapLibre's own, from the elevation tiles.
 - Terrain isn't an option: it comes with a region's offline maps.

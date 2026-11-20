@@ -34,6 +34,7 @@ from .sources import (
     tile_url,
     worldcover_url,
 )
+from .terrain import command_terrain
 from .tiles import (
     Ring,
     block_count,
@@ -312,6 +313,14 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--area", required=True)
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
 
+    p = sub.add_parser(
+        "terrain",
+        help="an area's terrain (with its background map: for one made before)",
+    )
+    p.add_argument("--area", required=True)
+    p.add_argument("--outline", required=True, help="the area's outline (GeoJSON)")
+    p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
+
     # For the scripts.
     sub.add_parser("sources", help="the aerial photo sources (JSON)")
     p = sub.add_parser("tiers", help="the imagery there is, as VITE_SATELLITE_TIERS")
@@ -334,6 +343,7 @@ def run_command(args) -> None:
         "bdortho": command_bdortho,
         "basemap": command_basemap,
         "zoomed-out": command_zoomed_out,
+        "terrain": command_terrain,
         "sources": command_sources,
         "tiers": command_tiers,
         "summary": command_summary,

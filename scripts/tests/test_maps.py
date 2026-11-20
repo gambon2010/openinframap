@@ -210,7 +210,9 @@ def test_a_background_map_full_detail_with_its_edition(folder, capsys):
     menu(folder, "1\n2\n4\ny\n\n")
     shown = capsys.readouterr().err
     assert "z0–15, 2026-11-10" in shown
-    assert "Background map, France, z0–15 (2026-11-10)" in shown and "5.0 GB" in shown
+    # Its terrain comes with it, in the size too (5 GB and 16,600 km² of terrain).
+    assert "Background map and terrain, France, z0–15 (2026-11-10)" in shown
+    assert "5.3 GB" in shown
     (argv,) = folder["ran"]
     assert argv[:5] == ["basemap", "--area", "france", "--build", "20261110.pmtiles"]
     assert "--outline" in argv
@@ -343,3 +345,22 @@ def test_a_background_map_removed_with_its_buildings_zoomed_out(folder, capsys):
     assert not (folder["dir"] / "france.railways.osm.pbf").exists()
     assert not (folder["dir"] / "france.taxiways.osm.pbf").exists()
     assert not transit.transit_of(folder["dir"], "france").exists()
+
+
+def test_terrain_offered_for_a_background_map_without_it(folder, capsys):
+    background_map(folder, "france", "20261110")
+    for made in (
+        "zoomed-out.pmtiles",
+        "transit.pmtiles",
+        "railways.osm.pbf",
+        "taxiways.osm.pbf",
+    ):
+        (folder["dir"] / f"france.{made}").write_bytes(b"made")
+    menu(folder, "1\n2\n5\ny\n\n")  # Add → France → Terrain (5th)
+    assert "Terrain (contours, shading, 3D; z0–13)" in capsys.readouterr().err
+    (argv,) = folder["ran"]
+    assert argv[:3] == ["terrain", "--area", "france"]
+    assert "--outline" in argv
+    pmtiles(folder["dir"] / "france.terrain.pmtiles", 0, 13)
+    menu(folder, "1\n2\n\n\n")
+    assert "Terrain (contours" not in capsys.readouterr().err
