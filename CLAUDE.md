@@ -33,9 +33,9 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 - **One way for each recurring thing:** clickable areas and lines (`core/map-style.ts`), downloads (`download`/`safely`, `netsafe.py`), Docker calls (`lib/docker.sh`, `offline_maps/docker.py`), panels (`makePanel`), errors.
 - **No debris:** no commented-out code, stale TODOs, debugging `console.log`/`print`, or comments describing behaviour that has changed.
 - **Strict:** no `any` or `@ts-ignore` in fork TypeScript; Python typed; everything CI runs passes (`.github/workflows/fork-tests.yml`: eslint, prettier, tsc on `src/fork`, ruff, mypy, shellcheck, the three test suites).
-- **Errors handled, not swallowed:** catch only what you expect, and say in a comment what happens then; scripts start with `set -euo pipefail`; exit 75/76 for network stops (`lib/net.sh`).
+- **Errors handled, not swallowed:** catch only what you expect, and say in a comment what happens then; scripts start with `set -euo pipefail`; exit 75/76 for network stops (`lib/net.sh`). An error message says what was being done and what to do next.
 - **No secrets or junk in git:** never commit `.env` files, `*.bak`, keys or build output; add files by explicit path. Leftovers on disk (old downloads, Docker images, caches) are reported, never deleted without asking.
-- **Tests:** next to new code (see Commands); remove redundant ones; keep the suites fast.
+- **Tests:** next to new code (see Commands); remove redundant ones; keep the suites fast. Tests follow the same reading rules as code: one idea per test, named for it; the edge values tried (zero, empty, the last one, just past the end). **A bug fixed comes with the test that would have caught it.** A package's behaviour the fork relies on (pmtiles decoding, Turf's earth geometry, contourpy...) has a small test pinning it down, so an upgrade that changes it fails a test, not the map.
 - **Docs current:** they describe what is, not what was (history goes in `docs/HISTORY.md`); no section repeated in two files.
 - **Clean-ups in this order:** tests, then deletions, then merging duplicates, then structure (splits, renames, folders), docs last.
 
@@ -63,6 +63,10 @@ The reader is one person maintaining this project, reading a file cold, months l
 
 - **Name the ideas.** If a block of code does one thing a person would describe in a phrase ("find the tiles that are missing"), make it a function or a named variable with that phrase as its name. Don't leave concepts implicit in inline expressions.
 - **Top-level functions read like a summary.** A main function should be a short list of named steps. Details live one level down.
+- **A file reads top-down.** What it's for first, then its main functions, then the helpers they call, in that order (constants a language needs first excepted).
+- **No true/false parameter that switches what a function does.** Two functions, each named for what it does.
+- **A function either answers or acts.** One that answers a question changes nothing; if one must do both, its name says so (`load_or_create`).
+- **No hidden "call this first".** If B only works after A, B calls A itself, or takes A's result as a parameter; never rely on the caller remembering the order.
 - **One level of thinking per function.** Don't mix the "what" (download the region) with the "how" (retry loops, byte offsets) in the same body.
 - **Limits.** Functions over ~40 lines, nesting deeper than 3 levels, or more than 4 parameters need a reason, or get split.
 - **No dense expressions.** No nested ternaries, no chained comprehensions, no multi-step one-liners. Use intermediate variables with meaningful names.
