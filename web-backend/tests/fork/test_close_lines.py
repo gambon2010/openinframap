@@ -1,11 +1,11 @@
-"""src/fork/background/close_lines.py: lines running close together drawn as one,
+"""src/fork/background_build/close_lines.py: lines running close together drawn as one,
 lines crossing or meeting left whole."""
 
 import numpy as np
 import pytest
 import shapely
 
-from src.fork.background.close_lines import one_line_where_close
+from src.fork.background_build.close_lines import one_line_where_close
 
 
 def run(*lines, distance=10.0):

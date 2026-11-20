@@ -3,7 +3,7 @@
 // tool (a building copied as an area). Every building from zoom 15 (only Protomaps'
 // zoom 15 tiles hold them: below, it merges them into blocks); zoomed out (12 to 14),
 // those big enough to see, in a layer of their own the backend adds to the same tiles
-// (web-backend/src/fork/background/zoomed_buildings.py). A copy takes the whole
+// (web-backend/src/fork/background_build/zoomed_buildings.py). A copy takes the whole
 // outline from the backend (exactOutline): a building can reach tiles not loaded.
 import polygonClipping, { type MultiPolygon, type Polygon } from 'polygon-clipping'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'

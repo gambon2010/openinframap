@@ -3,7 +3,7 @@ Protomaps' daily world build with pmtiles (in Docker) into
 data/offline-maps/<area>.pmtiles, with its manifest (<area>.json: the build it came
 from), then what it leaves out zoomed out, buildings and roads
 (<area>.zoomed-out.pmtiles, zooms 8 to 14, made in the backend's image:
-web-backend/src/fork/background/zoomed_out.py), and its terrain (terrain.py).
+web-backend/src/fork/background_build/zoomed_out.py), and its terrain (terrain.py).
 The backend serves them all together (web-backend/src/fork/background/).
 Full detail only."""
 

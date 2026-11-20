@@ -1,7 +1,7 @@
 """Fork: offline maps. An area's railway lines, cut out of its OpenStreetMap extract
 (osm_extract.py) into <area>.railways.osm.pbf beside its background map. The
 backend's zoomed out build ranks them (main, branch...) and draws them
-(web-backend/src/fork/background/zoomed_railways.py): the background map's own
+(web-backend/src/fork/background_build/zoomed_railways.py): the background map's own
 railways can't tell a main line from a branch line, and start at zoom 11. With the
 tram, metro and light rail routes (ROUTES): each line's letter and colour."""
 

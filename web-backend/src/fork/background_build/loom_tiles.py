@@ -11,7 +11,7 @@ railways file, widened, cut each piece; widened as far as LOOM spreads a bundle 
 lanes at each zoom, or the outer lanes would come out above ground). Beside them
 the lines' stops (line_stops.py), shown when a line is highlighted.
 
-    python -m src.fork.background.loom_tiles --area AREA [--folder DIR]
+    python -m src.fork.background_build.loom_tiles --area AREA [--folder DIR]
 """
 
 from __future__ import annotations
@@ -30,11 +30,11 @@ import shapely
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
 
-from . import OFFLINE_MAPS_DIR
+from ..background import OFFLINE_MAPS_DIR
 from .line_stops import STOPS_LAYER, StopIndex, stops
 from .loom_input import lines_in, work_of
 from .tiles import EXTENT, HALF, in_tile_units, map_units, tile_bounds, zipped
-from .transit import TRANSIT
+from ..background.transit import TRANSIT
 from .transit_lines import TRANSIT_KINDS
 from .zoomed_railways import mercator, source_of
 

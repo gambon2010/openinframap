@@ -1,7 +1,7 @@
-"""src/fork/background/transit_lines.py: tram and metro lines from OpenStreetMap's
+"""src/fork/background_build/transit_lines.py: tram and metro lines from OpenStreetMap's
 routes."""
 
-from src.fork.background import transit_lines as tl
+from src.fork.background_build import transit_lines as tl
 
 
 def test_a_route_is_a_line_with_its_colour_or_one_picked_by_its_name():

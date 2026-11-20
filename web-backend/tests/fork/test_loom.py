@@ -1,4 +1,4 @@
-"""src/fork/background/loom_input.py and loom_tiles.py: the trams and metro as
+"""src/fork/background_build/loom_input.py and loom_tiles.py: the trams and metro as
 LOOM's input (a graph per network), and LOOM's tiles packed for the map."""
 
 import gzip
@@ -6,8 +6,8 @@ import gzip
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import shapely
 
-from src.fork.background import line_stops, loom_input, loom_tiles
-from src.fork.background.tiles import tile_bounds
+from src.fork.background_build import line_stops, loom_input, loom_tiles
+from src.fork.background_build.tiles import tile_bounds
 
 OSM = """<?xml version="1.0" encoding="UTF-8"?>
 <osm version="0.6">

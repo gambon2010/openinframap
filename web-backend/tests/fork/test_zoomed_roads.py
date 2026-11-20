@@ -1,4 +1,4 @@
-"""src/fork/background/zoomed_roads.py (with zoomed_out.py): the roads zoomed out
+"""src/fork/background_build/zoomed_roads.py (with zoomed_out.py): the roads zoomed out
 (zooms 8 to 13), copied down from a background map's zoom 15 tiles, with what
 Protomaps drops there (tunnel marks, small roads, paths, some big roads); in the
 same tiles as the railways."""
@@ -11,9 +11,10 @@ import osmium  # type: ignore[import-untyped]
 import pytest
 import shapely
 
-from src.fork.background import Archive, beyond_area, zoomed_out
-from src.fork.background import zoomed_railways
-from src.fork.background import zoomed_roads as zr
+from src.fork.background import Archive
+from src.fork.background_build import beyond_area, zoomed_out
+from src.fork.background_build import zoomed_railways
+from src.fork.background_build import zoomed_roads as zr
 from tests.fork.test_background import make
 
 # Two zoom 15 tiles side by side in Paris.

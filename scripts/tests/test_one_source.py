@@ -56,7 +56,7 @@ def test_the_zoomed_out_companion_is_named_and_zoomed_alike():
         ROOT / "web-backend" / "src" / "fork" / "background" / "__init__.py"
     ).read_text()
     made = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "zoomed_out.py"
+        ROOT / "web-backend" / "src" / "fork" / "background_build" / "zoomed_out.py"
     ).read_text()
     assert f'COMPANION = "{extract.ZOOMED_OUT}"' in backend
     assert f"FULL_ZOOM = {extract.FULL_ZOOM}" in made
@@ -66,13 +66,13 @@ def test_the_railways_are_named_and_kinded_alike():
     from offline_maps import railways, regions
 
     made = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "zoomed_railways.py"
+        ROOT / "web-backend" / "src" / "fork" / "background_build" / "zoomed_railways.py"
     ).read_text()
     assert f'f"{{background_map.stem}}{railways.RAILWAYS}"' in made
     kinds = re.search(r"KINDS = \{([^}]*)\}", made)[1]
     assert sorted(re.findall(r'"(\w+)"', kinds)) == sorted(railways.KINDS)
     lines = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "transit_lines.py"
+        ROOT / "web-backend" / "src" / "fork" / "background_build" / "transit_lines.py"
     ).read_text()
     transit = re.search(r"TRANSIT_KINDS = \(([^)]*)\)", lines)[1]
     assert re.findall(r'"(\w+)"', transit) == list(railways.ROUTES)
@@ -82,7 +82,7 @@ def test_the_railways_are_named_and_kinded_alike():
     frontend = re.search(r"TRANSIT_KINDS = \[([^\]]*)\]", roads)[1]
     assert re.findall(r"'(\w+)'", frontend) == list(railways.ROUTES)
     tiles = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "loom_tiles.py"
+        ROOT / "web-backend" / "src" / "fork" / "background_build" / "loom_tiles.py"
     ).read_text()
     lanes = (
         ROOT / "web" / "src" / "fork" / "modules" / "roads" / "lane-layers.ts"
@@ -103,7 +103,7 @@ def test_the_railways_are_named_and_kinded_alike():
     assert float(width) == 2 * transit.LOOM_LINE_WIDTH / 10
     assert f"LANES_TO = {transit.LOOM_ZOOMS[-1]}" in lanes
     stops = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "line_stops.py"
+        ROOT / "web-backend" / "src" / "fork" / "background_build" / "line_stops.py"
     ).read_text()
     highlight = (
         ROOT / "web" / "src" / "fork" / "modules" / "roads" / "lane-highlight.ts"
@@ -113,7 +113,7 @@ def test_the_railways_are_named_and_kinded_alike():
     from offline_maps import taxiways
 
     lead_ins = (
-        ROOT / "web-backend" / "src" / "fork" / "background" / "stand_lead_ins.py"
+        ROOT / "web-backend" / "src" / "fork" / "background_build" / "stand_lead_ins.py"
     ).read_text()
     assert f'TAXIWAYS = "{taxiways.TAXIWAYS}"' in lead_ins
     shell = (ROOT / "scripts" / "lib" / "geofabrik.sh").read_text()

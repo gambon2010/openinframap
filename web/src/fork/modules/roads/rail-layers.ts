@@ -1,5 +1,5 @@
 // Fork: the railways, trams and metro (modules/roads), from a layer of the background
-// map's tiles the backend adds (web-backend/src/fork/background/zoomed_railways.py:
+// map's tiles the backend adds (web-backend/src/fork/background_build/zoomed_railways.py:
 // ranked from OpenStreetMap's tags, close tracks drawn as one). Railways: a line with
 // white dashes, one set of layers per rank (main lines drawn over the others), so the
 // key can hide each. Trams, metro and light rail zoomed out: a plain line, one set
@@ -14,7 +14,7 @@ export const RAILWAYS_PREFIX = 'railways_'
 export const TRANSIT_PREFIX = 'transit_'
 export const RAILWAYS_LAYER = 'railways'
 /** Trams, metro and light rail: drawn apart from the railways (the backend's
- * TRANSIT_KINDS, web-backend/src/fork/background/transit_lines.py; the background
+ * TRANSIT_KINDS, web-backend/src/fork/background_build/transit_lines.py; the background
  * map's own rail lines say the same in kind_detail). */
 export const TRANSIT_KINDS = ['tram', 'subway', 'light_rail']
 

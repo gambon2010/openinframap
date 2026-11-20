@@ -1215,6 +1215,11 @@ default). Counts are France's OSM data in October 2026.
 - **One way to declare the scripts' packages:** `extra_data.py` and `fetch_images.py`
   lost their inline metadata; their packages (httpx, psycopg2) are in
   `scripts/pyproject.toml` and they run through `scripts_python` too.
+- **The background map's build steps apart from its serving:** what's made once after a
+  download (the zoomed-out companion, LOOM's tram lanes, their tile geometry) moved
+  from `background/` to `background_build/`; `background/` keeps what answers
+  requests (the tiles, the tram lanes, building outlines). They still run in the
+  backend's image (shapely, osmium), now as `python -m src.fork.background_build.<module>`.
 
 ## Extra data (not from OpenStreetMap)
 

@@ -13,7 +13,7 @@ One graph per network (tracks within NETWORK_GAP_M of each other: a city's trams
 its metro), each in a file of its own: LOOM takes seconds on a city and far longer
 than a whole country's networks one by one on all of them at once.
 
-    python -m src.fork.background.loom_input --area AREA [--folder DIR]
+    python -m src.fork.background_build.loom_input --area AREA [--folder DIR]
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import numpy as np
 import osmium  # type: ignore[import-untyped]
 import shapely
 
-from . import OFFLINE_MAPS_DIR
+from ..background import OFFLINE_MAPS_DIR
 from .tiles import map_units
 from .transit_lines import TRANSIT_KINDS, Line, in_order, line_of
 from .zoomed_railways import mercator, source_of

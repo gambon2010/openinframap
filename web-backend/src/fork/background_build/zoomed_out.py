@@ -18,7 +18,7 @@ each tile decoded once, only its buildings and roads: the block's buildings tile
 8 and 9 come back simplified; at the end, their tiles and the railways' (a zoom
 per task) are made side by side in the same workers.
 
-    python -m src.fork.background.zoomed_out [--area AREA] [--folder DIR]
+    python -m src.fork.background_build.zoomed_out [--area AREA] [--folder DIR]
 
 Without --area: every background map with zoom 15 whose companion is missing or
 older than it. scripts/offline_maps/extract.py runs it after a download.
@@ -42,7 +42,7 @@ from pmtiles.tile import Compression, TileType, tileid_to_zxy, zxy_to_tileid
 from pmtiles.writer import Writer
 
 from ..pmtiles_files import Archive
-from . import OFFLINE_MAPS_DIR, companion_of, is_background_map, mvt, unzipped
+from ..background import OFFLINE_MAPS_DIR, companion_of, is_background_map, mvt, unzipped
 from . import beyond_area, stand_lead_ins
 from . import zoomed_buildings as buildings
 from . import zoomed_railways as railways

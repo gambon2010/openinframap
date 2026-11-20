@@ -1,4 +1,4 @@
-"""src/fork/background/zoomed_buildings.py and zoomed_out.py: the buildings zoomed
+"""src/fork/background_build/zoomed_buildings.py and zoomed_out.py: the buildings zoomed
 out (zooms 12 to 14), made from a background map's zoom 15 tiles into its companion,
 <area>.zoomed-out.pmtiles."""
 
@@ -11,9 +11,9 @@ import shapely
 from pmtiles.tile import zxy_to_tileid
 
 from src.fork.background import Archive, companion_of
-from src.fork.background import zoomed_buildings as zb
-from src.fork.background import zoomed_out
-from src.fork.background.tiles import EXTENT, drawable, ground_stretch, tile_bounds
+from src.fork.background_build import zoomed_buildings as zb
+from src.fork.background_build import zoomed_out
+from src.fork.background_build.tiles import EXTENT, drawable, ground_stretch, tile_bounds
 from tests.fork.test_background import make
 
 # Two zoom 15 tiles side by side in Paris, in one zoom 12 block.

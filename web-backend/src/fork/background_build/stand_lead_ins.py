@@ -29,7 +29,7 @@ import osmium  # type: ignore[import-untyped]
 import shapely
 from pmtiles.tile import zxy_to_tileid
 
-from . import mvt, unzipped
+from ..background import mvt, unzipped
 from .tiles import HALF, map_units, tile_bounds, zipped
 from .zoomed_railways import mercator
 

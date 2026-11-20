@@ -237,27 +237,29 @@ every route but logging in needs a session):
 - `pmtiles_files.py` (the PMTiles files served from `data/offline-maps/`: a file open,
   its index cached, `Archive`; the files of one kind in the folder, opened again when
   they change, `ArchiveFolder`: the background maps, the trams' lanes, the terrain);
-- `background/` (the background map's tiles, `/background/{z}/{x}/{y}.mvt`: each from
-  the first `data/offline-maps/<area>.pmtiles` that has it, so several areas show together;
-  at zooms 8 to 14 with the area's `<area>.zoomed-out.pmtiles` tile appended, its
-  roads replacing the background map's (`mvt.py`: a tile's layers, undecoded);
-  satellite imagery is the `satellite` service's; `zoomed_out.py`, a build step run
-  after each download, from the zoom 15 tiles: the buildings big enough to see at
-  zooms 12 to 14 (`zoomed_buildings.py`) and the roads at zooms 8 to 13 with what
-  Protomaps drops there, tunnel marks, small roads, paths (`zoomed_roads.py`), and the
-  railways at zooms 6 to 15, ranked from `<area>.railways.osm.pbf` (`zoomed_railways.py`);
-  airports' stand lead-ins (mapped as taxiways) left out of the roads, at zooms 14
-  and 15 by a cleaned roads layer for their tiles (`stand_lead_ins.py`, from
-  `<area>.taxiways.osm.pbf`);
-  roads drawn as Planetiler draws them (snapped, joined, no carriageway merging) and,
-  in tiles across the area's edge, the background map's own roads beyond it
-  (`beyond_area.py`); close tracks drawn as one zoomed out (`close_lines.py`); the
-  trams' and metros' lanes, LOOM's (tools/loom, run by scripts/offline_maps/transit.py):
-  its input, a graph per network, the lines from the routes (`loom_input.py`,
-  `transit_lines.py`), its tiles packed into `<area>.transit.pmtiles` with tunnels
-  marked (`loom_tiles.py`) and each line's stops (`line_stops.py`), served at `/background/transit` (`transit.py`);
-  `tiles.py` their tile geometry; `buildings.py`, a building's whole outline from the
-  zoom 15 tiles, `/background/building/{id}`, for copies);
+- `background/` (serving: the background map's tiles, `/background/{z}/{x}/{y}.mvt`:
+  each from the first `data/offline-maps/<area>.pmtiles` that has it, so several areas
+  show together; at zooms 6 to 15 with the area's `<area>.zoomed-out.pmtiles` tile
+  appended, its roads replacing the background map's (`mvt.py`: a tile's layers,
+  undecoded); the trams' and metros' lanes at `/background/transit` (`transit.py`);
+  `buildings.py`, a building's whole outline from the zoom 15 tiles,
+  `/background/building/{id}`, for copies; satellite imagery is the `satellite`
+  service's);
+- `background_build/` (made once after a download, not served: run by
+  scripts/offline_maps/ in the backend's image, `python -m
+  src.fork.background_build.<module>`): `zoomed_out.py`, from the zoom 15 tiles, the
+  buildings big enough to see at zooms 12 to 14 (`zoomed_buildings.py`), the roads at
+  zooms 8 to 13 with what Protomaps drops there, tunnel marks, small roads, paths
+  (`zoomed_roads.py`; drawn as Planetiler draws them; in tiles across the area's edge
+  the background map's own roads beyond it, `beyond_area.py`; airports' stand
+  lead-ins left out at zooms 14 and 15, `stand_lead_ins.py`, from
+  `<area>.taxiways.osm.pbf`), and the railways at zooms 6 to 15, ranked from
+  `<area>.railways.osm.pbf` (`zoomed_railways.py`; close tracks as one zoomed out,
+  `close_lines.py`); the trams' and metros' lanes, LOOM's (tools/loom, run by
+  scripts/offline_maps/transit.py): its input, a graph per network, the lines from the
+  routes (`loom_input.py`, `transit_lines.py`), its tiles packed into
+  `<area>.transit.pmtiles` with tunnels marked (`loom_tiles.py`) and each line's stops
+  (`line_stops.py`); `tiles.py` their tile geometry);
 - `terrain/` (the terrain's elevation tiles, `/terrain/{z}/{x}/{y}.webp`: each from the
   first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
   `elevations.py`, the one reader of heights: Terrarium tiles decoded, a tile's

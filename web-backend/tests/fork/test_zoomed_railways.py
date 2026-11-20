@@ -1,12 +1,12 @@
-"""src/fork/background/zoomed_railways.py: the railways zoomed out, ranked from
+"""src/fork/background_build/zoomed_railways.py: the railways zoomed out, ranked from
 OpenStreetMap's tags, close tracks drawn as one."""
 
 import numpy as np
 import pytest
 import shapely
 
-from src.fork.background import zoomed_railways as zr
-from src.fork.background.tiles import PIXELS, tile_size
+from src.fork.background_build import zoomed_railways as zr
+from src.fork.background_build.tiles import PIXELS, tile_size
 
 OSM = """<?xml version="1.0" encoding="UTF-8"?>
 <osm version="0.6">

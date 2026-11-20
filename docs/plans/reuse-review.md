@@ -52,10 +52,10 @@ known problem with code of our own, what exists, and what was decided (looked at
   same cells as points, then grouping by geometry); Supercluster is MapLibre's
   browser-side, hierarchical clustering of GeoJSON, and nothing keeps our per-kind
   counts (the key's hiding needs them).
-- **Railways close together drawn as one** (`background/close_lines.py`): Planetiler's
+- **Railways close together drawn as one** (`background_build/close_lines.py`): Planetiler's
   `FeatureMerge.mergeLineStrings` joins lines end to end, not side by side; nothing
   found collapses parallel tracks. Noted in its docstring.
-- **Buildings zoomed out** (`background/zoomed_buildings.py`): we keep each building
+- **Buildings zoomed out** (`background_build/zoomed_buildings.py`): we keep each building
   big enough to see (Planetiler's minimum pixel size, as an area); Planetiler's
   `mergeNearbyPolygons` merges buildings into blocks, what the background map's own
   tiles already do and what this replaces. Cited in the code.
