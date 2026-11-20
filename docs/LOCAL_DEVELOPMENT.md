@@ -596,7 +596,8 @@ database work running):
 
 ```bash
 (echo "DROP MATERIALIZED VIEW IF EXISTS search_feature;"; cat schema/fork/site-rules.sql \
-  schema/fork/site-overrides.sql schema/fork/sites.sql schema/fork/search.sql) \
+  schema/fork/site-overrides.sql schema/fork/site-kinds.sql schema/fork/sites.sql \
+  schema/fork/site-points.sql schema/fork/search.sql) \
   | docker compose exec -T db psql -U osm -d osm -q -v ON_ERROR_STOP=1
 bash -c 'source scripts/lib/common.sh && source scripts/lib/docker.sh && up_services --force-recreate tegola'
 ```

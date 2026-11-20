@@ -304,7 +304,7 @@ the schema fingerprint builds and exports carry.
   `oim_units`, `oim_max_stretch`, `oim_ground_area`), `places.sql`, `site-rules.sql`
   (`military_name_rule`: what a military site's name says it is, a row per language
   and kind), `site-overrides.sql` (`site_override`: kinds set by hand, by OSM id and
-  name, with why), `sites.sql` (`site_feature`, `site_points`; reads the two before), `grid.sql` (`grid_node` / `grid_edge`, used by
+  name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-points.sql` (`site_points`, grouped zoomed out), `grid.sql` (`grid_node` / `grid_edge`, used by
   `/grid/route` and `/grid/line`), `tower-numbers.sql`, `extra.sql` (the `extra`
   schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
   `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered

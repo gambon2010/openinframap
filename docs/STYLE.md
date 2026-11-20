@@ -55,7 +55,7 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   was unticked).
 - **A kind in a colour of its own within its category** (disused military and former
   airfields, grey among the military's green) is grouped apart zoomed out, in discs
-  of its colour (`GROUP_COLOURS`, `KIND_GROUPS`, `site_group` in `sites.sql`), so its
+  of its colour (`GROUP_COLOURS`, `KIND_GROUPS`, `site_group` in `site-points.sql`), so its
   discs never hide in the category's.
 - **A kind with no key row of its own** (closed airfields, a grey icon) is shown and
   hidden by another kind's row (the open airfields': `KEY_ROW_OF`); that row hides

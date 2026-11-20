@@ -1,4 +1,4 @@
--- Fork: what a military site's name says it is (sites.sql's military_kind). OSM's
+-- Fork: what a military site's name says it is (site-kinds.sql's military_kind). OSM's
 -- tags often say no more than "military area" (landuse=military); the name says
 -- "Dépôt de munitions", "Champ de tir", "Station radar". Each row is a pattern (a
 -- case-insensitive Postgres regular expression: \m and \M mark a word's start and
@@ -18,7 +18,7 @@
 -- Loges, des Matelots, de Sainte-Marthe, barracks and staffs).
 --
 -- To add a word or a language: a row (or an alternative in a row's pattern) with
--- the kind it means. Safe to run more than once; sites.sql reads it, so run sites.sql
+-- the kind it means. Safe to run more than once; site-kinds.sql reads it, so run the site files
 -- after changing it (a database rebuild does both).
 CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, language, pattern) AS VALUES
     -- Not military: clubs mapped as military ranges.
@@ -45,7 +45,7 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     -- Military airfields: air bases ("BA 105"), the Navy's air stations, army
     -- aviation, the air force's flying units (before schools' camps and ranges: an
     -- "Escadron de transport et d'entraînement" flies). The aerodromes themselves:
-    -- sites.sql's site_kind.
+    -- site-kinds.sql's site_kind.
     (36, 'military_airfield', false, 'fr', 'base a[ée]rienne|\mBA ?[0-9]|a[ée]ronautique navale|a[ée]ronavale|\mBAN\M|escadre|escadrille|flottille|escadrons? (de chasse|de transport|de transformation|de soutien technique a[ée]ronautique|d.h[ée]licopt|de ravitaillement|de d[ée]tection|de drones|de reconnaissance|de transit)|\mRHC\M|r[ée]giment d.h[ée]licopt|\mALAT\M|aviation l[ée]g[èe]re|avions de l.arm[ée]e|h[ée]liport militaire|h[ée]listation|a[ée]rodrome|terrain d.aviation|commandos? (parachutistes? )?de l.air|artillerie de l.air|groupement a[ée]rien'),
     (36, 'military_airfield', false, 'de', 'fliegerhorst|flugplatz|heeresflieger|marineflieger'),
     (36, 'military_airfield', false, 'en', 'air ?base|air station|airfield|\mRAF\M'),

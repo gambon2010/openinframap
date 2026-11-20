@@ -2,7 +2,7 @@
 -- astray (a fort still used by the army but tagged historic). Each row: the OSM id
 -- (imposm's: a relation's negative), the name it has in OSM (the override holds only
 -- while it matches: renamed in OSM, it's looked at again), the kind it is (one of
--- sites.sql's kinds; its site_kind's NULL can't be given), the date, and why.
+-- site-kinds.sql's kinds; its site_kind's NULL can't be given), the date, and why.
 -- What's inside one inherits from it as from any military site (sites.sql).
 --
 -- Safe to run more than once; sites.sql reads it, so run sites.sql after changing it

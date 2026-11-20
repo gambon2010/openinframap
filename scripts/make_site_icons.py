@@ -6,7 +6,7 @@ circle ringed in its category's colour, and a plain disc per category for groups
     npm pack @mapbox/maki@8.2.0 && tar xzf mapbox-maki-8.2.0.tgz
     python3 scripts/make_site_icons.py package/icons
 
-Kinds and categories are those of schema/fork/sites.sql (and oil_facility, Oil & Natural Gas's); the colours must match
+Kinds and categories are those of schema/fork/site-kinds.sql (and oil_facility, Oil & Natural Gas's); the colours must match
 web/src/fork/modules/sites/style.ts.
 """
 
@@ -26,7 +26,7 @@ COLOURS = {
     "transport": "#455A64",
     "military": "#2E7D32",
     # A group of kinds' colour within its category, grouped apart (grey among the
-    # military: modules/sites/style.ts GROUP_COLOURS, sites.sql's site_group).
+    # military: modules/sites/style.ts GROUP_COLOURS, site-points.sql's site_group).
     "military_disused": "#8D8D8D",
     "food": "#795548",
     "water_waste": "#00838F",

@@ -41,7 +41,7 @@ known problem with code of our own, what exists, and what was decided (looked at
   ms for ours, warm, on France's background map. Ours uses the package's own
   decoding functions (`deserialize_directory`, `find_tile`); only the cache is ours.
   Noted in `Archive`'s docstring.
-- **Grouping nearby sites** (`schema/fork/sites.sql`, `site_points`): integer grid
+- **Grouping nearby sites** (`schema/fork/site-points.sql`, `site_points`): integer grid
   cells per tile are the standard grid clustering (`ST_SnapToGrid` would give the
   same cells as points, then grouping by geometry); Supercluster is MapLibre's
   browser-side, hierarchical clustering of GeoJSON, and nothing keeps our per-kind

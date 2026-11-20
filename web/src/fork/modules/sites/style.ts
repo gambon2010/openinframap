@@ -36,7 +36,7 @@ export const site_colours: { [category: string]: string } = {
   water_waste: '#00838F'
 }
 
-// category -> kinds (schema/fork/sites.sql), in the order the key lists them. A kind
+// category -> kinds (schema/fork/site-kinds.sql), in the order the key lists them. A kind
 // listed under two categories (military airfields: Transport and Military) has one
 // tick box in both sections and is drawn by both categories' layers (shared_kinds).
 export const site_kinds: { [category: string]: string[] } = {
@@ -213,7 +213,7 @@ const site_icon: ExpressionSpecification = [
 ] as unknown as ExpressionSpecification
 
 /** Groups of kinds drawn in a colour of their own within their category, and
- * grouped apart (site_group in schema/fork/sites.sql): disused military grey among
+ * grouped apart (site_group in schema/fork/site-points.sql): disused military grey among
  * the military's green (their icons too: scripts/make_site_icons.py). */
 const GROUP_COLOURS: { [group: string]: string } = { military_disused: '#8D8D8D' }
 
@@ -315,7 +315,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       }
     },
     // Icons, all shown (overlapping if need be): below zoom 14, nearby sites of the
-    // same category come as one group (site_points in schema/fork/sites.sql), drawn by
+    // same category come as one group (site_points in schema/fork/site-points.sql), drawn by
     // the _group layer. Important sites are larger and labelled; the rest are
     // labelled from zoom 15.
     {
