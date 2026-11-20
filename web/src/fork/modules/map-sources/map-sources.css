@@ -50,18 +50,18 @@
 }
 
 .oim-map-sources-status.ok {
-  color: #1b7a33;
+  color: var(--oim-success);
 }
 
 .oim-map-sources-status.error {
-  color: #b3261e;
+  color: var(--oim-error);
 }
 
 .oim-map-sources-link {
   border: 0;
   padding: 0;
   background: transparent;
-  color: #1a5fb4;
+  color: var(--oim-link);
   cursor: pointer;
   font-size: 0.85rem;
   text-decoration: underline;

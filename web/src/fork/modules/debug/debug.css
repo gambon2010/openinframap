@@ -9,10 +9,10 @@
   box-sizing: border-box;
   width: 360px;
   padding: 6px 8px;
-  border-radius: var(--oim-radius-small, 4px);
-  background: rgba(20, 20, 30, 0.82);
-  color: #f2f2f2;
-  font-family: var(--oim-font-family-monospace, monospace);
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-overlay-background);
+  color: var(--oim-overlay-text);
+  font-family: var(--oim-font-family-monospace);
   font-size: 11px;
   line-height: 1.35;
   pointer-events: none;
@@ -27,7 +27,7 @@
   display: block;
 }
 .oim-debug b {
-  color: #ffd600;
+  color: var(--oim-overlay-accent);
   font-weight: normal;
 }
 .oim-debug-feature {

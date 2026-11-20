@@ -5,12 +5,12 @@
   display: none;
   max-width: 280px;
   padding: 4px 8px;
-  border-radius: var(--oim-radius-small, 3px);
-  background: #222;
-  color: #fff;
-  font:
-    12px/1.4 system-ui,
-    sans-serif;
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-overlay-background);
+  color: var(--oim-overlay-text);
+  font-family: var(--oim-font-family);
+  font-size: 12px;
+  line-height: 1.4;
   white-space: pre-line;
   pointer-events: none;
 }

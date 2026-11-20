@@ -18,7 +18,7 @@
   right: 34px;
   top: 4px;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--oim-radius-small);
   padding: 3px 8px;
   background-color: var(--oim-grey);
   cursor: pointer;

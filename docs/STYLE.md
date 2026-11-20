@@ -23,8 +23,13 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 
 - **Colours and sizes:** the tokens in `web/src/index.css` (`--oim-content-background`,
   `--oim-light-grey`, `--oim-grey`, `--oim-text-color`, `--oim-text-color-light`,
-  `--oim-radius-large`, `--oim-radius-small`, `--oim-drop-shadow`). No other
-  greys, radii or shadows.
+  `--oim-radius-large`, `--oim-radius-small`, `--oim-drop-shadow`), and the fork's
+  own where upstream has none (`ui/panel.css`): `--oim-error`, `--oim-success`,
+  `--oim-link`, `--oim-warning-background`, `--oim-note-accent` (a note's edge,
+  as on extra data's notices), `--oim-on-background`, and for the dark overlays
+  (the tooltip, the debug box: dark, as tooltips are) `--oim-overlay-background`,
+  `--oim-overlay-text`, `--oim-overlay-accent`. No other colours, greys, radii or
+  shadows in panels and controls.
 - **A panel:** `makePanel` (`ui/panel.ts`) for docked and floating panels. The
   left column's side panels (`ui/details.ts`) match it (`ui/details.css`): white
   body, large radius, drop shadow, 330–340 px wide, scrolling inside.

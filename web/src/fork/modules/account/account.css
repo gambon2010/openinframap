@@ -37,7 +37,7 @@
 }
 
 .oim-accounts-error {
-  color: #c92a2a;
+  color: var(--oim-error);
 }
 
 .oim-accounts-error:empty {
