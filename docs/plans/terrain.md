@@ -53,12 +53,15 @@ Copernicus GLO-30 direct (30 m, already inside the planet file); AWS Terrain Til
 - A source file `scripts/offline_maps/sources/mapterhorn.py`: a new layer "terrain"
   (beside overview, regional, detailed, basemap), fetched as "extract" like the
   background map: the area's box cut out of `planet.pmtiles` (zooms 0–12) and of
-  each zoom 6 file it touches (13, and 14 if asked), merged (`pmtiles merge`) into
+  each zoom 6 file it touches (13), merged (`pmtiles merge`) into
   `data/offline-maps/<area>.terrain-mapterhorn.pmtiles`. Sizes from the table
   (measured per km², like the other sources), md5 from `download_urls.json`.
-- `scripts/offline-maps.sh`'s menu gets "Terrain (contours, shading, 3D)", zooms 0
-  to 13 (its size shown); resumed and checked like the others; the inventory lists
-  it.
+- Not an option (the owner, 2026-11-20): downloading a region's offline maps
+  downloads its terrain too, always, zooms 0 to 13. It comes with the region's
+  background map (`build-region.sh`'s `--basemap full`, the offline maps menu's
+  background map step): no menu line or question of its own; its size is added to
+  the background map's in the estimates. Resumed and checked like the others; the
+  inventory lists it.
 - Served by the `pmtiles serve` service that serves the imagery (same folder, same
   URL scheme): no new container. (Its name, `satellite`, then says less than it
   serves: renaming it is a clean-up to report, not part of this.)
@@ -80,11 +83,21 @@ A module `web/src/fork/modules/terrain/`, its look written in `docs/STYLE.md` fi
   roads, buildings, labels and the infrastructure; over the map and over imagery
   alike (its own strength for each); whether it stays over imagery, the owner
   decides after seeing it. Light and bold looks.
-- **Contour lines**: thin brown lines, every fifth thicker with its height in metres
-  along it. The height between two lines (the interval) grows as the map zooms out,
-  so lines never crowd (to tune by eye): 100 m at zoom 9–10, 50 m at 11, 20 m at 12,
-  10 m at 13, 5 m from 14 (the thick ones 5 times that). Labels avoid the
-  infrastructure's.
+- **Contour lines, as on US military maps** (FM 3-25.26 / TC 3-25.26, Map Reading
+  and Land Navigation, ch. 10; the US Army's 1:50,000 topographic line maps):
+  - brown;
+  - **index contours**: every fifth line, heavier, its height written on it
+    (metres), the number's top facing uphill where MapLibre allows;
+  - **intermediate contours**: the four fine lines between, no number;
+  - the interval (height between two lines) as on the maps' scales: 20 m around
+    zoom 12–13 (the 1:50,000 sheets' usual interval; index lines every 100 m), 10 m
+    from zoom 14 (1:25,000), 50 m at zoom 11, 100 m at zooms 9–10 (1:250,000);
+  - **supplementary contours** (dashed, half the interval, for flat ground) and
+    **depression contours** (closed lines with ticks pointing downhill): wanted
+    too, but maplibre-contour draws neither; dashed half-interval lines from zoom 14
+    are easy, depressions would need the lines' direction (a later step, possibly
+    in the backend);
+  - labels avoid the infrastructure's.
 - The layer switcher: a "Terrain" group, "Hill shading" and "Contour lines", each
   its own entry (remembered as the others). Greyed out with a hint where no terrain
   file covers the view (as imagery does).
@@ -146,4 +159,5 @@ What it needs, and what the steps above already lay down:
 - Detail: zooms 0–13 (France 9.3 GB); no zoom 14.
 - Hill shading over the map and over imagery; over imagery to be judged once seen.
 - 3D: true heights (exaggeration 1).
-- Contour intervals: as above, to tune by eye.
+- Contour lines: as on US military maps (above).
+- Terrain isn't an option: it comes with a region's offline maps.
