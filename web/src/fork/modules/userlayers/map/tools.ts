@@ -103,8 +103,8 @@ export class Tools implements ToolsContext {
     this.tool = tool
     this.message = message
     this.hint = message
-    this.renderer.draft([], false)
-    this.renderer.graphicDraft(null)
+    this.renderer.drafts.draft([], false)
+    this.renderer.drafts.graphicDraft(null)
     drawGhost(this, null)
     // A tool other than select has the map (another one, like measuring, stops);
     // when it's taken back (Esc, measuring started), select again.

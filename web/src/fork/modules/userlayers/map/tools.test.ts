@@ -50,10 +50,12 @@ class FakeMap {
 
 function fakeRenderer() {
   return {
-    draft: vi.fn(),
-    graphicDraft: vi.fn(),
-    ghost: vi.fn(async () => {}),
-    measureDraft: vi.fn(),
+    drafts: {
+      draft: vi.fn(),
+      graphicDraft: vi.fn(),
+      ghost: vi.fn(async () => {}),
+      measureDraft: vi.fn()
+    },
     preview: vi.fn(),
     select: vi.fn(),
     selectAll: vi.fn(),

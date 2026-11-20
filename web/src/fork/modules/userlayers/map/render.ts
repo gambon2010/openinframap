@@ -8,37 +8,18 @@
 // zoom changes (arrow heads and teeth depend on the scale).
 import { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
-import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
+import { UserFeature, UserLayer } from '../model/model.ts'
 import { getLabelLevel } from './symbols.ts'
-import { isDirection } from '../graphics/variants.ts'
 import { ensureImage, iconName } from './icons.ts'
-import { Measurement } from '../measure/features.types.ts'
-import { measurementFeatures, measurementOf } from '../measure/features.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
-import {
-  DEFAULT_OBSERVER,
-  DEFAULT_TARGET,
-  HIDDEN_COLOUR,
-  SEEN_COLOUR,
-  fetchSight,
-  sightKey,
-  sightStretches,
-  type SightResult
-} from '../measure/sight.ts'
-import {
-  axisControlPoints,
-  axisWidth,
-  graphicsLibrary,
-  mapScale,
-  renderGraphic,
-  squareUp
-} from '../graphics/graphics.ts'
-import { modifiersToDraw } from '../model/fields.ts'
+import { MeasureDrawer, type MeasureView } from './render-measures.ts'
+import { graphicFeatures, type GraphicsView } from './render-graphics.ts'
+import { Drafts } from './drafts.ts'
+import { graphicsLibrary, mapScale } from '../graphics/graphics.ts'
 import { pointOf } from '../model/shapes.ts'
-import { DRAFT, GHOST, GRAPHIC_DRAFT, OUTLINE_PAD_PX, SELECTION } from './render.constants.ts'
-import { GraphicDraft, IconBox } from './render.types.ts'
+import { DRAFT, GHOST, OUTLINE_PAD_PX, SELECTION } from './render.constants.ts'
+import { IconBox } from './render.types.ts'
 import {
-  controlPoints,
   glows,
   isGraphic,
   isMeasure,
@@ -50,7 +31,6 @@ import {
 import {
   copyLayers,
   graphicLayers,
-  graphicSpecs,
   graphicsSourceId,
   highlightFilter,
   measureLayers,
@@ -84,9 +64,10 @@ export class Renderer {
   private last: { layers: Map<string, UserLayer>; hidden: Set<string> } | null = null
   /** Items in conflict (store.conflicts), drawn with an orange dashed ring. */
   conflicted = new Set<string>()
-  /** Lines of sight's answers by their points and heights (sightKey); null while
-   * asked, or when the backend couldn't answer. */
-  private sights = new Map<string, SightResult | null>()
+  /** The measurements' features (lines of sight's answers kept there). */
+  private measures = new MeasureDrawer(() => this.renderMeasures())
+  /** What the tools draw before anything is put down. */
+  readonly drafts: Drafts
   /** The layers' order, top first (the list's, ui/outliner.ts layerOrder): the top one
    * is drawn on top. */
   orderOf?: () => string[]
@@ -99,6 +80,7 @@ export class Renderer {
   constructor(map: MapLibreMap, primaryLayers: () => LayerSpecificationWithZIndex[]) {
     this.map = map
     this.primaryLayers = primaryLayers
+    this.drafts = new Drafts(map, () => this.ensureOverlays())
     // Arrow heads, teeth and labels are sized for a scale: redraw on zoom.
     map.on('zoomend', () => {
       if (this.last && Math.abs(map.getZoom() - this.graphicsZoom) >= 0.5) void this.renderGraphics()
@@ -139,32 +121,13 @@ export class Renderer {
     this.graphicsZoom = zoom
     const bounds = map.getBounds()
     const scale = mapScale(zoom, map.getCenter().lat)
-    const level = getLabelLevel()
+    const view: GraphicsView = {
+      scale,
+      bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+      level: getLabelLevel()
+    }
     for (const layer of withGraphics) {
-      const features: GeoJSON.Feature[] = []
-      for (const stored of layer.features.values()) {
-        const f = changed && stored.id === changed.id ? changed : stored
-        if (!isGraphic(f) || !f.properties.sidc) continue
-        try {
-          const pieces = renderGraphic(lib, {
-            sidc: f.properties.sidc!,
-            points:
-              f.properties.axis || f.properties.axisWidth !== undefined
-                ? axisControlPoints(controlPoints(f.geometry), f.properties.axisWidth)
-                : isDirection(f.properties.sidc)
-                  ? [...controlPoints(f.geometry)].reverse()
-                  : squareUp(f.properties.sidc, controlPoints(f.geometry)),
-            modifiers: modifiersToDraw(f.properties.modifiers, level),
-            color: f.properties.color,
-            scale,
-            bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
-          })
-          for (const piece of pieces) piece.properties = { ...piece.properties, fid: f.id }
-          features.push(...pieces)
-        } catch (e) {
-          console.warn('My layers: could not draw graphic', f.properties.sidc, e)
-        }
-      }
+      const features = graphicFeatures(lib, layer, view, changed)
       const source = map.getSource(graphicsSourceId(layer.id)) as GeoJSONSource | undefined
       source?.setData({ type: 'FeatureCollection', features })
     }
@@ -285,57 +248,14 @@ export class Renderer {
       zoom: map.getZoom(),
       bounds: { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }
     }
+    const view: MeasureView = { ticks, north: measurePrefs.north }
     for (const layer of this.last.layers.values()) {
       const source = map.getSource(measureSourceId(layer.id)) as GeoJSONSource | undefined
-      if (!source) continue
-      const features: GeoJSON.Feature[] = []
-      for (const stored of layer.features.values()) {
-        const f = changed?.id === stored.id ? changed : stored
-        if (!isMeasure(f)) continue
-        const m = measurementOf(f)
-        if (!m) continue
-        features.push(
-          ...measurementFeatures(m, {
-            north: measurePrefs.north,
-            ticks,
-            properties: {
-              fid: f.id,
-              color: f.properties.color ?? DEFAULT_COLOR,
-              ...(this.conflicted.has(f.id) ? { conflict: true } : {})
-            }
-          })
-        )
-        if (m.type === 'sight') features.push(...this.sightFeatures(f, m))
-      }
-      source.setData({ type: 'FeatureCollection', features })
-    }
-  }
-
-  /** A line of sight's stretches, green where the ground is seen, red where it's
-   * hidden (measure/sight.ts), once the backend has answered; asked once per points
-   * and heights, then the measurements drawn again. */
-  private sightFeatures(f: UserFeature, m: Measurement): GeoJSON.Feature[] {
-    const [from, to] = [m.points[0], m.points[m.points.length - 1]]
-    if (!from || !to || m.points.length < 2) return []
-    const observer = Number(f.properties.observer ?? DEFAULT_OBSERVER)
-    const target = Number(f.properties.target ?? DEFAULT_TARGET)
-    const key = sightKey(from, to, observer, target)
-    const result = this.sights.get(key)
-    if (result === undefined) {
-      this.sights.set(key, null)
-      void fetchSight(from, to, observer, target).then((answer) => {
-        if (!answer) return
-        this.sights.set(key, answer)
-        this.renderMeasures()
+      source?.setData({
+        type: 'FeatureCollection',
+        features: this.measures.layerFeatures(layer, view, this.conflicted, changed)
       })
-      return []
     }
-    if (!result) return []
-    return sightStretches(from, to, result).map((stretch) => ({
-      type: 'Feature',
-      geometry: { type: 'LineString', coordinates: stretch.points },
-      properties: { fid: f.id, color: stretch.seen ? SEEN_COLOUR : HIDDEN_COLOUR }
-    }))
   }
 
   /** Map layer ids of My layers' features (for clicks). */
@@ -474,107 +394,5 @@ export class Renderer {
       type: 'FeatureCollection',
       features: [...layer.features.values()].map((f) => drawn(f.id === feature.id ? feature : f))
     })
-  }
-
-  /** What a placing tool would put down (an icon: map/icons.ts), faint at a point;
-   * null: nothing. */
-  async ghost(icon: string | null, at: [number, number] | null, size = 1) {
-    this.ensureOverlays()
-    if (icon) await ensureImage(this.map, icon)
-    const features: GeoJSON.Feature[] =
-      icon && at
-        ? [{ type: 'Feature', geometry: { type: 'Point', coordinates: at }, properties: { icon, size } }]
-        : []
-    ;(this.map.getSource(GHOST) as GeoJSONSource | undefined)?.setData({
-      type: 'FeatureCollection',
-      features
-    })
-  }
-
-  /** A measurement being drawn (to the cursor), with its labels and marks. */
-  measureDraft(m: Measurement) {
-    this.ensureOverlays()
-    // Its marks come once it's done.
-    const features = measurementFeatures(m, {
-      draft: true,
-      north: measurePrefs.north,
-      zoom: this.map.getZoom()
-    })
-    ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
-  }
-
-  /** A graphic being drawn (an arrow, a boundary...), as it will look once done,
-   * faint: its points so far and the cursor. Drawn once per frame at most (the
-   * graphic is computed again as the mouse moves); null: none. */
-  graphicDraft(draft: GraphicDraft | null) {
-    this.pendingGraphic = draft
-    if (this.graphicFrame) return
-    this.graphicFrame = requestAnimationFrame(() => {
-      this.graphicFrame = 0
-      void this.drawGraphicDraft()
-    })
-  }
-
-  private pendingGraphic: GraphicDraft | null = null
-  private graphicFrame = 0
-
-  private async drawGraphicDraft() {
-    const draft = this.pendingGraphic
-    const map = this.map
-    this.ensureOverlays()
-    if (!map.getSource(GRAPHIC_DRAFT)) {
-      map.addSource(GRAPHIC_DRAFT, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      for (const spec of graphicSpecs(GRAPHIC_DRAFT, DEFAULT_COLOR, 0.6)) map.addLayer(spec)
-    }
-    const source = map.getSource(GRAPHIC_DRAFT) as GeoJSONSource
-    if (!draft) {
-      source.setData({ type: 'FeatureCollection', features: [] })
-      return
-    }
-    // In the colour of the layer it goes into.
-    map.setPaintProperty(`${GRAPHIC_DRAFT}_line`, 'line-color', ['coalesce', ['get', 'stroke'], draft.colour])
-    const lib = await graphicsLibrary()
-    if (this.pendingGraphic !== draft) return // something newer
-    const bounds = map.getBounds()
-    let pieces: GeoJSON.Feature[] = []
-    try {
-      pieces = renderGraphic(lib, {
-        sidc: draft.sidc,
-        points: draft.axis
-          ? axisControlPoints(draft.points, Math.max(10, axisWidth(draft.points) * (draft.widthFactor ?? 1)))
-          : isDirection(draft.sidc)
-            ? [...draft.points].reverse()
-            : draft.points,
-        modifiers: {},
-        scale: mapScale(map.getZoom(), map.getCenter().lat),
-        bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
-      })
-    } catch {
-      // Not drawable with these points (yet): nothing.
-    }
-    source.setData({ type: 'FeatureCollection', features: pieces })
-  }
-
-  /** The shape being drawn (line/area tools); cursor: where the line goes on to
-   * (no point drawn there: none has been put down yet); line: false, the points only. */
-  draft(points: [number, number][], closed: boolean, cursor?: [number, number], line = true) {
-    this.ensureOverlays()
-    const coordinates = cursor && points.length ? [...points, cursor] : points
-    const features: GeoJSON.Feature[] = points.map((c) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: c },
-      properties: {}
-    }))
-    if (line && coordinates.length > 1) {
-      features.push({
-        type: 'Feature',
-        geometry: {
-          type: 'LineString',
-          coordinates: closed ? [...coordinates, coordinates[0]] : coordinates
-        },
-        properties: {}
-      })
-    }
-    ;(this.map.getSource(DRAFT) as GeoJSONSource).setData({ type: 'FeatureCollection', features })
   }
 }

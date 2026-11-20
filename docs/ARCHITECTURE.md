@@ -178,7 +178,10 @@ state/   store.ts (the Store the UI uses) on top of:
 kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
          drawing, measure, copy); types.ts says what a kind defines, index.ts lists them
          and has kindOf(properties)
-map/     render.ts (the Renderer: sources, selection, handles), layers.ts (the map
+map/     render.ts (the Renderer: sources, selection, handles; the measurements'
+         features in render-measures.ts, with the lines of sight's answers; the
+         graphics' in render-graphics.ts; drafts.ts what the tools draw before
+         anything is put down: renderer.drafts), layers.ts (the map
          style layers, as functions), geometry.ts (pure: control points, moving,
          boxes), symbols.ts (drawing the images), icons.ts (adding them to the
          map, by the kinds' prefixes), tools.ts (what a click does: wires the

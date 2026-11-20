@@ -173,8 +173,8 @@ export function drawDraft(c: ToolsContext, cursor?: [number, number]) {
     const points = cursor ? [...tool.points, cursor] : tool.points
     const needed = tool.axis ? 2 : Math.max(2, tool.min)
     if (points.length >= needed && tool.properties.sidc) {
-      c.renderer.draft(tool.points, false, undefined, false)
-      c.renderer.graphicDraft({
+      c.renderer.drafts.draft(tool.points, false, undefined, false)
+      c.renderer.drafts.graphicDraft({
         sidc: tool.properties.sidc,
         points: squareUp(tool.properties.sidc, points),
         axis: tool.axis,
@@ -182,8 +182,8 @@ export function drawDraft(c: ToolsContext, cursor?: [number, number]) {
         colour: tool.properties.color ?? newItemColour()
       })
     } else {
-      c.renderer.graphicDraft(null)
-      c.renderer.draft(tool.points, false, cursor)
+      c.renderer.drafts.graphicDraft(null)
+      c.renderer.drafts.draft(tool.points, false, cursor)
     }
     return
   }
@@ -191,34 +191,34 @@ export function drawDraft(c: ToolsContext, cursor?: [number, number]) {
   const area = tool.mode === 'area'
   if (tool.properties?.kind === 'measure') {
     const points = cursor && tool.points.length ? [...tool.points, cursor] : tool.points
-    c.renderer.measureDraft({ type: area ? 'area' : 'distance', points })
+    c.renderer.drafts.measureDraft({ type: area ? 'area' : 'distance', points })
     return
   }
-  c.renderer.draft(tool.points, area, cursor)
+  c.renderer.drafts.draft(tool.points, area, cursor)
 }
 
 /** A placing tool: what it would put down, faint under the cursor (null: none). */
 export function drawGhost(c: ToolsContext, cursor: [number, number] | null) {
   if (c.tool.mode !== 'place' || !cursor) {
-    void c.renderer.ghost(null, null)
+    void c.renderer.drafts.ghost(null, null)
     // Range rings are previewed as a draft.
-    if (c.tool.mode === 'place') c.renderer.draft([], false)
+    if (c.tool.mode === 'place') c.renderer.drafts.draft([], false)
     return
   }
   const p = c.tool.properties
   if (p.kind === 'measure') {
-    c.renderer.measureDraft({ type: 'rings', points: [cursor], radii: p.radii as number[] })
+    c.renderer.drafts.measureDraft({ type: 'rings', points: [cursor], radii: p.radii as number[] })
     return
   }
-  void c.renderer.ghost(iconName(withNewColour(p)), cursor, p.size ?? 1)
+  void c.renderer.drafts.ghost(iconName(withNewColour(p)), cursor, p.size ?? 1)
 }
 
 /** Right-click while drawing: what's drawn so far is dropped; again: the tool stops. */
 export function cancelDrawing(c: ToolsContext) {
   if (drawing(c.tool) && c.tool.points.length) {
     c.tool.points = []
-    c.renderer.draft([], false)
-    c.renderer.graphicDraft(null)
+    c.renderer.drafts.draft([], false)
+    c.renderer.drafts.graphicDraft(null)
     c.notify()
   } else c.setTool({ mode: 'select' })
 }
