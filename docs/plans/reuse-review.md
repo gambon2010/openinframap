@@ -28,6 +28,11 @@ known problem with code of our own, what exists, and what was decided (looked at
   first: tactical graphics' control points and placing symbols may need its custom
   modes; worth it only if most of ours goes (the owner: backlog, 2026-11-20).
 
+- **KML export** (`modules/userlayers/io/formats.ts`): written by hand; `@placemarkio/tokml`
+  (by togeojson's author, which the import uses; maintained) would write it,
+  keeping our ExtendedData. GPX stays ours (no maintained writer: `togpx` is
+  abandoned). Small (the owner: backlog, 2026-11-20).
+
 ## Looked at, ours kept
 
 - **PMTiles reading in the backend** (`background/__init__.py` `Archive`, reused by
@@ -67,7 +72,6 @@ Most to gain first; each waits for the owner's go.
 
 | Part | What we wrote | What exists | Proposal | Size |
 |---|---|---|---|---|
-| KML export (`modules/userlayers/io/formats.ts`) | KML written by hand | `@placemarkio/tokml` (by togeojson's author, which we use for import; maintained) | Replace, keeping our ExtendedData; GPX stays ours (no maintained writer: `togpx` is abandoned) | Small |
 | Merging others' saved changes with yours (`state/merge.ts`, `reconcile.ts`) | A field-by-field three-way merge | CRDTs (Yjs, Automerge) | Keep: a CRDT would change the whole sync design, which the owner wants to discuss first (live sharing is in the backlog) | — |
 | The tooltip and the right-click menu (`ui/tooltip.ts`, `context-menu.ts`) | Positioning by hand | Floating UI | Keep: little to gain for two small pieces | — |
 

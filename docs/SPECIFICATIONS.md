@@ -282,6 +282,7 @@ How the work is organised: [ARCHITECTURE.md](./ARCHITECTURE.md) (the code),
 | 10.60 | Large food and logistics depots missing from OpenStreetMap (Pro à Pro, Duppigheim): other sources. | 🗂 backlog (2026-11-20) the ICPE register (Géorisques: warehouses 1510, cold stores 1511, with volumes) and SIRENE (activity codes, geocoded), Overture Places elsewhere; Google's terms forbid it |
 | 10.61 | The UI pieces not yet on the standard (STYLE.md) brought to it. | 📋 planned (2026-11-20) `docs/plans/ui-standard.md` |
 | 10.62 | My layers' drawing and editing on the map by Terra Draw (a maintained library) instead of our own code. | 🗂 backlog (2026-11-20) prototype first: `docs/plans/reuse-review.md` |
+| 10.63 | My layers' KML export by `@placemarkio/tokml` (the import's sister library) instead of KML written by our own code, keeping our extra details so files come back intact. | 🗂 backlog (2026-11-20) `docs/plans/reuse-review.md` |
 
 ## 11. Quality
 
