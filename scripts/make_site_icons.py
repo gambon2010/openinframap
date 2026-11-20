@@ -25,8 +25,8 @@ COLOURS = {
     "fuel": "#E65100",
     "transport": "#455A64",
     "military": "#2E7D32",
-    # A kind's colour within its category, with groups of its own (grey among the
-    # military: modules/sites/style.ts KIND_COLOURS, sites.sql's site_group).
+    # A group of kinds' colour within its category, grouped apart (grey among the
+    # military: modules/sites/style.ts GROUP_COLOURS, sites.sql's site_group).
     "military_disused": "#8D8D8D",
     "food": "#795548",
     "water_waste": "#00838F",
@@ -66,6 +66,7 @@ KINDS = {
     # Not a site kind: Oil & Natural Gas's facilities (modules/sites/petroleum.ts).
     "oil_facility": ("fuel", "industry"),
     "airport": ("transport", "airport"),
+    "airport_disused": ("military_disused", "airport"),  # closed: the disused grey
     "port": ("transport", "harbor"),
     "border": ("police", "roadblock"),
     "rail_yard": ("transport", "rail"),
@@ -80,6 +81,7 @@ KINDS = {
     "military_fort": ("military", "castle"),  # in use: green; disused, the same grey
     "military_radio": ("military", "communications-tower"),
     "military_research": ("military", None),  # a flask, drawn here
+    "military_airfield_disused": ("military_disused", "airfield"),
     "military_disused": ("military_disused", "castle"),
     "silo": ("food", "farm"),
     "slaughterhouse": ("food", "slaughterhouse"),

@@ -173,7 +173,8 @@
       "buddhist": "Buddhist temple",
       "worship": "Other place of worship (Hindu, Sikh...)",
       "fuel": "Fuel station",
-      "airport": "Airport, airfield (civil)",
+      "airport": "Airport, airfield (civil; grey: closed)",
+      "airport-disused": "Closed airfield (civil)",
       "port": "Port, harbour",
       "border": "Border control",
       "rail-yard": "Rail yard",
@@ -202,7 +203,8 @@
       "gendarmerie": "Gendarmerie",
       "police-national": "National police (commissariat)",
       "police-municipal": "Municipal police",
-      "military-airfield": "Military airfield, air base",
+      "military-airfield": "Military airfield, air base (grey: former)",
+      "military-airfield-disused": "Former military airfield",
       "military-naval-base": "Naval base, arsenal"
     }
   },

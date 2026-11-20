@@ -46,10 +46,13 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   remembers it in the browser; a new layer reusing another row's icon is hidden with
   it (the oil and gas facilities had the fuel depots' icon: hidden while that row
   was unticked).
-- **A kind in a colour of its own within its category** (disused military, grey among
-  the military's green) is grouped apart zoomed out, in discs of its colour
-  (`KIND_COLOURS`, `site_group` in `sites.sql`), so its discs never hide in the
-  category's.
+- **A kind in a colour of its own within its category** (disused military and former
+  airfields, grey among the military's green) is grouped apart zoomed out, in discs
+  of its colour (`GROUP_COLOURS`, `KIND_GROUPS`, `site_group` in `sites.sql`), so its
+  discs never hide in the category's.
+- **A kind with no key row of its own** (closed airfields, a grey icon) is shown and
+  hidden by another kind's row (the open airfields': `KEY_ROW_OF`); that row hides
+  both icons (a hide spec of several icons), so one thing has one tick box.
 - **A kind listed under two categories** (military airfields: Transport and Military)
   has one tick box in both sections, ticked alike, and keeps its own category's icon
   and colour (green under Transport too); both categories' layers draw it, so hiding

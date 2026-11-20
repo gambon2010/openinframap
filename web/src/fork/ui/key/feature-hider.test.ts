@@ -58,6 +58,17 @@ describe('FeatureHider.conditions', () => {
     expect(conditions.has('power_line_1')).toBe(false)
   })
 
+  test('a row of two icons keeps only what shows neither', () => {
+    const icon = ['match', ['get', 'kind'], 'airfield', 'site_airfield', 'former', 'site_former', 'site_base']
+    const sites = [{ id: 'sites_symbol', type: 'symbol', source: 'sites', layout: { 'icon-image': icon } }]
+    const conditions = hider.conditions({ icon: ['site_airfield', 'site_former'] }, sites)
+    expect(conditions.get('sites_symbol')).toEqual([
+      'all',
+      ['!=', icon, 'site_airfield'],
+      ['!=', icon, 'site_former']
+    ])
+  })
+
   test('hidden rows are remembered by their spec', () => {
     localStorage.clear()
     const h = new FeatureHider(fakeMap)

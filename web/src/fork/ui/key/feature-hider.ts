@@ -12,7 +12,7 @@ import { countsHidden, countsOf, shownCount, withCount } from './counted-groups.
 
 export type HideSpec =
   | { colour: string; types?: string[] } // layers of these types (default: line) drawn in this colour
-  | { icon: string } // symbol layers showing this sprite
+  | { icon: string | string[] } // symbol layers showing this sprite (or these)
   | { layers: string[] } // layers whose id starts with one of these
 
 export type StyleLayer = {
@@ -34,6 +34,11 @@ const HIDDEN_ONCE_KEY = 'oim-key-hidden-once'
 
 export function specKey(spec: HideSpec): string {
   return JSON.stringify(spec)
+}
+
+/** The colour or icons a row hides. */
+function hiddenValues(spec: { colour: string } | { icon: string | string[] }): string[] {
+  return 'colour' in spec ? [spec.colour] : [spec.icon].flat()
 }
 
 // The part of an expression that doesn't depend on zoom (filters can't use zoom):
@@ -151,7 +156,7 @@ export class FeatureHider {
     const hiddenIcons = new Set<string>()
     for (const key of this.hidden) {
       const spec = JSON.parse(key) as HideSpec
-      if ('icon' in spec) hiddenIcons.add(spec.icon)
+      if ('icon' in spec) hiddenValues(spec).forEach((icon) => hiddenIcons.add(icon))
     }
     const conditions = new Map<string, ExpressionSpecification>()
     for (const layer of layers) {
@@ -188,7 +193,11 @@ export function specConditions(
     return result
   }
 
-  const value = 'colour' in spec ? spec.colour : spec.icon
+  const values = hiddenValues(spec)
+  const keep = (expr: unknown): ExpressionSpecification =>
+    values.length === 1
+      ? (['!=', expr, values[0]] as ExpressionSpecification)
+      : (['all', ...values.map((value) => ['!=', expr, value])] as ExpressionSpecification)
   const types = 'colour' in spec ? spec.types || ['line'] : ['symbol']
   const property = (layer: StyleLayer) =>
     'colour' in spec ? layer.paint?.[`${layer.type}-color`] : layer.layout?.['icon-image']
@@ -198,12 +207,12 @@ export function specConditions(
   for (const layer of layers) {
     if (!types.includes(layer.type)) continue
     const expr = withoutZoom(property(layer))
-    if (expr !== undefined && JSON.stringify(expr).includes(JSON.stringify(value))) {
-      primaries.push({ layer, expr })
-    }
+    const draws = (value: string) => JSON.stringify(expr).includes(JSON.stringify(value))
+    if (expr !== undefined && values.some(draws)) primaries.push({ layer, expr })
   }
   for (const { layer, expr } of primaries) {
-    result.set(layer.id, expr === value ? false : (['!=', expr, value] as ExpressionSpecification))
+    const drawsOnlyHidden = typeof expr === 'string' && values.includes(expr)
+    result.set(layer.id, drawsOnlyHidden ? false : keep(expr))
   }
 
   // The same data's other layers. Only where the colour/icon depends on the
@@ -221,7 +230,7 @@ export function specConditions(
       ) {
         continue
       }
-      result.set(other.id, ['!=', expr, value] as ExpressionSpecification)
+      result.set(other.id, keep(expr))
     }
   }
   return result

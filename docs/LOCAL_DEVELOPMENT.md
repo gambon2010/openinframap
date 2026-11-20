@@ -565,7 +565,8 @@ ouvrage in use are the fort) or inside it (an unnamed area holding a depot is th
 depot), or what stands in it (a radio tower: a radio station). A "Camp de ..." is a
 training ground from 90 ha, else a garrison. Military airfields are listed under
 Transport too, with one tick box for both: Transport's airports are the civil ones
-(a civil airport's military part is a military airfield of its own). A site
+(a civil airport's military part is a military airfield of its own); closed
+airfields, civil or military, are drawn in grey with their tick box. A site
 mapped twice under one name (a building and its grounds) is drawn once. To teach it a word, in any language, add a row to
 `schema/fork/site-rules.sql`; to correct one site, add its OSM id, name and kind, with
 why, to `schema/fork/site-overrides.sql`. Then rebuild the sites (with no other

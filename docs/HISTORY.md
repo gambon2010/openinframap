@@ -845,6 +845,21 @@ radar or signal tower inside makes an area a radio station (the Navy's sémaphor
 mapped as its watchtowers; not mobile phone masts); touching a named site in use
 makes it that site's annex; only disused sites in or around it, disused. Names
 "ex-..." are disused. A gendarmerie compound mapped as barracks is one too.
+Later that day, former military airfields (a grey plane) instead of disused
+fortifications, which are unticked at first: a disused military site that was an
+aerodrome (tagged so, or a disused or historic one, or named an air base). There are 6:
+Dreux-Senonches, Souge, Vouziers-Séchault, Broyes-lès-Pesmes (the Graves radar
+inside is drawn on its own), Grostenquin (`disused:aeroway`: no longer taken as in
+use), Bapaume-Grévillers. Closed civil airfields (tagged disused or abandoned, or named
+"Ancien aérodrome": 9) were shown as airports; now a grey plane too. Neither has a
+key row of its own: the airfield rows (civil, military) show and hide them too (a
+key row can hide several icons), so ticking both shows every airfield.
+Clean-ups: the flying units' points inside an air base (Ochey's squadrons, 10) no
+longer draw a second plane; gendarmerie barracks mapped as army bases (a "Caserne
+..." under 10 ha with its station inside, about 80) are gendarmerie, under the
+caserne's name, and the unnamed pieces inside a gendarmerie site (its schools'
+buildings) aren't drawn; a site saying "gendarmerie" in its other name,
+description or `military_service` is the gendarmerie's ("Quartier Savary").
 
 ---
 

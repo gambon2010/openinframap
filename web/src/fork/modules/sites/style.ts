@@ -57,7 +57,7 @@ export const site_kinds: { [category: string]: string[] } = {
   ],
   religion: ['christian', 'muslim', 'jewish', 'buddhist', 'worship'],
   fuel: ['fuel', 'storage_tank'],
-  transport: ['airport', 'military_airfield', 'port', 'rail_yard'],
+  transport: ['airport', 'airport_disused', 'military_airfield', 'port', 'rail_yard'],
   military: [
     'military_airfield',
     'military_naval_base',
@@ -70,6 +70,7 @@ export const site_kinds: { [category: string]: string[] } = {
     'military_radio',
     'military_research',
     'military_area',
+    'military_airfield_disused',
     'military_disused'
   ],
   food: ['supermarket', 'convenience', 'wholesale', 'distribution', 'silo', 'slaughterhouse'],
@@ -126,12 +127,13 @@ export function site_kind_label(kind: string): string {
       sikh: t('sites.kind.sikh', 'Sikh gurdwara'),
       fuel: t('sites.kind.fuel', 'Fuel station'),
       storage_tank: t('sites.kind.storage-tank', 'Storage tank (fuel, gas)'),
-      airport: t('sites.kind.airport', 'Airport, airfield (civil)'),
+      airport: t('sites.kind.airport', 'Airport, airfield (civil; grey: closed)'),
+      airport_disused: t('sites.kind.airport-disused', 'Closed airfield (civil)'),
       port: t('sites.kind.port', 'Port, harbour'),
       border: t('sites.kind.border', 'Border control'),
       rail_yard: t('sites.kind.rail-yard', 'Rail yard'),
       military_area: t('sites.kind.military-area', 'Other military area'),
-      military_airfield: t('sites.kind.military-airfield', 'Military airfield, air base'),
+      military_airfield: t('sites.kind.military-airfield', 'Military airfield, air base (grey: former)'),
       military_naval_base: t('sites.kind.military-naval-base', 'Naval base, arsenal'),
       military_base: t('sites.kind.military-base', 'Barracks, army base'),
       military_school: t('sites.kind.military-school', 'Military school'),
@@ -141,6 +143,7 @@ export function site_kind_label(kind: string): string {
       military_fort: t('sites.kind.military-fort', 'Fort, fortification in use'),
       military_radio: t('sites.kind.military-radio', 'Radar, radio, signal station'),
       military_research: t('sites.kind.military-research', 'Research, test, weapons establishment'),
+      military_airfield_disused: t('sites.kind.military-airfield-disused', 'Former military airfield'),
       military_disused: t('sites.kind.military-disused', 'Bunker, trench, fortification'),
       silo: t('sites.kind.silo', 'Silo'),
       slaughterhouse: t('sites.kind.slaughterhouse', 'Slaughterhouse'),
@@ -163,6 +166,26 @@ const SHARED_ICONS: Record<string, string> = { hindu: 'site_worship', sikh: 'sit
 /** A kind's icon (its key row's too). */
 function kind_icon(kind: string): string {
   return SHARED_ICONS[kind] ?? `site_${kind}`
+}
+
+/** Kinds without a key row of their own, shown and hidden with another kind's:
+ * closed airfields (a grey icon) with the open ones, so the airfield rows show
+ * every airfield. */
+const KEY_ROW_OF: Record<string, string> = {
+  airport_disused: 'airport',
+  military_airfield_disused: 'military_airfield'
+}
+
+/** The kinds a category's key lists, a row each. */
+export function key_kinds(category: string): string[] {
+  return site_kinds[category].filter((kind) => !KEY_ROW_OF[kind])
+}
+
+/** The icons a kind's key row shows and hides: its own, and those of the kinds
+ * without a row of their own that go with it. */
+export function key_icons(kind: string): string[] {
+  const with_it = Object.keys(KEY_ROW_OF).filter((other) => KEY_ROW_OF[other] === kind)
+  return [kind, ...with_it].map(kind_icon)
 }
 
 /** Every kind once (a shared kind is listed under two categories). */
@@ -189,10 +212,16 @@ const site_icon: ExpressionSpecification = [
   'site_government'
 ] as unknown as ExpressionSpecification
 
-/** Kinds drawn in a colour of their own within their category, grouped apart (in
- * groups of that colour: site_group in schema/fork/sites.sql): disused military grey
- * among the military's green (their icons too: scripts/make_site_icons.py). */
-const KIND_COLOURS: { [kind: string]: string } = { military_disused: '#8D8D8D' }
+/** Groups of kinds drawn in a colour of their own within their category, and
+ * grouped apart (site_group in schema/fork/sites.sql): disused military grey among
+ * the military's green (their icons too: scripts/make_site_icons.py). */
+const GROUP_COLOURS: { [group: string]: string } = { military_disused: '#8D8D8D' }
+
+/** The kinds in those groups. */
+const KIND_GROUPS: { [kind: string]: string } = {
+  military_disused: 'military_disused',
+  military_airfield_disused: 'military_disused'
+}
 
 /** Kinds whose key row is unticked at first: disused fortifications (many, and
  * rarely what one looks for). */
@@ -200,12 +229,12 @@ export const HIDDEN_AT_FIRST = ['military_disused']
 
 /** A category's areas' colour: its own, but for kinds with their own. */
 function area_colour(category: string, colour: string): string | ExpressionSpecification {
-  const own = site_kinds[category].filter((kind) => KIND_COLOURS[kind])
+  const own = site_kinds[category].filter((kind) => KIND_GROUPS[kind])
   if (!own.length) return colour
   return [
     'match',
     ['get', 'kind'],
-    ...own.flatMap((kind) => [kind, KIND_COLOURS[kind]]),
+    ...own.flatMap((kind) => [kind, GROUP_COLOURS[KIND_GROUPS[kind]]]),
     colour
   ] as unknown as ExpressionSpecification
 }
@@ -224,15 +253,15 @@ function outline_colour(category: string, colour: string): string | ExpressionSp
   ] as unknown as ExpressionSpecification
 }
 
-/** A group's disc: its category's, or that of the kind with its own colour it holds
- * (such kinds are grouped apart, so a group holding one holds only it). */
+/** A group's disc: its category's, or that of the group of kinds with their own
+ * colour it holds (grouped apart, so a group holding one holds only its kinds). */
 function group_icon(category: string): string | ExpressionSpecification {
-  const own = site_kinds[category].filter((kind) => KIND_COLOURS[kind])
+  const own = site_kinds[category].filter((kind) => KIND_GROUPS[kind])
   if (!own.length) return `site_group_${category}`
   const holds = (kind: string) => ['<=', 0, ['index-of', `,${kind}:`, ['coalesce', ['get', 'kinds'], '']]]
   return [
     'case',
-    ...own.flatMap((kind) => [holds(kind), `site_group_${kind}`]),
+    ...own.flatMap((kind) => [holds(kind), `site_group_${KIND_GROUPS[kind]}`]),
     `site_group_${category}`
   ] as unknown as ExpressionSpecification
 }

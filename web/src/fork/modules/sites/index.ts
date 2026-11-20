@@ -10,6 +10,8 @@ import layers, {
   HIDDEN_AT_FIRST,
   area_layer_id,
   area_opacity,
+  key_icons,
+  key_kinds,
   site_colours,
   site_kinds,
   site_kind_label,
@@ -86,10 +88,12 @@ const sites: ForkModule = {
   key: async () => [
     ...Object.keys(site_kinds).map((category): KeySection => ({
       title: site_category_label(category),
-      rows: site_kinds[category].map((kind): KeyRow => {
+      rows: key_kinds(category).map((kind): KeyRow => {
         const label = site_kind_label(kind)
-        const sprite = keySprite(`site_${kind}`, 20)
-        const hide = { icon: `site_${kind}` }
+        const [icon, ...with_it] = key_icons(kind)
+        const sprite = keySprite(icon, 20)
+        // One icon: a plain string (the browser remembers rows by their spec).
+        const hide = { icon: with_it.length ? [icon, ...with_it] : icon }
         return HIDDEN_AT_FIRST.includes(kind)
           ? [label, sprite, hide, { hiddenAtFirst: true }]
           : [label, sprite, hide]
