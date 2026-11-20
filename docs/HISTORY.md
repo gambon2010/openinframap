@@ -1151,7 +1151,14 @@ default). Counts are France's OSM data in October 2026.
   Tracing from a coarser zoom (maplibre-contour's `overzoom`) and a longer minimum
   length were tried and changed nothing: the background map's buildings, drawn over
   the lines, were cutting them. The lines now go on top of everything (the owner's
-  choice); the hill shading stays on the ground.
+  choice); the hill shading stays on the ground. Each part of them (index lines,
+  heights, intermediate, supplementary, depression ticks) has its tick box.
+- **The coordinates box (2026-11-20):** also the ground's slope (Horn's method, as
+  GDAL's `gdaldem slope`, from `/terrain/elevation`), the magnetic declination
+  (WMM2025, `magvar`) and the distance and bearing from the last click (in the north
+  chosen for measuring). For that the measuring helpers moved out of My layers: the
+  Earth's geometry and the norths to `core/earth.ts` and `core/north.ts`, the
+  measuring preferences to `services/measure-prefs.ts`.
 
 ## Extra data (not from OpenStreetMap)
 

@@ -155,3 +155,10 @@ def test_a_point_s_height_between_the_pixels_around_it(monkeypatch):
     lat = math.degrees(math.atan(math.sinh(n)))
     assert abs(elevations.elevation(lon, lat) - 511) < 0.05
     assert elevations.elevation(lon + 1, lat) is None  # no terrain there
+
+
+def test_horn_s_slope_of_a_plane_and_a_flat():
+    # Rising 1 m a pixel eastwards, 1 m pixels: 45°.
+    plane = np.array([[0, 1, 2], [0, 1, 2], [0, 1, 2]], dtype=np.float64)
+    assert abs(elevations.horn_slope(plane, 1.0) - 45) < 1e-9
+    assert elevations.horn_slope(np.full((3, 3), 300.0), 6.6) == 0

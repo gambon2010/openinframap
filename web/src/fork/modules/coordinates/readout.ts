@@ -1,11 +1,17 @@
 // Fork: where the cursor is, at the bottom left next to the scale: latitude, longitude, the
-// military grid reference (MGRS, to the metre) and the ground's height (height.ts). G copies the grid reference under the
-// cursor (the pointer stays where it is), which the readout's tooltip says.
+// military grid reference (MGRS, to the metre), the ground's height and slope
+// (ground.ts), the magnetic declination, and how far and which way it is from the
+// last click (readings.ts; Escape forgets the click). G copies the grid reference
+// under the cursor (the pointer stays where it is), which the readout's tooltip says.
 import { IControl, Map } from 'maplibre-gl'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
+import type { LngLat } from '../../core/earth.ts'
 import { formatLatLng, toMgrs } from '../../core/mgrs.ts'
-import { heightFollower } from './height.ts'
+import { formatHeight, formatSlope } from '../../services/elevation.ts'
+import { measurePrefs } from '../../services/measure-prefs.ts'
+import { groundFollower } from './ground.ts'
+import { formatDeclination, fromPoint } from './readings.ts'
 
 export class CoordinatesReadout implements IControl {
   private el = el('div.maplibregl-ctrl.oim-coords', {
@@ -14,15 +20,35 @@ export class CoordinatesReadout implements IControl {
   private latLng = el('span.oim-coords-latlng')
   private mgrs = el('span.oim-coords-mgrs')
   private height = el('span.oim-coords-height', { title: t('coordinates.height', 'Height of the ground') })
+  private slope = el('span.oim-coords-slope', { title: t('coordinates.slope', 'Slope of the ground') })
+  private declination = el('span.oim-coords-declination', {
+    title: t('coordinates.declination', 'Magnetic declination: where a compass points, from true north')
+  })
+  private fromClick = el('span.oim-coords-from', {
+    title: t('coordinates.from-click', 'From the last click: distance and bearing (Escape forgets it)')
+  })
+  /** The last click on the map, distances and bearings are from; none at first. */
+  private lastClick: LngLat | null = null
 
   onAdd(map: Map): HTMLElement {
-    this.el.append(this.latLng, this.mgrs, this.height)
-    const followHeight = heightFollower((text) => (this.height.textContent = text))
+    this.el.append(this.latLng, this.mgrs, this.height, this.slope, this.declination, this.fromClick)
+    const followGround = groundFollower((ground) => {
+      this.height.textContent = `${t('coordinates.height-short', 'Alt')} ${formatHeight(ground.elevation)}`
+      this.slope.textContent = `${t('coordinates.slope-short', 'Slope')} ${formatSlope(ground.slope)}`
+    })
     const show = (lng: number, lat: number) => {
       this.latLng.textContent = formatLatLng(lng, lat)
       this.mgrs.textContent = toMgrs(lng, lat) ?? '—'
-      followHeight(lng, lat)
+      this.declination.textContent = `${t('coordinates.declination-short', 'Decl')} ${formatDeclination(lng, lat)}`
+      this.fromClick.textContent = this.lastClick
+        ? `${t('coordinates.from-click-short', 'From click')} ${fromPoint(this.lastClick, [lng, lat], measurePrefs.north)}`
+        : ''
+      followGround(lng, lat)
     }
+    map.on('click', (e) => {
+      this.lastClick = [e.lngLat.lng, e.lngLat.lat]
+      show(e.lngLat.lng, e.lngLat.lat)
+    })
     let pending = false
     map.on('mousemove', (e) => {
       if (pending) return
@@ -47,8 +73,14 @@ export class CoordinatesReadout implements IControl {
         setTimeout(() => this.el.classList.remove('copied'), 1200)
       })
     }
-    // G: the grid reference under the cursor, which the readout shows.
+    // G: the grid reference under the cursor, which the readout shows; Escape: no
+    // distance from the last click any more.
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.lastClick) {
+        this.lastClick = null
+        this.fromClick.textContent = ''
+        return
+      }
       if (e.key.toLowerCase() !== 'g' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return
       if (isTyping(e.target) || !map.getCanvas().matches(':hover')) return
       e.preventDefault()

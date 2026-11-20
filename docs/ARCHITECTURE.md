@@ -63,7 +63,9 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                look (areas in the fuel colour, an icon from tegola's
                petroleum_facility, their key row)
   search       search descriptions, Photon
-  coordinates  the cursor's position and MGRS; MGRS in search
+  coordinates  the cursor's position and MGRS, the ground's height and slope (ground.ts),
+               the declination and distance and bearing from the last click
+               (readings.ts); MGRS in search
   print        the map as a PDF with a legend (services/legend.ts: modules add to it)
   background   the satellite button (top right): the map or imagery
   satellite    the imagery (tells services/background.ts what there is)
@@ -249,7 +251,7 @@ every route but logging in needs a session):
   first `data/offline-maps/<area>.terrain.pmtiles` that has it, `files.py`;
   `elevations.py`, the one reader of heights: Terrarium tiles decoded, a tile's
   heights with its neighbours' edges, a point's height (`/terrain/elevation`, the
-  coordinates box); `contours.py`, contour lines as vector tiles,
+  coordinates box: also its slope, Horn's method); `contours.py`, contour lines as vector tiles,
   `/terrain/contours/{z}/{x}/{y}.mvt`, traced as tiles are asked for (smoothed with
   SciPy, military maps' intervals), kept in memory; `contour_marks.py`, what a line
   is: index, intermediate, supplementary on level ground, depression and its

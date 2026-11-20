@@ -18,6 +18,7 @@ from . import files
 
 TILE_PIXELS = 512
 FINEST_ZOOM = 13  # scripts/offline_maps/terrain.py MAX_ZOOM
+EARTH_CIRCUMFERENCE = 40_075_016.686  # metres, at the equator (web Mercator)
 # Decoded tiles kept (1 MB each).
 CACHED_TILES = 96
 
@@ -119,3 +120,33 @@ def bilinear(heights: np.ndarray, gx: float, gy: float) -> float | None:
     top = corners[0, 0] * (1 - fx) + corners[0, 1] * fx
     bottom = corners[1, 0] * (1 - fx) + corners[1, 1] * fx
     return float(top * (1 - fy) + bottom * fy)
+
+
+def ground_metres_per_pixel(lat: float, z: int) -> float:
+    """A terrain pixel's width on the ground at a latitude (web Mercator)."""
+    return EARTH_CIRCUMFERENCE * math.cos(math.radians(lat)) / (TILE_PIXELS * 2**z)
+
+
+def slope(lon: float, lat: float) -> float | None:
+    """The ground's slope at a point, degrees (0 flat, 90 a wall): Horn's method on
+    the 3 x 3 pixels around it, as GDAL's gdaldem slope computes it; None where
+    there's no terrain."""
+    column, row = tile_position(lon, lat, FINEST_ZOOM)
+    x, y = int(column // TILE_PIXELS), int(row // TILE_PIXELS)
+    around = window(FINEST_ZOOM, x, y, margin=1)
+    if around is None:
+        return None
+    c = int(column - x * TILE_PIXELS + around.left)
+    r = int(row - y * TILE_PIXELS + around.top)
+    cells = around.heights[r - 1 : r + 2, c - 1 : c + 2]
+    if cells.shape != (3, 3) or np.isnan(cells).any():
+        return None
+    return horn_slope(cells, ground_metres_per_pixel(lat, FINEST_ZOOM))
+
+
+def horn_slope(cells: np.ndarray, pixel_metres: float) -> float:
+    """Horn's slope (degrees) of the middle of 3 x 3 heights (rows from the north)."""
+    (a, b, c), (d, _, f), (g, h, i) = cells
+    east = ((c + 2 * f + i) - (a + 2 * d + g)) / (8 * pixel_metres)
+    north = ((g + 2 * h + i) - (a + 2 * b + c)) / (8 * pixel_metres)
+    return float(math.degrees(math.atan(math.hypot(east, north))))

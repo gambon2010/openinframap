@@ -776,7 +776,14 @@
     }
   },
   "coordinates": {
-    "height": "Height of the ground"
+    "height": "Height of the ground",
+    "slope": "Slope of the ground",
+    "declination": "Magnetic declination: where a compass points, from true north",
+    "from-click": "From the last click: distance and bearing (Escape forgets it)",
+    "height-short": "Alt",
+    "slope-short": "Slope",
+    "declination-short": "Decl",
+    "from-click-short": "From click"
   },
   "terrain": {
     "elevation-middle": "Elevation (middle)",

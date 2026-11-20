@@ -139,7 +139,9 @@ elevation reader the radio mode will use.
 
 - The height under the cursor in the coordinates box, and in a clicked thing's
   details ("Elevation 312 m": a point's own, an area's at its middle; none for a
-  line, whose heights are a profile) (done, 2026-11-20), from the backend's reader.
+  line, whose heights are a profile) (done, 2026-11-20), from the backend's reader;
+  the box also gives the slope, the magnetic declination and the distance and
+  bearing from the last click.
 - A line-of-sight check between two points, with its profile drawn (the
   battle-tracking backlog's terrain and line of sight).
 

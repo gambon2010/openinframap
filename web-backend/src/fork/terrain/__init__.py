@@ -2,7 +2,8 @@
 downloaded, served together at /terrain/{z}/{x}/{y}.webp (Terrarium encoded,
 512-pixel, lossless WebP: the map's hill shading and 3D relief), and contour lines
 made from them at /terrain/contours/{z}/{x}/{y}.mvt (contours.py); the height at a
-point at /terrain/elevation?lon=&lat= (the coordinates box)."""
+point and the ground's slope there at /terrain/elevation?lon=&lat= (the coordinates
+box)."""
 
 from __future__ import annotations
 
@@ -48,7 +49,7 @@ def elevation_tile(z: int, x: int, y: int) -> bytes | None:
 
 
 async def elevation_at(request: Request) -> Response:
-    """{"elevation": metres, or null where there's no terrain}."""
+    """{"elevation": metres, "slope": degrees; null where there's no terrain}."""
     try:
         lon, lat = float(request.query_params["lon"]), float(request.query_params["lat"])
     except (KeyError, ValueError):
@@ -56,7 +57,13 @@ async def elevation_at(request: Request) -> Response:
     if not (-180 <= lon <= 180 and -90 <= lat <= 90):
         return Response(status_code=400)
     height = await run_in_threadpool(elevations.elevation, lon, lat)
-    return JSONResponse({"elevation": None if height is None else round(height, 1)})
+    steepness = await run_in_threadpool(elevations.slope, lon, lat)
+    return JSONResponse(
+        {
+            "elevation": None if height is None else round(height, 1),
+            "slope": None if steepness is None else round(steepness, 1),
+        }
+    )
 
 
 routes = [

@@ -6,7 +6,7 @@ import type { Geometry, Polygon, MultiPolygon, Position } from 'geojson'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
-import { formatHeight, heightAt } from '../../services/elevation.ts'
+import { formatHeight, groundAt } from '../../services/elevation.ts'
 
 export type HeightPlace = { lng: number; lat: number; middle: boolean }
 
@@ -32,7 +32,7 @@ function boxMiddle(area: Polygon | MultiPolygon): Position {
 export async function heightRow(feature: MapGeoJSONFeature, content: HTMLElement) {
   const place = heightPlace(feature.geometry)
   if (!place) return
-  const metres = await heightAt(place.lng, place.lat)
+  const metres = (await groundAt(place.lng, place.lat)).elevation
   const table = content.querySelector('table.item_info')
   if (metres === null || !table || !content.isConnected) return
   const label = place.middle

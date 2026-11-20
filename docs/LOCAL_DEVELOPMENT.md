@@ -252,9 +252,13 @@ imagery; *Contour lines* draws them as on military maps (every fifth line heavie
 with its height; 100 m apart zoomed out, then 50, 20 and 10 m closer in; dashed
 supplementary lines at half the interval on level ground; ticks inside hollows),
 made by the backend from the terrain; it unfolds into a tick box for each of those
-parts. The coordinates box at the bottom left shows
-the ground's height under the cursor, and a clicked thing's details its height
-(an area's at its middle).
+parts. The coordinates box at the bottom left shows, besides where the cursor is,
+the ground's height (Alt) and slope (degrees and per cent), the magnetic
+declination (Decl), and the distance and bearing from your last click on the map
+(From click, in the north chosen in My layers' settings; Escape forgets the click);
+a clicked thing's details show its height (an area's at its middle). Narrower
+windows leave out the latitude and longitude, phones all but the grid reference
+and the height.
 
 ## Satellite imagery (offline)
 

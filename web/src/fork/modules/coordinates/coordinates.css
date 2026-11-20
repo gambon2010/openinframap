@@ -18,8 +18,25 @@
   content: ' ✓';
 }
 
-@media (max-width: 600px) {
+/* Nothing from the last click yet: no gap for it. */
+.oim-coords-from:empty {
+  display: none;
+}
+
+/* Not wide enough for everything: the grid reference says where, without the
+ * latitude and longitude. */
+@media (max-width: 1200px) {
   .oim-coords-latlng {
+    display: none;
+  }
+}
+
+/* On a phone: the grid reference and the height only. */
+@media (max-width: 600px) {
+  .oim-coords-latlng,
+  .oim-coords-slope,
+  .oim-coords-declination,
+  .oim-coords-from {
     display: none;
   }
 }
