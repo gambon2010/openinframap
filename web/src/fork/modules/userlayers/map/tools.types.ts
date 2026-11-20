@@ -13,6 +13,8 @@ export type Tool =
       points: [number, number][]
       /** What it makes (none: a drawing): a measurement, for the measuring tools. */
       properties?: FeatureProps
+      /** Finished by itself at this many points (a line of sight: two). */
+      max?: number
     }
   | { mode: 'copy' }
   | {

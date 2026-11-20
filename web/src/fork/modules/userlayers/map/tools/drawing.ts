@@ -40,6 +40,11 @@ export function addPoint(c: ToolsContext, lngLat: [number, number]) {
     return
   }
   if (tool.mode !== 'line' && tool.mode !== 'area') return
+  if (tool.max && tool.points.length + 1 >= tool.max) {
+    tool.points.push(lngLat)
+    finishDrawing(c)
+    return
+  }
   // A click on an area's first point closes it.
   if (tool.mode === 'area' && tool.points.length >= 3 && nearFirst(c, lngLat)) {
     finishDrawing(c)

@@ -225,3 +225,27 @@
   max-height: 44px;
   border-radius: 3px;
 }
+
+/* A line of sight's profile (measure/sight.ts): the ground, seen and hidden stretches, the eye's line. */
+.oim-ul-sight-profile {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+.oim-ul-sight-ground {
+  fill: var(--oim-light-grey);
+}
+.oim-ul-sight-seen,
+.oim-ul-sight-hidden {
+  stroke-width: 2;
+}
+.oim-ul-sight-seen {
+  stroke: var(--oim-success);
+}
+.oim-ul-sight-hidden {
+  stroke: var(--oim-error);
+}
+.oim-ul-sight-ray {
+  stroke: var(--oim-text-color-light);
+  stroke-dasharray: 4 3;
+}

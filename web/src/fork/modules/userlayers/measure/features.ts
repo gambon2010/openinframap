@@ -34,6 +34,8 @@ export function measurementOf(item: {
     return { type: 'rings', points: [g.coordinates as LngLat], radii: (p.radii as number[]) ?? DEFAULT_RADII }
   if (p.measure === 'area' && g.type === 'Polygon')
     return { type: 'area', points: g.coordinates[0].slice(0, -1) as LngLat[] }
+  if (p.measure === 'sight' && g.type === 'LineString')
+    return { type: 'sight', points: g.coordinates as LngLat[] }
   if (g.type === 'LineString') return { type: 'distance', points: g.coordinates as LngLat[] }
   return null
 }

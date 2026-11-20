@@ -3,7 +3,7 @@ import { North } from '../../../core/north.ts'
 import { TickView } from './ticks.types.ts'
 import { LngLat } from '../../../core/earth.ts'
 
-export type MeasureType = 'distance' | 'area' | 'rings'
+export type MeasureType = 'distance' | 'area' | 'rings' | 'sight'
 
 export interface Measurement {
   type: MeasureType

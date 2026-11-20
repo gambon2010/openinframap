@@ -11,6 +11,7 @@ import { action } from './buttons.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
+import { DEFAULT_OBSERVER, DEFAULT_TARGET } from '../measure/sight.ts'
 
 /** The map toolbar's tools: [id, glyph, label, key]. */
 export const TOOLS: [string, string, string, string][] = [
@@ -25,7 +26,8 @@ export const TOOLS: [string, string, string, string][] = [
   // Measuring (kinds/measure.ts): a measurement is an item like the others.
   ['measure-distance', '📏', 'Measure a distance', 'D'],
   ['measure-area', '⬠', 'Measure an area', 'E'],
-  ['measure-rings', '◎', 'Range rings', 'O']
+  ['measure-rings', '◎', 'Range rings', 'O'],
+  ['measure-sight', '👁', 'Line of sight', 'I']
 ]
 
 export class Toolbar {
@@ -61,8 +63,10 @@ export class Toolbar {
     if (tool.mode === 'place' && tool.properties.kind === 'measure') return 'measure-rings'
     if (tool.mode === 'place') return tool.properties.kind === 'symbol' ? 'symbol' : tool.properties.kind
     if (tool.mode === 'graphic') return 'graphic'
-    if ((tool.mode === 'line' || tool.mode === 'area') && tool.properties?.kind === 'measure')
+    if ((tool.mode === 'line' || tool.mode === 'area') && tool.properties?.kind === 'measure') {
+      if (tool.properties.measure === 'sight') return 'measure-sight'
       return tool.mode === 'area' ? 'measure-area' : 'measure-distance'
+    }
     return tool.mode
   }
 
@@ -107,6 +111,25 @@ export class Toolbar {
         )
         break
       }
+      case 'measure-sight':
+        tools.setTool(
+          {
+            mode: 'line',
+            points: [],
+            max: 2,
+            properties: {
+              kind: 'measure',
+              measure: 'sight',
+              observer: DEFAULT_OBSERVER,
+              target: DEFAULT_TARGET
+            }
+          },
+          t(
+            'userlayers.sight-hint',
+            'Click where you stand, then what you want to see. Right-click: start again.'
+          )
+        )
+        break
       case 'measure-rings':
         tools.setTool(
           { mode: 'place', properties: { kind: 'measure', measure: 'rings', radii: measurePrefs.radii } },

@@ -79,6 +79,8 @@ export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
 export const CONTOURS_URL = `${BACKEND_BASE_URL}/terrain/contours/{z}/{x}/{y}.mvt`
 // The ground's height at a point (?lon=&lat=), for the coordinates box.
 export const ELEVATION_URL = `${BACKEND_BASE_URL}/terrain/elevation`
+// The line of sight between two points (?from=lon,lat&to=lon,lat&observer=&target=).
+export const SIGHT_URL = `${BACKEND_BASE_URL}/terrain/sight`
 
 // Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
 // the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online

@@ -315,7 +315,8 @@
       "line": "line",
       "measure-distance": "distance",
       "measure-area": "measured area",
-      "measure-rings": "range rings"
+      "measure-rings": "range rings",
+      "measure-sight": "line of sight"
     },
     "changed": {
       "moved": "moved"
@@ -617,7 +618,8 @@
       "marker": "Marker",
       "measure-distance": "Distance",
       "measure-area": "Measured area",
-      "measure-rings": "Range rings"
+      "measure-rings": "Range rings",
+      "measure-sight": "Line of sight"
     },
     "size-now": "Size: {{n}} %",
     "width-now": "Width: {{n}} %",
@@ -663,7 +665,14 @@
       "drawings": "Drawings and markers",
       "pictures": "Pictures",
       "copies": "Copies of map features"
-    }
+    },
+    "sight-asking": "Looking at the terrain…",
+    "sight-unknown": "No terrain here: no answer.",
+    "sight-seen": "Seen",
+    "sight-hidden": "Hidden by the ground {{distance}} away",
+    "sight-observer": "Eyes above the ground (m)",
+    "sight-target": "Target above the ground (m)",
+    "sight-hint": "Click where you stand, then what you want to see. Right-click: start again."
   },
   "tower": {
     "unnamed-line": "a line",

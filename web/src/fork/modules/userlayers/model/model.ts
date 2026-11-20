@@ -24,7 +24,7 @@ export interface FeatureProps {
   color?: string
   width?: number
   /** measure: a distance (a line), an area (a polygon) or range rings (a point). */
-  measure?: 'distance' | 'area' | 'rings'
+  measure?: 'distance' | 'area' | 'rings' | 'sight'
   /** measure, rings: their radii in metres. */
   radii?: number[]
   /** It can't be changed, moved or deleted until unlocked (any item). */
