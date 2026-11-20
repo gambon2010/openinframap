@@ -444,6 +444,11 @@ Which page config is used: `GATE_FRONTEND` (`dev`, `built`), written into
 `conf.d/frontend.conf` at start by nginx's image (`frontend.conf.template`, its
 documented templates).
 
+The built page would install upstream's service worker, which answers page visits
+without the gate (the login page included) and keeps old builds: the gate answers
+`/registerSW.js` with nothing and `/sw.js` with `service-worker/sw.js`, a worker that
+removes itself from any browser that has one (`scripts/tests/test_gate.py`).
+
 ## Recipes
 
 **A map layer from OSM** (e.g. airports):

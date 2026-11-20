@@ -289,6 +289,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.67 | The whole project on an external drive: on a Linux or Windows computer, install Docker, plug the drive in, run one script, and the app runs 100% offline, reading the maps from the drive (the Docker images and the map database loaded into Docker); pulling the drive out damages nothing. | 📋 planned (2026-11-20) `docs/plans/portable-drive.md` |
 | 10.68 | My layers and accounts in a database of their own, so a map update never touches them. | ⏸ not needed (2026-11-20): the map database stays in Docker, and the import already keeps them |
 | 10.69 | Installers kept for computers without the internet: Docker (a clean install for every large Linux distribution, Intel/AMD and ARM, and Windows) and the development tools for Linux and Windows; the setup scripts say where they are when something is missing. | ✅ `scripts/fetch_installers.py`, `data/installers/`, `install-docker.sh` (2026-11-20) |
+| 10.70 | Switching between the built page and the development one resets itself in the browser (no old version kept, nothing to clear by hand). | ✅ the gate removes the map's service worker (`gate/service-worker/sw.js`) (2026-11-20) |
 
 ## 11. Quality
 

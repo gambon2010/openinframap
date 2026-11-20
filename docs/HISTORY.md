@@ -1262,6 +1262,16 @@ default). Counts are France's OSM data in October 2026.
   now builds and saves both gates (it didn't build the gate before). Checked: both
   configs valid, the built page rendered with no errors (a throwaway copy on another
   port, the login check off).
+- **The map's service worker kept away from the gate:** the built page installed
+  upstream's service worker (vite-plugin-pwa), which answers every page visit from
+  its own copy: `/login` got the map (Log out, or an ended session, looped between
+  the map and itself) and an old build kept showing after going back to Vite's dev
+  server. The gate now answers `/registerSW.js` with nothing (never installed) and
+  `/sw.js` with a worker that removes itself (`gate/service-worker/sw.js`,
+  vite-plugin-pwa's `selfDestroying` pattern), in both of its ways; no upstream file
+  changed. Checked in Chrome: the old image's worker, then the new gate on the same
+  address: within a second the worker was gone, its copy deleted, the tab reloaded
+  from the gate, `/login` reaching the gate; the page's settings kept.
 
 ## Extra data (not from OpenStreetMap)
 

@@ -12,6 +12,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # How the page is served (frontend/<GATE_FRONTEND>.conf): nginx's image writes the
 # template's include into conf.d at start (its documented templates).
 COPY frontend/ /etc/nginx/frontend/
+COPY service-worker/ /etc/nginx/service-worker/
 COPY frontend.conf.template /etc/nginx/templates/frontend.conf.template
 ENV GATE_FRONTEND=dev
 
