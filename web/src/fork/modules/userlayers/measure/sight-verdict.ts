@@ -4,8 +4,9 @@ import { t } from '../../../core/i18n.ts'
 import { formatDistance } from '../../../core/earth.ts'
 import type { ProfilePoint, SightResult, SightSettings } from './sight.ts'
 
-/** "Seen (12 m clear)", "Hidden by trees 6.38 km away (taken as 15 m; 18 m above the
- * line)": the margin is how far the eye's line to the target passes over the highest
+/** "Seen (12 m clear)", "Through trees 475 m away: may be seen (trees taken as 15 m)"
+ * (only trees in the way: a signal may get through), "Hidden by the ground 6.38 km
+ * away (18 m above the line)": the margin is how far the eye's line to the target passes over the highest
  * thing between, or how far that rises above it; a height the map doesn't give is
  * said as taken. */
 export function sightVerdict(result: SightResult, settings: SightSettings): string {
@@ -15,6 +16,13 @@ export function sightVerdict(result: SightResult, settings: SightSettings): stri
       ? t('userlayers.sight-seen-margin', 'Seen ({{margin}} m clear)', { margin })
       : t('userlayers.sight-seen', 'Seen')
   const distance = formatDistance(result.blocked_at ?? 0)
+  if (result.through_trees) {
+    const trees = t('userlayers.sight-trees-taken', 'trees taken as {{height}} m', { height: settings.trees })
+    return t('userlayers.sight-through-trees', 'Through trees {{distance}} away: may be seen ({{trees}})', {
+      distance,
+      trees
+    })
+  }
   const by = {
     ground: t('userlayers.sight-by-ground', 'Hidden by the ground {{distance}} away', { distance }),
     building: t('userlayers.sight-by-building', 'Hidden by a building {{distance}} away', { distance }),

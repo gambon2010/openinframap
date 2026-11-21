@@ -721,7 +721,9 @@
     "sight-note-level": "Heights above or below the line of sight, as seen from the eyes: the far ground bends away for the Earth's curvature, less the light's bending.",
     "sight-copy": "Copy the answer (JSON)",
     "sight-copied": "Copied",
-    "sight-copy-failed": "Copying refused by the browser"
+    "sight-copy-failed": "Copying refused by the browser",
+    "sight-key-through-trees": "through trees",
+    "sight-through-trees": "Through trees {{distance}} away: may be seen ({{trees}})"
   },
   "tower": {
     "unnamed-line": "a line",

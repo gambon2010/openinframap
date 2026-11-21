@@ -12,7 +12,10 @@ ground (GDAL's default 2), the target `target` metres above it (0). A point is s
 when the line from the observer's eye to it rises at least as steeply as to every
 surface before it (the classic profile test, as GRASS's r.los and viewsheds along a
 ray). Each sample also says its surface as seen from the eye (lowered), so a chart
-draws exactly what the answer used. Obstacles within END_CLEAR of either end are
+draws exactly what the answer used. Trees don't count as a sure stop (a signal
+may pass through foliage, a gap may show the target): hidden only by trees, the
+answer says so (`through_trees`), and what's named as hiding the target is the first
+solid thing (the ground, a building) when there is one. Obstacles within END_CLEAR of either end are
 left out: the observer and the target stand at a wood's edge, not inside it; and
 only where the terrain is bare ground (bare_ground.py: France), not counted twice
 where it already holds them."""
@@ -56,13 +59,17 @@ class Sample:
 class Sight:
     samples: list[Sample]
     target_seen: bool | None  # None: no terrain under one of the ends
-    blocked_at: float | None  # metres from the observer to the first surface hiding the target
-    blocked_by: str | None = None  # "ground", "building", "trees"
-    # Metres the eye's line to the target clears everything by (< 0: what rises above it).
+    # Metres from the observer to the first solid surface hiding the target (the first
+    # trees if only trees hide it), and what that is: "ground", "building", "trees".
+    blocked_at: float | None
+    blocked_by: str | None = None
+    # Metres the eye's line to the target clears everything by (< 0: how far what's
+    # named as hiding it, solid or trees, rises above it).
     margin: float | None = None
     eye: float | None = None  # the eye's height (metres above sea level)
     target_top: float | None = None  # the target's top as seen from the eye (lowered)
     obstacles_counted: bool = False  # trees and buildings added somewhere along the line
+    through_trees: bool = False  # hidden only by trees: it may still be seen
 
 
 def along(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
@@ -115,18 +122,24 @@ def line_of_sight(
     samples = profile(heights, distances, standing, rise, coefficient)
     target_height = heights[-1] + target
     target_rise = rise(target_height, length)
-    blocker = first_hiding(samples[1:-1], target_rise, rise)
+    blocker = first_hiding(samples[1:-1], target_rise, rise, surface_rise)
+    solid = first_hiding(samples[1:-1], target_rise, rise, solid_rise)
+    named = solid or blocker
     target_top = lowered(target_height, length, coefficient)
-    margin = clearance(samples[1:-1], eye, target_top, length)
+    # The margin measures what the answer names: the solid things when they hide the
+    # target, everything (trees too) otherwise.
+    top = solid_apparent if solid else whole_apparent
+    margin = clearance(samples[1:-1], eye, target_top, length, top)
     return Sight(
         samples,
         blocker is None,
-        None if blocker is None else blocker.distance,
-        None if blocker is None else blocked_by(blocker, target_rise, rise),
+        None if named is None else named.distance,
+        None if named is None else blocked_by(named, target_rise, rise),
         margin,
         eye,
         target_top,
         any(on_bare),
+        through_trees=blocker is not None and solid is None,
     )
 
 
@@ -172,14 +185,35 @@ def profile(
     return samples
 
 
-def clearance(between: list[Sample], eye: float, target_top: float, length: float) -> float | None:
-    """How far the eye's straight line to the target passes over the highest surface
-    between them, as seen from the eye (< 0: that surface rises above the line, by
-    that much); None if there's nothing between."""
-    gaps = [
-        eye + (target_top - eye) * s.distance / length - s.apparent for s in between if s.apparent is not None
-    ]
+def clearance(
+    between: list[Sample],
+    eye: float,
+    target_top: float,
+    length: float,
+    top: Callable[[Sample], float | None],
+) -> float | None:
+    """How far the eye's straight line to the target passes over the highest top
+    between them (`top`: a sample's whole surface or its solid part, as seen from the
+    eye; < 0: that rises above the line, by that much); None if there's nothing
+    between."""
+    gaps = []
+    for s in between:
+        height = top(s)
+        if height is not None:
+            gaps.append(eye + (target_top - eye) * s.distance / length - height)
     return min(gaps) if gaps else None
+
+
+def whole_apparent(sample: Sample) -> float | None:
+    """A sample's surface as seen from the eye: the ground and all that stands on it."""
+    return sample.apparent
+
+
+def solid_apparent(sample: Sample) -> float | None:
+    """A sample's solid top as seen from the eye: without trees."""
+    if sample.apparent is None or sample.obstacle.kind != "trees":
+        return sample.apparent
+    return sample.apparent - sample.obstacle.height
 
 
 def surface_rise(sample: Sample, rise: Rise) -> float:
@@ -189,11 +223,23 @@ def surface_rise(sample: Sample, rise: Rise) -> float:
     return rise(sample.ground + sample.obstacle.height, sample.distance)
 
 
-def first_hiding(between: list[Sample], target_rise: float, rise: Rise) -> Sample | None:
-    """The first sample whose surface rises above the eye's line to the target (the
-    samples between the two: the target's own ground can't hide it); None if none."""
+def solid_rise(sample: Sample, rise: Rise) -> float:
+    """How steeply the eye's line rises to a sample's solid top: the ground, and a
+    building on it (not trees: foliage may let the line through)."""
+    if sample.ground is None:
+        return -math.inf
+    building = sample.obstacle.height if sample.obstacle.kind == "building" else 0.0
+    return rise(sample.ground + building, sample.distance)
+
+
+def first_hiding(
+    between: list[Sample], target_rise: float, rise: Rise, top_rise: Callable[[Sample, Rise], float]
+) -> Sample | None:
+    """The first sample whose top (`top_rise`: its whole surface, or only what's solid)
+    rises above the eye's line to the target (the samples between the two: the
+    target's own ground can't hide it); None if none."""
     for sample in between:
-        if surface_rise(sample, rise) > target_rise:
+        if top_rise(sample, rise) > target_rise:
             return sample
     return None
 

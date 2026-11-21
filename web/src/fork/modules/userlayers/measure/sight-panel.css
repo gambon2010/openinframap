@@ -70,6 +70,10 @@
   border-top: 3px dashed var(--oim-success);
   height: 0 !important;
 }
+.oim-ul-sight-key-through-trees {
+  border-top: 3px dashed var(--oim-caution);
+  height: 0 !important;
+}
 .oim-ul-sight-key-blocked {
   border-top: 3px dashed var(--oim-error);
   height: 0 !important;
@@ -122,17 +126,21 @@
   stroke-width: 1.5;
   fill: none;
 }
-/* The eye's line to the target: green where it passes over everything, red where
-   something rises above it. */
-.oim-ul-sight-clear,
-.oim-ul-sight-blocked {
+/* The eye's line to the target: green where it passes over everything, yellow where
+   only trees rise above it, red where the ground or a building does. */
+.oim-ul-sight-line-clear,
+.oim-ul-sight-line-trees,
+.oim-ul-sight-line-blocked {
   stroke-width: 3;
   stroke-dasharray: 8 4;
 }
-.oim-ul-sight-clear {
+.oim-ul-sight-line-clear {
   stroke: var(--oim-success);
 }
-.oim-ul-sight-blocked {
+.oim-ul-sight-line-trees {
+  stroke: var(--oim-caution);
+}
+.oim-ul-sight-line-blocked {
   stroke: var(--oim-error);
 }
 .oim-ul-sight-block {

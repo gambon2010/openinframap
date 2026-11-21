@@ -314,6 +314,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.92 | The line of sight's profile a bubble on the right, clear of the buttons; its chart with the line of sight level; its heights set in the panel, the card only the answer and the button; debug numbers to check the math; a moved point recalculates. | ✅ `measure/sight-panel.ts`, `sight-debug.ts` (2026-11-21) |
 | 10.93 | A hidden layer hides everything of its items, their selection handles too; the open profile follows its line when it's moved, a spinner while it's worked out. | ✅ `map/render.ts`, `measure/sight-panel.ts` (2026-11-21) |
 | 10.94 | A line of sight dragged only by its two points, not as a whole. | ✅ `kinds/measure.ts` (`pointsOnly`), `map/tools/dragging.ts` (2026-11-21) |
+| 10.95 | Trees in yellow on a line of sight: they may not stop a signal; the ground or a building named as what hides the target, its margin measuring that. Accuracy checked against the textbook horizon. | ✅ `terrain/sight.py` (`through_trees`), `measure/sight.ts` (2026-11-21) |
 
 ## 11. Quality
 

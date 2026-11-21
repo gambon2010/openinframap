@@ -24,11 +24,24 @@ const answer = (profile: ProfilePoint[], eye: number, targetTop: number): SightR
   eye,
   target_top: targetTop,
   obstacles_counted: true,
+  through_trees: false,
   curvature: { coefficient: COEFFICIENT, earth_radius: RADIUS },
   profile
 })
 
 describe('a line of sight checked against itself', () => {
+  test('trees then the ground: hidden first where the ground rises above the line', () => {
+    // A level line at 200 m: trees reach 210 m at 50 m (their ground 190 m), the
+    // ground itself 205 m at 100 m.
+    const profile: ProfilePoint[] = [
+      [0, 198, true, 0, '', 200],
+      [50, 190, true, 20, 'trees', 210],
+      [100, 205, false, 0, '', 205],
+      [150, 198, false, 0, '', 200]
+    ]
+    expect(checkSight(answer(profile, 200, 200)).firstHiding).toBe(100)
+  })
+
   test('the lowering at 92 km is about 570 m (6/7 of the bare curvature)', () => {
     const result = answer([sample(0, 200)], 202, 0)
     expect(expectedDrop(result, 92_000)).toBeCloseTo(569.4, 1)
@@ -48,7 +61,7 @@ describe('a line of sight checked against itself', () => {
     expect(check.worstDropError).toBeCloseTo(drop(10_000), 6)
   })
 
-  test('the margin and the first sample above the line, from the profile', () => {
+  test('the margin and where it is first hidden, from the profile', () => {
     // A level line at 200 m: the middle sample's top rises 10 m above it.
     const profile: ProfilePoint[] = [
       [0, 198, true, 0, '', 200],
@@ -58,7 +71,7 @@ describe('a line of sight checked against itself', () => {
     ]
     const check = checkSight(answer(profile, 200, 200))
     expect(check.margin).toBe(-10)
-    expect(check.firstAbove).toBe(100)
+    expect(check.firstHiding).toBe(100)
   })
 
   test('no terrain: no drop, no margin', () => {
@@ -66,6 +79,6 @@ describe('a line of sight checked against itself', () => {
     expect(dropOf(none)).toBeNull()
     const check = checkSight(answer([none, none], 2, 0))
     expect(check.margin).toBeNull()
-    expect(check.firstAbove).toBeNull()
+    expect(check.firstHiding).toBeNull()
   })
 })

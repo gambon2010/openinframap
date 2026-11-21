@@ -1443,6 +1443,22 @@ default). Counts are France's OSM data in October 2026.
 - **A line of sight moves only by its points** (asked): a kind can say only its
   points drag (`pointsOnly`, `kinds/types.ts`); grabbing the line itself pans the map,
   and the cursor no longer offers to move it.
+- **Line of sight: trees as a maybe, accuracy reviewed** (asked). Trees no longer
+  count as a sure stop: hidden only by trees, the answer says "Through trees…: may be
+  seen" (`through_trees`), the line yellow there (`--oim-caution`); otherwise the
+  ground or a building is named, the margin measuring it (the trees' height was
+  given for a ground block before). Accuracy: the heights are above sea level
+  (Copernicus DEM: EGM2008 geoid; IGN RGE ALTI: NGF-IGN69), the right base for
+  GDAL's curvature correction (6/7 × d² / 2R); the code is our own (GDAL isn't a
+  dependency), now pinned by the textbook horizon (2 m eyes: 5.45 km with standard
+  refraction; seen at 5.3 km, hidden at 5.6 km). Limits: real refraction varies
+  (inversions over plains), lines over ~24 km are sampled more sparsely than the
+  terrain's 6 m pixels (4000 samples at most), the mean radius is used (±0.3 %).
+- **The system disk filled up** (internal server errors): its btrfs metadata ran
+  out (every chunk allocated), the database crash-looped on "No space left on
+  device". Docker's leftovers from rebuilding images at each export (165 unused
+  images, 69 GB; a 77 GB build cache) deleted with the owner's agreement: running
+  again. A `btrfs balance` (root) is still needed to give the disk unallocated room.
 
 ## Extra data (not from OpenStreetMap)
 

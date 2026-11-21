@@ -22,6 +22,7 @@ function answer(profile: ProfilePoint[], changes: Partial<SightResult> = {}): Si
     eye: 202,
     target_top: 200,
     obstacles_counted: true,
+    through_trees: false,
     curvature: { coefficient: 6 / 7, earth_radius: 6_371_008.8 },
     profile,
     ...changes
@@ -35,7 +36,7 @@ describe('a line of sight on the map', () => {
     const result = answer([row(0, 200, true), row(50, 260, true), row(75, 210, false), row(100, 200, false)])
     const stretches = sightStretches([0, 0], [1, 0], result)
     // Each piece takes the state where it ends: red to 75 m, then green.
-    expect(stretches.map((s) => s.clear)).toEqual([false, true])
+    expect(stretches.map((s) => s.state)).toEqual(['blocked', 'clear'])
     expect(stretches[0].points).toEqual([
       [0, 0],
       [0.5, 0],
@@ -46,6 +47,19 @@ describe('a line of sight on the map', () => {
       [0.75, 0],
       [1, 0]
     ])
+  })
+
+  test('yellow where only trees rise above the line, red where the ground does', () => {
+    // The eye at 202 m, the target's top at 200 m: trees 20 m tall on 195 m ground at
+    // 25 m (their ground under the line), then the ground itself at 250 m.
+    const result = answer([
+      row(0, 200, true),
+      row(25, 195, true, 20, 'trees'),
+      row(50, 250, false),
+      row(100, 200, false)
+    ])
+    const stretches = sightStretches([0, 0], [1, 0], result)
+    expect(stretches.map((s) => s.state)).toEqual(['trees', 'blocked', 'clear'])
   })
 
   test('no terrain: nothing drawn there', () => {
@@ -67,12 +81,15 @@ describe('a line of sight on the map', () => {
 describe('what a line of sight says', () => {
   test('what hides the target, where, by how much', () => {
     const trees = answer([row(0, 200, true), row(50, 200, true, 20, 'trees'), row(100, 200, false)], {
-      blocked_by: 'trees'
+      blocked_by: 'trees',
+      through_trees: true
     })
     expect(sightVerdict(trees, DEFAULT_SIGHT)).toBe(
-      'Hidden by trees 50 m away (trees taken as 15 m; 12 m above the line)'
+      'Through trees 50 m away: may be seen (trees taken as 15 m)'
     )
     expect(sightBlockLabel(trees)).toBe('Trees 20 m')
+    const ridge = answer([row(0, 200, true), row(50, 214, true), row(100, 200, false)])
+    expect(sightVerdict(ridge, DEFAULT_SIGHT)).toBe('Hidden by the ground 50 m away (12 m above the line)')
     expect(
       sightVerdict(
         answer([], { target_seen: true, blocked_at: null, blocked_by: null, margin: 7.6 }),

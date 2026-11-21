@@ -3,15 +3,15 @@
 // that line, so whatever rises above it shows at once however long the line. The
 // ground and what stands on it (buildings grey, trees green) are as seen from the
 // eye, the Earth's curvature in them as in the answer (sight.ts): the far ground
-// bends away. The line dashed, green where it passes over everything and red where
-// something rises above it, where the target is first hidden, and axes in metres
+// bends away. The line dashed, green where it passes over everything, yellow where
+// only trees rise above it, red where the ground or a building does, where the target is first hidden, and axes in metres
 // and kilometres. Hovering it says where along the line (onHover: the sample under
 // the pointer, null when it leaves).
 // Drawn by hand in SVG: polygons, lines and ticks a chart library would only wrap.
 import { svg } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance } from '../../../core/earth.ts'
-import { lineClearAt, lineHeightAt, type ProfilePoint, type SightResult } from './sight.ts'
+import { lineHeightAt, lineStateAt, type LineState, type ProfilePoint, type SightResult } from './sight.ts'
 
 const WIDTH = 1000
 const HEIGHT = 520
@@ -163,26 +163,26 @@ function groundTop(known: Known[], scale: Scale): SVGElement {
   return svg('polyline.oim-ul-sight-ground-top', { points })
 }
 
-/** The eye's line to the target, level at 0, in runs: clear (over everything) or
- * blocked. */
+/** The eye's line to the target, level at 0, in runs of one state (clear, through
+ * trees, blocked). */
 function rayLines(result: SightResult, known: Known[], scale: Scale): SVGElement[] {
   const lineAt = (distance: number) => `${scale.x(distance)},${scale.y(0)}`
-  const runs: { clear: boolean; distances: number[] }[] = []
+  const runs: { state: LineState; distances: number[] }[] = []
   for (const k of known) {
-    const clear = lineClearAt(result, k.point)
+    const state = lineStateAt(result, k.point)
     const last = runs[runs.length - 1]
-    if (last && last.clear === clear) last.distances.push(k.distance)
+    if (last && last.state === state) last.distances.push(k.distance)
     // A new run starts where the last ended, so they meet.
     else
       runs.push({
-        clear,
+        state,
         distances: last ? [last.distances[last.distances.length - 1], k.distance] : [k.distance]
       })
   }
   return runs
     .filter((run) => run.distances.length > 1)
     .map((run) =>
-      svg(`polyline.${run.clear ? 'oim-ul-sight-clear' : 'oim-ul-sight-blocked'}`, {
+      svg(`polyline.oim-ul-sight-line-${run.state}`, {
         points: run.distances.map(lineAt).join(' '),
         fill: 'none'
       })

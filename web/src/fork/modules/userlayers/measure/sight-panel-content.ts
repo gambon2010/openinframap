@@ -67,6 +67,7 @@ export function legend(): HTMLElement {
   return el(
     '.oim-ul-sight-legend',
     key('oim-ul-sight-key-clear', t('userlayers.sight-key-clear', 'line clear')),
+    key('oim-ul-sight-key-through-trees', t('userlayers.sight-key-through-trees', 'through trees')),
     key('oim-ul-sight-key-blocked', t('userlayers.sight-key-blocked', 'line blocked')),
     key('oim-ul-sight-key-ground', t('userlayers.sight-key-ground', 'ground')),
     key('oim-ul-sight-key-building', t('userlayers.sight-key-building', 'buildings')),
@@ -107,16 +108,16 @@ export function debugSection(result: SightResult, settings: SightSettings): HTML
     check.margin === null || result.margin === null || Math.abs(check.margin - result.margin) <= ROUNDING
   const blockOk =
     result.target_seen === true ||
-    (check.firstAbove !== null &&
+    (check.firstHiding !== null &&
       result.blocked_at !== null &&
-      Math.abs(check.firstAbove - result.blocked_at) <= BLOCKED_AT_ROUNDING)
+      Math.abs(check.firstHiding - result.blocked_at) <= BLOCKED_AT_ROUNDING)
   const rows: [string, string][] = [
     ['settings', JSON.stringify(settings)],
     ['eye, target_top', `${metres(result.eye)}, ${metres(result.target_top)}`],
     ['target_seen, blocked_by', `${result.target_seen}, ${result.blocked_by}`],
     [
-      'blocked_at · first above the line',
-      `${metres(result.blocked_at)} · ${metres(check.firstAbove)}${flag(blockOk)}`
+      'blocked_at · from the profile',
+      `${metres(result.blocked_at)} · ${metres(check.firstHiding)}${flag(blockOk)}`
     ],
     ['margin · from the profile', `${metres(result.margin)} · ${metres(check.margin)}${flag(marginOk)}`],
     [
@@ -126,7 +127,7 @@ export function debugSection(result: SightResult, settings: SightSettings): HTML
     ['lowered at the target · formula', `${metres(check.dropAtEnd)} · ${metres(check.dropAtEndExpected)}`],
     ['worst lowering error', `${check.worstDropError.toFixed(2)} m${flag(dropOk)}`],
     ['samples · spacing', `${check.samples} · ${check.spacing.toFixed(1)} m`],
-    ['obstacles_counted', String(result.obstacles_counted)]
+    ['obstacles_counted, through_trees', `${result.obstacles_counted}, ${result.through_trees}`]
   ]
   const copy = el('button.oim-ul-button', t('userlayers.sight-copy', 'Copy the answer (JSON)'), {
     type: 'button'

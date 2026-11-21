@@ -42,6 +42,8 @@
 :root {
   --oim-error: #b3261e;
   --oim-success: #1b7a33;
+  /* Maybe: a line of sight through trees. Deep amber, apart from the selection's yellow. */
+  --oim-caution: #c98a00;
   --oim-link: #1a5fb4;
   --oim-warning-background: #fff4e5;
   --oim-overlay-background: rgb(20 20 30 / 85%);

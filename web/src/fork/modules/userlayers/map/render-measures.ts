@@ -1,7 +1,7 @@
 // Fork: My layers' measurements as map features (map/render.ts draws them into each
 // layer's measure source): their lines, labels and marks (measure/features.ts), and a
-// line of sight's stretches, green where it passes over everything, red where
-// something rises above it
+// line of sight's stretches, green where it passes over everything, yellow where
+// only trees rise above it, red where the ground or a building does
 // (measure/sight.ts), and a mark where the target is first hidden, saying by what,
 // once the backend has answered (each answer asked once per points and heights).
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
@@ -11,8 +11,7 @@ import { measurementFeatures, measurementOf } from '../measure/features.ts'
 import type { North } from '../../../core/north.ts'
 import type { LngLat } from '../../../core/earth.ts'
 import {
-  BLOCKED_COLOUR,
-  CLEAR_COLOUR,
+  LINE_COLOURS,
   pointAlong,
   sightAnswer,
   sightKey,
@@ -99,7 +98,7 @@ export class MeasureDrawer {
     const stretches: GeoJSON.Feature[] = sightStretches(from, to, result).map((stretch) => ({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: stretch.points },
-      properties: { fid: f.id, color: stretch.clear ? CLEAR_COLOUR : BLOCKED_COLOUR }
+      properties: { fid: f.id, color: LINE_COLOURS[stretch.state] }
     }))
     return [...stretches, ...blockFeature(f, from, to, result)]
   }

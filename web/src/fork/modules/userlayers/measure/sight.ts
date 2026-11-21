@@ -3,7 +3,8 @@
 // between them, with the buildings and trees on it, from the backend
 // (web-backend/src/fork/terrain/sight.py: curvature less refraction, as GDAL's
 // viewshed). On the map and the chart the line is green where it passes over
-// everything, red where something rises above it. The profile is drawn by
+// everything, yellow where only trees rise above it, red where the ground or a
+// building does. The profile is drawn by
 // sight-chart.ts, in the split screen (sight-panel.ts).
 import { SIGHT_URL } from '../../../config.ts'
 import type { LngLat } from '../../../core/earth.ts'
@@ -48,7 +49,8 @@ export type Blocker = 'ground' | 'building' | 'trees'
 export interface SightResult {
   /** null: no terrain under one of the ends. */
   target_seen: boolean | null
-  /** Metres from the observer to the first surface hiding the target. */
+  /** Metres from the observer to the first solid thing hiding the target (the ground,
+   * a building; the first trees if only trees hide it). */
   blocked_at: number | null
   blocked_by: Blocker | null
   /** Metres the eye's line to the target passes over the highest thing between
@@ -60,6 +62,8 @@ export interface SightResult {
   /** Whether trees and buildings were added (only where the terrain is bare ground:
    * France). */
   obstacles_counted: boolean
+  /** Hidden only by trees: it may still be seen. */
+  through_trees: boolean
   /** How the far heights were lowered: coefficient × distance² / (2 × radius). */
   curvature: { coefficient: number; earth_radius: number }
   profile: ProfilePoint[]
@@ -112,11 +116,6 @@ export async function fetchSight(
   }
 }
 
-/** The colours a line of sight is drawn in: clear, blocked (as on its profile: the
- * fork's success and error colours, ui/panel.css). */
-export const CLEAR_COLOUR = '#1b7a33'
-export const BLOCKED_COLOUR = '#b3261e'
-
 /** The height of the eye's straight line to the target a distance along (as seen from
  * the eye, as the answer's heights; null: no terrain at an end). */
 export function lineHeightAt(result: SightResult, distance: number): number | null {
@@ -125,40 +124,56 @@ export function lineHeightAt(result: SightResult, distance: number): number | nu
   return result.eye + ((result.target_top - result.eye) * distance) / length
 }
 
-/** Whether the eye's straight line to the target passes over a sample's surface. */
-export function lineClearAt(result: SightResult, point: ProfilePoint): boolean {
-  const [distance, , , , , apparent] = point
-  const line = lineHeightAt(result, distance)
-  return apparent === null || line === null || apparent <= line
+/** Along a line of sight, where the eye's line passes: over everything ("clear"),
+ * through trees only ("trees": a signal may get through, a gap may show the target),
+ * or under the ground or a building ("blocked"). */
+export type LineState = 'clear' | 'trees' | 'blocked'
+
+/** The colours each is drawn in (as on its profile: the fork's success, caution and
+ * error colours, ui/panel.css). */
+export const LINE_COLOURS: Record<LineState, string> = {
+  clear: '#1b7a33',
+  trees: '#c98a00',
+  blocked: '#b3261e'
 }
 
-/** The line from observer to target cut where it goes from clear to blocked: each
- * stretch's points and whether the line passes over everything there (the backend
- * samples the line straight between the two points: a sample a fraction of the length
- * along it is that fraction of the way). Stretches without terrain are left out. */
+/** Where the eye's straight line to the target passes at a sample (both as seen from
+ * the eye: the answer's own heights). */
+export function lineStateAt(result: SightResult, point: ProfilePoint): LineState {
+  const [distance, , , standing, kind, apparent] = point
+  const line = lineHeightAt(result, distance)
+  if (apparent === null || line === null || apparent <= line) return 'clear'
+  const solidTop = kind === 'trees' ? apparent - standing : apparent
+  return solidTop <= line ? 'trees' : 'blocked'
+}
+
+/** The line from observer to target cut where its state changes: each stretch's
+ * points and its state (the backend samples the line straight between the two
+ * points: a sample a fraction of the length along it is that fraction of the way).
+ * Stretches without terrain are left out. */
 export function sightStretches(
   from: LngLat,
   to: LngLat,
   result: SightResult
-): { points: LngLat[]; clear: boolean }[] {
+): { points: LngLat[]; state: LineState }[] {
   const length = result.profile[result.profile.length - 1]?.[0] || 1
   const at = (distance: number) => pointAlong(from, to, distance, length)
-  const stretches: { points: LngLat[]; clear: boolean }[] = []
-  let current: { points: LngLat[]; clear: boolean } | null = null
+  const stretches: { points: LngLat[]; state: LineState }[] = []
+  let current: { points: LngLat[]; state: LineState } | null = null
   for (const point of result.profile) {
     const [distance, ground] = point
     if (ground === null) {
       current = null
       continue
     }
-    const clear = lineClearAt(result, point)
-    if (current && current.clear === clear) {
+    const state = lineStateAt(result, point)
+    if (current && current.state === state) {
       current.points.push(at(distance))
       continue
     }
     // A new stretch starts where the last ended, so they meet.
     const start: LngLat[] = current ? [current.points[current.points.length - 1]] : []
-    current = { points: [...start, at(distance)], clear }
+    current = { points: [...start, at(distance)], state }
     stretches.push(current)
   }
   return stretches.filter((s) => s.points.length > 1)

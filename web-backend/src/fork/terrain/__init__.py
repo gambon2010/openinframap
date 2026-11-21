@@ -70,7 +70,8 @@ async def sight_between(request: AppRequest) -> Response:
     {"target_seen", "blocked_at" (metres), "blocked_by" ("ground", "building",
     "trees"), "margin" (metres the eye's line to the target clears everything by;
     < 0: what rises above it, by that much), "eye", "target_top" (metres: the eye,
-    and the target's top as seen from it), "obstacles_counted", "curvature" (its
+    and the target's top as seen from it), "obstacles_counted", "through_trees" (hidden only
+    by trees: it may still be seen; blocked_at then names the first trees), "curvature" (its
     coefficient and the Earth's radius: the debug view checks the profile with them),
     "profile": [[distance, ground, seen, obstacle height, obstacle kind, surface as
     seen from the eye]...]}."""
@@ -98,6 +99,7 @@ async def sight_between(request: AppRequest) -> Response:
             "eye": rounded(found.eye, 1),
             "target_top": rounded(found.target_top, 1),
             "obstacles_counted": found.obstacles_counted,
+            "through_trees": found.through_trees,
             "curvature": {"coefficient": sight.VISIBLE_LIGHT, "earth_radius": sight.EARTH_RADIUS},
             "profile": [profile_row(s) for s in found.samples],
         }

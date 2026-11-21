@@ -61,6 +61,18 @@ def test_the_earth_s_curvature_hides_what_is_far_on_flat_ground(monkeypatch):
     assert sight.line_of_sight(*FAR, observer=100, target=50).target_seen
 
 
+def test_the_horizon_from_2_m_on_the_sea_is_5_45_km(monkeypatch):
+    """The textbook horizon with the standard refraction: sqrt(2 R h / (1 - 1/7)),
+    5453 m for eyes 2 m up (5048 m without refraction): a person lying on the sea is
+    seen just inside it, hidden just past it."""
+    monkeypatch.setattr(sight.elevations, "elevation", ground(lambda lat: 0.0))
+    degrees_per_metre = 1 / 111_195  # along a meridian, on the mean sphere
+    inside = ((7.0, 47.0), (7.0, 47.0 + 5300 * degrees_per_metre))
+    past = ((7.0, 47.0), (7.0, 47.0 + 5600 * degrees_per_metre))
+    assert sight.line_of_sight(*inside).target_seen
+    assert sight.line_of_sight(*past).target_seen is False
+
+
 def test_no_terrain_under_an_end_no_answer(monkeypatch):
     monkeypatch.setattr(sight.elevations, "elevation", lambda lon, lat: None)
     assert sight.line_of_sight(*NEAR).target_seen is None
@@ -92,6 +104,26 @@ def test_trees_hide_the_ground_behind_them(monkeypatch):
     found = sight.line_of_sight(*NEAR, obstacles_at=wood)
     assert found.blocked_by == "trees"
     assert not any(s.seen for s in found.samples if s.distance > 500)
+
+
+def test_hidden_only_by_trees_it_may_still_be_seen(monkeypatch):
+    monkeypatch.setattr(sight.elevations, "elevation", ground(lambda lat: 200.0))
+    wood = standing((47.003, 47.004), obstacles.Obstacle(20.0, "trees"))
+    found = sight.line_of_sight(*NEAR, obstacles_at=wood)
+    assert found.target_seen is False and found.through_trees
+
+
+def test_trees_then_a_ridge_the_ridge_is_named(monkeypatch):
+    # Trees 40 m tall at about 0.35 km, a 10 m rise at about 0.8 km: the rise is a sure
+    # stop, and the margin is how far it, not the taller trees, rises over the line
+    # (about 9 m; the trees about 38 m).
+    ridge = ground(lambda lat: 210.0 if 47.007 < lat < 47.008 else 200.0)
+    monkeypatch.setattr(sight.elevations, "elevation", ridge)
+    wood = standing((47.003, 47.004), obstacles.Obstacle(40.0, "trees"))
+    found = sight.line_of_sight(*NEAR, obstacles_at=wood)
+    assert found.blocked_by == "ground" and not found.through_trees
+    assert 770 < found.blocked_at < 890
+    assert -11 < found.margin < -8
 
 
 def test_nothing_is_added_where_the_terrain_already_holds_it(monkeypatch):

@@ -1,9 +1,10 @@
 // Fork: a line of sight's answer checked against itself, for the split screen's debug
 // section (sight-panel.ts, with debug on): each sample's lowering for the Earth's
 // curvature worked out again from the distance, the margin and where the target is
-// first hidden worked out again from the profile. A difference beyond the profile's
+// first hidden (the first solid thing, else the first trees) worked out again from
+// the profile. A difference beyond the profile's
 // rounding (0.1 m) means the backend and the chart disagree.
-import { lineHeightAt, type ProfilePoint, type SightResult } from './sight.ts'
+import { lineHeightAt, lineStateAt, type ProfilePoint, type SightResult } from './sight.ts'
 
 /** The profile's heights are rounded to 0.1 m: two of them in one figure. */
 export const ROUNDING = 0.2
@@ -19,8 +20,9 @@ export interface SightCheck {
   worstDropError: number
   /** The margin worked out from the profile (null: no sample between the ends). */
   margin: number | null
-  /** The first sample between the ends rising above the line (metres along). */
-  firstAbove: number | null
+  /** Where the target is first hidden, from the profile (metres along): the first
+   * sample whose ground or building rises above the line, else the first trees. */
+  firstHiding: number | null
 }
 
 export function checkSight(result: SightResult): SightCheck {
@@ -34,7 +36,7 @@ export function checkSight(result: SightResult): SightCheck {
     dropAtEndExpected: expectedDrop(result, length),
     worstDropError: worstDropError(result),
     margin: marginFromProfile(result),
-    firstAbove: firstAboveLine(result)
+    firstHiding: firstHiding(result)
   }
 }
 
@@ -66,22 +68,30 @@ function between(result: SightResult): ProfilePoint[] {
   return result.profile.slice(1, -1).filter((p) => p[5] !== null)
 }
 
-/** The least the line passes over a sample by (negative: the most one rises above). */
+/** The least the line passes over a sample by (negative: the most one rises above),
+ * measuring what the answer names: solid tops when the ground or a building hides
+ * the target, whole surfaces (trees too) otherwise. */
 function marginFromProfile(result: SightResult): number | null {
+  const solidHides = result.target_seen === false && !result.through_trees
   let margin: number | null = null
   for (const point of between(result)) {
     const line = lineHeightAt(result, point[0])
-    if (line === null || point[5] === null) continue
-    const over = line - point[5]
+    const top = solidHides ? solidTop(point) : point[5]
+    if (line === null || top === null) continue
+    const over = line - top
     if (margin === null || over < margin) margin = over
   }
   return margin
 }
 
-function firstAboveLine(result: SightResult): number | null {
-  for (const point of between(result)) {
-    const line = lineHeightAt(result, point[0])
-    if (line !== null && point[5] !== null && point[5] > line) return point[0]
-  }
-  return null
+/** A sample's top as seen from the eye without trees (null: no terrain). */
+function solidTop([, , , standing, kind, apparent]: ProfilePoint): number | null {
+  if (apparent === null) return null
+  return kind === 'trees' ? apparent - standing : apparent
+}
+
+function firstHiding(result: SightResult): number | null {
+  const inTheWay = between(result).filter((point) => lineStateAt(result, point) !== 'clear')
+  const solid = inTheWay.find((point) => lineStateAt(result, point) === 'blocked')
+  return (solid ?? inTheWay[0])?.[0] ?? null
 }

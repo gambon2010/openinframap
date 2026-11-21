@@ -84,10 +84,12 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   the shared spinner (`.oim-spinner`, ui/panel.css: a small turning ring before
   "Looking at the terrain…"; the card shows it too). The line's card holds only its answer and the button; its heights are
   set in the panel, in a row of small fields above the chart. The chart is turned so
-  the eye's line is level at 0 (heights "+50 m", "−20 m" from it): the in the light grey of panels with a darker grey top, buildings grey and woods
-  green standing on it, the eye's line dashed, green where it passes over everything
-  and red where something rises above it (the success and error colours, as the line
-  on the map), a red ring "Hidden from here", heights and distances on light grid
+  the eye's line is level at 0 (heights "+50 m", "−20 m" from it): the ground in the
+  light grey of panels with a darker grey top, buildings grey and woods green
+  standing on it, the eye's line dashed, green where it passes over everything,
+  yellow where only trees rise above it, red where the ground or a building does
+  (the success, caution and error colours, `--oim-caution` a deep amber apart from
+  the selection's yellow; as the line on the map), a red ring "Hidden from here", heights and distances on light grid
   lines; the pointer's place a white dot ringed in black, on the chart
   and on the map (unlike the selection's yellow). On the map the line's mark where
   it's hidden: a white disc ringed in the error red, labelled with what hides it.
