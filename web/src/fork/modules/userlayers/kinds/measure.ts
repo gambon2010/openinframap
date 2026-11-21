@@ -42,6 +42,7 @@ export const measure: ItemKind = {
   drawn: 'measure',
   thumbnail: (item) => ICONS[typeOf(item)],
   coloured: true,
+  pointsOnly: (item) => typeOf(item) === 'sight',
   filters: () => ['graphics'],
   card: (item, update, setGeometry) => {
     const m = measurementOf(item)

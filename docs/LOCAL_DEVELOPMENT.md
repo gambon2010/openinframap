@@ -728,8 +728,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   sight is level: what rises above it shows at once, and the far ground bends away
   with the Earth's curvature; point at the chart and a dot shows that place on the
   map. With debug on (Settings), the panel also shows the answer's raw numbers,
-  checked against themselves (✓ or ✗), and copies it as JSON. Moving a point asks
-  again when you let go, the open profile following (a spinner while it's worked
+  checked against themselves (✓ or ✗), and copies it as JSON. Only its two points
+  can be dragged (not the line as a whole); moving one asks again when you let go, the open profile following (a spinner while it's worked
   out). Trees and buildings are added only in
   France, where the terrain is bare ground (elsewhere it already holds them), not
   within 30 m of either end; the Earth's curvature counted, as GDAL's viewshed; needs

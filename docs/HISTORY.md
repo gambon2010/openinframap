@@ -1440,6 +1440,9 @@ default). Counts are France's OSM data in October 2026.
   (moved, heights changed or undone: asked again, the last chart faded under a
   spinner; deleted: closed), and its contents moved to `sight-panel-content.ts`.
   CLAUDE.md gained "Push back on what doesn't make sense".
+- **A line of sight moves only by its points** (asked): a kind can say only its
+  points drag (`pointsOnly`, `kinds/types.ts`); grabbing the line itself pans the map,
+  and the cursor no longer offers to move it.
 
 ## Extra data (not from OpenStreetMap)
 

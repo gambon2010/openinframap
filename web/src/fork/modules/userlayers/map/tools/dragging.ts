@@ -9,6 +9,7 @@ import { axisWidthFrom, squareUp } from '../../graphics/graphics.ts'
 import { controlPoints, moveVertex, sizeFromDrag, translateGeometry } from '../geometry.ts'
 import { graphicGeometry } from './drawing.ts'
 import type { ToolsContext } from '../tools.types.ts'
+import type { UserFeature } from '../../model/model.ts'
 
 /** A selection handle (resize or point) under the pointer, if any. */
 export function handleAt(c: ToolsContext, point: { x: number; y: number }, layer: string) {
@@ -69,6 +70,7 @@ export function startDrag(c: ToolsContext, e: MapMouseEvent) {
     }
     return
   }
+  if (!movesWhole(feature)) return
   const hit = c.hit(e.point)
   if (!hit || String(hit.properties.fid) !== c.selected) return
   e.preventDefault()
@@ -82,13 +84,21 @@ export function startDrag(c: ToolsContext, e: MapMouseEvent) {
   }
 }
 
+/** Whether an item can be grabbed anywhere on it and moved whole. */
+function movesWhole(feature: UserFeature): boolean {
+  return !kindOf(feature.properties).pointsOnly?.(feature)
+}
+
 /** Not dragging, something selected: the cursor says what a drag would do. */
 export function hoverCursor(c: ToolsContext, e: MapMouseEvent) {
-  c.map.getCanvas().style.cursor = handleAt(c, e.point, 'user_selection_resize')
-    ? 'nwse-resize'
-    : String(c.hit(e.point)?.properties.fid) === c.selected
-      ? 'move'
-      : ''
+  if (handleAt(c, e.point, 'user_selection_resize')) {
+    c.map.getCanvas().style.cursor = 'nwse-resize'
+    return
+  }
+  const hit = c.hit(e.point)
+  const overSelected = String(hit?.properties.fid) === c.selected
+  const feature = c.selected ? c.store.layerOf(c.selected)?.features.get(c.selected) : undefined
+  c.map.getCanvas().style.cursor = overSelected && feature && movesWhole(feature) ? 'move' : ''
 }
 
 /** The pointer moving while dragging: the item follows (saved on release). */

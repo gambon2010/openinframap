@@ -47,6 +47,9 @@ export interface ItemKind {
   lineWidth?: boolean
   /** It can be dragged on the map (default yes). */
   movable?: boolean
+  /** Only its points can be dragged, not the whole item (a line of sight: it's
+   * placed by where one stands and what one looks at). */
+  pointsOnly?(item: Item): boolean
   /** The card opens on its Appearance (pictures: their size matters first). */
   appearanceFirst?: boolean
   /** The filter chips it's under. */
