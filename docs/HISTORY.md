@@ -1420,6 +1420,19 @@ default). Counts are France's OSM data in October 2026.
   spare" would have stayed); now `--check` fails and the normal run updates it, and
   one key with two texts is a clash. It found one at once: "Move to layer" shown with
   a stray "…" in the map's menu (two uses of one key, now two keys).
+- **Line of sight, third round** (asked): the profile a rounded bubble on the right,
+  clear of the toolbar and the map's buttons; the chart turned so the line of sight
+  is level (the ground kept as seen from the eye: on a long line it bent down off the
+  chart, 570 m at 92 km, and what rose above the line was hard to see); the card only
+  the answer and the button, the four heights in the panel; the panel draws its own
+  line on the map (the owner's layer was hidden: the line seemed missing). With debug
+  on, the panel lists the answer's numbers checked against themselves: each sample's
+  lowering from the curvature formula (the backend now gives its coefficient and
+  radius), the margin and where the target is first hidden worked out again from
+  the profile; the debug switch moved to `services/debug-mode.ts` so modules can read
+  it. **Bug:** moving a point didn't recalculate: the map asked the backend on every
+  frame of the drag (1.7 s each for a 92 km line), and the last answer came long after;
+  now asked only when the point is dropped (test in `render-measures.test.ts`).
 
 ## Extra data (not from OpenStreetMap)
 

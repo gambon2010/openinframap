@@ -225,3 +225,8 @@
   max-height: 44px;
   border-radius: 3px;
 }
+/* A line of sight's answer, its profile's button under it. */
+.oim-ul-sight-result {
+  display: block;
+  margin-bottom: 8px;
+}

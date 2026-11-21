@@ -1,15 +1,17 @@
-// Fork: a line of sight's profile as a chart (the split screen: sight-panel.ts):
-// the ground and what stands on it (buildings grey, trees green) as seen from the
-// eye, so the Earth's curvature is in it as in the answer (sight.ts), the eye's line
-// to the target dashed, green where it passes over everything and red where
-// something rises above it, where the target is first hidden, and axes in metres and
-// kilometres. Hovering it says
-// where along the line (onHover: the sample under the pointer, null when it leaves).
+// Fork: a line of sight's profile as a chart (the split screen: sight-panel.ts),
+// turned so the eye's line to the target is level: heights are metres above or below
+// that line, so whatever rises above it shows at once however long the line. The
+// ground and what stands on it (buildings grey, trees green) are as seen from the
+// eye, the Earth's curvature in them as in the answer (sight.ts): the far ground
+// bends away. The line dashed, green where it passes over everything and red where
+// something rises above it, where the target is first hidden, and axes in metres
+// and kilometres. Hovering it says where along the line (onHover: the sample under
+// the pointer, null when it leaves).
 // Drawn by hand in SVG: polygons, lines and ticks a chart library would only wrap.
 import { svg } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance } from '../../../core/earth.ts'
-import { lineClearAt, type ProfilePoint, type SightResult } from './sight.ts'
+import { lineClearAt, lineHeightAt, type ProfilePoint, type SightResult } from './sight.ts'
 
 const WIDTH = 1000
 const HEIGHT = 520
@@ -20,18 +22,19 @@ const BOTTOM = 40
 /** About this many ticks along each axis. */
 const TICKS = 6
 
-/** A sample with terrain, its ground as seen from the eye. */
+/** A sample with terrain, its heights above the eye's line to the target (negative:
+ * below it), as seen from the eye. */
 interface Known {
   point: ProfilePoint
   distance: number
-  ground: number // as seen from the eye
-  top: number // the surface's top, as seen from the eye
+  ground: number
+  top: number // the surface's top: the ground and what stands on it
 }
 
 export function sightChart(result: SightResult, onHover: (point: ProfilePoint | null) => void): SVGElement {
-  const known = knownSamples(result.profile)
+  const known = knownSamples(result)
   const length = result.profile[result.profile.length - 1]?.[0] || 1
-  const scale = chartScale(known, result, length)
+  const scale = chartScale(known, length)
   const plot = svg(
     'svg.oim-ul-sight-chart',
     { viewBox: `0 0 ${WIDTH} ${HEIGHT}`, role: 'img' },
@@ -39,19 +42,21 @@ export function sightChart(result: SightResult, onHover: (point: ProfilePoint | 
     groundShape(known, scale),
     ...standingShapes(known, scale),
     groundTop(known, scale),
-    ...rayLines(result, known, scale, length),
+    ...rayLines(result, known, scale),
     ...blockMark(result, known, scale)
   )
   hoverOn(plot, known, scale, onHover)
   return plot
 }
 
-function knownSamples(profile: ProfilePoint[]): Known[] {
+function knownSamples(result: SightResult): Known[] {
   const known: Known[] = []
-  for (const point of profile) {
+  for (const point of result.profile) {
     const [distance, ground, , standing, , apparent] = point
-    if (ground === null || apparent === null) continue
-    known.push({ point, distance, ground: apparent - standing, top: apparent })
+    const line = lineHeightAt(result, distance)
+    if (ground === null || apparent === null || line === null) continue
+    const top = apparent - line
+    known.push({ point, distance, ground: top - standing, top })
   }
   return known
 }
@@ -63,10 +68,9 @@ interface Scale {
   high: number
 }
 
-function chartScale(known: Known[], result: SightResult, length: number): Scale {
-  const heights = [...known.map((k) => k.ground), ...known.map((k) => k.top)]
-  if (result.eye !== null) heights.push(result.eye)
-  if (result.target_top !== null) heights.push(result.target_top)
+function chartScale(known: Known[], length: number): Scale {
+  // The line itself (0) always in the chart.
+  const heights = [0, ...known.map((k) => k.ground), ...known.map((k) => k.top)]
   const lowest = Math.min(...heights)
   const highest = Math.max(...heights)
   const pad = (highest - lowest) * 0.05 || 1
@@ -94,11 +98,7 @@ function axes(scale: Scale, length: number): SVGElement[] {
   for (let h = Math.ceil(scale.low / heightStep) * heightStep; h <= scale.high; h += heightStep) {
     parts.push(svg('line.oim-ul-sight-grid', { x1: LEFT, x2: WIDTH - RIGHT, y1: scale.y(h), y2: scale.y(h) }))
     parts.push(
-      svg(
-        'text.oim-ul-sight-tick',
-        { x: LEFT - 6, y: scale.y(h) + 4, 'text-anchor': 'end' },
-        `${Math.round(h)} m`
-      )
+      svg('text.oim-ul-sight-tick', { x: LEFT - 6, y: scale.y(h) + 4, 'text-anchor': 'end' }, signedMetres(h))
     )
   }
   const distanceStep = niceStep(length)
@@ -115,6 +115,14 @@ function axes(scale: Scale, length: number): SVGElement[] {
     )
   }
   return parts
+}
+
+/** "+50 m", "0 m", "−120 m": above or below the line. */
+function signedMetres(height: number): string {
+  const metres = Math.round(height)
+  if (metres > 0) return `+${metres} m`
+  if (metres < 0) return `−${-metres} m`
+  return '0 m'
 }
 
 function groundShape(known: Known[], scale: Scale): SVGElement {
@@ -155,12 +163,10 @@ function groundTop(known: Known[], scale: Scale): SVGElement {
   return svg('polyline.oim-ul-sight-ground-top', { points })
 }
 
-/** The eye's line to the target, in runs: clear (over everything) or blocked. */
-function rayLines(result: SightResult, known: Known[], scale: Scale, length: number): SVGElement[] {
-  const eye = result.eye ?? scale.low
-  const target = result.target_top ?? scale.low
-  const lineAt = (distance: number) =>
-    `${scale.x(distance)},${scale.y(eye + ((target - eye) * distance) / length)}`
+/** The eye's line to the target, level at 0, in runs: clear (over everything) or
+ * blocked. */
+function rayLines(result: SightResult, known: Known[], scale: Scale): SVGElement[] {
+  const lineAt = (distance: number) => `${scale.x(distance)},${scale.y(0)}`
   const runs: { clear: boolean; distances: number[] }[] = []
   for (const k of known) {
     const clear = lineClearAt(result, k.point)
@@ -185,9 +191,10 @@ function rayLines(result: SightResult, known: Known[], scale: Scale, length: num
 
 /** Where the target is first hidden: a mark on what hides it. */
 function blockMark(result: SightResult, known: Known[], scale: Scale): SVGElement[] {
-  if (result.blocked_at === null) return []
+  const blockedAt = result.blocked_at
+  if (blockedAt === null || !known.length) return []
   const at = known.reduce((best, k) =>
-    Math.abs(k.distance - result.blocked_at!) < Math.abs(best.distance - result.blocked_at!) ? k : best
+    Math.abs(k.distance - blockedAt) < Math.abs(best.distance - blockedAt) ? k : best
   )
   return [
     svg('circle.oim-ul-sight-block', { cx: scale.x(at.distance), cy: scale.y(at.top), r: 7 }),

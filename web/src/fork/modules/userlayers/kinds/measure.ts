@@ -7,7 +7,7 @@ import { formatDistance, formatLength, parseDistances, parseLength } from '../..
 import { Measurement } from '../measure/features.types.ts'
 import { legBearing, legsOf, measurementOf, summary, withLegLength } from '../measure/features.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
-import { sightAnswer, sightSettingsOf, type SightSettings } from '../measure/sight.ts'
+import { sightAnswer, sightSettingsOf } from '../measure/sight.ts'
 import { openSightPanel } from '../measure/sight-panel.ts'
 import { sightVerdict } from '../measure/sight-verdict.ts'
 import { FeatureProps } from '../model/model.ts'
@@ -52,31 +52,15 @@ export const measure: ItemKind = {
   }
 }
 
-/** A line of sight: the heights of the eyes and of what's looked at (typed), whether
- * it's seen and what hides it, once the backend answers (measure/sight.ts), and a
- * button opening its profile in a split screen (measure/sight-panel.ts). */
+/** A line of sight: whether it's seen and what hides it, once the backend answers
+ * (measure/sight.ts), and a button opening its profile in a split screen, where its
+ * heights are set too (measure/sight-panel.ts). */
 function sightCard(
   m: Measurement,
   item: Item,
   update: (changes: Partial<FeatureProps>) => void
 ): HTMLElement[] {
   const settings = sightSettingsOf(item.properties)
-  const heightInput = (field: keyof SightSettings) => {
-    const input = el('input', {
-      type: 'number',
-      min: 0,
-      step: 0.5,
-      value: settings[field],
-      'data-field': field
-    }) as HTMLInputElement
-    input.onchange = () => {
-      const metres = Number(input.value)
-      if (Number.isFinite(metres) && metres >= 0) update({ [field]: metres })
-    }
-    return input
-  }
-  const row = (label: string, field: keyof SightSettings) =>
-    el('.oim-ul-detail', el('span.oim-ul-detail-name', label), heightInput(field))
   const result = el('strong.oim-ul-sight-result', t('userlayers.sight-asking', 'Looking at the terrain…'))
   const [from, to] = [m.points[0], m.points[m.points.length - 1]]
   void sightAnswer(from, to, settings).then((sight) => {
@@ -89,25 +73,14 @@ function sightCard(
     type: 'button'
   }) as HTMLButtonElement
   open.onclick = () =>
-    void openSightPanel({
+    openSightPanel({
       title: String(item.properties.name || t('userlayers.what.measure-sight', 'Line of sight')),
       from,
       to,
-      settings
+      settings,
+      update
     })
-  return [
-    result,
-    row(t('userlayers.sight-observer', 'Eyes above the ground (m)'), 'observer'),
-    row(t('userlayers.sight-target', 'Target above the ground (m)'), 'target'),
-    row(t('userlayers.sight-trees', 'Trees (m)'), 'trees'),
-    row(t('userlayers.sight-buildings', 'Buildings without a height (m)'), 'buildings'),
-    el(
-      '.oim-ul-detail',
-      el('span.oim-ul-detail-name', t('userlayers.measure-total', 'In all')),
-      el('strong', summary(m, measurePrefs.north))
-    ),
-    open
-  ]
+  return [result, open]
 }
 
 /** Range rings: their distances, typed ("1, 5, 10 km", "500 m", "3 nm"). */

@@ -76,9 +76,12 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   grey as disused sites are) get a base made for them: their hull, titled by its
   kind.
 - **A line of sight's profile** (`userlayers/measure/sight-panel.ts`, `sight-chart.ts`):
-  a split screen, the panel over the right half (the shared panel chrome), the map
-  on the left fitted to the line clear of the left column's panels. The chart: the
-  ground in the light grey of panels with a darker grey top, buildings grey and woods
+  a split screen: the panel a bubble over the right half (the shared panel chrome,
+  rounded, shadowed), clear of the toolbar, the map's buttons and the credits; the map
+  on the left fitted to the line clear of the left column's panels, the line drawn
+  by the panel. The line's card holds only its answer and the button; its heights are
+  set in the panel, in a row of small fields above the chart. The chart is turned so
+  the eye's line is level at 0 (heights "+50 m", "−20 m" from it): the in the light grey of panels with a darker grey top, buildings grey and woods
   green standing on it, the eye's line dashed, green where it passes over everything
   and red where something rises above it (the success and error colours, as the line
   on the map), a red ring "Hidden from here", heights and distances on light grid

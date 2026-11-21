@@ -710,7 +710,6 @@
     "sight-above-line": "{{margin}} m above the line",
     "sight-trees": "Trees (m)",
     "sight-buildings": "Buildings without a height (m)",
-    "sight-note-curvature": "Heights as seen from the eyes: the far ground is lowered for the Earth's curvature, less the light's bending.",
     "sight-note-counted": "Buildings stand as tall as OpenStreetMap says ({{buildings}} m when it doesn't), woods {{trees}} m: in France the terrain is bare ground.",
     "sight-note-in-terrain": "Outside France the terrain holds trees and buildings itself: none added.",
     "sight-key-clear": "line clear",
@@ -718,7 +717,11 @@
     "sight-key-ground": "ground",
     "sight-trees-taken": "trees taken as {{height}} m",
     "sight-building-taken": "its height taken as {{height}} m",
-    "move-to-choose": "Move to layer…"
+    "move-to-choose": "Move to layer…",
+    "sight-note-level": "Heights above or below the line of sight, as seen from the eyes: the far ground bends away for the Earth's curvature, less the light's bending.",
+    "sight-copy": "Copy the answer (JSON)",
+    "sight-copied": "Copied",
+    "sight-copy-failed": "Copying refused by the browser"
   },
   "tower": {
     "unnamed-line": "a line",

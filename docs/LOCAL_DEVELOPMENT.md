@@ -721,11 +721,15 @@ on the My layers workspace; click it again to close it. It has two parts:
   green where it passes over everything and red where something rises above it, a
   ringed mark where the target is first hidden says by what, "Trees 15 m"; its card
   says whether the target is seen ("Hidden by trees 475 m away (trees taken as 15 m;
-  137 m above the line)") and takes the heights of your eyes, of the target, of trees
+  137 m above the line)"); **Open the profile** opens a large panel on the right, the
+  line on the map on the left: there the heights of your eyes, of the target, of trees
   and of buildings OpenStreetMap gives no height for (15 m and 8 m at first: the map
-  has no tree heights, most buildings none); **Open the profile** splits the screen:
-  the chart large on the right, the line on the map on the left; point at the chart
-  and a dot shows that place on the map. Trees and buildings are added only in
+  has no tree heights, most buildings none), and the chart, turned so the line of
+  sight is level: what rises above it shows at once, and the far ground bends away
+  with the Earth's curvature; point at the chart and a dot shows that place on the
+  map. With debug on (Settings), the panel also shows the answer's raw numbers,
+  checked against themselves (✓ or ✗), and copies it as JSON. Moving a point asks
+  again when you let go. Trees and buildings are added only in
   France, where the terrain is bare ground (elsewhere it already holds them), not
   within 30 m of either end; the Earth's curvature counted, as GDAL's viewshed; needs
   the terrain and the background map). Click

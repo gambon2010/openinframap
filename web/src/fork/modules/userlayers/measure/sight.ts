@@ -60,6 +60,8 @@ export interface SightResult {
   /** Whether trees and buildings were added (only where the terrain is bare ground:
    * France). */
   obstacles_counted: boolean
+  /** How the far heights were lowered: coefficient × distance² / (2 × radius). */
+  curvature: { coefficient: number; earth_radius: number }
   profile: ProfilePoint[]
 }
 
@@ -115,14 +117,19 @@ export async function fetchSight(
 export const CLEAR_COLOUR = '#1b7a33'
 export const BLOCKED_COLOUR = '#b3261e'
 
-/** Whether the eye's straight line to the target passes over a sample's surface
- * (both as seen from the eye: the answer's own heights). */
+/** The height of the eye's straight line to the target a distance along (as seen from
+ * the eye, as the answer's heights; null: no terrain at an end). */
+export function lineHeightAt(result: SightResult, distance: number): number | null {
+  if (result.eye === null || result.target_top === null) return null
+  const length = result.profile[result.profile.length - 1]?.[0] || 1
+  return result.eye + ((result.target_top - result.eye) * distance) / length
+}
+
+/** Whether the eye's straight line to the target passes over a sample's surface. */
 export function lineClearAt(result: SightResult, point: ProfilePoint): boolean {
   const [distance, , , , , apparent] = point
-  if (apparent === null || result.eye === null || result.target_top === null) return true
-  const length = result.profile[result.profile.length - 1]?.[0] || 1
-  const line = result.eye + ((result.target_top - result.eye) * distance) / length
-  return apparent <= line
+  const line = lineHeightAt(result, distance)
+  return apparent === null || line === null || apparent <= line
 }
 
 /** The line from observer to target cut where it goes from clear to blocked: each

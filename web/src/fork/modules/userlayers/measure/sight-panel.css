@@ -1,18 +1,50 @@
 /* Fork: a line of sight's split screen (sight-panel.ts) and its chart
-   (sight-chart.ts): the right half of the screen, the map on the left. */
+   (sight-chart.ts): a bubble over the right half of the screen, clear of the
+   toolbar (top), the map's buttons (right) and the credits (bottom), the map on the
+   left. */
 .oim-panel.oim-ul-sight-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 50vw;
+  top: var(--oim-ul-sight-clear-top);
+  right: var(--oim-ul-sight-clear-right);
+  bottom: var(--oim-ul-sight-clear-bottom);
+  width: calc(50vw - var(--oim-ul-sight-clear-right));
   max-width: none;
   max-height: none;
-  border-radius: 0;
-  /* Over My layers' toolbar and panels (the map's controls). */
+  overflow-y: auto;
+  border-radius: 12px;
+  /* Over My layers' panels. */
   z-index: 1000;
   background: var(--oim-content-background);
   box-shadow: var(--oim-drop-shadow);
+}
+:root {
+  /* The toolbar's height, the map's buttons' width, the credits' height, with room. */
+  --oim-ul-sight-clear-top: 64px;
+  --oim-ul-sight-clear-right: 60px;
+  --oim-ul-sight-clear-bottom: 40px;
+}
+.oim-ul-sight-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px 12px;
+  margin-bottom: 10px;
+}
+.oim-ul-sight-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85em;
+  color: var(--oim-text-color-light);
+}
+.oim-ul-sight-setting input {
+  width: 100%;
+}
+.oim-ul-sight-debug {
+  margin-top: 10px;
+  font-size: 0.85em;
+}
+.oim-ul-sight-debug:empty {
+  display: none;
 }
 .oim-ul-sight-verdict {
   display: block;

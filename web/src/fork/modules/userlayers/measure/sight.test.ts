@@ -22,6 +22,7 @@ function answer(profile: ProfilePoint[], changes: Partial<SightResult> = {}): Si
     eye: 202,
     target_top: 200,
     obstacles_counted: true,
+    curvature: { coefficient: 6 / 7, earth_radius: 6_371_008.8 },
     profile,
     ...changes
   }

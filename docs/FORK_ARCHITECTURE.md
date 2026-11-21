@@ -55,7 +55,8 @@ services/  shared state and registries, nothing drawn: live updates (live.ts),
            button (background.ts),
            the 3D view on or off (view3d.ts), the ground's height at a point
            (elevation.ts), your measuring preferences: the north bearings are
-           from, range rings' distances (measure-prefs.ts)
+           from, range rings' distances (measure-prefs.ts), whether debug info is
+           shown (debug-mode.ts: switched by the debug module, read by others)
 modules/   one folder per feature, each a ForkModule, listed in MODULES:
   details      a clicked feature's details in the left panel
   grid         routes between stations, where a power line goes, tower numbers
@@ -202,7 +203,9 @@ measure/ measurements, pure: ticks.ts (marks along a distance), features.ts
          north.ts), the preferences a service (measure-prefs.ts): the coordinates
          box uses them too; sight.ts (a line of sight: the backend's answer, asked
          once, its stretches on the map), sight-verdict.ts (its answer in words),
-         sight-chart.ts (its profile chart), sight-panel.ts (the split screen)
+         sight-chart.ts (its profile chart), sight-panel.ts (the split screen,
+         its settings), sight-debug.ts (the answer checked against itself, shown
+         with debug on)
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast,
          preferences.ts (My layers' part of Settings); editor/ (the card:

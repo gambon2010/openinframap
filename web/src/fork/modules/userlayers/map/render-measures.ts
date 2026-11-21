@@ -63,27 +63,38 @@ export class MeasureDrawer {
           }
         })
       )
-      if (m.type === 'sight') features.push(...this.sightFeatures(f, m))
+      if (m.type !== 'sight') continue
+      // Not asked while a point is dragged: a long line takes the backend a second or
+      // two, and one asked per frame queued up behind each other. Asked when dropped.
+      const dragging = changed?.id === stored.id
+      if (!dragging) this.askSight(f, m)
+      features.push(...this.knownSightFeatures(f, m))
     }
     return features
   }
 
-  /** A line of sight's stretches, once the backend has answered (asked now if not). */
-  private sightFeatures(f: UserFeature, m: Measurement): GeoJSON.Feature[] {
-    const [from, to] = [m.points[0], m.points[m.points.length - 1]]
-    if (!from || !to || m.points.length < 2) return []
+  /** Asks the backend for a line of sight's answer, if not asked yet; the map is
+   * drawn again when it comes. */
+  private askSight(f: UserFeature, m: Measurement) {
+    const ends = sightEnds(m)
+    if (!ends) return
     const settings = sightSettingsOf(f.properties)
-    const key = sightKey(from, to, settings)
-    const result = this.sights.get(key)
-    if (result === undefined) {
-      this.sights.set(key, null)
-      void sightAnswer(from, to, settings).then((answer) => {
-        if (!answer) return
-        this.sights.set(key, answer)
-        this.redraw()
-      })
-      return []
-    }
+    const key = sightKey(ends.from, ends.to, settings)
+    if (this.sights.has(key)) return
+    this.sights.set(key, null)
+    void sightAnswer(ends.from, ends.to, settings).then((answer) => {
+      if (!answer) return
+      this.sights.set(key, answer)
+      this.redraw()
+    })
+  }
+
+  /** A line of sight's stretches and the mark where it's hidden, if its answer is had. */
+  private knownSightFeatures(f: UserFeature, m: Measurement): GeoJSON.Feature[] {
+    const ends = sightEnds(m)
+    if (!ends) return []
+    const { from, to } = ends
+    const result = this.sights.get(sightKey(from, to, sightSettingsOf(f.properties)))
     if (!result) return []
     const stretches: GeoJSON.Feature[] = sightStretches(from, to, result).map((stretch) => ({
       type: 'Feature',
@@ -92,6 +103,12 @@ export class MeasureDrawer {
     }))
     return [...stretches, ...blockFeature(f, from, to, result)]
   }
+}
+
+/** A line of sight's observer and target (null: not two points yet). */
+function sightEnds(m: Measurement): { from: LngLat; to: LngLat } | null {
+  if (m.points.length < 2) return null
+  return { from: m.points[0], to: m.points[m.points.length - 1] }
 }
 
 /** Where the target is first hidden: a mark, labelled with what hides it. */

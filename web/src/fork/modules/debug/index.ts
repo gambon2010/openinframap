@@ -9,14 +9,12 @@
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { el, mount } from 'redom'
 import { t } from '../../core/i18n.ts'
-import { readText, writeText } from '../../core/storage.ts'
+import { debugMode } from '../../services/debug-mode.ts'
 import { ForkModule } from '../../types.ts'
 import { SOURCE_NOTE, addDetailsExtra } from '../../ui/details.ts'
 import { addSettingsSection } from '../../ui/settings.ts'
 import { debugInfo, featureRows, osmUrl } from './info.ts'
 import './debug.css'
-
-const KEY = 'oim-debug'
 
 // Rows kept for the features under the pointer (describeFeatures lists 6 and "… more").
 const UNDER_ROWS = 7
@@ -94,11 +92,9 @@ const debug: ForkModule = {
     addDetailsExtra((feature, content) => {
       if (on.checked) mount(content, debugDetails(feature, content.querySelector(`.${SOURCE_NOTE}`)))
     })
-    on.onchange = () => {
-      writeText(KEY, on.checked ? '1' : '0')
-      apply(on.checked)
-    }
-    apply(readText(KEY) === '1')
+    on.onchange = () => debugMode.set(on.checked)
+    debugMode.onChange(apply)
+    apply(debugMode.on)
     addSettingsSection({
       el: el(
         'section.oim-debug-settings',
