@@ -1320,6 +1320,11 @@ default). Counts are France's OSM data in October 2026.
   (`FROM_TILES_WITH_EVERY_BUILDING`, `core/buildings.ts`: MapLibre checks a filter's
   zoom against the tile's). Checked in the app: the factory at Mertzwiller, 3.8 ha
   alone.
+- **Hill shading over imagery** (asked: it "looks a bit weird"): shadows only, lit
+  from the south-south-east, where the sun is in the photos; it laid a milky veil
+  (white highlights, warm grey shadows) and lit from the north-west, against the
+  photos' own shadows. Four looks compared on the same view (none, before, shadows
+  only, shadows from the sun); the map's look unchanged.
 
 ## Extra data (not from OpenStreetMap)
 

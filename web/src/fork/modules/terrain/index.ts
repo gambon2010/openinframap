@@ -60,18 +60,24 @@ function place(map: Map) {
   for (const id of CONTOUR_LAYERS) if (map.getLayer(id)) map.moveLayer(id)
 }
 
+/** One colour per light direction, over the map and over imagery. */
+const perDirection = (colour: { map: string; imagery: string }) => ({
+  map: LIGHT_DIRECTIONS.map.map(() => colour.map),
+  imagery: LIGHT_DIRECTIONS.imagery.map(() => colour.imagery)
+})
+const SHADING_COLOURS = { shadows: perDirection(SHADOW_COLOUR), highlights: perDirection(HIGHLIGHT_COLOUR) }
+
 const hillshade = {
   id: HILLSHADE_LAYER,
   type: 'hillshade' as const,
   source: TERRAIN_SOURCE,
   paint: {
     'hillshade-method': 'multidirectional' as const,
-    'hillshade-illumination-direction': LIGHT_DIRECTIONS,
+    'hillshade-illumination-direction': LIGHT_DIRECTIONS.map,
     'hillshade-illumination-anchor': 'map' as const,
     'hillshade-exaggeration': STRENGTH.map,
-    // One colour per light direction.
-    'hillshade-shadow-color': LIGHT_DIRECTIONS.map(() => SHADOW_COLOUR),
-    'hillshade-highlight-color': LIGHT_DIRECTIONS.map(() => HIGHLIGHT_COLOUR)
+    'hillshade-shadow-color': SHADING_COLOURS.shadows.map,
+    'hillshade-highlight-color': SHADING_COLOURS.highlights.map
   }
 }
 
@@ -107,6 +113,9 @@ const terrain: ForkModule = {
     else map.once('load', apply)
     background.onChange(apply)
     followBackground(map, HILLSHADE_LAYER, 'hillshade-exaggeration', STRENGTH)
+    followBackground(map, HILLSHADE_LAYER, 'hillshade-illumination-direction', LIGHT_DIRECTIONS)
+    followBackground(map, HILLSHADE_LAYER, 'hillshade-shadow-color', SHADING_COLOURS.shadows)
+    followBackground(map, HILLSHADE_LAYER, 'hillshade-highlight-color', SHADING_COLOURS.highlights)
     for (const id of CONTOUR_LINE_LAYERS) followBackground(map, id, 'line-color', CONTOUR_COLOUR)
     followBackground(map, LABEL_LAYER, 'text-color', CONTOUR_LABEL_COLOUR)
     followBackground(map, LABEL_LAYER, 'text-halo-color', CONTOUR_LABEL_HALO)

@@ -40,13 +40,16 @@ export const SUPPLEMENTARY_DASHES = [4, 3]
 export const TICK_LENGTH = 4
 export const TICK_DASHES = [0.3, 2.5]
 
-/** Light from the north-west, as on paper maps, blended with three more
- * directions (MapLibre's multidirectional method: slopes facing away from the
- * main light don't go flat). Degrees clockwise from north. */
-export const LIGHT_DIRECTIONS = [315, 270, 0, 225]
-/** How strong the shading is (0 to 1): over the map, and fainter over imagery
- * (photos have their own shadows). */
-export const STRENGTH = { map: 0.45, imagery: 0.25 }
-/** Warm grey shadows, faint white highlights, see-through (the map shows under). */
-export const SHADOW_COLOUR = 'rgba(70, 58, 45, 0.55)'
-export const HIGHLIGHT_COLOUR = 'rgba(255, 255, 255, 0.25)'
+/** Where the light comes from, in degrees clockwise from north. Over the map: from
+ * the north-west, as on paper maps, blended with three more directions (MapLibre's
+ * multidirectional method: slopes facing away from the main light don't go flat).
+ * Over imagery: from the south-south-east, where the sun is in the photos (taken
+ * around midday), so the shading deepens their shadows instead of contradicting them. */
+export const LIGHT_DIRECTIONS = { map: [315, 270, 0, 225], imagery: [160] }
+/** How strong the shading is (0 to 1). */
+export const STRENGTH = { map: 0.45, imagery: 0.4 }
+/** Shadows: warm grey and see-through over the map (it shows under); a dark blue
+ * grey over photos. */
+export const SHADOW_COLOUR = { map: 'rgba(70, 58, 45, 0.55)', imagery: 'rgba(20, 25, 35, 0.65)' }
+/** Highlights: faint white over the map; none over photos (a milky veil). */
+export const HIGHLIGHT_COLOUR = { map: 'rgba(255, 255, 255, 0.25)', imagery: 'rgba(0, 0, 0, 0)' }

@@ -119,8 +119,10 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   first): MapLibre's `hillshade` from the terrain's elevations, light from the
   north-west (several directions blended, so slopes away from it don't go flat),
   soft warm-grey shadows and faint highlights, see-through. Over the map it lies on
-  the land cover and water, under roads, buildings, labels and all data; over
-  imagery right above the photos, fainter. Zoomed in past 13 it's as smooth as at
+  the land cover and water, under roads, buildings, labels and all data. Over
+  imagery right above the photos, shadows only, lit from the south-south-east like
+  the midday sun in the photos (no highlights: white ones laid a milky veil on the
+  forests; light from the north-west put shadows where the photos have sun). Zoomed in past 13 it's as smooth as at
   13 (the terrain's finest).
 - **Contour lines** (`modules/terrain`, Data layers → Terrain → Contour lines, off at
   first), as on US military maps (FM 3-25.26), in the USGS's US Topo browns: every
