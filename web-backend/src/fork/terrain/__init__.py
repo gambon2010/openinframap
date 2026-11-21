@@ -64,7 +64,8 @@ async def sight_between(request: Request) -> Response:
     """?from=lon,lat&to=lon,lat[&observer=2&target=0]: the line of sight (sight.py):
     {"target_seen", "blocked_at" (metres), "blocked_by" ("ground", "building",
     "trees"), "margin" (metres the eye's line to the target clears everything by;
-    < 0: what rises above it, by that much), "eye", "target_top" (metres: the eye, and the target's top as seen from it),
+    < 0: what rises above it, by that much), "eye", "target_top" (metres: the eye,
+    and the target's top as seen from it),
     "profile": [[distance, ground, seen, obstacle height, obstacle kind, surface as
     seen from the eye]...]}."""
     try:

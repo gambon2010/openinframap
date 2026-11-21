@@ -54,7 +54,8 @@ class Sight:
     target_seen: bool | None  # None: no terrain under one of the ends
     blocked_at: float | None  # metres from the observer to the first surface hiding the target
     blocked_by: str | None = None  # "ground", "building", "trees"
-    margin: float | None = None  # metres the eye's line to the target clears everything by (< 0: what rises above it, by that much)
+    # Metres the eye's line to the target clears everything by (< 0: what rises above it).
+    margin: float | None = None
     eye: float | None = None  # the eye's height (metres above sea level)
     target_top: float | None = None  # the target's top as seen from the eye (lowered)
 
@@ -157,9 +158,7 @@ def clearance(between: list[Sample], eye: float, target_top: float, length: floa
     between them, as seen from the eye (< 0: that surface rises above the line, by
     that much); None if there's nothing between."""
     gaps = [
-        eye + (target_top - eye) * s.distance / length - s.apparent
-        for s in between
-        if s.apparent is not None
+        eye + (target_top - eye) * s.distance / length - s.apparent for s in between if s.apparent is not None
     ]
     return min(gaps) if gaps else None
 

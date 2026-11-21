@@ -687,7 +687,6 @@
     "sight-asking": "Looking at the terrain…",
     "sight-unknown": "No terrain here: no answer.",
     "sight-seen": "Seen",
-    "sight-hidden": "Hidden by the ground {{distance}} away",
     "sight-observer": "Eyes above the ground (m)",
     "sight-target": "Target above the ground (m)",
     "sight-hint": "Click where you stand, then what you want to see. Right-click: start again.",
@@ -705,14 +704,14 @@
     "sight-trees-at": "trees {{height}} m",
     "sight-seen-here": "seen",
     "sight-hidden-here": "hidden",
-    "sight-seen-margin": "Seen ({{margin}} m to spare)",
+    "sight-seen-margin": "Seen ({{margin}} m clear)",
     "sight-by-ground": "Hidden by the ground {{distance}} away",
     "sight-by-building": "Hidden by a building {{distance}} away",
     "sight-by-trees": "Hidden by trees {{distance}} away",
-    "sight-short": "({{margin}} m short)",
     "sight-mark-trees": "Trees {{height}} m",
     "sight-mark-building": "Building {{height}} m",
-    "sight-mark-ground": "Ground"
+    "sight-mark-ground": "Ground",
+    "sight-above-line": "({{margin}} m above the line)"
   },
   "tower": {
     "unnamed-line": "a line",
