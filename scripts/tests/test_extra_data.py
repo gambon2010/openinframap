@@ -1,6 +1,7 @@
 """scripts/extra_data.py: outlines and classification (no network, no database)."""
 
-from extra_data import GeorisquesICPE, inside, outer_rings
+from extradata import GeorisquesICPE
+from extradata.base import inside, outer_rings
 
 SQUARE = {
     "type": "Polygon",

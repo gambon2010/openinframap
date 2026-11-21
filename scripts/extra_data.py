@@ -22,9 +22,6 @@ from pathlib import Path
 # The code is in scripts/extradata/. Run as a script, Python doesn't look next to it.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from extradata import *
-from extradata.base import *
-from extradata.cli import *
 from extradata.cli import main
 from netsafe import run_until_connected
 

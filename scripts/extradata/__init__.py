@@ -5,7 +5,7 @@ file (a Source class). To add one: a file here, and a line in SOURCES below.
 """
 
 from .agence_ore import FranceAgenceORE
-from .base import *
+from .base import Source
 from .france import FrenchSource
 from .georisques_icpe import GeorisquesICPE
 
