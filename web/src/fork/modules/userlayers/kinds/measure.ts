@@ -10,7 +10,7 @@ import { measurePrefs } from '../../../services/measure-prefs.ts'
 import { sightAnswer, sightSettingsOf } from '../measure/sight.ts'
 import { openSightPanel } from '../measure/sight-panel.ts'
 import { sightVerdict } from '../measure/sight-verdict.ts'
-import { FeatureProps } from '../model/model.ts'
+import { FeatureProps, type UserFeature } from '../model/model.ts'
 import { areaCrossesItself } from '../model/shapes.ts'
 import { ItemKind, Item } from './types.ts'
 
@@ -57,11 +57,15 @@ export const measure: ItemKind = {
  * heights are set too (measure/sight-panel.ts). */
 function sightCard(
   m: Measurement,
-  item: Item,
+  item: UserFeature,
   update: (changes: Partial<FeatureProps>) => void
 ): HTMLElement[] {
   const settings = sightSettingsOf(item.properties)
-  const result = el('strong.oim-ul-sight-result', t('userlayers.sight-asking', 'Looking at the terrain…'))
+  const result = el(
+    'strong.oim-ul-sight-result',
+    el('span.oim-spinner', { 'aria-hidden': 'true' }),
+    t('userlayers.sight-asking', 'Looking at the terrain…')
+  )
   const [from, to] = [m.points[0], m.points[m.points.length - 1]]
   void sightAnswer(from, to, settings).then((sight) => {
     result.textContent =
@@ -72,14 +76,7 @@ function sightCard(
   const open = el('button.oim-ul-button', t('userlayers.sight-open', 'Open the profile'), {
     type: 'button'
   }) as HTMLButtonElement
-  open.onclick = () =>
-    openSightPanel({
-      title: String(item.properties.name || t('userlayers.what.measure-sight', 'Line of sight')),
-      from,
-      to,
-      settings,
-      update
-    })
+  open.onclick = () => openSightPanel(item.id, update)
   return [result, open]
 }
 

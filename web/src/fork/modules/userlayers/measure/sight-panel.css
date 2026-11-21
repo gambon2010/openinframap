@@ -154,3 +154,8 @@
   stroke: #111;
   stroke-width: 2;
 }
+/* The last chart faded while the line's new answer is asked. */
+.oim-ul-sight-chart-box.asking {
+  opacity: 0.35;
+  pointer-events: none;
+}

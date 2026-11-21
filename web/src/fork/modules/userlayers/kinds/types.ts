@@ -54,7 +54,7 @@ export interface ItemKind {
   /** More on its card, after its name and before its appearance (ui/editor.ts):
    * update changes its properties, setGeometry its shape (each one change, undoable). */
   card?(
-    item: Item,
+    item: UserFeature,
     update: (changes: Partial<FeatureProps>) => void,
     setGeometry: (geometry: GeoJSON.Geometry) => void
   ): HTMLElement[]

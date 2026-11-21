@@ -311,7 +311,8 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.89 | Line of sight: kept in My layers, the line and what blocks it drawn on the map; its card simplified, a button opening a split screen (the chart large on the right, the line on the left, centred), hovering the chart showing the place on the map; trees and buildings counted. | ✅ `terrain/obstacles.py`, `measure/sight-panel.ts` (2026-11-21) |
 | 10.90 | The line of sight green where the line is clear, red where it's blocked; tree and building heights adjustable (15 m and 8 m at first); not counted twice outside France. | ✅ `measure/sight.ts`, `terrain/bare_ground.py` (2026-11-21) |
 | 10.91 | The strings check notices a text changed in the code but not in en.json. | ✅ `scripts/fork-strings.mjs` (2026-11-21) |
-| 10.92 | The line of sight's profile a bubble on the right, clear of the buttons; its chart with the line of sight level; its heights set in the panel, the card only the answer and the button; its line drawn by the panel (shown even in a hidden layer); debug numbers to check the math; a moved point recalculates. | ✅ `measure/sight-panel.ts`, `sight-debug.ts` (2026-11-21) |
+| 10.92 | The line of sight's profile a bubble on the right, clear of the buttons; its chart with the line of sight level; its heights set in the panel, the card only the answer and the button; debug numbers to check the math; a moved point recalculates. | ✅ `measure/sight-panel.ts`, `sight-debug.ts` (2026-11-21) |
+| 10.93 | A hidden layer hides everything of its items, their selection handles too; the open profile follows its line when it's moved, a spinner while it's worked out. | ✅ `map/render.ts`, `measure/sight-panel.ts` (2026-11-21) |
 
 ## 11. Quality
 

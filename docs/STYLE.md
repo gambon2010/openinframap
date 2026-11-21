@@ -78,8 +78,11 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 - **A line of sight's profile** (`userlayers/measure/sight-panel.ts`, `sight-chart.ts`):
   a split screen: the panel a bubble over the right half (the shared panel chrome,
   rounded, shadowed), clear of the toolbar, the map's buttons and the credits; the map
-  on the left fitted to the line clear of the left column's panels, the line drawn
-  by the panel. The line's card holds only its answer and the button; its heights are
+  on the left fitted to the line clear of the left column's panels (the line is My
+  layers' own drawing: hidden with its layer, like everything of a hidden layer, the
+  selection's handles too). While a new answer is asked, the last chart fades under
+  the shared spinner (`.oim-spinner`, ui/panel.css: a small turning ring before
+  "Looking at the terrain…"; the card shows it too). The line's card holds only its answer and the button; its heights are
   set in the panel, in a row of small fields above the chart. The chart is turned so
   the eye's line is level at 0 (heights "+50 m", "−20 m" from it): the in the light grey of panels with a darker grey top, buildings grey and woods
   green standing on it, the eye's line dashed, green where it passes over everything

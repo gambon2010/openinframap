@@ -1433,6 +1433,13 @@ default). Counts are France's OSM data in October 2026.
   it. **Bug:** moving a point didn't recalculate: the map asked the backend on every
   frame of the drag (1.7 s each for a 92 km line), and the last answer came long after;
   now asked only when the point is dropped (test in `render-measures.test.ts`).
+- **A hidden layer hides all of it** (the owner): the panel drawing its own line in a
+  hidden layer was wrong, taken out; the selection's handles (and highlight) aren't
+  drawn for an item in a hidden layer either, and come back when it's shown
+  (`map/render.ts`). The open profile follows its line through My layers' changes
+  (moved, heights changed or undone: asked again, the last chart faded under a
+  spinner; deleted: closed), and its contents moved to `sight-panel-content.ts`.
+  CLAUDE.md gained "Push back on what doesn't make sense".
 
 ## Extra data (not from OpenStreetMap)
 

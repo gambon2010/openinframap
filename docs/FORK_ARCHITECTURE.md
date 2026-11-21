@@ -203,8 +203,9 @@ measure/ measurements, pure: ticks.ts (marks along a distance), features.ts
          north.ts), the preferences a service (measure-prefs.ts): the coordinates
          box uses them too; sight.ts (a line of sight: the backend's answer, asked
          once, its stretches on the map), sight-verdict.ts (its answer in words),
-         sight-chart.ts (its profile chart), sight-panel.ts (the split screen,
-         its settings), sight-debug.ts (the answer checked against itself, shown
+         sight-chart.ts (its profile chart), sight-panel.ts (the split screen:
+         following its line), sight-panel-content.ts (what it shows beside the
+         chart: the settings, the note, the debug numbers), sight-debug.ts (the answer checked against itself, shown
          with debug on)
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast,

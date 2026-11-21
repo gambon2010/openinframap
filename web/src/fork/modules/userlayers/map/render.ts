@@ -232,8 +232,9 @@ export class Renderer {
       }
     }
     this.ensureOverlays()
-    // The selection's resize handle needs the image, which may only be loaded now.
-    if (resizable(this.selected)) this.select(this.selected)
+    // The selection drawn again as its item is now: its layer may have been hidden or
+    // shown, and a resize handle needs the image, which may only be loaded now.
+    if (this.selected) this.select(this.storedVersion(this.selected))
     this.renderMeasures()
     await this.renderGraphics()
   }
@@ -292,7 +293,8 @@ export class Renderer {
     }
   }
 
-  /** Highlight several features (no handles: they're for one item at a time). */
+  /** Highlight several features (no handles: they're for one item at a time); none
+   * in a hidden layer. */
   selectAll(features: UserFeature[]) {
     if (features.length <= 1) {
       this.select(features[0] ?? null)
@@ -300,11 +302,29 @@ export class Renderer {
     }
     this.selected = null
     this.ensureOverlays()
-    this.highlightItems(features)
+    const shown = features.filter((f) => !this.inHiddenLayer(f))
+    this.highlightItems(shown)
     ;(this.map.getSource(SELECTION) as GeoJSONSource).setData({
       type: 'FeatureCollection',
-      features: features.flatMap((f) => this.outline(f) ?? selectionFeatures(f).slice(0, glows(f) ? 0 : 1))
+      features: shown.flatMap((f) => this.outline(f) ?? selectionFeatures(f).slice(0, glows(f) ? 0 : 1))
     })
+  }
+
+  /** An item as the layers last drawn hold it (itself if they don't). */
+  private storedVersion(feature: UserFeature): UserFeature {
+    for (const layer of this.last?.layers.values() ?? []) {
+      const stored = layer.features.get(feature.id)
+      if (stored) return stored
+    }
+    return feature
+  }
+
+  /** Whether an item's layer is hidden from the map (as the layers were last drawn). */
+  private inHiddenLayer(feature: UserFeature): boolean {
+    if (!this.last) return false
+    for (const layer of this.last.layers.values())
+      if (layer.features.has(feature.id)) return this.last.hidden.has(layer.id)
+    return false
   }
 
   /** A picture, symbol or marker's outline: the box around its image, on screen. */
@@ -326,13 +346,16 @@ export class Renderer {
     ]
   }
 
-  /** Highlight a feature (null: none); pictures, symbols and markers get a resize handle. */
+  /** Highlight a feature (null: none); pictures, symbols and markers get a resize handle.
+   * Nothing is drawn for an item in a hidden layer, its handles neither (it stays
+   * selected: they come back when the layer is shown). */
   select(feature: UserFeature | null) {
     this.selected = feature
     this.ensureOverlays()
-    this.highlightItems(feature ? [feature] : [])
-    const features = feature ? (this.outline(feature) ?? selectionFeatures(feature)) : []
-    const handle = feature ? this.resizeHandle(feature) : null
+    const shown = feature && !this.inHiddenLayer(feature) ? feature : null
+    this.highlightItems(shown ? [shown] : [])
+    const features = shown ? (this.outline(shown) ?? selectionFeatures(shown)) : []
+    const handle = shown ? this.resizeHandle(shown) : null
     if (handle) {
       features.push({
         type: 'Feature',

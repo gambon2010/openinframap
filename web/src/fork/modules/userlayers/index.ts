@@ -4,7 +4,8 @@
 // pictures, markers, drawings, and copies of map features, which are drawn like
 // the originals and stay visible when the originals are hidden.
 import { onLive } from '../../services/live.ts'
-import { setSightMap } from './measure/sight-panel.ts'
+import { connectSightPanel } from './measure/sight-panel.ts'
+import { findFeature } from './state/reconcile.ts'
 import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
 import { Renderer } from './map/render.ts'
@@ -24,7 +25,10 @@ import { LngLatBounds } from 'maplibre-gl'
 const userlayers: ForkModule = {
   init: ({ map, primaryLayers }) => {
     const store = new Store()
-    setSightMap(map)
+    connectSightPanel(map, {
+      item: (id) => findFeature(store.layers, id)?.feature,
+      onChange: (listener) => store.onChange(listener)
+    })
     const renderer = new Renderer(map, primaryLayers)
     // The layers are drawn in the list's order (yours: state/personal.ts).
     renderer.orderOf = () => layerOrder([...store.layers.values()], store.personal)

@@ -39,6 +39,17 @@ These apply to the fork's own files. Upstream's files stay as close to upstream 
 - **Docs current:** they describe what is, not what was (history goes in `docs/HISTORY.md`); no section repeated in two files.
 - **Clean-ups in this order:** tests, then deletions, then merging duplicates, then structure (splits, renames, folders), docs last.
 
+## Push back on what doesn't make sense
+
+Before building a fix or a workaround, ask whether the behaviour it gives would make
+sense to the person using the map. If it wouldn't (something shown in a hidden layer,
+a control that does the same as another, a fix that hides the cause instead of
+removing it), say so and propose the sensible behaviour instead of building it; the
+same for a request: if it seems to go against how the rest of the app works, say why
+before doing it. Example: a line of sight in a hidden layer seemed missing; drawing it
+anyway from the profile panel was wrong: a hidden layer hides all its items, their
+selection handles too.
+
 ## Reuse before writing
 
 Before writing an algorithm or a feature that's a known problem (contour lines,

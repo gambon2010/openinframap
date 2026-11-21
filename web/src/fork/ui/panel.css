@@ -273,3 +273,22 @@ html button.oim-on {
   display: block;
   margin: auto;
 }
+
+/* Something being worked out (a line of sight asked of the backend): a small ring
+   turning, before its text. */
+.oim-spinner {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 0.4em;
+  vertical-align: -0.1em;
+  border: 2px solid var(--oim-grey);
+  border-top-color: var(--oim-text-color);
+  border-radius: 50%;
+  animation: oim-spin 0.8s linear infinite;
+}
+@keyframes oim-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
