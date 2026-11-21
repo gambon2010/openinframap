@@ -77,7 +77,7 @@ KINDS = {
     "military_school": ("military", "school"),
     "military_office": ("military", "lift-gate"),
     "military_depot": ("military", None),  # cartridges, drawn here
-    "military_range": ("military", "danger"),
+    "military_range": ("military", None),  # a pistol, drawn here
     "military_fort": ("military", "castle"),  # in use: green; disused, the same grey
     "military_radio": ("military", "communications-tower"),
     "military_research": ("military", None),  # a flask, drawn here
@@ -123,6 +123,12 @@ OWN = {
     '<path d="M7 3.6h1v9.6H7zM4.5 5.2h6v1.1h-6z"/>'
     '<path d="M2.2 9.6c0.3 2.5 2.6 4 5.3 4s5-1.5 5.3-4" fill="none" stroke="currentColor" stroke-width="1.2"/>'
     '<path d="M0.9 10.6 2.1 8.3l1.4 2.1zM14.1 10.6 12.9 8.3l-1.4 2.1z"/>',
+    # Ranges and training grounds: a pistol (slide, sights, slanted grip, trigger guard).
+    "military_range": '<path d="M1 3.4h13v3H1z"/><path d="M12.8 2.5h1v1h-1z"/>'
+    '<path d="M3.2 6.3h4.6l-1.2 7.3H2.1z"/>'
+    '<path d="M7.7 6.4h3.2v0.6c0 1.9-1.3 3.1-3.1 3.1" fill="none" stroke="currentColor" stroke-width="0.9"/>'
+    '<path d="M8.6 6.5v1.9" fill="none" stroke="currentColor" stroke-width="0.7"/>'
+    '<path d="M2.4 4.9h9.6" fill="none" stroke="#fff" stroke-width="0.5"/>',
     "storage_tank": '<path d="M2.5 3.5c0-1.1 2.2-2 5-2s5 0.9 5 2v8c0 1.1-2.2 2-5 2s-5-0.9-5-2z"/>'
     '<path d="M2.5 3.5c0 1.1 2.2 2 5 2s5-0.9 5-2M2.5 8c0 1.1 2.2 2 5 2s5-0.9 5-2" fill="none" stroke="#fff" stroke-width="1"/>',
 }
