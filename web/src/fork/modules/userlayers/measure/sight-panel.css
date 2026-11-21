@@ -34,21 +34,23 @@
   margin-right: 4px;
   vertical-align: middle;
 }
-.oim-ul-sight-key-seen {
-  background: var(--oim-success);
+.oim-ul-sight-key-clear {
+  border-top: 3px dashed var(--oim-success);
+  height: 0 !important;
 }
-.oim-ul-sight-key-hidden {
-  background: var(--oim-error);
+.oim-ul-sight-key-blocked {
+  border-top: 3px dashed var(--oim-error);
+  height: 0 !important;
+}
+.oim-ul-sight-key-ground {
+  background: var(--oim-light-grey);
+  outline: 1px solid var(--oim-dark-grey);
 }
 .oim-ul-sight-key-building {
   background: #8d8d8d;
 }
 .oim-ul-sight-key-trees {
   background: #6a9a5b;
-}
-.oim-ul-sight-key-ray {
-  border-top: 2px dashed var(--oim-text-color-light);
-  height: 0 !important;
 }
 .oim-ul-sight-chart {
   display: block;
@@ -83,20 +85,23 @@
   fill: #6a9a5b;
   fill-opacity: 0.8;
 }
-.oim-ul-sight-seen,
-.oim-ul-sight-hidden {
-  stroke-width: 2.5;
+.oim-ul-sight-ground-top {
+  stroke: var(--oim-dark-grey);
+  stroke-width: 1.5;
+  fill: none;
 }
-.oim-ul-sight-seen {
+/* The eye's line to the target: green where it passes over everything, red where
+   something rises above it. */
+.oim-ul-sight-clear,
+.oim-ul-sight-blocked {
+  stroke-width: 3;
+  stroke-dasharray: 8 4;
+}
+.oim-ul-sight-clear {
   stroke: var(--oim-success);
 }
-.oim-ul-sight-hidden {
+.oim-ul-sight-blocked {
   stroke: var(--oim-error);
-}
-.oim-ul-sight-ray {
-  stroke: var(--oim-text-color);
-  stroke-width: 1.5;
-  stroke-dasharray: 6 4;
 }
 .oim-ul-sight-block {
   fill: none;

@@ -1,10 +1,10 @@
 """Fork: what stands on the ground along a line of sight (sight.py): the terrain's
 elevations are the bare ground (IGN's model in France), so buildings and trees are
 added from the background map's own tiles (zoom 15: every building, forest and wood
-areas). A building stands as high as OpenStreetMap says, else 8 m (the 3D view's
-standard: web/src/fork/modules/buildings); trees 20 m, a common canopy height in line
-of sight studies. Each tile is decoded once (a spatial index over its shapes) and
-kept a while: a line crosses many points of the same tile."""
+areas). A building stands as high as OpenStreetMap says, else as high as the line of
+sight's card says (8 m at first); trees as high as it says (15 m at first): the
+background map has no tree heights. Each tile is decoded once (a spatial index over
+its shapes) and kept a while: a line crosses many points of the same tile."""
 
 from __future__ import annotations
 
@@ -19,8 +19,6 @@ from ..background import ARCHIVES, unzipped
 
 ZOOM = 15  # the background map's tiles holding every building
 EXTENT = 4096  # a vector tile's coordinates across
-BUILDING_HEIGHT = 8.0
-TREE_HEIGHT = 20.0
 FOREST_KINDS = ("forest", "wood")
 CACHED_TILES = 256
 
@@ -34,7 +32,28 @@ class Obstacle:
 NOTHING = Obstacle(0.0, "")
 
 
-def obstacles_at(points: list[tuple[float, float]]) -> list[Obstacle]:
+@dataclass(frozen=True)
+class Heights:
+    """The heights taken where the map gives none (metres)."""
+
+    trees: float = 15.0
+    buildings: float = 8.0
+
+
+@dataclass(frozen=True)
+class Standing:
+    """A building or a wood in a tile: its kind, and its height if the map gives one."""
+
+    kind: str
+    height: float | None
+
+    def obstacle(self, heights: Heights) -> Obstacle:
+        if self.height is not None:
+            return Obstacle(self.height, self.kind)
+        return Obstacle(heights.trees if self.kind == "trees" else heights.buildings, self.kind)
+
+
+def obstacles_at(points: list[tuple[float, float]], heights: Heights = Heights()) -> list[Obstacle]:
     """What stands at each point (lon, lat): the tallest building or trees there."""
     found = [NOTHING] * len(points)
     by_tile: dict[tuple[int, int], list[tuple[int, float, float]]] = {}
@@ -47,8 +66,8 @@ def obstacles_at(points: list[tuple[float, float]]) -> list[Obstacle]:
         if shapes is None:
             continue
         indexes = [index for index, _, _ in entries]
-        heights = shapes.at([(px, py) for _, px, py in entries])
-        for index, obstacle in zip(indexes, heights):
+        standing = shapes.at([(px, py) for _, px, py in entries], heights)
+        for index, obstacle in zip(indexes, standing):
             found[index] = obstacle
     return found
 
@@ -68,17 +87,18 @@ class TileShapes:
     """A tile's buildings and trees, with an index over them."""
 
     shapes: list[shapely.Geometry]
-    obstacles: list[Obstacle]
+    standing: list[Standing]
     tree: shapely.STRtree
 
-    def at(self, positions: list[tuple[float, float]]) -> list[Obstacle]:
+    def at(self, positions: list[tuple[float, float]], heights: Heights = Heights()) -> list[Obstacle]:
         """The tallest obstacle at each position."""
         points = shapely.points(positions)
         found = [NOTHING] * len(positions)
         point_index, shape_index = self.tree.query(points, predicate="within")
         for p, s in zip(point_index, shape_index):
-            if self.obstacles[s].height > found[p].height:
-                found[p] = self.obstacles[s]
+            obstacle = self.standing[s].obstacle(heights)
+            if obstacle.height > found[p].height:
+                found[p] = obstacle
         return found
 
 
@@ -95,18 +115,18 @@ def tile_shapes(x: int, y: int, version: str) -> TileShapes | None:
 def shapes_of(layers: dict) -> TileShapes:
     """A decoded tile's buildings and forests, as obstacles."""
     shapes: list[shapely.Geometry] = []
-    obstacles: list[Obstacle] = []
+    standing: list[Standing] = []
     for feature in layers.get("buildings", {}).get("features", []):
         shapes.append(shapely.geometry.shape(feature["geometry"]))
-        obstacles.append(Obstacle(building_height(feature["properties"]), "building"))
+        standing.append(Standing("building", building_height(feature["properties"])))
     for feature in layers.get("landuse", {}).get("features", []):
         if feature["properties"].get("kind") in FOREST_KINDS:
             shapes.append(shapely.geometry.shape(feature["geometry"]))
-            obstacles.append(Obstacle(TREE_HEIGHT, "trees"))
-    return TileShapes(shapes, obstacles, shapely.STRtree(shapes))
+            standing.append(Standing("trees", None))
+    return TileShapes(shapes, standing, shapely.STRtree(shapes))
 
 
-def building_height(properties: dict) -> float:
-    """A building's height: OpenStreetMap's (through Protomaps), else the standard one."""
+def building_height(properties: dict) -> float | None:
+    """A building's height as OpenStreetMap gives it (through Protomaps), if it does."""
     height = properties.get("height")
-    return float(height) if isinstance(height, int | float) and height > 0 else BUILDING_HEIGHT
+    return float(height) if isinstance(height, int | float) and height > 0 else None

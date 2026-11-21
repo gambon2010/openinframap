@@ -11,7 +11,7 @@ import { action } from './buttons.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
-import { DEFAULT_OBSERVER, DEFAULT_TARGET } from '../measure/sight.ts'
+import { DEFAULT_SIGHT } from '../measure/sight.ts'
 
 /** The map toolbar's tools: [id, glyph, label, key]. */
 export const TOOLS: [string, string, string, string][] = [
@@ -120,8 +120,7 @@ export class Toolbar {
             properties: {
               kind: 'measure',
               measure: 'sight',
-              observer: DEFAULT_OBSERVER,
-              target: DEFAULT_TARGET
+              ...DEFAULT_SIGHT
             }
           },
           t(

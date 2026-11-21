@@ -1,8 +1,12 @@
 // Fork: collect the English strings of the fork's code into src/fork/locales/en.json.
 // The code calls t('key', 'English text') (fork/core/i18n.ts); the text is
 // the fallback, and en.json is what translators (and i18next's debug log) see.
-//   node scripts/fork-strings.mjs           add what's missing (keeps what's there)
-//   node scripts/fork-strings.mjs --check   only report (exit 1 if anything is missing)
+//   node scripts/fork-strings.mjs           add what's missing, update what the code
+//                                           now says differently
+//   node scripts/fork-strings.mjs --check   only report (exit 1 if anything is missing,
+//                                           different, or clashing)
+// en.json's text is what's shown (i18next reads it first): a text changed in the code
+// but not here would keep showing the old one.
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -21,10 +25,15 @@ function files(dir) {
 // t('key', 'text') or t('key', "text"), the text possibly split over lines.
 const call = /\bt\(\s*'([a-z0-9][\w.-]*)'\s*,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g
 const found = new Map()
+// One key with two different texts in the code: only one can be in en.json.
+const twice = []
 for (const file of files(root)) {
   for (const m of readFileSync(file, 'utf8').matchAll(call)) {
     const text = (m[2] ?? m[3]).replace(/\\(['"\\])/g, '$1')
-    if (!found.has(m[1])) found.set(m[1], { text, file: file.slice(root.length) })
+    const rel = file.slice(root.length)
+    const before = found.get(m[1])
+    if (!before) found.set(m[1], { text, file: rel })
+    else if (before.text !== text) twice.push(`${m[1]}: "${before.text}" (${before.file}) and "${text}" (${rel})`)
   }
 }
 // tn('key', 'one', 'other', n): two strings, key_one and key_other (English plurals).
@@ -40,8 +49,9 @@ for (const file of files(root)) {
 }
 
 const en = JSON.parse(readFileSync(localeFile, 'utf8'))
-const problems = []
+const problems = twice.map((p) => `${p}: one key, two texts`)
 let added = 0
+let changed = 0
 for (const [key, { text, file }] of found) {
   const parts = key.split('.')
   let node = en
@@ -55,6 +65,10 @@ for (const [key, { text, file }] of found) {
       } else if (node[part] === undefined) {
         if (!check) node[part] = text
         added++
+      } else if (node[part] !== text) {
+        console.log(`changed: ${key} (${file}): en.json "${node[part]}", the code "${text}"`)
+        if (!check) node[part] = text
+        changed++
       }
     } else {
       if (typeof node[part] === 'string') {
@@ -69,6 +83,9 @@ for (const [key, { text, file }] of found) {
   if (!ok) continue
 }
 for (const p of problems) console.log('clash:', p)
-console.log(`${found.size} strings in the code, ${added} ${check ? 'missing from' : 'added to'} en.json`)
+console.log(
+  `${found.size} strings in the code, ${added} ${check ? 'missing from' : 'added to'} en.json, ` +
+    `${changed} ${check ? 'different in' : 'updated in'} en.json`
+)
 if (!check) writeFileSync(localeFile, JSON.stringify(en, null, 2) + '\n')
-process.exit(check && (added || problems.length) ? 1 : 0)
+process.exit(check && (added || changed || problems.length) ? 1 : 0)

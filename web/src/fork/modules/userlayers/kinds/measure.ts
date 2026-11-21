@@ -7,7 +7,7 @@ import { formatDistance, formatLength, parseDistances, parseLength } from '../..
 import { Measurement } from '../measure/features.types.ts'
 import { legBearing, legsOf, measurementOf, summary, withLegLength } from '../measure/features.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
-import { DEFAULT_OBSERVER, DEFAULT_TARGET, sightAnswer } from '../measure/sight.ts'
+import { sightAnswer, sightSettingsOf, type SightSettings } from '../measure/sight.ts'
 import { openSightPanel } from '../measure/sight-panel.ts'
 import { sightVerdict } from '../measure/sight-verdict.ts'
 import { FeatureProps } from '../model/model.ts'
@@ -60,14 +60,13 @@ function sightCard(
   item: Item,
   update: (changes: Partial<FeatureProps>) => void
 ): HTMLElement[] {
-  const observer = Number(item.properties.observer ?? DEFAULT_OBSERVER)
-  const target = Number(item.properties.target ?? DEFAULT_TARGET)
-  const heightInput = (field: 'observer' | 'target', value: number) => {
+  const settings = sightSettingsOf(item.properties)
+  const heightInput = (field: keyof SightSettings) => {
     const input = el('input', {
       type: 'number',
       min: 0,
       step: 0.5,
-      value,
+      value: settings[field],
       'data-field': field
     }) as HTMLInputElement
     input.onchange = () => {
@@ -76,13 +75,15 @@ function sightCard(
     }
     return input
   }
+  const row = (label: string, field: keyof SightSettings) =>
+    el('.oim-ul-detail', el('span.oim-ul-detail-name', label), heightInput(field))
   const result = el('strong.oim-ul-sight-result', t('userlayers.sight-asking', 'Looking at the terrain…'))
   const [from, to] = [m.points[0], m.points[m.points.length - 1]]
-  void sightAnswer(from, to, observer, target).then((sight) => {
+  void sightAnswer(from, to, settings).then((sight) => {
     result.textContent =
       !sight || sight.target_seen === null
         ? t('userlayers.sight-unknown', 'No terrain here: no answer.')
-        : sightVerdict(sight)
+        : sightVerdict(sight, settings)
   })
   const open = el('button.oim-ul-button', t('userlayers.sight-open', 'Open the profile'), {
     type: 'button'
@@ -92,21 +93,14 @@ function sightCard(
       title: String(item.properties.name || t('userlayers.what.measure-sight', 'Line of sight')),
       from,
       to,
-      observer,
-      target
+      settings
     })
   return [
     result,
-    el(
-      '.oim-ul-detail',
-      el('span.oim-ul-detail-name', t('userlayers.sight-observer', 'Eyes above the ground (m)')),
-      heightInput('observer', observer)
-    ),
-    el(
-      '.oim-ul-detail',
-      el('span.oim-ul-detail-name', t('userlayers.sight-target', 'Target above the ground (m)')),
-      heightInput('target', target)
-    ),
+    row(t('userlayers.sight-observer', 'Eyes above the ground (m)'), 'observer'),
+    row(t('userlayers.sight-target', 'Target above the ground (m)'), 'target'),
+    row(t('userlayers.sight-trees', 'Trees (m)'), 'trees'),
+    row(t('userlayers.sight-buildings', 'Buildings without a height (m)'), 'buildings'),
     el(
       '.oim-ul-detail',
       el('span.oim-ul-detail-name', t('userlayers.measure-total', 'In all')),

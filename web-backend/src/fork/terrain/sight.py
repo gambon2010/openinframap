@@ -13,7 +13,9 @@ when the line from the observer's eye to it rises at least as steeply as to ever
 surface before it (the classic profile test, as GRASS's r.los and viewsheds along a
 ray). Each sample also says its surface as seen from the eye (lowered), so a chart
 draws exactly what the answer used. Obstacles within END_CLEAR of either end are
-left out: the observer and the target stand at a wood's edge, not inside it."""
+left out: the observer and the target stand at a wood's edge, not inside it; and
+only where the terrain is bare ground (bare_ground.py: France), not counted twice
+where it already holds them."""
 
 from __future__ import annotations
 
@@ -36,7 +38,9 @@ END_CLEAR = 30.0
 # How steeply the line from the observer's eye rises to a height at a distance.
 Rise = Callable[[float, float], float]
 # What stands at each point along the line (obstacles.obstacles_at).
-ObstaclesAt = Callable[[list[tuple[float, float]]], list[obstacles.Obstacle]]
+ObstaclesAt = Callable[[list[tuple[float, float]], obstacles.Heights], list[obstacles.Obstacle]]
+# Whether the terrain at a point (lon, lat) is bare ground (bare_ground.py).
+BareGround = Callable[[float, float], bool]
 
 
 @dataclass(frozen=True)
@@ -58,6 +62,7 @@ class Sight:
     margin: float | None = None
     eye: float | None = None  # the eye's height (metres above sea level)
     target_top: float | None = None  # the target's top as seen from the eye (lowered)
+    obstacles_counted: bool = False  # trees and buildings added somewhere along the line
 
 
 def along(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
@@ -85,6 +90,8 @@ def line_of_sight(
     target: float = 0.0,
     coefficient: float = VISIBLE_LIGHT,
     obstacles_at: ObstaclesAt | None = None,
+    assumed: obstacles.Heights = obstacles.Heights(),
+    bare_ground: BareGround | None = None,
 ) -> Sight:
     """The profile from observer to target, what of it is seen, what first hides the
     target and by how much."""
@@ -95,7 +102,10 @@ def line_of_sight(
     distances = [length * i / (count - 1) for i in range(count)]
     if heights[0] is None or heights[-1] is None:
         return Sight([Sample(d, h, False) for d, h in zip(distances, heights)], None, None)
-    standing = standing_on(points, distances, length, obstacles_at or obstacles.obstacles_at)
+    on_bare = [True if bare_ground is None else bare_ground(*point) for point in points]
+    standing = standing_on(
+        points, distances, length, on_bare, assumed, obstacles_at or obstacles.obstacles_at
+    )
     eye = heights[0] + observer
 
     def rise(height: float, distance: float) -> float:
@@ -116,17 +126,26 @@ def line_of_sight(
         margin,
         eye,
         target_top,
+        any(on_bare),
     )
 
 
 def standing_on(
-    points: list[tuple[float, float]], distances: list[float], length: float, obstacles_at: ObstaclesAt
+    points: list[tuple[float, float]],
+    distances: list[float],
+    length: float,
+    on_bare: list[bool],
+    assumed: obstacles.Heights,
+    obstacles_at: ObstaclesAt,
 ) -> list[obstacles.Obstacle]:
-    """What stands at each sample, but near either end (END_CLEAR)."""
-    found = obstacles_at(points)
+    """What stands at each sample, but near either end (END_CLEAR) and where the
+    terrain isn't bare ground (it holds them already)."""
+    if not any(on_bare):
+        return [obstacles.NOTHING] * len(points)
+    found = obstacles_at(points, assumed)
     return [
-        obstacles.NOTHING if d < END_CLEAR or length - d < END_CLEAR else obstacle
-        for d, obstacle in zip(distances, found)
+        obstacle if bare and END_CLEAR <= d <= length - END_CLEAR else obstacles.NOTHING
+        for d, obstacle, bare in zip(distances, found, on_bare)
     ]
 
 

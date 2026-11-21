@@ -72,4 +72,8 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
     (915582117::bigint, 'ZAC Les Seguins Les Ribéreaux', 'none', '2026-11-21'::date,
      'Not military: a land-cover import (Corine code 121, "industrial or commercial units"), its own note saying the land use is to be set to industrial or retail; a ZAC is a business park.'),
     (80367348::bigint, 'Espace Roger Pierre Seassal', 'none', '2026-11-21'::date,
-     'Not military: the square beside Nice''s Rauba-Capeù war memorial, named after its architect Roger Séassal (Wikipedia).');
+     'Not military: the square beside Nice''s Rauba-Capeù war memorial, named after its architect Roger Séassal (Wikipedia).'),
+    (197043497::bigint, 'zone militaire', 'military_naval_base', '2026-11-21'::date,
+     'At Les Salins d''Hyères beside Port Pothuau, the Navy''s address there ("Marine Nationale, Port Pothuau": Pages Jaunes), the harbour of the DGA''s missile test centre on Île du Levant; the Navy at Les Salins since 1892 (postenavalemilitaire.com).'),
+    (1058969132::bigint, 'Bois de Nice', 'military_range', '2026-11-21'::date,
+     'The army''s ground at Courbessac, Nîmes: "La Poudrière", 100 ha of artillery manoeuvre ground since 1878 (anciens-aerodromes.com, the aero club''s history); walkers still cross military land there beside the Camp des Garrigues.');

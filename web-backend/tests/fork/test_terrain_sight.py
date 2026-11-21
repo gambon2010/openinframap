@@ -13,13 +13,17 @@ FAR = ((7.0, 47.0), (7.0, 47.3))
 @pytest.fixture(autouse=True)
 def bare_ground(monkeypatch):
     """Nothing stands on the ground unless a test says so (no background map read)."""
-    monkeypatch.setattr(sight.obstacles, "obstacles_at", lambda points: [obstacles.NOTHING] * len(points))
+    monkeypatch.setattr(
+        sight.obstacles, "obstacles_at", lambda points, heights: [obstacles.NOTHING] * len(points)
+    )
 
 
 def standing(at_lat, obstacle):
     """An obstacle on the points between two latitudes (`at_lat`: (south, north))."""
     south, north = at_lat
-    return lambda points: [obstacle if south < lat < north else obstacles.NOTHING for _, lat in points]
+    return lambda points, heights: [
+        obstacle if south < lat < north else obstacles.NOTHING for _, lat in points
+    ]
 
 
 def ground(height_at):
@@ -88,3 +92,11 @@ def test_trees_hide_the_ground_behind_them(monkeypatch):
     found = sight.line_of_sight(*NEAR, obstacles_at=wood)
     assert found.blocked_by == "trees"
     assert not any(s.seen for s in found.samples if s.distance > 500)
+
+
+def test_nothing_is_added_where_the_terrain_already_holds_it(monkeypatch):
+    """Off bare ground (outside France: Copernicus' surface model) trees aren't added again."""
+    monkeypatch.setattr(sight.elevations, "elevation", ground(lambda lat: 200.0))
+    wood = standing((47.003, 47.004), obstacles.Obstacle(20.0, "trees"))
+    found = sight.line_of_sight(*NEAR, obstacles_at=wood, bare_ground=lambda lon, lat: False)
+    assert found.target_seen and not found.obstacles_counted

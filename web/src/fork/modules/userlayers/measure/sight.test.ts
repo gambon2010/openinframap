@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { sightKey, sightStretches, type ProfilePoint, type SightResult } from './sight.ts'
+import { DEFAULT_SIGHT, sightKey, sightStretches, type ProfilePoint, type SightResult } from './sight.ts'
 import { sightBlockLabel, sightVerdict } from './sight-verdict.ts'
 import { niceStep, sightChart } from './sight-chart.ts'
 
@@ -21,22 +21,30 @@ function answer(profile: ProfilePoint[], changes: Partial<SightResult> = {}): Si
     margin: -12,
     eye: 202,
     target_top: 200,
+    obstacles_counted: true,
     profile,
     ...changes
   }
 }
 
 describe('a line of sight on the map', () => {
-  test('cut where what is seen changes, the stretches meeting', () => {
+  test('green where the line passes over everything, red where something rises above it', () => {
+    // The eye at 202 m, the target's top at 200 m: a rise of 260 m at 50 m and 210 m at
+    // 75 m stand above the line.
     const result = answer([row(0, 200, true), row(50, 260, true), row(75, 210, false), row(100, 200, false)])
     const stretches = sightStretches([0, 0], [1, 0], result)
-    expect(stretches.map((s) => s.seen)).toEqual([true, false])
+    // Each piece takes the state where it ends: red to 75 m, then green.
+    expect(stretches.map((s) => s.clear)).toEqual([false, true])
     expect(stretches[0].points).toEqual([
       [0, 0],
-      [0.5, 0]
+      [0.5, 0],
+      [0.75, 0]
     ])
-    expect(stretches[1].points[0]).toEqual([0.5, 0])
-    expect(stretches[1].points.at(-1)).toEqual([1, 0])
+    // Each starts where the last ended.
+    expect(stretches[1].points).toEqual([
+      [0.75, 0],
+      [1, 0]
+    ])
   })
 
   test('no terrain: nothing drawn there', () => {
@@ -48,7 +56,10 @@ describe('a line of sight on the map', () => {
   })
 
   test('the answer changes with either point or height', () => {
-    expect(sightKey([1, 2], [3, 4], 2, 0)).not.toBe(sightKey([1, 2], [3, 4], 2, 10))
+    const key = (changes: Partial<typeof DEFAULT_SIGHT>) =>
+      sightKey([1, 2], [3, 4], { ...DEFAULT_SIGHT, ...changes })
+    expect(key({})).not.toBe(key({ target: 10 }))
+    expect(key({})).not.toBe(key({ trees: 20 }))
   })
 })
 
@@ -57,10 +68,15 @@ describe('what a line of sight says', () => {
     const trees = answer([row(0, 200, true), row(50, 200, true, 20, 'trees'), row(100, 200, false)], {
       blocked_by: 'trees'
     })
-    expect(sightVerdict(trees)).toBe('Hidden by trees 50 m away (12 m above the line)')
+    expect(sightVerdict(trees, DEFAULT_SIGHT)).toBe(
+      'Hidden by trees 50 m away (trees taken as 15 m; 12 m above the line)'
+    )
     expect(sightBlockLabel(trees)).toBe('Trees 20 m')
     expect(
-      sightVerdict(answer([], { target_seen: true, blocked_at: null, blocked_by: null, margin: 7.6 }))
+      sightVerdict(
+        answer([], { target_seen: true, blocked_at: null, blocked_by: null, margin: 7.6 }),
+        DEFAULT_SIGHT
+      )
     ).toBe('Seen (8 m clear)')
   })
 })

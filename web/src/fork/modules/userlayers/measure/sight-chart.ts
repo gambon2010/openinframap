@@ -1,14 +1,15 @@
 // Fork: a line of sight's profile as a chart (the split screen: sight-panel.ts):
 // the ground and what stands on it (buildings grey, trees green) as seen from the
-// eye, so the Earth's curvature is in it as in the answer (sight.ts), the ground
-// green where seen and red where hidden, the eye's line to the target dashed, where
-// the target is first hidden, and axes in metres and kilometres. Hovering it says
+// eye, so the Earth's curvature is in it as in the answer (sight.ts), the eye's line
+// to the target dashed, green where it passes over everything and red where
+// something rises above it, where the target is first hidden, and axes in metres and
+// kilometres. Hovering it says
 // where along the line (onHover: the sample under the pointer, null when it leaves).
 // Drawn by hand in SVG: polygons, lines and ticks a chart library would only wrap.
 import { svg } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance } from '../../../core/earth.ts'
-import type { ProfilePoint, SightResult } from './sight.ts'
+import { lineClearAt, type ProfilePoint, type SightResult } from './sight.ts'
 
 const WIDTH = 1000
 const HEIGHT = 520
@@ -37,8 +38,8 @@ export function sightChart(result: SightResult, onHover: (point: ProfilePoint | 
     ...axes(scale, length),
     groundShape(known, scale),
     ...standingShapes(known, scale),
-    ...seenLines(known, scale),
-    rayLine(result, scale, length),
+    groundTop(known, scale),
+    ...rayLines(result, known, scale, length),
     ...blockMark(result, known, scale)
   )
   hoverOn(plot, known, scale, onHover)
@@ -149,27 +150,37 @@ function standingShape(run: Known[], scale: Scale): SVGElement {
   return svg(`polygon.oim-ul-sight-${run[0].point[4]}`, { points: [...top, ...bottom].join(' ') })
 }
 
-function seenLines(known: Known[], scale: Scale): SVGElement[] {
-  return known.slice(1).map((k, i) =>
-    svg('line', {
-      x1: scale.x(known[i].distance),
-      y1: scale.y(known[i].ground),
-      x2: scale.x(k.distance),
-      y2: scale.y(k.ground),
-      class: k.point[2] ? 'oim-ul-sight-seen' : 'oim-ul-sight-hidden'
-    })
-  )
+function groundTop(known: Known[], scale: Scale): SVGElement {
+  const points = known.map((k) => `${scale.x(k.distance)},${scale.y(k.ground)}`).join(' ')
+  return svg('polyline.oim-ul-sight-ground-top', { points })
 }
 
-function rayLine(result: SightResult, scale: Scale, length: number): SVGElement {
+/** The eye's line to the target, in runs: clear (over everything) or blocked. */
+function rayLines(result: SightResult, known: Known[], scale: Scale, length: number): SVGElement[] {
   const eye = result.eye ?? scale.low
   const target = result.target_top ?? scale.low
-  return svg('line.oim-ul-sight-ray', {
-    x1: scale.x(0),
-    y1: scale.y(eye),
-    x2: scale.x(length),
-    y2: scale.y(target)
-  })
+  const lineAt = (distance: number) =>
+    `${scale.x(distance)},${scale.y(eye + ((target - eye) * distance) / length)}`
+  const runs: { clear: boolean; distances: number[] }[] = []
+  for (const k of known) {
+    const clear = lineClearAt(result, k.point)
+    const last = runs[runs.length - 1]
+    if (last && last.clear === clear) last.distances.push(k.distance)
+    // A new run starts where the last ended, so they meet.
+    else
+      runs.push({
+        clear,
+        distances: last ? [last.distances[last.distances.length - 1], k.distance] : [k.distance]
+      })
+  }
+  return runs
+    .filter((run) => run.distances.length > 1)
+    .map((run) =>
+      svg(`polyline.${run.clear ? 'oim-ul-sight-clear' : 'oim-ul-sight-blocked'}`, {
+        points: run.distances.map(lineAt).join(' '),
+        fill: 'none'
+      })
+    )
 }
 
 /** Where the target is first hidden: a mark on what hides it. */

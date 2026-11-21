@@ -8,6 +8,7 @@ box); the line of sight between two points at /terrain/sight (sight.py)."""
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
@@ -15,7 +16,10 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from ..tile_answers import tile_response
-from . import contours, elevations, files, sight
+from ... import Request as AppRequest
+from ... import get_db
+from . import contours, elevations, files, obstacles, sight
+from .bare_ground import bare_ground_test
 
 MEDIA_TYPE = "image/webp"
 VECTOR_TILE = "application/vnd.mapbox-vector-tile"
@@ -60,8 +64,9 @@ def point_of(text: str) -> tuple[float, float]:
     return lon, lat
 
 
-async def sight_between(request: Request) -> Response:
-    """?from=lon,lat&to=lon,lat[&observer=2&target=0]: the line of sight (sight.py):
+async def sight_between(request: AppRequest) -> Response:
+    """?from=lon,lat&to=lon,lat[&observer=2&target=0&trees=15&buildings=8]: the line
+    of sight (sight.py; trees and buildings without a height taken as tall as given):
     {"target_seen", "blocked_at" (metres), "blocked_by" ("ground", "building",
     "trees"), "margin" (metres the eye's line to the target clears everything by;
     < 0: what rises above it, by that much), "eye", "target_top" (metres: the eye,
@@ -72,9 +77,17 @@ async def sight_between(request: Request) -> Response:
         start, end = point_of(request.query_params["from"]), point_of(request.query_params["to"])
         observer = float(request.query_params.get("observer", 2))
         target = float(request.query_params.get("target", 0))
+        defaults = obstacles.Heights()
+        assumed = obstacles.Heights(
+            trees=float(request.query_params.get("trees", defaults.trees)),
+            buildings=float(request.query_params.get("buildings", defaults.buildings)),
+        )
     except (KeyError, ValueError):
         return Response(status_code=400)
-    found = await run_in_threadpool(sight.line_of_sight, start, end, observer, target)
+    bare = await bare_ground_test(get_db(request))
+    found = await run_in_threadpool(
+        partial(sight.line_of_sight, start, end, observer, target, assumed=assumed, bare_ground=bare)
+    )
     return JSONResponse(
         {
             "target_seen": found.target_seen,
@@ -83,6 +96,7 @@ async def sight_between(request: Request) -> Response:
             "margin": rounded(found.margin, 1),
             "eye": rounded(found.eye, 1),
             "target_top": rounded(found.target_top, 1),
+            "obstacles_counted": found.obstacles_counted,
             "profile": [profile_row(s) for s in found.samples],
         }
     )

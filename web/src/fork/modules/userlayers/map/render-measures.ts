@@ -1,6 +1,7 @@
 // Fork: My layers' measurements as map features (map/render.ts draws them into each
 // layer's measure source): their lines, labels and marks (measure/features.ts), and a
-// line of sight's stretches, green where the ground is seen, red where it's hidden
+// line of sight's stretches, green where it passes over everything, red where
+// something rises above it
 // (measure/sight.ts), and a mark where the target is first hidden, saying by what,
 // once the backend has answered (each answer asked once per points and heights).
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
@@ -10,13 +11,12 @@ import { measurementFeatures, measurementOf } from '../measure/features.ts'
 import type { North } from '../../../core/north.ts'
 import type { LngLat } from '../../../core/earth.ts'
 import {
-  DEFAULT_OBSERVER,
-  DEFAULT_TARGET,
-  HIDDEN_COLOUR,
-  SEEN_COLOUR,
+  BLOCKED_COLOUR,
+  CLEAR_COLOUR,
   pointAlong,
   sightAnswer,
   sightKey,
+  sightSettingsOf,
   sightStretches,
   type SightResult
 } from '../measure/sight.ts'
@@ -72,13 +72,12 @@ export class MeasureDrawer {
   private sightFeatures(f: UserFeature, m: Measurement): GeoJSON.Feature[] {
     const [from, to] = [m.points[0], m.points[m.points.length - 1]]
     if (!from || !to || m.points.length < 2) return []
-    const observer = Number(f.properties.observer ?? DEFAULT_OBSERVER)
-    const target = Number(f.properties.target ?? DEFAULT_TARGET)
-    const key = sightKey(from, to, observer, target)
+    const settings = sightSettingsOf(f.properties)
+    const key = sightKey(from, to, settings)
     const result = this.sights.get(key)
     if (result === undefined) {
       this.sights.set(key, null)
-      void sightAnswer(from, to, observer, target).then((answer) => {
+      void sightAnswer(from, to, settings).then((answer) => {
         if (!answer) return
         this.sights.set(key, answer)
         this.redraw()
@@ -89,7 +88,7 @@ export class MeasureDrawer {
     const stretches: GeoJSON.Feature[] = sightStretches(from, to, result).map((stretch) => ({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: stretch.points },
-      properties: { fid: f.id, color: stretch.seen ? SEEN_COLOUR : HIDDEN_COLOUR }
+      properties: { fid: f.id, color: stretch.clear ? CLEAR_COLOUR : BLOCKED_COLOUR }
     }))
     return [...stretches, ...blockFeature(f, from, to, result)]
   }

@@ -140,7 +140,7 @@ export function buildBulkCard(
   }
   const move = select(
     [
-      ['', t('userlayers.move-to', 'Move to layer…')],
+      ['', t('userlayers.move-to-choose', 'Move to layer…')],
       ...layers.filter((l) => actions.canEdit(l)).map((l): [string, string] => [l.id, l.name])
     ],
     '',

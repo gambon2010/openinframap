@@ -24,12 +24,16 @@ def test_buildings_and_trees_stand_where_they_are_the_tallest_counts():
         },
     }
     shapes = obstacles.shapes_of(layers)
-    found = shapes.at([(120, 120), (1020, 1020), (500, 500), (3200, 3200), (4000, 100)])
-    assert found[0] == obstacles.Obstacle(31.0, "building")  # in the wood, taller than its trees
-    assert found[1] == obstacles.Obstacle(obstacles.TREE_HEIGHT, "trees")  # 8 m house under 20 m trees
-    assert found[2] == obstacles.Obstacle(obstacles.TREE_HEIGHT, "trees")
+    heights = obstacles.Heights(trees=15.0, buildings=8.0)
+    found = shapes.at([(120, 120), (1020, 1020), (500, 500), (3200, 3200), (4000, 100)], heights)
+    assert found[0] == obstacles.Obstacle(31.0, "building")  # OSM's height, taller than the trees
+    assert found[1] == obstacles.Obstacle(15.0, "trees")  # an 8 m house (no height) under 15 m trees
+    assert found[2] == obstacles.Obstacle(15.0, "trees")
     assert found[3] == obstacles.NOTHING  # a meadow
     assert found[4] == obstacles.NOTHING
+    # Taller trees asked for: the house's standard height stays as asked.
+    taller = shapes.at([(1020, 1020)], obstacles.Heights(trees=5.0, buildings=12.0))
+    assert taller[0] == obstacles.Obstacle(12.0, "building")
 
 
 def test_a_point_s_place_in_its_zoom_15_tile():

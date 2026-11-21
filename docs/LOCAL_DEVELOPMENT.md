@@ -718,15 +718,17 @@ on the My layers workspace; click it again to close it. It has two parts:
   bearing, the total, marks along it like a ruler, finer as you zoom in, down to
   10 m), ⬠ an area, ◎ range rings (their distances on the ring's card), 👁 a line
   of sight (key I: click where you stand, then what you want to see; the line turns
-  green where you see the ground and red where it's hidden, a ringed mark where the
-  target is first hidden says by what, "Trees 20 m"; its card says whether the
-  target is seen ("Hidden by trees 475 m away, 142 m above the line") and takes the
-  heights of your eyes and of the target; **Open the profile** splits the screen:
-  the chart large on the right, the line on the map on the left; point at the
-  chart and a dot shows that place on the map. Buildings count as tall as
-  OpenStreetMap says (8 m when it doesn't), woods 20 m, not within 30 m of either
-  end; the Earth's curvature counted, as GDAL's viewshed; needs the terrain and the
-  background map). Click
+  green where it passes over everything and red where something rises above it, a
+  ringed mark where the target is first hidden says by what, "Trees 15 m"; its card
+  says whether the target is seen ("Hidden by trees 475 m away (trees taken as 15 m;
+  137 m above the line)") and takes the heights of your eyes, of the target, of trees
+  and of buildings OpenStreetMap gives no height for (15 m and 8 m at first: the map
+  has no tree heights, most buildings none); **Open the profile** splits the screen:
+  the chart large on the right, the line on the map on the left; point at the chart
+  and a dot shows that place on the map. Trees and buildings are added only in
+  France, where the terrain is bare ground (elsewhere it already holds them), not
+  within 30 m of either end; the Earth's curvature counted, as GDAL's viewshed; needs
+  the terrain and the background map). Click
   points; double-click or Enter to finish; right-click starts again. A measurement
   is saved and shared like any item; drag its points to change it, or type a leg's
   length on its card (the following legs keep theirs), and 🔒 Lock it on its card

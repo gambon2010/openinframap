@@ -273,7 +273,9 @@ every route but logging in needs a session):
   heights with its neighbours' edges, a point's height (`/terrain/elevation`, the
   coordinates box: also its slope, Horn's method); `sight.py`, the line of sight
   between two points (`/terrain/sight`, as GDAL's viewshed; what stands on the
-  ground from the background map's tiles, `obstacles.py`: buildings, woods); `contours.py`, contour lines as vector tiles,
+  ground from the background map's tiles, `obstacles.py`: buildings, woods, their
+  heights as asked where the map gives none; only where the terrain is bare ground,
+  `bare_ground.py`: France, its outline from `countries.country_eez`); `contours.py`, contour lines as vector tiles,
   `/terrain/contours/{z}/{x}/{y}.mvt`, traced as tiles are asked for (smoothed with
   SciPy, military maps' intervals), kept in memory; `contour_marks.py`, what a line
   is: index, intermediate, supplementary on level ground, depression and its

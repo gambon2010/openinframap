@@ -1405,6 +1405,21 @@ default). Counts are France's OSM data in October 2026.
   on the left fitted clear of the left column; pointing at the chart marks the
   place on the map). One answer per line, shared by the card, the map and the
   profile. Checked in the app as the debug account (Lièpvre, Vosges).
+- **Line of sight, second round** (asked): the line green where it passes over
+  everything and red where something rises above it (on the map and the chart; the
+  ground's seen or hidden left out); trees and buildings without a height adjustable
+  on the card (15 m and 8 m at first: the map has no tree heights, most buildings
+  none; IGN's forest inventory publishes no national average height), said in the
+  verdict when what hides the target has a height taken; added only in France,
+  where the terrain is IGN's bare ground (`terrain/bare_ground.py`; elsewhere
+  Copernicus' surface model already holds them: counted twice before). Bois de Nice
+  (the army's Courbessac ground since 1878) and the plot at Port Pothuau (the Navy at
+  Les Salins d'Hyères) fixed by hand: no named generic site left.
+- **The strings check compares texts** (`scripts/fork-strings.mjs`): a text changed in
+  the code but not in en.json (which i18next shows first) failed nothing ("m to
+  spare" would have stayed); now `--check` fails and the normal run updates it, and
+  one key with two texts is a clash. It found one at once: "Move to layer" shown with
+  a stray "…" in the map's menu (two uses of one key, now two keys).
 
 ## Extra data (not from OpenStreetMap)
 
