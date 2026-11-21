@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { Map as MapLibreMap } from 'maplibre-gl'
-import { FeatureHider, specKey } from './feature-hider.ts'
+import { FeatureHider, SAME_FEATURES_AS, specKey } from './feature-hider.ts'
 
 // Enough of a map for the hider's constructor; conditions() only reads the layers given.
 const fakeMap = { on: () => undefined } as unknown as MapLibreMap
@@ -67,6 +67,31 @@ describe('FeatureHider.conditions', () => {
       ['!=', icon, 'site_airfield'],
       ['!=', icon, 'site_former']
     ])
+  })
+
+  test('an icon hides the areas that say they are the same features', () => {
+    const icon = ['match', ['get', 'kind'], 'military_range', 'site_military_range', 'site_military_area']
+    const sites = [
+      {
+        id: 'sites_military',
+        type: 'symbol',
+        source: 'sites',
+        'source-layer': 'sites_point',
+        layout: { 'icon-image': icon }
+      },
+      {
+        id: 'sites_area_military',
+        type: 'fill',
+        source: 'sites',
+        'source-layer': 'sites_area',
+        metadata: { [SAME_FEATURES_AS]: 'sites_point' }
+      },
+      { id: 'other_area', type: 'fill', source: 'sites', 'source-layer': 'sites_area' }
+    ]
+    const conditions = hider.conditions({ icon: 'site_military_range' }, sites)
+    expect(conditions.get('sites_area_military')).toEqual(['!=', icon, 'site_military_range'])
+    // An area layer that doesn't say so is other data.
+    expect(conditions.has('other_area')).toBe(false)
   })
 
   test('hidden rows are remembered by their spec', () => {

@@ -1306,6 +1306,12 @@ default). Counts are France's OSM data in October 2026.
   the same): `followChanges` (`ui/data-layers.ts`) redraws it after every
   `setVisibility` and every reading of the address, whoever made them. A test runs it
   on the real layer switcher.
+- **A hidden key row hides the sites' areas too** (bug: unticking "Range" hid the
+  ranges' icons but left their areas): the areas are in other tile data
+  (`sites_area`) than the icons (`sites_point`); a layer can now say whose features
+  it draws (`SAME_FEATURES_AS`, `ui/key/feature-hider.ts`), and the sites' area
+  layers say they're the icons'. Ranges' icon: a pistol instead of the skull and
+  bones (asked).
 
 ## Extra data (not from OpenStreetMap)
 

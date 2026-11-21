@@ -15,6 +15,11 @@ export type HideSpec =
   | { icon: string | string[] } // symbol layers showing this sprite (or these)
   | { layers: string[] } // layers whose id starts with one of these
 
+/** A layer's metadata key: the source-layer whose features it draws too (a site's
+ * area, in sites_area, is the same site as its icon in sites_point), so a key row
+ * hiding them there hides them here too. */
+export const SAME_FEATURES_AS = 'oim:same-features-as'
+
 export type StyleLayer = {
   id: string
   type: string
@@ -223,8 +228,7 @@ export function specConditions(
     for (const other of layers) {
       if (
         result.has(other.id) ||
-        other.source !== layer.source ||
-        other['source-layer'] !== layer['source-layer'] ||
+        !drawsSameFeatures(other, layer) ||
         // An icon row leaves other icon layers alone (towers vs poles share their data).
         ('icon' in spec && other.layout?.['icon-image'] !== undefined)
       ) {
@@ -234,4 +238,14 @@ export function specConditions(
     }
   }
   return result
+}
+
+/** Whether a layer draws the same features as another: the same data, or features
+ * it says are the same (SAME_FEATURES_AS). */
+function drawsSameFeatures(other: StyleLayer, layer: StyleLayer): boolean {
+  if (other.source !== layer.source) return false
+  const metadata = other.metadata as Record<string, unknown> | undefined
+  return (
+    other['source-layer'] === layer['source-layer'] || metadata?.[SAME_FEATURES_AS] === layer['source-layer']
+  )
 }

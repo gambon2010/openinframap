@@ -8,6 +8,7 @@ import { interpolate, zoom } from '../../../style/stylehelpers.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { text_paint, font } from '../../../style/common.ts'
 import { COUNTS } from '../../ui/key/counted-groups.ts'
+import { SAME_FEATURES_AS } from '../../ui/key/feature-hider.ts'
 
 // Must match scripts/make_site_icons.py.
 /** A site's area: light, lighter close in (its icon says what it is); over imagery
@@ -292,6 +293,8 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       zorder: 4,
       source: 'sites',
       'source-layer': 'sites_area',
+      // The same sites as the icons: their key rows hide the areas too.
+      metadata: { [SAME_FEATURES_AS]: 'sites_point' },
       filter: ['==', ['get', 'category'], category],
       type: 'fill',
       paint: {
@@ -306,6 +309,8 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       zorder: 4,
       source: 'sites',
       'source-layer': 'sites_area',
+      // The same sites as the icons: their key rows hide the areas too.
+      metadata: { [SAME_FEATURES_AS]: 'sites_point' },
       filter: of_category(category),
       type: 'line',
       paint: {
