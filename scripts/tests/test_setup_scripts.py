@@ -403,6 +403,11 @@ def test_start(sandbox):
     # The gate (the way in from the network) is started, and the browser opened on
     # the dev server, in the background: give it a moment to be called.
     assert sandbox.docker_calls("up", "gate")
+    # Each build's replaced images removed: this project's only, by its label.
+    assert sandbox.docker_calls(
+        "image", "prune", "label=com.docker.compose.project=oimtest"
+    )
+    assert sandbox.docker_calls("builder", "prune", "--max-used-space")
     for _ in range(50):
         if ["xdg-open", "http://localhost:5173"] in sandbox.calls():
             break

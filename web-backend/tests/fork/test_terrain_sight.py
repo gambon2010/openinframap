@@ -132,3 +132,16 @@ def test_nothing_is_added_where_the_terrain_already_holds_it(monkeypatch):
     wood = standing((47.003, 47.004), obstacles.Obstacle(20.0, "trees"))
     found = sight.line_of_sight(*NEAR, obstacles_at=wood, bare_ground=lambda lon, lat: False)
     assert found.target_seen and not found.obstacles_counted
+
+
+def test_one_sample_per_terrain_pixel_however_long():
+    # At 48° N a zoom 13 pixel is about 6.4 m: a 92 km line gets about 14 400 samples,
+    # none further apart than a pixel.
+    pixel = sight.elevations.ground_metres_per_pixel(48.0, sight.elevations.FINEST_ZOOM)
+    count = sight.sample_count(92_000, 48.0)
+    assert 92_000 / (count - 1) <= pixel
+    assert 14_000 < count < 15_000
+    # Past the cap, sparser rather than endless.
+    assert sight.sample_count(1_000_000, 48.0) == sight.MOST_SAMPLES
+    # Even a line shorter than a pixel has its two ends.
+    assert sight.sample_count(1.0, 48.0) == 2

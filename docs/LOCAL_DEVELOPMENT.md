@@ -734,7 +734,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   can be dragged (not the line as a whole); moving one asks again when you let go, the open profile following (a spinner while it's worked
   out). Trees and buildings are added only in
   France, where the terrain is bare ground (elsewhere it already holds them), not
-  within 30 m of either end; the Earth's curvature counted, as GDAL's viewshed; needs
+  within 30 m of either end; one sample per terrain pixel (a 92 km line: about
+  14 600, a few seconds); the Earth's curvature counted, as GDAL's viewshed; needs
   the terrain and the background map). Click
   points; double-click or Enter to finish; right-click starts again. A measurement
   is saved and shared like any item; drag its points to change it, or type a leg's
@@ -863,4 +864,11 @@ If you add your own mounts, add `:z` too.
 **Not enough disk space.** Docker keeps its data in `/var/lib/docker` by default,
 often on the system disk. The script shows the estimate before starting. Downloads
 and filtered files in `data/downloads/osm/` are reused, so after freeing space just re-run.
+The scripts remove the project's old images after each build, and keep Docker's
+build cache under 5 GB. On a **btrfs** system disk (Fedora's default) the database
+can stop with "No space left on device" while `df` still shows free space: btrfs has
+handed out all its space to file contents, and its metadata can't grow. Check with
+`btrfs filesystem usage /` ("Device unallocated" near 0); fix with
+`sudo btrfs balance start -dusage=20 /` (packs half-empty chunks, giving their space
+back), then `docker compose restart db`.
 

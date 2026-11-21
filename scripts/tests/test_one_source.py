@@ -197,3 +197,9 @@ def test_the_bases_parts_start_at_one_zoom():
     tiles = (ROOT / "tegola" / "layers.fork.yml").read_text()
     assert f"AND (zoom < {zoom[1]} OR f.area > 0)" in points
     assert f"NOT IN ('building', 'zone') OR !ZOOM! >= {zoom[1]})" in tiles
+
+
+def test_the_build_cache_kept_is_the_same_for_shell_and_python():
+    from offline_maps import docker
+
+    assert shell("BUILD_CACHE_KEPT") == docker.BUILD_CACHE_KEPT

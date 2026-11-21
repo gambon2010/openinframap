@@ -364,8 +364,11 @@ the schema fingerprint builds and exports carry.
   - `json`: `json_get`, `json_write` (manifests);
   - `docker`: **every Docker call**: `up_services` (start services, images rebuilt
     first, offline the ones there), `compose_run` (a one-off container of a service),
-    `backend_python` (the backend's image, for build steps written in Python). The
-    Python scripts' one is `offline_maps/docker.py` (`run` an image, `run_service`;
+    `backend_python` (the backend's image, for build steps written in Python),
+    `remove_superseded_images` (after each build: this project's images it replaced,
+    found by Compose's project label, and the build cache beyond `BUILD_CACHE_KEPT`).
+    The Python scripts' one is `offline_maps/docker.py` (`run` an image, `run_service`,
+    `remove_superseded_images` likewise;
     `as_root` for images whose programs only run as root, the files given back);
   - `db`: `SCHEMA_FILES`, the SQL steps in order, by name (`schema_file`: upstream's
     in `schema/`, the fork's in `schema/fork/`), `run_schema` (with each step's

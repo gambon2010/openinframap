@@ -1459,6 +1459,13 @@ default). Counts are France's OSM data in October 2026.
   device". Docker's leftovers from rebuilding images at each export (165 unused
   images, 69 GB; a 77 GB build cache) deleted with the owner's agreement: running
   again. A `btrfs balance` (root) is still needed to give the disk unallocated room.
+- **Old images removed after each build** (asked, 2026-11-22): `remove_superseded_images`
+  (`lib/docker.sh`, `offline_maps/docker.py`) after every successful build: this
+  project's untagged images (Compose labels them with the project) and Docker's build
+  cache beyond 5 GB; the CLAUDE.md rule on leftovers says so.
+- **A line of sight sampled at every pixel** (asked): one sample per terrain pixel at
+  the line's latitude (`sample_count`; 40 000 at most, about 250 km at 48° N), instead
+  of 4000 at most (23 m apart on a 92 km line): 14 600 samples there, 2 to 4 s.
 
 ## Extra data (not from OpenStreetMap)
 

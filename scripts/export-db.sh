@@ -108,6 +108,7 @@ if [[ "$SAVE_IMAGES" == 1 ]]; then
     # the frontend changed).
     docker compose --progress quiet --profile tools \
         build tegola backend gate imposm osmium loom </dev/null
+    remove_superseded_images
     save_images() {
         docker save "${IMAGES[@]}" | gzip -1 > "$DOCKER_IMAGES_TAR.part"
         mv "$DOCKER_IMAGES_TAR.part" "$DOCKER_IMAGES_TAR"

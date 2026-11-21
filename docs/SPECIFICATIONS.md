@@ -315,6 +315,8 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.93 | A hidden layer hides everything of its items, their selection handles too; the open profile follows its line when it's moved, a spinner while it's worked out. | ✅ `map/render.ts`, `measure/sight-panel.ts` (2026-11-21) |
 | 10.94 | A line of sight dragged only by its two points, not as a whole. | ✅ `kinds/measure.ts` (`pointsOnly`), `map/tools/dragging.ts` (2026-11-21) |
 | 10.95 | Trees in yellow on a line of sight: they may not stop a signal; the ground or a building named as what hides the target, its margin measuring that. Accuracy checked against the textbook horizon. | ✅ `terrain/sight.py` (`through_trees`), `measure/sight.ts` (2026-11-21) |
+| 10.96 | The scripts remove the project's own old Docker images after each build (and cap the build cache), so they can't fill the disk again. | ✅ `lib/docker.sh`, `offline_maps/docker.py` (2026-11-22) |
+| 10.97 | A line of sight sampled at every terrain pixel, however long. | ✅ `terrain/sight.py` (`sample_count`) (2026-11-22) |
 
 ## 11. Quality
 

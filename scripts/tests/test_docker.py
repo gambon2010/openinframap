@@ -15,7 +15,9 @@ def ran(monkeypatch):
 
     def run(command, **kwargs):
         calls.append((command, kwargs))
-        return subprocess.CompletedProcess(command, 0, "out", "")
+        # Compose's configuration names the project.
+        out = '{"name": "oimtest"}' if "config" in command else "out"
+        return subprocess.CompletedProcess(command, 0, out, "")
 
     monkeypatch.setattr(docker.subprocess, "run", run)
     return calls
@@ -65,7 +67,7 @@ def test_a_program_in_a_compose_service(ran, tmp_path):
         at="/work",
         as_root=True,
     )
-    (build, _), (run, kwargs) = ran
+    (build, _), (run, kwargs) = ran[0], ran[-1]
     assert build[-2:] == ["build", "backend"]
     assert run[:8] == [
         "docker",
@@ -92,7 +94,7 @@ def test_a_program_in_a_compose_service(ran, tmp_path):
     # As the user: the program is the entrypoint.
     ran.clear()
     docker.run_service("backend", ["/app/.venv/bin/python", "-m", "x"], tmp_path)
-    run = ran[1][0]
+    run = ran[-1][0]
     at = run.index("backend")
     assert run[at - 2 : at] == ["--entrypoint", "/app/.venv/bin/python"] and run[
         at + 1 :
@@ -120,3 +122,25 @@ def test_as_root_keeps_the_programs_status_and_always_gives_back(
     )
     assert result.returncode == status
     assert log.read_text().split() == ["-R", "1000:1000", "/w"]
+
+
+def test_a_build_removes_the_images_it_replaced(ran):
+    docker.remove_superseded_images()
+    commands = [command for command, _ in ran]
+    # This project's only (by its label), and the build cache trimmed.
+    assert [
+        "docker",
+        "image",
+        "prune",
+        "-f",
+        "--filter",
+        "label=com.docker.compose.project=oimtest",
+    ] in commands
+    assert [
+        "docker",
+        "builder",
+        "prune",
+        "-f",
+        "--max-used-space",
+        docker.BUILD_CACHE_KEPT,
+    ] in commands

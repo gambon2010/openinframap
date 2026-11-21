@@ -31,10 +31,9 @@ from . import elevations, obstacles
 EARTH_RADIUS = 6_371_008.8  # metres, the mean radius
 # Curvature less refraction, for visible light (GDAL's default).
 VISIBLE_LIGHT = 6 / 7
-# The terrain's pixel at zoom 13 in France: a sample every this many metres.
-STEP = 6.0
-# At most this many samples along a line (longer lines are sampled more sparsely).
-MOST_SAMPLES = 4000
+# At most this many samples along a line: one per terrain pixel to about 250 km at
+# 48° N; longer lines are sampled more sparsely (a narrow crest may fall between).
+MOST_SAMPLES = 40_000
 # Obstacles this close to either end are left out (metres).
 END_CLEAR = 30.0
 
@@ -85,6 +84,13 @@ def ground_distance(a: tuple[float, float], b: tuple[float, float]) -> float:
     return 2 * EARTH_RADIUS * math.asin(math.sqrt(h))
 
 
+def sample_count(length: float, lat: float) -> int:
+    """How many samples a line gets: one per terrain pixel (its finest zoom's width
+    at the line's latitude), so no crest falls between two (MOST_SAMPLES at most)."""
+    pixel = elevations.ground_metres_per_pixel(lat, elevations.FINEST_ZOOM)
+    return max(2, min(MOST_SAMPLES, math.ceil(length / pixel) + 1))
+
+
 def lowered(height: float, distance: float, coefficient: float) -> float:
     """A height as seen from afar: lowered for the Earth's curvature, less refraction."""
     return height - coefficient * distance**2 / (2 * EARTH_RADIUS)
@@ -103,7 +109,7 @@ def line_of_sight(
     """The profile from observer to target, what of it is seen, what first hides the
     target and by how much."""
     length = ground_distance(observer_at, target_at)
-    count = max(2, min(MOST_SAMPLES, int(length / STEP) + 1))
+    count = sample_count(length, (observer_at[1] + target_at[1]) / 2)
     points = [along(observer_at, target_at, i / (count - 1)) for i in range(count)]
     heights = [elevations.elevation(*point) for point in points]
     distances = [length * i / (count - 1) for i in range(count)]
