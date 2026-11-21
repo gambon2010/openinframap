@@ -1312,6 +1312,14 @@ default). Counts are France's OSM data in October 2026.
   it draws (`SAME_FEATURES_AS`, `ui/key/feature-hider.ts`), and the sites' area
   layers say they're the icons'. Ranges' icon: a pistol instead of the skull and
   bones (asked).
+- **A click on a building zoomed out took in a whole block** (bug: hundreds of
+  houses highlighted, "13.7 ha"): below zoom 15, Protomaps' tiles hold blocks of
+  buildings merged into one feature carrying one building's id, and MapLibre still
+  drew the whole-buildings layer from the zoom-14 tile. Its layers and the gathering
+  of a building's pieces now keep only tiles from zoom 15
+  (`FROM_TILES_WITH_EVERY_BUILDING`, `core/buildings.ts`: MapLibre checks a filter's
+  zoom against the tile's). Checked in the app: the factory at Mertzwiller, 3.8 ha
+  alone.
 
 ## Extra data (not from OpenStreetMap)
 

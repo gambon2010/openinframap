@@ -85,7 +85,7 @@ describe('the look follows the background and the 3D view', () => {
     followLook(map as never)
     background.choose('satellite')
     view3d.set(true)
-    expect(filters[`${BUILDINGS_LAYER}_3d`]).toEqual(['==', ['get', 'kind'], 'building'])
+    expect(filters[`${BUILDINGS_LAYER}_3d`]).toEqual(layer(`${BUILDINGS_LAYER}_hit`).filter)
     expect(filters[`${ZOOMED_OUT_LAYER}_3d`]).toBeNull()
     expect(paint[`${BUILDINGS_LAYER}_hit fill-opacity`]).toBe(0)
     expect(paint[`${BUILDINGS_LAYER}_shadow fill-opacity`]).toBe(0)

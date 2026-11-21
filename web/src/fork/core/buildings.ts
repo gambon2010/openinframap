@@ -6,7 +6,7 @@
 // (web-backend/src/fork/background_build/zoomed_buildings.py). A copy takes the whole
 // outline from the backend (exactOutline): a building can reach tiles not loaded.
 import polygonClipping, { type MultiPolygon, type Polygon } from 'polygon-clipping'
-import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
+import type { ExpressionSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { groundArea } from './geo.ts'
 import { tilesShownFrom } from './tile-zooms.ts'
 
@@ -34,6 +34,12 @@ export const BUILDINGS_SHOWN_FROM = tilesShownFrom(BUILDINGS_MINZOOM)
 export const ZOOMED_OUT_LAYER = 'buildings_zoomed_out'
 export const ZOOMED_OUT_SOURCE_LAYER = 'buildings_large'
 export const ZOOMED_OUT_MINZOOM = 12
+
+/** Only the features of tiles holding every building (zoom 15 on): below, Protomaps'
+ * tiles hold blocks of buildings merged into one, each with one building's id, so
+ * a building's pieces gathered by id would take in its whole block. MapLibre checks a
+ * filter's zoom against the tile's (in whole zooms: the style spec's "filter"). */
+export const FROM_TILES_WITH_EVERY_BUILDING: ExpressionSpecification = ['>=', ['zoom'], BUILDINGS_MINZOOM]
 
 /** A building's id: the same in every tile it's cut into (Protomaps' own, not
  * OpenStreetMap's number). */
@@ -72,7 +78,8 @@ export function buildingOutline(
   if (id === undefined) return null
   const pieces = map
     .querySourceFeatures(feature.source ?? BUILDINGS_SOURCE, {
-      sourceLayer: feature.sourceLayer ?? BUILDINGS_SOURCE_LAYER
+      sourceLayer: feature.sourceLayer ?? BUILDINGS_SOURCE_LAYER,
+      ...(feature.sourceLayer === ZOOMED_OUT_SOURCE_LAYER ? {} : { filter: FROM_TILES_WITH_EVERY_BUILDING })
     })
     .filter((f) => f.id === id)
     .map((f) => f.geometry)
