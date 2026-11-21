@@ -1,5 +1,7 @@
 -- Fork: the critical sites as one point each for the map's tiles (Tegola's
--- sites_point), grouped below zoom 14 into numbered bubbles (site_feature: sites.sql).
+-- sites_point), grouped below zoom 14 into numbered bubbles (site_tile: sites.sql,
+-- site-parts.sql). A military base's building and zone parts aren't points: drawn
+-- from zoom 15, those mapped as points only (a bunker's node), the others as areas.
 -- Safe to run more than once. The functions set their search_path: Postgres builds
 -- materialized views with a restricted one, where hstore's -> isn't visible.
 
@@ -25,18 +27,20 @@ $$;
 DROP FUNCTION IF EXISTS site_points(geometry, integer);
 CREATE FUNCTION site_points(bbox geometry, zoom integer)
 RETURNS TABLE (id bigint, osm_id bigint, geometry geometry, name text, kind text, category text,
-               importance integer, tags hstore, count integer, count_label text, kinds text)
+               importance integer, tags hstore, count integer, count_label text, kinds text,
+               part text, part_what text, base_name text, parts text)
 LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
     WITH p AS (
         SELECT f.id, f.osm_id, c.pt AS geometry, f.name, f.kind, f.category, site_group(f.kind, f.category) AS grp,
-               f.importance, f.tags,
+               f.importance, f.tags, f.part, f.part_what, f.base_name, f.parts,
                CASE WHEN zoom < 14 AND (f.importance > 0 OR zoom < 8) AND f.kind <> 'military_airfield'
                     THEN floor((ST_X(c.pt) + 20037508.342789244) / g.cell)::bigint END AS cx,
                floor((ST_Y(c.pt) + 20037508.342789244) / g.cell)::bigint AS cy
-          FROM site_feature f
+          FROM site_tile f
                CROSS JOIN LATERAL (SELECT ST_Centroid(f.geometry) AS pt) c
                CROSS JOIN (SELECT 40075016.68557849 / power(2, zoom) / 12 AS cell) g
          WHERE f.geometry && bbox
+           AND NOT (coalesce(f.part, '') IN ('building', 'zone') AND (zoom < 15 OR f.area > 0))
     ), counted AS (
         -- How many of its kind share its cell.
         SELECT p.*, count(*) OVER (PARTITION BY p.grp, p.kind, p.cx, p.cy)::integer AS of_kind FROM p
@@ -53,7 +57,7 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
          GROUP BY grouped.category, grouped.grp, grouped.cx, grouped.cy
     )
     SELECT counted.id, counted.osm_id, counted.geometry, counted.name, counted.kind, counted.category,
-           counted.importance, counted.tags, 1, NULL, NULL
+           counted.importance, counted.tags, 1, NULL, NULL, counted.part, counted.part_what, counted.base_name, counted.parts
       FROM counted
      WHERE cx IS NULL OR of_kind = 1
     UNION ALL
@@ -63,7 +67,7 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
            CASE WHEN groups.n < 1000 THEN groups.n::text
                 WHEN groups.n < 10000 THEN trim_scale(round(groups.n / 1000.0, 1)) || 'k'
                 ELSE round(groups.n / 1000.0) || 'k' END,
-           groups.kinds
+           groups.kinds, NULL, NULL, NULL, NULL
       FROM groups
            -- Groups of different kinds in one place would sit on top of each other:
            -- each group's is moved ~10 px (on a 512 px tile) its own way.

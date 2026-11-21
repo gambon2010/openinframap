@@ -60,6 +60,16 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 - **A kind with no key row of its own** (closed airfields, a grey icon) is shown and
   hidden by another kind's row (the open airfields': `KEY_ROW_OF`); that row hides
   both icons (a hide spec of several icons), so one thing has one tick box.
+- **A military base's parts** (`modules/sites/parts.ts`, `schema/fork/site-parts.sql`):
+  the base alone has its icon and label; zoomed out its parts aren't drawn nor counted
+  in the discs, and its details count them ("118 × Bunker, 3 × Barracks building").
+  A part of another kind than its base (a range in a camp) is drawn as any site. From
+  zoom 15, a part that is a building (tagged one, or a bunker, casemate, cupola,
+  barracks... mapped as military only) is drawn as a building, the background map's
+  roof colour with a dark outline, see-through over imagery; one mapped as a point, a
+  small disc ringed in the military's green; the rest as a thin dashed green outline;
+  none with an icon. Its details are titled with what it is ("Bunker") and say whose
+  part it is.
 - **A kind listed under two categories** (military airfields: Transport and Military)
   has one tick box in both sections, ticked alike, and keeps its own category's icon
   and colour (green under Transport too); both categories' layers draw it, so hiding

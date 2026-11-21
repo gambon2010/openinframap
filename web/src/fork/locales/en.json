@@ -209,7 +209,24 @@
       "military-airfield": "Military airfield, air base (grey: former)",
       "military-airfield-disused": "Former military airfield",
       "military-naval-base": "Naval base, arsenal"
-    }
+    },
+    "part": {
+      "of": "Part of",
+      "bunker": "Bunker",
+      "casemate": "Casemate",
+      "cupola": "Armoured cupola",
+      "embrasure": "Embrasure (firing post)",
+      "barracks": "Barracks building",
+      "office": "Office",
+      "checkpoint": "Checkpoint, guard post",
+      "hangar": "Hangar",
+      "range": "Range",
+      "danger-area": "Danger area",
+      "training-area": "Training area",
+      "building": "Building",
+      "zone": "Part of the site"
+    },
+    "parts": "Parts"
   },
   "route": {
     "title": "Grid connection",

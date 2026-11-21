@@ -128,9 +128,12 @@ WITH s AS (
       FROM military_final m JOIN kept k USING (site_id) WHERE m.kind = 'military_area'
 ), radio_tower AS (
     -- Radio, radar and signal towers (the Navy's watchtowers are its sémaphores), and
-    -- antennas; not a mobile phone mast standing on military land.
+    -- antennas; not a mobile phone mast standing on military land. What a tower is
+    -- used for is in tower:type (man_made=tower or mast + tower:type=communication,
+    -- Issoudun's transmitter); the main value only when there's none.
     SELECT geometry FROM osm_mast
-     WHERE (type IN ('communication', 'radar') OR (type = 'watchtower' AND tags->'operator' ~* 'marine'))
+     WHERE (coalesce(tags->'tower:type', type) IN ('communication', 'radar', 'communications_tower')
+            OR (coalesce(tags->'tower:type', type) = 'watchtower' AND tags->'operator' ~* 'marine'))
        AND NOT coalesce(tags->'communication:mobile_phone' = 'yes' OR tags->'operator' ~* 'bouygues|orange|\mSFR\M|\mfree\M', false)
     UNION ALL
     SELECT geometry FROM osm_telecom_antenna

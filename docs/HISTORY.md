@@ -1325,6 +1325,25 @@ default). Counts are France's OSM data in October 2026.
   (white highlights, warm grey shadows) and lit from the north-west, against the
   photos' own shadows. Four looks compared on the same view (none, before, shadows
   only, shadows from the sun); the map's look unchanged.
+- **A military base's parts** (asked: sub-parts drawn like their base overwhelmed
+  the screen, and the same depot's bunkers were buildings in one place, sites
+  with icons in another): `schema/fork/site-parts.sql` gives each military site
+  inside a larger one its base (the smallest around it) and what it is as a part.
+  Of another kind than its base: drawn as any site (its own marking kept). A
+  building (tagged one, or a bunker, casemate, cupola, embrasure, barracks, office,
+  checkpoint, hangar mapped as military only): drawn as a building from zoom 15, no
+  icon, titled with what it is ("Bunker") and whose part it is. The rest: a thin
+  dashed outline from zoom 15. Zoomed out, a base's building and zone parts aren't
+  drawn nor counted in the numbered discs; the base's details count them ("120 ×
+  Bunker"). France: 1,319 building parts, 149 zones, 319 of their own kind. The
+  build finds them from the sites' own outlines (the background map's buildings
+  are OpenStreetMap's, drawn under ours: no matching needed). Checked in the app:
+  Rozelier (one icon zoomed out instead of ~20 discs; its 120 bunkers as buildings;
+  a bunker's and the base's details), Neubourg over imagery, Camp de Souge.
+- **The radio rule read only a tower's main tag** (`man_made=tower`/`mast`), not
+  what it's for (`tower:type=communication`: 41,000 masts): military areas around a
+  radio tower stayed "Other military area" (Issoudun's transmitter: 12 of its 13
+  fenced plots now "Radar, radio, signal station").
 
 ## Extra data (not from OpenStreetMap)
 

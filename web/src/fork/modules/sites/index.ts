@@ -2,6 +2,7 @@
 // "sites" map). Everything the map needs for them, as one fork module.
 import { t } from '../../core/i18n.ts'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
+import type { MapGeoJSONFeature } from 'maplibre-gl'
 import { ForkModule, KeyRow, KeySection } from '../../types.ts'
 import { OIM_TILES } from '../../config.ts'
 import { keySprite } from '../../ui/key/toggles.ts'
@@ -19,6 +20,8 @@ import layers, {
 } from './style.ts'
 import { followBackground } from '../../services/background.ts'
 import { facilityKey, facilityLayers, recolourFacilities } from './petroleum.ts'
+import { PART_ROOF_LAYER, partLabel, partLayers, partsSummary } from './parts.ts'
+import { PART_ROOF_OPACITY } from './parts.constants.ts'
 
 const oim_attribution =
   '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://openinframap.org/copyright">Open Infrastructure Map</a>'
@@ -34,7 +37,7 @@ const sites: ForkModule = {
     }
   }),
 
-  layers: () => [...layers(), ...facilityLayers()],
+  layers: () => [...layers(), ...partLayers(), ...facilityLayers()],
 
   switcherGroups: () => [
     new LayerGroup(t('layers.sites', 'Critical sites'), [
@@ -69,6 +72,7 @@ const sites: ForkModule = {
           map: area_opacity,
           imagery: AREA_OPACITY_OVER_IMAGERY
         })
+      followBackground(map, PART_ROOF_LAYER, 'fill-opacity', PART_ROOF_OPACITY)
     }
     if (map.isStyleLoaded()) followImagery()
     else map.once('load', followImagery)
@@ -103,18 +107,30 @@ const sites: ForkModule = {
   ],
 
   popup: {
-    // Shown as the title and "Type" instead; id is the tile's, count only on groups.
-    hiddenKeys: ['id', 'category', 'importance', 'count', 'count_label', 'kinds'],
-    renderKey: (key, value) =>
-      key == 'kind' ? popupRow(t('info.type'), site_kind_label(String(value))) : undefined,
-    title: (feature) =>
-      feature.layer.id.startsWith('sites_') ? site_kind_label(feature.properties.kind) : undefined
+    // Shown as the title and "Type" instead; id is the tile's, count only on groups;
+    // a part's what it is goes in its title.
+    hiddenKeys: ['id', 'category', 'importance', 'count', 'count_label', 'kinds', 'part', 'part_what'],
+    renderKey: (key, value) => {
+      if (key == 'kind') return popupRow(t('info.type'), site_kind_label(String(value)))
+      if (key == 'base_name') return popupRow(t('sites.part.of', 'Part of'), String(value))
+      if (key == 'parts') return popupRow(t('sites.parts', 'Parts'), partsSummary(String(value)))
+      return undefined
+    },
+    title: (feature) => siteTitle(feature)
   },
 
   searchDescription: (result) =>
     result.type === 'feature' && result.source === 'site' && result.kind
       ? site_kind_label(result.kind) + (result.town ? `, ${result.town}` : '')
       : undefined
+}
+
+/** An unnamed site's title: what a base's part is (a bunker), else its kind. */
+function siteTitle(feature: MapGeoJSONFeature): string | undefined {
+  if (!feature.layer.id.startsWith('sites_')) return undefined
+  const { kind, part, part_what } = feature.properties
+  if (part === 'building' || part === 'zone') return partLabel(String(part_what ?? kind), part)
+  return site_kind_label(kind)
 }
 
 function popupRow(key: string, value: string): HTMLElement {

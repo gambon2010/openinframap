@@ -9,6 +9,7 @@ import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { text_paint, font } from '../../../style/common.ts'
 import { COUNTS } from '../../ui/key/counted-groups.ts'
 import { SAME_FEATURES_AS } from '../../ui/key/feature-hider.ts'
+import { NOT_A_SITE_OF_ITS_OWN } from './parts.constants.ts'
 
 // Must match scripts/make_site_icons.py.
 /** A site's area: light, lighter close in (its icon says what it is); over imagery
@@ -295,7 +296,8 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       'source-layer': 'sites_area',
       // The same sites as the icons: their key rows hide the areas too.
       metadata: { [SAME_FEATURES_AS]: 'sites_point' },
-      filter: ['==', ['get', 'category'], category],
+      // A base's building and zone parts: parts.ts.
+      filter: ['all', ['==', ['get', 'category'], category], ['!', NOT_A_SITE_OF_ITS_OWN]],
       type: 'fill',
       paint: {
         'fill-color': area_colour(category, colour),
@@ -311,7 +313,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       'source-layer': 'sites_area',
       // The same sites as the icons: their key rows hide the areas too.
       metadata: { [SAME_FEATURES_AS]: 'sites_point' },
-      filter: of_category(category),
+      filter: ['all', of_category(category), ['!', NOT_A_SITE_OF_ITS_OWN]],
       type: 'line',
       paint: {
         'line-color': outline_colour(category, colour),
@@ -328,7 +330,7 @@ export default function layers(): LayerSpecificationWithZIndex[] {
       zorder: 590,
       source: 'sites',
       'source-layer': 'sites_point',
-      filter: ['all', of_category(category), ['!', ['has', 'count_label']]],
+      filter: ['all', of_category(category), ['!', ['has', 'count_label']], ['!', NOT_A_SITE_OF_ITS_OWN]],
       type: 'symbol',
       paint: text_paint,
       layout: {

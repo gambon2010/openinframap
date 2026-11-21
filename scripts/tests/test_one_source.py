@@ -183,3 +183,17 @@ def test_the_gate_and_the_dev_server_pass_on_the_same_paths():
     vite_paths = set(in_vite[1].replace("\\\\", "\\").split("|"))
     assert gate_paths == vite_paths
     assert "location /tegola/" in gate and "'/tegola/'" in vite
+
+
+def test_the_bases_parts_start_at_one_zoom():
+    """A base's building and zone parts: left out of the tiles before it (SQL, Tegola),
+    drawn from it (the frontend)."""
+    frontend = (
+        ROOT / "web" / "src" / "fork" / "modules" / "sites" / "parts.constants.ts"
+    ).read_text()
+    zoom = re.search(r"PARTS_MIN_ZOOM = (\d+)", frontend)
+    assert zoom, "PARTS_MIN_ZOOM wasn't found"
+    points = (ROOT / "schema" / "fork" / "site-points.sql").read_text()
+    tiles = (ROOT / "tegola" / "layers.fork.yml").read_text()
+    assert f"AND (zoom < {zoom[1]} OR f.area > 0)" in points
+    assert f"NOT IN ('building', 'zone') OR !ZOOM! >= {zoom[1]})" in tiles

@@ -292,6 +292,13 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.70 | Switching between the built page and the development one resets itself in the browser (no old version kept, nothing to clear by hand). | ✅ the gate removes the map's service worker (`gate/service-worker/sw.js`) (2026-11-20) |
 | 10.71 | Only the built frontend in Docker; development uses Vite's dev server directly, as before the gate. | ✅ one gate image (`gate/`), Vite passes the gate's paths on (`web/vite.config.ts`) (2026-11-21) |
 | 10.72 | A French "place d'armes" (parade ground) isn't a range. | ✅ `site-rules.sql`: only "Place d'armes de ..." (Swiss training grounds) (2026-11-21) |
+| 10.73 | A military base's parts not drawn like the base: the base alone with its icon; parts of another kind keep their own marking; parts that are buildings drawn as buildings with a clear title (those not tagged as buildings too); the rest as outlines; zoomed out, the base's details count its parts instead of numbered discs. | ✅ `site-parts.sql`, `modules/sites/parts.ts` (2026-11-21) |
+| 10.74 | Ranges' icon a gun instead of the skull and bones. | ✅ a pistol (`make_site_icons.py`) (2026-11-21) |
+| 10.75 | A hidden key row hides its sites' areas, not only their icons. | ✅ `SAME_FEATURES_AS` (2026-11-21) |
+| 10.76 | Hill shading over imagery that doesn't look odd; 3D turns the shading on over the map. | ✅ shadows only from the photos' sun; `modules/view3d` (2026-11-21) |
+| 10.77 | Contour heights readable over imagery (the map's unchanged). | ✅ dark halo over imagery (2026-11-21) |
+| 10.78 | No relief or contours at sea where ships were measured (Toulon). | 📋 proposed: flatten the sea in the terrain file with the background map's land (2026-11-21) |
+| 10.79 | Several plots of one site (Issoudun's transmitter: 13 fenced plots, one Wikipedia link) shown as one site with its towers counted. | 📋 proposed (2026-11-21) |
 
 ## 11. Quality
 

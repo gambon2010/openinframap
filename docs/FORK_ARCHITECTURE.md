@@ -62,7 +62,8 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
   extra        data from outside OSM
   sites        critical sites; petroleum.ts: Oil & Natural Gas's facilities in their
                look (areas in the fuel colour, an icon from tegola's
-               petroleum_facility, their key row)
+               petroleum_facility, their key row); parts.ts: a military base's
+               parts (buildings, points, zones; their titles, a base's count)
   search       search descriptions, Photon
   coordinates  the cursor's position and MGRS, the ground's height and slope (ground.ts),
                the declination and distance and bearing from the last click
@@ -319,7 +320,7 @@ the schema fingerprint builds and exports carry.
   `oim_units`, `oim_max_stretch`, `oim_ground_area`), `places.sql`, `site-rules.sql`
   (`military_name_rule`: what a military site's name says it is, a row per language
   and kind), `site-overrides.sql` (`site_override`: kinds set by hand, by OSM id and
-  name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-points.sql` (`site_points`, grouped zoomed out), `grid.sql` (`grid_node` / `grid_edge`, used by
+  name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-parts.sql` (`site_part`, a military base's parts: own kind, building or zone; `site_part_count`, a base's parts counted; `site_tile`, what the tiles read), `site-points.sql` (`site_points`, grouped zoomed out, leaving out a base's building and zone parts below zoom 15), `grid.sql` (`grid_node` / `grid_edge`, used by
   `/grid/route` and `/grid/line`), `tower-numbers.sql`, `extra.sql` (the `extra`
   schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
   `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered
