@@ -72,3 +72,35 @@ def test_installed_where_upstream_uses_them():
     assert data.get_wikidata.__wrapped__.__module__ == "src.data"
     assert wikidata.get_commons_thumbnail is area.get_commons_thumbnail
     assert wikidata.wikidata_json.__wrapped__.__module__ == "src.views.wikidata"
+
+
+def test_images_are_served_before_their_folder_exists(tmp_path):
+    """data/map/ is read-only in the backend's container: it can't make the images'
+    folder, and must start and answer without it (bug: a new installation's build
+    stopped). Until the folder is there: not found."""
+    from starlette.applications import Starlette
+    from starlette.routing import Mount
+    from starlette.testclient import TestClient
+
+    from src.fork.wikidata_offline import ImagesFolder
+
+    folder = tmp_path / "images"
+    client = TestClient(Starlette(routes=[Mount("/i", app=ImagesFolder(folder))]))
+    assert client.get("/i/Q1.jpg").status_code == 404
+    folder.mkdir()
+    (folder / "Q1.jpg").write_bytes(b"jpeg")
+    assert client.get("/i/Q1.jpg").status_code == 200
+
+
+def test_starlette_fails_every_request_while_its_folder_is_missing(tmp_path):
+    """Why ImagesFolder checks first: StaticFiles with check_dir off still raises."""
+    import pytest
+    from starlette.applications import Starlette
+    from starlette.routing import Mount
+    from starlette.staticfiles import StaticFiles
+    from starlette.testclient import TestClient
+
+    missing = StaticFiles(directory=str(tmp_path / "missing"), check_dir=False)
+    client = TestClient(Starlette(routes=[Mount("/i", app=missing)]))
+    with pytest.raises(RuntimeError):
+        client.get("/i/Q1.jpg")

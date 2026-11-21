@@ -1344,6 +1344,12 @@ default). Counts are France's OSM data in October 2026.
   what it's for (`tower:type=communication`: 41,000 masts): military areas around a
   radio tower stayed "Other military area" (Issoudun's transmitter: 12 of its 13
   fenced plots now "Radar, radio, signal station").
+- **The backend made the images' folder at start** (bug, from the data folders'
+  split: `data/map/` is read-only in its container): a new installation's build
+  stopped at "Creating search indexes" (the real Luxembourg build test caught it).
+  It no longer writes there: `ImagesFolder` (`wikidata_offline.py`) serves the
+  pictures, not found until the scripts make the folder; a test pins that
+  Starlette's StaticFiles fails every request while its folder is missing.
 
 ## Extra data (not from OpenStreetMap)
 

@@ -6,7 +6,6 @@ these routes ahead of upstream's, so a fork route can replace one of upstream's
 
 from starlette.middleware import Middleware
 from starlette.routing import BaseRoute, Mount
-from starlette.staticfiles import StaticFiles
 
 from . import (
     about,
@@ -27,7 +26,6 @@ from .background import transit as background_transit
 from .paths import IMAGES_DIR
 from .userdata.events import STREAMING as events_streaming
 
-IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 # Popups from the offline Wikidata cache (upstream's functions wrapped).
 wikidata_offline.install()
 
@@ -35,7 +33,7 @@ routes: list[BaseRoute] = [
     # Logging in, the accounts (every other call needs a logged-in user: LoginMiddleware).
     *auth.routes,
     # Offline Wikidata images (scripts/fetch_images.py).
-    Mount("/local-images", app=StaticFiles(directory=str(IMAGES_DIR)), name="local-images"),
+    Mount("/local-images", app=wikidata_offline.ImagesFolder(IMAGES_DIR), name="local-images"),
     # Replaces upstream's about page: this map, its data, credits, help.
     *about.routes,
     *search.routes,

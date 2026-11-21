@@ -9,6 +9,8 @@ their functions, where they're defined (data.py) and where they're imported
 - get_wikidata: the cached entity JSON first; no network: None.
 - get_commons_thumbnail: the picture downloaded for the item being shown
   (/local-images/<id>.<ext>) first; no network: None.
+- ImagesFolder: serves the pictures (/local-images), not found until their folder
+  exists (data/map/ is read-only here: the scripts make it).
 """
 
 from __future__ import annotations
@@ -22,6 +24,10 @@ from typing import Any
 
 import httpx
 
+from starlette.responses import PlainTextResponse
+from starlette.staticfiles import StaticFiles
+from starlette.types import Receive, Scope, Send
+
 from .paths import IMAGES_DIR, WIKIDATA_JSON_DIR
 
 logger = logging.getLogger(__name__)
@@ -29,6 +35,22 @@ logger = logging.getLogger(__name__)
 # The Wikidata item whose details are being made (views/wikidata.wikidata_json),
 # so its picture can be the one downloaded for it.
 _current_item: contextvars.ContextVar[str | None] = contextvars.ContextVar("item", default=None)
+
+
+class ImagesFolder(StaticFiles):
+    """The downloaded pictures: Starlette's StaticFiles, but "not found" while the folder
+    doesn't exist (StaticFiles fails every request then; the backend can't make it,
+    data/map/ being read-only in its container)."""
+
+    def __init__(self, folder: Path) -> None:
+        super().__init__(directory=str(folder), check_dir=False)
+        self.folder = folder
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if not self.folder.is_dir():
+            await PlainTextResponse("Not Found", status_code=404)(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
 
 
 def cached_entity(wikidata_id: str, folder: Path | None = None) -> dict | None:
