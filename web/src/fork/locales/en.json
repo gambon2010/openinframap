@@ -224,7 +224,8 @@
       "danger-area": "Danger area",
       "training-area": "Training area",
       "building": "Building",
-      "zone": "Part of the site"
+      "zone": "Part of the site",
+      "ammunition": "Ammunition magazine"
     },
     "parts": "Parts"
   },
@@ -689,7 +690,29 @@
     "sight-hidden": "Hidden by the ground {{distance}} away",
     "sight-observer": "Eyes above the ground (m)",
     "sight-target": "Target above the ground (m)",
-    "sight-hint": "Click where you stand, then what you want to see. Right-click: start again."
+    "sight-hint": "Click where you stand, then what you want to see. Right-click: start again.",
+    "sight-open": "Open the profile",
+    "sight-blocked-here": "Hidden from here",
+    "sight-hover-hint": "Point at the chart to see the place on the map.",
+    "sight-note": "Heights as seen from the eyes: the far ground is lowered for the Earth's curvature, less the light's bending. Buildings stand as tall as OpenStreetMap says (8 m when it doesn't), woods 20 m.",
+    "sight-key-seen": "ground seen",
+    "sight-key-hidden": "ground hidden",
+    "sight-key-building": "buildings",
+    "sight-key-trees": "trees",
+    "sight-key-ray": "line from the eyes to the target",
+    "sight-ground-at": "ground {{height}} m",
+    "sight-building-at": "building {{height}} m",
+    "sight-trees-at": "trees {{height}} m",
+    "sight-seen-here": "seen",
+    "sight-hidden-here": "hidden",
+    "sight-seen-margin": "Seen ({{margin}} m to spare)",
+    "sight-by-ground": "Hidden by the ground {{distance}} away",
+    "sight-by-building": "Hidden by a building {{distance}} away",
+    "sight-by-trees": "Hidden by trees {{distance}} away",
+    "sight-short": "({{margin}} m short)",
+    "sight-mark-trees": "Trees {{height}} m",
+    "sight-mark-building": "Building {{height}} m",
+    "sight-mark-ground": "Ground"
   },
   "tower": {
     "unnamed-line": "a line",

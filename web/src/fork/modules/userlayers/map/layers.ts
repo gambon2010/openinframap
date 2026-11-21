@@ -265,6 +265,19 @@ export function measureLayers(layer: UserLayer, highlighted: string[]): LayerSpe
         'circle-stroke-width': 2
       }
     },
+    // A line of sight's mark where the target is first hidden (map/render-measures.ts).
+    {
+      id: `${source}_sight_block`,
+      type: 'circle',
+      source,
+      filter: ['==', ['get', 'sightBlock'], true],
+      paint: {
+        'circle-radius': 6,
+        'circle-color': '#fff',
+        'circle-stroke-color': '#b3261e',
+        'circle-stroke-width': 3
+      }
+    },
     // Lengths and bearings (along their leg, above it), the total, the marks'
     // distances (under the line, smaller, in its colour): measure/features.ts.
     {

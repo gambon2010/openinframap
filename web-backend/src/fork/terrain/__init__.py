@@ -61,9 +61,12 @@ def point_of(text: str) -> tuple[float, float]:
 
 
 async def sight_between(request: Request) -> Response:
-    """?from=lon,lat&to=lon,lat[&observer=2&target=0]: the line of sight
-    (sight.py): {"target_seen", "blocked_at" (metres), "profile": [[distance, ground,
-    seen]...]}."""
+    """?from=lon,lat&to=lon,lat[&observer=2&target=0]: the line of sight (sight.py):
+    {"target_seen", "blocked_at" (metres), "blocked_by" ("ground", "building",
+    "trees"), "margin" (metres the eye's line to the target clears everything by;
+    < 0: what rises above it, by that much), "eye", "target_top" (metres: the eye, and the target's top as seen from it),
+    "profile": [[distance, ground, seen, obstacle height, obstacle kind, surface as
+    seen from the eye]...]}."""
     try:
         start, end = point_of(request.query_params["from"]), point_of(request.query_params["to"])
         observer = float(request.query_params.get("observer", 2))
@@ -74,13 +77,29 @@ async def sight_between(request: Request) -> Response:
     return JSONResponse(
         {
             "target_seen": found.target_seen,
-            "blocked_at": None if found.blocked_at is None else round(found.blocked_at),
-            "profile": [
-                [round(s.distance, 1), None if s.ground is None else round(s.ground, 1), s.seen]
-                for s in found.samples
-            ],
+            "blocked_at": rounded(found.blocked_at, 0),
+            "blocked_by": found.blocked_by,
+            "margin": rounded(found.margin, 1),
+            "eye": rounded(found.eye, 1),
+            "target_top": rounded(found.target_top, 1),
+            "profile": [profile_row(s) for s in found.samples],
         }
     )
+
+
+def profile_row(s: sight.Sample) -> list:
+    return [
+        round(s.distance, 1),
+        rounded(s.ground, 1),
+        s.seen,
+        round(s.obstacle.height, 1),
+        s.obstacle.kind,
+        rounded(s.apparent, 1),
+    ]
+
+
+def rounded(value: float | None, digits: int) -> float | None:
+    return None if value is None else round(value, digits)
 
 
 routes = [

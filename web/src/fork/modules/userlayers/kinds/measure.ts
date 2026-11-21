@@ -1,13 +1,15 @@
 // Fork: a measurement: a distance (each leg's length and bearing, marks along the
 // way), an area (and its perimeter) or range rings round a point. Drawn by
 // map/render.ts from measure/features.ts; its points are moved like a drawing's.
-import { el, setChildren } from 'redom'
+import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance, formatLength, parseDistances, parseLength } from '../../../core/earth.ts'
 import { Measurement } from '../measure/features.types.ts'
 import { legBearing, legsOf, measurementOf, summary, withLegLength } from '../measure/features.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
-import { DEFAULT_OBSERVER, DEFAULT_TARGET, fetchSight, profileSvg } from '../measure/sight.ts'
+import { DEFAULT_OBSERVER, DEFAULT_TARGET, sightAnswer } from '../measure/sight.ts'
+import { openSightPanel } from '../measure/sight-panel.ts'
+import { sightVerdict } from '../measure/sight-verdict.ts'
 import { FeatureProps } from '../model/model.ts'
 import { areaCrossesItself } from '../model/shapes.ts'
 import { ItemKind, Item } from './types.ts'
@@ -51,7 +53,8 @@ export const measure: ItemKind = {
 }
 
 /** A line of sight: the heights of the eyes and of what's looked at (typed), whether
- * it's seen, and the ground's profile, once the backend answers (measure/sight.ts). */
+ * it's seen and what hides it, once the backend answers (measure/sight.ts), and a
+ * button opening its profile in a split screen (measure/sight-panel.ts). */
 function sightCard(
   m: Measurement,
   item: Item,
@@ -73,21 +76,27 @@ function sightCard(
     }
     return input
   }
-  const result = el('.oim-ul-sight-result', t('userlayers.sight-asking', 'Looking at the terrain…'))
+  const result = el('strong.oim-ul-sight-result', t('userlayers.sight-asking', 'Looking at the terrain…'))
   const [from, to] = [m.points[0], m.points[m.points.length - 1]]
-  void fetchSight(from, to, observer, target).then((sight) => {
-    if (!sight || sight.target_seen === null) {
-      result.textContent = t('userlayers.sight-unknown', 'No terrain here: no answer.')
-      return
-    }
-    const verdict = sight.target_seen
-      ? t('userlayers.sight-seen', 'Seen')
-      : t('userlayers.sight-hidden', 'Hidden by the ground {{distance}} away', {
-          distance: formatDistance(sight.blocked_at ?? 0)
-        })
-    setChildren(result, [el('strong', verdict), profileSvg(sight, observer, target)])
+  void sightAnswer(from, to, observer, target).then((sight) => {
+    result.textContent =
+      !sight || sight.target_seen === null
+        ? t('userlayers.sight-unknown', 'No terrain here: no answer.')
+        : sightVerdict(sight)
   })
+  const open = el('button.oim-ul-button', t('userlayers.sight-open', 'Open the profile'), {
+    type: 'button'
+  }) as HTMLButtonElement
+  open.onclick = () =>
+    void openSightPanel({
+      title: String(item.properties.name || t('userlayers.what.measure-sight', 'Line of sight')),
+      from,
+      to,
+      observer,
+      target
+    })
   return [
+    result,
     el(
       '.oim-ul-detail',
       el('span.oim-ul-detail-name', t('userlayers.sight-observer', 'Eyes above the ground (m)')),
@@ -103,7 +112,7 @@ function sightCard(
       el('span.oim-ul-detail-name', t('userlayers.measure-total', 'In all')),
       el('strong', summary(m, measurePrefs.north))
     ),
-    result
+    open
   ]
 }
 

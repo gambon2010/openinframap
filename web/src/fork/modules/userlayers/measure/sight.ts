@@ -1,9 +1,9 @@
 // Fork: a line of sight (a measurement of the kind "sight", kinds/measure.ts): whether
 // the target is seen from the observer over the terrain, and the ground's profile
-// between them, from the backend (web-backend/src/fork/terrain/sight.py: curvature
-// less refraction, as GDAL's viewshed). The profile is drawn as a small SVG: one
-// polygon a chart library would only wrap.
-import { svg } from 'redom'
+// between them, with the buildings and trees on it, from the backend
+// (web-backend/src/fork/terrain/sight.py: curvature less refraction, as GDAL's
+// viewshed). The profile is drawn by sight-chart.ts, in the split screen
+// (sight-panel.ts).
 import { SIGHT_URL } from '../../../config.ts'
 import type { LngLat } from '../../../core/earth.ts'
 
@@ -13,15 +13,62 @@ export const DEFAULT_OBSERVER = 2
 export const DEFAULT_TARGET = 0
 
 /** A point along the line: metres from the observer, the ground's height (null: no
- * terrain), and whether the observer sees it. */
-export type ProfilePoint = [distance: number, ground: number | null, seen: boolean]
+ * terrain), whether the observer sees the ground there, what stands on it (metres,
+ * and "building", "trees" or ""), and its top as seen from the eye (lowered for the
+ * Earth's curvature less refraction: the chart draws these, as the answer used them). */
+export type ProfilePoint = [
+  distance: number,
+  ground: number | null,
+  seen: boolean,
+  standing: number,
+  standingKind: '' | 'building' | 'trees',
+  apparent: number | null
+]
+
+export type Blocker = 'ground' | 'building' | 'trees'
 
 export interface SightResult {
   /** null: no terrain under one of the ends. */
   target_seen: boolean | null
-  /** Metres from the observer to the first ground hiding the target. */
+  /** Metres from the observer to the first surface hiding the target. */
   blocked_at: number | null
+  blocked_by: Blocker | null
+  /** Metres the target clears everything by (negative: hidden by that much). */
+  margin: number | null
+  /** The eye's height, and the target's top as seen from it (metres). */
+  eye: number | null
+  target_top: number | null
   profile: ProfilePoint[]
+}
+
+/** Answers asked or had, by sightKey: the card, the map and the profile ask once. */
+const answers = new Map<string, Promise<SightResult | null>>()
+
+/** A line of sight's answer, asked once for its points and heights. */
+export function sightAnswer(
+  from: LngLat,
+  to: LngLat,
+  observer: number,
+  target: number
+): Promise<SightResult | null> {
+  const key = sightKey(from, to, observer, target)
+  let answer = answers.get(key)
+  if (!answer) {
+    answer = fetchSight(from, to, observer, target)
+    answers.set(key, answer)
+    // Not kept when it failed: asked again next time (offline for a moment).
+    void answer.then((found) => {
+      if (!found) answers.delete(key)
+    })
+  }
+  return answer
+}
+
+/** Where along the line a distance from the observer is (the backend samples the line
+ * straight between the two points). */
+export function pointAlong(from: LngLat, to: LngLat, distance: number, length: number): LngLat {
+  const f = length ? distance / length : 0
+  return [from[0] + (to[0] - from[0]) * f, from[1] + (to[1] - from[1]) * f]
 }
 
 /** The line of sight from the backend; null if it can't be had (offline). */
@@ -45,48 +92,6 @@ export async function fetchSight(
   }
 }
 
-const WIDTH = 300
-const HEIGHT = 90
-const PAD = 4
-
-/** The profile: the ground as a filled shape, seen stretches green and hidden ones
- * red along its top, the eye's line to the target dashed (drawn straight over the
- * ground as measured: on long lines the Earth's curvature, which the backend counts,
- * makes the difference). */
-export function profileSvg(result: SightResult, observer: number, target: number): SVGElement {
-  const known = result.profile.filter((p): p is [number, number, boolean] => p[1] !== null)
-  const length = result.profile[result.profile.length - 1]?.[0] || 1
-  const eye = (known[0]?.[1] ?? 0) + observer
-  const top = (known[known.length - 1]?.[1] ?? 0) + target
-  const heights = [...known.map((p) => p[1]), eye, top]
-  const low = Math.min(...heights)
-  const high = Math.max(...heights)
-  const x = (d: number) => PAD + (d / length) * (WIDTH - 2 * PAD)
-  const y = (h: number) => HEIGHT - PAD - ((h - low) / (high - low || 1)) * (HEIGHT - 2 * PAD)
-  const ground = known.map(([d, h]) => `${x(d)},${y(h)}`).join(' ')
-  const shape = svg('polygon', {
-    points: `${x(0)},${HEIGHT - PAD} ${ground} ${x(length)},${HEIGHT - PAD}`,
-    class: 'oim-ul-sight-ground'
-  })
-  const stretches = known.slice(1).map(([d, h, seen], i) =>
-    svg('line', {
-      x1: x(known[i][0]),
-      y1: y(known[i][1]),
-      x2: x(d),
-      y2: y(h),
-      class: seen ? 'oim-ul-sight-seen' : 'oim-ul-sight-hidden'
-    })
-  )
-  const ray = svg('line', { x1: x(0), y1: y(eye), x2: x(length), y2: y(top), class: 'oim-ul-sight-ray' })
-  return svg(
-    'svg.oim-ul-sight-profile',
-    { viewBox: `0 0 ${WIDTH} ${HEIGHT}`, role: 'img' },
-    shape,
-    ...stretches,
-    ray
-  )
-}
-
 /** The colours a line of sight's stretches are drawn in on the map: seen, hidden
  * (as on its profile: the fork's success and error colours, ui/panel.css). */
 export const SEEN_COLOUR = '#1b7a33'
@@ -102,10 +107,7 @@ export function sightStretches(
   result: SightResult
 ): { points: LngLat[]; seen: boolean }[] {
   const length = result.profile[result.profile.length - 1]?.[0] || 1
-  const at = (distance: number): LngLat => {
-    const f = distance / length
-    return [from[0] + (to[0] - from[0]) * f, from[1] + (to[1] - from[1]) * f]
-  }
+  const at = (distance: number) => pointAlong(from, to, distance, length)
   const stretches: { points: LngLat[]; seen: boolean }[] = []
   let current: { points: LngLat[]; seen: boolean } | null = null
   for (const [distance, ground, seen] of result.profile) {

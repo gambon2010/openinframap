@@ -56,7 +56,8 @@ DROP MATERIALIZED VIEW IF EXISTS site_feature;
 CREATE MATERIALIZED VIEW site_feature AS
 WITH s AS (
     SELECT o.id AS site_id, o.osm_id, o.geometry, o.name, o.tags,
-           coalesce(fixed.kind, site_kind(o.key, o.type, o.tags)) AS kind,
+           -- An override's 'none': not a site (site-overrides.sql).
+           CASE WHEN fixed.kind = 'none' THEN NULL ELSE coalesce(fixed.kind, site_kind(o.key, o.type, o.tags)) END AS kind,
            CASE WHEN ST_GeometryType(o.geometry) IN ('ST_Polygon', 'ST_MultiPolygon')
                 THEN oim_ground_area(o.geometry) ELSE 0 END AS area
       FROM osm_site o LEFT JOIN site_override fixed ON fixed.osm_id = o.osm_id AND fixed.name = o.name
@@ -250,13 +251,20 @@ WITH s AS (
     SELECT row_number() OVER () AS id, merged.*, site_category(kind) AS category
       FROM merged WHERE kind IS NOT NULL
 ), twin AS (
-    -- Each named site and another of the same name and category touching it: one
-    -- thing mapped twice. The larger (then the first) is kept.
+    -- Each named site and another of the same name and category touching it or
+    -- within 20 m (a bunker mapped as an area and as a point beside it): one thing
+    -- mapped twice. The larger (then the first) is kept. Found by place first,
+    -- through osm_site's index (the region's widest stretch, read once), then by
+    -- name: pairing by name first compared all of France's "Mairie" with each other
+    -- (minutes).
     SELECT a.id, b.kind AS twin_kind, (b.area, -b.id) > (a.area, -a.id) AS twin_kept
-      FROM numbered a JOIN numbered b
-        ON b.id <> a.id AND lower(b.name) = lower(a.name) AND b.category = a.category
-       AND b.geometry && a.geometry AND ST_Intersects(a.geometry, b.geometry)
+      FROM numbered a
+           CROSS JOIN (SELECT oim_max_stretch() AS widest) stretch
+           JOIN osm_site o ON o.geometry && ST_Expand(a.geometry, 20 * stretch.widest)
+           JOIN numbered b
+             ON b.osm_id = o.osm_id AND b.id <> a.id AND lower(b.name) = lower(a.name) AND b.category = a.category
      WHERE coalesce(a.name, '') <> ''
+       AND ST_DWithin(a.geometry, b.geometry, oim_units(20, b.geometry))
 ), better_kind AS (
     -- A kind that says more, from a twin, for a kept site whose own says little.
     SELECT n.id, min(t.twin_kind) AS kind

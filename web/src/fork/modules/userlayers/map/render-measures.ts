@@ -1,23 +1,26 @@
 // Fork: My layers' measurements as map features (map/render.ts draws them into each
 // layer's measure source): their lines, labels and marks (measure/features.ts), and a
 // line of sight's stretches, green where the ground is seen, red where it's hidden
-// (measure/sight.ts), once the backend has answered (each answer asked once per points
-// and heights, kept here).
+// (measure/sight.ts), and a mark where the target is first hidden, saying by what,
+// once the backend has answered (each answer asked once per points and heights).
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { Measurement } from '../measure/features.types.ts'
 import type { TickView } from '../measure/ticks.types.ts'
 import { measurementFeatures, measurementOf } from '../measure/features.ts'
 import type { North } from '../../../core/north.ts'
+import type { LngLat } from '../../../core/earth.ts'
 import {
   DEFAULT_OBSERVER,
   DEFAULT_TARGET,
   HIDDEN_COLOUR,
   SEEN_COLOUR,
-  fetchSight,
+  pointAlong,
+  sightAnswer,
   sightKey,
   sightStretches,
   type SightResult
 } from '../measure/sight.ts'
+import { sightBlockLabel } from '../measure/sight-verdict.ts'
 import { isMeasure } from './geometry.ts'
 
 /** What the measurements are drawn for: the map's zoom and view (their marks), the
@@ -75,7 +78,7 @@ export class MeasureDrawer {
     const result = this.sights.get(key)
     if (result === undefined) {
       this.sights.set(key, null)
-      void fetchSight(from, to, observer, target).then((answer) => {
+      void sightAnswer(from, to, observer, target).then((answer) => {
         if (!answer) return
         this.sights.set(key, answer)
         this.redraw()
@@ -83,10 +86,24 @@ export class MeasureDrawer {
       return []
     }
     if (!result) return []
-    return sightStretches(from, to, result).map((stretch) => ({
+    const stretches: GeoJSON.Feature[] = sightStretches(from, to, result).map((stretch) => ({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: stretch.points },
       properties: { fid: f.id, color: stretch.seen ? SEEN_COLOUR : HIDDEN_COLOUR }
     }))
+    return [...stretches, ...blockFeature(f, from, to, result)]
   }
+}
+
+/** Where the target is first hidden: a mark, labelled with what hides it. */
+function blockFeature(f: UserFeature, from: LngLat, to: LngLat, result: SightResult): GeoJSON.Feature[] {
+  if (result.blocked_at === null) return []
+  const length = result.profile[result.profile.length - 1]?.[0] || 1
+  return [
+    {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: pointAlong(from, to, result.blocked_at, length) },
+      properties: { fid: f.id, sightBlock: true, label: sightBlockLabel(result) }
+    }
+  ]
 }

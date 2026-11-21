@@ -2,7 +2,7 @@
 -- astray (a fort still used by the army but tagged historic). Each row: the OSM id
 -- (imposm's: a relation's negative), the name it has in OSM (the override holds only
 -- while it matches: renamed in OSM, it's looked at again), the kind it is (one of
--- site-kinds.sql's kinds; its site_kind's NULL can't be given), the date, and why.
+-- site-kinds.sql's kinds, or 'none': not a site at all, left out), the date, and why.
 -- What's inside one inherits from it as from any military site (sites.sql).
 --
 -- Safe to run more than once; sites.sql reads it, so run sites.sql after changing it
@@ -66,4 +66,10 @@ CREATE OR REPLACE VIEW site_override (osm_id, name, kind, since, why) AS VALUES
     (121145095::bigint, 'Le Champ des Bombes', 'military_depot', '2026-11-21'::date,
      'The Burettes enclosure at Penol (Marcilloles): bombs stored at the Marcilloles range since 1918, buried there from 1928, about 30,000 still fenced in in 2011 (anciens-aerodromes.com).'),
     (700177018::bigint, 'Penn an enez', 'military_disused', '2026-11-21'::date,
-     'The Penn an Enez battery (Esquibien, Audierne): on the 1818 naval chart, decommissioned in 1889, its three cannons still there.');
+     'The Penn an Enez battery (Esquibien, Audierne): on the 1818 naval chart, decommissioned in 1889, its three cannons still there.'),
+    (31108720::bigint, 'CPA', 'military_disused', '2026-11-21'::date,
+     'The air force commandos'' (CPA 20) former site at the former BA 272 Saint-Cyr-l''École: the base closed in 1988, CPA 20 moved to Villacoublay (Wikipedia, Raids magazine); disused (the owner''s call).'),
+    (915582117::bigint, 'ZAC Les Seguins Les Ribéreaux', 'none', '2026-11-21'::date,
+     'Not military: a land-cover import (Corine code 121, "industrial or commercial units"), its own note saying the land use is to be set to industrial or retail; a ZAC is a business park.'),
+    (80367348::bigint, 'Espace Roger Pierre Seassal', 'none', '2026-11-21'::date,
+     'Not military: the square beside Nice''s Rauba-Capeù war memorial, named after its architect Roger Séassal (Wikipedia).');

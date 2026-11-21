@@ -75,6 +75,15 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   military area mapped around them (a forest's magazines; a strongpoint's bunkers,
   grey as disused sites are) get a base made for them: their hull, titled by its
   kind.
+- **A line of sight's profile** (`userlayers/measure/sight-panel.ts`, `sight-chart.ts`):
+  a split screen, the panel over the right half (the shared panel chrome), the map
+  on the left fitted to the line clear of the left column's panels. The chart: the
+  ground in the light grey of panels, green along its top where seen and red where
+  hidden (the success and error colours), buildings grey and woods green standing
+  on it, the eye's line dashed, a red ring "Hidden from here", heights and distances
+  on light grid lines; the pointer's place a white dot ringed in black, on the chart
+  and on the map (unlike the selection's yellow). On the map the line's mark where
+  it's hidden: a white disc ringed in the error red, labelled with what hides it.
 - **A kind listed under two categories** (military airfields: Transport and Military)
   has one tick box in both sections, ticked alike, and keeps its own category's icon
   and colour (green under Transport too); both categories' layers draw it, so hiding

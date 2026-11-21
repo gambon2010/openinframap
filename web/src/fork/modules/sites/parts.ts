@@ -141,6 +141,7 @@ export function partLabel(what: string, part: string): string {
     office: t('sites.part.office', 'Office'),
     checkpoint: t('sites.part.checkpoint', 'Checkpoint, guard post'),
     hangar: t('sites.part.hangar', 'Hangar'),
+    ammunition: t('sites.part.ammunition', 'Ammunition magazine'),
     range: t('sites.part.range', 'Range'),
     danger_area: t('sites.part.danger-area', 'Danger area'),
     training_area: t('sites.part.training-area', 'Training area')

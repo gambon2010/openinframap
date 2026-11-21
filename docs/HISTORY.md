@@ -1392,6 +1392,19 @@ default). Counts are France's OSM data in October 2026.
   background set meanwhile; it now keeps a value changed during the fade (the
   `map.once('load')` setups suspected first run fine: modules start before the
   map loads).
+- **The line of sight redone** (docs/plans/archive/line-of-sight.md): its chart drew the ground
+  as measured while the answer lowered it for the Earth's curvature (570 m at 92
+  km), so a clear-looking line came with "Hidden 6.38 km away". The backend now
+  gives every sample's surface as seen from the eye, the chart draws those; it
+  counts buildings (OSM's height, else 8 m) and woods (20 m) from the background
+  map's zoom 15 tiles (`terrain/obstacles.py`, a spatial index per tile, 0.4 s for
+  5 km), says what first hides the target and how far the eye's line passes over
+  (or under) the highest thing between. On the map a mark where it's hidden; the
+  card simplified ("Hidden by trees 475 m away, 142 m above the line"), "Open the
+  profile" splitting the screen (the chart large on the right with axes, the line
+  on the left fitted clear of the left column; pointing at the chart marks the
+  place on the map). One answer per line, shared by the card, the map and the
+  profile. Checked in the app as the debug account (Lièpvre, Vosges).
 
 ## Extra data (not from OpenStreetMap)
 

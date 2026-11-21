@@ -1,0 +1,119 @@
+/* Fork: a line of sight's split screen (sight-panel.ts) and its chart
+   (sight-chart.ts): the right half of the screen, the map on the left. */
+.oim-panel.oim-ul-sight-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50vw;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  /* Over My layers' toolbar and panels (the map's controls). */
+  z-index: 1000;
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+.oim-ul-sight-verdict {
+  display: block;
+  font-size: 1.15em;
+  margin-bottom: 8px;
+}
+.oim-ul-sight-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.85em;
+  color: var(--oim-text-color-light);
+  margin-bottom: 6px;
+}
+.oim-ul-sight-key i {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.oim-ul-sight-key-seen {
+  background: var(--oim-success);
+}
+.oim-ul-sight-key-hidden {
+  background: var(--oim-error);
+}
+.oim-ul-sight-key-building {
+  background: #8d8d8d;
+}
+.oim-ul-sight-key-trees {
+  background: #6a9a5b;
+}
+.oim-ul-sight-key-ray {
+  border-top: 2px dashed var(--oim-text-color-light);
+  height: 0 !important;
+}
+.oim-ul-sight-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+}
+.oim-ul-sight-readout {
+  min-height: 1.4em;
+  margin: 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+.oim-ul-sight-note {
+  font-size: 0.85em;
+  color: var(--oim-text-color-light);
+}
+.oim-ul-sight-grid {
+  stroke: var(--oim-grey);
+  stroke-width: 1;
+}
+.oim-ul-sight-tick {
+  font-size: 13px;
+  fill: var(--oim-text-color-light);
+}
+.oim-ul-sight-ground {
+  fill: var(--oim-light-grey);
+}
+.oim-ul-sight-building {
+  fill: #8d8d8d;
+}
+.oim-ul-sight-trees {
+  fill: #6a9a5b;
+  fill-opacity: 0.8;
+}
+.oim-ul-sight-seen,
+.oim-ul-sight-hidden {
+  stroke-width: 2.5;
+}
+.oim-ul-sight-seen {
+  stroke: var(--oim-success);
+}
+.oim-ul-sight-hidden {
+  stroke: var(--oim-error);
+}
+.oim-ul-sight-ray {
+  stroke: var(--oim-text-color);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+.oim-ul-sight-block {
+  fill: none;
+  stroke: var(--oim-error);
+  stroke-width: 3;
+}
+.oim-ul-sight-block-label {
+  font-size: 13px;
+  font-weight: bold;
+  fill: var(--oim-error);
+}
+.oim-ul-sight-cursor {
+  stroke: var(--oim-text-color);
+  stroke-width: 1;
+}
+.oim-ul-sight-cursor-dot {
+  fill: #fff;
+  stroke: #111;
+  stroke-width: 2;
+}

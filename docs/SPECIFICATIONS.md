@@ -306,6 +306,9 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.84 | Landmarks for navigating: hilltops and mountaintops with their name and altitude, large radio towers, radio repeaters' positions. | 🗂 backlog (2026-11-21) |
 | 10.85 | Montmacq's ammunition depot (Forêt de Laigue) one base; disused bunker groups as bases with a grey outline. | ✅ `site_made_base_whole`, `site-parts.sql` (2026-11-21) |
 | 10.86 | The unclear military sites researched: those confirmed fixed by hand with their sources, the rest left for checking. | ✅ `site-overrides.sql` (2026-11-21) |
+| 10.87 | Made bases' shapes following their parts (not long hulls), a spread cap; Maginot works grouped by their name; "Ligne Maginot" disused unless tagged otherwise. | 🗂 backlog (2026-11-21) |
+| 10.88 | A list of the sites whose kind is only a guess, for spot checks. | ✅ `data/local/checks/` (2026-11-21) |
+| 10.89 | Line of sight: kept in My layers, the line and what blocks it drawn on the map; its card simplified, a button opening a split screen (the chart large on the right, the line on the left, centred), hovering the chart showing the place on the map; trees and buildings counted. | ✅ `terrain/obstacles.py`, `measure/sight-panel.ts` (2026-11-21) |
 
 ## 11. Quality
 

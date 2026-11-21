@@ -1,11 +1,25 @@
 """src/fork/terrain/sight.py: line of sight over made-up ground (as GDAL's viewshed:
 curvature less refraction, an observer 2 m up)."""
 
-from src.fork.terrain import sight
+import pytest
+
+from src.fork.terrain import obstacles, sight
 
 # Two points 1.1 km apart on a meridian, and 33 km apart.
 NEAR = ((7.0, 47.0), (7.0, 47.01))
 FAR = ((7.0, 47.0), (7.0, 47.3))
+
+
+@pytest.fixture(autouse=True)
+def bare_ground(monkeypatch):
+    """Nothing stands on the ground unless a test says so (no background map read)."""
+    monkeypatch.setattr(sight.obstacles, "obstacles_at", lambda points: [obstacles.NOTHING] * len(points))
+
+
+def standing(at_lat, obstacle):
+    """An obstacle on the points between two latitudes (`at_lat`: (south, north))."""
+    south, north = at_lat
+    return lambda points: [obstacle if south < lat < north else obstacles.NOTHING for _, lat in points]
 
 
 def ground(height_at):
@@ -46,3 +60,31 @@ def test_the_earth_s_curvature_hides_what_is_far_on_flat_ground(monkeypatch):
 def test_no_terrain_under_an_end_no_answer(monkeypatch):
     monkeypatch.setattr(sight.elevations, "elevation", lambda lon, lat: None)
     assert sight.line_of_sight(*NEAR).target_seen is None
+
+
+def test_a_building_between_hides_the_target_and_says_so(monkeypatch):
+    monkeypatch.setattr(sight.elevations, "elevation", ground(lambda lat: 200.0))
+    block = standing((47.004, 47.005), obstacles.Obstacle(15.0, "building"))
+    found = sight.line_of_sight(*NEAR, obstacles_at=block)
+    assert found.target_seen is False and found.blocked_by == "building"
+    assert 440 < found.blocked_at < 560
+    assert found.margin < 0  # hidden by that much
+    # Its surface, as the chart draws it, stands on the ground.
+    on_it = [s for s in found.samples if s.obstacle.kind == "building"]
+    assert all(abs(s.apparent - 215.0) < 1 for s in on_it)
+
+
+def test_trees_at_the_observer_s_feet_are_left_out(monkeypatch):
+    monkeypatch.setattr(sight.elevations, "elevation", ground(lambda lat: 200.0))
+    # A wood over the first 20 m: the observer stands at its edge.
+    wood = standing((46.9, 47.00018), obstacles.Obstacle(20.0, "trees"))
+    found = sight.line_of_sight(*NEAR, obstacles_at=wood)
+    assert found.target_seen and found.margin > 0
+
+
+def test_trees_hide_the_ground_behind_them(monkeypatch):
+    monkeypatch.setattr(sight.elevations, "elevation", ground(lambda lat: 200.0))
+    wood = standing((47.003, 47.004), obstacles.Obstacle(20.0, "trees"))
+    found = sight.line_of_sight(*NEAR, obstacles_at=wood)
+    assert found.blocked_by == "trees"
+    assert not any(s.seen for s in found.samples if s.distance > 500)

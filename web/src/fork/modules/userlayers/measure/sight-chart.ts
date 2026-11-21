@@ -1,0 +1,236 @@
+// Fork: a line of sight's profile as a chart (the split screen: sight-panel.ts):
+// the ground and what stands on it (buildings grey, trees green) as seen from the
+// eye, so the Earth's curvature is in it as in the answer (sight.ts), the ground
+// green where seen and red where hidden, the eye's line to the target dashed, where
+// the target is first hidden, and axes in metres and kilometres. Hovering it says
+// where along the line (onHover: the sample under the pointer, null when it leaves).
+// Drawn by hand in SVG: polygons, lines and ticks a chart library would only wrap.
+import { svg } from 'redom'
+import { t } from '../../../core/i18n.ts'
+import { formatDistance } from '../../../core/earth.ts'
+import type { ProfilePoint, SightResult } from './sight.ts'
+
+const WIDTH = 1000
+const HEIGHT = 520
+const LEFT = 64
+const RIGHT = 16
+const TOP = 16
+const BOTTOM = 40
+/** About this many ticks along each axis. */
+const TICKS = 6
+
+/** A sample with terrain, its ground as seen from the eye. */
+interface Known {
+  point: ProfilePoint
+  distance: number
+  ground: number // as seen from the eye
+  top: number // the surface's top, as seen from the eye
+}
+
+export function sightChart(result: SightResult, onHover: (point: ProfilePoint | null) => void): SVGElement {
+  const known = knownSamples(result.profile)
+  const length = result.profile[result.profile.length - 1]?.[0] || 1
+  const scale = chartScale(known, result, length)
+  const plot = svg(
+    'svg.oim-ul-sight-chart',
+    { viewBox: `0 0 ${WIDTH} ${HEIGHT}`, role: 'img' },
+    ...axes(scale, length),
+    groundShape(known, scale),
+    ...standingShapes(known, scale),
+    ...seenLines(known, scale),
+    rayLine(result, scale, length),
+    ...blockMark(result, known, scale)
+  )
+  hoverOn(plot, known, scale, onHover)
+  return plot
+}
+
+function knownSamples(profile: ProfilePoint[]): Known[] {
+  const known: Known[] = []
+  for (const point of profile) {
+    const [distance, ground, , standing, , apparent] = point
+    if (ground === null || apparent === null) continue
+    known.push({ point, distance, ground: apparent - standing, top: apparent })
+  }
+  return known
+}
+
+interface Scale {
+  x: (distance: number) => number
+  y: (height: number) => number
+  low: number
+  high: number
+}
+
+function chartScale(known: Known[], result: SightResult, length: number): Scale {
+  const heights = [...known.map((k) => k.ground), ...known.map((k) => k.top)]
+  if (result.eye !== null) heights.push(result.eye)
+  if (result.target_top !== null) heights.push(result.target_top)
+  const lowest = Math.min(...heights)
+  const highest = Math.max(...heights)
+  const pad = (highest - lowest) * 0.05 || 1
+  const low = lowest - pad
+  const high = highest + pad
+  return {
+    x: (d) => LEFT + (d / length) * (WIDTH - LEFT - RIGHT),
+    y: (h) => HEIGHT - BOTTOM - ((h - low) / (high - low)) * (HEIGHT - TOP - BOTTOM),
+    low,
+    high
+  }
+}
+
+/** A round step for about TICKS ticks over a range: 1, 2 or 5 times a power of ten. */
+export function niceStep(range: number): number {
+  const rough = range / TICKS
+  const power = 10 ** Math.floor(Math.log10(rough))
+  const steps = [1, 2, 5, 10].map((m) => m * power)
+  return steps.find((step) => step >= rough) ?? 10 * power
+}
+
+function axes(scale: Scale, length: number): SVGElement[] {
+  const parts: SVGElement[] = []
+  const heightStep = niceStep(scale.high - scale.low)
+  for (let h = Math.ceil(scale.low / heightStep) * heightStep; h <= scale.high; h += heightStep) {
+    parts.push(svg('line.oim-ul-sight-grid', { x1: LEFT, x2: WIDTH - RIGHT, y1: scale.y(h), y2: scale.y(h) }))
+    parts.push(
+      svg(
+        'text.oim-ul-sight-tick',
+        { x: LEFT - 6, y: scale.y(h) + 4, 'text-anchor': 'end' },
+        `${Math.round(h)} m`
+      )
+    )
+  }
+  const distanceStep = niceStep(length)
+  for (let d = 0; d <= length; d += distanceStep) {
+    parts.push(
+      svg('line.oim-ul-sight-grid', { x1: scale.x(d), x2: scale.x(d), y1: TOP, y2: HEIGHT - BOTTOM })
+    )
+    parts.push(
+      svg(
+        'text.oim-ul-sight-tick',
+        { x: scale.x(d), y: HEIGHT - BOTTOM + 18, 'text-anchor': 'middle' },
+        formatDistance(d)
+      )
+    )
+  }
+  return parts
+}
+
+function groundShape(known: Known[], scale: Scale): SVGElement {
+  const top = known.map((k) => `${scale.x(k.distance)},${scale.y(k.ground)}`).join(' ')
+  const first = known[0]?.distance ?? 0
+  const last = known[known.length - 1]?.distance ?? 0
+  const base = scale.y(scale.low)
+  return svg('polygon.oim-ul-sight-ground', {
+    points: `${scale.x(first)},${base} ${top} ${scale.x(last)},${base}`
+  })
+}
+
+/** Buildings and trees: a shape per run of the same kind, from the ground to their top. */
+function standingShapes(known: Known[], scale: Scale): SVGElement[] {
+  const shapes: SVGElement[] = []
+  let run: Known[] = []
+  const close = () => {
+    if (run.length) shapes.push(standingShape(run, scale))
+    run = []
+  }
+  for (const k of known) {
+    const kind = k.point[4]
+    if (!kind || (run.length && run[0].point[4] !== kind)) close()
+    if (kind) run.push(k)
+  }
+  close()
+  return shapes
+}
+
+function standingShape(run: Known[], scale: Scale): SVGElement {
+  const top = run.map((k) => `${scale.x(k.distance)},${scale.y(k.top)}`)
+  const bottom = [...run].reverse().map((k) => `${scale.x(k.distance)},${scale.y(k.ground)}`)
+  return svg(`polygon.oim-ul-sight-${run[0].point[4]}`, { points: [...top, ...bottom].join(' ') })
+}
+
+function seenLines(known: Known[], scale: Scale): SVGElement[] {
+  return known.slice(1).map((k, i) =>
+    svg('line', {
+      x1: scale.x(known[i].distance),
+      y1: scale.y(known[i].ground),
+      x2: scale.x(k.distance),
+      y2: scale.y(k.ground),
+      class: k.point[2] ? 'oim-ul-sight-seen' : 'oim-ul-sight-hidden'
+    })
+  )
+}
+
+function rayLine(result: SightResult, scale: Scale, length: number): SVGElement {
+  const eye = result.eye ?? scale.low
+  const target = result.target_top ?? scale.low
+  return svg('line.oim-ul-sight-ray', {
+    x1: scale.x(0),
+    y1: scale.y(eye),
+    x2: scale.x(length),
+    y2: scale.y(target)
+  })
+}
+
+/** Where the target is first hidden: a mark on what hides it. */
+function blockMark(result: SightResult, known: Known[], scale: Scale): SVGElement[] {
+  if (result.blocked_at === null) return []
+  const at = known.reduce((best, k) =>
+    Math.abs(k.distance - result.blocked_at!) < Math.abs(best.distance - result.blocked_at!) ? k : best
+  )
+  return [
+    svg('circle.oim-ul-sight-block', { cx: scale.x(at.distance), cy: scale.y(at.top), r: 7 }),
+    svg(
+      'text.oim-ul-sight-block-label',
+      { x: scale.x(at.distance), y: scale.y(at.top) - 12, 'text-anchor': 'middle' },
+      t('userlayers.sight-blocked-here', 'Hidden from here')
+    )
+  ]
+}
+
+/** A line and a dot following the pointer, and onHover with the sample under it. */
+function hoverOn(
+  plot: SVGElement,
+  known: Known[],
+  scale: Scale,
+  onHover: (point: ProfilePoint | null) => void
+) {
+  const line = svg('line.oim-ul-sight-cursor', { y1: TOP, y2: HEIGHT - BOTTOM, visibility: 'hidden' })
+  const dot = svg('circle.oim-ul-sight-cursor-dot', { r: 5, visibility: 'hidden' })
+  plot.append(line, dot)
+  plot.addEventListener('pointermove', (event) => {
+    const box = plot.getBoundingClientRect()
+    const x = ((event.clientX - box.left) / box.width) * WIDTH
+    const k = nearest(known, scale, x)
+    if (!k) return
+    for (const [name, value] of [
+      ['x1', scale.x(k.distance)],
+      ['x2', scale.x(k.distance)]
+    ] as const)
+      line.setAttribute(name, String(value))
+    dot.setAttribute('cx', String(scale.x(k.distance)))
+    dot.setAttribute('cy', String(scale.y(k.top)))
+    line.setAttribute('visibility', 'visible')
+    dot.setAttribute('visibility', 'visible')
+    onHover(k.point)
+  })
+  plot.addEventListener('pointerleave', () => {
+    line.setAttribute('visibility', 'hidden')
+    dot.setAttribute('visibility', 'hidden')
+    onHover(null)
+  })
+}
+
+/** The sample nearest an x on the chart (the samples are in order: a binary search). */
+function nearest(known: Known[], scale: Scale, x: number): Known | undefined {
+  let low = 0
+  let high = known.length - 1
+  while (high - low > 1) {
+    const middle = (low + high) >> 1
+    if (scale.x(known[middle].distance) < x) low = middle
+    else high = middle
+  }
+  const [a, b] = [known[low], known[high]]
+  if (!a || !b) return a ?? b
+  return Math.abs(scale.x(a.distance) - x) <= Math.abs(scale.x(b.distance) - x) ? a : b
+}

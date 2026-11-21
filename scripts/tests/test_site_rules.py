@@ -50,7 +50,8 @@ def test_the_overrides_give_kinds_the_map_draws():
         r"^\s*\(-?\d+::bigint, '(?:[^']|'')*',\s*'([a-z_]+)'", sql, re.MULTILINE
     )
     assert len(kinds) == sql.count("::bigint"), "an override's row wasn't read"
-    assert set(kinds) <= drawn_kinds()
+    # 'none': not a site, left out (sites.sql).
+    assert set(kinds) - {"none"} <= drawn_kinds()
 
 
 def kind_by_name(name: str) -> str | None:

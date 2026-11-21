@@ -15,7 +15,7 @@ import {
 } from 'maplibre-gl'
 import type { Feature } from 'geojson'
 import { sourceGeometry } from '../core/map-data.ts'
-import { buildingOutline, isBuildingLayer } from '../core/buildings.ts'
+import { buildingOutline, isBuildingLayer, joinPieces } from '../core/buildings.ts'
 
 const SOURCE = 'feature_highlight'
 const YELLOW = '#ffd400'
@@ -199,17 +199,25 @@ export class FeatureHighlight {
       const outline = buildingOutline(this._map, feature)
       if (outline) return [{ type: 'Feature', geometry: outline, properties: {} }]
     }
+    const pieces = this.sameFeature(feature)
+    if (!pieces.length) return [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
+    // An area's pieces joined into one outline: no cut lines where the tiles end.
+    const outline = joinPieces(pieces.map((piece) => piece.geometry))
+    if (outline) return [{ type: 'Feature', geometry: outline, properties: {} }]
+    return pieces.map((piece) => ({ type: 'Feature', geometry: piece.geometry, properties: {} }))
+  }
+
+  /** The pieces of one feature in the loaded tiles: by its OSM id, else by the tile
+   * layer's own id (a base made by the build has no OSM id: bug, only the clicked
+   * tile's piece was highlighted). */
+  private sameFeature(feature: MapGeoJSONFeature): { geometry: GeoJSON.Geometry }[] {
+    if (!feature.source) return []
     const osmId = feature.properties['osm_id']
-    if (osmId !== undefined && feature.source) {
-      const pieces = this._map.querySourceFeatures(feature.source, {
-        sourceLayer: feature.sourceLayer,
-        filter: ['==', ['get', 'osm_id'], osmId]
-      })
-      if (pieces.length) {
-        return pieces.map((piece) => ({ type: 'Feature', geometry: piece.geometry, properties: {} }))
-      }
-    }
-    return [{ type: 'Feature', geometry: feature.geometry, properties: {} }]
+    let filter: FilterSpecification | undefined
+    if (osmId !== undefined) filter = ['==', ['get', 'osm_id'], osmId]
+    else if (feature.id !== undefined) filter = ['==', ['id'], feature.id]
+    if (!filter) return []
+    return this._map.querySourceFeatures(feature.source, { sourceLayer: feature.sourceLayer, filter })
   }
 
   bounds(feature: MapGeoJSONFeature): LngLatBounds {
