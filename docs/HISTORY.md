@@ -1374,6 +1374,24 @@ default). Counts are France's OSM data in October 2026.
   above 0 outside it set to 0, after every terrain download (`offline-maps.py
   terrain-sea` for one made before); clipping a DEM with land polygons as OpenTopoMap
   does.
+- **Third round:** Montmacq's magazines one base (`site_made_base_whole`: a place
+  where the buildings standing alone are one base however far apart; the owner's
+  exception, the 5-in-150-m rule otherwise). Disused bunker groups get made bases
+  too, grey as disused sites are (423: Atlantic Wall and Maginot strongpoints, about
+  8 bunkers each). The unclear named military sites researched on the web, fixed by
+  hand where a source says what they are (`site-overrides.sql`, each with its
+  source): the gendarmerie's ECASGN at Le Blanc, the army commissariat's ESCAT at
+  Châtres, the Navy's Pencran radio station and Anse Saupin laundry, the Burettes
+  bomb enclosure (Champ des Bombes), the Penn an Enez battery, a fire station, the
+  Sécurité civile's bomb disposal centre. Left for checking: CPA (the air force
+  commandos' former site at Saint-Cyr, base closed 1988), Bois de Nice (walkers
+  cross military land, status unsettled), "zone militaire" near Hyères, ZAC Les
+  Seguins (a land-cover import to fix in OSM), Espace Roger Pierre Seassal (Nice's
+  war memorial square, not military). Why the sites' imagery looks were lost: a
+  fade (`ui/fade.ts`) restored the opacity it had read before, over the one the
+  background set meanwhile; it now keeps a value changed during the fade (the
+  `map.once('load')` setups suspected first run fine: modules start before the
+  map loads).
 
 ## Extra data (not from OpenStreetMap)
 

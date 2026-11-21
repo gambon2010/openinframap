@@ -71,9 +71,10 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   a camp, a named station) is drawn as any site, its own marking kept. One mapped as
   a point: a small disc ringed in the military's green; the rest: a thin dashed green
   outline; none with an icon. Its details are titled with what it is ("Bunker") and
-  say whose part it is, and its kind. Buildings of one kind in use standing together
-  with no military area mapped around them (a forest's magazines) get a base made
-  for them: their hull, titled by its kind.
+  say whose part it is, and its kind. Buildings of one kind standing together with no
+  military area mapped around them (a forest's magazines; a strongpoint's bunkers,
+  grey as disused sites are) get a base made for them: their hull, titled by its
+  kind.
 - **A kind listed under two categories** (military airfields: Transport and Military)
   has one tick box in both sections, ticked alike, and keeps its own category's icon
   and colour (green under Transport too); both categories' layers draw it, so hiding

@@ -20,7 +20,7 @@ import {
   PART_ZONE_DASHES,
   PART_ZONE_WIDTH
 } from './parts.constants.ts'
-import { site_colours, site_kind_label } from './style.ts'
+import { military_colour, site_kind_label } from './style.ts'
 
 /** The building parts' roof layer (index.ts follows the background with it). */
 export const PART_ROOF_LAYER = 'sites_military_part_building'
@@ -91,7 +91,7 @@ export function partLayers(): LayerSpecificationWithZIndex[] {
       filter: ['==', ['get', 'part'], 'zone'],
       type: 'line',
       paint: {
-        'line-color': site_colours.military,
+        'line-color': military_colour(),
         'line-width': PART_ZONE_WIDTH,
         'line-dasharray': PART_ZONE_DASHES
       }
@@ -107,7 +107,7 @@ export function partLayers(): LayerSpecificationWithZIndex[] {
       paint: {
         'circle-radius': PART_POINT_RADIUS,
         'circle-color': PART_ROOF_COLOUR,
-        'circle-stroke-color': site_colours.military,
+        'circle-stroke-color': military_colour(),
         'circle-stroke-width': 1.5
       }
     }

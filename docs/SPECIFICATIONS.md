@@ -303,6 +303,9 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.81 | A depot whose base isn't mapped (bunkers alone in a forest) shown as one base. | ✅ bases made for groups of buildings (`site_made_base`) (2026-11-21) |
 | 10.82 | Contour heights over imagery as over the map. | ✅ (2026-11-21) |
 | 10.83 | Sites classified better from their names: tax offices, town halls, the CSNJ (military), lunettes (forts); radio stations not made from anonymous masts. | ✅ `site-kinds.sql`, `site-rules.sql`, `sites.sql` (2026-11-21) |
+| 10.84 | Landmarks for navigating: hilltops and mountaintops with their name and altitude, large radio towers, radio repeaters' positions. | 🗂 backlog (2026-11-21) |
+| 10.85 | Montmacq's ammunition depot (Forêt de Laigue) one base; disused bunker groups as bases with a grey outline. | ✅ `site_made_base_whole`, `site-parts.sql` (2026-11-21) |
+| 10.86 | The unclear military sites researched: those confirmed fixed by hand with their sources, the rest left for checking. | ✅ `site-overrides.sql` (2026-11-21) |
 
 ## 11. Quality
 

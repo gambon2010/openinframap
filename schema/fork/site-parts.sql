@@ -13,8 +13,9 @@
 -- Zoomed out, a base's building and zone parts aren't drawn nor counted in the
 -- numbered groups (site-points.sql): the base stands for them, and its details count
 -- them (site_part_count). Buildings of one kind standing together with no military
--- area mapped around them (a forest's ammunition magazines) get a base made for
--- them (site_made_base). Safe to run more than once; run after sites.sql.
+-- area mapped around them (a forest's ammunition magazines, a strongpoint's
+-- bunkers) get a base made for them (site_made_base). Safe to run more than once;
+-- run after sites.sql.
 
 -- How close (real metres) buildings of one kind stand, and how many, to make a base
 -- for them when none is mapped; a storage area tagged military=ammunition is a
@@ -42,6 +43,12 @@ LANGUAGE sql IMMUTABLE SET search_path = public, pg_temp AS $$
     SELECT coalesce(nullif(nullif(tags->'military', 'yes'), ''), nullif(nullif(tags->'building', 'yes'), ''), kind)
 $$;
 
+-- Places where the buildings of one kind standing alone are one base however far
+-- apart (the 5-in-150-m rule split them): the place, how far around it, why.
+CREATE OR REPLACE VIEW site_made_base_whole (lon, lat, metres, since, why) AS VALUES
+    (2.94, 49.468, 3500.0, '2026-11-21'::date,
+     'Forêt de Laigue (Montmacq, Saint-Léger-aux-Bois): one ammunition depot, its magazines along the forest''s roads (the owner''s call).');
+
 DROP VIEW IF EXISTS site_tile;
 DROP MATERIALIZED VIEW IF EXISTS site_military;
 DROP MATERIALIZED VIEW IF EXISTS site_part_count;
@@ -55,12 +62,11 @@ CREATE MATERIALIZED VIEW site_made_base AS
 WITH military AS (
     SELECT id, geometry, kind, tags, area FROM site_feature WHERE category IN ('military', 'military_disused')
 ), alone AS (
-    -- Buildings in use with no military site around them (disused ones, the
-    -- Atlantic Wall's bunkers, aren't grouped).
+    -- Buildings with no military site around them (disused ones too: an Atlantic
+    -- Wall or Maginot strongpoint's bunkers, their base grey as they are).
     SELECT p.id, p.geometry, p.kind
       FROM military p
      WHERE is_military_building(p.tags, p.area)
-       AND p.kind NOT IN ('military_disused', 'military_airfield_disused')
        AND NOT EXISTS (
            SELECT 1 FROM military b
             WHERE b.id <> p.id AND b.area > p.area
@@ -71,9 +77,20 @@ WITH military AS (
                             eps := oim_made_base_gap(), minpoints := oim_made_base_min_parts())
                OVER (PARTITION BY kind) AS cluster
       FROM alone
+), placed AS (
+    -- Each one's group: the place it's in, where the owner made one base of a place
+    -- (site_made_base_whole: numbered below 0), else its cluster.
+    SELECT grouped.id, grouped.geometry, grouped.kind,
+           coalesce(-whole.n, grouped.cluster) AS cluster
+      FROM grouped
+           LEFT JOIN LATERAL (
+               SELECT w.n FROM (SELECT row_number() OVER () AS n, * FROM site_made_base_whole) w
+                CROSS JOIN LATERAL (SELECT ST_Transform(ST_SetSRID(ST_MakePoint(w.lon, w.lat), 4326), 3857) AS at) p
+                WHERE ST_DWithin(grouped.geometry, p.at, oim_units(w.metres, p.at))
+                LIMIT 1) whole ON true
 ), hulls AS (
     SELECT kind, ST_Buffer(ST_ConvexHull(ST_Collect(geometry)), oim_units(oim_made_base_gap() / 6, ST_Collect(geometry))) AS geometry
-      FROM grouped WHERE cluster IS NOT NULL
+      FROM placed WHERE cluster IS NOT NULL
      GROUP BY kind, cluster
 )
 SELECT (SELECT max(id) FROM site_feature) + row_number() OVER (ORDER BY kind, ST_XMin(geometry)) AS id,

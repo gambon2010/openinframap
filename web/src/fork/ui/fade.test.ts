@@ -49,6 +49,20 @@ describe('data layers fading as their entry is ticked', () => {
     vi.unstubAllGlobals()
   })
 
+  it("keep a look another module set while they faded (the background's)", () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (f: FrameRequestCallback) => frames.push(f))
+    const { map, paint } = fakeMap()
+    const switcher = { _updateVisibility: () => map.setLayoutProperty('power_line', 'visibility', 'visible') }
+    fadeSwitcher(map, switcher)
+    switcher._updateVisibility()
+    // Imagery shown while it fades in: its look over imagery.
+    map.setPaintProperty('power_line', 'line-opacity', 0.35)
+    frames.forEach((f) => f(0))
+    expect(paint.power_line['line-opacity']).toBe(0.35)
+    vi.unstubAllGlobals()
+  })
+
   it('leave the layers changing their own look as they are, and the map as it was', () => {
     const { map, layout, paint } = fakeMap()
     const set = map.setLayoutProperty

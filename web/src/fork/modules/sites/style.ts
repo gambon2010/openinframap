@@ -230,6 +230,11 @@ const KIND_GROUPS: { [kind: string]: string } = {
 export const HIDDEN_AT_FIRST = ['military_disused']
 
 /** A category's areas' colour: its own, but for kinds with their own. */
+/** The military's green, grey for disused kinds (a base's parts: parts.ts). */
+export function military_colour(): string | ExpressionSpecification {
+  return area_colour('military', site_colours.military)
+}
+
 function area_colour(category: string, colour: string): string | ExpressionSpecification {
   const own = site_kinds[category].filter((kind) => KIND_GROUPS[kind])
   if (!own.length) return colour

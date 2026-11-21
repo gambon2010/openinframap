@@ -39,6 +39,8 @@ class Fader {
   private own = new globalThis.Map<string, Record<string, unknown>>()
   /** Layers fading out, hidden at the end. */
   private leaving = new globalThis.Map<string, number>()
+  /** What the fade itself last painted (by layer, by property). */
+  private painted = new globalThis.Map<string, Record<string, unknown>>()
 
   constructor(private map: Map) {}
 
@@ -48,6 +50,7 @@ class Fader {
   }
 
   private paint(id: string, values: Record<string, unknown>, ms: number) {
+    this.painted.set(id, { ...this.painted.get(id), ...values })
     for (const [property, value] of Object.entries(values)) {
       this.map.setPaintProperty(
         id,
@@ -56,6 +59,21 @@ class Fader {
       )
       this.map.setPaintProperty(id, property as PaintName, value as PaintValue)
     }
+  }
+
+  /** Its own opacities back at the end of a fade, but those another module changed
+   * meanwhile (the background's look, followBackground): its change is the newer, kept
+   * (bug: the sites' opacity over imagery, set while their layers faded in, was undone). */
+  private paintBack(id: string, own: Record<string, unknown>, ms: number) {
+    const painted = this.painted.get(id) ?? {}
+    const back = Object.fromEntries(
+      Object.entries(own).map(([property, value]) => {
+        const now = this.map.getPaintProperty(id, property as PaintName)
+        const changedMeanwhile = JSON.stringify(now) !== JSON.stringify(painted[property])
+        return [property, changedMeanwhile ? now : value]
+      })
+    )
+    this.paint(id, back, ms)
   }
 
   /** The layer's own opacities, read before it first fades. */
@@ -83,7 +101,7 @@ class Fader {
         // Shown again while fading out: back to its own opacity.
         window.clearTimeout(leaving)
         this.leaving.delete(id)
-        this.paint(id, this.ownOpacities(id), FADE_MS)
+        this.paintBack(id, this.ownOpacities(id), FADE_MS)
         return
       }
       if (shown) return set(visibility)
@@ -91,7 +109,7 @@ class Fader {
       this.paint(id, this.zero(id), 0)
       set(visibility)
       requestAnimationFrame(() => {
-        this.paint(id, own, FADE_MS)
+        this.paintBack(id, own, FADE_MS)
         this.own.delete(id)
       })
       return
@@ -105,7 +123,7 @@ class Fader {
         this.leaving.delete(id)
         set('none')
         // Its own opacity back while hidden, then its transitions as usual.
-        this.paint(id, own, 0)
+        this.paintBack(id, own, 0)
         for (const property of Object.keys(own))
           this.map.setPaintProperty(
             id,
