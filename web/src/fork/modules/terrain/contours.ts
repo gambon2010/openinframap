@@ -11,6 +11,7 @@ import {
   CONTOURS_SOURCE_LAYER,
   CONTOUR_COLOUR,
   CONTOUR_LABEL_COLOUR,
+  CONTOUR_LABEL_HALO,
   INDEX_WIDTH,
   INTERMEDIATE_WIDTH,
   SUPPLEMENTARY_DASHES,
@@ -89,7 +90,7 @@ const label: SymbolLayerSpecification = {
   },
   paint: {
     'text-color': CONTOUR_LABEL_COLOUR.map,
-    'text-halo-color': 'rgba(255, 255, 255, 0.85)',
+    'text-halo-color': CONTOUR_LABEL_HALO.map,
     'text-halo-width': 1.2
   }
 }

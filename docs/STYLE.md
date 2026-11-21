@@ -131,7 +131,8 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   their downhill side. The interval follows the maps' scales: 100 m at zooms 9–10,
   50 m at 11, 20 m at 12–13, 10 m from 14 (made in the backend). They're drawn on
   top of everything (the owner's choice: under the background map's buildings every
-  line in a town was cut into pieces); over imagery a lighter brown. From zoom 9
+  line in a town was cut into pieces); over imagery a lighter brown, the heights
+  in pale tan on a dark brown halo (white on photos didn't read). From zoom 9
   (nothing further out). The entry unfolds into a tick box per part (index lines,
   their heights, intermediate, supplementary, depression ticks), so the parts not
   needed can be hidden.

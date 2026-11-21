@@ -23,6 +23,7 @@ import {
   CONTOURS_SWITCHER_ID,
   CONTOUR_COLOUR,
   CONTOUR_LABEL_COLOUR,
+  CONTOUR_LABEL_HALO,
   HIGHLIGHT_COLOUR,
   HILLSHADE_LAYER,
   LIGHT_DIRECTIONS,
@@ -108,6 +109,7 @@ const terrain: ForkModule = {
     followBackground(map, HILLSHADE_LAYER, 'hillshade-exaggeration', STRENGTH)
     for (const id of CONTOUR_LINE_LAYERS) followBackground(map, id, 'line-color', CONTOUR_COLOUR)
     followBackground(map, LABEL_LAYER, 'text-color', CONTOUR_LABEL_COLOUR)
+    followBackground(map, LABEL_LAYER, 'text-halo-color', CONTOUR_LABEL_HALO)
     addDetailsExtra(heightRow)
   }
 }
