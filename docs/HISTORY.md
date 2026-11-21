@@ -1350,6 +1350,30 @@ default). Counts are France's OSM data in October 2026.
   It no longer writes there: `ImagesFolder` (`wikidata_offline.py`) serves the
   pictures, not found until the scripts make the folder; a test pins that
   Starlette's StaticFiles fails every request while its folder is missing.
+- **The base parts, second round** (the owner's screenshots): a camp's barracks and
+  office blocks (Mourmelon: tagged military=office/barracks, their kind other than
+  the camp's) were drawn as bases with icons: an unnamed building part is now a
+  building whatever its kind, raised in 3D (it stayed flat); a part of another kind
+  keeps its marking only when it isn't an unnamed building. A forest's ammunition
+  magazines with no military area mapped around them (Forêt de Laigue: 137 areas
+  tagged military=ammunition) showed as numbered discs: groups of in-use buildings of
+  one kind, 5 or more within 150 m (PostGIS's ST_ClusterDBSCAN on real metres), get
+  a base made for them (their hull); not the disused bunkers (423 groups along the
+  Atlantic Wall and the Maginot line: the owner's call). The parts step had taken
+  hours (a join on a view without index): a materialized view with one, 2 seconds.
+  The sites' imagery looks (areas, parts' roofs) never applied: the module waited for
+  the map's load event, already past. Contour heights over imagery as over the map
+  (asked: the dark halo was "changed so much").
+- **Classification:** a communication mast counts for a radio station only with its
+  operator named (an anonymous one is most often a phone mast: about 13 areas back
+  to "Other military area"); offices named "Centre des Finances Publiques" are tax
+  offices, "Mairie" town halls, the CSNJ military offices; a lunette is a fort.
+- **The sea flattened in the terrain** (ships measured by the Copernicus DEM stood as
+  hills over 100 m in Toulon's roadstead): `background_build/terrain_sea.py` masks
+  each terrain tile with the background map's land (Protomaps' earth layer), heights
+  above 0 outside it set to 0, after every terrain download (`offline-maps.py
+  terrain-sea` for one made before); clipping a DEM with land polygons as OpenTopoMap
+  does.
 
 ## Extra data (not from OpenStreetMap)
 

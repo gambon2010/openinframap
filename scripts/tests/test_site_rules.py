@@ -73,3 +73,7 @@ def test_a_parade_ground_is_not_a_range_but_a_swiss_training_ground_is():
     assert kind_by_name("Place d'armes") is None
     assert kind_by_name("Place d’armes de Bure") == "military_range"
     assert kind_by_name("Champ de tir de Suippes") == "military_range"
+
+
+def test_a_lunette_is_a_fortification():
+    assert kind_by_name("Lunette d'Arçon") == "military_fort"

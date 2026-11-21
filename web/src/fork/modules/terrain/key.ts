@@ -34,7 +34,7 @@ function heightSwatch(): SVGElement {
   return svg(
     'svg',
     { width: WIDTH, height: HEIGHT },
-    svg('text', { x: 3, y: 12, 'font-size': 10, fill: CONTOUR_LABEL_COLOUR.map }, '500')
+    svg('text', { x: 3, y: 12, 'font-size': 10, fill: CONTOUR_LABEL_COLOUR }, '500')
   )
 }
 

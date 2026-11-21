@@ -9,6 +9,7 @@
 import type { Map } from 'maplibre-gl'
 import type { LayerSwitcher } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
+import { readJson, writeJson } from '../../core/storage.ts'
 import { BUILDINGS_SWITCHER_ID } from '../../core/buildings.ts'
 import { HILLSHADE_SWITCHER_ID, RELIEF_EXAGGERATION, RELIEF_SOURCE } from '../../core/terrain.ts'
 import { background } from '../../services/background.ts'
@@ -34,13 +35,17 @@ const SKY = {
 }
 
 /** The layer switcher's entries 3D switched on (they were off): off again when it
- * ends. */
-const switchedOn = new Set<string>()
+ * ends. Kept in this browser: the address keeps them on across a reload, and 3D
+ * must still switch them off after it. */
+const SWITCHED_ON_KEY = 'oim-3d-switched-on'
+const switchedOn = new Set<string>(readJson<string[]>(SWITCHED_ON_KEY, []))
+const keepSwitchedOn = () => writeJson(SWITCHED_ON_KEY, [...switchedOn])
 
 /** Switches an entry on for 3D, if it's off. */
 function switchOn(layerSwitcher: LayerSwitcher, id: string) {
   if (layerSwitcher._visible.includes(id)) return
   switchedOn.add(id)
+  keepSwitchedOn()
   layerSwitcher.setVisibility(id, true)
   layerSwitcher._updateList()
 }
@@ -48,6 +53,7 @@ function switchOn(layerSwitcher: LayerSwitcher, id: string) {
 /** Switches an entry off again, if 3D switched it on. */
 function switchBackOff(layerSwitcher: LayerSwitcher, id: string) {
   if (!switchedOn.delete(id)) return
+  keepSwitchedOn()
   layerSwitcher.setVisibility(id, false)
   layerSwitcher._updateList()
 }

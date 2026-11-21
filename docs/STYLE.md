@@ -63,13 +63,17 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 - **A military base's parts** (`modules/sites/parts.ts`, `schema/fork/site-parts.sql`):
   the base alone has its icon and label; zoomed out its parts aren't drawn nor counted
   in the discs, and its details count them ("118 × Bunker, 3 × Barracks building").
-  A part of another kind than its base (a range in a camp) is drawn as any site. From
-  zoom 15, a part that is a building (tagged one, or a bunker, casemate, cupola,
-  barracks... mapped as military only) is drawn as a building, the background map's
-  roof colour with a dark outline, see-through over imagery; one mapped as a point, a
-  small disc ringed in the military's green; the rest as a thin dashed green outline;
-  none with an icon. Its details are titled with what it is ("Bunker") and say whose
-  part it is.
+  From zoom 15, a part that is a building (tagged one, or a bunker, casemate, cupola,
+  barracks, office, small ammunition magazine... mapped as military only) is drawn as
+  a building, the background map's roof colour with a dark outline, see-through over
+  imagery, raised in 3D; unnamed, even of another kind than its base (a camp's
+  barracks blocks). A part of another kind that isn't an unnamed building (a range in
+  a camp, a named station) is drawn as any site, its own marking kept. One mapped as
+  a point: a small disc ringed in the military's green; the rest: a thin dashed green
+  outline; none with an icon. Its details are titled with what it is ("Bunker") and
+  say whose part it is, and its kind. Buildings of one kind in use standing together
+  with no military area mapped around them (a forest's magazines) get a base made
+  for them: their hull, titled by its kind.
 - **A kind listed under two categories** (military airfields: Transport and Military)
   has one tick box in both sections, ticked alike, and keeps its own category's icon
   and colour (green under Transport too); both categories' layers draw it, so hiding
@@ -143,8 +147,8 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   their downhill side. The interval follows the maps' scales: 100 m at zooms 9–10,
   50 m at 11, 20 m at 12–13, 10 m from 14 (made in the backend). They're drawn on
   top of everything (the owner's choice: under the background map's buildings every
-  line in a town was cut into pieces); over imagery a lighter brown, the heights
-  in pale tan on a dark brown halo (white on photos didn't read). From zoom 9
+  line in a town was cut into pieces); over imagery the lines a lighter brown, the
+  heights as over the map. From zoom 9
   (nothing further out). The entry unfolds into a tick box per part (index lines,
   their heights, intermediate, supplementary, depression ticks), so the parts not
   needed can be hidden.

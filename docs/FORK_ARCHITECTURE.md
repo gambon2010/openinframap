@@ -310,7 +310,9 @@ the schema fingerprint builds and exports carry.
   zoomed out (the railways and taxiways cut from the region's OpenStreetMap extract:
   `offline_maps/osm_extract.py`, `railways.py`, `taxiways.py`), and its terrain
   (`offline_maps/terrain.py`: the outline cut out of Mapterhorn's terrain tiles to
-  zoom 13, into `<area>.terrain.pmtiles`; docs/plans/terrain.md);
+  zoom 13, into `<area>.terrain.pmtiles`, its sea then flattened with the background
+  map's land, the backend's `background_build/terrain_sea.py`; `offline-maps.py
+  terrain-sea --area AREA` for a terrain downloaded before; docs/plans/terrain.md);
   `select_basemap` points `VITE_BASEMAP_URL` at the backend's `/background`). Every
   question comes before the first long step.
 - **SQL (`schema/`):** upstream's: `dev-init.sql` / `prod-init.sql` (once, when the
@@ -320,13 +322,14 @@ the schema fingerprint builds and exports carry.
   `oim_units`, `oim_max_stretch`, `oim_ground_area`), `places.sql`, `site-rules.sql`
   (`military_name_rule`: what a military site's name says it is, a row per language
   and kind), `site-overrides.sql` (`site_override`: kinds set by hand, by OSM id and
-  name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-parts.sql` (`site_part`, a military base's parts: own kind, building or zone; `site_part_count`, a base's parts counted; `site_tile`, what the tiles read), `site-points.sql` (`site_points`, grouped zoomed out, leaving out a base's building and zone parts below zoom 15), `grid.sql` (`grid_node` / `grid_edge`, used by
+  name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-parts.sql` (`site_made_base`, bases made for buildings of one kind standing together with none mapped; `site_military`, every military site; `site_part`, a military base's parts: building, own kind or zone; `site_part_count`, a base's parts counted; `site_tile`, what the tiles read), `site-points.sql` (`site_points`, grouped zoomed out, leaving out a base's building and zone parts below zoom 15), `grid.sql` (`grid_node` / `grid_edge`, used by
   `/grid/route` and `/grid/line`), `tower-numbers.sql`, `extra.sql` (the `extra`
   schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
   `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered
   migrations (`userdata/migrations/`).
 - **Tegola (`tegola/`):** `config.toml` is generated from `tegola.yml`, `layers.yml`
-  (upstream's) and `layers.fork.yml` (`generate_tegola_config.py`); never edit it.
+  (upstream's) and `layers.fork.yml` (`generate_tegola_config.py`), inside its image
+  when it's built (`tegola/Dockerfile`); never edit it.
   Tegola caches tiles in its container: recreated after the data is replaced.
 
 - **`build-region.sh`:** at the top, "what the build will do": every variable the
@@ -456,7 +459,7 @@ removes itself from any browser that has one (`scripts/tests/test_gate.py`).
    osmium filter and the fingerprint.
 2. SQL views in a `schema/fork/*.sql`. A new file goes in `SCHEMA_FILES` and
    `SCHEMA_LABELS` (`lib/db.sh`) and in a `run_schema` line of `build-region.sh`.
-3. The tile layer in `tegola/layers.fork.yml`, then regenerate `config.toml`.
+3. The tile layer in `tegola/layers.fork.yml`, then rebuild Tegola (`up_services --force-recreate tegola`).
 4. A module in `fork/modules/<name>/`: its `layers()` (style),
    `switcherGroups()`, `key()`, popup rules. Add it to `MODULES`.
 5. Strings: `npm run fork-strings`. Searchable by name: `schema/fork/search.sql`.

@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from 'vite'
 import { configDefaults } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'

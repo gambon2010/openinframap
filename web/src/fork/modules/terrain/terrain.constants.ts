@@ -22,12 +22,12 @@ export const CONTOURS_SOURCE_LAYER = 'contours'
 export const CONTOURS_MIN_ZOOM = 9
 export const CONTOURS_MAX_ZOOM = 16
 
-/** Contour browns (the USGS's US Topo specifications): the lines, and the darker
- * heights written on index contours; lighter over imagery. */
+/** Contour browns (the USGS's US Topo specifications): the lines, lighter over
+ * imagery; the darker heights written on index contours (CONTOUR_LABEL_COLOUR). */
 export const CONTOUR_COLOUR = { map: '#b38659', imagery: '#e0b07a' }
-export const CONTOUR_LABEL_COLOUR = { map: '#834225', imagery: '#ffe2b8' }
-/** The heights' halo: white on the map, dark brown on photos (white washed out). */
-export const CONTOUR_LABEL_HALO = { map: 'rgba(255, 255, 255, 0.85)', imagery: 'rgba(52, 34, 18, 0.9)' }
+export const CONTOUR_LABEL_COLOUR = '#834225'
+/** The heights' halo: white, over the map and imagery alike (the owner's choice). */
+export const CONTOUR_LABEL_HALO = 'rgba(255, 255, 255, 0.85)'
 /** Line widths (pixels) at zooms 9 and 16: intermediate (and supplementary) and
  * index contours. */
 export const INTERMEDIATE_WIDTH: [number, number] = [0.5, 0.9]

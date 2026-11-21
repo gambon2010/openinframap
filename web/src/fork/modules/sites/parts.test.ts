@@ -28,6 +28,7 @@ describe("a base's parts", () => {
     expect(partLayers().map((layer) => layer.id)).toEqual([
       'sites_military_part_building',
       'sites_military_part_building_outline',
+      'sites_military_part_building_3d',
       'sites_military_part_zone',
       'sites_military_part_point'
     ])

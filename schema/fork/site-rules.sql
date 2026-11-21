@@ -78,7 +78,7 @@ CREATE OR REPLACE VIEW military_name_rule (priority, kind, replaces_tags, langua
     (60, 'military_depot', false, 'de', 'munition|materiallager|\mdepot\M'),
     (60, 'military_depot', false, 'en', 'ammunition|\mammo\M|\mdepot\M|storage'),
     -- Forts, Maginot line works, batteries, citadels.
-    (70, 'military_fort', false, 'fr', '\mforts?\M|ouvrage|citadelle|batterie|redoute|casemate|blockhaus|\mblocs?\M|forteresse|fortin|bastion'),
+    (70, 'military_fort', false, 'fr', '\mforts?\M|\mlunette|ouvrage|citadelle|batterie|redoute|casemate|blockhaus|\mblocs?\M|forteresse|fortin|bastion'),
     (70, 'military_fort', false, 'de', 'festung|\mfort\M|zitadelle|schanze'),
     (70, 'military_fort', false, 'en', 'fortress|citadel|\mfort\M|battery|redoubt'),
     -- Barracks and bases: the army's, and joint ones.

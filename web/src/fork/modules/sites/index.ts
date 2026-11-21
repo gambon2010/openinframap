@@ -20,7 +20,7 @@ import layers, {
 } from './style.ts'
 import { followBackground } from '../../services/background.ts'
 import { facilityKey, facilityLayers, recolourFacilities } from './petroleum.ts'
-import { PART_ROOF_LAYER, partLabel, partLayers, partsSummary } from './parts.ts'
+import { PART_ROOF_LAYER, followView3d, partLabel, partLayers, partsSummary } from './parts.ts'
 import { PART_ROOF_OPACITY } from './parts.constants.ts'
 
 const oim_attribution =
@@ -65,17 +65,16 @@ const sites: ForkModule = {
 
   init: ({ map, clickRouter, primaryLayers }) => {
     recolourFacilities(map)
-    // The areas' fill a little stronger over imagery.
-    const followImagery = () => {
-      for (const category of Object.keys(site_colours))
-        followBackground(map, area_layer_id(category), 'fill-opacity', {
-          map: area_opacity,
-          imagery: AREA_OPACITY_OVER_IMAGERY
-        })
-      followBackground(map, PART_ROOF_LAYER, 'fill-opacity', PART_ROOF_OPACITY)
-    }
-    if (map.isStyleLoaded()) followImagery()
-    else map.once('load', followImagery)
+    // The areas' fill a little stronger over imagery, the parts' roofs see-through
+    // (bug: this waited for the map's load event, already past when modules start,
+    // so it never ran).
+    for (const category of Object.keys(site_colours))
+      followBackground(map, area_layer_id(category), 'fill-opacity', {
+        map: area_opacity,
+        imagery: AREA_OPACITY_OVER_IMAGERY
+      })
+    followBackground(map, PART_ROOF_LAYER, 'fill-opacity', PART_ROOF_OPACITY)
+    followView3d(map)
     // Clicking a group of sites (a numbered disc) zooms in on it.
     clickRouter.registerHandler(
       primaryLayers()

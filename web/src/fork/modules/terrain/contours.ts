@@ -89,8 +89,8 @@ const label: SymbolLayerSpecification = {
     'text-padding': 4
   },
   paint: {
-    'text-color': CONTOUR_LABEL_COLOUR.map,
-    'text-halo-color': CONTOUR_LABEL_HALO.map,
+    'text-color': CONTOUR_LABEL_COLOUR,
+    'text-halo-color': CONTOUR_LABEL_HALO,
     'text-halo-width': 1.2
   }
 }

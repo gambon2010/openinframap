@@ -18,6 +18,10 @@ export const NOT_A_SITE_OF_ITS_OWN: ExpressionSpecification = [
 export const PART_ROOF_COLOUR = 'hsl(30, 12%, 82%)'
 export const PART_ROOF_OPACITY = { map: 0.9, imagery: 0.35 }
 export const PART_OUTLINE_COLOUR = 'hsl(0, 0%, 15%)'
+/** A building part raised in 3D: its height, or its floors at this height each, else
+ * this one (a magazine, a barracks block). Metres. */
+export const PART_DEFAULT_HEIGHT_M = 5
+export const PART_LEVEL_HEIGHT_M = 3
 /** A zone part's outline: thinner than a site's, dashed. */
 export const PART_ZONE_WIDTH = 1
 export const PART_ZONE_DASHES = [3, 2]

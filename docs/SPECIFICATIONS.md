@@ -296,9 +296,13 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.74 | Ranges' icon a gun instead of the skull and bones. | ✅ a pistol (`make_site_icons.py`) (2026-11-21) |
 | 10.75 | A hidden key row hides its sites' areas, not only their icons. | ✅ `SAME_FEATURES_AS` (2026-11-21) |
 | 10.76 | Hill shading over imagery that doesn't look odd; 3D turns the shading on over the map. | ✅ shadows only from the photos' sun; `modules/view3d` (2026-11-21) |
-| 10.77 | Contour heights readable over imagery (the map's unchanged). | ✅ dark halo over imagery (2026-11-21) |
-| 10.78 | No relief or contours at sea where ships were measured (Toulon). | 📋 proposed: flatten the sea in the terrain file with the background map's land (2026-11-21) |
-| 10.79 | Several plots of one site (Issoudun's transmitter: 13 fenced plots, one Wikipedia link) shown as one site with its towers counted. | 📋 proposed (2026-11-21) |
+| 10.77 | Contour heights readable over imagery (the map's unchanged). | ✅ replaced by 10.82 (2026-11-21) |
+| 10.78 | No relief or contours at sea where ships were measured (Toulon). | ✅ `background_build/terrain_sea.py`: the sea flattened with the background map's land, after every terrain download (2026-11-21) |
+| 10.79 | Several plots of one site (Issoudun's transmitter: 13 fenced plots, one Wikipedia link) shown as one site with its towers counted. | 🗂 backlog (2026-11-21) |
+| 10.80 | A base's buildings drawn as buildings even when tagged as another kind (a camp's barracks and office blocks), raised in 3D. | ✅ `site-parts.sql`, `parts.ts` (2026-11-21) |
+| 10.81 | A depot whose base isn't mapped (bunkers alone in a forest) shown as one base. | ✅ bases made for groups of buildings (`site_made_base`) (2026-11-21) |
+| 10.82 | Contour heights over imagery as over the map. | ✅ (2026-11-21) |
+| 10.83 | Sites classified better from their names: tax offices, town halls, the CSNJ (military), lunettes (forts); radio stations not made from anonymous masts. | ✅ `site-kinds.sql`, `site-rules.sql`, `sites.sql` (2026-11-21) |
 
 ## 11. Quality
 

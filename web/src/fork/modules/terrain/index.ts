@@ -11,7 +11,7 @@ import { HILLSHADE_SWITCHER_ID, RELIEF_SOURCE, TERRAIN_SOURCE } from '../../core
 import { background, followBackground } from '../../services/background.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { ForkModule } from '../../types.ts'
-import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, LABEL_LAYER, contourLayers } from './contours.ts'
+import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, contourLayers } from './contours.ts'
 import { heightRow } from './details.ts'
 import { contoursKey } from './key.ts'
 import { shadingBefore } from './placement.ts'
@@ -22,8 +22,6 @@ import {
   CONTOURS_SOURCE,
   CONTOURS_SWITCHER_ID,
   CONTOUR_COLOUR,
-  CONTOUR_LABEL_COLOUR,
-  CONTOUR_LABEL_HALO,
   HIGHLIGHT_COLOUR,
   HILLSHADE_LAYER,
   LIGHT_DIRECTIONS,
@@ -117,8 +115,6 @@ const terrain: ForkModule = {
     followBackground(map, HILLSHADE_LAYER, 'hillshade-shadow-color', SHADING_COLOURS.shadows)
     followBackground(map, HILLSHADE_LAYER, 'hillshade-highlight-color', SHADING_COLOURS.highlights)
     for (const id of CONTOUR_LINE_LAYERS) followBackground(map, id, 'line-color', CONTOUR_COLOUR)
-    followBackground(map, LABEL_LAYER, 'text-color', CONTOUR_LABEL_COLOUR)
-    followBackground(map, LABEL_LAYER, 'text-halo-color', CONTOUR_LABEL_HALO)
     addDetailsExtra(heightRow)
   }
 }

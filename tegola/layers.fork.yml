@@ -155,6 +155,11 @@ layers:
       - name: part_what
       - name: base_name
       - name: parts
+      # A building part's height in 3D (metres, or floors).
+      - name: height
+        sql: tags -> 'height'
+      - name: levels
+        sql: tags -> 'building:levels'
     id_field: id
     from: site_tile
     where: >

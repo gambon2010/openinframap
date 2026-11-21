@@ -112,6 +112,11 @@ LANGUAGE sql STABLE SET search_path = public, pg_temp AS $$
             WHEN tags->'government' = 'employment_agency' THEN 'employment'
             WHEN tags->'government' = 'customs' THEN 'customs'
             WHEN tags->'government' IN ('parliament', 'legislative', 'ministry', 'presidency', 'cabinet') THEN 'national'
+            -- Offices tagged no more than government, their names saying what they are.
+            WHEN tags->'name' ~* 'finances publiques|trésorerie|centre des impôts|service des impôts' THEN 'tax'
+            WHEN tags->'name' ~* '^(mairie|h[ôo]tel de ville)\M' THEN 'townhall'
+            -- The armed forces' national service centres (DSNJ).
+            WHEN tags->'name' ~* '^CSNJ\M|service national et de la jeunesse' THEN 'military_office'
             ELSE 'government' END
         WHEN type = 'courthouse' THEN 'courthouse'
         WHEN type = 'prison' THEN 'prison'

@@ -130,9 +130,12 @@ WITH s AS (
     -- Radio, radar and signal towers (the Navy's watchtowers are its sémaphores), and
     -- antennas; not a mobile phone mast standing on military land. What a tower is
     -- used for is in tower:type (man_made=tower or mast + tower:type=communication,
-    -- Issoudun's transmitter); the main value only when there's none.
+    -- Issoudun's transmitter); the main value only when there's none. A
+    -- communication mast only with its operator named (TDF, the army): an anonymous
+    -- one is most often a phone mast (a camp's would make it a radio station).
     SELECT geometry FROM osm_mast
-     WHERE (coalesce(tags->'tower:type', type) IN ('communication', 'radar', 'communications_tower')
+     WHERE (coalesce(tags->'tower:type', type) IN ('radar', 'communications_tower')
+            OR (coalesce(tags->'tower:type', type) = 'communication' AND (type <> 'mast' OR tags ? 'operator'))
             OR (coalesce(tags->'tower:type', type) = 'watchtower' AND tags->'operator' ~* 'marine'))
        AND NOT coalesce(tags->'communication:mobile_phone' = 'yes' OR tags->'operator' ~* 'bouygues|orange|\mSFR\M|\mfree\M', false)
     UNION ALL
