@@ -82,6 +82,10 @@ def test_made_from_the_parts_holding_tiles_merged(tmp_path, monkeypatch):
         return subprocess.CompletedProcess(args, 0)
 
     monkeypatch.setattr(terrain, "pmtiles", fake_pmtiles)
+    flattened = []
+    monkeypatch.setattr(
+        terrain, "flatten_sea", lambda folder, area: flattened.append(area)
+    )
     terrain.make_terrain(tmp_path, "alsace", outline)
 
     cut = [a for a in ran if a[0] == "extract"]
@@ -95,3 +99,5 @@ def test_made_from_the_parts_holding_tiles_merged(tmp_path, monkeypatch):
     ]
     assert (tmp_path / "alsace.terrain.pmtiles").exists()
     assert not list(tmp_path.glob(".alsace.terrain-*"))  # the parts are gone
+    # And its sea flattened, once merged.
+    assert flattened == ["alsace"]

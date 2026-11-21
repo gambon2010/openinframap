@@ -7,6 +7,7 @@ bash scripts/offline-maps.sh, or by build-region.sh.
     uv run --project scripts scripts/offline-maps.py maps            the menu (what's there, add, remove)
     uv run --project scripts scripts/offline-maps.py maps --source ID --yes      add one, no questions
     uv run --project scripts scripts/offline-maps.py zoomed-out --area AREA
+    uv run --project scripts scripts/offline-maps.py terrain-sea --area AREA   the sea flattened in its terrain
     uv run --project scripts scripts/offline-maps.py --help          every command (the menu's downloads
                                                     are commands too: overview, regional,
                                                     detailed, bdortho, basemap)

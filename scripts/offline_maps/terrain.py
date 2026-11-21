@@ -11,7 +11,9 @@ touches, up to zoom 13 (6.6 m in France: enough for the relief and the radio mod
 planned), merged into one file.
 
 It isn't an offline map of its own: it comes with an area's background map
-(extract.py), always."""
+(extract.py), always. Once merged, the sea in it is flattened with the background
+map's land (the backend's background_build/terrain_sea.py: ships measured at sea
+stood as hills)."""
 
 from __future__ import annotations
 
@@ -131,7 +133,14 @@ def make_terrain(folder: Path, area: str, outline: Path) -> None:
     merge(folder, parts, out)
     for part in parts:
         part.unlink(missing_ok=True)
+    flatten_sea(folder, area)
     print(f"{ui.human(out.stat().st_size)} -> {out.name}", file=sys.stderr)
+
+
+def flatten_sea(folder: Path, area: str) -> None:
+    """The sea in an area's terrain flattened (once: the file says when it's done)."""
+    print(f"  flattening the sea in {area}'s terrain", file=sys.stderr)
+    docker.run_backend_module("terrain_sea", folder, area)
 
 
 def cut_out(folder: Path, url: str, outline: Path, part: Path) -> None:
@@ -164,6 +173,12 @@ def merge(folder: Path, parts: list[Path], out: Path) -> None:
             ["merge", *[f"/out/{p.name}" for p in parts], f"/out/{partial.name}"],
         )
     partial.replace(out)
+
+
+def command_terrain_sea(args) -> None:
+    """offline-maps.py terrain-sea --area AREA: the sea flattened in a terrain already
+    downloaded."""
+    flatten_sea(Path(args.maps_dir).resolve(), args.area)
 
 
 def command_terrain(args) -> None:

@@ -35,7 +35,7 @@ from .sources import (
     tile_url,
     worldcover_url,
 )
-from .terrain import command_terrain
+from .terrain import command_terrain, command_terrain_sea
 from .tiles import (
     Ring,
     block_count,
@@ -317,6 +317,13 @@ def main(argv: Iterable[str] | None = None) -> None:
     p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
 
     p = sub.add_parser(
+        "terrain-sea",
+        help="flatten the sea in an area's terrain (one downloaded before this was done)",
+    )
+    p.add_argument("--area", required=True)
+    p.add_argument("--maps-dir", default=OFFLINE_MAPS_DIR)
+
+    p = sub.add_parser(
         "terrain",
         help="an area's terrain (with its background map: for one made before)",
     )
@@ -344,6 +351,7 @@ def run_command(args) -> None:
         "basemap": command_basemap,
         "zoomed-out": command_zoomed_out,
         "terrain": command_terrain,
+        "terrain-sea": command_terrain_sea,
         "sources": command_sources,
         "imagery": command_imagery,
         "summary": command_summary,
