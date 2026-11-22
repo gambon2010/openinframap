@@ -45,7 +45,12 @@ export function startDrag(c: ToolsContext, e: MapMouseEvent) {
       c.dragging = {
         feature: structuredClone(feature),
         layerId: layer.id,
-        resize: { x: centre.x, y: centre.y, distanceAtSize1: Math.hypot(box.right, box.bottom) }
+        // In screen pixels: its layer may be drawn to scale (bigger or smaller now).
+        resize: {
+          x: centre.x,
+          y: centre.y,
+          distanceAtSize1: Math.hypot(box.right, box.bottom) * c.renderer.zoomFactor(feature)
+        }
       }
       return
     }

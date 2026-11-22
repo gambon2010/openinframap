@@ -26,6 +26,8 @@ export interface OutlinerActions {
   zoomToLayer: (layer: UserLayer) => void
   /** The layers' order changed: the map draws them again. */
   reordered: () => void
+  /** The map's zoom now (a layer's symbols to scale start from it). */
+  mapZoom: () => number
   /** An item's right-click menu (map/item-menu.ts: the map's too). */
   itemMenu: (feature: UserFeature, layerId: string) => MenuItem[]
 }

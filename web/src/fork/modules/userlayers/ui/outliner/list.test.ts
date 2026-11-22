@@ -118,7 +118,8 @@ beforeEach(() => {
     importFile: vi.fn(),
     zoomToLayer: vi.fn(),
     reordered: vi.fn(),
-    itemMenu: () => [{ label: 'Rename', run: () => {} }]
+    itemMenu: () => [{ label: 'Rename', run: () => {} }],
+    mapZoom: () => 14
   }
   outliner = new Outliner(store, actions)
   document.body.append(outliner.el, outliner.footer)
@@ -289,6 +290,23 @@ describe('right-click menus', () => {
     expect(menuOf(rowNamed('Units'))).toMatchSnapshot()
     expect(menuOf(rowNamed('Theirs'))).toMatchSnapshot()
     expect(menuOf(rowNamed('Ops'))).toMatchSnapshot()
+  })
+
+  test("a layer's symbols to scale from the zoom now, and back", () => {
+    const { units } = sampleLayers()
+    outliner.draw()
+    const choose = (label: string) => {
+      rowNamed('Units').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+      const entry = [...document.querySelectorAll<HTMLButtonElement>('.oim-context-menu button')].find((b) =>
+        b.textContent?.startsWith(label)
+      )
+      entry!.click()
+      outliner.draw()
+    }
+    choose('Symbols to scale')
+    expect(store.layers.get(units)!.style.scaledAt).toBe(14)
+    choose('Symbols: same size')
+    expect(store.layers.get(units)!.style.scaledAt).toBeUndefined()
   })
 
   test("an item's row: the item's menu (the map's)", () => {

@@ -34,6 +34,9 @@
   border-left: 1px solid var(--oim-grey);
 }
 .oim-ul-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 32px;
   height: 32px;
   padding: 0 6px;
@@ -41,9 +44,28 @@
   background: none;
   font-size: 1.05rem;
 }
-.oim-ul-toolbar-label {
+/* A group's button and its ▾ (the group's other tools), side by side as one. */
+.oim-ul-tool-group {
+  display: inline-flex;
+  align-items: center;
+}
+.oim-ul-tool-more {
+  width: 14px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--oim-radius-small);
+  background: none;
   color: var(--oim-text-color-light);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.oim-ul-tool-more:hover:not(:disabled) {
+  background: var(--oim-grey);
+}
+/* Where new items go: the pencil (as the list's "you draw here"), then the layer. */
+.oim-ul-into {
+  color: var(--oim-text-color-light);
 }
 .oim-ul-target {
   max-width: 11em;
@@ -58,7 +80,7 @@
   position: absolute;
   top: 60px;
   /* Centred like the toolbar above it. */
-  --oim-picker-width: min(560px, calc(100% - var(--oim-top-bar-left, 16px) - 56px));
+  --oim-picker-width: min(680px, calc(100% - var(--oim-top-bar-left, 16px) - 56px));
   left: max(50%, calc(var(--oim-top-bar-left, 16px) + var(--oim-picker-width) / 2));
   z-index: 4;
   display: none;
@@ -77,13 +99,65 @@
 .oim-ul-picker .oim-ul-palette-results {
   max-height: none;
 }
+/* Categories in a column on the left, the symbols on the right. */
+.oim-ul-palette-body {
+  display: grid;
+  grid-template-columns: 11em minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+.oim-ul-palette-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-right: 8px;
+  border-right: 1px solid var(--oim-grey);
+}
+.oim-ul-palette-category {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  color: var(--oim-text-color);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-palette-category:hover:not(:disabled) {
+  background: var(--oim-light-grey);
+}
+.oim-ul-palette-category:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.oim-ul-palette-category small {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-palette-label {
+  color: var(--oim-text-color-light);
+  font-size: 0.85rem;
+}
+/* Equal tiles: the symbol, its name under it, the star in the corner. */
 .oim-ul-picker .oim-ul-symbol-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 2px 8px;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 4px;
 }
-
-/* The measuring tools: a little apart from the drawing ones. */
-.oim-ul-tool-icon.oim-ul-tool-gap {
-  margin-left: 8px;
+.oim-ul-picker .oim-ul-symbol-entry {
+  position: relative;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+.oim-ul-picker .oim-ul-symbol-entry .oim-ul-star {
+  position: absolute;
+  top: 0;
+  right: 0;
 }

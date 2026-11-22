@@ -57,7 +57,10 @@ def test_which_sources_and_datasets_an_import_takes():
     assert wanted_sources(args(), covering) == (set(SOURCES), None)
     # A choice: only its source, only its datasets.
     assert wanted_sources(args(choose="gas"), covering) == ({"fr-agence-ore"}, ["gaz"])
-    assert wanted_sources(args(choose="gas,icpe"), covering)[0] == set(SOURCES)
+    assert wanted_sources(args(choose="gas,icpe"), covering)[0] == {
+        "fr-agence-ore",
+        "fr-georisques-icpe",
+    }
     with pytest.raises(SystemExit, match="Unknown choice"):
         wanted_sources(args(choose="nope"), covering)
     with pytest.raises(SystemExit, match="Unknown source"):

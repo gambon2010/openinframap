@@ -6,7 +6,8 @@
 // Tactical graphics (arrows, phase lines, areas...) are drawn by the C5ISR renderer
 // (graphics.ts) into a second source per layer (user_<id>_g), redrawn when the
 // zoom changes (arrow heads and teeth depend on the scale).
-import { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
+import { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl'
+import { dotColour, zoomFactor } from './scale.ts'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { UserFeature, UserLayer } from '../model/model.ts'
 import { kindOf } from '../kinds/index.ts'
@@ -42,6 +43,14 @@ import {
   sourceId
 } from './layers.ts'
 
+/** A layer switched to scale or back keeps its map layers: their symbols' size and
+ * zooms are set again (the dots' layer comes and goes by itself). */
+function keepScale(map: MapLibreMap, spec: LayerSpecification) {
+  if (spec.type === 'symbol' && spec.layout?.['icon-size'] !== undefined)
+    map.setLayoutProperty(spec.id, 'icon-size', spec.layout['icon-size'])
+  map.setLayerZoomRange(spec.id, spec.minzoom ?? 0, spec.maxzoom ?? 24)
+}
+
 /** A feature as drawn: its properties plus what the map layers need. */
 function drawn(feature: UserFeature, conflict = false): GeoJSON.Feature {
   const p = feature.properties
@@ -53,6 +62,8 @@ function drawn(feature: UserFeature, conflict = false): GeoJSON.Feature {
       copy: undefined,
       fid: feature.id,
       icon: iconName(p),
+      // Its dot when its layer is to scale and zoomed out (scale.ts).
+      dot: dotColour(p),
       copy_key: p.copy ? `${p.copy.source}/${p.copy.sourceLayer}` : null,
       // In conflict with someone else's change (ui/conflicts.ts): marked.
       ...(conflict ? { conflict: true } : {})
@@ -199,6 +210,7 @@ export class Renderer {
           added = true
         }
         map.setLayoutProperty(spec.id, 'visibility', hidden.has(layer.id) ? 'none' : 'visible')
+        keepScale(map, spec)
       }
       specIds.set(layer.id, ids)
     }
@@ -337,7 +349,7 @@ export class Renderer {
     if (!resizable(feature)) return null
     const box = this.iconBox(feature)
     if (!box) return null
-    const { left, top, right, bottom } = scaledBox(box, feature.properties.size ?? 1, OUTLINE_PAD_PX)
+    const { left, top, right, bottom } = scaledBox(box, this.onScreenSize(feature), OUTLINE_PAD_PX)
     const at = pointOf(feature)
     const ring = [
       [left, top],
@@ -398,8 +410,21 @@ export class Renderer {
     if (!resizable(feature)) return null
     const box = this.iconBox(feature)
     if (!box) return null
-    const { right, bottom } = scaledBox(box, feature.properties.size ?? 1)
+    const { right, bottom } = scaledBox(box, this.onScreenSize(feature))
     return this.offsetOnScreen(pointOf(feature), right, bottom)
+  }
+
+  /** How much bigger than its size an item is drawn now: its layer may be to scale
+   * (scale.ts). */
+  zoomFactor(feature: UserFeature): number {
+    for (const layer of this.last?.layers.values() ?? [])
+      if (layer.features.has(feature.id)) return zoomFactor(layer.style.scaledAt, this.map.getZoom())
+    return 1
+  }
+
+  /** Its size on screen: its own, times its layer's scale now. */
+  private onScreenSize(feature: UserFeature): number {
+    return (feature.properties.size ?? 1) * this.zoomFactor(feature)
   }
 
   /** A point `dx`, `dy` screen pixels from another, on the map. */

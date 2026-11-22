@@ -1502,7 +1502,23 @@ default). Counts are France's OSM data in October 2026.
   (`tools/copy-box.ts`; `mapMode` can now take Shift + drag, `boxZoom`). Copied
   buildings are their own kind (`kinds/building.ts`: no handles, not dragged, a
   Buildings group, named areas and lines now labelled on the map). Proposals written:
-  the toolbar and the picker (`docs/plans/toolbar-and-picker.md`).
+  the toolbar and the picker (`docs/plans/archive/toolbar-and-picker.md`).
+- **Toolbar, picker, scale, building numbers** (asked): the toolbar's twelve tools in
+  six buttons, Draw and Measure groups with a ▾ (the shared context menu), icons
+  drawn in `ui/icons.ts`'s style (`ui/tool-icons.ts`; the app's own icons already
+  follow Lucide's look, so the same, drawn here rather than a package); the picker's
+  categories in a column with match counts, symbols as tiles. A layer's symbols to
+  scale (`map/scale.ts`, `style.scaledAt`: halved per zoom level out, up to 8 times
+  in, dots below a quarter). Buildings numbered per commune ("WIS-47", like a gridded
+  reference graphic: bands of 100 m from the north-west, alternating direction),
+  on first request and kept (`building_numbers/`, `userdata.building_ref`, migration
+  004); the communes' outlines and three-letter codes, unique per département, from
+  Etalab (extra data `fr-communes`, IGN Admin Express, 5 m). Wisches: 1,613
+  buildings in 1.2 s; Strasbourg: 45,003 in 15 s, then instant. The route under
+  `/background/` (already passed on by the gate and the dev server). Staff comments
+  on one line (the multi-line field type removed). Plans: indoor maps (OSM's Simple
+  Indoor Tagging: 65,000 rooms in France; maplibre-gl-indoorequal), peer-to-peer
+  layers (sync bundles, then linked installations; CRDTs looked at).
 
 ## Extra data (not from OpenStreetMap)
 

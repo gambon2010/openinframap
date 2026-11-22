@@ -3,7 +3,8 @@
 // imagery and raised in the 3D view (look.ts). Every building from zoom 15; zoomed
 // out (12 to 14) those big enough to see there (fork/core/buildings.ts), all from the
 // background map. Clickable anywhere inside: its details (height, area), and My
-// layers' copy tool or the details' copy button make it an area of your own.
+// layers' copy tool or the details' copy button make it an item of your own. Their
+// numbers ("WIS-47") a layer of their own (numbers.ts).
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { t } from '../../core/i18n.ts'
@@ -18,21 +19,26 @@ import {
 import { ForkModule } from '../../types.ts'
 import { detailsCard } from '../../ui/details.ts'
 import { buildingLayers, followLook } from './look.ts'
+import { followNumbers, numbersLayers, numbersSource } from './numbers.ts'
+import { NUMBERS_LAYER } from './buildings.constants.ts'
 
 let theMap: Map | undefined
 
 const buildings: ForkModule = {
-  layers: buildingLayers,
+  sources: numbersSource,
+  layers: () => [...buildingLayers(), ...numbersLayers()],
 
   switcherGroups: () => [
     new LayerGroup(t('layers.background-map', 'Background map'), [
-      new Layer(BUILDINGS_SWITCHER_ID, t('layers.buildings', 'Buildings'), BUILDINGS_PREFIX, false)
+      new Layer(BUILDINGS_SWITCHER_ID, t('layers.buildings', 'Buildings'), BUILDINGS_PREFIX, false),
+      new Layer(NUMBERS_LAYER, t('layers.building-numbers', 'Building numbers'), NUMBERS_LAYER, false)
     ])
   ],
 
   init: ({ map }) => {
     theMap = map
     followLook(map)
+    followNumbers(map)
   },
 
   popup: {

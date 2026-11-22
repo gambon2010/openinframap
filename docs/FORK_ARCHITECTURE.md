@@ -195,6 +195,7 @@ map/     render.ts (the Renderer: sources, selection, handles; the measurements'
          map's events; its parts in tools/: drawing, dragging, resize, copy,
          copy-box (Shift + drag), selection, sharing tools.types.ts's
          ToolsContext), interactions.ts (hover, right-click, copy / paste),
+         scale.ts (a layer's symbols to scale: their size by zoom, the dots),
          item-menu.ts (an item's right-click menu, the map's and the list's),
          legend.ts
 graphics/ tactical graphics: graphics.ts (the C5ISR renderer: codes, points,
@@ -216,7 +217,8 @@ ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          index.ts builds it from sections.ts, choices.ts a military item's
          dropdowns, controls.ts the rows and inputs),
          outliner/ (the list: index.ts, rows/ item, layer, folder; menus.ts, editing.ts,
-         drag.ts, footer.ts over types.ts's OutlinerContext; filter.ts, order.ts), palette.ts (the picker);
+         drag.ts, footer.ts over types.ts's OutlinerContext; filter.ts, order.ts), palette.ts (the picker), toolbar.ts (the tools in groups) and
+         tool-icons.ts (its icons, drawn as ui/icons.ts's);
          userlayers.css lists the CSS files in order (order matters)
 ```
 
@@ -243,7 +245,10 @@ every route but logging in needs a session):
 - `circuits.py` (names for unnamed circuits, replacing upstream's circuit API);
 - `grid/` (`route.py`: routes over the power grid; `line.py`: where a line goes; `tower.py`), `line_trace/` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
-  (towers numbered along their lines, a build step);
+  (towers numbered along their lines, a build step), `building_numbers/` (buildings
+  numbered per commune, "WIS-47", on first request: `numbering.py` the order,
+  `buildings.py` a commune's buildings from the background map's tiles, `register.py`
+  kept in `userdata.building_ref`, migration 004);
 - `map_data.py` (a map feature's full geometry);
 - `pmtiles_files.py` (the PMTiles files served from `data/map/offline-maps/`: a file open,
   its index cached, `Archive`; the files of one kind in the folder, opened again when
@@ -435,7 +440,8 @@ the schema fingerprint builds and exports carry.
   - `cli.py`: one command per download, `maps`, `tiers` / `summary` (what the map
     is told about the imagery).
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
-  source, and `SOURCES`.
+  source (`communes.py`: France's communes and their short codes, for building
+  numbers), and `SOURCES`.
 - **Exports** (`export-db.sh`, `import-db.sh`) carry the database: a `pg_dump` of
   the `public`, `countries`, `stats`, `extra` and `userdata` schemas and a manifest.
   The restore skips what a fresh database already has (PostGIS, `spatial_ref_sys`,

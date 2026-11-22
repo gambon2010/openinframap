@@ -95,7 +95,7 @@ export class Palette {
   el: HTMLElement
   mode: PaletteMode = 'symbols'
   private search: HTMLInputElement
-  private chips: HTMLElement
+  private categories: HTMLElement
   private frames: HTMLElement
   private planned: HTMLInputElement
   private results: HTMLElement
@@ -113,7 +113,7 @@ export class Palette {
     this.onPick = onPick
     this.personal = personal
     this.search = el('input.oim-ul-palette-search', { type: 'search' }) as HTMLInputElement
-    this.chips = el('.oim-ul-chips')
+    this.categories = el('nav.oim-ul-palette-categories')
     this.frames = el('.oim-ul-frames')
     this.planned = el('input', { type: 'checkbox' }) as HTMLInputElement
     this.results = el('.oim-ul-palette-results')
@@ -122,11 +122,12 @@ export class Palette {
       this.search,
       el(
         '.oim-ul-palette-options',
+        el('span.oim-ul-palette-label', t('userlayers.identity', 'Identity')),
         this.frames,
         el('label.oim-ul-inline', this.planned, t('userlayers.planned', 'Planned'))
       ),
-      this.chips,
-      this.results
+      // Categories on the left, what's in the chosen one on the right.
+      el('.oim-ul-palette-body', this.categories, this.results)
     )
     this.search.oninput = () => this.update()
     this.planned.onchange = () => this.update()
@@ -185,21 +186,31 @@ export class Palette {
     }
   }
 
-  private chipsRow() {
-    this.chips.textContent = ''
-    const chip = (label: string, group: string | undefined) => {
-      const button = el(`button.oim-ul-chip${this.group === group ? '.oim-on' : ''}`, label, {
-        type: 'button'
-      })
+  /** The categories, one per line: first your favourites and recent ones (or, while
+   * searching, everything), then each category, with how many match the search. */
+  private categoriesColumn() {
+    this.categories.textContent = ''
+    const query = this.search.value.trim()
+    const entry = (label: string, group: string | undefined) => {
+      const count = query ? searchCatalogue(query, this.mode, group).length : null
+      const button = el(
+        `button.oim-ul-palette-category${this.group === group ? '.oim-on' : ''}`,
+        el('span', label),
+        count === null ? '' : el('small', String(count)),
+        { type: 'button', disabled: count === 0 }
+      )
       button.onclick = () => {
         this.group = group
         this.update()
       }
       return button
     }
-    this.chips.append(chip(t('userlayers.palette.all', 'All'), undefined))
+    const first = query
+      ? t('userlayers.palette.all', 'All')
+      : t('userlayers.palette.mine', '★ Favourites and recent')
+    this.categories.append(entry(first, undefined))
     for (const name of categoriesFor(this.mode))
-      this.chips.append(chip(t(`userlayers.category.${name}`, name), name))
+      this.categories.append(entry(t(`userlayers.category.${name}`, name), name))
   }
 
   private button(entry: Entry): HTMLElement {
@@ -246,7 +257,7 @@ export class Palette {
   private update() {
     if (!this.render) return
     this.framesRow()
-    this.chipsRow()
+    this.categoriesColumn()
     this.results.textContent = ''
     const query = this.search.value.trim()
     if (!query && !this.group) {

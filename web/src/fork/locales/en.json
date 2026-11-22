@@ -20,7 +20,8 @@
     "trams-and-metro": "Trams and metro",
     "terrain": "Terrain",
     "hillshade": "Hill shading",
-    "contours": "Contour lines"
+    "contours": "Contour lines",
+    "building-numbers": "Building numbers"
   },
   "search": {
     "place": {
@@ -368,7 +369,8 @@
       "favourites": "Favourites",
       "recent": "Recently used",
       "none": "Nothing with that name.",
-      "more": "Showing the first {{n}}: type more to narrow it down."
+      "more": "Showing the first {{n}}: type more to narrow it down.",
+      "mine": "★ Favourites and recent"
     },
     "unfavourite": "Remove from favourites",
     "favourite": "Add to favourites",
@@ -385,7 +387,6 @@
     "save-title": "Send your changes to the database (they can then be played back)",
     "discard": "Discard unsaved changes",
     "discarding": "Discarding",
-    "into": "Into",
     "default-name": "My layer",
     "graphic-unsupported": "\"{{name}}\" can't be drawn yet.",
     "uploading": "Uploading the picture",
@@ -726,7 +727,17 @@
     "name-help": "Its name, in the list and on the map",
     "notes-help": "Your notes: in this card only, never written on the map",
     "reset-size": "Reset size",
-    "size-help": "Change it on the map: Shift + scroll over it, or drag its handle"
+    "size-help": "Change it on the map: Shift + scroll over it, or drag its handle",
+    "scale-off": "Symbols: same size at every zoom",
+    "scale-on": "Symbols to scale (smaller zoomed out)",
+    "tool-group": {
+      "select": "Select",
+      "symbol": "Symbols",
+      "graphic": "Graphics",
+      "draw": "Draw: line, area, marker, picture",
+      "copy": "Copy from the map",
+      "measure": "Measure: distance, area, range rings, line of sight"
+    }
   },
   "tower": {
     "unnamed-line": "a line",

@@ -203,3 +203,15 @@ BEGIN
     GET DIAGNOSTICS removed = ROW_COUNT;
     RETURN removed;
 END $$;
+
+-- French communes: outlines and a short code each ("WIS" for Wisches, unique within
+-- its département), to number buildings per commune (web-backend building_numbers/).
+CREATE TABLE IF NOT EXISTS extra.commune (
+    id bigserial PRIMARY KEY,
+    source text NOT NULL REFERENCES extra.source ON DELETE CASCADE,
+    code text NOT NULL,             -- INSEE code
+    name text NOT NULL,
+    abbreviation text NOT NULL,
+    geometry geometry(MultiPolygon, 3857) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS extra_commune_geometry ON extra.commune USING gist (geometry);

@@ -8,26 +8,49 @@ import { Pick, PaletteMode } from './palette.types.ts'
 import { graphicsLibrary, isAxis, pointCount } from '../graphics/graphics.ts'
 import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
+import { toolIcon } from './tool-icons.ts'
+import { openContextMenuFor } from '../../../ui/context-menu.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
 import { DEFAULT_SIGHT } from '../measure/sight.ts'
 
-/** The map toolbar's tools: [id, glyph, label, key]. */
-export const TOOLS: [string, string, string, string][] = [
-  ['select', '↖', 'Select and move', 'V'],
-  ['symbol', '⬚', 'Symbol', 'S'],
-  ['graphic', '➚', 'Arrow or graphic', 'A'],
-  ['line', '╱', 'Line', 'L'],
-  ['area', '▱', 'Area', 'R'],
-  ['marker', '📍', 'Marker', 'M'],
-  ['image', '🖼', 'Picture', 'P'],
-  ['copy', '⧉', 'Copy from the map', 'C'],
+/** The map toolbar's tools: [id, label, key]; their icons: tool-icons.ts. */
+export const TOOLS: [string, string, string][] = [
+  ['select', 'Select and move', 'V'],
+  ['symbol', 'Symbol', 'S'],
+  ['graphic', 'Arrow or graphic', 'A'],
+  ['line', 'Line', 'L'],
+  ['area', 'Area', 'R'],
+  ['marker', 'Marker', 'M'],
+  ['image', 'Picture', 'P'],
+  ['copy', 'Copy from the map', 'C'],
   // Measuring (kinds/measure.ts): a measurement is an item like the others.
-  ['measure-distance', '📏', 'Measure a distance', 'D'],
-  ['measure-area', '⬠', 'Measure an area', 'E'],
-  ['measure-rings', '◎', 'Range rings', 'O'],
-  ['measure-sight', '👁', 'Line of sight', 'I']
+  ['measure-distance', 'Measure a distance', 'D'],
+  ['measure-area', 'Measure an area', 'E'],
+  ['measure-rings', 'Range rings', 'O'],
+  ['measure-sight', 'Line of sight', 'I']
+]
+
+/** The toolbar's buttons: a tool, or a group of tools sharing one button (its ▾
+ * lists them). */
+interface ToolGroup {
+  id: string
+  label: string
+  tools: string[]
+}
+
+export const TOOL_GROUPS: ToolGroup[] = [
+  { id: 'select', label: 'Select', tools: ['select'] },
+  { id: 'symbol', label: 'Symbols', tools: ['symbol'] },
+  { id: 'graphic', label: 'Graphics', tools: ['graphic'] },
+  { id: 'draw', label: 'Draw: line, area, marker, picture', tools: ['line', 'area', 'marker', 'image'] },
+  { id: 'copy', label: 'Copy from the map', tools: ['copy'] },
+  {
+    id: 'measure',
+    label: 'Measure: distance, area, range rings, line of sight',
+    tools: ['measure-distance', 'measure-area', 'measure-rings', 'measure-sight']
+  }
 ]
 
 export class Toolbar {
@@ -38,6 +61,8 @@ export class Toolbar {
   readonly fileInput: HTMLInputElement
   private palette: Palette
   private ws: Workspace
+  /** Each group's tool used last: its button does that one. */
+  private lastInGroup = new Map<string, string>()
 
   constructor(ws: Workspace) {
     this.ws = ws
@@ -71,6 +96,8 @@ export class Toolbar {
   }
 
   chooseTool(id: string) {
+    const group = TOOL_GROUPS.find((g) => g.tools.includes(id))
+    if (group) this.lastInGroup.set(group.id, id)
     const tools = this.ws.tools
     const again = this.activeToolId() === id && id !== 'select'
     this.paletteMode = null
@@ -163,6 +190,42 @@ export class Toolbar {
     this.ws.update()
   }
 
+  /** A group's button: the tool used last in it (one click); a group of several has
+   * a ▾ listing them all, with their keys (the shared context menu). */
+  private groupButton(group: ToolGroup, active: string, live: boolean): HTMLElement {
+    const shown = group.tools.includes(active) ? active : (this.lastInGroup.get(group.id) ?? group.tools[0])
+    const [id, label, key] = TOOLS.find(([tool]) => tool === shown)!
+    const name = t(`userlayers.tool.${id}`, label)
+    const main = action(toolIcon(id), () => this.chooseTool(id), {
+      title: `${name} (${key})`,
+      active: active === id,
+      className: 'oim-ul-tool-icon'
+    })
+    main.setAttribute('aria-pressed', String(active === id))
+    main.setAttribute('aria-label', name)
+    main.disabled = !live
+    if (group.tools.length === 1) return main
+    const list = el('button.oim-ul-tool-more', '▾', {
+      type: 'button',
+      title: t(`userlayers.tool-group.${group.id}`, group.label),
+      'aria-label': t(`userlayers.tool-group.${group.id}`, group.label),
+      disabled: !live
+    }) as HTMLButtonElement
+    list.onclick = () =>
+      openContextMenuFor(
+        list,
+        group.tools.map((tool) => {
+          const [, toolLabel, toolKey] = TOOLS.find(([each]) => each === tool)!
+          return {
+            label: `${t(`userlayers.tool.${tool}`, toolLabel)}  (${toolKey})`,
+            run: () => this.chooseTool(tool),
+            disabled: tool === active
+          }
+        })
+      )
+    return el('span.oim-ul-tool-group', main, list)
+  }
+
   update() {
     const { store, timeline } = this.ws
     const view = store.view
@@ -175,18 +238,7 @@ export class Toolbar {
     const active = this.activeToolId()
     const tools = el(
       '.oim-ul-toolbar-group',
-      TOOLS.map(([id, glyph, label, key]) => {
-        const b = action(glyph, () => this.chooseTool(id), {
-          title: `${t(`userlayers.tool.${id}`, label)} (${key})`,
-          active: active === id,
-          // The measuring tools: a little apart from the drawing ones.
-          className: `oim-ul-tool-icon${id === 'measure-distance' ? '.oim-ul-tool-gap' : ''}`
-        })
-        b.setAttribute('aria-pressed', String(active === id))
-        b.setAttribute('aria-label', t(`userlayers.tool.${id}`, label))
-        b.disabled = !view.live
-        return b
-      })
+      TOOL_GROUPS.map((group) => this.groupButton(group, active, view.live))
     )
     // Where new items go.
     const target = el(
@@ -212,23 +264,27 @@ export class Toolbar {
       }
       this.ws.newLayer()
     }
-    const undo = action('↶', () => store.undo(), {
+    const undo = action(toolIcon('undo'), () => store.undo(), {
       title: t('userlayers.undo', 'Undo (Ctrl+Z)'),
       disabled: !store.canUndo || !view.live,
       className: 'oim-ul-tool-icon'
     })
-    const redo = action('↷', () => store.redo(), {
+    const redo = action(toolIcon('redo'), () => store.redo(), {
       title: t('userlayers.redo', 'Redo (Ctrl+Shift+Z)'),
       disabled: !store.canRedo || !view.live,
       className: 'oim-ul-tool-icon'
     })
-    const history = action('🕘', () => (inPlayback ? timeline.close() : void timeline.open()), {
-      title: inPlayback
-        ? t('userlayers.history-exit', 'Back to now')
-        : t('userlayers.history-open', 'Play back the history'),
-      active: inPlayback,
-      className: 'oim-ul-tool-icon'
-    })
+    const history = action(
+      toolIcon('history'),
+      () => (inPlayback ? timeline.close() : void timeline.open()),
+      {
+        title: inPlayback
+          ? t('userlayers.history-exit', 'Back to now')
+          : t('userlayers.history-open', 'Play back the history'),
+        active: inPlayback,
+        className: 'oim-ul-tool-icon'
+      }
+    )
     const pending = store.unsavedCount
     const busy = this.ws.busy
     const save = action(
@@ -275,7 +331,12 @@ export class Toolbar {
     )
     bar.append(
       tools,
-      el('.oim-ul-toolbar-group', el('span.oim-ul-toolbar-label', t('userlayers.into', 'Into')), target),
+      el(
+        '.oim-ul-toolbar-group.oim-ul-into',
+        { title: t('userlayers.add-to', 'New items go into this layer') },
+        toolIcon('into', 16),
+        target
+      ),
       el('.oim-ul-toolbar-group', undo, redo, history),
       el('.oim-ul-toolbar-group', save, more)
     )

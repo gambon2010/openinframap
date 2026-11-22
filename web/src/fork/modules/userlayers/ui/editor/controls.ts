@@ -92,11 +92,10 @@ export function detailRow(
 function detailControl(field: Field, value: string, set: (value: string) => void, name: string): HTMLElement {
   if (field.input === 'datetime') return dateControl(value, set, name)
   if (field.input === 'rating') return ratingControl(value, set, name)
-  if (field.input === 'textarea') return textControl('textarea', value, set, name)
   if (field.quantity === 'angle') return angleControl(field, value, set, name)
   if (field.quantity) return amountControl(field, field.quantity, value, set, name)
   if (field.input === 'number') return numberControl(field, value, set, name)
-  return textControl('text', value, set, name)
+  return textControl(value, set, name)
 }
 
 /** A plain number (a quantity): kept only within what's allowed. */
@@ -107,16 +106,8 @@ function numberControl(field: Field, value: string, set: (value: string) => void
   return input
 }
 
-function textControl(
-  kind: 'text' | 'textarea',
-  value: string,
-  set: (value: string) => void,
-  name: string
-): HTMLElement {
-  const input =
-    kind === 'textarea'
-      ? (el('textarea', value, { rows: 2, 'data-field': name }) as HTMLTextAreaElement)
-      : (el('input', { type: kind, value, 'data-field': name }) as HTMLInputElement)
+function textControl(value: string, set: (value: string) => void, name: string): HTMLElement {
+  const input = el('input', { type: 'text', value, 'data-field': name }) as HTMLInputElement
   input.onchange = () => set(input.value.trim())
   return input
 }

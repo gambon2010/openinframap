@@ -2,7 +2,7 @@
 import { el } from 'redom'
 
 export function action(
-  label: string,
+  label: string | Node,
   onclick: () => void,
   options: {
     title?: string

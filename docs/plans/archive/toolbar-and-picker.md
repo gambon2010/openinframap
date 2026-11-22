@@ -1,4 +1,4 @@
-# My layers' toolbar and symbol picker, redone (proposal, 2026-11-22)
+# My layers' toolbar and symbol picker, redone (2026-11-22, built)
 
 Asked (spec 10.101): the toolbar's icons are too generic (a dashed square for
 "Symbol", unicode shapes, emoji), there are twelve tools in a row, and some belong

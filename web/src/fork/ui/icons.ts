@@ -4,7 +4,8 @@
 // print, settings, your account). 24-unit outlines, 2 wide, round ends, as Lucide's.
 const SVG = 'http://www.w3.org/2000/svg'
 
-function icon(paths: string[], size = 16): SVGSVGElement {
+/** A line icon from its paths (24-unit outlines), in the text's colour. */
+export function icon(paths: string[], size = 16): SVGSVGElement {
   const svg = document.createElementNS(SVG, 'svg')
   for (const [name, value] of Object.entries({
     viewBox: '0 0 24 24',

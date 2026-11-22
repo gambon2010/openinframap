@@ -92,6 +92,7 @@ export function layerMenu(
         : t('userlayers.lock', '🔒 Lock (no changes to its items)'),
       run: () => store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } })
     })
+  if (changeable) items.push(scaleEntry(c, layer))
   if (owner && layer.access !== undefined)
     items.push({ label: t('userlayers.share', 'Share…'), run: () => openSharing(layer) })
   // Your own folders: even a layer you may only view goes in one.
@@ -118,6 +119,19 @@ export function layerMenu(
     })
   }
   return items
+}
+
+/** Its symbols to scale (smaller zoomed out, map/scale.ts), as they look at the zoom
+ * now; or back to the same size on screen at every zoom. */
+function scaleEntry(c: OutlinerContext, layer: UserLayer): MenuItem {
+  const scaled = layer.style.scaledAt !== undefined
+  const scaledAt = scaled ? undefined : Math.round(c.actions.mapZoom() * 10) / 10
+  return {
+    label: scaled
+      ? t('userlayers.scale-off', 'Symbols: same size at every zoom')
+      : t('userlayers.scale-on', 'Symbols to scale (smaller zoomed out)'),
+    run: () => c.store.updateLayer(layer.id, { style: { ...layer.style, scaledAt } })
+  }
 }
 
 /** A folder's right-click menu: a new layer in it, rename, lock, export, remove. */

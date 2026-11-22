@@ -84,6 +84,8 @@ export const IMAGERY_URL = `${BACKEND_BASE_URL}/satellite`
 export const ELEVATION_URL = `${BACKEND_BASE_URL}/terrain/elevation`
 // The line of sight between two points (?from=lon,lat&to=lon,lat&observer=&target=).
 export const SIGHT_URL = `${BACKEND_BASE_URL}/terrain/sight`
+/** The numbered buildings in a view ("WIS-47": web-backend building_numbers/). */
+export const BUILDING_NUMBERS_URL = `${BACKEND_BASE_URL}/background/building-numbers`
 
 // Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
 // the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online

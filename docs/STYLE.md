@@ -61,6 +61,14 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   the thing's name. An item's menu is the same on the map and in the list.
 - **Military graphics** are drawn in their identity's colours (the renderer's:
   hostile red, friend black...), never in a colour of their own.
+- **Toolbar icons:** line icons in `ui/icons.ts`'s style (24-unit outlines, 2 wide,
+  round ends, the text's colour; My layers' in `ui/tool-icons.ts`), no emoji or
+  unicode shapes; tools that belong together share one button with a small ▾ (the
+  shared context menu listing them with their keys).
+- **Pickers** (the symbol picker): search at the top, its options under it, the
+  categories in a column on the left and the choices on the right as equal tiles (the
+  picture, its name under it); no hint text, no credits, no tooltip repeating a name
+  written on screen.
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
 - **Where data comes from** (a source, its licence, when it was updated): only in a
   thing's debug info (Settings → Debug), never in its details (`SOURCE_NOTE`,
@@ -190,6 +198,13 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
 - **Leave out clutter the original map leaves out:** small pieces with no name
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).
+
+- **Building numbers** ("WIS-47", `modules/buildings/numbers.ts`): in the map's
+  label style (`text_paint`), 11 px, from zoom 16; where two would overlap, one waits
+  for a closer zoom.
+- **Symbols to scale** (a layer's option, `userlayers/map/scale.ts`): zoomed out past
+  a quarter of their size, small dots of the frame's fill colour (MIL-STD-2525C's
+  light cyan, red, green, yellow) ringed in black.
 
 ## Checking a change
 

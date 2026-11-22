@@ -18,3 +18,11 @@ export const SHADOW_OFFSET: [number, number] = [2, 2]
 export const RAISED_OPACITY = 0.85
 /** A building with no height in the map's data (most houses): about two storeys. */
 export const DEFAULT_HEIGHT_M = 8
+
+/** Building numbers (numbers.ts): their layer's id (the layer switcher's prefix), and
+ * the zoom they're asked for from (a few streets: the backend numbers whole communes,
+ * a handful per view at most). */
+export const NUMBERS_LAYER = 'building_numbers'
+export const NUMBERS_FROM_ZOOM = 16
+/** Over the buildings (-10), under the infrastructure. */
+export const NUMBERS_ZORDER = -9.8

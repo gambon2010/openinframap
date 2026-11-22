@@ -650,7 +650,11 @@ Open data published by network operators. For now that's the French distribution
 networks: every low- and medium-voltage line and street-level substation, and the
 gas distribution pipes (`--only gaz` imports just those) and biomethane injection
 points (`--only biomethane`), plus the classified installations (ICPE, Seveso
-sites among them) from Géorisques (`import fr-georisques-icpe`); from
+sites among them) from Géorisques (`import fr-georisques-icpe`), and the communes'
+outlines to number buildings (`import fr-communes`, 90 MB once: Data layers →
+Background map → **Building numbers**, each building's number within its commune,
+"WIS-47", from zoom 16; a commune is numbered the first time it's shown, a few
+seconds for a city, and the numbers never change for anyone); from
 [Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
 Europe and the border strips of France's neighbours. Switch it on in the layer
 switcher under **Not from OpenStreetMap** (power and gas are separate entries). It's
@@ -756,14 +760,16 @@ on the My layers workspace; click it again to close it. It has two parts:
   layers is the **details** area: the selected item's card, or the details of any
   map feature you click (the last thing clicked). A grid connection, if you have
   one, folds to one line at the bottom ("Route: A → B · 18 km"); click it to unfold.
-- **The toolbar at the top of the map**: the tools, the layer new things go
-  **Into**, undo ↶ / redo ↷, history 🕘 and **Save (n)** (⋯ to discard unsaved
+- **The toolbar at the top of the map**: six tool buttons (Select, Symbol, Graphic,
+  Draw, Copy, Measure; Draw and Measure each hold several tools: the button repeats
+  the one used last, its small ▾ lists them all with their keys), the layer new things
+  go into (after the ✎), undo, redo, history and **Save (n)** (⋯ to discard unsaved
   changes). Each tool has a key:
 
 | Key | Tool |
 |---|---|
 | V | Select and move |
-| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search, categories (units, equipment, incidents...), your favourites (☆ next to any symbol) and recently used; pick friend / hostile / neutral / unknown as frame shapes, and Planned |
+| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search at the top, the identity (friend / hostile / neutral / unknown frames) and Planned under it, the categories in a column on the left (first your favourites, ☆ on any symbol, and recently used; while searching, how many match in each) and the symbols on the right |
 | A | Arrow or graphic: axes, attacks, phase lines, areas, obstacles, tasks such as block or breach |
 | L / R | Line / area: click points, double-click or Enter to finish |
 | M | Marker |
@@ -807,6 +813,12 @@ the next time the map is opened, keeping their width (an unsaved change each: Sa
 **Several at once:** Shift-click items on the map or in the list; the details then
 show one card for all of them (identity, planned / present, move, delete), and each
 change to them is one undo step.
+
+**Symbols to scale** (a layer's right-click menu): its symbols, markers and pictures
+shrink as you zoom out and grow as you zoom in (to 8 times their size), as they look
+at the zoom you switched it on at; zoomed out past a quarter of their size they
+become small dots of their identity's colour. Off at first (the same size at every
+zoom); the setting is the layer's, saved and shared with it.
 
 On the map or in the list: **right-click** an item for its menu (identity,
 planned / present, rename, duplicate, copy, move to another layer, lock, delete); on

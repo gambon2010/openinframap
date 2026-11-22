@@ -45,7 +45,7 @@ export const FIELDS: Field[] = [
   {
     key: 'G',
     label: 'Staff comments',
-    input: 'textarea',
+    input: 'text',
     kinds: [...ALL_SYMBOLS, 'graphic'],
     help: 'Written beside the symbol on the map (unlike Notes, which stay in the card)'
   },

@@ -196,7 +196,7 @@ export class Workspace implements IControl {
       return
     }
     if (mod || e.altKey) return
-    const tool = TOOLS.find(([, , , key]) => key === e.key.toUpperCase())
+    const tool = TOOLS.find(([, , key]) => key === e.key.toUpperCase())
     if (tool) {
       e.preventDefault()
       this.toolbar.chooseTool(tool[0])

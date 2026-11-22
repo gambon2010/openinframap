@@ -2,7 +2,7 @@
 import type { Quantity } from './units.types.ts'
 import { SymbolKind } from './sidc.ts'
 
-export type FieldInput = 'text' | 'textarea' | 'number' | 'datetime' | 'rating'
+export type FieldInput = 'text' | 'number' | 'datetime' | 'rating'
 
 export interface Field {
   /** The modifier letter(s) of the standard. */

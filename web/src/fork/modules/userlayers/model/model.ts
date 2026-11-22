@@ -44,9 +44,9 @@ export interface UserFeature {
 export interface UserLayer {
   id: string
   name: string
-  /** color: of its drawings and markers; folder: its folder before folders were personal (state/personal.ts: the fallback);
-   * locked: its items can't be changed or moved. */
-  style: { locked?: boolean }
+  /** locked: its items can't be changed or moved; scaledAt: its symbols drawn to
+   * scale, as their size says at this zoom (map/scale.ts). */
+  style: { locked?: boolean; scaledAt?: number }
   features: Map<string, UserFeature>
   /** Your access (docs/plans/archive/sync.md): its owner (one you just made: none said),
    * shared with you to modify, or to view (read-only). */

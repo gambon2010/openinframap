@@ -55,7 +55,8 @@ export class Sidebar {
       zoomToLayer: (layer) => this.zoomToAll([...layer.features.values()]),
       // The map draws the layers in the list's order.
       reordered: () => void ws.renderer.render(ws.store.layers, ws.store.hidden),
-      itemMenu: (feature, layerId) => ws.itemMenu?.(feature, layerId) ?? []
+      itemMenu: (feature, layerId) => ws.itemMenu?.(feature, layerId) ?? [],
+      mapZoom: () => ws.map.getZoom()
     })
   }
 

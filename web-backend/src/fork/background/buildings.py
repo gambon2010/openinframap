@@ -50,9 +50,7 @@ def outline(building_id: int, lon: float, lat: float, most: int = 25) -> dict | 
     """A building's whole outline in degrees: its piece in the zoom 15 tile at the
     point, and in each neighbour its piece reaches the edge of (at most `most`
     tiles). None if it isn't there."""
-    n = 2**FULL_ZOOM
-    start = (int((lon + 180) / 360 * n), int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n))
-    todo: list[tuple[int, int]] = [start]
+    todo: list[tuple[int, int]] = [tile_of(lon, lat)]
     seen: set[tuple[int, int]] = set()
     parts: list[BaseGeometry] = []
     while todo and len(seen) < most:
@@ -79,6 +77,14 @@ def outline(building_id: int, lon: float, lat: float, most: int = 25) -> dict | 
     if not parts:
         return None
     return mapping(unary_union(parts))
+
+
+def tile_of(lon: float, lat: float) -> tuple[int, int]:
+    """The zoom 15 tile a point is in."""
+    n = 2**FULL_ZOOM
+    x = int((lon + 180) / 360 * n)
+    y = int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
+    return x, y
 
 
 def area_only(geom: BaseGeometry) -> BaseGeometry:

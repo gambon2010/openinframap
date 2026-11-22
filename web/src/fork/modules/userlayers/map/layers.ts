@@ -2,7 +2,9 @@
 // them): each layer's own (fills, lines, icons, labels), the tactical graphics', the
 // copies' (clones of upstream's layers) and measurements. The selection, draft and
 // placing overlays': overlay-layers.ts.
-import { FilterSpecification, LayerSpecification } from 'maplibre-gl'
+import { DataDrivenPropertyValueSpecification, FilterSpecification, LayerSpecification } from 'maplibre-gl'
+import { dotZoom, scaledIconSize } from './scale.ts'
+import { DOT_RADIUS } from './scale.constants.ts'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserLayer } from '../model/model.ts'
@@ -81,14 +83,16 @@ export function ownLayers(layer: UserLayer): LayerSpecification[] {
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': color, 'line-width': ['coalesce', ['get', 'width'], 3] }
     },
+    ...scaledDots(layer),
     {
       id: `${source}_symbol`,
       type: 'symbol',
       source,
       filter: ['all', POINT, OWN],
+      ...symbolZooms(layer),
       layout: {
         'icon-image': ['coalesce', ['get', 'icon'], ''],
-        'icon-size': ['coalesce', ['get', 'size'], 1],
+        'icon-size': iconSize(layer),
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
         'text-field': ['coalesce', ['get', 'name'], ''],
@@ -123,6 +127,39 @@ export function ownLayers(layer: UserLayer): LayerSpecification[] {
       paint: text_paint
     }
   ] as LayerSpecification[]
+}
+
+/** Its symbols' size: as set, or to scale (scale.ts). */
+function iconSize(layer: UserLayer): DataDrivenPropertyValueSpecification<number> {
+  const scaledAt = layer.style.scaledAt
+  return scaledAt === undefined ? ['coalesce', ['get', 'size'], 1] : scaledIconSize(scaledAt)
+}
+
+/** To scale, its symbols show from the zoom they'd be too small at (dots below). */
+function symbolZooms(layer: UserLayer): { minzoom?: number } {
+  const scaledAt = layer.style.scaledAt
+  return scaledAt === undefined ? {} : { minzoom: dotZoom(scaledAt) }
+}
+
+/** To scale, its symbols as dots of their colour when zoomed out too far to see them. */
+function scaledDots(layer: UserLayer): LayerSpecification[] {
+  const scaledAt = layer.style.scaledAt
+  if (scaledAt === undefined) return []
+  return [
+    {
+      id: `${sourceId(layer.id)}_dot`,
+      type: 'circle',
+      source: sourceId(layer.id),
+      filter: ['all', POINT, OWN] as unknown as FilterSpecification,
+      maxzoom: dotZoom(scaledAt),
+      paint: {
+        'circle-radius': DOT_RADIUS,
+        'circle-color': ['get', 'dot'],
+        'circle-stroke-color': '#000',
+        'circle-stroke-width': 1
+      }
+    }
+  ]
 }
 
 export function graphicLayers(layer: UserLayer, highlighted: string[]): LayerSpecification[] {
