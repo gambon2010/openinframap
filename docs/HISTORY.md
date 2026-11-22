@@ -1466,6 +1466,15 @@ default). Counts are France's OSM data in October 2026.
 - **A line of sight sampled at every pixel** (asked): one sample per terrain pixel at
   the line's latitude (`sample_count`; 40 000 at most, about 250 km at 48° N), instead
   of 4000 at most (23 m apart on a 92 km line): 14 600 samples there, 2 to 4 s.
+- **The item card redone** (asked; docs/plans/archive/item-card-redesign.md): it
+  looked cobbled together (a picture of the item, a title unlike the panels', four
+  kinds of controls, rows of different widths, "+ Add detail" scrolling inside the
+  card, no way to remove a detail, a lone lock button). Now the panels' title bar with
+  a padlock, one form of same-width rows, every choice a dropdown (`choices.ts`),
+  units beside values (`model/units.ts`: speeds, distances, altitudes kept with their
+  unit as the map draws them; directions in degrees, shown in ° or mils), dates back
+  to words when left, × on details, a grouped native dropdown to add one. "Additional
+  information" removed (it printed on the map; no item used it): Notes only.
 
 ## Extra data (not from OpenStreetMap)
 

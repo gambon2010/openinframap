@@ -281,7 +281,6 @@
       "M": "Higher formation",
       "V": "Type",
       "C": "Quantity",
-      "H": "Additional information",
       "G": "Staff comments",
       "F": "Reinforced / reduced",
       "J": "Evaluation rating",
@@ -295,13 +294,11 @@
       "AN": "Attitude"
     },
     "name": "Name",
-    "more-identities": "More…",
     "status": {
       "P": "Present",
       "A": "Planned"
     },
     "add-detail": "Add detail",
-    "notes-placeholder": "Notes…",
     "size-reset": "Normal size",
     "size": "Size",
     "color": "Colour",
@@ -309,9 +306,6 @@
     "s": {
       "appearance": "Appearance"
     },
-    "drag-hint": "Drag it on the map to move it.",
-    "drag-arrow-hint": "Drag the points of its path to move or bend it, and the handle at the arrowhead’s corner to make it wider or narrower.",
-    "drag-points-hint": "Drag its points on the map to change its shape.",
     "duplicate": "Duplicate",
     "delete": "Delete",
     "deselect": "Done",
@@ -723,7 +717,18 @@
     "sight-copied": "Copied",
     "sight-copy-failed": "Copying refused by the browser",
     "sight-key-through-trees": "through trees",
-    "sight-through-trees": "Through trees {{distance}} away: may be seen ({{trees}})"
+    "sight-through-trees": "Through trees {{distance}} away: may be seen ({{trees}})",
+    "identity": "Identity",
+    "condition-planned": "Only for what is present",
+    "drawn-as": "Drawn as",
+    "marked-as": "Marked as",
+    "remove-detail": "Remove",
+    "mixed": "(mixed)",
+    "notes": "Notes",
+    "reset": "Reset",
+    "status-label": "Status",
+    "condition-label": "Condition",
+    "echelon-label": "Echelon"
   },
   "tower": {
     "unnamed-line": "a line",

@@ -1,4 +1,5 @@
 // Fork: the fields of a military symbol's card (fields.ts): its types.
+import type { Quantity } from './units.types.ts'
 import { SymbolKind } from './sidc.ts'
 
 export type FieldInput = 'text' | 'textarea' | 'number' | 'datetime' | 'rating'
@@ -9,8 +10,8 @@ export interface Field {
   label: string
   input: FieldInput
   kinds: SymbolKind[]
-  /** For number fields. */
-  unit?: string
+  /** What it measures: its value is given in a unit chosen beside it (units.ts). */
+  quantity?: Quantity
   help?: string
 }
 

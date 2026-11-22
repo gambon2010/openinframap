@@ -1,195 +1,120 @@
 /* Fork: My layers. The item card (editor.ts). */
 
-/* --- Version 3: the item card (editor.ts) --- */
-.oim-ul-card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 4.2em 8px 8px !important;
-}
-.oim-ul-card-symbol {
-  flex: 0 0 auto;
-  min-width: 36px;
-  font-size: 1.6rem;
-  text-align: center;
-}
-.oim-ul-card-symbol svg {
-  max-width: 64px;
-  max-height: 44px;
-}
-.oim-ul-card-titles {
+/* The item card (editor/), docs/plans/item-card-redesign.md: the details panel's
+   title bar (ui/details.css), one form of rows, each a label, its control and a ×. */
+.oim-ul-card-header .oim-ul-card-titles {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  flex: 1;
 }
-.oim-ul-card-title {
-  width: 100%;
-  padding: 1px 3px;
-  border: 1px solid transparent;
-  border-radius: var(--oim-radius-small);
-  background: transparent;
-  color: var(--oim-text-color);
-  font: inherit;
-  font-size: 1.15rem;
-  font-weight: bold;
+/* The padlock: a title bar button (ui/panel.css), before minimise and close. */
+.oim-ul-card-header .oim-ul-item-lock {
+  position: absolute;
+  top: 0;
+  right: 3.6rem;
+  font-size: 0.95rem;
 }
-.oim-ul-card-title:hover,
-.oim-ul-card-title:focus {
-  border-color: var(--oim-grey);
-  background: #fff;
+.oim-side-panel.oim-info-panel .oim-ul-card-header:has(.oim-ul-item-lock) {
+  padding-right: 5.6rem;
 }
-.oim-ul-card-header .oim-ul-what {
-  padding-left: 4px;
-  color: var(--oim-text-color-light);
-  font-size: 0.8rem;
-}
-.oim-ul-identity {
+.oim-ul-form {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 4px 0 8px;
-  border-bottom: 1px solid var(--oim-grey);
-}
-.oim-ul-identity .oim-ul-frames,
-.oim-ul-identity .oim-ul-chips {
-  margin: 0;
-  align-items: center;
-}
-.oim-ul-identity .oim-ul-frames select {
-  max-width: 7em;
-  font-size: 0.8rem;
-}
-.oim-ul-echelons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-}
-.oim-ul-echelons .oim-ul-chip {
-  min-width: 2.2em;
-  padding: 1px 5px;
-  font-weight: bold;
-  letter-spacing: -1px;
-}
-.oim-ul-identity-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 3px;
-  border-radius: 50%;
-}
-.oim-ul-identity-F {
-  background: #000;
-}
-.oim-ul-identity-H {
-  background: #e00;
-}
-.oim-ul-identity-N {
-  background: #0a0;
-}
-.oim-ul-identity-U {
-  background: #ee0;
-}
-.oim-ul-identity .oim-ul-frame {
-  width: auto;
-  min-width: 34px;
-  padding: 0 4px;
-  font-size: 0.75rem;
-}
-.oim-ul-details {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 0;
+  padding: 2px 0 8px;
 }
 .oim-ul-detail {
   display: grid;
-  grid-template-columns: 9.5em 1fr;
+  grid-template-columns: 7.5em minmax(0, 1fr) 1.4em;
   align-items: center;
   gap: 6px;
   min-height: 28px;
   font-size: 0.88rem;
 }
-/* A grid cell doesn't shrink below its content by default: the date input would
-   push its "Now" button out of the card. */
+/* A grid cell doesn't shrink below its content by default. */
 .oim-ul-detail > * {
-  min-width: 0;
-}
-.oim-ul-detail .oim-ul-unit input {
-  flex: 1;
   min-width: 0;
 }
 .oim-ul-detail-name {
   color: var(--oim-text-color-light);
 }
-.oim-ul-inline-input {
+/* Every control the same: full width, one height, one border. */
+.oim-ul-detail > input:not([type='checkbox'], [type='range'], [type='color']),
+.oim-ul-detail > select,
+.oim-ul-detail > textarea,
+.oim-ul-control > input:not([type='checkbox'], [type='range']),
+.oim-ul-control > select {
   box-sizing: border-box;
   width: 100%;
-  padding: 2px 4px;
-  border: 1px solid transparent;
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid var(--oim-grey);
   border-radius: var(--oim-radius-small);
-  background: transparent;
+  background: #fff;
   color: var(--oim-text-color);
   font: inherit;
 }
-.oim-ul-inline-input:hover,
-.oim-ul-inline-input:focus {
-  border-color: var(--oim-grey);
-  background: #fff;
+.oim-ul-detail > textarea {
+  resize: vertical;
 }
+.oim-ul-detail > input[type='color'] {
+  width: 3em;
+}
+/* A control and what goes with it (a unit, "Now", "Reset"): side by side, the
+   first taking the room. */
+.oim-ul-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-control > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.oim-ul-control > :not(:first-child) {
+  flex: 0 0 auto;
+  width: auto;
+}
+.oim-ul-checks {
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.oim-ul-checks > :first-child {
+  flex: 0 0 auto;
+}
+.oim-ul-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+/* A date in words: clicked, it turns into its input. */
 .oim-ul-detail-value {
-  padding: 2px 4px;
-  border: 1px solid transparent;
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid var(--oim-grey);
   border-radius: var(--oim-radius-small);
-  background: none;
+  background: #fff;
   color: var(--oim-text-color);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
-.oim-ul-detail-value:hover {
-  border-color: var(--oim-grey);
+.oim-ul-row-remove {
+  width: 1.4em;
+  height: 1.4em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--oim-text-color-light);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.oim-ul-row-remove:hover {
+  color: var(--oim-error);
 }
 .oim-ul-add-detail {
-  margin: 2px 0 6px;
-}
-.oim-ul-add-detail > summary {
-  color: #1565c0;
-  font-size: 0.88rem;
-  font-weight: normal;
-}
-.oim-ul-add-detail .oim-ul-menu-items {
-  left: 0;
-  right: auto;
-  width: 280px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-.oim-ul-add-detail h4 {
-  margin: 6px 4px 2px;
-  color: var(--oim-text-color-light);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-}
-.oim-ul-add-field {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 3px 6px;
-  border: 0;
-  border-radius: var(--oim-radius-small);
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-.oim-ul-add-field:hover {
-  background: var(--oim-light-grey);
-}
-.oim-ul-add-field small {
-  color: var(--oim-text-color-light);
-}
-.oim-ul-notes {
-  margin: 4px 0;
-  border-color: var(--oim-grey);
+  color: var(--oim-link);
 }
 .oim-ul-card-footer {
   display: flex;
@@ -218,12 +143,6 @@
 .oim-ul-leg small {
   margin-left: 6px;
   color: var(--oim-dark-grey);
-}
-/* A picture item's photo in the card's header (kinds/image.ts thumbnail). */
-.oim-ul-card-symbol img {
-  max-width: 64px;
-  max-height: 44px;
-  border-radius: 3px;
 }
 /* A line of sight's answer, its profile's button under it. */
 .oim-ul-sight-result {

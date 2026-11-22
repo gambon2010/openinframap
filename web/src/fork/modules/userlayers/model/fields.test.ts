@@ -35,7 +35,7 @@ describe('fields per kind of symbol', () => {
   const keys = (kind: Parameters<typeof fieldsFor>[0]) => fieldsFor(kind).map((f) => f.key)
 
   test('units have a higher formation and movement, not a type', () => {
-    expect(keys('unit')).toEqual(expect.arrayContaining(['T', 'M', 'H', 'G', 'F', 'J', 'W', 'Q', 'Z']))
+    expect(keys('unit')).toEqual(expect.arrayContaining(['T', 'M', 'G', 'F', 'J', 'W', 'Q', 'Z']))
     expect(keys('unit')).not.toContain('V')
   })
 
@@ -81,7 +81,7 @@ describe('the item card', () => {
 
   test('what can still be added, grouped by question', () => {
     const groups = addableFields('unit', {})
-    expect(groups.map(([g]) => g)).toEqual(['what', 'where', 'sure'])
+    expect(groups.map(([g]) => g)).toEqual(['where', 'sure'])
     expect(groups.flatMap(([, fields]) => fields.map((f) => f.key))).not.toContain('M')
     expect(addableFields('unit', { Q: '1', Z: '2' }).find(([g]) => g === 'where')).toBeUndefined()
   })

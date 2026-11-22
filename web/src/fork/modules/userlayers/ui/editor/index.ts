@@ -1,37 +1,27 @@
 // Fork: the card of a selected My layers item, in the left details panel (the
-// sidebar's inspector, docs/plans/my-layers-v3.md). Read first, edit in place:
-// - a header with the symbol (large, live) and its designation;
-// - identity, status, echelon, HQ / task force / dummy as clickable shapes and marks
-//   (they're part of the code: sidc.ts);
-// - the details that matter for its kind, plus any filled in, in plain words
-//   (fields.ts); "+ Add detail" for the rest, by question (who, what, when...);
-// - notes, appearance, layer, duplicate / delete.
+// sidebar's inspector; docs/plans/item-card-redesign.md):
+// - the title bar: its name, what it is and its layer (the lock: inspector.ts);
+// - one form, a label and a control per row: its name, its choices (identity,
+//   status, condition, echelon... as dropdowns: choices.ts), the details that matter
+//   for its kind plus any filled in (fields.ts), "+ Add detail…" for the rest, notes;
+// - what its kind adds, appearance, layer, duplicate / delete.
 // Each change is a change of the feature (undoable, saved with Save, in the history).
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { FeatureProps, UserFeature, UserLayer } from '../../model/model.ts'
-import { IDENTITIES } from '../../model/sidc.constants.ts'
 import { identity, status, symbolKind, withIdentity, withStatus } from '../../model/sidc.ts'
 import { kindOf } from '../../kinds/index.ts'
 import { BulkActions, Card, CardPart, EditorActions } from './types.ts'
-import { MAIN_IDENTITIES } from './constants.ts'
-import { chip, select } from './controls.ts'
-import {
-  appearanceSection,
-  detailsSection,
-  footerSection,
-  headerSection,
-  identitySection,
-  kindSection,
-  notesSection
-} from './sections.ts'
+import { formRow, select } from './controls.ts'
+import { identityOptions, statusOptions } from './choices.ts'
+import { appearanceSection, footerSection, formSection, headerSection, kindSection } from './sections.ts'
 
-export async function buildEditor(
+export function buildEditor(
   feature: UserFeature,
   layer: UserLayer,
   layers: UserLayer[],
   actions: EditorActions
-): Promise<HTMLElement> {
+): HTMLElement {
   const p = feature.properties
   const update = (changes: Partial<FeatureProps>) => actions.update({ ...p, ...changes })
   const itemKind = kindOf(p)
@@ -59,10 +49,8 @@ export async function buildEditor(
     modifiers,
     setModifier
   }
-  await headerSection(card, parts)
-  await identitySection(card, parts)
-  detailsSection(card, parts)
-  notesSection(card, parts)
+  headerSection(card, parts)
+  formSection(card, parts)
   kindSection(card, parts)
   appearanceSection(card, parts)
   footerSection(card, parts)
@@ -81,11 +69,10 @@ export function buildBulkCard(
   parts.push(
     el(
       'div.oim-popup-header.oim-ul-card-header',
-      el('span.oim-ul-card-symbol', '▣'),
       el(
         'div.oim-ul-card-titles',
         el('h3', t('userlayers.n-selected', '{{count}} items selected', { count: items.length })),
-        el('span.oim-ul-what', t('userlayers.bulk-hint', 'Changes below apply to all of them'))
+        el('h4', t('userlayers.bulk-hint', 'Changes below apply to all of them'))
       )
     )
   )
@@ -109,30 +96,30 @@ export function buildBulkCard(
   if (military.length) {
     const setSidc = (change: (sidc: string) => string) =>
       actions.updateEach((p) => (p.sidc ? { ...p, sidc: change(p.sidc) } : null))
+    const shared = (of: (sidc: string) => string) => {
+      const values = new Set(military.map((i) => of(i.feature.properties.sidc!)))
+      return values.size === 1 ? [...values][0] : ''
+    }
+    const mixed: [string, string] = ['', t('userlayers.mixed', '(mixed)')]
     parts.push(
       el(
-        '.oim-ul-identity',
-        el(
-          '.oim-ul-chips',
-          ...MAIN_IDENTITIES.map((id) =>
-            chip(
-              IDENTITIES.find(([c]) => c === id)?.[1] ?? id,
-              military.every((i) => identity(i.feature.properties.sidc!) === id),
-              () => setSidc((s) => withIdentity(s, id))
-            )
+        '.oim-ul-form',
+        formRow(
+          t('userlayers.identity', 'Identity'),
+          select(
+            [mixed, ...identityOptions()],
+            shared(identity),
+            (v) => v && setSidc((s) => withIdentity(s, v)),
+            'bulk-identity'
           )
         ),
-        el(
-          '.oim-ul-chips',
-          chip(
-            t('userlayers.status.P', 'Present'),
-            military.every((i) => status(i.feature.properties.sidc!) !== 'A'),
-            () => setSidc((s) => withStatus(s, 'P'))
-          ),
-          chip(
-            t('userlayers.status.A', 'Planned'),
-            military.every((i) => status(i.feature.properties.sidc!) === 'A'),
-            () => setSidc((s) => withStatus(s, 'A'))
+        formRow(
+          t('userlayers.status-label', 'Status'),
+          select(
+            [mixed, ...statusOptions()],
+            shared((s) => (status(s) === 'A' ? 'A' : 'P')),
+            (v) => v && setSidc((s) => withStatus(s, v)),
+            'bulk-status'
           )
         )
       )

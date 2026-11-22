@@ -45,6 +45,13 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 - **Chosen, on, selected:** class `oim-on`, the map selection's yellow background
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
   buttons when their panel is open: `oim-pressed`.
+- **A form** (My layers' item card, `ui/editor/`): one row per thing, a label in
+  the light text colour on the left (one column width), its control filling the
+  rest, a × at the end of what can be removed (`.oim-ul-detail`, `formRow`). Every
+  choice is a dropdown, on/off things tick boxes, all controls one height and one
+  border; a value with a unit has the unit's dropdown beside it. The title bar says
+  what the thing is, as every panel's; no picture of something already on the map,
+  no hint saying what everyone knows (dragging).
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
 - **Where data comes from** (a source, its licence, when it was updated): only in a
   thing's debug info (Settings → Debug), never in its details (`SOURCE_NOTE`,

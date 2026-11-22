@@ -739,7 +739,7 @@ on the My layers workspace; click it again to close it. It has two parts:
   the terrain and the background map). Click
   points; double-click or Enter to finish; right-click starts again. A measurement
   is saved and shared like any item; drag its points to change it, or type a leg's
-  length on its card (the following legs keep theirs), and 🔒 Lock it on its card
+  length on its card (the following legs keep theirs), and lock it with the padlock in its card's title bar
   so it stays as it is. Click an area's first point (or double-click, or Enter) to
   close it; its outline can't cross itself. Bearings from true, magnetic (compass) or grid
   north: in the list's settings.
@@ -785,16 +785,19 @@ the next time the map is opened, keeping their width (an unsaved change each: Sa
 
 **The item card** (click one of your items):
 
-- at the top, the symbol and its name: click the name to change it;
-- its identity as the actual frames (more in "More…"), Present / Planned, damaged or
-  destroyed, and for units the echelon as its marks (• || X XX...) with HQ, task
-  force and dummy: one click each, the symbol follows;
-- the details that matter for that kind of item (for a unit: higher formation and
-  when it was seen), in plain words ("30 Oct 12:00 · 2 h ago", "B2: usually
-  reliable, probably true"). Click a value to change it. **+ Add detail** adds
-  others (type, quantity, direction, speed, rating, comments...), grouped by
-  question: who, what, when, where, how sure;
-- notes, appearance (size, colour), and at the bottom its layer, Duplicate, Delete.
+- the title bar: its name (or what it is), what it is and its layer, and a padlock
+  to lock it (🔓 unlocked, 🔒 locked: it can't be changed, moved or deleted);
+- one form, a label and a control per row: its name; its identity, status (present,
+  planned), condition (fully capable, damaged, destroyed, full to capacity), how a
+  graphic is drawn, echelon, mobility, each a dropdown; HQ, task force and dummy as
+  tick boxes; the details that matter for its kind (for a unit: higher formation and
+  when it was seen). A speed, distance or altitude has its unit beside it (km/h, kn,
+  mph; m, km, nm; m, ft), a direction degrees or mils; the unit you chose last is
+  kept. A date reads in words ("30 Oct 12:00 · 2 h ago"): click it to change it.
+  **+ Add detail…** adds others (type, quantity, direction, speed, rating,
+  comments...), grouped by question; × removes one added by mistake;
+- notes, appearance (size and Reset, colour), and at the bottom its layer,
+  Duplicate, Delete.
 
 **Several at once:** Shift-click items on the map or in the list; the details then
 show one card for all of them (identity, planned / present, move, delete), and each

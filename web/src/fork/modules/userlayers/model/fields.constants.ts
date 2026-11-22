@@ -18,12 +18,6 @@ export const FIELDS: Field[] = [
   { key: 'V', label: 'Type', input: 'text', kinds: ['equipment'] },
   { key: 'C', label: 'Quantity', input: 'number', kinds: ['equipment'] },
   {
-    key: 'H',
-    label: 'Additional information',
-    input: 'text',
-    kinds: [...ALL_SYMBOLS, 'graphic']
-  },
-  {
     key: 'G',
     label: 'Staff comments',
     input: 'textarea',
@@ -59,14 +53,14 @@ export const FIELDS: Field[] = [
     key: 'Q',
     label: 'Direction of movement',
     input: 'number',
-    unit: '°',
+    quantity: 'angle',
     kinds: ['unit', 'equipment', 'activity']
   },
   {
     key: 'Z',
     label: 'Speed',
     input: 'number',
-    unit: 'km/h',
+    quantity: 'speed',
     kinds: ['unit', 'equipment', 'activity']
   },
   // Geometry (graphics)
@@ -74,6 +68,7 @@ export const FIELDS: Field[] = [
     key: 'X',
     label: 'Altitude / depth',
     input: 'text',
+    quantity: 'altitude',
     kinds: ['graphic'],
     help: 'One value, or "min,max" for airspace'
   },
@@ -81,11 +76,11 @@ export const FIELDS: Field[] = [
     key: 'AM',
     label: 'Width / radius / length',
     input: 'text',
-    unit: 'm',
+    quantity: 'distance',
     kinds: ['graphic'],
     help: 'For corridors, circles and rectangles'
   },
-  { key: 'AN', label: 'Attitude', input: 'number', unit: '°', kinds: ['graphic'] }
+  { key: 'AN', label: 'Attitude', input: 'number', quantity: 'angle', kinds: ['graphic'] }
 ]
 
 export const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
@@ -105,7 +100,6 @@ export const FIELD_GROUP: Record<string, Group> = {
   M: 'who',
   V: 'what',
   C: 'what',
-  H: 'what',
   W: 'when',
   W1: 'when',
   Q: 'where',

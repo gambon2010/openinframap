@@ -85,7 +85,7 @@ export class Inspector {
     this.editorKey = key
     // Keep the focus where it was (each change rebuilds the editor).
     const focused = (document.activeElement as HTMLElement | null)?.getAttribute?.('data-field')
-    const editor = await buildEditor(feature, layer, [...store.layers.values()], {
+    const editor = buildEditor(feature, layer, [...store.layers.values()], {
       update: (properties) => store.updateFeature(layer.id, { ...feature, properties }),
       setGeometry: (geometry) => store.updateFeature(layer.id, { ...feature, geometry }),
       moveTo: (layerId) => store.moveFeature(id, layerId),
@@ -94,7 +94,6 @@ export class Inspector {
       done: () => tools.select(null),
       canEdit: (l) => view.canEdit(l)
     })
-    if (this.editorKey !== key) return // something newer
     const itemLocked = Boolean(feature.properties.locked)
     if (!view.canEditItem(layer, feature)) {
       // A locked layer's items, or a locked item, can be looked at, not changed.
@@ -114,23 +113,23 @@ export class Inspector {
       )
     }
     if (view.canEdit(layer)) {
-      // Lock or unlock this one item (any item, e.g. a measurement to keep as it is).
-      const lock = el(
-        'button.oim-ul-button.oim-ul-item-lock',
-        itemLocked ? t('userlayers.unlock-item', '🔓 Unlock') : t('userlayers.lock-item', '🔒 Lock'),
-        {
-          type: 'button',
-          title: itemLocked
-            ? t('userlayers.unlock-item-title', 'Allow changes to this item again')
-            : t('userlayers.lock-item-title', 'Keep this item from being changed, moved or deleted')
-        }
-      ) as HTMLButtonElement
+      // Lock or unlock this one item (any item, e.g. a measurement to keep as it is):
+      // a padlock in the title bar, before minimise and close.
+      const title = itemLocked
+        ? t('userlayers.unlock-item-title', 'Allow changes to this item again')
+        : t('userlayers.lock-item-title', 'Keep this item from being changed, moved or deleted')
+      const lock = el('button.oim-side-panel-button.oim-ul-item-lock', itemLocked ? '🔒' : '🔓', {
+        type: 'button',
+        title,
+        'aria-label': title,
+        'aria-pressed': String(itemLocked)
+      }) as HTMLButtonElement
       lock.onclick = () =>
         store.updateFeature(layer.id, {
           ...feature,
           properties: { ...feature.properties, locked: itemLocked ? undefined : true }
         })
-      editor.insertBefore(lock, editor.children[1] ?? null)
+      editor.querySelector('.oim-popup-header')?.append(lock)
     }
     panel.show(editor, () => {
       // Closed (×, Esc) or replaced by another feature's details: deselect.

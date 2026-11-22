@@ -3,6 +3,7 @@
 // `modifiers` ({T: "2nd Bn", W: "301200ZOCT26"...}) and drawn around the symbol.
 // Identity, status, echelon and mobility live in the code itself (sidc.ts).
 import { SymbolKind } from './sidc.ts'
+import { joinValue, splitValue } from './units.ts'
 import type { Field, LabelLevel, Group } from './fields.types.ts'
 import {
   FIELDS,
@@ -136,7 +137,10 @@ export function displayValue(key: string, value: string, now = new Date()): stri
   if (key === 'W' || key === 'W1') return dtgText(value, now)
   if (key === 'J') return ratingText(value)
   if (key === 'Q') return compassText(value)
-  if (key === 'Z') return `${value} km/h`
+  if (key === 'Z') {
+    const { amount, unit } = splitValue(value, 'speed')
+    return joinValue(amount, unit)
+  }
   if (key === 'F')
     return value === '+'
       ? 'Reinforced (+)'

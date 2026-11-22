@@ -166,7 +166,8 @@ one is missing.
 
 ```
 model/   what items are: model.ts (Change, UserLayer...), sidc.ts (symbol codes),
-         fields.ts (descriptive fields), labels.ts, the symbol catalogue
+         fields.ts (descriptive fields), units.ts (the units a detail is given in),
+         labels.ts, the symbol catalogue
 state/   store.ts (the Store the UI uses) on top of:
            changes.ts    pure: applying changes, steps, revertFields, differences
            undo.ts       undo / redo, including undo after Save
@@ -210,7 +211,8 @@ measure/ measurements, pure: ticks.ts (marks along a distance), features.ts
 ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          sidebar, inspector (the card), situations, timeline, toast,
          preferences.ts (My layers' part of Settings); editor/ (the card:
-         index.ts builds it from sections.ts, controls.ts the small inputs),
+         index.ts builds it from sections.ts, choices.ts a military item's
+         dropdowns, controls.ts the rows and inputs),
          outliner/ (the list: index.ts, rows/ item, layer, folder; menus.ts, editing.ts,
          drag.ts, footer.ts over types.ts's OutlinerContext; filter.ts, order.ts), palette.ts (the picker);
          userlayers.css lists the CSS files in order (order matters)
