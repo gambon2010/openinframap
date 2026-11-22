@@ -26,6 +26,7 @@ import {
 import { dragTo, endDrag, hoverCursor, startDrag } from './tools/dragging.ts'
 import { keepResize, onWheel } from './tools/resize.ts'
 import { copyAt } from './tools/copy.ts'
+import { dragCopyBox, endCopyBox, startCopyBox } from './tools/copy-box.ts'
 import * as selecting from './tools/selection.ts'
 
 export type { Tool } from './tools.types.ts'
@@ -49,6 +50,7 @@ export class Tools implements ToolsContext {
   readonly renderer: Renderer
   readonly primaryLayers: () => LayerSpecificationWithZIndex[]
   dragging: Dragging | null = null
+  copyBox: ToolsContext['copyBox'] = null
   resizing: Resizing | null = null
   cursor: [number, number] | null = null
   wheelTotal = 0
@@ -84,9 +86,13 @@ export class Tools implements ToolsContext {
     })
     map.on('mousedown', (e) => {
       keepResize(this)
+      startCopyBox(this, e)
       startDrag(this, e)
     })
-    map.on('mouseup', () => endDrag(this))
+    map.on('mouseup', (e) => {
+      endDrag(this)
+      void endCopyBox(this, e)
+    })
     document.addEventListener('keydown', (e) => this.keydown(e))
   }
 
@@ -114,6 +120,8 @@ export class Tools implements ToolsContext {
         name: MODE,
         cursor: 'crosshair',
         doubleClickZoom: !drawing(tool),
+        // The copy tool's Shift + drag is its box (copy-box.ts).
+        boxZoom: tool.mode !== 'copy',
         // Its own keys (keydown below) stop the tool on Escape.
         keydown: (e) => e.key === 'Escape',
         contextmenu: () => cancelDrawing(this),
@@ -220,8 +228,11 @@ export class Tools implements ToolsContext {
     if (this.tool.mode !== 'select') this.map.getCanvas().style.cursor = 'crosshair'
     if (drawing(this.tool)) drawDraft(this, [e.lngLat.lng, e.lngLat.lat])
     else if (this.tool.mode === 'place') drawGhost(this, [e.lngLat.lng, e.lngLat.lat])
-    else if (!this.dragging && this.selected) hoverCursor(this, e)
+    // Only the Select tool moves things: another tool keeps its crosshair over the
+    // selection (copying a building selects it; the cursor said "move").
+    else if (this.tool.mode === 'select' && !this.dragging && this.selected) hoverCursor(this, e)
     dragTo(this, e)
+    dragCopyBox(this, e)
   }
 
   private keydown(e: KeyboardEvent) {

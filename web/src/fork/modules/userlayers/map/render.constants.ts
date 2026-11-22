@@ -26,6 +26,12 @@ export const POLYGON: FilterSpecification = [
   ['literal', ['Polygon', 'MultiPolygon']]
 ]
 
+export const LINE: FilterSpecification = [
+  'in',
+  ['geometry-type'],
+  ['literal', ['LineString', 'MultiLineString']]
+]
+
 export const LINE_OR_POLYGON: FilterSpecification = [
   'in',
   ['geometry-type'],

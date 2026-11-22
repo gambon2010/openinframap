@@ -6,6 +6,7 @@ import { kindOf } from '../../../kinds/index.ts'
 import { featureLabelParts } from '../../../model/labels.ts'
 import { symbolRenderer } from '../../../map/symbols.ts'
 import { graphicsLibrary, graphicsReady } from '../../../graphics/graphics.ts'
+import { withContextMenu } from '../../../../../ui/context-menu.ts'
 import { focusable } from '../widgets.ts'
 import type { OutlinerContext } from '../types.ts'
 
@@ -86,6 +87,7 @@ export function item(c: OutlinerContext, feature: UserFeature, layer: UserLayer)
     e.dataTransfer?.setData('application/x-oim-item', feature.id)
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
   }
+  withContextMenu(row, () => c.actions.itemMenu(feature, layer.id))
   focusable(c, row, `item:${feature.id}`)
   return row
 }

@@ -155,7 +155,7 @@ export class Toolbar {
           { mode: 'copy' },
           t(
             'userlayers.copy-hint',
-            'Click lines, substations, sites... to copy them into the layer. They stay visible when their kind is hidden.'
+            'Click lines, substations, sites, buildings... to copy them into the layer; Shift + drag a box to copy everything in it. Esc to stop.'
           )
         )
         break

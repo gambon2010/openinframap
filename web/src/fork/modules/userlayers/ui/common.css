@@ -1,9 +1,7 @@
 /* Fork: My layers. Shared by My layers' components: buttons, chips, fields, hints, the palette and list basics. (Was the first, version 1 and 2 part of userlayers.css.) */
 
 .oim-ul-hint,
-.oim-ul-credit,
-.oim-ul-step,
-.oim-ul-credit {
+.oim-ul-step {
   font-size: 0.75rem;
 }
 .oim-ul-error {

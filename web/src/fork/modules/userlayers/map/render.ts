@@ -9,6 +9,7 @@
 import { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { UserFeature, UserLayer } from '../model/model.ts'
+import { kindOf } from '../kinds/index.ts'
 import { getLabelLevel } from './symbols.ts'
 import { ensureImage, iconName } from './icons.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
@@ -359,7 +360,8 @@ export class Renderer {
     this.ensureOverlays()
     const shown = feature && !this.inHiddenLayer(feature) ? feature : null
     this.highlightItems(shown ? [shown] : [])
-    const editable = shown !== null && (this.canEditItem?.(shown) ?? true)
+    const reshapable = shown !== null && kindOf(shown.properties).movable !== false
+    const editable = reshapable && (this.canEditItem?.(shown) ?? true)
     const shapes = shown ? (this.outline(shown) ?? selectionFeatures(shown)) : []
     const features = editable ? shapes : withoutHandles(shapes)
     const handle = shown && editable ? this.resizeHandle(shown) : null

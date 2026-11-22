@@ -13,7 +13,7 @@ import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../graphics/graphics.ts'
 import type { PersonalSettings } from '../state/personal.ts'
 import type { Entry, PaletteMode, Pick } from './palette.types.ts'
-import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_LABELS, CATEGORIES } from './palette.constants.ts'
+import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_GLYPHS, CATEGORIES } from './palette.constants.ts'
 
 /** A catalogue code (with * for identity and status) made concrete. */
 export function concreteSidc(code: string, affiliation: string, status: string): string {
@@ -126,14 +126,7 @@ export class Palette {
         el('label.oim-ul-inline', this.planned, t('userlayers.planned', 'Planned'))
       ),
       this.chips,
-      this.results,
-      el(
-        'p.oim-ul-credit',
-        t(
-          'userlayers.palette.credit',
-          'MIL-STD-2525C. Symbols drawn by @syncpoint/signs (as in ODIN), graphics by the C5ISR renderer.'
-        )
-      )
+      this.results
     )
     this.search.oninput = () => this.update()
     this.planned.onchange = () => this.update()
@@ -212,11 +205,10 @@ export class Palette {
   private button(entry: Entry): HTMLElement {
     const [code, name, , geometry] = entry
     const sidc = concreteSidc(code, this.affiliation, this.status())
-    const button = el('button.oim-ul-symbol', { title: name, type: 'button' })
+    // Its name is written beside it (labelled): no tooltip saying it again.
+    const button = el('button.oim-ul-symbol', { 'aria-label': name, type: 'button' })
     if (geometry) {
-      const [glyph, kind] = GEOMETRY_LABELS[geometry]
-      button.textContent = glyph
-      button.title = `${name} (${t(`userlayers.geometry.${geometry}`, kind)})`
+      button.textContent = GEOMETRY_GLYPHS[geometry]
     } else {
       try {
         button.innerHTML = this.render!(sidc, 18)
@@ -286,9 +278,6 @@ export class Palette {
           el('.oim-ul-symbol-grid', ...recent.map((e) => this.labelled(e)))
         )
       }
-      this.results.append(
-        el('p.oim-ul-hint', t('userlayers.palette.pick', 'Search by name, or pick a category above.'))
-      )
       return
     }
     const matches = searchCatalogue(query, this.mode, this.group).filter(

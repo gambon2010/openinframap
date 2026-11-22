@@ -1,10 +1,8 @@
 // Fork: working on My layers' items directly on the map (docs/plans/my-layers-v3.md):
 // - hover: a tooltip with the item's name, type and status;
-// - right-click: a menu (identity, present / planned, duplicate, move to layer,
-//   delete);
+// - right-click: the item's menu (item-menu.ts, the list's too);
 // - double-click: rename (opens the card with the name ready to type);
 // - Ctrl+C / Ctrl+V: copy the selected item, paste it where the pointer is.
-import { t } from '../../../core/i18n.ts'
 import { el } from 'redom'
 import { Map, MapGeoJSONFeature, MapMouseEvent, PointLike } from 'maplibre-gl'
 import { Store } from '../state/store.ts'
@@ -13,8 +11,8 @@ import { Renderer } from './render.ts'
 import { geometryCentre, translateGeometry } from './geometry.ts'
 import { UserFeature } from '../model/model.ts'
 import { featureLabelParts } from '../model/labels.ts'
-import { IDENTITIES } from '../model/sidc.constants.ts'
-import { status, withIdentity, withStatus } from '../model/sidc.ts'
+import { openContextMenu, type MenuItem } from '../../../ui/context-menu.ts'
+import { itemMenu } from './item-menu.ts'
 
 export class Interactions {
   private map: Map
@@ -23,7 +21,6 @@ export class Interactions {
   private renderer: Renderer
   private isOpen: () => boolean
   private tooltip = el('.oim-ul-tooltip')
-  private menu = el('.oim-ul-context')
   private clipboard: UserFeature | null = null
   private pointer: [number, number] | null = null
 
@@ -33,15 +30,11 @@ export class Interactions {
     this.tools = tools
     this.renderer = renderer
     this.isOpen = isOpen
-    map.getContainer().append(this.tooltip, this.menu)
+    map.getContainer().append(this.tooltip)
     map.on('mousemove', (e) => this.hover(e))
     map.on('mouseout', () => this.tooltip.classList.remove('visible'))
     map.on('contextmenu', (e) => this.contextMenu(e))
     map.on('dblclick', (e) => this.rename(e))
-    map.on('movestart', () => this.closeMenu())
-    document.addEventListener('mousedown', (e) => {
-      if (!this.menu.contains(e.target as Node)) this.closeMenu()
-    })
     document.addEventListener('keydown', (e) => this.keydown(e))
   }
 
@@ -90,93 +83,32 @@ export class Interactions {
 
   // --- Right-click menu --------------------------------------------------------------
 
-  private closeMenu() {
-    this.menu.classList.remove('visible')
+  /** An item's right-click menu (item-menu.ts), as the list shows it too. */
+  itemMenu(feature: UserFeature, layerId: string): MenuItem[] {
+    return itemMenu(
+      {
+        store: this.store,
+        rename: (id) => this.focusName(id),
+        duplicate: (f, l) => this.paste(f, l, 'beside'),
+        copy: (f) => (this.clipboard = structuredClone(f))
+      },
+      feature,
+      layerId
+    )
   }
 
+  /** On the map, the menu says which item it's for (the list's row already does). */
   private contextMenu(e: MapMouseEvent) {
     const item = this.itemAt(e.point)
     if (!item || !this.tools.enabled) return
     e.preventDefault()
     e.originalEvent.preventDefault()
     this.tooltip.classList.remove('visible')
-    // Only the quick actions: the item isn't selected (its card stays closed; Rename
-    // opens it).
-    const { feature, layerId } = item
-    const locked = !this.store.view.canEditItem(this.store.layers.get(layerId), feature)
-    const entry = (label: string, onclick: () => void, disabled = false) => {
-      const b = el('button', label, { type: 'button', disabled }) as HTMLButtonElement
-      b.onclick = () => {
-        this.closeMenu()
-        onclick()
-      }
-      return b
-    }
-    const update = (changes: Partial<UserFeature['properties']>) =>
-      this.store.updateFeature(layerId, { ...feature, properties: { ...feature.properties, ...changes } })
-    const items: HTMLElement[] = []
-    const { name, what } = featureLabelParts(feature)
-    items.push(el('h4', name || what))
-    const sidc = feature.properties.sidc
-    if (sidc) {
-      items.push(
-        el(
-          '.oim-ul-context-row',
-          ...['F', 'H', 'N', 'U'].map((id) => {
-            const b = entry(
-              IDENTITIES.find(([c]) => c === id)?.[1] ?? id,
-              () => update({ sidc: withIdentity(sidc, id) }),
-              locked || sidc[1] === id
-            )
-            b.classList.add(`oim-ul-context-${id}`)
-            return b
-          })
-        ),
-        status(sidc) === 'A'
-          ? entry(
-              t('userlayers.make-present', 'Mark as present'),
-              () => update({ sidc: withStatus(sidc, 'P') }),
-              locked
-            )
-          : entry(
-              t('userlayers.make-planned', 'Mark as planned'),
-              () => update({ sidc: withStatus(sidc, 'A') }),
-              locked
-            )
-      )
-    }
-    items.push(
-      entry(t('userlayers.rename', 'Rename'), () => this.focusName(feature.id), locked),
-      entry(t('userlayers.duplicate', 'Duplicate'), () => this.paste(feature, layerId, 'beside')),
-      entry(t('userlayers.copy-item', 'Copy (Ctrl+C)'), () => (this.clipboard = structuredClone(feature)))
-    )
-    const others = [...this.store.layers.values()].filter(
-      (l) => l.id !== layerId && this.store.view.canEdit(l)
-    )
-    if (others.length && !locked) {
-      items.push(
-        el(
-          'details',
-          el('summary', t('userlayers.move-to', 'Move to layer')),
-          ...others.map((l) => entry(l.name, () => this.store.moveFeature(feature.id, l.id)))
-        )
-      )
-    }
-    // Lock or unlock this one item (whoever may change its layer).
-    if (this.store.view.canEdit(this.store.layers.get(layerId))) {
-      items.push(
-        feature.properties.locked
-          ? entry(t('userlayers.unlock-item', '🔓 Unlock'), () => update({ locked: undefined }))
-          : entry(t('userlayers.lock-item', '🔒 Lock'), () => update({ locked: true }))
-      )
-    }
-    items.push(entry(t('userlayers.delete', 'Delete'), () => this.store.deleteFeatures([feature.id]), locked))
-    this.menu.replaceChildren(...items)
-    // Keep it inside the map.
-    const box = this.map.getContainer().getBoundingClientRect()
-    this.menu.style.left = `${Math.min(e.point.x, box.width - 200)}px`
-    this.menu.style.top = `${Math.min(e.point.y, box.height - 260)}px`
-    this.menu.classList.add('visible')
+    const { name, what } = featureLabelParts(item.feature)
+    openContextMenu(e.originalEvent.clientX, e.originalEvent.clientY, [
+      { heading: name || what },
+      ...this.itemMenu(item.feature, item.layerId)
+    ])
   }
 
   // --- Rename, copy and paste --------------------------------------------------------------
@@ -184,10 +116,10 @@ export class Interactions {
   /** Select an item and put the cursor in its name, on the card. */
   private focusName(id: string) {
     this.tools.select(id)
-    // The card is drawn asynchronously (it renders the symbol).
+    // The card is drawn once the selection's change has gone round.
     let tries = 0
     const focus = () => {
-      const input = document.querySelector<HTMLInputElement>('.oim-ul-card-title')
+      const input = document.querySelector<HTMLInputElement>('.oim-ul-editor input[data-field="title"]')
       if (input && !input.disabled) {
         input.focus()
         input.select()
@@ -235,7 +167,6 @@ export class Interactions {
   private keydown(e: KeyboardEvent) {
     if (!this.isOpen() || !this.tools.enabled) return
     if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return
-    if (e.key === 'Escape') this.closeMenu()
     if (!(e.ctrlKey || e.metaKey)) return
     const key = e.key.toLowerCase()
     if (key === 'c' && this.tools.selected) {

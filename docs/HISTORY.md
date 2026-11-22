@@ -1489,6 +1489,20 @@ default). Counts are France's OSM data in October 2026.
   unreadable there, the card and the timeline say when); "Staff comments" removed
   (printed on the map like "Additional information"; no item used it): Notes only;
   the unit dropdown's tooltip says the number isn't converted.
+- **Third round** (asked): Staff comments back (it is written on the map beside the
+  symbol, unlike Notes); one item menu (`map/item-menu.ts`) for the map and the list,
+  through the shared context menu (the map's own menu and its CSS removed); the layer
+  and folder menus without their title; graphics coloured by identity, the renderer's
+  (a colour set on a graphic contradicted it: a hostile area drawn black); the symbol
+  picker's hint, credit (now in LOCAL_DEVELOPMENT.md) and name-repeating tooltips
+  removed (`GEOMETRY_GLYPHS`). **Bugs:** the copy tool's cursor turned into "move"
+  over the building just copied (it's selected), so it looked like the select tool
+  and clicks copied more (test in `tools.test.ts`); Rename from the map's menu found
+  no name field since the card was redone. Copying many: Shift + drag a box
+  (`tools/copy-box.ts`; `mapMode` can now take Shift + drag, `boxZoom`). Copied
+  buildings are their own kind (`kinds/building.ts`: no handles, not dragged, a
+  Buildings group, named areas and lines now labelled on the map). Proposals written:
+  the toolbar and the picker (`docs/plans/toolbar-and-picker.md`).
 
 ## Extra data (not from OpenStreetMap)
 

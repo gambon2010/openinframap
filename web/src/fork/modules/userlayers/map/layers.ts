@@ -6,7 +6,15 @@ import { FilterSpecification, LayerSpecification } from 'maplibre-gl'
 import { LayerSpecificationWithZIndex } from '../../../../style/types.ts'
 import { font, text_paint } from '../../../../style/common.ts'
 import { DEFAULT_COLOR, UserLayer } from '../model/model.ts'
-import { HIGHLIGHT, LINE_OR_POLYGON, MEASURE_LABEL_LAYOUT, OWN, POINT, POLYGON } from './render.constants.ts'
+import {
+  HIGHLIGHT,
+  LINE,
+  LINE_OR_POLYGON,
+  MEASURE_LABEL_LAYOUT,
+  OWN,
+  POINT,
+  POLYGON
+} from './render.constants.ts'
 
 export function sourceId(layerId: string) {
   return `user_${layerId}`
@@ -89,6 +97,28 @@ export function ownLayers(layer: UserLayer): LayerSpecification[] {
         'text-offset': [0, 1.6],
         'text-anchor': 'top',
         'text-optional': true
+      },
+      paint: text_paint
+    },
+    // A named area or line: its name in it, or along it (a renamed building).
+    {
+      id: `${source}_area_name`,
+      type: 'symbol',
+      source,
+      filter: ['all', POLYGON, OWN, ['has', 'name']],
+      layout: { 'text-field': ['get', 'name'], 'text-font': font, 'text-size': 12 },
+      paint: text_paint
+    },
+    {
+      id: `${source}_line_name`,
+      type: 'symbol',
+      source,
+      filter: ['all', LINE, OWN, ['has', 'name']],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': font,
+        'text-size': 12,
+        'symbol-placement': 'line'
       },
       paint: text_paint
     }

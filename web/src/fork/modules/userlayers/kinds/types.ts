@@ -45,7 +45,7 @@ export interface ItemKind {
   coloured?: boolean
   /** As a line or area: its line width can be set. */
   lineWidth?: boolean
-  /** It can be dragged on the map (default yes). */
+  /** It can be dragged or reshaped on the map (default yes); if not, no handles. */
   movable?: boolean
   /** Only its points can be dragged, not the whole item (a line of sight: it's
    * placed by where one stands and what one looks at). */

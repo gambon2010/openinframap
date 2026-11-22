@@ -768,7 +768,7 @@ on the My layers workspace; click it again to close it. It has two parts:
 | L / R | Line / area: click points, double-click or Enter to finish |
 | M | Marker |
 | P | Picture: your own image or icon |
-| C | Copy from the map: power lines, substations, sites... drawn like the originals, and still shown when you hide the grid |
+| C | Copy from the map: power lines, substations, sites, buildings... (click one, or **Shift + drag** a box to copy everything in it); copies are drawn like the originals and still shown when you hide the grid; a building keeps its shape (no handles, can't be dragged), goes under **Buildings** in the list and shows its name if you give it one |
 
 Esc stops a tool. **Ctrl+Z** undoes the last change and **Ctrl+Shift+Z** redoes
 it. Undo goes on past a Save: a saved change isn't removed from the server, undoing
@@ -808,8 +808,9 @@ the next time the map is opened, keeping their width (an unsaved change each: Sa
 show one card for all of them (identity, planned / present, move, delete), and each
 change to them is one undo step.
 
-On the map: hover an item to see what it is; **right-click** it for a quick menu
-(identity, planned / present, rename, duplicate, move to another layer, delete);
+On the map or in the list: **right-click** an item for its menu (identity,
+planned / present, rename, duplicate, copy, move to another layer, lock, delete); on
+the map, hover an item to see what it is;
 **double-click** it to rename it; **Ctrl+C / Ctrl+V** copy it and paste it where
 the pointer is. Drag a symbol to move it; drag the round handle at a picture's,
 symbol's or marker's corner to resize it.
@@ -823,6 +824,12 @@ Changes are kept in your browser until you press **Save**, which stores them in 
 database. **🕘** opens a timeline at the bottom of the map that steps through every
 saved change and says what changed. Rebuilding or importing a region keeps your
 layers.
+
+**Credits:** military symbols by [@syncpoint/signs](https://github.com/syncpoint/signs)
+(as in ODIN), tactical graphics by the C5ISR renderer (mil-sym-ts), both MIL-STD-2525C.
+Graphics are drawn in their identity's colours (hostile red...): they have no colour
+of their own to set.
+
 
 ## Updating the data
 

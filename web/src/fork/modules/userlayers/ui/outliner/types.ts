@@ -1,5 +1,6 @@
 // Fork: My layers' list (outliner/index.ts): its filters, what it asks the workspace
 // to do, and a name being typed in place.
+import type { MenuItem } from '../../../../ui/context-menu.ts'
 import type { UserFeature, UserLayer } from '../../model/model.ts'
 import type { Format } from '../../io/formats.ts'
 import type { Store } from '../../state/store.ts'
@@ -25,6 +26,8 @@ export interface OutlinerActions {
   zoomToLayer: (layer: UserLayer) => void
   /** The layers' order changed: the map draws them again. */
   reordered: () => void
+  /** An item's right-click menu (map/item-menu.ts: the map's too). */
+  itemMenu: (feature: UserFeature, layerId: string) => MenuItem[]
 }
 
 /** A name being typed in place. */
@@ -48,6 +51,7 @@ export type ItemGroup =
   | 'measurements'
   | 'drawings'
   | 'pictures'
+  | 'buildings'
   | 'copies'
 
 /** What the list's parts (rows/, menus.ts, editing.ts, drag.ts, footer.ts) share:

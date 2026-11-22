@@ -4,7 +4,6 @@
 // (sidc.ts).
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
-import { IDENTITIES } from '../../model/sidc.constants.ts'
 import {
   MOBILITIES,
   identity,
@@ -20,7 +19,8 @@ import { controlPoints } from '../../map/geometry.ts'
 import { variantsOf, withKey } from '../../graphics/variants.ts'
 import { axisWidth } from '../../graphics/graphics.ts'
 import { Card } from './types.ts'
-import { CONDITIONS, ECHELON_MARKS, IDENTITY_ICONS, MAIN_IDENTITIES } from './constants.ts'
+import { CONDITIONS, ECHELON_MARKS } from './constants.ts'
+import { identityOptions } from '../../model/labels.ts'
 import { checkbox, formRow, select } from './controls.ts'
 
 /** The rows of a military item's choices (nothing for other items). */
@@ -35,17 +35,6 @@ export function choiceRows(c: Card): HTMLElement[] {
   if (kind === 'unit') rows.push(echelonRow(sidc, setSidc), marksRow(sidc, setSidc))
   if (kind === 'equipment' && sidc[2] === 'G') rows.push(mobilityRow(sidc, setSidc))
   return rows
-}
-
-/** Every identity in one list, the four common ones first, each with its frame's
- * shape and colour (a dropdown's lines hold text only: emoji). */
-export function identityOptions(): [string, string][] {
-  const main = MAIN_IDENTITIES.map((id) => IDENTITIES.find(([code]) => code === id)!)
-  const others = IDENTITIES.filter(([code]) => !MAIN_IDENTITIES.includes(code))
-  return [...main, ...others].map(([code, label]) => [
-    code,
-    `${IDENTITY_ICONS[code]}  ${t(`userlayers.affiliation.${code}`, label)}`
-  ])
 }
 
 function identityRow(sidc: string, setSidc: (next: string) => void): HTMLElement {

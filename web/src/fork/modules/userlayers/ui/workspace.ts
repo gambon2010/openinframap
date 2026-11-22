@@ -8,6 +8,8 @@
 //   (timeline.ts) and the banner while a situation is shown (situations.ts);
 // - the keyboard shortcuts.
 // What's shown and what may be changed is the store's view (state/view.ts).
+import type { UserFeature } from '../model/model.ts'
+import type { MenuItem } from '../../../ui/context-menu.ts'
 import { el } from 'redom'
 import { IControl, Map } from 'maplibre-gl'
 import { t } from '../../../core/i18n.ts'
@@ -41,6 +43,9 @@ export class Workspace implements IControl {
   readonly sidebar: Sidebar
   readonly situations: Situations
   readonly timeline: Timeline
+  /** An item's right-click menu, given by index.ts once the map's interactions exist
+   * (map/item-menu.ts). */
+  itemMenu?: (feature: UserFeature, layerId: string) => MenuItem[]
   private toast: Toast
   private inspector: Inspector
   private conflicts: ConflictWindow

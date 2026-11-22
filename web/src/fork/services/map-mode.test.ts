@@ -4,14 +4,17 @@ import { mapMode } from './map-mode.ts'
 function fakeMap() {
   const handlers: Record<string, (e: unknown) => void> = {}
   const zoom = { enabled: true, enable: () => (zoom.enabled = true), disable: () => (zoom.enabled = false) }
+  const box = { enabled: true, enable: () => (box.enabled = true), disable: () => (box.enabled = false) }
   const canvas = { style: { cursor: '' } }
   return {
     handlers,
     zoom,
+    box,
     canvas,
     map: {
       on: (name: string, h: (e: unknown) => void) => (handlers[name] = h),
       doubleClickZoom: zoom,
+      boxZoom: box,
       getCanvas: () => canvas
     }
   }
@@ -92,5 +95,14 @@ describe('whose click it is', () => {
     expect(mapMode.takes({} as never)).toBe(true) // a tool has the map
     mapMode.leave('measure')
     expect(mapMode.takes({} as never)).toBe(false)
+  })
+
+  test('a mode may take Shift + drag (a box), given back when it ends', () => {
+    const { map, box } = fakeMap()
+    mapMode.install(map as never, { handleClick: vi.fn() } as never)
+    mapMode.enter({ name: 'copy', boxZoom: false })
+    expect(box.enabled).toBe(false)
+    mapMode.leave('copy')
+    expect(box.enabled).toBe(true)
   })
 })

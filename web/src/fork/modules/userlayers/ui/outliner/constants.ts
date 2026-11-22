@@ -31,6 +31,7 @@ export const ITEM_GROUPS: [ItemGroup, string][] = [
   ['other-graphics', 'Other graphics'],
   ['measurements', 'Measurements'],
   ['drawings', 'Drawings and markers'],
+  ['buildings', 'Buildings'],
   ['pictures', 'Pictures'],
   ['copies', 'Copies of map features']
 ]

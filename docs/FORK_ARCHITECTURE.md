@@ -182,7 +182,7 @@ state/   store.ts (the Store the UI uses) on top of:
                          canEdit(layer) is the one "may this be changed now?"
            playback.ts   the saved history, step by step; api.ts the backend
 kinds/   the kinds of item, one file each (symbol, graphic, image, marker,
-         drawing, measure, copy); types.ts says what a kind defines, index.ts lists them
+         drawing, building, measure, copy); types.ts says what a kind defines, index.ts lists them
          and has kindOf(properties)
 map/     render.ts (the Renderer: sources, selection, handles; the measurements'
          features in render-measures.ts, with the lines of sight's answers; the
@@ -193,8 +193,10 @@ map/     render.ts (the Renderer: sources, selection, handles; the measurements'
          boxes), symbols.ts (drawing the images), icons.ts (adding them to the
          map, by the kinds' prefixes), tools.ts (what a click does: wires the
          map's events; its parts in tools/: drawing, dragging, resize, copy,
-         selection, sharing tools.types.ts's ToolsContext), interactions.ts (hover,
-         right-click, copy / paste), legend.ts
+         copy-box (Shift + drag), selection, sharing tools.types.ts's
+         ToolsContext), interactions.ts (hover, right-click, copy / paste),
+         item-menu.ts (an item's right-click menu, the map's and the list's),
+         legend.ts
 graphics/ tactical graphics: graphics.ts (the C5ISR renderer: codes, points,
          squaring), labels.ts (plain labels, English/French), variants.ts (two
          versions of one graphic), svg.ts (drawn small, for the legend)
@@ -530,7 +532,7 @@ from an older export catches up the same way.
    registry (unique ids and image prefixes, an icon only with images).
 
 **A tool that takes the map over** (clicks, right-click, keys, the cursor):
-`mapMode.enter({ name, cursor?, doubleClickZoom?, click?, dblclick?, contextmenu?,
+`mapMode.enter({ name, cursor?, doubleClickZoom?, boxZoom?, click?, dblclick?, contextmenu?,
 mousemove?, keydown?, exit? })` from `services/map-mode.ts`, and `mapMode.leave(name)`
 when done. Escape and other tools end it: tidy up in `exit`. Meanwhile clicks on
 map features don't open their details. Example: My layers' tools

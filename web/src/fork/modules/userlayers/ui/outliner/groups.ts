@@ -1,7 +1,7 @@
 // Fork: a layer's items in the list, sorted into groups that fold (ui/outliner):
 // by side: friendly units and graphics, hostile units and graphics, neutral and
-// unknown units and graphics; then measurements, drawings and markers, pictures,
-// copies of map features. Empty groups aren't shown. Inside a group: what's
+// unknown units and graphics; then measurements, drawings and markers, buildings,
+// pictures, copies of map features. Empty groups aren't shown. Inside a group: what's
 // present first, planned at the end; then by shape (arrows, lines, areas, points),
 // then by type (all the attack arrows one after the other), then by name. Pure.
 import { UserFeature } from '../../model/model.ts'
@@ -33,6 +33,8 @@ export function groupOf(feature: UserFeature): ItemGroup {
       return 'measurements'
     case 'image':
       return 'pictures'
+    case 'building':
+      return 'buildings'
     case 'copy':
       return 'copies'
     default:

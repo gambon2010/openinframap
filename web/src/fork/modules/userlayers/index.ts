@@ -36,7 +36,8 @@ const userlayers: ForkModule = {
     const tools = new Tools(map, store, renderer, primaryLayers)
     const workspace = new Workspace(map, store, tools, renderer)
     map.addControl(workspace, 'top-right')
-    new Interactions(map, store, tools, renderer, () => workspace.isOpen)
+    const interactions = new Interactions(map, store, tools, renderer, () => workspace.isOpen)
+    workspace.itemMenu = (feature, layerId) => interactions.itemMenu(feature, layerId)
 
     // Clicks My layers handles (its features, or a tool in use) don't open
     // upstream's info popups.

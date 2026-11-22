@@ -69,7 +69,7 @@ export function layerMenu(
 ): MenuItem[] {
   const store = c.store
   const locked = Boolean(layer.style.locked)
-  const items: MenuItem[] = [{ heading: layer.name }]
+  const items: MenuItem[] = []
   if (changeable) {
     items.push({
       label: t('userlayers.draw-here', 'Draw into this layer'),
@@ -130,7 +130,7 @@ export function folderMenu(
 ): MenuItem[] {
   const store = c.store
   const live = store.view.live
-  const items: MenuItem[] = [{ heading: `📁 ${folder}` }]
+  const items: MenuItem[] = []
   if (live) {
     items.push(
       {

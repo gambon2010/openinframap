@@ -3,7 +3,7 @@
 /** What a feature in a user layer is. Copies of map features keep their original
  * properties too, so they're drawn like the original. */
 export interface FeatureProps {
-  kind: 'symbol' | 'graphic' | 'image' | 'marker' | 'drawing' | 'copy' | 'measure'
+  kind: 'symbol' | 'graphic' | 'image' | 'marker' | 'drawing' | 'building' | 'copy' | 'measure'
   name?: string
   /** symbol, graphic: its MIL-STD-2525C code (symbols drawn by @syncpoint/signs,
    * graphics by the C5ISR renderer from the control points in the geometry). */

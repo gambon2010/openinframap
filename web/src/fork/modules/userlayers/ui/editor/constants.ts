@@ -17,22 +17,6 @@ export const ECHELON_MARKS: [string, string, string][] = [
   ['K', 'XXXX', 'Army']
 ]
 
-export const MAIN_IDENTITIES = ['F', 'H', 'N', 'U']
-
-/** Each identity as its frame: friends a blue rectangle, hostiles a red diamond,
- * neutrals a green square, the unknown yellow (MIL-STD-2525C's shapes and colours). */
-export const IDENTITY_ICONS: Record<string, string> = {
-  P: '🟨',
-  U: '🟨',
-  A: '🟦',
-  F: '🟦',
-  N: '🟩',
-  S: '♦️',
-  H: '♦️',
-  J: '♦️',
-  K: '♦️'
-}
-
 export const CONDITIONS: [string, string][] = [
   ['C', 'Fully capable'],
   ['D', 'Damaged'],

@@ -18,6 +18,8 @@ export interface MapMode {
   cursor?: string
   /** false: a double-click is the mode's (finishing a line), not a zoom. */
   doubleClickZoom?: boolean
+  /** false: Shift + drag is the mode's (a box to copy what's in it), not a zoom. */
+  boxZoom?: boolean
   click?(e: MapMouseEvent): void
   dblclick?(e: MapMouseEvent): void
   /** Right-click (the browser's menu doesn't open while a mode has one). */
@@ -40,6 +42,7 @@ function end() {
   if (map) {
     map.getCanvas().style.cursor = ''
     map.doubleClickZoom.enable()
+    map.boxZoom.enable()
   }
   mode.exit?.()
 }
@@ -87,6 +90,8 @@ export const mapMode = {
       map.getCanvas().style.cursor = mode.cursor ?? ''
       if (mode.doubleClickZoom === false) map.doubleClickZoom.disable()
       else map.doubleClickZoom.enable()
+      if (mode.boxZoom === false) map.boxZoom.disable()
+      else map.boxZoom.enable()
     }
   },
 

@@ -323,7 +323,8 @@
       "measure-distance": "distance",
       "measure-area": "measured area",
       "measure-rings": "range rings",
-      "measure-sight": "line of sight"
+      "measure-sight": "line of sight",
+      "building": "building"
     },
     "changed": {
       "moved": "moved"
@@ -360,21 +361,19 @@
     "no-layers": "No layer yet: pick a tool in the toolbar above the map, a layer is made for you.",
     "planned": "Planned",
     "palette": {
-      "credit": "MIL-STD-2525C. Symbols drawn by @syncpoint/signs (as in ODIN), graphics by the C5ISR renderer.",
       "search": "Search symbols (fire, hospital, infantry...)",
       "search-graphics": "Search graphics (axis, phase line, block...)",
       "loading": "Loading symbols...",
       "all": "All",
       "favourites": "Favourites",
       "recent": "Recently used",
-      "pick": "Search by name, or pick a category above.",
       "none": "Nothing with that name.",
       "more": "Showing the first {{n}}: type more to narrow it down."
     },
     "unfavourite": "Remove from favourites",
     "favourite": "Add to favourites",
     "title": "My layers",
-    "copy-hint": "Click lines, substations, sites... to copy them into the layer. They stay visible when their kind is hidden.",
+    "copy-hint": "Click lines, substations, sites, buildings... to copy them into the layer; Shift + drag a box to copy everything in it. Esc to stop.",
     "add-to": "New items go into this layer",
     "undo": "Undo (Ctrl+Z)",
     "redo": "Redo (Ctrl+Shift+Z)",
@@ -431,14 +430,14 @@
     "copy-item": "Copy (Ctrl+C)",
     "copy": {
       "already": "Already in this layer.",
-      "done": "Copied. Click more features to copy them, or Esc to stop.",
-      "building": "Building",
+      "done": "Copied. Click more, Shift + drag a box for many, or Esc to stop.",
       "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 12 or closer)",
       "into": "Copy into “{{layer}}”",
       "into-new": "Copy into My layers",
       "into-help": "Into the layer you draw into (My layers)",
       "already-in": "Already in “{{layer}}”",
-      "copied-into": "Copied into “{{layer}}”"
+      "copied-into": "Copied into “{{layer}}”",
+      "box-done": "Copied {{count}} (any already in the layer left as they were)."
     },
     "echelon": {
       "-": "None",
@@ -508,11 +507,6 @@
       "Obstacles": "Obstacles",
       "Fire support": "Fire support",
       "Logistics": "Logistics"
-    },
-    "geometry": {
-      "L": "Line",
-      "A": "Area",
-      "M": "Shape from points"
     },
     "move-to-folder-menu": "Move to folder",
     "new-folder-dots": "New folder…",
@@ -619,7 +613,8 @@
       "measure-distance": "Distance",
       "measure-area": "Measured area",
       "measure-rings": "Range rings",
-      "measure-sight": "Line of sight"
+      "measure-sight": "Line of sight",
+      "building": "Building"
     },
     "size-now": "Size: {{n}} %",
     "width-now": "Width: {{n}} %",

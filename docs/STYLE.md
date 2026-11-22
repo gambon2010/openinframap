@@ -56,6 +56,11 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   highlighted without its handles; the padlock is part of the title bar. The title bar says
   what the thing is, as every panel's; no picture of something already on the map,
   no hint saying what everyone knows (dragging).
+- **Right-click menus:** the shared context menu (`ui/context-menu.ts`) everywhere.
+  In a list it has no title (the row says what it's for); on the map it starts with
+  the thing's name. An item's menu is the same on the map and in the list.
+- **Military graphics** are drawn in their identity's colours (the renderer's:
+  hostile red, friend black...), never in a colour of their own.
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
 - **Where data comes from** (a source, its licence, when it was updated): only in a
   thing's debug info (Settings → Debug), never in its details (`SOURCE_NOTE`,

@@ -2,7 +2,6 @@
 
 exports[`right-click menus > yours, someone else's to view, a folder's 1`] = `
 [
-  "Units",
   "Draw into this layer",
   "Zoom to its items",
   "Rename",
@@ -21,7 +20,6 @@ exports[`right-click menus > yours, someone else's to view, a folder's 1`] = `
 
 exports[`right-click menus > yours, someone else's to view, a folder's 2`] = `
 [
-  "Theirs",
   "Shared with you to view only",
   "Move to folder",
   "📁 Ops",
@@ -35,7 +33,6 @@ exports[`right-click menus > yours, someone else's to view, a folder's 2`] = `
 
 exports[`right-click menus > yours, someone else's to view, a folder's 3`] = `
 [
-  "📁 Ops",
   "New layer in this folder",
   "Rename",
   "🔒 Lock its layers (yours)",

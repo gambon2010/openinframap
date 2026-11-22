@@ -67,6 +67,8 @@ export interface ToolsContext {
   /** The tool's own hint (message shows a warning instead for a moment). */
   hint: string
   dragging: Dragging | null
+  /** The copy tool's box being drawn (Shift + drag: copy-box.ts). */
+  copyBox: { start: [number, number]; outline: HTMLElement } | null
   resizing: Resizing | null
   /** Where the pointer was last on the map (to draw previews again after a scroll). */
   cursor: [number, number] | null

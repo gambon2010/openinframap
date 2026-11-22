@@ -1,6 +1,7 @@
 // Fork: My layers' tactical graphics as map features (map/render.ts draws them into
 // each layer's graphics source), by the C5ISR renderer (graphics/graphics.ts), sized
-// for the map's scale and cut to the view.
+// for the map's scale and cut to the view, in their identity's colours (the renderer's:
+// hostile red...; an item's own colour isn't used, so it can't contradict its identity).
 import { UserFeature, UserLayer } from '../model/model.ts'
 import { isDirection } from '../graphics/variants.ts'
 import { axisControlPoints, graphicsLibrary, renderGraphic, squareUp } from '../graphics/graphics.ts'
@@ -44,7 +45,6 @@ export function graphicFeatures(
         sidc: f.properties.sidc,
         points: pointsToDraw(f),
         modifiers: modifiersToDraw(f.properties.modifiers, view.level),
-        color: f.properties.color,
         scale: view.scale,
         bbox: view.bbox
       })

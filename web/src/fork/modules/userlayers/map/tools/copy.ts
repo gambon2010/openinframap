@@ -1,7 +1,7 @@
 // Fork: My layers' map tools (tools.ts): copying the map feature under a click (a
 // line, a substation, a site...) into the active layer, with its full geometry from
 // the backend; once per layer. A building (the Buildings layer, switched on) is
-// copied as an ordinary area: its outline, joined from the tiles it's cut into.
+// copied as a building item: its outline, joined from the tiles it's cut into.
 import type { MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl'
 import { t } from '../../../../core/i18n.ts'
 import { sourceGeometry } from '../../../../core/map-data.ts'
@@ -11,16 +11,11 @@ import type { FeatureProps } from '../../model/model.ts'
 import type { ToolsContext } from '../tools.types.ts'
 
 export async function copyAt(c: ToolsContext, e: MapMouseEvent) {
-  // The topmost map feature (upstream's or the fork's data layers) under the click.
-  const order = new globalThis.Map(c.primaryLayers().map((l) => [l.id, l.zorder]))
-  const candidates = c.map
-    .queryRenderedFeatures([
-      [e.point.x - 4, e.point.y - 4],
-      [e.point.x + 4, e.point.y + 4]
-    ])
-    .filter((f) => order.has(f.layer.id) && f.sourceLayer && !f.layer.id.startsWith('user_'))
-    .sort((a, b) => (order.get(b.layer.id) ?? 0) - (order.get(a.layer.id) ?? 0))
-  const f = candidates[0]
+  // The topmost map feature under the click.
+  const f = mapFeaturesIn(c, [
+    [e.point.x - 4, e.point.y - 4],
+    [e.point.x + 4, e.point.y + 4]
+  ])[0]
   if (!f) {
     c.message = t(
       'userlayers.copy.nothing-buildings',
@@ -30,6 +25,19 @@ export async function copyAt(c: ToolsContext, e: MapMouseEvent) {
     return
   }
   await copyFeature(c, f)
+}
+
+/** The map features (upstream's or the fork's data layers, not My layers') in a box on
+ * the screen, the topmost first. */
+export function mapFeaturesIn(
+  c: ToolsContext,
+  box: [[number, number], [number, number]]
+): MapGeoJSONFeature[] {
+  const order = new globalThis.Map(c.primaryLayers().map((l) => [l.id, l.zorder]))
+  return c.map
+    .queryRenderedFeatures(box)
+    .filter((f) => order.has(f.layer.id) && f.sourceLayer && !f.layer.id.startsWith('user_'))
+    .sort((a, b) => (order.get(b.layer.id) ?? 0) - (order.get(a.layer.id) ?? 0))
 }
 
 /** A map feature (a line, a substation, a building...) into the active layer, once:
@@ -62,13 +70,13 @@ export async function copyFeature(c: ToolsContext, f: MapGeoJSONFeature): Promis
     copy: { source: f.source, sourceLayer: f.sourceLayer!, layer: f.layer.id }
   }
   const featureId = c.store.addFeature(layerId, geometry, properties)
-  c.message = t('userlayers.copy.done', 'Copied. Click more features to copy them, or Esc to stop.')
+  c.message = t('userlayers.copy.done', 'Copied. Click more, Shift + drag a box for many, or Esc to stop.')
   c.select(featureId)
   return 'copied'
 }
 
-/** A building as an ordinary area of the active layer (editable, the colour for
- * new items), named "Building", with its height kept. */
+/** A building into the active layer (kinds/building.ts: its shape fixed, the colour
+ * for new items), with its height kept. */
 async function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): Promise<'copied' | 'already'> {
   const id = buildingId(f)
   const layerId = c.activeLayer()
@@ -82,13 +90,12 @@ async function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): Promise<'cop
   }
   const geometry = (await exactOutline(c.map, f)) || f.geometry
   const properties: FeatureProps = {
-    kind: 'drawing',
-    name: t('userlayers.copy.building', 'Building'),
+    kind: 'building',
     ...(id !== undefined ? { building_id: id } : {}),
     ...(typeof f.properties.height === 'number' ? { height: f.properties.height } : {})
   }
   const featureId = c.store.addFeature(layerId, geometry, withNewColour(properties))
-  c.message = t('userlayers.copy.done', 'Copied. Click more features to copy them, or Esc to stop.')
+  c.message = t('userlayers.copy.done', 'Copied. Click more, Shift + drag a box for many, or Esc to stop.')
   c.select(featureId)
   return 'copied'
 }

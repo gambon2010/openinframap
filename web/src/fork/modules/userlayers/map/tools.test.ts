@@ -262,6 +262,28 @@ describe('selecting, moving and deleting', () => {
     expect(tools.selected).toBeNull()
   })
 
+  test('a copied building stays where it is when dragged (its shape is the building)', async () => {
+    const outline: GeoJSON.Polygon = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 0]
+        ]
+      ]
+    }
+    const id = store.addFeature(tools.activeLayer(), outline, { kind: 'building' })
+    const building = store.layerOf(id)!.features.get(id)!
+    under(building)
+    await click(0.5, 0.5)
+    map.emit('mousedown', at(0.5, 0.5))
+    map.emit('mousemove', at(2, 2))
+    map.emit('mouseup', {})
+    expect(store.layerOf(id)!.features.get(id)!.geometry).toEqual(outline)
+  })
+
   test('a selected item dragged moves, saved once on release', async () => {
     const a = await marker(0, 0)
     under(a)
@@ -330,6 +352,17 @@ function shiftScroll(deltaY: number) {
 }
 
 describe('resizing and copying', () => {
+  test('copy: the crosshair stays over what was just copied (it is selected)', async () => {
+    tools.setTool({ mode: 'place', properties: { kind: 'marker' } })
+    await click(0, 0)
+    const [marker] = items()
+    tools.setTool({ mode: 'copy' })
+    tools.select(marker.id)
+    under(marker)
+    map.emit('mousemove', at(0, 0))
+    expect(map.getCanvas().style.cursor).toBe('crosshair')
+  })
+
   test('Shift + scroll on a selected marker resizes it, kept as one change', async () => {
     tools.setTool({ mode: 'place', properties: { kind: 'marker' } })
     await click(0, 0)
@@ -366,7 +399,31 @@ describe('resizing and copying', () => {
     expect(tools.message).toMatch(/Already/)
   })
 
-  test('copy: a building becomes an ordinary area, its exact outline from the backend, once', async () => {
+  test('copy: Shift + drag copies everything in the box, each once', async () => {
+    tools = new Tools(map as unknown as MapLibre, store, fakeRenderer() as unknown as Renderer, () => [
+      { id: 'power_tower', zorder: 10 } as never
+    ])
+    const tower = (id: number) =>
+      ({
+        layer: { id: 'power_tower' },
+        source: 'power',
+        sourceLayer: 'power_tower',
+        properties: { osm_id: id },
+        geometry: { type: 'Point', coordinates: [id, id] }
+      }) as never
+    // The same tower twice (as a tile edge can give it), and another.
+    map.found = () => [tower(1), tower(1), tower(2)]
+    tools.setTool({ mode: 'copy' })
+    map.emit('mousedown', at(0, 0, true))
+    map.emit('mousemove', at(3, 3))
+    map.emit('mouseup', at(3, 3))
+    await new Promise((done) => setTimeout(done, 0))
+    expect(items()).toHaveLength(2)
+    expect(tools.message).toMatch(/Copied 2/)
+    expect(map.dragPan.enable).toHaveBeenCalled()
+  })
+
+  test('copy: a building becomes a building item, its exact outline from the backend, once', async () => {
     tools = new Tools(map as unknown as MapLibre, store, fakeRenderer() as unknown as Renderer, () => [
       { id: 'buildings_outline', zorder: -10 } as never
     ])
@@ -409,7 +466,8 @@ describe('resizing and copying', () => {
     await click(0.5, 0.5)
     const [copy] = items()
     expect(asked[0]).toMatch(new RegExp(`^/background/building/${building}\\?lon=0&lat=0$`))
-    expect(copy.properties).toMatchObject({ kind: 'drawing', name: 'Building', height: 12 })
+    expect(copy.properties).toMatchObject({ kind: 'building', height: 12 })
+    expect(copy.properties.name).toBeUndefined()
     expect(copy.properties.color).toBeTruthy()
     const xs = (copy.geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
     expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 2.5])

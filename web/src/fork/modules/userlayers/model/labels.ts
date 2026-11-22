@@ -2,7 +2,7 @@
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from './model.ts'
 import { kindOf } from '../kinds/index.ts'
-import { IDENTITIES } from './sidc.constants.ts'
+import { IDENTITIES, IDENTITY_ICONS, MAIN_IDENTITIES } from './sidc.constants.ts'
 import { status } from './sidc.ts'
 import { fromDtg, relativeTime } from './fields.ts'
 
@@ -29,4 +29,15 @@ export function featureLabelParts(
 export function featureLabel(feature: UserFeature): string {
   const { name, what } = featureLabelParts(feature)
   return name ? `${name} · ${what}` : what
+}
+
+/** Every identity in one list, the four common ones first, each with its frame's
+ * shape and colour (a dropdown's lines hold text only: emoji). */
+export function identityOptions(): [string, string][] {
+  const main = MAIN_IDENTITIES.map((id) => IDENTITIES.find(([code]) => code === id)!)
+  const others = IDENTITIES.filter(([code]) => !MAIN_IDENTITIES.includes(code))
+  return [...main, ...others].map(([code, label]) => [
+    code,
+    `${IDENTITY_ICONS[code]}  ${t(`userlayers.affiliation.${code}`, label)}`
+  ])
 }

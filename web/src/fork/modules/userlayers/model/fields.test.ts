@@ -35,7 +35,7 @@ describe('fields per kind of symbol', () => {
   const keys = (kind: Parameters<typeof fieldsFor>[0]) => fieldsFor(kind).map((f) => f.key)
 
   test('units have a higher formation and movement, not a type', () => {
-    expect(keys('unit')).toEqual(expect.arrayContaining(['T', 'M', 'F', 'J', 'W', 'Q', 'Z']))
+    expect(keys('unit')).toEqual(expect.arrayContaining(['T', 'M', 'G', 'F', 'J', 'W', 'Q', 'Z']))
     expect(keys('unit')).not.toContain('V')
   })
 
@@ -86,10 +86,10 @@ describe('the item card', () => {
 
   test("what can still be added: the rest, in the card's order", () => {
     const keys = (modifiers: Record<string, string>) => addableFields('unit', modifiers).map((f) => f.key)
-    expect(keys({})).toEqual(['F', 'J', 'K', 'Q', 'Z'])
+    expect(keys({})).toEqual(['G', 'F', 'J', 'K', 'Q', 'Z'])
     // Shown already (the kind's own, or added): not offered again.
     expect(keys({})).not.toContain('M')
-    expect(keys({ Q: '1', Z: '2' })).toEqual(['F', 'J', 'K'])
+    expect(keys({ Q: '1', Z: '2' })).toEqual(['G', 'F', 'J', 'K'])
   })
 
   test('values in words', () => {

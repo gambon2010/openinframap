@@ -319,6 +319,10 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.97 | A line of sight sampled at every terrain pixel, however long. | ✅ `terrain/sight.py` (`sample_count`) (2026-11-22) |
 | 10.98 | The item card redone: the panels' title bar (name, what, layer, padlock), one form of same-width rows, every choice a dropdown, units chosen beside values, dates back to words when left, × to remove a detail, "+ Add detail" a grouped dropdown, only Notes (no "Additional information"), Reset for size, no drag hint, no picture. | ✅ `ui/editor/`, `model/units.ts` (2026-11-22) |
 | 10.99 | The card, second round: icons in the identity list, tooltips on the labels, the padlock part of the title bar, "+ Add detail" without categories, numbers checked (no negative speed), no handles on locked items, no Appearance section (Reset size), the main button's hover, no dates written on the map, Notes only (no Staff comments), a tooltip saying units aren't converted. | ✅ `ui/editor/`, `map/render.ts`, `model/fields.ts` (2026-11-22) |
+| 10.100 | Staff comments back (written on the map beside the symbol); right-click on items in the list (the map's menu); military graphics coloured by identity (no colour to override); the layer menu without its redundant title; the symbol picker without its hint, credit and repeated tooltips; the copy tool's cursor stays a crosshair; Shift + drag a box copies everything in it; copied buildings their own kind (fixed shape, no handles, a Buildings group, their name shown); Rename from the map's menu working again. | ✅ (2026-11-22) |
+| 10.101 | The toolbar's icons less generic, tools grouped under one button with a list (measuring...); the layer menu ("Into") and the symbol picker reorganised. | 🗂 proposal `docs/plans/toolbar-and-picker.md` (2026-11-22) |
+| 10.102 | A toggle for symbols at a real size (smaller when zoomed out), off by default (they keep their size). | 🗂 explained 2026-11-22, not built |
+| 10.103 | Optional numbering of buildings by position within a town or neighbourhood (not street numbers), for easy reference on a shared map. | 🗂 explained 2026-11-22, not built |
 
 ## 11. Quality
 

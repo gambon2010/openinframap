@@ -42,6 +42,13 @@ export const FIELDS: Field[] = [
     min: 0,
     help: 'How many'
   },
+  {
+    key: 'G',
+    label: 'Staff comments',
+    input: 'textarea',
+    kinds: [...ALL_SYMBOLS, 'graphic'],
+    help: 'Written beside the symbol on the map (unlike Notes, which stay in the card)'
+  },
   // Assessment
   {
     key: 'F',

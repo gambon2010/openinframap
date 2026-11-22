@@ -117,7 +117,8 @@ beforeEach(() => {
     exportLayers: vi.fn(),
     importFile: vi.fn(),
     zoomToLayer: vi.fn(),
-    reordered: vi.fn()
+    reordered: vi.fn(),
+    itemMenu: () => [{ label: 'Rename', run: () => {} }]
   }
   outliner = new Outliner(store, actions)
   document.body.append(outliner.el, outliner.footer)
@@ -288,6 +289,13 @@ describe('right-click menus', () => {
     expect(menuOf(rowNamed('Units'))).toMatchSnapshot()
     expect(menuOf(rowNamed('Theirs'))).toMatchSnapshot()
     expect(menuOf(rowNamed('Ops'))).toMatchSnapshot()
+  })
+
+  test("an item's row: the item's menu (the map's)", () => {
+    const { units } = sampleLayers()
+    store.personal.toggle('expanded', units, true)
+    outliner.draw()
+    expect(menuOf(itemNamed('Route'))).toEqual(['Rename'])
   })
 })
 

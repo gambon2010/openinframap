@@ -54,7 +54,8 @@ export class Sidebar {
       importFile: () => void importFile(ws.store, ws.map),
       zoomToLayer: (layer) => this.zoomToAll([...layer.features.values()]),
       // The map draws the layers in the list's order.
-      reordered: () => void ws.renderer.render(ws.store.layers, ws.store.hidden)
+      reordered: () => void ws.renderer.render(ws.store.layers, ws.store.hidden),
+      itemMenu: (feature, layerId) => ws.itemMenu?.(feature, layerId) ?? []
     })
   }
 

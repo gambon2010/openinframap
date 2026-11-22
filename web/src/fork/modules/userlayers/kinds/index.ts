@@ -1,6 +1,7 @@
 // Fork: the kinds of item My layers has (types.ts says what a kind defines).
 import { FeatureProps } from '../model/model.ts'
 import { copy } from './copy.ts'
+import { building } from './building.ts'
 import { drawing } from './drawing.ts'
 import { graphic } from './graphic.ts'
 import { image } from './image.ts'
@@ -9,7 +10,7 @@ import { measure } from './measure.ts'
 import { symbol } from './symbol.ts'
 import { ItemKind } from './types.ts'
 
-export const KINDS: ItemKind[] = [symbol, graphic, image, marker, drawing, measure, copy]
+export const KINDS: ItemKind[] = [symbol, graphic, image, marker, drawing, building, measure, copy]
 
 const BY_ID = new Map(KINDS.map((k) => [k.id as string, k]))
 

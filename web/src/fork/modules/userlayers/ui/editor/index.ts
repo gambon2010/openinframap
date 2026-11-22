@@ -13,7 +13,8 @@ import { identity, status, symbolKind, withIdentity, withStatus } from '../../mo
 import { kindOf } from '../../kinds/index.ts'
 import { BulkActions, Card, CardPart, EditorActions } from './types.ts'
 import { formRow, select } from './controls.ts'
-import { identityOptions, statusOptions } from './choices.ts'
+import { statusOptions } from './choices.ts'
+import { identityOptions } from '../../model/labels.ts'
 import { footerSection, formSection, headerSection, kindSection } from './sections.ts'
 
 export function buildEditor(

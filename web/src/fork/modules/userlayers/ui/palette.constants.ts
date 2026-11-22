@@ -10,10 +10,12 @@ export const AFFILIATIONS: [string, string][] = [
 
 export const MAX_RESULTS = 150
 
-export const GEOMETRY_LABELS: Record<string, [string, string]> = {
-  L: ['╱', 'Line'],
-  A: ['▱', 'Area'],
-  M: ['➚', 'Shape from points']
+/** A graphic's picture in the picker and the list, by its shape (line, area, shape
+ * from points). */
+export const GEOMETRY_GLYPHS: Record<string, string> = {
+  L: '╱',
+  A: '▱',
+  M: '➚'
 }
 
 export const GRAPHIC_GROUPS = [
