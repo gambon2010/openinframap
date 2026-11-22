@@ -9,3 +9,11 @@ export interface Unit {
   symbol: string
   factor: number
 }
+
+/** The values a detail allows, in its quantity's first unit. */
+export interface AllowedRange {
+  min?: number
+  max?: number
+}
+
+export type RangeProblem = 'not-a-number' | 'too-low' | 'too-high'

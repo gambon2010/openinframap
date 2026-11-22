@@ -7,7 +7,11 @@
   flex-direction: column;
   min-width: 0;
 }
-/* The padlock: a title bar button (ui/panel.css), before minimise and close. */
+/* The padlock: a title bar button (ui/panel.css), before minimise and close; part
+   of the title bar, so it scrolls away with it. */
+.oim-side-panel.oim-info-panel .oim-ul-card-header {
+  position: relative;
+}
 .oim-ul-card-header .oim-ul-item-lock {
   position: absolute;
   top: 0;
@@ -98,6 +102,11 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+/* A number outside what's allowed: not kept, its tooltip says why. */
+.oim-ul-detail .oim-ul-invalid {
+  border-color: var(--oim-error);
+  outline: 1px solid var(--oim-error);
 }
 .oim-ul-row-remove {
   width: 1.4em;

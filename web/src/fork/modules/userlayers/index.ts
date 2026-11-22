@@ -32,6 +32,7 @@ const userlayers: ForkModule = {
     const renderer = new Renderer(map, primaryLayers)
     // The layers are drawn in the list's order (yours: state/personal.ts).
     renderer.orderOf = () => layerOrder([...store.layers.values()], store.personal)
+    renderer.canEditItem = (feature) => store.view.canEditItem(store.layerOf(feature.id), feature)
     const tools = new Tools(map, store, renderer, primaryLayers)
     const workspace = new Workspace(map, store, tools, renderer)
     map.addControl(workspace, 'top-right')

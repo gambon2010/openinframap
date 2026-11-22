@@ -50,8 +50,6 @@ export interface ItemKind {
   /** Only its points can be dragged, not the whole item (a line of sight: it's
    * placed by where one stands and what one looks at). */
   pointsOnly?(item: Item): boolean
-  /** The card opens on its Appearance (pictures: their size matters first). */
-  appearanceFirst?: boolean
   /** The filter chips it's under. */
   filters?(p: FeatureProps): KindFilter[]
   /** More on its card, after its name and before its appearance (ui/editor.ts):

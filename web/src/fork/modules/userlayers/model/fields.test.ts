@@ -35,7 +35,7 @@ describe('fields per kind of symbol', () => {
   const keys = (kind: Parameters<typeof fieldsFor>[0]) => fieldsFor(kind).map((f) => f.key)
 
   test('units have a higher formation and movement, not a type', () => {
-    expect(keys('unit')).toEqual(expect.arrayContaining(['T', 'M', 'G', 'F', 'J', 'W', 'Q', 'Z']))
+    expect(keys('unit')).toEqual(expect.arrayContaining(['T', 'M', 'F', 'J', 'W', 'Q', 'Z']))
     expect(keys('unit')).not.toContain('V')
   })
 
@@ -66,6 +66,11 @@ describe('modifiers drawn on the map', () => {
     expect(modifiersToDraw({ M: '1st Bde' }, 'name')).toEqual({})
     expect(modifiersToDraw(modifiers, 'all')).toEqual({ T: '2nd Bn', M: '1st Bde' })
   })
+
+  test('dates never drawn: the card and the timeline say when', () => {
+    const dated = { T: 'PAA', W: '221846ZNOV26', W1: '231846ZNOV26' }
+    expect(modifiersToDraw(dated, 'all')).toEqual({ T: 'PAA' })
+  })
 })
 
 describe('the item card', () => {
@@ -79,11 +84,12 @@ describe('the item card', () => {
     expect(keys('unit', { Q: '45' })).toContain('Q')
   })
 
-  test('what can still be added, grouped by question', () => {
-    const groups = addableFields('unit', {})
-    expect(groups.map(([g]) => g)).toEqual(['where', 'sure'])
-    expect(groups.flatMap(([, fields]) => fields.map((f) => f.key))).not.toContain('M')
-    expect(addableFields('unit', { Q: '1', Z: '2' }).find(([g]) => g === 'where')).toBeUndefined()
+  test("what can still be added: the rest, in the card's order", () => {
+    const keys = (modifiers: Record<string, string>) => addableFields('unit', modifiers).map((f) => f.key)
+    expect(keys({})).toEqual(['F', 'J', 'K', 'Q', 'Z'])
+    // Shown already (the kind's own, or added): not offered again.
+    expect(keys({})).not.toContain('M')
+    expect(keys({ Q: '1', Z: '2' })).toEqual(['F', 'J', 'K'])
   })
 
   test('values in words', () => {

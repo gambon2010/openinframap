@@ -20,7 +20,7 @@ import { controlPoints } from '../../map/geometry.ts'
 import { variantsOf, withKey } from '../../graphics/variants.ts'
 import { axisWidth } from '../../graphics/graphics.ts'
 import { Card } from './types.ts'
-import { CONDITIONS, ECHELON_MARKS, MAIN_IDENTITIES } from './constants.ts'
+import { CONDITIONS, ECHELON_MARKS, IDENTITY_ICONS, MAIN_IDENTITIES } from './constants.ts'
 import { checkbox, formRow, select } from './controls.ts'
 
 /** The rows of a military item's choices (nothing for other items). */
@@ -37,17 +37,26 @@ export function choiceRows(c: Card): HTMLElement[] {
   return rows
 }
 
-/** Every identity in one list, the four common ones first. */
+/** Every identity in one list, the four common ones first, each with its frame's
+ * shape and colour (a dropdown's lines hold text only: emoji). */
 export function identityOptions(): [string, string][] {
   const main = MAIN_IDENTITIES.map((id) => IDENTITIES.find(([code]) => code === id)!)
   const others = IDENTITIES.filter(([code]) => !MAIN_IDENTITIES.includes(code))
-  return [...main, ...others].map(([code, label]) => [code, t(`userlayers.affiliation.${code}`, label)])
+  return [...main, ...others].map(([code, label]) => [
+    code,
+    `${IDENTITY_ICONS[code]}  ${t(`userlayers.affiliation.${code}`, label)}`
+  ])
 }
 
 function identityRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   return formRow(
     t('userlayers.identity', 'Identity'),
-    select(identityOptions(), identity(sidc), (v) => setSidc(withIdentity(sidc, v)), 'identity')
+    select(identityOptions(), identity(sidc), (v) => setSidc(withIdentity(sidc, v)), 'identity'),
+    undefined,
+    t(
+      'userlayers.identity-help',
+      'Whose it is: the frame’s shape and colour (friend blue rectangle, hostile red diamond, neutral green square, unknown yellow)'
+    )
   )
 }
 
@@ -63,7 +72,12 @@ function statusRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   const planned = status(sidc) === 'A'
   return formRow(
     t('userlayers.status-label', 'Status'),
-    select(statusOptions(), planned ? 'A' : 'P', (v) => setSidc(withStatus(sidc, v)), 'status')
+    select(statusOptions(), planned ? 'A' : 'P', (v) => setSidc(withStatus(sidc, v)), 'status'),
+    undefined,
+    t(
+      'userlayers.status-help',
+      'Present: there now (solid outline). Planned: expected or intended (dashed outline)'
+    )
   )
 }
 
@@ -81,7 +95,15 @@ function conditionRow(sidc: string, setSidc: (next: string) => void): HTMLElemen
     control.disabled = true
     control.title = t('userlayers.condition-planned', 'Only for what is present')
   }
-  return formRow(t('userlayers.condition-label', 'Condition'), control)
+  return formRow(
+    t('userlayers.condition-label', 'Condition'),
+    control,
+    undefined,
+    t(
+      'userlayers.condition-help',
+      'How it is, if present: fully capable, damaged, destroyed or full to capacity (a bar under the symbol)'
+    )
+  )
 }
 
 /** A graphic's two versions (graphic-variants.ts): a task or an obstacle, an axis of
@@ -113,7 +135,9 @@ function drawnAsRow(c: Card): HTMLElement | null {
       String(versions.index),
       (v) => switchTo(v === '1' ? 1 : 0),
       'drawn-as'
-    )
+    ),
+    undefined,
+    t('userlayers.drawn-as-help', 'The graphic’s other version, on the same points')
   )
 }
 
@@ -125,7 +149,9 @@ function echelonRow(sidc: string, setSidc: (next: string) => void): HTMLElement 
   })
   return formRow(
     t('userlayers.echelon-label', 'Echelon'),
-    select(options, m.echelon, (v) => setSidc(withUnitModifiers(sidc, { ...m, echelon: v })), 'echelon')
+    select(options, m.echelon, (v) => setSidc(withUnitModifiers(sidc, { ...m, echelon: v })), 'echelon'),
+    undefined,
+    t('userlayers.echelon-help', 'Its size, from a team to an army: the marks above the frame')
   )
 }
 
@@ -151,6 +177,11 @@ function marksRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
         (on) => setSidc(withUnitModifiers(sidc, { ...m, feint: on })),
         t('userlayers.f.feint-title', 'Feint / dummy')
       )
+    ),
+    undefined,
+    t(
+      'userlayers.marked-as-help',
+      'Headquarters (a staff under the frame), task force (a bracket above), dummy (a dashed outline)'
     )
   )
 }
@@ -158,6 +189,8 @@ function marksRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
 function mobilityRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   return formRow(
     t('userlayers.f.mobility', 'Mobility'),
-    select(MOBILITIES, mobility(sidc), (v) => setSidc(withMobility(sidc, v)), 'mobility')
+    select(MOBILITIES, mobility(sidc), (v) => setSidc(withMobility(sidc, v)), 'mobility'),
+    undefined,
+    t('userlayers.mobility-help', 'How it moves: the mark under the frame')
   )
 }

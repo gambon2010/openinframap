@@ -786,17 +786,22 @@ the next time the map is opened, keeping their width (an unsaved change each: Sa
 **The item card** (click one of your items):
 
 - the title bar: its name (or what it is), what it is and its layer, and a padlock
-  to lock it (🔓 unlocked, 🔒 locked: it can't be changed, moved or deleted);
+  to lock it (🔓 unlocked, 🔒 locked: it can't be changed, moved or deleted, and its
+  points and handles aren't shown on the map);
 - one form, a label and a control per row: its name; its identity, status (present,
   planned), condition (fully capable, damaged, destroyed, full to capacity), how a
   graphic is drawn, echelon, mobility, each a dropdown; HQ, task force and dummy as
   tick boxes; the details that matter for its kind (for a unit: higher formation and
   when it was seen). A speed, distance or altitude has its unit beside it (km/h, kn,
-  mph; m, km, nm; m, ft), a direction degrees or mils; the unit you chose last is
-  kept. A date reads in words ("30 Oct 12:00 · 2 h ago"): click it to change it.
-  **+ Add detail…** adds others (type, quantity, direction, speed, rating,
-  comments...), grouped by question; × removes one added by mistake;
-- notes, appearance (size and Reset, colour), and at the bottom its layer,
+  mph; m, km, nm; m, ft: changing the unit doesn't convert the number), a direction
+  degrees or mils (converted); the unit you chose last is kept. A number outside
+  what's allowed (a negative speed, a direction past 360°) is outlined in red and not
+  kept. A date reads in words ("30 Oct 12:00 · 2 h ago"): click it to change it;
+  dates aren't written on the map. **+ Add detail…** adds others (type, quantity,
+  direction, speed, rating...); × removes one added by mistake. Each label's tooltip
+  says what it is;
+- notes (yours, never on the map), its size with **Reset size** (change it on the
+  map: Shift + scroll, or its handle), its colour, and at the bottom its layer,
   Duplicate, Delete.
 
 **Several at once:** Shift-click items on the map or in the list; the details then

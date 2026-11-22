@@ -6,18 +6,3 @@
   align-items: center;
   gap: 6px;
 }
-
-.oim-ul-what {
-  margin: 0 0 6px;
-  color: var(--oim-text-color-light);
-  font-size: 0.85rem;
-}
-.oim-ul-editor-section {
-  margin: 4px 0;
-  border-top: 1px solid var(--oim-grey);
-}
-.oim-ul-editor-section summary {
-  padding: 4px 0;
-  font-weight: bold;
-  cursor: pointer;
-}

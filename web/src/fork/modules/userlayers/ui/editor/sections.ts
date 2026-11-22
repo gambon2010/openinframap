@@ -1,15 +1,14 @@
 // Fork: an item's card (editor/index.ts): its parts, in order: the title bar, one
-// form (its name, its choices, its details, "+ Add detail…", notes), what its kind
-// adds, appearance, footer (docs/plans/item-card-redesign.md).
+// form (its name, its choices, its details, "+ Add detail…", notes, how it looks),
+// what its kind adds, footer (docs/plans/item-card-redesign.md).
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR } from '../../model/model.ts'
-import { DEFAULT_FIELDS, GROUPS } from '../../model/fields.constants.ts'
+import { DEFAULT_FIELDS } from '../../model/fields.constants.ts'
 import { addableFields, cardFields, toDtg } from '../../model/fields.ts'
-import { MAX_SIZE, MIN_SIZE } from '../../map/render.constants.ts'
 import { Card, CardPart } from './types.ts'
 import { choiceRows } from './choices.ts'
-import { detailRow, formRow, groupedSelect, select } from './controls.ts'
+import { detailRow, formRow, promptSelect, select } from './controls.ts'
 
 /** The title bar, as every details panel's: its name (or what it is, without one),
  * and what it is in which layer. */
@@ -28,12 +27,18 @@ export function headerSection(c: Card, parts: CardPart[]) {
   )
 }
 
-/** The form: its name, its choices, its details, "+ Add detail…" and notes, one row
- * each, every control the same width. */
+/** The form: its name, its choices, its details, "+ Add detail…", notes and how it
+ * looks, one row each, every control the same width. */
 export function formSection(c: Card, parts: CardPart[]) {
-  parts.push(
-    el('.oim-ul-form', nameRow(c), ...choiceRows(c), ...detailRows(c), ...addDetailRow(c), notesRow(c))
-  )
+  const rows = [
+    nameRow(c),
+    ...choiceRows(c),
+    ...detailRows(c),
+    ...addDetailRow(c),
+    notesRow(c),
+    ...lookRows(c)
+  ]
+  parts.push(el('.oim-ul-form', ...rows))
 }
 
 function nameRow(c: Card): HTMLElement {
@@ -46,7 +51,13 @@ function nameRow(c: Card): HTMLElement {
   }) as HTMLInputElement
   input.onchange = () =>
     military ? setModifier('T', input.value.trim()) : update({ name: input.value.trim() || undefined })
-  return formRow(t('userlayers.name', 'Name'), input)
+  const help = military
+    ? t(
+        'userlayers.name-help-military',
+        'Its unique designation ("2nd Bn", "OBJ LION"), written beside it on the map'
+      )
+    : t('userlayers.name-help', 'Its name, in the list and on the map')
+  return formRow(t('userlayers.name', 'Name'), input, undefined, help)
 }
 
 /** The details for its kind and any filled in (the name has its own row); the ones
@@ -64,21 +75,16 @@ function detailRows(c: Card): HTMLElement[] {
     })
 }
 
-/** "+ Add detail…": the details it doesn't show yet, by the question they answer;
- * the one chosen appears, ready to fill in. */
+/** "+ Add detail…": the details it doesn't show yet, in the order of the card; the
+ * one chosen appears, ready to fill in. */
 function addDetailRow(c: Card): HTMLElement[] {
   const { military, kind, modifiers, update } = c
   if (!military || !kind) return []
-  const addable = addableFields(kind, modifiers)
-  if (!addable.length) return []
-  const groups = addable.map(([group, fields]): [string, [string, string][]] => [
-    t(`userlayers.group.${group}`, GROUPS.find(([g]) => g === group)![1]),
-    fields.map((field): [string, string] => [field.key, t(`userlayers.f.${field.key}`, field.label)])
-  ])
-  const fields = addable.flatMap(([, f]) => f)
-  const add = groupedSelect(
+  const fields = addableFields(kind, modifiers)
+  if (!fields.length) return []
+  const add = promptSelect(
     `+ ${t('userlayers.add-detail', 'Add detail')}…`,
-    groups,
+    fields.map((field): [string, string] => [field.key, t(`userlayers.f.${field.key}`, field.label)]),
     (key) => {
       const field = fields.find((f) => f.key === key)
       // A blank value makes the row appear, ready to fill in.
@@ -95,20 +101,20 @@ function notesRow(c: Card): HTMLElement {
   const { p, update } = c
   const notes = el('textarea', p.notes ?? '', { rows: 2, 'data-field': 'notes' }) as HTMLTextAreaElement
   notes.onchange = () => update({ notes: notes.value.trim() || undefined })
-  return formRow(t('userlayers.notes', 'Notes'), notes)
+  return formRow(
+    t('userlayers.notes', 'Notes'),
+    notes,
+    undefined,
+    t('userlayers.notes-help', 'Your notes: in this card only, never written on the map')
+  )
 }
 
-/** What its kind adds (a line of sight's answer, range rings' distances...). */
-export function kindSection(c: Card, parts: CardPart[]) {
-  const { feature, actions, update, itemKind } = c
-  parts.push(...(itemKind.card?.(feature, update, actions.setGeometry) ?? []))
-}
-
-/** Its appearance, folded: size (and a reset), colour, line width. */
-export function appearanceSection(c: Card, parts: CardPart[]) {
+/** How it looks, as rows of the form: its size (changed on the map: Shift + scroll,
+ * or its handle) with a reset, its colour, its line width. */
+function lookRows(c: Card): HTMLElement[] {
   const { feature, p, update, itemKind } = c
-  const look: HTMLElement[] = []
-  if (itemKind.sized && feature.geometry.type === 'Point') look.push(sizeRow(p.size ?? 1, update))
+  const rows: HTMLElement[] = []
+  if (itemKind.sized && feature.geometry.type === 'Point') rows.push(sizeRow(p.size ?? 1, update))
   if (itemKind.coloured) {
     const color = el('input', {
       type: 'color',
@@ -116,7 +122,7 @@ export function appearanceSection(c: Card, parts: CardPart[]) {
       'data-field': 'color'
     }) as HTMLInputElement
     color.onchange = () => update({ color: color.value })
-    look.push(formRow(t('userlayers.color', 'Colour'), color))
+    rows.push(formRow(t('userlayers.color', 'Colour'), color))
   }
   if (itemKind.lineWidth && feature.geometry.type !== 'Point') {
     const width = el('input', {
@@ -128,38 +134,31 @@ export function appearanceSection(c: Card, parts: CardPart[]) {
       'data-field': 'width'
     }) as HTMLInputElement
     width.onchange = () => update({ width: Number(width.value) })
-    look.push(formRow(t('userlayers.width', 'Line width'), width))
+    rows.push(formRow(t('userlayers.width', 'Line width'), width))
   }
-  if (!look.length) return
-  parts.push(
-    el(
-      'details.oim-ul-editor-section',
-      { open: Boolean(itemKind.appearanceFirst) },
-      el('summary', t('userlayers.s.appearance', 'Appearance')),
-      ...look
-    )
-  )
+  return rows
 }
 
+/** Its size as a percentage, and a reset to the normal size. */
 function sizeRow(value: number, update: Card['update']): HTMLElement {
-  const size = el('input', {
-    type: 'range',
-    min: String(MIN_SIZE),
-    max: String(MAX_SIZE),
-    step: '0.05',
-    value: String(value),
-    'data-field': 'size',
-    title: `${Math.round(value * 100)} %`
-  }) as HTMLInputElement
-  size.oninput = () => (size.title = `${Math.round(Number(size.value) * 100)} %`)
-  size.onchange = () => update({ size: Number(size.value) })
-  const reset = el('button.oim-ul-button', t('userlayers.reset', 'Reset'), {
+  const reset = el('button.oim-ul-button', t('userlayers.reset-size', 'Reset size'), {
     type: 'button',
-    title: t('userlayers.size-reset', 'Normal size')
+    'data-field': 'size'
   }) as HTMLButtonElement
   reset.disabled = value === 1
   reset.onclick = () => update({ size: 1 })
-  return formRow(t('userlayers.size', 'Size'), el('span.oim-ul-control', size, reset))
+  return formRow(
+    t('userlayers.size', 'Size'),
+    el('span.oim-ul-control', el('span', `${Math.round(value * 100)} %`), reset),
+    undefined,
+    t('userlayers.size-help', 'Change it on the map: Shift + scroll over it, or drag its handle')
+  )
+}
+
+/** What its kind adds (a line of sight's answer, range rings' distances...). */
+export function kindSection(c: Card, parts: CardPart[]) {
+  const { feature, actions, update, itemKind } = c
+  parts.push(...(itemKind.card?.(feature, update, actions.setGeometry) ?? []))
 }
 
 /** The footer: its layer, duplicate, delete, done. */

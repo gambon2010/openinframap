@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { UNITS } from './units.constants.ts'
-import { angleFrom, angleIn, joinValue, lastUnit, rememberUnit, splitValue } from './units.ts'
+import { angleFrom, angleIn, joinValue, lastUnit, rangeProblem, rememberUnit, splitValue } from './units.ts'
 
 const unit = (quantity: keyof typeof UNITS, symbol: string) =>
   UNITS[quantity].find((u) => u.symbol === symbol)!
@@ -38,5 +38,26 @@ describe("a detail's units", () => {
     expect(lastUnit('Z', 'speed').symbol).toBe('kn')
     // Another detail keeps its own.
     expect(lastUnit('AM', 'distance').symbol).toBe('m')
+  })
+
+  test('no negative speed; zero and empty are fine', () => {
+    const kmh = unit('speed', 'km/h')
+    expect(rangeProblem('-5', kmh, { min: 0 })).toBe('too-low')
+    expect(rangeProblem('0', kmh, { min: 0 })).toBeNull()
+    expect(rangeProblem('', kmh, { min: 0 })).toBeNull()
+    expect(rangeProblem('fast', kmh, { min: 0 })).toBe('not-a-number')
+  })
+
+  test('a direction up to a full turn, in either unit', () => {
+    const range = { min: 0, max: 360 }
+    expect(rangeProblem('360', unit('angle', '°'), range)).toBeNull()
+    expect(rangeProblem('361', unit('angle', '°'), range)).toBe('too-high')
+    expect(rangeProblem('6400', unit('angle', 'mils'), range)).toBeNull()
+    expect(rangeProblem('6401', unit('angle', 'mils'), range)).toBe('too-high')
+  })
+
+  test('each number of a "min,max" altitude is checked; depths may be negative', () => {
+    expect(rangeProblem('-200,500', unit('altitude', 'm'), {})).toBeNull()
+    expect(rangeProblem('100,', unit('altitude', 'm'), {})).toBe('not-a-number')
   })
 })

@@ -1,15 +1,29 @@
 // Fork: an item's card (editor/index.ts): the controls its form is built from. Every
 // row is a label and its control, the control filling the rest, a × at the end of
-// the details that can be removed (docs/plans/item-card-redesign.md).
+// the details that can be removed, a tooltip on each label saying what it is; a
+// number outside what's allowed is outlined, says why and isn't kept
+// (docs/plans/item-card-redesign.md).
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { Field } from '../../model/fields.types.ts'
 import { displayValue, fromDtg, toDtg } from '../../model/fields.ts'
 import { UNITS } from '../../model/units.constants.ts'
-import { angleFrom, angleIn, joinValue, lastUnit, rememberUnit, splitValue } from '../../model/units.ts'
-import type { Quantity, Unit } from '../../model/units.types.ts'
+import {
+  angleFrom,
+  angleIn,
+  joinValue,
+  lastUnit,
+  rangeProblem,
+  rememberUnit,
+  splitValue
+} from '../../model/units.ts'
+import type { AllowedRange, Quantity, RangeProblem, Unit } from '../../model/units.types.ts'
 
-/** A row of the card's form: its label, its control, and a × when it can be removed. */
+/** A plain number's "unit": the number itself. */
+const PLAIN: Unit = { symbol: '', factor: 1 }
+
+/** A row of the card's form: its label (`help`: its tooltip), its control, and a ×
+ * when it can be removed. */
 export function formRow(label: string, control: HTMLElement, remove?: () => void, help = ''): HTMLElement {
   const end = remove
     ? el('button.oim-ul-row-remove', '×', {
@@ -19,7 +33,7 @@ export function formRow(label: string, control: HTMLElement, remove?: () => void
       })
     : el('span')
   if (remove) (end as HTMLButtonElement).onclick = remove
-  return el('.oim-ul-detail', { title: help }, el('span.oim-ul-detail-name', label), control, end)
+  return el('.oim-ul-detail', el('span.oim-ul-detail-name', { title: help }, label), control, end)
 }
 
 export function select(
@@ -37,27 +51,14 @@ export function select(
   return s
 }
 
-/** A dropdown of choices by group (the browser draws the groups); its first line
- * says what it's for and chooses nothing. */
-export function groupedSelect(
+/** A dropdown whose first line says what it's for and chooses nothing. */
+export function promptSelect(
   prompt: string,
-  groups: [string, [string, string][]][],
+  options: [string, string][],
   onchange: (value: string) => void,
   field: string
 ): HTMLSelectElement {
-  const s = el(
-    'select',
-    { 'data-field': field },
-    el('option', prompt, { value: '' }),
-    groups.map(([label, options]) =>
-      el(
-        'optgroup',
-        { label },
-        options.map(([v, text]) => el('option', text, { value: v }))
-      )
-    )
-  ) as HTMLSelectElement
-  s.onchange = () => s.value && onchange(s.value)
+  const s = select([['', prompt], ...options], '', (v) => v && onchange(v), field)
   return s
 }
 
@@ -92,13 +93,22 @@ function detailControl(field: Field, value: string, set: (value: string) => void
   if (field.input === 'datetime') return dateControl(value, set, name)
   if (field.input === 'rating') return ratingControl(value, set, name)
   if (field.input === 'textarea') return textControl('textarea', value, set, name)
-  if (field.quantity === 'angle') return angleControl(field.key, value, set, name)
+  if (field.quantity === 'angle') return angleControl(field, value, set, name)
   if (field.quantity) return amountControl(field, field.quantity, value, set, name)
-  return textControl(field.input === 'number' ? 'number' : 'text', value, set, name)
+  if (field.input === 'number') return numberControl(field, value, set, name)
+  return textControl('text', value, set, name)
+}
+
+/** A plain number (a quantity): kept only within what's allowed. */
+function numberControl(field: Field, value: string, set: (value: string) => void, name: string): HTMLElement {
+  const input = el('input', { type: 'number', value, 'data-field': name }) as HTMLInputElement
+  allowRange(input, field, PLAIN)
+  input.onchange = () => keepIfAllowed(input, field, PLAIN, () => set(input.value.trim()))
+  return input
 }
 
 function textControl(
-  kind: 'text' | 'number' | 'textarea',
+  kind: 'text' | 'textarea',
   value: string,
   set: (value: string) => void,
   name: string
@@ -158,28 +168,39 @@ function amountControl(
     value: split.amount,
     'data-field': name
   }) as HTMLInputElement
-  input.onchange = () => set(joinValue(input.value, unit))
+  allowRange(input, field, unit)
+  const keep = () => keepIfAllowed(input, field, unit, () => set(joinValue(input.value, unit)))
+  input.onchange = keep
   const units = unitSelect(quantity, unit, name, (chosen) => {
     unit = chosen
     rememberUnit(field.key, chosen)
-    if (input.value.trim()) set(joinValue(input.value, unit))
+    allowRange(input, field, unit)
+    if (input.value.trim()) keep()
   })
+  // The number stays as typed: a speed's unit is part of its label.
+  units.title = t('userlayers.unit-no-conversion', "Changing the unit doesn't convert the number.")
   return el('span.oim-ul-control', input, units)
 }
 
 /** A direction: kept in degrees (it turns the symbol's arrow), shown in the unit
  * chosen beside it. */
-function angleControl(key: string, value: string, set: (value: string) => void, name: string): HTMLElement {
+function angleControl(field: Field, value: string, set: (value: string) => void, name: string): HTMLElement {
+  const key = field.key
   let unit = lastUnit(key, 'angle')
   const degrees = value === '' ? null : Number(value)
   const input = el('input', { type: 'number', 'data-field': name }) as HTMLInputElement
   const show = () =>
     (input.value = degrees === null || Number.isNaN(degrees) ? '' : String(angleIn(degrees, unit)))
   show()
-  input.onchange = () => set(input.value.trim() ? String(angleFrom(Number(input.value), unit)) : '')
+  allowRange(input, field, unit)
+  input.onchange = () =>
+    keepIfAllowed(input, field, unit, () =>
+      set(input.value.trim() ? String(angleFrom(Number(input.value), unit)) : '')
+    )
   const units = unitSelect('angle', unit, name, (chosen) => {
     unit = chosen
     rememberUnit(key, chosen)
+    allowRange(input, field, unit)
     show()
   })
   return el('span.oim-ul-control', input, units)
@@ -193,4 +214,28 @@ function unitSelect(quantity: Quantity, unit: Unit, name: string, chosen: (unit:
     (symbol) => chosen(units.find((u) => u.symbol === symbol) ?? units[0]),
     name + ':unit'
   )
+}
+
+/** The browser's own limits on a number input, in the unit shown (its arrows stop
+ * there). */
+function allowRange(input: HTMLInputElement, range: AllowedRange, unit: Unit) {
+  input.min = range.min === undefined ? '' : String(range.min / unit.factor)
+  input.max = range.max === undefined ? '' : String(range.max / unit.factor)
+}
+
+/** Keeps a typed value if it's allowed; otherwise outlines the input and says why in
+ * its tooltip (nothing kept: the card shows the last value kept once rebuilt). */
+function keepIfAllowed(input: HTMLInputElement, range: AllowedRange, unit: Unit, keep: () => void) {
+  const problem = rangeProblem(input.value, unit, range)
+  input.classList.toggle('oim-ul-invalid', problem !== null)
+  input.title = problem ? problemText(problem, range, unit) : ''
+  if (!problem) keep()
+}
+
+function problemText(problem: RangeProblem, range: AllowedRange, unit: Unit): string {
+  const inUnit = (value: number) => `${Math.round((value / unit.factor) * 10) / 10} ${unit.symbol}`.trim()
+  if (problem === 'not-a-number') return t('userlayers.not-a-number', 'Not a number')
+  if (problem === 'too-low')
+    return t('userlayers.too-low', 'At least {{min}}', { min: inUnit(range.min ?? 0) })
+  return t('userlayers.too-high', 'At most {{max}}', { max: inUnit(range.max ?? 0) })
 }

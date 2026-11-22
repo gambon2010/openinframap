@@ -20,6 +20,5 @@ export const image: ItemKind = {
   },
   thumbnail: ({ properties: p }) => (p.image ? el('img', { src: imageUrl(p.image), alt: '' }) : '🖼'),
   sized: true,
-  appearanceFirst: true,
   filters: () => ['pictures']
 }

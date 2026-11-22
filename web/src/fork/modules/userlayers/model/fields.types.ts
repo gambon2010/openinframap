@@ -12,10 +12,11 @@ export interface Field {
   kinds: SymbolKind[]
   /** What it measures: its value is given in a unit chosen beside it (units.ts). */
   quantity?: Quantity
+  /** The values allowed, in its quantity's first unit (km/h, m, °). */
+  min?: number
+  max?: number
   help?: string
 }
 
 /** How much of the labels the map shows (a map setting). */
 export type LabelLevel = 'none' | 'name' | 'all'
-
-export type Group = 'who' | 'what' | 'when' | 'where' | 'sure'

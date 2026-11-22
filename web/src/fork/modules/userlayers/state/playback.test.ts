@@ -29,8 +29,8 @@ describe('changedFields', () => {
   })
 
   test('a removed field counts', () => {
-    const before = unit('SFGPUCI--------', { modifiers: { G: 'note' } })
-    expect(changedFields(before, unit('SFGPUCI--------'))).toEqual(['staff comments'])
+    const before = unit('SFGPUCI--------', { modifiers: { M: '3rd Bde' } })
+    expect(changedFields(before, unit('SFGPUCI--------'))).toEqual(['higher formation'])
   })
 
   test('moved, renamed, notes', () => {

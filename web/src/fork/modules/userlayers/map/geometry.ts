@@ -72,6 +72,12 @@ export function selectionFeatures(feature: UserFeature): GeoJSON.Feature[] {
   return out
 }
 
+/** A selection's shapes without its handles (the points to drag, an arrow's width
+ * handle): for an item that can't be changed. */
+export function withoutHandles(shapes: GeoJSON.Feature[]): GeoJSON.Feature[] {
+  return shapes.filter((shape) => !shape.properties?.vertex)
+}
+
 /** The points of a drawing that can be moved (a polygon's closing point left out). */
 export function vertices(geometry: GeoJSON.Geometry): [number, number][] {
   if (geometry.type === 'LineString') return geometry.coordinates as [number, number][]

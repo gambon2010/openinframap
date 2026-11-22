@@ -4,7 +4,7 @@
 // in degrees, and shown in the unit chosen. The unit chosen last for a detail is
 // kept in this browser, so the next one starts in it.
 import { readText, writeText } from '../../../core/storage.ts'
-import type { Quantity, Unit } from './units.types.ts'
+import type { AllowedRange, Quantity, RangeProblem, Unit } from './units.types.ts'
 import { UNITS } from './units.constants.ts'
 
 /** A value kept with its unit, split: the number part as written ("30", "100,500")
@@ -34,6 +34,22 @@ export function angleIn(degrees: number, unit: Unit): number {
 /** An angle given in a unit, in degrees, as kept (rounded to a tenth). */
 export function angleFrom(amount: number, unit: Unit): number {
   return Math.round(amount * unit.factor * 10) / 10
+}
+
+/** What's wrong with an amount typed in a unit, if anything: each number in it (one,
+ * or "min,max") must be a number within the range allowed, given in the quantity's
+ * first unit (a negative speed is no speed). Empty is fine: nothing is kept. */
+export function rangeProblem(amount: string, unit: Unit, range: AllowedRange): RangeProblem | null {
+  const parts = amount.split(',').map((part) => part.trim())
+  if (amount.trim() === '') return null
+  for (const part of parts) {
+    const value = Number(part)
+    if (part === '' || !Number.isFinite(value)) return 'not-a-number'
+    const inFirstUnit = value * unit.factor
+    if (range.min !== undefined && inFirstUnit < range.min) return 'too-low'
+    if (range.max !== undefined && inFirstUnit > range.max) return 'too-high'
+  }
+  return null
 }
 
 /** The unit a detail was last given in, in this browser (else its quantity's first). */

@@ -14,7 +14,7 @@ import { kindOf } from '../../kinds/index.ts'
 import { BulkActions, Card, CardPart, EditorActions } from './types.ts'
 import { formRow, select } from './controls.ts'
 import { identityOptions, statusOptions } from './choices.ts'
-import { appearanceSection, footerSection, formSection, headerSection, kindSection } from './sections.ts'
+import { footerSection, formSection, headerSection, kindSection } from './sections.ts'
 
 export function buildEditor(
   feature: UserFeature,
@@ -52,7 +52,6 @@ export function buildEditor(
   headerSection(card, parts)
   formSection(card, parts)
   kindSection(card, parts)
-  appearanceSection(card, parts)
   footerSection(card, parts)
   return el('div.oim-popup-content.oim-ul-editor', ...parts)
 }

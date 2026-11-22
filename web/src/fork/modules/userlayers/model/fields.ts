@@ -4,16 +4,8 @@
 // Identity, status, echelon and mobility live in the code itself (sidc.ts).
 import { SymbolKind } from './sidc.ts'
 import { joinValue, splitValue } from './units.ts'
-import type { Field, LabelLevel, Group } from './fields.types.ts'
-import {
-  FIELDS,
-  MONTHS,
-  GROUPS,
-  FIELD_GROUP,
-  DEFAULT_FIELDS,
-  RELIABILITY,
-  CREDIBILITY
-} from './fields.constants.ts'
+import type { Field, LabelLevel } from './fields.types.ts'
+import { FIELDS, MONTHS, DEFAULT_FIELDS, DATE_KEYS, RELIABILITY, CREDIBILITY } from './fields.constants.ts'
 
 /** The fields of a kind of symbol, in order. */
 export function fieldsFor(kind: SymbolKind): Field[] {
@@ -52,15 +44,19 @@ export function cleanModifiers(modifiers: Record<string, string> | undefined): R
   return out
 }
 
-/** The modifiers drawn at a label level: none, the designation only, or everything. */
+/** The modifiers drawn at a label level: none, the designation only, or everything
+ * but the dates (a date-time group, "221846ZNOV26", is unreadable on the map: the
+ * card and the timeline say when). */
 export function modifiersToDraw(modifiers: Record<string, string> | undefined, level: LabelLevel) {
   const clean = cleanModifiers(modifiers)
   if (level === 'none') return {}
   if (level === 'name') return clean['T'] ? { T: clean['T'] } : {}
-  return clean
+  const drawn = { ...clean }
+  for (const key of DATE_KEYS) delete drawn[key]
+  return drawn
 }
 
-// --- The item card (editor.ts): fields grouped by the question they answer -------
+// --- The item card (editor/): the fields it shows, and the ones it can add -------
 
 /** The fields of a kind on the card: the defaults, then the ones it has (even blank:
  * just added with "+ Add detail"), in field order. */
@@ -69,18 +65,10 @@ export function cardFields(kind: SymbolKind, modifiers: Record<string, string> |
   return fieldsFor(kind).filter((f) => shown.has(f.key))
 }
 
-/** The fields that can still be added ("+ Add detail"), by group. */
-export function addableFields(
-  kind: SymbolKind,
-  modifiers: Record<string, string> | undefined
-): [Group, Field[]][] {
+/** The fields that can still be added ("+ Add detail…"), in the card's order. */
+export function addableFields(kind: SymbolKind, modifiers: Record<string, string> | undefined): Field[] {
   const shown = new Set(cardFields(kind, modifiers).map((f) => f.key))
-  const out: [Group, Field[]][] = []
-  for (const [group] of GROUPS) {
-    const fields = fieldsFor(kind).filter((f) => FIELD_GROUP[f.key] === group && !shown.has(f.key))
-    if (fields.length) out.push([group, fields])
-  }
-  return out
+  return fieldsFor(kind).filter((f) => !shown.has(f.key))
 }
 
 /** A source rating in words: "B2" -> "B2: usually reliable, probably true". */

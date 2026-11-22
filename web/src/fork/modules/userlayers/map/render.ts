@@ -27,7 +27,8 @@ import {
   resizable,
   scaledBox,
   selectionFeatures,
-  visibleBox
+  visibleBox,
+  withoutHandles
 } from './geometry.ts'
 import {
   copyLayers,
@@ -71,6 +72,9 @@ export class Renderer {
   /** The layers' order, top first (the list's, ui/outliner.ts layerOrder): the top one
    * is drawn on top. */
   orderOf?: () => string[]
+  /** Whether an item may be changed now (state/view.ts canEditItem, given by
+   * index.ts): one that can't (locked, in a locked or view-only layer) gets no handles. */
+  canEditItem?: (feature: UserFeature) => boolean
   private orderKey = ''
 
   private graphicsZoom = -1
@@ -348,14 +352,17 @@ export class Renderer {
 
   /** Highlight a feature (null: none); pictures, symbols and markers get a resize handle.
    * Nothing is drawn for an item in a hidden layer, its handles neither (it stays
-   * selected: they come back when the layer is shown). */
+   * selected: they come back when the layer is shown); one that can't be changed
+   * (locked) is highlighted without its handles. */
   select(feature: UserFeature | null) {
     this.selected = feature
     this.ensureOverlays()
     const shown = feature && !this.inHiddenLayer(feature) ? feature : null
     this.highlightItems(shown ? [shown] : [])
-    const features = shown ? (this.outline(shown) ?? selectionFeatures(shown)) : []
-    const handle = shown ? this.resizeHandle(shown) : null
+    const editable = shown !== null && (this.canEditItem?.(shown) ?? true)
+    const shapes = shown ? (this.outline(shown) ?? selectionFeatures(shown)) : []
+    const features = editable ? shapes : withoutHandles(shapes)
+    const handle = shown && editable ? this.resizeHandle(shown) : null
     if (handle) {
       features.push({
         type: 'Feature',

@@ -281,7 +281,6 @@
       "M": "Higher formation",
       "V": "Type",
       "C": "Quantity",
-      "G": "Staff comments",
       "F": "Reinforced / reduced",
       "J": "Evaluation rating",
       "K": "Combat effectiveness",
@@ -299,13 +298,9 @@
       "A": "Planned"
     },
     "add-detail": "Add detail",
-    "size-reset": "Normal size",
     "size": "Size",
     "color": "Colour",
     "width": "Line width",
-    "s": {
-      "appearance": "Appearance"
-    },
     "duplicate": "Duplicate",
     "delete": "Delete",
     "deselect": "Done",
@@ -444,13 +439,6 @@
       "into-help": "Into the layer you draw into (My layers)",
       "already-in": "Already in “{{layer}}”",
       "copied-into": "Copied into “{{layer}}”"
-    },
-    "group": {
-      "who": "Who",
-      "what": "What",
-      "when": "When",
-      "where": "Where and movement",
-      "sure": "How sure"
     },
     "echelon": {
       "-": "None",
@@ -725,10 +713,25 @@
     "remove-detail": "Remove",
     "mixed": "(mixed)",
     "notes": "Notes",
-    "reset": "Reset",
     "status-label": "Status",
     "condition-label": "Condition",
-    "echelon-label": "Echelon"
+    "echelon-label": "Echelon",
+    "identity-help": "Whose it is: the frame’s shape and colour (friend blue rectangle, hostile red diamond, neutral green square, unknown yellow)",
+    "status-help": "Present: there now (solid outline). Planned: expected or intended (dashed outline)",
+    "condition-help": "How it is, if present: fully capable, damaged, destroyed or full to capacity (a bar under the symbol)",
+    "drawn-as-help": "The graphic’s other version, on the same points",
+    "echelon-help": "Its size, from a team to an army: the marks above the frame",
+    "marked-as-help": "Headquarters (a staff under the frame), task force (a bracket above), dummy (a dashed outline)",
+    "mobility-help": "How it moves: the mark under the frame",
+    "unit-no-conversion": "Changing the unit doesn't convert the number.",
+    "not-a-number": "Not a number",
+    "too-low": "At least {{min}}",
+    "too-high": "At most {{max}}",
+    "name-help-military": "Its unique designation (\"2nd Bn\", \"OBJ LION\"), written beside it on the map",
+    "name-help": "Its name, in the list and on the map",
+    "notes-help": "Your notes: in this card only, never written on the map",
+    "reset-size": "Reset size",
+    "size-help": "Change it on the map: Shift + scroll over it, or drag its handle"
   },
   "tower": {
     "unnamed-line": "a line",

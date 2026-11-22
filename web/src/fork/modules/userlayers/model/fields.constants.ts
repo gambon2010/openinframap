@@ -1,6 +1,6 @@
 // Fork: the fields of a military symbol's card (fields.ts): its constants and tables.
 import { SymbolKind } from './sidc.ts'
-import type { Field, Group } from './fields.types.ts'
+import type { Field } from './fields.types.ts'
 
 export const ALL_SYMBOLS: SymbolKind[] = ['unit', 'equipment', 'installation', 'activity', 'other']
 
@@ -13,15 +13,34 @@ export const FIELDS: Field[] = [
     kinds: [...ALL_SYMBOLS, 'graphic'],
     help: 'The name that identifies it ("2nd Bn", "OBJ LION")'
   },
-  { key: 'T1', label: 'Second designation', input: 'text', kinds: ['graphic'] },
-  { key: 'M', label: 'Higher formation', input: 'text', kinds: ['unit', 'installation'] },
-  { key: 'V', label: 'Type', input: 'text', kinds: ['equipment'] },
-  { key: 'C', label: 'Quantity', input: 'number', kinds: ['equipment'] },
   {
-    key: 'G',
-    label: 'Staff comments',
-    input: 'textarea',
-    kinds: [...ALL_SYMBOLS, 'graphic']
+    key: 'T1',
+    label: 'Second designation',
+    input: 'text',
+    kinds: ['graphic'],
+    help: 'A second name, written on the other side of the graphic'
+  },
+  {
+    key: 'M',
+    label: 'Higher formation',
+    input: 'text',
+    kinds: ['unit', 'installation'],
+    help: 'The formation it belongs to ("3rd Bde"), written beside the symbol'
+  },
+  {
+    key: 'V',
+    label: 'Type',
+    input: 'text',
+    kinds: ['equipment'],
+    help: 'Which equipment it is ("Leopard 2A6")'
+  },
+  {
+    key: 'C',
+    label: 'Quantity',
+    input: 'number',
+    kinds: ['equipment'],
+    min: 0,
+    help: 'How many'
   },
   // Assessment
   {
@@ -42,26 +61,50 @@ export const FIELDS: Field[] = [
     key: 'K',
     label: 'Combat effectiveness',
     input: 'text',
-    kinds: ['unit', 'equipment', 'installation', 'activity']
+    kinds: ['unit', 'equipment', 'installation', 'activity'],
+    help: 'How able it is to fight ("70 %", "green")'
   },
   // Time
-  { key: 'W', label: 'Date-time group', input: 'datetime', kinds: ALL_SYMBOLS },
-  { key: 'W', label: 'Effective from', input: 'datetime', kinds: ['graphic'] },
-  { key: 'W1', label: 'Effective to', input: 'datetime', kinds: ['graphic'] },
+  {
+    key: 'W',
+    label: 'Date-time group',
+    input: 'datetime',
+    kinds: ALL_SYMBOLS,
+    help: 'When it was seen or reported (the timeline shows it from then)'
+  },
+  {
+    key: 'W',
+    label: 'Effective from',
+    input: 'datetime',
+    kinds: ['graphic'],
+    help: 'When it starts to apply'
+  },
+  {
+    key: 'W1',
+    label: 'Effective to',
+    input: 'datetime',
+    kinds: ['graphic'],
+    help: 'When it stops applying'
+  },
   // Movement
   {
     key: 'Q',
     label: 'Direction of movement',
     input: 'number',
     quantity: 'angle',
-    kinds: ['unit', 'equipment', 'activity']
+    kinds: ['unit', 'equipment', 'activity'],
+    min: 0,
+    max: 360,
+    help: 'Which way it moves, from north: an arrow from the symbol'
   },
   {
     key: 'Z',
     label: 'Speed',
     input: 'number',
     quantity: 'speed',
-    kinds: ['unit', 'equipment', 'activity']
+    kinds: ['unit', 'equipment', 'activity'],
+    min: 0,
+    help: "How fast it moves. Changing the unit doesn't convert the number."
   },
   // Geometry (graphics)
   {
@@ -70,7 +113,7 @@ export const FIELDS: Field[] = [
     input: 'text',
     quantity: 'altitude',
     kinds: ['graphic'],
-    help: 'One value, or "min,max" for airspace'
+    help: 'One value, or "min,max" for airspace. Changing the unit doesn\'t convert the number.'
   },
   {
     key: 'AM',
@@ -78,40 +121,25 @@ export const FIELDS: Field[] = [
     input: 'text',
     quantity: 'distance',
     kinds: ['graphic'],
-    help: 'For corridors, circles and rectangles'
+    min: 0,
+    help: "For corridors, circles and rectangles. Changing the unit doesn't convert the number."
   },
-  { key: 'AN', label: 'Attitude', input: 'number', quantity: 'angle', kinds: ['graphic'] }
+  {
+    key: 'AN',
+    label: 'Attitude',
+    input: 'number',
+    quantity: 'angle',
+    kinds: ['graphic'],
+    min: 0,
+    max: 360,
+    help: 'Which way it points, from north'
+  }
 ]
+
+/** The date-time groups' letters (not drawn on the map: modifiersToDraw). */
+export const DATE_KEYS = ['W', 'W1']
 
 export const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-
-export const GROUPS: [Group, string][] = [
-  ['who', 'Who'],
-  ['what', 'What'],
-  ['when', 'When'],
-  ['where', 'Where and movement'],
-  ['sure', 'How sure']
-]
-
-/** Which question each field answers. */
-export const FIELD_GROUP: Record<string, Group> = {
-  T: 'who',
-  T1: 'who',
-  M: 'who',
-  V: 'what',
-  C: 'what',
-  W: 'when',
-  W1: 'when',
-  Q: 'where',
-  Z: 'where',
-  X: 'where',
-  AM: 'where',
-  AN: 'where',
-  F: 'sure',
-  J: 'sure',
-  K: 'sure',
-  G: 'sure'
-}
 
 /** Shown on the card even when empty, ready to fill in (anything filled in is shown too). */
 export const DEFAULT_FIELDS: Record<SymbolKind, string[]> = {

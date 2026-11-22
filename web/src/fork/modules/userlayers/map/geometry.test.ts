@@ -12,7 +12,8 @@ import {
   translateGeometry,
   vertices,
   visibleBox,
-  scaledBox
+  scaledBox,
+  withoutHandles
 } from './geometry.ts'
 import { withoutMinZoom } from './layers.ts'
 import { dropRepeats, graphicGeometry, wheelPixels } from './tools.ts'
@@ -121,6 +122,12 @@ describe('selection', () => {
     const out = selectionFeatures(feature(line, 'graphic'))
     expect(out.every((f) => f.properties?.vertex)).toBe(true)
     expect(out).toHaveLength(3)
+  })
+
+  test('a locked drawing: its shape highlighted, none of its handles', () => {
+    const out = withoutHandles(selectionFeatures(feature(square, 'drawing')))
+    expect(out).toHaveLength(1)
+    expect(out[0].geometry).toEqual(square)
   })
 })
 

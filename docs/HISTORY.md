@@ -1475,6 +1475,20 @@ default). Counts are France's OSM data in October 2026.
   unit as the map draws them; directions in degrees, shown in ° or mils), dates back
   to words when left, × on details, a grouped native dropdown to add one. "Additional
   information" removed (it printed on the map; no item used it): Notes only.
+- **The card, second round** (asked): identities with their frame as an emoji
+  (🟦 friend, ♦️ hostile, 🟩 neutral, 🟨 unknown: native dropdown lines hold text
+  only); tooltips on every label; the padlock inside the title bar (it stayed put
+  while the card scrolled); "+ Add detail…" a flat list in the card's order (the
+  question groups and their names removed); numbers checked against each field's
+  range (`rangeProblem`: no negative speed, directions to 360° in either unit),
+  outlined and not kept; a locked item (or one in a locked or view-only layer)
+  highlighted without its handles (`withoutHandles`, the renderer given
+  `canEditItem`); the Appearance section gone (size shown with Reset size, colour
+  and line width as rows); the blue button no longer turns grey with white text on
+  hover; dates no longer written on the map (`modifiersToDraw`: "221846ZNOV26" is
+  unreadable there, the card and the timeline say when); "Staff comments" removed
+  (printed on the map like "Additional information"; no item used it): Notes only;
+  the unit dropdown's tooltip says the number isn't converted.
 
 ## Extra data (not from OpenStreetMap)
 

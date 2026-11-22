@@ -47,9 +47,13 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   buttons when their panel is open: `oim-pressed`.
 - **A form** (My layers' item card, `ui/editor/`): one row per thing, a label in
   the light text colour on the left (one column width), its control filling the
-  rest, a × at the end of what can be removed (`.oim-ul-detail`, `formRow`). Every
-  choice is a dropdown, on/off things tick boxes, all controls one height and one
-  border; a value with a unit has the unit's dropdown beside it. The title bar says
+  rest, a × at the end of what can be removed (`.oim-ul-detail`, `formRow`), the
+  label's tooltip saying what it is. Every choice is a dropdown (an identity's lines
+  begin with its frame as an emoji: dropdown lines hold text only), on/off things
+  tick boxes, all controls one height and one border, no folded sections; a value
+  with a unit has the unit's dropdown beside it; a value not allowed is outlined in
+  the error red, its tooltip saying why (`.oim-ul-invalid`). A locked item is
+  highlighted without its handles; the padlock is part of the title bar. The title bar says
   what the thing is, as every panel's; no picture of something already on the map,
   no hint saying what everyone knows (dragging).
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
