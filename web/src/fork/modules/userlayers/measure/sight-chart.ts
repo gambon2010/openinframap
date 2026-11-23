@@ -8,6 +8,7 @@
 // and kilometres. Hovering it says where along the line (onHover: the sample under
 // the pointer, null when it leaves).
 // Drawn by hand in SVG: polygons, lines and ticks a chart library would only wrap.
+import { clamp } from '../../../core/math.ts'
 import { svg } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance } from '../../../core/earth.ts'
@@ -22,6 +23,8 @@ const TOP = 16
 const BOTTOM = 40
 /** About this many ticks along each axis. */
 const TICKS = 6
+/** ← and → cross the line in this many steps. */
+const KEY_STEPS = 200
 
 /** A sample with terrain, its heights above the eye's line to the target (negative:
  * below it), as seen from the eye. */
@@ -195,7 +198,8 @@ function blockMark(result: SightResult, known: Known[], scale: Scale): SVGElemen
   ]
 }
 
-/** A line and a dot following the pointer, and onHover with the sample under it. */
+/** Pointing at the chart, or ← and → (Shift: one sample at a time): a line and a dot
+ * at that place, and `onHover` told (the panel's readout and the map follow). */
 function hoverOn(
   plot: SVGElement,
   known: Known[],
@@ -205,27 +209,53 @@ function hoverOn(
   const line = svg('line.oim-ul-sight-cursor', { y1: TOP, y2: HEIGHT - BOTTOM, visibility: 'hidden' })
   const dot = svg('circle.oim-ul-sight-cursor-dot', { r: 5, visibility: 'hidden' })
   plot.append(line, dot)
+  let shown: number | null = null
+  const show = (index: number | null) => {
+    shown = index
+    const k = index === null ? undefined : known[index]
+    const visibility = k ? 'visible' : 'hidden'
+    line.setAttribute('visibility', visibility)
+    dot.setAttribute('visibility', visibility)
+    if (!k) return onHover(null)
+    const x = String(scale.x(k.distance))
+    line.setAttribute('x1', x)
+    line.setAttribute('x2', x)
+    dot.setAttribute('cx', x)
+    dot.setAttribute('cy', String(scale.y(k.top)))
+    onHover(k.point)
+  }
   plot.addEventListener('pointermove', (event) => {
     const box = plot.getBoundingClientRect()
     const x = ((event.clientX - box.left) / box.width) * WIDTH
     const k = nearest(known, scale, x)
-    if (!k) return
-    for (const [name, value] of [
-      ['x1', scale.x(k.distance)],
-      ['x2', scale.x(k.distance)]
-    ] as const)
-      line.setAttribute(name, String(value))
-    dot.setAttribute('cx', String(scale.x(k.distance)))
-    dot.setAttribute('cy', String(scale.y(k.top)))
-    line.setAttribute('visibility', 'visible')
-    dot.setAttribute('visibility', 'visible')
-    onHover(k.point)
+    if (k) show(known.indexOf(k))
   })
-  plot.addEventListener('pointerleave', () => {
-    line.setAttribute('visibility', 'hidden')
-    dot.setAttribute('visibility', 'hidden')
-    onHover(null)
-  })
+  plot.addEventListener('pointerleave', () => show(null))
+  const onKey = (event: KeyboardEvent) => {
+    // The chart gone (the panel closed, a new answer drawn): this listener with it.
+    if (!plot.isConnected) return document.removeEventListener('keydown', onKey, { capture: true })
+    const next = steppedSample(shown, known.length, event)
+    if (next === undefined) return
+    event.preventDefault()
+    event.stopPropagation()
+    show(next)
+  }
+  // Before the map, which pans with the arrows.
+  document.addEventListener('keydown', onKey, { capture: true })
+}
+
+/** The sample ← or → leads to (a two-hundredth of the line; with Shift, the next
+ * sample), from the start or end when none is shown; undefined for any other key, or
+ * while typing. */
+export function steppedSample(shown: number | null, count: number, event: KeyboardEvent): number | undefined {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return undefined
+  if ((event.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]'))
+    return undefined
+  if (!count) return undefined
+  const forward = event.key === 'ArrowRight'
+  if (shown === null) return forward ? 0 : count - 1
+  const step = event.shiftKey ? 1 : Math.max(1, Math.round(count / KEY_STEPS))
+  return clamp(shown + (forward ? step : -step), 0, count - 1)
 }
 
 /** The sample nearest an x on the chart (the samples are in order: a binary search). */

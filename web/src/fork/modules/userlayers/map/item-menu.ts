@@ -48,8 +48,8 @@ export function itemMenu(a: ItemMenuActions, feature: UserFeature, layerId: stri
     store.updateFeature(layerId, { ...feature, properties: { ...feature.properties, ...changes } })
   const items: MenuItem[] = [...sightEntries(feature, update), ...codeEntries(feature, locked, update)]
   items.push(
-    { label: t('userlayers.rename', 'Rename'), run: () => a.rename(feature.id), disabled: locked },
-    { label: t('userlayers.duplicate', 'Duplicate'), run: () => a.duplicate(feature, layerId) },
+    { label: t('userlayers.rename-item', 'Rename (F2)'), run: () => a.rename(feature.id), disabled: locked },
+    { label: t('userlayers.duplicate-item', 'Duplicate (Ctrl+D)'), run: () => a.duplicate(feature, layerId) },
     { label: t('userlayers.copy-item', 'Copy (Ctrl+C)'), run: () => a.copy(feature) }
   )
   const others = [...store.layers.values()].filter((l) => l.id !== layerId && store.view.canEdit(l))

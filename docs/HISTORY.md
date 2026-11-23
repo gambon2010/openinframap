@@ -1580,6 +1580,11 @@ default). Counts are France's OSM data in October 2026.
   chip like the others (`chip.ts`, the filters' chips too); every My layers dropdown
   the card's look. The toolbar: tools, then undo, redo, history, then the layer new
   items go into beside Discard and Save.
+- **Shortcuts** (asked, 2026-11-23): / or Ctrl+K the search box; Ctrl+S saves (one
+  `save()` for the button and the key); F2 renames the selected item, Ctrl+D
+  duplicates it (the menu says so); ← → step through the history and along a line of
+  sight's profile (Shift: one sample), before the map's own arrows; ? lists every
+  shortcut, each module giving its own (`shortcuts`, ui/shortcuts.ts).
 
 ## Extra data (not from OpenStreetMap)
 

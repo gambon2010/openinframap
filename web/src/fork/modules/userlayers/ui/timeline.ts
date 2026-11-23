@@ -15,6 +15,26 @@ export class Timeline {
 
   constructor(ws: Workspace) {
     this.ws = ws
+    // Before the map, which pans with the arrows.
+    document.addEventListener('keydown', (e) => this.stepOnKey(e), { capture: true })
+  }
+
+  /** ← and →: the previous and next change, while the history is shown. */
+  private stepOnKey(e: KeyboardEvent) {
+    if (this.ws.store.view.mode !== 'playback') return
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return
+    e.preventDefault()
+    e.stopPropagation()
+    this.goTo(this.ws.playback.position + (e.key === 'ArrowLeft' ? -1 : 1))
+  }
+
+  /** The history at a step (0: before the first change), shown on the map. */
+  private goTo(position: number) {
+    const pb = this.ws.playback
+    pb.stop()
+    pb.position = clamp(position, 0, pb.changes.length)
+    void this.showStep()
   }
 
   async open() {
@@ -64,11 +84,7 @@ export class Timeline {
     if (!inPlayback) return
     const pb = this.ws.playback
     const total = pb.changes.length
-    const go = (position: number) => () => {
-      pb.stop()
-      pb.position = clamp(position, 0, total)
-      void this.showStep()
-    }
+    const go = (position: number) => () => this.goTo(position)
     const slider = el('input.oim-ul-slider', {
       type: 'range',
       min: '0',
@@ -106,9 +122,9 @@ export class Timeline {
       el(
         '.oim-ul-timeline-controls',
         action('⏮', go(0), { title: t('userlayers.first', 'Start') }),
-        action('◀', go(pb.position - 1), { title: t('userlayers.previous', 'Previous change') }),
+        action('◀', go(pb.position - 1), { title: t('userlayers.previous', 'Previous change (←)') }),
         play,
-        action('▶|', go(pb.position + 1), { title: t('userlayers.next', 'Next change') }),
+        action('▶|', go(pb.position + 1), { title: t('userlayers.next', 'Next change (→)') }),
         action('⏭', go(total), { title: t('userlayers.last', 'Now') }),
         speed,
         slider,

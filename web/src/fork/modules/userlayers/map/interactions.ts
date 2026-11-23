@@ -9,7 +9,7 @@ import { Store } from '../state/store.ts'
 import { Tools } from './tools.ts'
 import { Renderer } from './render.ts'
 import { geometryCentre, translateGeometry } from './geometry.ts'
-import { UserFeature } from '../model/model.ts'
+import { UserFeature, UserLayer } from '../model/model.ts'
 import { featureLabelParts } from '../model/labels.ts'
 import { openContextMenu, type MenuItem } from '../../../ui/context-menu.ts'
 import { itemMenu } from './item-menu.ts'
@@ -164,21 +164,36 @@ export class Interactions {
     this.tools.select(id)
   }
 
+  /** The item keys: F2 renames the selected item, Ctrl+D duplicates it, Ctrl+C / Ctrl+V
+   * copy and paste (as its right-click menu does). */
   private keydown(e: KeyboardEvent) {
     if (!this.isOpen() || !this.tools.enabled) return
     if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return
+    const selected = this.selectedItem()
+    if (e.key === 'F2' && selected && this.store.view.canEditItem(selected.layer, selected.feature)) {
+      e.preventDefault()
+      this.focusName(selected.feature.id)
+      return
+    }
     if (!(e.ctrlKey || e.metaKey)) return
     const key = e.key.toLowerCase()
-    if (key === 'c' && this.tools.selected) {
-      const layer = this.store.layerOf(this.tools.selected)
-      const feature = layer?.features.get(this.tools.selected)
-      if (feature) {
-        this.clipboard = structuredClone(feature)
-        e.preventDefault()
-      }
+    if (key === 'c' && selected) {
+      this.clipboard = structuredClone(selected.feature)
+      e.preventDefault()
+    } else if (key === 'd' && selected) {
+      e.preventDefault()
+      this.paste(selected.feature, selected.layer.id, 'beside')
     } else if (key === 'v' && this.clipboard) {
       e.preventDefault()
       this.paste(this.clipboard, this.store.activeLayer, 'pointer')
     }
+  }
+
+  /** The selected item and its layer, if one is selected. */
+  private selectedItem(): { feature: UserFeature; layer: UserLayer } | null {
+    const id = this.tools.selected
+    const layer = id ? this.store.layerOf(id) : undefined
+    const feature = id ? layer?.features.get(id) : undefined
+    return layer && feature ? { feature, layer } : null
   }
 }

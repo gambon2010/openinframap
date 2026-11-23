@@ -299,10 +299,10 @@ export class Toolbar {
         (pending
           ? t('userlayers.save-n', 'Save ({{count}})', { count: pending })
           : t('userlayers.saved', 'Saved')),
-      () => void this.ws.run(t('userlayers.saving', 'Saving'), () => store.save()),
+      () => this.ws.save(),
       {
         primary: pending > 0,
-        disabled: !pending || !!busy || inPlayback || store.conflicts.length > 0,
+        disabled: !this.ws.canSave(),
         title: store.conflicts.length
           ? tn(
               'userlayers.save-conflicts',
@@ -310,7 +310,10 @@ export class Toolbar {
               'Resolve the {{count}} conflicts first',
               store.conflicts.length
             )
-          : t('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
+          : t(
+              'userlayers.save-title',
+              'Send your changes to the database (Ctrl+S; they can then be played back)'
+            )
       }
     )
     const discard = action(t('userlayers.discard-button', 'Discard'), () => void this.discard(pending), {

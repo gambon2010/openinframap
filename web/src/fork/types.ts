@@ -86,4 +86,13 @@ export interface ForkModule {
   searchSelected?: (result: SearchResult, ctx: ForkContext) => void
   /** More search providers (search/search.ts), besides upstream's coordinates and the backend. */
   searchProviders?: (language: string) => ISearchProvider[]
+  /** Its keyboard shortcuts, for the list ? shows (ui/shortcuts.ts). */
+  shortcuts?: () => Shortcut[]
+}
+
+/** A keyboard shortcut: the keys, what they do, the group it's listed under. */
+export interface Shortcut {
+  keys: string
+  does: string
+  group: string
 }

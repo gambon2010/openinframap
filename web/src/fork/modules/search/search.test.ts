@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import search, { dropDuplicates } from './index.ts'
+import search, { dropDuplicates, focusSearchOnKey } from './index.ts'
 import type { SearchResult } from '../../../search/search.ts'
 
 const result = (name: string, latitude: number, longitude: number, score: number): SearchResult => ({
@@ -38,5 +38,32 @@ describe('result descriptions', () => {
 
   test("others: upstream's", () => {
     expect(search.searchDescription!({ type: 'substation' })).toBeUndefined()
+  })
+})
+
+describe('the keys to the search box', () => {
+  const box = () => document.querySelector<HTMLInputElement>('.oim-search-input')!
+  const press = (target: Element, key: string, ctrlKey = false) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey, bubbles: true, cancelable: true }))
+
+  test('/ and Ctrl+K put the cursor in it', () => {
+    document.body.innerHTML = '<input class="oim-search-input"><div id="map"></div>'
+    document.addEventListener('keydown', focusSearchOnKey)
+    press(document.getElementById('map')!, '/')
+    expect(document.activeElement).toBe(box())
+    box().blur()
+    press(document.getElementById('map')!, 'k', true)
+    expect(document.activeElement).toBe(box())
+    document.removeEventListener('keydown', focusSearchOnKey)
+  })
+
+  test('/ typed in another field stays there', () => {
+    document.body.innerHTML = '<input class="oim-search-input"><input id="name">'
+    document.addEventListener('keydown', focusSearchOnKey)
+    const name = document.getElementById('name') as HTMLInputElement
+    name.focus()
+    press(name, '/')
+    expect(document.activeElement).toBe(name)
+    document.removeEventListener('keydown', focusSearchOnKey)
   })
 })

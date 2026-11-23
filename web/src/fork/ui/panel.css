@@ -315,3 +315,21 @@ html button.oim-on {
 .oim-ask-text input {
   padding: 3px 5px;
 }
+
+/* The keyboard shortcuts' window (ui/shortcuts.ts): a table a group, the keys on the
+   left in the monospace font. */
+.oim-shortcuts h3 {
+  margin: 10px 0 4px;
+  font-size: 0.95rem;
+}
+/* One width for the keys in every group, so the tables line up. */
+.oim-shortcuts th {
+  width: 13em;
+  padding: 2px 12px 2px 0;
+  text-align: left;
+  white-space: nowrap;
+}
+.oim-shortcuts kbd {
+  font-family: var(--oim-font-family-monospace);
+  font-size: 0.85rem;
+}

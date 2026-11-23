@@ -9,7 +9,7 @@ import {
   type SightResult
 } from './sight.ts'
 import { sightBlockLabel, sightVerdict } from './sight-verdict.ts'
-import { niceStep, sightChart } from './sight-chart.ts'
+import { niceStep, sightChart, steppedSample } from './sight-chart.ts'
 
 /** A profile row: distance, ground, seen, and optionally what stands there. */
 const row = (
@@ -165,5 +165,25 @@ describe('a short break in a long line of sight', () => {
 
   test('long enough already, or clear: as it is', () => {
     expect(noticeableRuns(runs, 2)).toEqual([runs[0], runs[2], runs[1]])
+  })
+})
+
+describe('moving along the profile with the arrows', () => {
+  const key = (k: string, shiftKey = false) => new KeyboardEvent('keydown', { key: k, shiftKey })
+
+  test('from nothing shown: → starts at the eye, ← at the target', () => {
+    expect(steppedSample(null, 1000, key('ArrowRight'))).toBe(0)
+    expect(steppedSample(null, 1000, key('ArrowLeft'))).toBe(999)
+  })
+
+  test('a two-hundredth of the line a step, one sample with Shift, within the line', () => {
+    expect(steppedSample(100, 1000, key('ArrowRight'))).toBe(105)
+    expect(steppedSample(100, 1000, key('ArrowLeft', true))).toBe(99)
+    expect(steppedSample(998, 1000, key('ArrowRight'))).toBe(999)
+  })
+
+  test('another key, or no samples: not ours', () => {
+    expect(steppedSample(0, 1000, key('a'))).toBeUndefined()
+    expect(steppedSample(null, 0, key('ArrowRight'))).toBeUndefined()
   })
 })

@@ -2,6 +2,7 @@
 // upstream files keep one-line changes and new layers only need a new module in
 // MODULES. Upstream imports only this file, types.ts and config.ts. See
 // docs/FORK_CHANGES.md ("Fork structure").
+import { generalShortcuts, listShortcutsOnKey } from './ui/shortcuts.ts'
 import i18next from 'i18next'
 import { Map, MapGeoJSONFeature, SourceSpecification } from 'maplibre-gl'
 import { LayerGroup } from '@russss/maplibregl-layer-switcher'
@@ -102,6 +103,9 @@ export function forkInit(ctx: ForkContext) {
   mapMode.install(ctx.map, ctx.clickRouter)
   // One tooltip for every title on the page.
   tooltips.install()
+  document.addEventListener('keydown', (e) =>
+    listShortcutsOnKey(e, () => [...generalShortcuts(), ...MODULES.flatMap((m) => m.shortcuts?.() ?? [])])
+  )
   leaveLabelsUnclicked(ctx.clickRouter)
   for (const m of MODULES) m.init?.(ctx)
 }

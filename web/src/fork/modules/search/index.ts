@@ -6,6 +6,7 @@ import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
 import type { SearchResult } from '../../../search/search.ts'
 import PhotonSearch from './photon.ts'
+import { SEARCH_INPUT } from './search.constants.ts'
 
 // What the named features of schema/fork/search.sql are (critical sites: fork/sites).
 function feature_kind_label(kind: string): string {
@@ -42,7 +43,27 @@ function feature_kind_label(kind: string): string {
   )
 }
 
+/** / or Ctrl+K: the search box, the cursor in it (/ not while typing elsewhere). */
+export function focusSearchOnKey(e: KeyboardEvent) {
+  const typing = (e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable]')
+  const slash = e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey
+  const ctrlK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'
+  const box = document.querySelector<HTMLInputElement>(SEARCH_INPUT)
+  if (!(slash || ctrlK) || !box) return
+  e.preventDefault()
+  box.focus()
+  box.select()
+}
+
 const search: ForkModule = {
+  init: () => document.addEventListener('keydown', focusSearchOnKey),
+  shortcuts: () => [
+    {
+      keys: '/  ' + t('shortcuts.or', 'or') + '  Ctrl+K',
+      does: t('shortcuts.search', 'The search box'),
+      group: t('shortcuts.everywhere', 'Everywhere')
+    }
+  ],
   // Addresses from a Photon server, if one is configured.
   searchProviders: (language) => [new PhotonSearch(language)],
 

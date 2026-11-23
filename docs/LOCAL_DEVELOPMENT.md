@@ -93,6 +93,7 @@ listens on this computer; it passes the same requests to the same services.
 
 ## Using the map
 
+- **Keys:** **?** lists every keyboard shortcut; **/** or **Ctrl+K** the search box.
 - **Top left:** the search box; a result chosen is pinned and highlighted, its
   details shown, your layers left as they are. Below it, clicking anything on the map opens its
   **details** (and highlights it); under those, the **Grid connection** panel when

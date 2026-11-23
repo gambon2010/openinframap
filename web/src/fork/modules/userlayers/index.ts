@@ -3,6 +3,7 @@
 // They can hold military and emergency symbols (MIL-STD-2525C, as in ODINv2),
 // pictures, markers, drawings, and copies of map features, which are drawn like
 // the originals and stay visible when the originals are hidden.
+import { userLayersShortcuts } from './shortcuts.ts'
 import { onLive } from '../../services/live.ts'
 import { connectSightPanel } from './measure/sight-panel.ts'
 import { findFeature } from './state/reconcile.ts'
@@ -23,6 +24,7 @@ import { layerOrder, sortLayers } from './ui/outliner/order.ts'
 import { LngLatBounds } from 'maplibre-gl'
 
 const userlayers: ForkModule = {
+  shortcuts: userLayersShortcuts,
   init: ({ map, primaryLayers }) => {
     const store = new Store()
     connectSightPanel(map, {

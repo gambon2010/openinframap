@@ -151,7 +151,8 @@ shows it as the page's own tooltip (never the browser's), for every title on the
 page, upstream's included. Questions and messages: `ui/ask.ts` (`askToConfirm`,
 `askForText`, `tell`), a window in the middle of the screen, never the browser's
 `confirm`, `prompt` or `alert`. A module's label-only layers (`labelLayers`) aren't
-clicked: a click opens what's under them.
+clicked: a click opens what's under them. Keyboard shortcuts: a module lists its own
+(`shortcuts`), ? shows them all (`ui/shortcuts.ts`); a new key goes in that list.
 
 **Types and constants:** a file's types go in `X.types.ts` and its constants and
 tables in `X.constants.ts`, next to it (`render.ts`, `render.types.ts`,

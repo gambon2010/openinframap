@@ -134,6 +134,18 @@ export class Workspace implements IControl {
     this.update()
   }
 
+  /** Whether Save can run now: changes to send, nothing else running, no conflict
+   * left to resolve, the present shown (not the history). */
+  canSave(): boolean {
+    const { store } = this
+    return store.unsavedCount > 0 && !this.busy && store.view.live && store.conflicts.length === 0
+  }
+
+  /** Sends the changes to the database (Save, Ctrl+S). */
+  save() {
+    if (this.canSave()) void this.run(t('userlayers.saving', 'Saving'), () => this.store.save())
+  }
+
   /** Run a task with its name on the Save button; an error is shown to the user. */
   async run(label: string, task: () => Promise<void>) {
     this.busy = label
@@ -182,9 +194,15 @@ export class Workspace implements IControl {
 
   private keydown(e: KeyboardEvent) {
     if (!this.isOpen || !this.store.view.live) return
+    const mod = e.ctrlKey || e.metaKey
+    // Ctrl+S saves even while typing (the browser would offer to save the page).
+    if (mod && e.key.toLowerCase() === 's') {
+      e.preventDefault()
+      this.save()
+      return
+    }
     const target = e.target as HTMLElement
     if (target.closest('input, textarea, select, [contenteditable]')) return
-    const mod = e.ctrlKey || e.metaKey
     if (mod && e.key.toLowerCase() === 'z') {
       e.preventDefault()
       if (e.shiftKey) this.store.redo()
