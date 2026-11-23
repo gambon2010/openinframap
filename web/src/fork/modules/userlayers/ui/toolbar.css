@@ -71,9 +71,6 @@
   max-width: 11em;
   padding: 3px;
 }
-.oim-ul-toolbar .oim-ul-menu-items {
-  top: 100%;
-}
 
 /* The symbol picker, under the toolbar. */
 .oim-ul-picker {

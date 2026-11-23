@@ -3,6 +3,7 @@
 // (outliner/), the only part that scrolls, and its buttons under it. Built once, so
 // the list's search box keeps its focus; each update refreshes the message and the
 // list. It's as tall as its content, up to the bottom of the left column.
+import { mapScale } from '../../../core/geo.ts'
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { UserFeature } from '../model/model.ts'
@@ -56,7 +57,7 @@ export class Sidebar {
       // The map draws the layers in the list's order.
       reordered: () => void ws.renderer.render(ws.store.layers, ws.store.hidden),
       itemMenu: (feature, layerId) => ws.itemMenu?.(feature, layerId) ?? [],
-      mapZoom: () => ws.map.getZoom()
+      mapScale: () => mapScale(ws.map.getZoom(), ws.map.getCenter().lat)
     })
   }
 

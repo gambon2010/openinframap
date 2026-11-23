@@ -20,7 +20,7 @@ export function setNewItemColour(colour: string) {
 /** A new item's properties with the colour for new items, if its kind has a colour
  * and it has none yet. */
 export function withNewColour(properties: FeatureProps): FeatureProps {
-  return kindOf(properties).coloured && !properties.color
+  return kindOf(properties).coloured?.(properties) && !properties.color
     ? { ...properties, color: newItemColour() }
     : properties
 }

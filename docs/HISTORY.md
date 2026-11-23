@@ -1519,6 +1519,26 @@ default). Counts are France's OSM data in October 2026.
   on one line (the multi-line field type removed). Plans: indoor maps (OSM's Simple
   Indoor Tagging: 65,000 rooms in France; maplibre-gl-indoorequal), peer-to-peer
   layers (sync bundles, then linked installations; CRDTs looked at).
+- **Scale slider, neighbourhoods, slivers, search** (asked, 2026-11-26): a layer's
+  symbol scale is a slider of map scales (1:5 000 to 1:500 000, `style.symbolScale`,
+  drawn at the zoom that scale is at the map's latitude; `mapScale` and
+  `zoomForScale` in core/geo.ts, the debug box's and the graphics' copies merged).
+  Building numbers per neighbourhood where INSEE splits a commune (IRIS grouped by
+  grand quartier, from IGN's Géoplateforme WFS: 3,994 neighbourhoods in 1,848
+  communes; Strasbourg's 30, "STR-PET" Petite France, "STR-NEU" Neudorf Ouest),
+  numbered again from scratch (migration 005); slivers (narrower than 1.5 m or under
+  2 m²: a staircase's steps beside the cathedral) not numbered, left out of the flat
+  buildings' layers; labels whole or the number alone (Settings); a copied building
+  named by its number; numbers found by the search, nearest the map first (the map's
+  centre sent: `forkSearchParams`). Whole-country numbering at build looked at and
+  left out: decoding every building tile of France takes hours and fills the
+  database with tens of millions of rows, for numbers the lazy way gives the same.
+  **Bug:** the hover tooltip had stopped showing (its styles went with the old menu's,
+  2026-11-22): restored. Copying keeps to infrastructure and buildings (`canCopy`).
+  Discard a button, its question a centred window (`ui/confirm.ts`, every
+  `window.confirm` replaced). Drawn icons for the list, menus and padlock; a line of
+  sight has no colour; a named measurement shows its name. Backlog: whole features on
+  select, SNCF railway data.
 
 ## Extra data (not from OpenStreetMap)
 

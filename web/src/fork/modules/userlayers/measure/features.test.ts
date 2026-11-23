@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { measurementFeatures, measurementOf, summary } from './features.ts'
+import { measurementFeatures, measurementOf, nameFeature, summary } from './features.ts'
 
 const leg: [number, number][] = [
   [7, 47],
@@ -151,5 +151,34 @@ describe('range rings zoomed out', () => {
     const { legBearing } = await import('./features.ts')
     expect(legBearing([7, 47], [7, 48], 'true')).toBe('000°T (0 mils)')
     expect(legBearing([7, 47], [7, 48], 'grid')).toMatch(/^\d{3}°G \(\d+ mils\)$/)
+  })
+})
+
+describe("a named measurement's name on the map", () => {
+  test('above the middle of a line of sight, bold, first', () => {
+    const name = nameFeature(
+      {
+        type: 'sight',
+        points: [
+          [0, 0],
+          [2, 2]
+        ]
+      },
+      'OP North'
+    )
+    expect(name.geometry).toEqual({ type: 'Point', coordinates: [1, 1] })
+    expect(name.properties).toMatchObject({ label: 'OP North', big: true, priority: 0, anchor: 'bottom' })
+  })
+
+  test("at an area's centre", () => {
+    const square: [number, number][] = [
+      [0, 0],
+      [2, 0],
+      [2, 2],
+      [0, 2],
+      [0, 0]
+    ]
+    const name = nameFeature({ type: 'area', points: square }, 'Zone')
+    expect(name.geometry).toEqual({ type: 'Point', coordinates: [1, 1] })
   })
 })

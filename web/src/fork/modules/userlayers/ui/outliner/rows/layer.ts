@@ -9,6 +9,7 @@ import type { ItemGroup } from '../types.ts'
 import { ITEMS_SHOWN, ITEM_GROUPS } from '../constants.ts'
 import { groupItems } from '../groups.ts'
 import { button, focusable } from '../widgets.ts'
+import { toolIcon } from '../../tool-icons.ts'
 import { nameInput, startEditing } from '../editing.ts'
 import { layerMenu } from '../menus.ts'
 import { layerDropTarget } from '../drag.ts'
@@ -46,7 +47,7 @@ export function layerRow(
     label,
     owner ? '' : sharedTag(layer),
     locked
-      ? el('span.oim-ul-row-icon', '🔒', {
+      ? el('span.oim-ul-row-icon', toolIcon('lock', 14), {
           title: t('userlayers.locked-layer', 'Locked: no changes to its items')
         })
       : '',

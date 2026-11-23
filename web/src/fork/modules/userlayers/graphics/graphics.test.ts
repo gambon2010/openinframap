@@ -9,13 +9,13 @@ import {
   graphicsLibrary,
   haloFor,
   isAxis,
-  mapScale,
   pathLength,
   pointCount,
   renderGraphic,
   squareUp,
   toDCode
 } from './graphics.ts'
+import { mapScale } from '../../../core/geo.ts'
 import { SQUARE } from './graphics.constants.ts'
 
 type Lib = Awaited<ReturnType<typeof graphicsLibrary>>

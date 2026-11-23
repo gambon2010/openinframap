@@ -246,9 +246,11 @@ every route but logging in needs a session):
 - `grid/` (`route.py`: routes over the power grid; `line.py`: where a line goes; `tower.py`), `line_trace/` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
   (towers numbered along their lines, a build step), `building_numbers/` (buildings
-  numbered per commune, "WIS-47", on first request: `numbering.py` the order,
-  `buildings.py` a commune's buildings from the background map's tiles, `register.py`
-  kept in `userdata.building_ref`, migration 004);
+  numbered per neighbourhood or commune, "STR-NEU-12", on first request:
+  `numbering.py` the order, `buildings.py` an area's buildings from the background
+  map's tiles (slivers apart), `register.py` kept in `userdata.building_ref` and
+  `building_sliver`, migrations 004 and 005; the search finds them,
+  `search/buildings.py`);
 - `map_data.py` (a map feature's full geometry);
 - `pmtiles_files.py` (the PMTiles files served from `data/map/offline-maps/`: a file open,
   its index cached, `Archive`; the files of one kind in the folder, opened again when
@@ -440,8 +442,9 @@ the schema fingerprint builds and exports carry.
   - `cli.py`: one command per download, `maps`, `tiers` / `summary` (what the map
     is told about the imagery).
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
-  source (`communes.py`: France's communes and their short codes, for building
-  numbers), and `SOURCES`.
+  source (`communes.py`: France's communes and their short codes, with
+  `neighbourhoods.py`: the larger communes' neighbourhoods from INSEE's IRIS, for
+  building numbers), and `SOURCES`.
 - **Exports** (`export-db.sh`, `import-db.sh`) carry the database: a `pg_dump` of
   the `public`, `countries`, `stats`, `extra` and `userdata` schemas and a manifest.
   The restore skips what a fresh database already has (PostGIS, `spatial_ref_sys`,

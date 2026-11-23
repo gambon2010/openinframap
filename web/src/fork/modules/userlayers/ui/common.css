@@ -130,30 +130,6 @@
   display: block;
 }
 
-.oim-ul-menu {
-  position: relative;
-}
-.oim-ul-menu summary {
-  list-style: none;
-  padding: 0 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-.oim-ul-menu summary::-webkit-details-marker {
-  display: none;
-}
-.oim-ul-menu-items {
-  position: absolute;
-  right: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 4px;
-  border-radius: var(--oim-radius-small);
-  background: var(--oim-content-background);
-  box-shadow: var(--oim-drop-shadow);
-}
 .oim-ul-items {
   list-style: none;
   margin: 2px 0 6px 28px;
@@ -227,9 +203,12 @@
   max-width: 30px;
   max-height: 26px;
 }
+/* The identity's label, its frames right after it, Planned at the far end. */
 .oim-ul-palette-options {
   align-items: center;
-  justify-content: space-between;
+}
+.oim-ul-palette-options > .oim-ul-inline {
+  margin-left: auto;
 }
 .oim-ul-palette h4 {
   margin: 6px 0 2px;

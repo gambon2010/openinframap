@@ -133,6 +133,14 @@ export function forkSearchDescription(result: BackendSearchResult): string | und
   return first((m) => m.searchDescription?.(result))
 }
 
+/** search/openinframap.ts: what the backend's search is also told: where the map is
+ * ("near": lon,lat), so a building number found in several places ("WIS-47") comes
+ * from the nearest first. */
+export function forkSearchParams(): Record<string, string> {
+  const centre = context?.map.getCenter()
+  return centre ? { near: `${centre.lng.toFixed(4)},${centre.lat.toFixed(4)}` } : {}
+}
+
 /** search/search.ts: a result was picked. */
 export function forkSearchSelected(result: SearchResult) {
   if (!context) return

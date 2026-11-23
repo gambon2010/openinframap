@@ -38,11 +38,11 @@ export interface ItemKind {
   images?: { prefix: string; make(value: string): Promise<IconImage> }
   /** A small picture for the list: an element, text, or null while the symbol
    * library loads (render: given once it has). */
-  thumbnail(item: Item, render?: SymbolRender): HTMLElement | string | null
+  thumbnail(item: Item, render?: SymbolRender): Element | string | null
   /** As a point: a size (the slider, the resize handle on the map). */
   sized?: boolean
-  /** Its own colour can be set. */
-  coloured?: boolean
+  /** Its own colour can be set (a line of sight's colours say what's seen: none). */
+  coloured?(properties: FeatureProps): boolean
   /** As a line or area: its line width can be set. */
   lineWidth?: boolean
   /** It can be dragged or reshaped on the map (default yes); if not, no handles. */

@@ -68,7 +68,8 @@
       "icpe": "Classified installation (ICPE)",
       "biomethane-injection": "Biomethane injection point",
       "distribution-substation": "Distribution substation",
-      "power-tower": "Tower, numbered along its line"
+      "power-tower": "Tower, numbered along its line",
+      "building-number": "Building, numbered in its area"
     }
   },
   "sources": {
@@ -256,7 +257,8 @@
   "panel": {
     "minimise": "Minimise",
     "restore": "Restore",
-    "close": "Close"
+    "close": "Close",
+    "cancel": "Cancel"
   },
   "settings": {
     "title": "Settings"
@@ -285,7 +287,7 @@
       "F": "Reinforced / reduced",
       "J": "Evaluation rating",
       "K": "Combat effectiveness",
-      "W": "Date-time group",
+      "W": "Seen at",
       "W1": "Effective to",
       "Q": "Direction of movement",
       "Z": "Speed",
@@ -307,7 +309,7 @@
     "deselect": "Done",
     "n-selected": "{{count}} items selected",
     "bulk-hint": "Changes below apply to all of them",
-    "bulk-locked": "🔒 {{count}} in locked layers are left as they are.",
+    "bulk-locked": "{{count}} in locked layers are left as they are.",
     "move-to": "Move to layer",
     "delete-all": "Delete all",
     "clear-selection": "Done",
@@ -346,17 +348,16 @@
     "copy-of-short": "Copy: {{layer}}",
     "outline-search": "Search your layers…",
     "item-title": "Click: select · Ctrl-click: add · Shift-click: all down to here · drag onto a layer: move",
-    "more": "More",
     "draw-here": "Draw into this layer",
     "show": "Show on the map",
     "hide": "Hide from the map",
-    "unlock": "🔓 Unlock",
-    "lock": "🔒 Lock (no changes to its items)",
+    "unlock": "Unlock",
+    "lock": "Lock (no changes to its items)",
     "active": "You draw into this layer",
     "no-match": "Nothing matches.",
     "empty-layer": "Nothing in it yet.",
     "folder-eye": "Show or hide all its layers",
-    "folder-lock": "🔒 Lock its layers (yours)",
+    "folder-lock": "Lock its layers (yours)",
     "drop-out": "Drop a layer here to take it out of its folder",
     "new-layer": "New layer",
     "no-layers": "No layer yet: pick a tool in the toolbar above the map, a layer is made for you.",
@@ -414,7 +415,7 @@
     "points-so-far": "({{n}} so far)",
     "stop": "Stop (Esc)",
     "delete-n": "Delete these {{count}} items?",
-    "locked-note": "🔒 In a locked layer: unlock it in the list to change this.",
+    "locked-note": "In a locked layer: unlock it in the list to change this.",
     "history-save-first": "Save or discard your changes first: the history only has saved ones.",
     "history-loading": "Loading the history",
     "step": "Step",
@@ -572,9 +573,9 @@
     "ring-distances": "Ring distances",
     "bearings-from": "Measured bearings from",
     "measure-hint": "Click points; double-click or Enter to finish. Backspace: take back a point; right-click: start again.",
-    "item-locked-note": "🔒 Locked: unlock it to change, move or delete it.",
-    "unlock-item": "🔓 Unlock",
-    "lock-item": "🔒 Lock",
+    "item-locked-note": "Locked: unlock it to change, move or delete it.",
+    "unlock-item": "Unlock",
+    "lock-item": "Lock",
     "unlock-item-title": "Allow changes to this item again",
     "lock-item-title": "Keep this item from being changed, moved or deleted",
     "item-locked": "Locked",
@@ -590,8 +591,8 @@
     "delete-layer_other": "Delete the layer \"{{name}}\" and its {{count}} items?",
     "n-layers_one": "{{count}} layer",
     "n-layers_other": "{{count}} layers",
-    "situation-include-pending_one": "Save your unsaved change first, so it is in the situation? (Cancel: leave it out.)",
-    "situation-include-pending_other": "Save your {{count}} unsaved changes first, so they are in the situation? (Cancel: leave them out.)",
+    "situation-include-pending_one": "Save your unsaved change first, so it is in the situation?",
+    "situation-include-pending_other": "Save your {{count}} unsaved changes first, so they are in the situation?",
     "save-conflicts_one": "Resolve the conflict first",
     "save-conflicts_other": "Resolve the {{count}} conflicts first",
     "discard-confirm_one": "Forget the unsaved change?",
@@ -635,7 +636,7 @@
     },
     "layer-row-title": "Click: open · right-click: more",
     "locked-layer": "Locked: no changes to its items",
-    "folder-unlock": "🔓 Unlock its layers",
+    "folder-unlock": "Unlock its layers",
     "remove-folder": "Remove the folder (its layers stay)",
     "folder-locked": "All its layers are locked",
     "filter-on": "Filter ({{count}})",
@@ -728,8 +729,7 @@
     "notes-help": "Your notes: in this card only, never written on the map",
     "reset-size": "Reset size",
     "size-help": "Change it on the map: Shift + scroll over it, or drag its handle",
-    "scale-off": "Symbols: same size at every zoom",
-    "scale-on": "Symbols to scale (smaller zoomed out)",
+    "scale-on": "Symbols to scale (smaller zoomed out)…",
     "tool-group": {
       "select": "Select",
       "symbol": "Symbols",
@@ -737,7 +737,22 @@
       "draw": "Draw: line, area, marker, picture",
       "copy": "Copy from the map",
       "measure": "Measure: distance, area, range rings, line of sight"
-    }
+    },
+    "scale-change": "Symbol scale: {{scale}}…",
+    "symbol-scale": "Symbol scale",
+    "scale-none": "Same size at every zoom",
+    "scale-at": "As their size at {{scale}}",
+    "symbol-scale-of": "Symbol scale: {{layer}}",
+    "symbol-scale-help": "To scale, its symbols shrink as you zoom out and grow as you zoom in (up to 8 times), as on a paper map at that scale; too small, they become dots. The map is at {{now}}.",
+    "locked-option": "{{name}} (locked)",
+    "import": "Import",
+    "delete-items": "Delete items",
+    "delete-layer-title": "Delete layer",
+    "situation-save": "Save situation",
+    "save-first": "Save first",
+    "leave-out": "Leave out",
+    "discard-button": "Discard",
+    "delete-situation-title": "Delete situation"
   },
   "tower": {
     "unnamed-line": "a line",
@@ -814,7 +829,11 @@
     "height": "Height",
     "starts-at": "Starts at",
     "area": "Area (on the ground)",
-    "building": "Building"
+    "building": "Building",
+    "numbers-full": "With their place (STR-NEU-12)",
+    "numbers-short": "The number only (12)",
+    "numbers-title": "Building numbers",
+    "numbers-labels": "Written"
   },
   "view3d": {
     "button": "3D view: tilt the map, buildings rise"

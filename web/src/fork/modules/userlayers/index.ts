@@ -10,7 +10,7 @@ import { ForkModule } from '../../types.ts'
 import { Store } from './state/store.ts'
 import { Renderer } from './map/render.ts'
 import { Tools } from './map/tools.ts'
-import { copyFeature } from './map/tools/copy.ts'
+import { canCopy, copyFeature } from './map/tools/copy.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { el, mount } from 'redom'
 import { t } from '../../core/i18n.ts'
@@ -46,7 +46,7 @@ const userlayers: ForkModule = {
     // A map feature's details (a line, a substation, a building...): copy it into
     // the layer you draw into, as the copy tool does.
     addDetailsExtra((feature, content) => {
-      if (!feature.sourceLayer || feature.layer.id.startsWith('user_')) return
+      if (!feature.sourceLayer || feature.layer.id.startsWith('user_') || !canCopy(map, feature)) return
       const active = store.activeLayer ? store.layers.get(store.activeLayer) : undefined
       const into = active && store.view.canEdit(active) ? active.name : null
       const button = el(

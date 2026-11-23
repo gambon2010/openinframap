@@ -119,7 +119,7 @@ beforeEach(() => {
     zoomToLayer: vi.fn(),
     reordered: vi.fn(),
     itemMenu: () => [{ label: 'Rename', run: () => {} }],
-    mapZoom: () => 14
+    mapScale: () => 24_000
   }
   outliner = new Outliner(store, actions)
   document.body.append(outliner.el, outliner.footer)
@@ -292,21 +292,20 @@ describe('right-click menus', () => {
     expect(menuOf(rowNamed('Ops'))).toMatchSnapshot()
   })
 
-  test("a layer's symbols to scale from the zoom now, and back", () => {
+  test("a layer's symbols to scale: on at the step nearest the map's scale, then off", () => {
     const { units } = sampleLayers()
     outliner.draw()
-    const choose = (label: string) => {
-      rowNamed('Units').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
-      const entry = [...document.querySelectorAll<HTMLButtonElement>('.oim-context-menu button')].find((b) =>
-        b.textContent?.startsWith(label)
-      )
-      entry!.click()
-      outliner.draw()
-    }
-    choose('Symbols to scale')
-    expect(store.layers.get(units)!.style.scaledAt).toBe(14)
-    choose('Symbols: same size')
-    expect(store.layers.get(units)!.style.scaledAt).toBeUndefined()
+    rowNamed('Units').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    const entry = [...document.querySelectorAll<HTMLButtonElement>('.oim-context-menu button')].find((b) =>
+      b.textContent?.startsWith('Symbols to scale')
+    )
+    entry!.click()
+    // The map at 1:24 000: on at 1:25 000.
+    expect(store.layers.get(units)!.style.symbolScale).toBe(25_000)
+    const slider = document.querySelector<HTMLInputElement>('.oim-modal input[type="range"]')!
+    slider.value = '0'
+    slider.dispatchEvent(new Event('change'))
+    expect(store.layers.get(units)!.style.symbolScale).toBeUndefined()
   })
 
   test("an item's row: the item's menu (the map's)", () => {

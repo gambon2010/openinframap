@@ -8,6 +8,7 @@ import { symbolRenderer } from '../../../map/symbols.ts'
 import { graphicsLibrary, graphicsReady } from '../../../graphics/graphics.ts'
 import { withContextMenu } from '../../../../../ui/context-menu.ts'
 import { focusable } from '../widgets.ts'
+import { toolIcon } from '../../tool-icons.ts'
 import type { OutlinerContext } from '../types.ts'
 
 /** A small picture of an item for the list. */
@@ -62,7 +63,7 @@ export function item(c: OutlinerContext, feature: UserFeature, layer: UserLayer)
       el('small', name ? [what, detail].filter(Boolean).join(' · ') : detail)
     ),
     feature.properties.locked
-      ? el('span.oim-ul-item-locked', '🔒', { title: t('userlayers.item-locked', 'Locked') })
+      ? el('span.oim-ul-item-locked', toolIcon('lock', 14), { title: t('userlayers.item-locked', 'Locked') })
       : '',
     c.store.isFeatureInConflict(feature.id)
       ? el('span.oim-ul-conflict-tag', '⚠', {

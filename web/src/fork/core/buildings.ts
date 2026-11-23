@@ -126,3 +126,21 @@ export async function exactOutline(
   }
   return buildingOutline(map, feature)
 }
+
+/** A building's number ("STR-NEU-12", web-backend building_numbers/), or null if it
+ * has none (a sliver, no commune outlines imported, the backend out of reach). */
+export async function buildingNumber(
+  feature: Pick<MapGeoJSONFeature, 'id' | 'geometry'>
+): Promise<string | null> {
+  const id = buildingId(feature)
+  const at = somePoint(feature.geometry)
+  if (id === undefined || !at) return null
+  try {
+    const query = new URLSearchParams({ id: String(id), lon: String(at[0]), lat: String(at[1]) })
+    const response = await fetch(`/background/building-number?${query}`)
+    return response.ok ? ((await response.json()).label as string) : null
+  } catch {
+    // Offline from the backend: no number.
+    return null
+  }
+}

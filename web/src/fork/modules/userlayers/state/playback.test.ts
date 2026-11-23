@@ -25,7 +25,7 @@ describe('changedFields', () => {
   test('descriptive fields by name', () => {
     const before = unit('SFGPUCI--------', { modifiers: { T: '2nd Bn' } })
     const after = unit('SFGPUCI--------', { modifiers: { T: '2nd Bn', M: '1st Bde', W: '301200ZOCT26' } })
-    expect(changedFields(before, after)).toEqual(['higher formation', 'date-time group'])
+    expect(changedFields(before, after)).toEqual(['higher formation', 'seen at'])
   })
 
   test('a removed field counts', () => {

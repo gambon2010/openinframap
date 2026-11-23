@@ -1,5 +1,6 @@
 // Fork: small geographic helpers shared by modules (no UI): degrees and radians, how
-// many metres a screen pixel covers at a zoom (web Mercator, 512-pixel tiles), the
+// many metres a screen pixel covers at a zoom (web Mercator, 512-pixel tiles) and
+// the map's scale there, the
 // distance on the ground between two places, and the area inside a ring (Turf's, on
 // the sphere of the Earth's mean radius).
 import turfArea from '@turf/area'
@@ -16,6 +17,19 @@ export const toDegrees = (radians: number) => (radians * 180) / Math.PI
 /** Metres per screen pixel at a latitude and zoom. */
 export function metresPerPixel(lat: number, zoom: number): number {
   return (EARTH_CIRCUMFERENCE_M * Math.cos(toRadians(lat))) / (TILE_PIXELS * 2 ** zoom)
+}
+
+/** A screen pixel in the OGC's standard (0.28 mm): what a map's scale is counted in. */
+export const OGC_PIXEL_M = 0.00028
+
+/** The map's scale (1:n) at a zoom and latitude. */
+export function mapScale(zoom: number, lat: number): number {
+  return metresPerPixel(lat, zoom) / OGC_PIXEL_M
+}
+
+/** The zoom a scale (1:n) is drawn at, at a latitude: mapScale's inverse. */
+export function zoomForScale(scale: number, lat: number): number {
+  return Math.log2((EARTH_CIRCUMFERENCE_M * Math.cos(toRadians(lat))) / (TILE_PIXELS * scale * OGC_PIXEL_M))
 }
 
 /** Metres on the ground between two [longitude, latitude] places (haversine). */

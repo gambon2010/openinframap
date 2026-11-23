@@ -1,6 +1,7 @@
 // Fork: a measurement: a distance (each leg's length and bearing, marks along the
 // way), an area (and its perimeter) or range rings round a point. Drawn by
 // map/render.ts from measure/features.ts; its points are moved like a drawing's.
+import { toolIcon } from '../ui/tool-icons.ts'
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance, formatLength, parseDistances, parseLength } from '../../../core/earth.ts'
@@ -14,7 +15,13 @@ import { FeatureProps, type UserFeature } from '../model/model.ts'
 import { areaCrossesItself } from '../model/shapes.ts'
 import { ItemKind, Item } from './types.ts'
 
-const ICONS = { distance: '📏', area: '⬠', rings: '◎', sight: '👁' }
+// Their pictures (ui/tool-icons.ts), the measuring tools'.
+const ICONS = {
+  distance: 'measure-distance',
+  area: 'measure-area',
+  rings: 'measure-rings',
+  sight: 'measure-sight'
+}
 
 // In sentences ("…a distance"), and as a label ("Distance: 3 km").
 const NAMES = () => ({
@@ -40,8 +47,8 @@ export const measure: ItemKind = {
     return m ? `${LABELS()[m.type]}: ${summary(m, measurePrefs.north)}` : LABELS()[typeOf(item)]
   },
   drawn: 'measure',
-  thumbnail: (item) => ICONS[typeOf(item)],
-  coloured: true,
+  thumbnail: (item) => toolIcon(ICONS[typeOf(item)], 16),
+  coloured: (p) => p.measure !== 'sight',
   pointsOnly: (item) => typeOf(item) === 'sight',
   filters: () => ['graphics'],
   card: (item, update, setGeometry) => {

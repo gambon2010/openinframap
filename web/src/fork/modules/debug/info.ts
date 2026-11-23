@@ -1,10 +1,7 @@
 // Fork: what the debug box shows (index.ts), worked out from the map. Pure but for
 // reading the map.
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
-import { metresPerPixel } from '../../core/geo.ts'
-
-/** A screen pixel in the OGC's standard (0.28 mm): what a map's scale is counted in. */
-const OGC_PIXEL_M = 0.00028
+import { OGC_PIXEL_M, metresPerPixel } from '../../core/geo.ts'
 
 export interface DebugInfo {
   zoom: string

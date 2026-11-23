@@ -2,6 +2,7 @@
 // fake map and renderer with a real store: the safety net for splitting tools.ts
 // (docs/plans/refactor-5e.md). Pixels: 1000 a degree, y down.
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { OIM_TILES } from '../../../config.ts'
 import type { Map as MapLibre, MapGeoJSONFeature } from 'maplibre-gl'
 import { Store } from '../state/store.ts'
 import { Tools } from './tools.ts'
@@ -17,6 +18,15 @@ class FakeMap {
   canvas = document.createElement('canvas')
   layers = new Set<string>()
   dragPan = { enable: vi.fn(), disable: vi.fn() }
+  /** The style's sources: the infrastructure's from the tile server, the background map. */
+  getStyle() {
+    return {
+      sources: {
+        power: { type: 'vector', tiles: [`${OIM_TILES}/power/{z}/{x}/{y}.pbf`] },
+        basemap: { type: 'vector', tiles: ['/background/{z}/{x}/{y}.mvt'] }
+      }
+    }
+  }
   /** What queryRenderedFeatures finds, by the layers asked for ('' = any). */
   found: (layers: string[] | undefined) => Partial<MapGeoJSONFeature>[] = () => []
 
@@ -423,7 +433,40 @@ describe('resizing and copying', () => {
     expect(map.dragPan.enable).toHaveBeenCalled()
   })
 
-  test('copy: a building becomes a building item, its exact outline from the backend, once', async () => {
+  test("copy: the background map's roads aren't copied, the infrastructure is", async () => {
+    tools = new Tools(map as unknown as MapLibre, store, fakeRenderer() as unknown as Renderer, () => [
+      { id: 'power_tower', zorder: 10 } as never,
+      { id: 'roads_ground_minor', zorder: 5 } as never
+    ])
+    const road = {
+      layer: { id: 'roads_ground_minor' },
+      source: 'basemap',
+      sourceLayer: 'roads',
+      properties: { name: 'Rue du Ried' },
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [0, 0],
+          [1, 1]
+        ]
+      }
+    } as never
+    const tower = {
+      layer: { id: 'power_tower' },
+      source: 'power',
+      sourceLayer: 'power_tower',
+      properties: { osm_id: 1 },
+      geometry: { type: 'Point', coordinates: [1, 1] }
+    } as never
+    map.found = () => [road, tower]
+    tools.setTool({ mode: 'copy' })
+    map.emit('mousedown', at(0, 0, true))
+    map.emit('mouseup', at(3, 3))
+    await new Promise((done) => setTimeout(done, 0))
+    expect(items().map((i) => i.properties.copy?.sourceLayer)).toEqual(['power_tower'])
+  })
+
+  test('copy: a building becomes a building item named by its number, its exact outline from the backend, once', async () => {
     tools = new Tools(map as unknown as MapLibre, store, fakeRenderer() as unknown as Renderer, () => [
       { id: 'buildings_outline', zorder: -10 } as never
     ])
@@ -460,14 +503,17 @@ describe('resizing and copying', () => {
     const asked: string[] = []
     vi.stubGlobal('fetch', async (url: string) => {
       asked.push(url)
-      return new Response(JSON.stringify({ geometry: square(0, 2.5) }))
+      // Its number, and its outline.
+      const answer = url.startsWith('/background/building-number')
+        ? { label: 'WIS-47' }
+        : { geometry: square(0, 2.5) }
+      return new Response(JSON.stringify(answer))
     })
     tools.setTool({ mode: 'copy' })
     await click(0.5, 0.5)
     const [copy] = items()
-    expect(asked[0]).toMatch(new RegExp(`^/background/building/${building}\\?lon=0&lat=0$`))
-    expect(copy.properties).toMatchObject({ kind: 'building', height: 12 })
-    expect(copy.properties.name).toBeUndefined()
+    expect(asked).toContain(`/background/building/${building}?lon=0&lat=0`)
+    expect(copy.properties).toMatchObject({ kind: 'building', height: 12, name: 'WIS-47' })
     expect(copy.properties.color).toBeTruthy()
     const xs = (copy.geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
     expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 2.5])
@@ -482,6 +528,8 @@ describe('resizing and copying', () => {
     await click(0.5, 0.5)
     const xs2 = (items()[0].geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
     expect([Math.min(...xs2), Math.max(...xs2)]).toEqual([0, 2])
+    // And no number to name it by.
+    expect(items()[0].properties.name).toBeUndefined()
     vi.unstubAllGlobals()
   })
 })

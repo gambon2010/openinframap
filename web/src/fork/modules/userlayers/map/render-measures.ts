@@ -7,7 +7,7 @@
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { Measurement } from '../measure/features.types.ts'
 import type { TickView } from '../measure/ticks.types.ts'
-import { measurementFeatures, measurementOf } from '../measure/features.ts'
+import { measurementFeatures, measurementOf, nameFeature } from '../measure/features.ts'
 import type { North } from '../../../core/north.ts'
 import type { LngLat } from '../../../core/earth.ts'
 import {
@@ -62,6 +62,8 @@ export class MeasureDrawer {
           }
         })
       )
+      const name = String(f.properties.name ?? '').trim()
+      if (name) features.push(nameFeature(m, name, { fid: f.id }))
       if (m.type !== 'sight') continue
       // Not asked while a point is dragged: a long line takes the backend a second or
       // two, and one asked per frame queued up behind each other. Asked when dropped.

@@ -8,6 +8,8 @@ import './context-menu.css'
 
 export interface MenuEntry {
   label: string
+  /** A line icon before the label (ui/icons.ts's style). */
+  icon?: SVGElement
   run?: () => void
   /** Shown greyed out. */
   disabled?: boolean
@@ -68,11 +70,11 @@ function entryElement(entry: MenuEntry): HTMLElement {
   if (entry.entries) {
     return el(
       'details.oim-menu-sub',
-      el('summary', entry.label),
+      el('summary', entry.icon ?? '', entry.label),
       entry.entries.map((e) => entryElement(e))
     )
   }
-  const button = el(`button${entry.danger ? '.oim-menu-danger' : ''}`, entry.label, {
+  const button = el(`button${entry.danger ? '.oim-menu-danger' : ''}`, entry.icon ?? '', entry.label, {
     type: 'button',
     disabled: Boolean(entry.disabled)
   }) as HTMLButtonElement

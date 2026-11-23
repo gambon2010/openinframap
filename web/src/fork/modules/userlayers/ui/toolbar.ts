@@ -9,6 +9,7 @@ import { graphicsLibrary, isAxis, pointCount } from '../graphics/graphics.ts'
 import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
 import { toolIcon } from './tool-icons.ts'
+import { askToConfirm } from '../../../ui/confirm.ts'
 import { openContextMenuFor } from '../../../ui/context-menu.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
@@ -191,7 +192,7 @@ export class Toolbar {
   }
 
   /** A group's button: the tool used last in it (one click); a group of several has
-   * a ▾ listing them all, with their keys (the shared context menu). */
+   * a ▾ listing its other tools, with their keys (the shared context menu). */
   private groupButton(group: ToolGroup, active: string, live: boolean): HTMLElement {
     const shown = group.tools.includes(active) ? active : (this.lastInGroup.get(group.id) ?? group.tools[0])
     const [id, label, key] = TOOLS.find(([tool]) => tool === shown)!
@@ -211,15 +212,17 @@ export class Toolbar {
       'aria-label': t(`userlayers.tool-group.${group.id}`, group.label),
       disabled: !live
     }) as HTMLButtonElement
+    // The others in the group: the one on the button isn't listed again.
+    const others = group.tools.filter((tool) => tool !== shown)
     list.onclick = () =>
       openContextMenuFor(
         list,
-        group.tools.map((tool) => {
+        others.map((tool) => {
           const [, toolLabel, toolKey] = TOOLS.find(([each]) => each === tool)!
           return {
             label: `${t(`userlayers.tool.${tool}`, toolLabel)}  (${toolKey})`,
-            run: () => this.chooseTool(tool),
-            disabled: tool === active
+            icon: toolIcon(tool, 16),
+            run: () => this.chooseTool(tool)
           }
         })
       )
@@ -246,11 +249,15 @@ export class Toolbar {
       { title: t('userlayers.add-to', 'New items go into this layer'), disabled: inPlayback },
       [...store.layers.values()].map((l) =>
         // A locked layer takes nothing new.
-        el('option', l.style.locked ? `🔒 ${l.name}` : l.name, {
-          value: l.id,
-          selected: l.id === store.activeLayer,
-          disabled: !view.canEdit(l)
-        })
+        el(
+          'option',
+          l.style.locked ? t('userlayers.locked-option', '{{name}} (locked)', { name: l.name }) : l.name,
+          {
+            value: l.id,
+            selected: l.id === store.activeLayer,
+            disabled: !view.canEdit(l)
+          }
+        )
       ),
       el('option', `+ ${t('userlayers.new-layer', 'New layer')}`, {
         value: '',
@@ -306,29 +313,10 @@ export class Toolbar {
           : t('userlayers.save-title', 'Send your changes to the database (they can then be played back)')
       }
     )
-    const more = el(
-      'details.oim-ul-menu',
-      el('summary', '⋯', { title: t('userlayers.more', 'More') }),
-      el(
-        '.oim-ul-menu-items',
-        action(
-          t('userlayers.discard', 'Discard unsaved changes'),
-          () => {
-            const message = tn(
-              'userlayers.discard-confirm',
-              'Forget the unsaved change?',
-              'Forget the {{count}} unsaved changes?',
-              pending
-            )
-            if (window.confirm(message)) {
-              this.ws.tools.select(null)
-              void this.ws.run(t('userlayers.discarding', 'Discarding'), () => store.discard())
-            }
-          },
-          { disabled: !pending || !!busy }
-        )
-      )
-    )
+    const discard = action(t('userlayers.discard-button', 'Discard'), () => void this.discard(pending), {
+      disabled: !pending || !!busy || inPlayback,
+      title: t('userlayers.discard', 'Discard unsaved changes')
+    })
     bar.append(
       tools,
       el(
@@ -338,8 +326,25 @@ export class Toolbar {
         target
       ),
       el('.oim-ul-toolbar-group', undo, redo, history),
-      el('.oim-ul-toolbar-group', save, more)
+      el('.oim-ul-toolbar-group', discard, save)
     )
+  }
+
+  /** Forgets the unsaved changes, once the person says so (in the middle of the screen). */
+  private async discard(pending: number) {
+    const sure = await askToConfirm(
+      t('userlayers.discard', 'Discard unsaved changes'),
+      tn(
+        'userlayers.discard-confirm',
+        'Forget the unsaved change?',
+        'Forget the {{count}} unsaved changes?',
+        pending
+      ),
+      t('userlayers.discard-button', 'Discard')
+    )
+    if (!sure) return
+    this.ws.tools.select(null)
+    await this.ws.run(t('userlayers.discarding', 'Discarding'), () => this.ws.store.discard())
   }
 
   private async picked(pick: Pick) {

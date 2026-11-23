@@ -1,7 +1,9 @@
 // Fork: what the left details panel shows for My layers: the selected item's card
 // (editor.ts), one card for several selected items, nothing while a past version
 // is shown. A locked layer's card can be looked at, not changed.
+import { askToConfirm } from '../../../ui/confirm.ts'
 import { el } from 'redom'
+import { toolIcon } from './tool-icons.ts'
 import { t } from '../../../core/i18n.ts'
 import { leftColumn } from '../../../ui/left-column.ts'
 import { UserFeature, UserLayer } from '../model/model.ts'
@@ -53,12 +55,12 @@ export class Inspector {
               .map((i) => i.feature.id),
             layerId
           ),
-        remove: () => {
-          if (
-            window.confirm(t('userlayers.delete-n', 'Delete these {{count}} items?', { count: items.length }))
-          )
-            tools.deleteSelected()
-        },
+        remove: () =>
+          void askToConfirm(
+            t('userlayers.delete-items', 'Delete items'),
+            t('userlayers.delete-n', 'Delete these {{count}} items?', { count: items.length }),
+            t('userlayers.delete', 'Delete')
+          ).then((yes) => yes && tools.deleteSelected()),
         clear: () => tools.select(null),
         canEdit: (l) => view.canEdit(l)
       })
@@ -106,8 +108,8 @@ export class Inspector {
         el(
           'p.oim-ul-locked-note',
           view.canEdit(layer) && itemLocked
-            ? t('userlayers.item-locked-note', '🔒 Locked: unlock it to change, move or delete it.')
-            : t('userlayers.locked-note', '🔒 In a locked layer: unlock it in the list to change this.')
+            ? t('userlayers.item-locked-note', 'Locked: unlock it to change, move or delete it.')
+            : t('userlayers.locked-note', 'In a locked layer: unlock it in the list to change this.')
         ),
         editor.children[1] ?? null
       )
@@ -118,12 +120,16 @@ export class Inspector {
       const title = itemLocked
         ? t('userlayers.unlock-item-title', 'Allow changes to this item again')
         : t('userlayers.lock-item-title', 'Keep this item from being changed, moved or deleted')
-      const lock = el('button.oim-side-panel-button.oim-ul-item-lock', itemLocked ? '🔒' : '🔓', {
-        type: 'button',
-        title,
-        'aria-label': title,
-        'aria-pressed': String(itemLocked)
-      }) as HTMLButtonElement
+      const lock = el(
+        'button.oim-side-panel-button.oim-ul-item-lock',
+        toolIcon(itemLocked ? 'lock' : 'unlock', 16),
+        {
+          type: 'button',
+          title,
+          'aria-label': title,
+          'aria-pressed': String(itemLocked)
+        }
+      ) as HTMLButtonElement
       lock.onclick = () =>
         store.updateFeature(layer.id, {
           ...feature,

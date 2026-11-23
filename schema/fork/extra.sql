@@ -215,3 +215,17 @@ CREATE TABLE IF NOT EXISTS extra.commune (
     geometry geometry(MultiPolygon, 3857) NOT NULL
 );
 CREATE INDEX IF NOT EXISTS extra_commune_geometry ON extra.commune USING gist (geometry);
+
+-- The neighbourhoods of the larger French communes (INSEE's IRIS grouped by grand
+-- quartier), each with a short code unique within its commune ("NEU" for Neudorf):
+-- buildings are numbered per neighbourhood there ("STR-NEU-12").
+CREATE TABLE IF NOT EXISTS extra.neighbourhood (
+    id bigserial PRIMARY KEY,
+    source text NOT NULL REFERENCES extra.source ON DELETE CASCADE,
+    commune text NOT NULL,          -- its commune's INSEE code
+    code text NOT NULL,             -- the commune's code and the grand quartier's two digits
+    name text NOT NULL,
+    abbreviation text NOT NULL,
+    geometry geometry(MultiPolygon, 3857) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS extra_neighbourhood_geometry ON extra.neighbourhood USING gist (geometry);

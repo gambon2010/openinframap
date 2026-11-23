@@ -1,4 +1,5 @@
 // Fork: My layers' Import and Export (formats.ts): choosing a file, downloading one.
+import { askToConfirm } from '../../../ui/confirm.ts'
 import { Map as MapLibreMap } from 'maplibre-gl'
 import { t } from '../../../core/i18n.ts'
 import { UserLayer } from '../model/model.ts'
@@ -54,11 +55,13 @@ export async function importFile(store: Store, map: MapLibreMap) {
   }
   if (
     items.length > MANY &&
-    !window.confirm(
+    !(await askToConfirm(
+      t('userlayers.import', 'Import'),
       t('userlayers.import-many', 'This file has {{count}} items: the map may get slow. Import them?', {
         count: items.length
-      })
-    )
+      }),
+      t('userlayers.import', 'Import')
+    ))
   )
     return
   store.importLayer(file.name.replace(/\.[^.]+$/, ''), items)

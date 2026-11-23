@@ -13,6 +13,7 @@ function feature_kind_label(kind: string): string {
     {
       power_line: t('search.kind.power-line', 'Power line'),
       power_tower: t('search.kind.power-tower', 'Tower, numbered along its line'),
+      building: t('search.kind.building-number', 'Building, numbered in its area'),
       generator: t('search.kind.generator', 'Generator'),
       switchgear: t('search.kind.switchgear', 'Switchgear'),
       street_cabinet: t('search.kind.street-cabinet', 'Street cabinet'),

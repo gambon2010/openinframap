@@ -5,7 +5,8 @@ word matching ("vianden" finds "Centrale de Vianden"), places (imposm/places.py)
 and everything else with a name (schema/fork/search.sql), ranked together.
 
 - matching.py: matching a query in SQL, accents left out;
-- stations.py, places.py, features.py, towers.py: one search per kind;
+- stations.py, places.py, features.py, towers.py, buildings.py (numbers): one search
+  per kind;
 - ranking.py: the order of everything found together.
 """
 
@@ -27,6 +28,7 @@ from .places import search_places
 from .ranking import result_tier, sort_key
 from .stations import search_plants, search_substations
 from .towers import TOWER_QUERY, search_towers
+from .buildings import FRANCE_CENTRE, search_buildings
 
 __all__ = ["TOWER_QUERY", "plain", "query_params", "result_tier", "routes", "sort_key"]
 
@@ -49,6 +51,9 @@ async def search(request: Request) -> Response:
         raise HTTPException(400, "No query provided")
 
     start = time.monotonic_ns()
+    # First and alone: numbering an area writes to the database (its own commit), which
+    # mustn't happen while the other searches share the connection.
+    buildings = await search_buildings(database, query, limit, map_centre(request))
     async with asyncio.TaskGroup() as tg:
         substations = tg.create_task(search_substations(database, query, language, limit))
         plants = tg.create_task(search_plants(database, query, language, limit))
@@ -60,7 +65,7 @@ async def search(request: Request) -> Response:
     # equally good matches big places, then infrastructure, then small places; then
     # the biggest.
     results = sorted(
-        await substations + await plants + await places + await features + await towers,
+        await substations + await plants + await places + await features + await towers + buildings,
         key=lambda row: (row["match_rank"], result_tier(row), -sort_key(row)),
     )
     for row in results:
@@ -71,6 +76,15 @@ async def search(request: Request) -> Response:
 
     response = {"time": (end - start) / 1e9, "results": results}
     return JSONResponse(response)
+
+
+def map_centre(request: Request) -> tuple[float, float]:
+    """Where the map is ("near=lon,lat"), else France's middle (buildings.py)."""
+    try:
+        lon, lat = (float(v) for v in request.query_params["near"].split(","))
+    except (KeyError, ValueError):
+        return FRANCE_CENTRE
+    return lon, lat
 
 
 routes = [Route("/search/typeahead", endpoint=search)]

@@ -18,7 +18,8 @@ import { MeasureDrawer, type MeasureView } from './render-measures.ts'
 import { graphicFeatures, type GraphicsView } from './render-graphics.ts'
 import { Drafts } from './drafts.ts'
 import { overlayLayers } from './overlay-layers.ts'
-import { graphicsLibrary, mapScale } from '../graphics/graphics.ts'
+import { graphicsLibrary } from '../graphics/graphics.ts'
+import { mapScale, zoomForScale } from '../../../core/geo.ts'
 import { pointOf } from '../model/shapes.ts'
 import { DRAFT, GHOST, OUTLINE_PAD_PX, SELECTION } from './render.constants.ts'
 import { IconBox } from './render.types.ts'
@@ -201,7 +202,7 @@ export class Renderer {
         ...copyLayers(layer, this.primaryLayers),
         ...graphicLayers(layer, this.highlighted),
         ...measureLayers(layer, this.highlighted),
-        ...ownLayers(layer)
+        ...ownLayers(layer, this.symbolZoom(layer))
       ]) {
         wanted.add(spec.id)
         ids.push(spec.id)
@@ -418,8 +419,14 @@ export class Renderer {
    * (scale.ts). */
   zoomFactor(feature: UserFeature): number {
     for (const layer of this.last?.layers.values() ?? [])
-      if (layer.features.has(feature.id)) return zoomFactor(layer.style.scaledAt, this.map.getZoom())
+      if (layer.features.has(feature.id)) return zoomFactor(this.symbolZoom(layer), this.map.getZoom())
     return 1
+  }
+
+  /** The zoom a layer's symbol scale is drawn at here (its latitude), if it has one. */
+  private symbolZoom(layer: UserLayer): number | undefined {
+    const scale = layer.style.symbolScale
+    return scale === undefined ? undefined : zoomForScale(scale, this.map.getCenter().lat)
   }
 
   /** Its size on screen: its own, times its layer's scale now. */

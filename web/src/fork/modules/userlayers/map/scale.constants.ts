@@ -1,4 +1,9 @@
-// Fork: a layer's symbols drawn to scale (scale.ts): its limits and dot colours.
+// Fork: a layer's symbols drawn to scale (scale.ts): the scales offered, its limits
+// and dot colours.
+
+/** The map scales a layer's symbols can be drawn at (1:n), the usual ones of paper
+ * maps, from a street plan to a regional map. */
+export const SCALE_STEPS = [5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000]
 
 /** Below a quarter of their size, they're drawn as dots. */
 export const DOT_BELOW = 0.25

@@ -61,7 +61,7 @@ hooks upstream files call:
 | `key/svg.ts` | swatches carry `data-colour`, `data-dash` or `data-layer` |
 | `popup/infopopup.ts` | `forkPopup.hiddenKeys()`, `.renderKey()`, `.title()`, `.html()`; `forkPopup.open()` first in `popup()` (details in the side panel) |
 | `search/search.ts` | `forkSearchSelected(result)`, `forkSearchProviders(language)` (Photon, grid references) and `dropDuplicates` (all from `fork/index.ts`); results carry the backend's result (`backend`) |
-| `search/openinframap.ts` | `forkSearchDescription(result)`; `backend: result` |
+| `search/openinframap.ts` | `forkSearchDescription(result)`; `backend: result`; `...forkSearchParams()` in the query (the map's centre) |
 | `index.ts` | `addForkTranslations()` |
 
 **Folders by role** (`docs/plans/refactor.md`, step 4):

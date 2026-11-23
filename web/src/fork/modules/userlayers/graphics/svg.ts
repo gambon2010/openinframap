@@ -8,11 +8,11 @@ import {
   axisControlPoints,
   graphicsLibrary,
   isAxis,
-  mapScale,
   pointCount,
   renderGraphic,
   squareUp
 } from './graphics.ts'
+import { mapScale } from '../../../core/geo.ts'
 
 type LonLat = [number, number]
 

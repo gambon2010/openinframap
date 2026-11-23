@@ -1,4 +1,8 @@
 // Fork: My layers' list (outliner/index.ts): the right-click menus of layers and folders, and what they do: folders, export.
+import { askToConfirm } from '../../../../ui/confirm.ts'
+import { openSymbolScale } from '../symbol-scale.ts'
+import { toolIcon } from '../tool-icons.ts'
+import { scaleLabel } from '../../map/scale.ts'
 import { t, tn } from '../../../../core/i18n.ts'
 import type { UserLayer } from '../../model/model.ts'
 import { openSharing } from '../sharing.ts'
@@ -88,8 +92,9 @@ export function layerMenu(
   if (owner && changeable)
     items.push({
       label: locked
-        ? t('userlayers.unlock', '🔓 Unlock')
-        : t('userlayers.lock', '🔒 Lock (no changes to its items)'),
+        ? t('userlayers.unlock', 'Unlock')
+        : t('userlayers.lock', 'Lock (no changes to its items)'),
+      icon: toolIcon(locked ? 'unlock' : 'lock', 16),
       run: () => store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } })
     })
   if (changeable) items.push(scaleEntry(c, layer))
@@ -114,23 +119,28 @@ export function layerMenu(
           layer.features.size,
           { name: layer.name }
         )
-        if (window.confirm(message)) store.deleteLayer(layer.id)
+        void askToConfirm(
+          t('userlayers.delete-layer-title', 'Delete layer'),
+          message,
+          t('userlayers.delete', 'Delete')
+        ).then((yes) => yes && store.deleteLayer(layer.id))
       }
     })
   }
   return items
 }
 
-/** Its symbols to scale (smaller zoomed out, map/scale.ts), as they look at the zoom
- * now; or back to the same size on screen at every zoom. */
+/** Its symbols drawn to scale, or not: the slider of steps (ui/symbol-scale.ts),
+ * turning it on at the step nearest the map's scale now. */
 function scaleEntry(c: OutlinerContext, layer: UserLayer): MenuItem {
-  const scaled = layer.style.scaledAt !== undefined
-  const scaledAt = scaled ? undefined : Math.round(c.actions.mapZoom() * 10) / 10
+  const scaled = layer.style.symbolScale !== undefined
   return {
     label: scaled
-      ? t('userlayers.scale-off', 'Symbols: same size at every zoom')
-      : t('userlayers.scale-on', 'Symbols to scale (smaller zoomed out)'),
-    run: () => c.store.updateLayer(layer.id, { style: { ...layer.style, scaledAt } })
+      ? t('userlayers.scale-change', 'Symbol scale: {{scale}}…', {
+          scale: scaleLabel(layer.style.symbolScale!)
+        })
+      : t('userlayers.scale-on', 'Symbols to scale (smaller zoomed out)…'),
+    run: () => openSymbolScale(c.store, layer, c.actions.mapScale())
   }
 }
 
@@ -158,8 +168,8 @@ export function folderMenu(
   if (lockable.length)
     items.push({
       label: allLocked
-        ? t('userlayers.folder-unlock', '🔓 Unlock its layers')
-        : t('userlayers.folder-lock', '🔒 Lock its layers (yours)'),
+        ? t('userlayers.folder-unlock', 'Unlock its layers')
+        : t('userlayers.folder-lock', 'Lock its layers (yours)'),
       run: () =>
         lockable.forEach((l) =>
           store.updateLayer(l.id, { style: { ...l.style, locked: !allLocked || undefined } })

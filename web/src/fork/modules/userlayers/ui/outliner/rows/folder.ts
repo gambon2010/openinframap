@@ -6,6 +6,7 @@ import type { UserLayer } from '../../../model/model.ts'
 import { eyeIcon } from '../../../../../ui/icons.ts'
 import { withContextMenu } from '../../../../../ui/context-menu.ts'
 import { button, focusable } from '../widgets.ts'
+import { toolIcon } from '../../tool-icons.ts'
 import { nameInput, startEditing } from '../editing.ts'
 import { folderMenu, moveToFolder } from '../menus.ts'
 import { dropTarget } from '../drag.ts'
@@ -44,7 +45,7 @@ export function folderRow(
     ),
     label,
     allLocked
-      ? el('span.oim-ul-row-icon', '🔒', {
+      ? el('span.oim-ul-row-icon', toolIcon('lock', 14), {
           title: t('userlayers.folder-locked', 'All its layers are locked')
         })
       : '',

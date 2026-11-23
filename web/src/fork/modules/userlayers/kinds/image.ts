@@ -1,4 +1,5 @@
 // Fork: a picture uploaded to the backend, placed on the map.
+import { toolIcon } from '../ui/tool-icons.ts'
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { imageUrl } from '../state/api.ts'
@@ -18,7 +19,8 @@ export const image: ItemKind = {
       return { data: image, pixelRatio }
     }
   },
-  thumbnail: ({ properties: p }) => (p.image ? el('img', { src: imageUrl(p.image), alt: '' }) : '🖼'),
+  thumbnail: ({ properties: p }) =>
+    p.image ? el('img', { src: imageUrl(p.image), alt: '' }) : toolIcon('image', 16),
   sized: true,
   filters: () => ['pictures']
 }

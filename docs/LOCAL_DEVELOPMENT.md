@@ -651,10 +651,15 @@ networks: every low- and medium-voltage line and street-level substation, and th
 gas distribution pipes (`--only gaz` imports just those) and biomethane injection
 points (`--only biomethane`), plus the classified installations (ICPE, Seveso
 sites among them) from Géorisques (`import fr-georisques-icpe`), and the communes'
-outlines to number buildings (`import fr-communes`, 90 MB once: Data layers →
-Background map → **Building numbers**, each building's number within its commune,
-"WIS-47", from zoom 16; a commune is numbered the first time it's shown, a few
-seconds for a city, and the numbers never change for anyone); from
+and neighbourhoods' outlines to number buildings (`import fr-communes`, 90 MB and
+IGN's IRIS once: Data layers → Background map → **Building numbers**, each building's
+number within its neighbourhood where INSEE splits the commune, "STR-NEU-12" in
+Neudorf, Strasbourg, else within its commune, "WIS-47"; from zoom 16, written whole
+or as the number alone (Settings → Building numbers); an area is numbered the first
+time it's shown, a few seconds for a city, and the numbers never change for anyone;
+search "STR-NEU-12" or "wis 47" in the search box to go there, the nearest place
+with that code first. Buildings no one could stand in, a staircase's steps drawn one
+by one, aren't numbered and aren't drawn outside 3D); from
 [Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
 Europe and the border strips of France's neighbours. Switch it on in the layer
 switcher under **Not from OpenStreetMap** (power and gas are separate entries). It's
@@ -774,7 +779,7 @@ on the My layers workspace; click it again to close it. It has two parts:
 | L / R | Line / area: click points, double-click or Enter to finish |
 | M | Marker |
 | P | Picture: your own image or icon |
-| C | Copy from the map: power lines, substations, sites, buildings... (click one, or **Shift + drag** a box to copy everything in it); copies are drawn like the originals and still shown when you hide the grid; a building keeps its shape (no handles, can't be dragged), goes under **Buildings** in the list and shows its name if you give it one |
+| C | Copy from the map: power lines, substations, sites, buildings... (click one, or **Shift + drag** a box to copy everything in it); not the background map's roads or contours (a copy of them couldn't be renamed on the map); copies are drawn like the originals and still shown when you hide the grid; a building keeps its shape (no handles, can't be dragged), goes under **Buildings** in the list, takes its number as its name ("STR-NEU-12") and shows its name on the map |
 
 Esc stops a tool. **Ctrl+Z** undoes the last change and **Ctrl+Shift+Z** redoes
 it. Undo goes on past a Save: a saved change isn't removed from the server, undoing
@@ -815,10 +820,12 @@ show one card for all of them (identity, planned / present, move, delete), and e
 change to them is one undo step.
 
 **Symbols to scale** (a layer's right-click menu): its symbols, markers and pictures
-shrink as you zoom out and grow as you zoom in (to 8 times their size), as they look
-at the zoom you switched it on at; zoomed out past a quarter of their size they
-become small dots of their identity's colour. Off at first (the same size at every
-zoom); the setting is the layer's, saved and shared with it.
+drawn as on a paper map at a scale you choose on a slider of fixed steps (1:5 000 to
+1:500 000; switched on, it starts at the step nearest the map's scale): they shrink
+as you zoom out and grow as you zoom in (to 8 times their size); zoomed out past a
+quarter of their size they become small dots of their identity's colour. Off at
+first (the slider's left end: the same size at every zoom); the setting is the
+layer's, saved and shared with it.
 
 On the map or in the list: **right-click** an item for its menu (identity,
 planned / present, rename, duplicate, copy, move to another layer, lock, delete); on

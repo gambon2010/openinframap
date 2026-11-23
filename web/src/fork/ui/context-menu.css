@@ -82,3 +82,9 @@
 .oim-menu-sub[open] > summary::after {
   content: '▾';
 }
+/* An entry's icon, before its label. */
+.oim-context-menu button svg,
+.oim-context-menu summary svg {
+  margin-right: 6px;
+  vertical-align: -3px;
+}

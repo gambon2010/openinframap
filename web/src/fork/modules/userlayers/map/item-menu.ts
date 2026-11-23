@@ -8,6 +8,7 @@ import type { Store } from '../state/store.ts'
 import type { UserFeature } from '../model/model.ts'
 import { status, withIdentity, withStatus } from '../model/sidc.ts'
 import { identityOptions } from '../model/labels.ts'
+import { toolIcon } from '../ui/tool-icons.ts'
 
 /** What the menu's entries do beyond changing the item (interactions.ts has them). */
 export interface ItemMenuActions {
@@ -46,8 +47,16 @@ export function itemMenu(a: ItemMenuActions, feature: UserFeature, layerId: stri
   if (store.view.canEdit(layer)) {
     items.push(
       feature.properties.locked
-        ? { label: t('userlayers.unlock-item', '🔓 Unlock'), run: () => update({ locked: undefined }) }
-        : { label: t('userlayers.lock-item', '🔒 Lock'), run: () => update({ locked: true }) }
+        ? {
+            label: t('userlayers.unlock-item', 'Unlock'),
+            icon: toolIcon('unlock', 16),
+            run: () => update({ locked: undefined })
+          }
+        : {
+            label: t('userlayers.lock-item', 'Lock'),
+            icon: toolIcon('lock', 16),
+            run: () => update({ locked: true })
+          }
     )
   }
   items.push('separator', {

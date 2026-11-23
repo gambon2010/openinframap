@@ -74,10 +74,10 @@ export const FIELDS: Field[] = [
   // Time
   {
     key: 'W',
-    label: 'Date-time group',
+    label: 'Seen at',
     input: 'datetime',
     kinds: ALL_SYMBOLS,
-    help: 'When it was seen or reported (the timeline shows it from then)'
+    help: "When it was seen or reported (the standard's date-time group); the timeline shows it from then"
   },
   {
     key: 'W',

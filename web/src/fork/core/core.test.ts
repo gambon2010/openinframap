@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
-import { metresPerPixel, toDegrees, toRadians } from './geo.ts'
+import { mapScale, metresPerPixel, toDegrees, toRadians, zoomForScale } from './geo.ts'
 import { clamp } from './math.ts'
 import { parseHex } from './colour.ts'
 import { geometryIs } from './map-style.ts'
@@ -76,5 +76,12 @@ describe('distance on the ground', () => {
     // 0.05° of longitude: 5.6 km at the equator, 2.8 km at 60°N.
     expect(groundDistance([0, 0], [0.05, 0]) / 1000).toBeCloseTo(5.56, 1)
     expect(groundDistance([0, 60], [0.05, 60]) / 1000).toBeCloseTo(2.78, 1)
+  })
+})
+
+describe('map scales', () => {
+  test('zoom 13 at 48° N is about 1:23 000, and a scale finds its zoom back', () => {
+    expect(mapScale(13, 48)).toBeCloseTo(22_800, -2)
+    expect(zoomForScale(mapScale(13.4, 48), 48)).toBeCloseTo(13.4, 6)
   })
 })

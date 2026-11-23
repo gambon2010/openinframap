@@ -3,6 +3,7 @@
 // graphic's two versions are one row: offeredAs). Point symbols are
 // previewed by @syncpoint/signs; lines, areas and arrows are drawn on the map by the
 // C5ISR renderer (graphics.ts), so the picker shows their kind instead.
+import { toolIcon } from './tool-icons.ts'
 import { standardName } from '../graphics/graphics.ts'
 import { variantsOf } from '../graphics/variants.ts'
 import { graphicKey } from '../graphics/labels.ts'
@@ -13,7 +14,7 @@ import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../graphics/graphics.ts'
 import type { PersonalSettings } from '../state/personal.ts'
 import type { Entry, PaletteMode, Pick } from './palette.types.ts'
-import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_GLYPHS, CATEGORIES } from './palette.constants.ts'
+import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_ICONS, CATEGORIES } from './palette.constants.ts'
 
 /** A catalogue code (with * for identity and status) made concrete. */
 export function concreteSidc(code: string, affiliation: string, status: string): string {
@@ -219,7 +220,7 @@ export class Palette {
     // Its name is written beside it (labelled): no tooltip saying it again.
     const button = el('button.oim-ul-symbol', { 'aria-label': name, type: 'button' })
     if (geometry) {
-      button.textContent = GEOMETRY_GLYPHS[geometry]
+      button.append(toolIcon(GEOMETRY_ICONS[geometry] ?? 'graphic', 20))
     } else {
       try {
         button.innerHTML = this.render!(sidc, 18)

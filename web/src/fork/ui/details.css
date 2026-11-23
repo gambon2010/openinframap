@@ -96,7 +96,9 @@
 }
 
 /* Buttons: My layers' (userlayers/ui/common.css .oim-ul-button). */
-.oim-info-panel .oim-button {
+/* Buttons in the details panel and in windows (ui/confirm.ts): My layers' look. */
+.oim-info-panel .oim-button,
+.oim-modal .oim-button {
   margin: 6px 4px 0 0;
   padding: 3px 8px;
   border: 1px solid var(--oim-grey);
@@ -107,11 +109,24 @@
   font-weight: normal;
 }
 
-.oim-info-panel .oim-button:hover:not(:disabled) {
+.oim-info-panel .oim-button:hover:not(:disabled),
+.oim-modal .oim-button:hover:not(:disabled) {
   background: var(--oim-grey);
 }
 
-.oim-info-panel .oim-button:disabled {
+/* The main action: blue, a shade darker on hover. */
+.oim-modal .oim-button.primary {
+  border-color: #1565c0;
+  background: #1565c0;
+  color: #fff;
+}
+.oim-modal .oim-button.primary:hover:not(:disabled) {
+  background: #1565c0;
+  filter: brightness(0.85);
+}
+
+.oim-info-panel .oim-button:disabled,
+.oim-modal .oim-button:disabled {
   opacity: 0.5;
   cursor: default;
 }

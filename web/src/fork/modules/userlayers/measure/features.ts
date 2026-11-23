@@ -105,6 +105,32 @@ function beyond(angle: number): Placement {
     : { anchor: 'bottom', offset: [0, -0.6], priority: 0 }
 }
 
+/** A named measurement's name on the map: above the middle of its line (a line of
+ * sight, a distance: its middle leg), at an area's centre, above range rings' centre;
+ * bold, before its other labels (priority 0). */
+export function nameFeature(
+  m: Measurement,
+  name: string,
+  properties: Record<string, unknown> = {}
+): GeoJSON.Feature {
+  const label = { ...properties, label: name, big: true, priority: 0 }
+  if (m.type === 'rings') return point(m.points[0], { ...label, anchor: 'bottom', offset: [0, -1.2] })
+  if (m.type === 'area') return point(centreOf(m.points), label)
+  const middle = Math.floor((m.points.length - 1) / 2)
+  const [a, b] = [m.points[middle], m.points[middle + 1] ?? m.points[middle]]
+  const halfway: LngLat = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+  return point(halfway, { ...label, anchor: 'bottom', offset: [0, -1.2] })
+}
+
+/** The average of an area's corners (its last point repeating its first left out). */
+function centreOf(points: LngLat[]): LngLat {
+  const [first, last] = [points[0], points[points.length - 1]]
+  const closed = points.length > 1 && first[0] === last[0] && first[1] === last[1]
+  const corners = closed ? points.slice(0, -1) : points
+  const sum = corners.reduce(([x, y], [px, py]) => [x + px, y + py], [0, 0])
+  return [sum[0] / corners.length, sum[1] / corners.length]
+}
+
 /** The features that draw a measurement. */
 export function measurementFeatures(m: Measurement, options: DrawOptions = {}): GeoJSON.Feature[] {
   const north = options.north ?? 'true'

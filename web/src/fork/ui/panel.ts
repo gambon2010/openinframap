@@ -43,6 +43,27 @@ export function makeModal(
   return { panel, body, open, close }
 }
 
+/** A window opened once (a question, a setting of one thing): shown at once, and
+ * taken off the page when it's closed (makeModal's stay, to be opened again);
+ * `closed` settles then, however it was closed (a button, ×, Escape, a click beside). */
+export function showModal(
+  title: string,
+  ...content: (HTMLElement | string)[]
+): { close: () => void; closed: Promise<void> } {
+  const { panel, open, close } = makeModal(title, ...content)
+  const backdrop = panel.parentElement!
+  const closed = new Promise<void>((done) => {
+    new MutationObserver((_, observer) => {
+      if (backdrop.classList.contains('visible')) return
+      observer.disconnect()
+      backdrop.remove()
+      done()
+    }).observe(backdrop, { attributes: true, attributeFilter: ['class'] })
+  })
+  open()
+  return { close, closed }
+}
+
 /** A panel element (closed: without the class "visible") with its title bar and body. */
 export function makePanel(
   className: string,

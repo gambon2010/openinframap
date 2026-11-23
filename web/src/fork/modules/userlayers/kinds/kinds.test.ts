@@ -1,3 +1,4 @@
+import { toolIcon } from '../ui/tool-icons.ts'
 import { describe, expect, test } from 'vitest'
 import { KINDS, KIND_IDS, kindOf, kindOfImage } from './index.ts'
 import { iconName } from '../map/icons.ts'
@@ -61,7 +62,9 @@ describe('the kinds', () => {
     )
     expect(kindOf(line.properties).noun(line)).toBe('line')
     expect(kindOf(area.properties).noun(area)).toBe('area')
-    expect(kindOf(area.properties).thumbnail(area)).toBe('▱')
+    // The area tool's icon (ui/tool-icons.ts): the same drawn icon as its toolbar's.
+    const picture = kindOf(area.properties).thumbnail(area) as SVGElement
+    expect(picture.outerHTML).toBe(toolIcon('area', 16).outerHTML)
     const copy = item({ kind: 'copy', copy: { source: 's', sourceLayer: 'l', layer: 'Power lines' } })
     expect(kindOf(copy.properties).noun(copy)).toBe('copy of Power lines')
     const unit = item({ kind: 'symbol', sidc: 'SFGPUCI----D---' })

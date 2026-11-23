@@ -9,13 +9,8 @@ import { ensureImage } from './icons.ts'
 import { Measurement } from '../measure/features.types.ts'
 import { measurementFeatures } from '../measure/features.ts'
 import { measurePrefs } from '../../../services/measure-prefs.ts'
-import {
-  axisControlPoints,
-  axisWidth,
-  graphicsLibrary,
-  mapScale,
-  renderGraphic
-} from '../graphics/graphics.ts'
+import { axisControlPoints, axisWidth, graphicsLibrary, renderGraphic } from '../graphics/graphics.ts'
+import { mapScale } from '../../../core/geo.ts'
 import { DRAFT, GHOST, GRAPHIC_DRAFT } from './render.constants.ts'
 import { GraphicDraft } from './render.types.ts'
 import { graphicSpecs } from './layers.ts'

@@ -1,6 +1,7 @@
 // Fork: situations in My layers' sidebar: a selector (live, a saved situation,
 // save now as one, delete) and, while one is shown, a banner over the map with
 // "Back to live". A situation is shown read-only (store.view).
+import { askToConfirm } from '../../../ui/confirm.ts'
 import { el } from 'redom'
 import { t, tn } from '../../../core/i18n.ts'
 import { Situation } from '../state/api.types.ts'
@@ -79,14 +80,17 @@ export class Situations {
         const pending = store.unsavedCount
         const includePending =
           pending > 0 &&
-          window.confirm(
+          (await askToConfirm(
+            t('userlayers.situation-save', 'Save situation'),
             tn(
               'userlayers.situation-include-pending',
-              'Save your unsaved change first, so it is in the situation? (Cancel: leave it out.)',
-              'Save your {{count}} unsaved changes first, so they are in the situation? (Cancel: leave them out.)',
+              'Save your unsaved change first, so it is in the situation?',
+              'Save your {{count}} unsaved changes first, so they are in the situation?',
               pending
-            )
-          )
+            ),
+            t('userlayers.save-first', 'Save first'),
+            t('userlayers.leave-out', 'Leave out')
+          ))
         await this.ws.run(t('userlayers.saving', 'Saving'), async () => {
           if (includePending) await store.save()
           // The layers shown on the map (saved ones: the server knows them).
@@ -102,12 +106,14 @@ export class Situations {
     if (value === 'delete' && this.viewing) {
       const viewing = this.viewing
       if (
-        window.confirm(
+        await askToConfirm(
+          t('userlayers.delete-situation-title', 'Delete situation'),
           t(
             'userlayers.delete-situation-confirm',
             'Delete the situation "{{name}}"? (Your layers stay as they are.)',
             { name: viewing.name }
-          )
+          ),
+          t('userlayers.delete', 'Delete')
         )
       ) {
         this.backToLive()

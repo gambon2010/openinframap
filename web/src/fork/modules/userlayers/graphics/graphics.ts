@@ -6,13 +6,12 @@
 // What it returns is GeoJSON (lines, polygons, and label points) that MapLibre draws.
 
 import { graphicKey, labelLanguage, plainLabel } from './labels.ts'
-import { metresPerPixel, toRadians } from '../../../core/geo.ts'
+import { toRadians } from '../../../core/geo.ts'
 import type { C5Ren, PointCount, LonLat, GraphicInput } from './graphics.types.ts'
 import {
   BEYOND_C,
   METRES_PER_DEGREE_LON_AT_EQUATOR,
   METRES_PER_DEGREE_LAT,
-  OGC_PIXEL_M,
   SQUARE
 } from './graphics.constants.ts'
 
@@ -142,12 +141,6 @@ export function axisWidthFrom(path: LonLat[], handle: LonLat): number {
   const length = Math.hypot(dx, dy) || 1
   const [hx, hy] = toMetres(handle, tip)
   return Math.max(10, Math.round((2 * Math.abs(hx * dy - hy * dx)) / length))
-}
-
-/** Map scale (1:n) at a zoom and latitude, as the renderer wants it. */
-export function mapScale(zoom: number, latitude: number): number {
-  // Metres per pixel / metres per screen pixel (0.28 mm, the OGC standard).
-  return metresPerPixel(latitude, zoom) / OGC_PIXEL_M
 }
 
 /**

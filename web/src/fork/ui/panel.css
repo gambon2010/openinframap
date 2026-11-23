@@ -294,3 +294,10 @@ html button.oim-on {
     transform: rotate(360deg);
   }
 }
+/* A question's buttons (ui/confirm.ts): at the bottom right, the main one last. */
+.oim-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+}

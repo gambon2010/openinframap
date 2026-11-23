@@ -69,6 +69,12 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   categories in a column on the left and the choices on the right as equal tiles (the
   picture, its name under it); no hint text, no credits, no tooltip repeating a name
   written on screen.
+- **Questions** before what can't be undone (deleting, discarding): a window in the
+  middle of the screen (`ui/confirm.ts`), never the browser's own box; its buttons
+  say what each does, the main one last. Windows opened once: `showModal`.
+- **No emoji in the interface:** My layers' pictures (the list, the menus, the
+  padlock) are `ui/tool-icons.ts`'s line icons; a dropdown's lines, text only, say
+  "(locked)" in words.
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
 - **Where data comes from** (a source, its licence, when it was updated): only in a
   thing's debug info (Settings → Debug), never in its details (`SOURCE_NOTE`,

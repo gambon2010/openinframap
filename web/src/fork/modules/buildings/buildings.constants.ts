@@ -24,5 +24,7 @@ export const DEFAULT_HEIGHT_M = 8
  * a handful per view at most). */
 export const NUMBERS_LAYER = 'building_numbers'
 export const NUMBERS_FROM_ZOOM = 16
+/** How the numbers are written, kept in this browser: "full" or "number". */
+export const NUMBERS_LABELS_KEY = 'oim-building-number-labels'
 /** Over the buildings (-10), under the infrastructure. */
 export const NUMBERS_ZORDER = -9.8

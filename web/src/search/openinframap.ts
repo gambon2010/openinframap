@@ -5,7 +5,7 @@ import { SearchResult, ISearchProvider } from './search'
 import { formatVoltage, formatPower } from '../l10n'
 import { t } from 'i18next'
 import { BACKEND_BASE_URL } from '../fork/config.ts'
-import { forkSearchDescription } from '../fork/index.ts'
+import { forkSearchDescription, forkSearchParams } from '../fork/index.ts'
 import { BackendSearchResult } from '../fork/types.ts'
 
 type OIMResult = BackendSearchResult & {
@@ -40,7 +40,8 @@ export default class OIMSearchProvider implements ISearchProvider {
     const searchParams = new URLSearchParams({
       q: query,
       lang: this.language,
-      v: '2'
+      v: '2',
+      ...forkSearchParams()
     })
 
     const result = await fetch(`${this.url}?${searchParams.toString()}`, {

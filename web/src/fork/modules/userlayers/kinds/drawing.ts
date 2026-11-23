@@ -1,4 +1,5 @@
 // Fork: a drawing: a free line or area, in its colour and width.
+import { toolIcon } from '../ui/tool-icons.ts'
 import { t } from '../../../core/i18n.ts'
 import { ItemKind, Item } from './types.ts'
 
@@ -9,8 +10,8 @@ export const drawing: ItemKind = {
   noun: (item) => (area(item) ? t('userlayers.kind.area', 'area') : t('userlayers.kind.line', 'line')),
   what: (item) => (area(item) ? t('userlayers.what.area', 'Area') : t('userlayers.what.line', 'Line')),
   drawn: 'standard',
-  thumbnail: (item) => (area(item) ? '▱' : '╱'),
-  coloured: true,
+  thumbnail: (item) => toolIcon(area(item) ? 'area' : 'line', 16),
+  coloured: () => true,
   lineWidth: true,
   filters: () => ['graphics']
 }

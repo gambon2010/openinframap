@@ -1,6 +1,7 @@
-// Fork: My layers' toolbar icons, drawn as the app's other line icons (ui/icons.ts:
-// 24-unit outlines, 2 wide, round ends): each tool a picture of what it makes, the
-// symbol tool a friendly infantry frame, the graphic tool an attack arrow.
+// Fork: My layers' icons, drawn as the app's other line icons (ui/icons.ts: 24-unit
+// outlines, 2 wide, round ends): the toolbar's (each tool a picture of what it makes,
+// the symbol tool a friendly infantry frame, the graphic tool an attack arrow), the
+// list's pictures of items (kinds/), the padlock.
 import { icon } from '../../../ui/icons.ts'
 
 const PATHS: Record<string, string[]> = {
@@ -29,7 +30,10 @@ const PATHS: Record<string, string[]> = {
   redo: ['M15 14l5-5-5-5', 'M20 9H9a5 5 0 0 0 0 10h3'],
   history: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M12 7v5l3 2'],
   // Where new items go: the list's "you draw here" pencil.
-  into: ['M15 4l5 5L9 20H4v-5z']
+  into: ['M15 4l5 5L9 20H4v-5z'],
+  building: ['M3 21h18', 'M5 21V9l7-5 7 5v12', 'M10 21v-6h4v6'],
+  lock: ['M5 11h14v10H5z', 'M8 11V7a4 4 0 0 1 8 0v4'],
+  unlock: ['M5 11h14v10H5z', 'M8 11V7a4 4 0 0 1 7.9-1']
 }
 
 /** A tool's (or a toolbar button's) icon by its id. */

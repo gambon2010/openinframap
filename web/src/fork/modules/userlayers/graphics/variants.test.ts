@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest'
 import { VARIANTS, isDirection, variantsOf, withKey } from './variants.ts'
-import { graphicsLibrary, mapScale, renderGraphic } from './graphics.ts'
+import { graphicsLibrary, renderGraphic } from './graphics.ts'
+import { mapScale } from '../../../core/geo.ts'
 import { searchCatalogue } from '../ui/palette.ts'
 import { graphicKey } from './labels.ts'
 

@@ -115,7 +115,7 @@ function lookRows(c: Card): HTMLElement[] {
   const { feature, p, update, itemKind } = c
   const rows: HTMLElement[] = []
   if (itemKind.sized && feature.geometry.type === 'Point') rows.push(sizeRow(p.size ?? 1, update))
-  if (itemKind.coloured) {
+  if (itemKind.coloured?.(p)) {
     const color = el('input', {
       type: 'color',
       value: p.color ?? DEFAULT_COLOR,
@@ -176,7 +176,7 @@ export function footerSection(c: Card, parts: CardPart[]) {
     const l = layers.find((x) => x.id === option.value)
     if (l && !actions.canEdit(l) && l.id !== layer.id) {
       option.disabled = true
-      option.textContent = `🔒 ${l.name}`
+      option.textContent = t('userlayers.locked-option', '{{name}} (locked)', { name: l.name })
     }
   }
   const button = (label: string, onclick: () => void, primary = false) => {

@@ -19,9 +19,6 @@ export const METRES_PER_DEGREE_LON_AT_EQUATOR = 111_320
 /** Metres in a degree of latitude (its average, near 45°). */
 export const METRES_PER_DEGREE_LAT = 110_540
 
-/** A screen pixel's size in the OGC's standard (0.28 mm), metres. */
-export const OGC_PIXEL_M = 0.00028
-
 /**
  * Three-point graphics drawn square: a base between two points and the third on the
  * perpendicular through its middle (Block, Contain, Clear, Breach, Bypass...; Disrupt:

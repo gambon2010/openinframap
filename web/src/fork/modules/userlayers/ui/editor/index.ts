@@ -87,7 +87,7 @@ export function buildBulkCard(
     parts.push(
       el(
         'p.oim-ul-locked-note',
-        t('userlayers.bulk-locked', '🔒 {{count}} in locked layers are left as they are.', {
+        t('userlayers.bulk-locked', '{{count}} in locked layers are left as they are.', {
           count: items.length - unlocked.length
         })
       )

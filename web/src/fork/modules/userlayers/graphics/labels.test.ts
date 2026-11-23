@@ -2,7 +2,8 @@
 // every graphic in the catalogue, in English and French.
 import { beforeAll, describe, expect, test } from 'vitest'
 import { SQUARE } from './graphics.constants.ts'
-import { graphicsLibrary, isAxis, mapScale, pointCount, renderGraphic } from './graphics.ts'
+import { graphicsLibrary, isAxis, pointCount, renderGraphic } from './graphics.ts'
+import { mapScale } from '../../../core/geo.ts'
 import { samplePoints } from './svg.ts'
 import { GRAPHIC_LABELS } from './labels.constants.ts'
 import { LabelLanguage } from './labels.types.ts'

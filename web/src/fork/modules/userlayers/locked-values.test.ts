@@ -1,7 +1,8 @@
 // Today's exact results of the calculations being tidied (shared helpers, named
 // constants): any change in a number, rounding or unit shows here.
 import { describe, expect, test } from 'vitest'
-import { axisWidth, axisWidthFrom, axisWidthPoint, mapScale, pathLength } from './graphics/graphics.ts'
+import { axisWidth, axisWidthFrom, axisWidthPoint, pathLength } from './graphics/graphics.ts'
+import { mapScale } from '../../core/geo.ts'
 import { MAX_SIZE, MIN_SIZE } from './map/render.constants.ts'
 import { sizeFromDrag } from './map/geometry.ts'
 import { metresPerPixel as tickMetresPerPixel } from './measure/ticks.ts'
