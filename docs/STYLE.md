@@ -42,6 +42,8 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 - **Buttons:** small, bordered, square-ish: `.oim-ul-button` (the details panel's
   `.oim-button` is given the same look). A main action is `.primary` (`--oim-primary`, the one blue, also for drop targets).
   Disabled at half opacity.
+- **Several things each on or off, in a row** (a unit's HQ, task force, dummy;
+  the list's filters): chips (`.oim-ul-chip`), lit when on, not tick boxes.
 - **Chosen, on, selected:** class `oim-on`, the map selection's yellow background
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
   buttons when their panel is open: `oim-pressed`.

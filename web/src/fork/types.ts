@@ -51,7 +51,6 @@ export interface BackendSearchResult {
   subtype?: string
   source?: string
   town?: string
-  layer?: string
   country?: string
 }
 

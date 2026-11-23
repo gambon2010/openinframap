@@ -3,7 +3,6 @@
 // and the marks a unit can carry as tick boxes. They're all part of its code
 // (sidc.ts).
 import { t } from '../../../../core/i18n.ts'
-import { el } from 'redom'
 import {
   MOBILITIES,
   identity,
@@ -19,8 +18,9 @@ import { controlPoints } from '../../map/geometry.ts'
 import { variantsOf, withKey } from '../../graphics/variants.ts'
 import { axisWidth } from '../../graphics/graphics.ts'
 import { Card } from './types.ts'
-import { CONDITIONS, ECHELON_MARKS } from './constants.ts'
-import { checkbox, formRow, identityChoice, select } from './controls.ts'
+import { CONDITIONS } from './constants.ts'
+import { formRow, identityChoice, select } from './controls.ts'
+import { echelonOptions, markChips } from '../unit-marks.ts'
 
 /** The rows of a military item's choices (nothing for other items). */
 export function choiceRows(c: Card): HTMLElement[] {
@@ -131,13 +131,14 @@ function drawnAsRow(c: Card): HTMLElement | null {
 
 function echelonRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   const m = unitModifiers(sidc)
-  const options = ECHELON_MARKS.map(([code, mark, label]): [string, string] => {
-    const name = t(`userlayers.echelon.${code}`, label)
-    return [code, code === '-' ? name : `${mark}  ${name}`]
-  })
   return formRow(
     t('userlayers.echelon-label', 'Echelon'),
-    select(options, m.echelon, (v) => setSidc(withUnitModifiers(sidc, { ...m, echelon: v })), 'echelon'),
+    select(
+      echelonOptions(),
+      m.echelon,
+      (v) => setSidc(withUnitModifiers(sidc, { ...m, echelon: v })),
+      'echelon'
+    ),
     undefined,
     t('userlayers.echelon-help', 'Its size, from a team to an army: the marks above the frame')
   )
@@ -145,27 +146,9 @@ function echelonRow(sidc: string, setSidc: (next: string) => void): HTMLElement 
 
 /** Headquarters, task force, dummy: each on or off. */
 function marksRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
-  const m = unitModifiers(sidc)
   return formRow(
     t('userlayers.marked-as', 'Marked as'),
-    el(
-      'span.oim-ul-control.oim-ul-checks',
-      checkbox(
-        t('userlayers.f.hq', 'HQ'),
-        m.hq,
-        (on) => setSidc(withUnitModifiers(sidc, { ...m, hq: on })),
-        t('userlayers.f.hq-title', 'Headquarters')
-      ),
-      checkbox(t('userlayers.f.task-force', 'Task force'), m.taskForce, (on) =>
-        setSidc(withUnitModifiers(sidc, { ...m, taskForce: on }))
-      ),
-      checkbox(
-        t('userlayers.f.feint', 'Dummy'),
-        m.feint,
-        (on) => setSidc(withUnitModifiers(sidc, { ...m, feint: on })),
-        t('userlayers.f.feint-title', 'Feint / dummy')
-      )
-    ),
+    markChips(unitModifiers(sidc), (marks) => setSidc(withUnitModifiers(sidc, marks))),
     undefined,
     t(
       'userlayers.marked-as-help',

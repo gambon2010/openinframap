@@ -1,4 +1,5 @@
 // Fork: the symbol and graphic picker (palette.ts): its constants and tables.
+import type { UnitModifiers } from '../model/sidc.ts'
 import type { Category } from './palette.types.ts'
 
 export const AFFILIATIONS: [string, string][] = [
@@ -64,3 +65,6 @@ export const CATEGORIES: Category[] = [
   { mode: 'graphics', label: 'Fire support', groups: ['Fire support'] },
   { mode: 'graphics', label: 'Logistics', groups: ['Combat service support'] }
 ]
+
+/** No echelon and no marks: a unit as the catalogue has it. */
+export const NO_MARKS: UnitModifiers = { echelon: '-', hq: false, taskForce: false, feint: false }

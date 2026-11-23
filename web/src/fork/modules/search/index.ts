@@ -1,6 +1,6 @@
 // Fork: search additions. The backend also finds places (imposm/places.py) and
-// everything else with a name (schema/fork/search.sql); these say what each result is,
-// and picking one switches on the layer that shows it.
+// everything else with a name (schema/fork/search.sql); these say what each result is.
+// Picking one leaves the layers as they are: the details panel pins it (details/).
 import { groundDistance } from '../../core/geo.ts'
 import { t } from '../../core/i18n.ts'
 import { ForkModule } from '../../types.ts'
@@ -56,13 +56,6 @@ const search: ForkModule = {
       return t(`search.place.${result.place_type}`, fallback)
     }
     return undefined
-  },
-
-  searchSelected: (result, { layerSwitcher }) => {
-    const layer = result.backend?.layer
-    if (!layer) return
-    layerSwitcher.setVisibility(layer, true)
-    layerSwitcher._updateList()
   }
 }
 

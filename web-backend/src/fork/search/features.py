@@ -32,7 +32,7 @@ async def search_features(
             f"""
         SELECT
             source, kind, subtype, name, names->'name:{language}' AS loc_name, detail, town,
-            layer, ST_AsGeoJSON(geometry) AS geometry,
+            ST_AsGeoJSON(geometry) AS geometry,
             CASE
                 WHEN name_plain = :exact THEN 0
                 WHEN substr(name_plain, 1, 20) LIKE :query THEN 1
@@ -56,7 +56,6 @@ async def search_features(
             "local_name": row._mapping["name"],
             "operator": row._mapping["detail"],
             "town": row._mapping["town"],
-            "layer": row._mapping["layer"],
             "geometry": json.loads(row._mapping["geometry"]),
             "match_rank": row._mapping["match_rank"],
         }

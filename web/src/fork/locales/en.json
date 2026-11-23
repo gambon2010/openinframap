@@ -298,7 +298,8 @@
       "AM": "Width / radius / length",
       "AN": "Attitude",
       "G": "Staff comments",
-      "W-from": "Effective from"
+      "W-from": "Effective from",
+      "task-force-title": "Task force: a bracket above the frame"
     },
     "name": "Name",
     "status": {
@@ -376,7 +377,8 @@
       "recent": "Recently used",
       "none": "Nothing with that name.",
       "more": "Showing the first {{n}}: type more to narrow it down.",
-      "mine": "★ Favourites and recent"
+      "mine": "★ Favourites and recent",
+      "units": "Units"
     },
     "unfavourite": "Remove from favourites",
     "favourite": "Add to favourites",

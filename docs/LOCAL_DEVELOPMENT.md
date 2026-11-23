@@ -93,7 +93,8 @@ listens on this computer; it passes the same requests to the same services.
 
 ## Using the map
 
-- **Top left:** the search box. Below it, clicking anything on the map opens its
+- **Top left:** the search box; a result chosen is pinned and highlighted, its
+  details shown, your layers left as they are. Below it, clicking anything on the map opens its
   **details** (and highlights it); under those, the **Grid connection** panel when
   you pick a route (see below). **–** shrinks a panel to its title, **×** closes it.
 - **Bottom left** (next to the scale): where the cursor is: latitude, longitude and the
@@ -658,8 +659,8 @@ Neudorf, Strasbourg, "MLS-NOR-12" in Molsheim's north, else within its commune,
 "WIS-47"; from zoom 16, written whole
 or as the number alone (Settings → Building numbers); an area is numbered the first
 time it's shown, a few seconds for a city, and the numbers never change for anyone;
-search "STR-NEU-12" or "wis 47" in the search box to go there, the nearest place
-with that code first. Buildings no one could stand in, a staircase's steps drawn one
+search "STR-NEU-12" or "wis 47" in the search box to go there (pinned; switch the
+numbers on to read the others), the nearest place with that code first. Buildings no one could stand in, a staircase's steps drawn one
 by one, aren't numbered and aren't drawn outside 3D. A building's details show its
 number, and its name when OpenStreetMap gives it one ("Cathédrale Notre-Dame":
 names read at build from the whole extract, `scripts/building_names.py` to read
@@ -780,7 +781,7 @@ on the My layers workspace; click it again to close it. It has two parts:
 | Key | Tool |
 |---|---|
 | V | Select and move |
-| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search at the top, the identity (friend / hostile / neutral / unknown frames) and Planned under it, the categories in a column on the left (first your favourites, ☆ on any symbol, and recently used; while searching, how many match in each) and the symbols on the right |
+| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search at the top, the identity (friend / hostile / neutral / unknown frames) and Planned under it, then the echelon and marks (HQ, task force, dummy) every unit you place gets, the categories in a column on the left (first your favourites, ☆ on any symbol, and recently used; while searching, how many match in each) and the symbols on the right. Keys: ↓ from the search into the symbols, the arrows between them, Enter places the one ringed (in the search box: the first), Esc closes |
 | A | Arrow or graphic: axes, attacks, phase lines, areas, obstacles, tasks such as block or breach |
 | L / R | Line / area: click points, double-click or Enter to finish |
 | M | Marker |

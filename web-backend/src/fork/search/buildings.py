@@ -91,8 +91,6 @@ def result(name: str, geometry: dict) -> dict:
         "local_name": None,
         "operator": None,
         "town": None,
-        # Picked, it switches on the map's Building numbers (its layer switcher entry).
-        "layer": "building_numbers",
         "geometry": geometry,
         "match_rank": 0,
     }

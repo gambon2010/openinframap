@@ -96,13 +96,6 @@ export function promptSelect(
   return s
 }
 
-/** A tick box with its label, for something on or off. */
-export function checkbox(label: string, checked: boolean, onchange: (on: boolean) => void, title = '') {
-  const box = el('input', { type: 'checkbox', checked }) as HTMLInputElement
-  box.onchange = () => onchange(box.checked)
-  return el('label.oim-ul-check', { title }, box, label)
-}
-
 /** A datetime-local input value (local time) for a DTG. */
 export function dtgToInput(dtg: string | undefined): string {
   const date = dtg ? fromDtg(dtg) : null

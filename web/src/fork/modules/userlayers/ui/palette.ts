@@ -14,7 +14,11 @@ import { symbolRenderer } from '../map/symbols.ts'
 import { graphicsLibrary, pointCount } from '../graphics/graphics.ts'
 import type { PersonalSettings } from '../state/personal.ts'
 import type { Entry, PaletteMode, Pick } from './palette.types.ts'
-import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_ICONS, CATEGORIES } from './palette.constants.ts'
+import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_ICONS, CATEGORIES, NO_MARKS } from './palette.constants.ts'
+import { symbolKind, withUnitModifiers, type UnitModifiers } from '../model/sidc.ts'
+import { select } from './editor/controls.ts'
+import { echelonOptions, markChips } from './unit-marks.ts'
+import { nextTile } from './palette-keys.ts'
 
 /** A catalogue code (with * for identity and status) made concrete. */
 export function concreteSidc(code: string, affiliation: string, status: string): string {
@@ -101,8 +105,12 @@ export class Palette {
   private planned: HTMLInputElement
   private results: HTMLElement
   private affiliation = 'F'
+  // The echelon and marks every unit placed gets (none at first).
+  private unit: UnitModifiers = NO_MARKS
+  private unitRow = el('.oim-ul-palette-options')
   private group: string | undefined
   private onPick: (pick: Pick) => void
+  private onClose: () => void
   private render?: (sidc: string, size?: number) => string
   // Graphics the renderer can draw (a few catalogue entries are only headings).
   private drawable?: Set<string>
@@ -110,8 +118,9 @@ export class Palette {
   /** Favourites and recently used: yours, kept for your account (state/personal.ts). */
   private personal: PersonalSettings
 
-  constructor(onPick: (pick: Pick) => void, personal: PersonalSettings) {
+  constructor(onPick: (pick: Pick) => void, personal: PersonalSettings, onClose: () => void) {
     this.onPick = onPick
+    this.onClose = onClose
     this.personal = personal
     this.search = el('input.oim-ul-palette-search', { type: 'search' }) as HTMLInputElement
     this.categories = el('nav.oim-ul-palette-categories')
@@ -127,10 +136,14 @@ export class Palette {
         this.frames,
         el('label.oim-ul-inline', this.planned, t('userlayers.planned', 'Planned'))
       ),
+      this.unitRow,
       // Categories on the left, what's in the chosen one on the right.
       el('.oim-ul-palette-body', this.categories, this.results)
     )
     this.search.oninput = () => this.update()
+    // Keys: ↓ from the search into the tiles, the arrows between them, Enter picks
+    // (the search box: the first), Esc closes.
+    this.el.addEventListener('keydown', (e) => this.key(e))
     this.planned.onchange = () => this.update()
   }
 
@@ -187,6 +200,58 @@ export class Palette {
     }
   }
 
+  private key(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      this.onClose()
+      return
+    }
+    const tiles = [...this.results.querySelectorAll<HTMLButtonElement>('button.oim-ul-symbol')]
+    if (e.target === this.search) {
+      this.keyInSearch(e, tiles)
+      return
+    }
+    const from = tiles.indexOf(e.target as HTMLButtonElement)
+    if (from < 0) return
+    const places = tiles.map((tile) => tile.getBoundingClientRect())
+    const next = nextTile(places, from, e.key)
+    if (next === undefined) return
+    e.preventDefault()
+    if (next === null) this.search.focus()
+    else tiles[next].focus()
+  }
+
+  /** ↓ goes into the tiles, Enter picks the first. */
+  private keyInSearch(e: KeyboardEvent, tiles: HTMLButtonElement[]) {
+    if (!tiles.length || (e.key !== 'ArrowDown' && e.key !== 'Enter')) return
+    e.preventDefault()
+    if (e.key === 'ArrowDown') tiles[0].focus()
+    else tiles[0].click()
+  }
+
+  /** The units' echelon and marks, symbols only: what's shown and placed has them. */
+  private unitMarksRow() {
+    this.unitRow.hidden = this.mode !== 'symbols'
+    const echelon = select(
+      echelonOptions(),
+      this.unit.echelon,
+      (value) => {
+        this.unit = { ...this.unit, echelon: value }
+        this.update()
+      },
+      'palette-echelon'
+    )
+    const marks = markChips(this.unit, (marks) => {
+      this.unit = marks
+      this.update()
+    })
+    this.unitRow.replaceChildren(
+      el('span.oim-ul-palette-label', t('userlayers.palette.units', 'Units')),
+      echelon,
+      marks
+    )
+  }
+
   /** The categories, one per line: first your favourites and recent ones (or, while
    * searching, everything), then each category, with how many match the search. */
   private categoriesColumn() {
@@ -216,7 +281,7 @@ export class Palette {
 
   private button(entry: Entry): HTMLElement {
     const [code, name, , geometry] = entry
-    const sidc = concreteSidc(code, this.affiliation, this.status())
+    const sidc = this.withUnitMarks(concreteSidc(code, this.affiliation, this.status()))
     // Its name is written beside it (labelled): no tooltip saying it again.
     const button = el('button.oim-ul-symbol', { 'aria-label': name, type: 'button' })
     if (geometry) {
@@ -233,6 +298,11 @@ export class Palette {
       this.onPick({ sidc, name, geometry })
     }
     return button
+  }
+
+  /** A unit with the echelon and marks chosen above; anything else as it is. */
+  private withUnitMarks(sidc: string): string {
+    return symbolKind(sidc) === 'unit' ? withUnitModifiers(sidc, this.unit) : sidc
   }
 
   private labelled(entry: Entry): HTMLElement {
@@ -258,6 +328,7 @@ export class Palette {
   private update() {
     if (!this.render) return
     this.framesRow()
+    this.unitMarksRow()
     this.categoriesColumn()
     this.results.textContent = ''
     const query = this.search.value.trim()

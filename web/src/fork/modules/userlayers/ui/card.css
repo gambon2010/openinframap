@@ -80,17 +80,10 @@
   flex: 0 0 auto;
   width: auto;
 }
-.oim-ul-checks {
-  flex-wrap: wrap;
-  gap: 2px 10px;
-}
-.oim-ul-checks > :first-child {
-  flex: 0 0 auto;
-}
-.oim-ul-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+/* A unit's marks (unit-marks.ts): chips in one row, no wrapping. */
+.oim-ul-detail > .oim-ul-marks {
+  flex-wrap: nowrap;
+  margin: 0;
 }
 /* A date in words: clicked, it turns into its input. */
 .oim-ul-detail-value {

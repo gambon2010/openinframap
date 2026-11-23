@@ -50,7 +50,6 @@ async def search_towers(database: AsyncConnection, query: str, limit: Optional[i
                 "local_name": None,
                 "operator": None,
                 "town": None,
-                "layer": "P",
                 "geometry": json.loads(r["geometry"]),
                 "match_rank": 0,
             }

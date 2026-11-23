@@ -1561,6 +1561,13 @@ default). Counts are France's OSM data in October 2026.
   button opening the shared menu (a dropdown's lines can't hold pictures); tower
   numbers and contour heights label layers; no tooltip on a tool group's ▾ (asked).
   Indoor plan settled (docs/plans/indoor-maps.md); search ideas to the backlog.
+- **Search pins, picker keys** (asked, 2026-11-23): choosing a search result no
+  longer switches its layer on (the cathedral turned on Places of worship): the
+  details panel pins and highlights it; the results' `layer` gone from the backend
+  and `search_feature`. The picker: a Units row (echelon, HQ, task force, dummy)
+  given to every unit placed and shown on the tiles; ↓, the arrows, Enter and Esc
+  (`palette-keys.ts`). A unit's marks as chips in one row (`unit-marks.ts`, shared
+  with the card), the tick boxes gone.
 
 ## Extra data (not from OpenStreetMap)
 

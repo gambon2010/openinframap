@@ -137,7 +137,7 @@ group (OpenStreetMap) stays commented out in `src/openinframap.ts`: re-enabling 
 breaks saved links whose layer list has no `A`. URLs come from `config.ts` (`VITE_*`
 variables; `throughGate` sends local services through the gate). Search
 (`src/search/`) combines coordinates, the backend (`search_feature`; picking a result
-switches its layer on) and an optional Photon server (`VITE_PHOTON_URL` / Settings),
+pins it in the details panel, the layers left as they are) and an optional Photon server (`VITE_PHOTON_URL` / Settings),
 same-name results within ~5 km merged.
 
 **Styles:** panels share `ui/panel.css` (build them with `makePanel()`). Anything
