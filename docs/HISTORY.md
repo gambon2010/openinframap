@@ -1614,6 +1614,19 @@ default). Counts are France's OSM data in October 2026.
   stopped the tiles: "opj_decode() failed"). An extraction counts as finished once
   its archive is gone (extract deletes it then), else it's done again from the parts
   kept (`bdortho.extracted_images`, a test).
+- **Building numbers worked out, not stored** (asked, 2026-11-23: option A of four:
+  A worked out when asked, B one row per area, C A plus a record per map update, D
+  our own numbers file made at build): an area's numbers from the background map's
+  buildings in the same order, kept in memory for the map in use (64 areas,
+  `building_numbers/areas.py`); the register's three tables dropped (migration 007,
+  10 MB for two towns, about 200 bytes a building). The same numbers as before
+  (MLS-NOR-1694 still), on every computer with the same map; a newer map can shift
+  them. A search by number works out the area first (2 s for Petite France, then
+  instant).
+- **Bug: the Eiffel Tower a 330 m block in 3D:** its outline is tagged
+  building:part=no with the tower's height, and the map's tiles list it with the
+  parts (kind_detail "no"); raised, it hid the tower's 56 parts. Parts tagged no
+  are left out (`PART_FILTER`, core/buildings.ts).
 
 ## Extra data (not from OpenStreetMap)
 

@@ -32,6 +32,14 @@ export const isBuildingLayer = (id: string) =>
   id.startsWith(BUILDINGS_PREFIX) && !id.startsWith(INTERIOR_PREFIX)
 export const BUILDINGS_SOURCE = 'basemap'
 export const BUILDINGS_SOURCE_LAYER = 'buildings'
+/** The background map's building parts (OpenStreetMap's building:part): not one
+ * tagged building:part=no, which says it isn't (the Eiffel Tower's outline, 330 m
+ * tall: raised as a part, a block hid the tower's own parts). */
+export const PART_FILTER: ExpressionSpecification = [
+  'all',
+  ['==', ['get', 'kind'], 'building_part'],
+  ['!=', ['get', 'kind_detail'], 'no']
+]
 /** Every building is in the tiles from this zoom. */
 export const BUILDINGS_MINZOOM = 15
 /** Where the zoomed out buildings hand over to every building: where those tiles

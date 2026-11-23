@@ -334,12 +334,13 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.112 | Search: line-of-sight and measurement names. | 🗂 backlog (2026-11-23) |
 | 10.113 | Search, more: streets by name; communes by INSEE code or postcode; neighbourhoods by name or code; rivers, lakes, bridges, tunnels, dams; peaks and passes; the background map's shops and restaurants; OpenStreetMap ids; addresses (Base Adresse Nationale); cadastral parcels; road distance markers; railway kilometre points and level crossings; motorway exits; airports by ICAO/IATA; antennas by ANFR number; IGN 1:25 000 sheets; companies (SIRENE); a kind near a place; only what's in view; recent searches. | 🗂 backlog (2026-11-23) |
 | 10.114 | Place several (Shift + click keeps the placing tool on); no tooltip on a tool group's ▾; identities drawn as their frames in the card, several items' edit and the right-click menu (no emoji); a click on a tower's number or a contour's height opens the tower or the line. | ✅ (2026-11-23) |
-| 10.115 | Building numbers redesigned to take less space (today about 200 bytes a building). | 💬 discussing (2026-11-23) |
+| 10.115 | Building numbers take no space: worked out from the background map when asked for (option A), the same on every computer with the same map. | ✅ (2026-11-23) |
 | 10.116 | A search result pinned and highlighted, the layers left as they are; a unit's echelon and marks chosen in the picker before placing (its keys tried, then removed: of no use); a unit's marks as chips in one row; the picker's choices on one line, only its symbols scrolling; one look for every dropdown; the layer choice beside Save. | ✅ (2026-11-23) |
 | 10.117 | A line of sight's profile opened from its right-click menu; its yellow and red stretches at least a few pixels long on the map and the profile, so a break is seen at a glance. | ✅ (2026-11-23) |
 | 10.118 | Shortcuts: / or Ctrl+K the search; Ctrl+S save; F2 rename; Ctrl+D duplicate; ← → in the history and the line-of-sight profile; ? the list of every shortcut. | ✅ (2026-11-23) |
 | 10.119 | Building interiors: everything indoor OpenStreetMap has, things with a floor kept inside interiors and buildings; buildings with one tinted while outlines are shown; floors chosen per building in its details; a room's, a door's or a shop's details. | ✅ (2026-11-23) |
-| 10.120 | Interiors, next: rooms in the search; a building copied into My layers keeping its floors. | 📋 to do (2026-11-23) |
+| 10.120 | Interiors, next: only buildings with a floor plan count (tint, floors); no points drawn; "What's inside" in a building's card (the interiors' points with their floor, the map tiles' points in the building); the map hidden under a floor shown; a stronger tint; underground interiors outside buildings as places of their own; a building copied into My layers keeping its floors. No room search. | 📋 to do (2026-11-23) |
+| 10.121 | The 3D view without the relief (a Relief row under Data layers → Terrain). | 💬 proposed (2026-11-23) |
 
 ## 11. Quality
 

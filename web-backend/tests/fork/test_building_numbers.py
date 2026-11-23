@@ -57,3 +57,48 @@ def test_a_search_for_a_building_number():
     assert BUILDING_QUERY.match("wis 47").groups() == ("wis", None, "47")
     assert BUILDING_QUERY.match("rue du ried") is None
     assert BUILDING_QUERY.match("strasbourg-12") is None
+
+
+def test_an_areas_numbers_worked_out_once_then_remembered(monkeypatch):
+    import asyncio
+
+    from src.fork.building_numbers import areas
+    from src.fork.building_numbers.buildings import AreaBuildings
+
+    asked = []
+
+    def buildings_in(outline):
+        asked.append(outline)
+        # Two buildings in a row from the west, a sliver apart.
+        return AreaBuildings({1: (7.0, 48.0), 2: (7.001, 48.0)}, {3: (7.002, 48.0)})
+
+    monkeypatch.setattr(areas, "buildings_in", buildings_in)
+    monkeypatch.setattr(areas.ARCHIVES, "version", lambda: "edition-1")
+    areas._remembered.clear()
+    square = '{"type": "Polygon", "coordinates": [[[7, 48], [8, 48], [8, 49], [7, 48]]]}'
+    first = asyncio.run(areas.area_numbers("67482", square))
+    again = asyncio.run(areas.area_numbers("67482", square))
+    assert first.numbers == {1: 1, 2: 2} and first.slivers == {3: (7.002, 48.0)}
+    assert again is first and len(asked) == 1
+    assert first.building_numbered(2) == 2 and first.building_numbered(9) is None
+
+
+def test_another_background_map_works_them_out_again(monkeypatch):
+    import asyncio
+
+    from src.fork.building_numbers import areas
+    from src.fork.building_numbers.buildings import AreaBuildings
+
+    asked = []
+
+    def buildings_in(outline):
+        asked.append(outline)
+        return AreaBuildings({}, {})
+
+    monkeypatch.setattr(areas, "buildings_in", buildings_in)
+    areas._remembered.clear()
+    square = '{"type": "Polygon", "coordinates": [[[7, 48], [8, 48], [8, 49], [7, 48]]]}'
+    for edition in ("edition-1", "edition-2"):
+        monkeypatch.setattr(areas.ARCHIVES, "version", lambda edition=edition: edition)
+        asyncio.run(areas.area_numbers("67482", square))
+    assert len(asked) == 2

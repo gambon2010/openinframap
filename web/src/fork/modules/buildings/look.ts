@@ -17,10 +17,11 @@ import { clickableArea } from '../../core/map-style.ts'
 import {
   BUILDINGS_LAYER,
   BUILDINGS_SHOWN_FROM,
-  FROM_TILES_WITH_EVERY_BUILDING,
   BUILDINGS_SOURCE,
   BUILDINGS_SOURCE_LAYER,
+  FROM_TILES_WITH_EVERY_BUILDING,
   PARTS_LAYER,
+  PART_FILTER,
   ZOOMED_OUT_LAYER,
   ZOOMED_OUT_MINZOOM,
   ZOOMED_OUT_SOURCE_LAYER
@@ -60,7 +61,7 @@ const WHOLE: Buildings = {
 const PARTS: Buildings = {
   source: BUILDINGS_SOURCE,
   sourceLayer: BUILDINGS_SOURCE_LAYER,
-  filter: ['all', ['==', ['get', 'kind'], 'building_part'], FROM_TILES_WITH_EVERY_BUILDING],
+  filter: ['all', PART_FILTER, FROM_TILES_WITH_EVERY_BUILDING],
   minzoom: BUILDINGS_SHOWN_FROM
 }
 

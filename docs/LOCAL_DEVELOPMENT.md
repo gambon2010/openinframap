@@ -658,8 +658,10 @@ IGN's IRIS once: Data layers → Background map → **Building numbers**, each b
 number within its neighbourhood where INSEE splits the commune, "STR-NEU-12" in
 Neudorf, Strasbourg, "MLS-NOR-12" in Molsheim's north, else within its commune,
 "WIS-47"; from zoom 16, written whole
-or as the number alone (Settings → Building numbers); an area is numbered the first
-time it's shown, a few seconds for a city, and the numbers never change for anyone;
+or as the number alone (Settings → Building numbers); an area's numbers are worked
+out from the background map when it's first shown (a few seconds for a city, again
+after the backend restarts), the same on every computer with the same background
+map; a newer background map can change them;
 search "STR-NEU-12" or "wis 47" in the search box to go there (pinned; switch the
 numbers on to read the others), the nearest place with that code first. Buildings no one could stand in, a staircase's steps drawn one
 by one, aren't numbered and aren't drawn outside 3D. Buildings with a mapped interior (stations, shopping

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { copiedBuildingName, isBuildingLayer, joinPieces } from './buildings.ts'
+import { PART_FILTER, copiedBuildingName, isBuildingLayer, joinPieces } from './buildings.ts'
 
 const box = (w: number, s: number, e: number, n: number): GeoJSON.Polygon => ({
   type: 'Polygon',
@@ -93,5 +93,12 @@ describe('a buildings layer', () => {
   test('its outlines and 3D are; its interiors, shown with it, are not', () => {
     expect(isBuildingLayer('buildings_outline_hit')).toBe(true)
     expect(isBuildingLayer('buildings_indoor_area')).toBe(false)
+  })
+})
+
+describe("a building's parts", () => {
+  test('not one tagged building:part=no (the Eiffel Tower outline, 330 m, hid its parts)', () => {
+    expect(PART_FILTER).toContainEqual(['!=', ['get', 'kind_detail'], 'no'])
+    expect(PART_FILTER).toContainEqual(['==', ['get', 'kind'], 'building_part'])
   })
 })

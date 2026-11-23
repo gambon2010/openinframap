@@ -7,7 +7,7 @@
 // the same id in each: found in one, it's left out everywhere.
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import type { Map } from 'maplibre-gl'
-import { BUILDINGS_SOURCE, BUILDINGS_SOURCE_LAYER } from '../../core/buildings.ts'
+import { BUILDINGS_SOURCE, BUILDINGS_SOURCE_LAYER, PART_FILTER } from '../../core/buildings.ts'
 
 export interface Shape {
   id: number
@@ -58,7 +58,7 @@ function loaded(map: Map, kind: 'building' | 'building_part'): Shape[] {
   const shapes: Shape[] = []
   const features = map.querySourceFeatures(BUILDINGS_SOURCE, {
     sourceLayer: BUILDINGS_SOURCE_LAYER,
-    filter: ['==', ['get', 'kind'], kind]
+    filter: kind === 'building' ? ['==', ['get', 'kind'], 'building'] : PART_FILTER
   })
   for (const f of features) {
     const geometry = f.geometry

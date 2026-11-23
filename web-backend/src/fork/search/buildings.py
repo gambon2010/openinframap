@@ -1,12 +1,12 @@
 """Fork: the search box (search/__init__.py): buildings by their number ("STR-NEU-451",
 "WIS-47": building_numbers/), in the area the code names: a neighbourhood of a commune,
 or a commune without neighbourhoods. A commune's code is unique within its
-département only: every area it may be is answered (a handful at most), numbered
-first if it wasn't yet, the nearest to the map's centre first (the search is told)."""
+département only: every area it may be is answered (a handful at most), its numbers
+worked out if they weren't yet, the nearest to the map's centre first (the search is
+told)."""
 
 from __future__ import annotations
 
-import json
 import re
 from typing import Optional
 
@@ -14,8 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..building_numbers.numbering import label
-from ..building_numbers.register import number_area
-from ..userdata.schema import ensure_schema
+from ..building_numbers.areas import area_numbers
 from .matching import plain, table_exists
 
 # "str-neu-451", "wis 47": a commune's code, a neighbourhood's (if any), the number.
@@ -55,8 +54,6 @@ async def search_buildings(
     match = BUILDING_QUERY.match(plain(query).strip())
     if not match or not await table_exists(database, "extra.neighbourhood"):
         return []
-    # The register's tables (userdata migrations), made on first use.
-    await ensure_schema(database)
     commune, neighbourhood, number = match.group(1), match.group(2) or "", int(match.group(3))
     lon, lat = near
     areas = (
@@ -67,16 +64,13 @@ async def search_buildings(
     ).all()
     found = []
     for code, prefix, place, outline in areas:
-        await number_area(database, code, outline)
-        point = await database.scalar(
-            text(
-                """SELECT ST_AsGeoJSON(geometry) FROM userdata.building_ref
-                    WHERE area = :code AND number = :number"""
-            ),
-            {"code": code, "number": number},
-        )
-        if point:
-            found.append(result(f"{label(prefix, number)} · {place}", json.loads(point)))
+        numbers = await area_numbers(code, outline)
+        building = numbers.building_numbered(number)
+        if building is not None:
+            lon_lat = list(numbers.points[building])
+            found.append(
+                result(f"{label(prefix, number)} · {place}", {"type": "Point", "coordinates": lon_lat})
+            )
     return found[: limit or None]
 
 

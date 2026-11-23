@@ -2,13 +2,13 @@
 Neudorf, in Strasbourg; "WIS-47" in a commune with no neighbourhoods), as a gridded
 reference graphic numbers them (numbering.py). Per neighbourhood where INSEE splits a
 commune, else per commune (extra data `fr-communes`: their outlines and short codes),
-numbered the first time asked for and kept (register.py), so a number never changes
-for anyone. Slivers (a staircase's steps) aren't numbered, and the map leaves them
-out of the buildings outside 3D.
+worked out when asked for and kept in memory (areas.py): the same numbers on every
+computer with the same background map. Slivers (a staircase's steps) aren't numbered,
+and the map leaves them out of the buildings outside 3D.
 
     /background/building-numbers?bbox=w,s,e,n     the numbered buildings in a view
         (GeoJSON points: "prefix" "STR-NEU", "number" 12) and its slivers' ids
-        ("hidden"); the areas it touches numbered first (a few seconds the first
+        ("hidden"); the areas it touches worked out first (a few seconds the first
         time). Asked for zoomed in only.
     /background/building-names?lon=&lat=&id=      one building's number and its own
         name from OpenStreetMap ("number", "name", each null when it has none), for
@@ -23,9 +23,8 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from ... import Request, get_db
-from ..userdata.schema import ensure_schema
 from .numbering import label
-from .register import number_area
+from .areas import area_numbers
 
 # A view touching more areas than this is too far out to number (the map asks from
 # zoom 16, a few streets).
@@ -57,36 +56,31 @@ async def numbers_in_view(request: Request) -> Response:
     missing = await missing_outlines(database)
     if missing:
         return missing
-    view = {"w": west, "s": south, "e": east, "n": north}
-    areas = await numbered_areas(database, view, MOST_AREAS)
+    areas = await areas_over(database, {"w": west, "s": south, "e": east, "n": north}, MOST_AREAS)
     if areas is None:
         return JSONResponse({"error": "Zoom in to see building numbers"}, status_code=413)
-    prefixes = {code: prefix for code, prefix in areas}
-    rows = await database.execute(
-        text(
-            """SELECT area, number, ST_X(geometry), ST_Y(geometry) FROM userdata.building_ref
-                WHERE geometry && ST_MakeEnvelope(:w, :s, :e, :n, 4326) AND area = ANY(:codes)"""
-        ),
-        {**view, "codes": list(prefixes)},
-    )
-    features = [
-        {
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [lon, lat]},
-            "properties": {"prefix": prefixes[area], "number": number},
-        }
-        for area, number, lon, lat in rows
-    ]
-    hidden = await database.execute(
-        text(
-            """SELECT building_id FROM userdata.building_sliver
-                WHERE geometry && ST_MakeEnvelope(:w, :s, :e, :n, 4326) AND area = ANY(:codes)"""
-        ),
-        {**view, "codes": list(prefixes)},
-    )
-    return JSONResponse(
-        {"type": "FeatureCollection", "features": features, "hidden": [building for (building,) in hidden]}
-    )
+
+    def in_view(point: tuple[float, float]) -> bool:
+        return west <= point[0] <= east and south <= point[1] <= north
+
+    features, hidden = [], []
+    for code, prefix, outline in areas:
+        numbers = await area_numbers(code, outline)
+        for building, number in numbers.numbers.items():
+            point = numbers.points[building]
+            if in_view(point):
+                features.append(number_feature(prefix, number, point))
+        hidden += [building for building, point in numbers.slivers.items() if in_view(point)]
+    return JSONResponse({"type": "FeatureCollection", "features": features, "hidden": hidden})
+
+
+def number_feature(prefix: str, number: int, point: tuple[float, float]) -> dict:
+    """A building's number on the map: a point inside it."""
+    return {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": list(point)},
+        "properties": {"prefix": prefix, "number": number},
+    }
 
 
 async def building_names(request: Request) -> Response:
@@ -103,22 +97,17 @@ async def building_names(request: Request) -> Response:
 
 
 async def number_of(database: AsyncConnection, building: int, lon: float, lat: float) -> str | None:
-    """A building's number ("STR-NEU-12"), its area numbered first if it wasn't; None
-    for a sliver, or without the communes' outlines."""
+    """A building's number ("STR-NEU-12"); None for a sliver, or without the communes'
+    outlines."""
     if await missing_outlines(database):
         return None
-    point = {"w": lon, "s": lat, "e": lon, "n": lat}
-    areas = await numbered_areas(database, point, MOST_AREAS) or []
-    prefixes = {code: prefix for code, prefix in areas}
-    found = (
-        await database.execute(
-            text("SELECT area, number FROM userdata.building_ref WHERE building_id = :id"), {"id": building}
-        )
-    ).first()
-    if not found or found[0] not in prefixes:
-        return None
-    area, number = found
-    return label(prefixes[area], number)
+    for code, prefix, outline in (
+        await areas_over(database, {"w": lon, "s": lat, "e": lon, "n": lat}, MOST_AREAS) or []
+    ):
+        number = (await area_numbers(code, outline)).numbers.get(building)
+        if number is not None:
+            return label(prefix, number)
+    return None
 
 
 async def osm_name(database: AsyncConnection, building: int) -> str | None:
@@ -133,9 +122,7 @@ async def osm_name(database: AsyncConnection, building: int) -> str | None:
 
 
 async def missing_outlines(database: AsyncConnection) -> Response | None:
-    """The register's tables made (userdata migrations), and an answer saying what to
-    do if the communes' outlines haven't been imported."""
-    await ensure_schema(database)
+    """An answer saying what to do if the communes' outlines haven't been imported."""
     if await database.scalar(text("SELECT to_regclass('extra.neighbourhood') IS NOT NULL")):
         return None
     return JSONResponse(
@@ -144,15 +131,13 @@ async def missing_outlines(database: AsyncConnection) -> Response | None:
     )
 
 
-async def numbered_areas(database: AsyncConnection, box: dict, most: int) -> list[tuple[str, str]] | None:
-    """The areas touching a box, numbered if they weren't (code, prefix); None if there
-    are more than `most` (too far out)."""
+async def areas_over(database: AsyncConnection, box: dict, most: int) -> list[tuple[str, str, str]] | None:
+    """The areas touching a box (code, prefix, outline); None if there are more than
+    `most` (too far out)."""
     found = (await database.execute(text(AREAS), {**box, "most": most + 1})).all()
     if len(found) > most:
         return None
-    for code, _, outline in found:
-        await number_area(database, code, outline)
-    return [(code, prefix) for code, prefix, _ in found]
+    return [(code, prefix, outline) for code, prefix, outline in found]
 
 
 routes = [

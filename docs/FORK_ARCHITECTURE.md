@@ -256,10 +256,11 @@ every route but logging in needs a session):
 - `grid/` (`route.py`: routes over the power grid; `line.py`: where a line goes; `tower.py`), `line_trace/` (following a
   line), `grid_check.py` (lines ending at nothing, a command), `tower_numbers/`
   (towers numbered along their lines, a build step), `building_numbers/` (buildings
-  numbered per neighbourhood or commune, "STR-NEU-12", on first request:
+  numbered per neighbourhood or commune, "STR-NEU-12", worked out when asked for:
   `numbering.py` the order, `buildings.py` an area's buildings from the background
-  map's tiles (slivers apart), `register.py` kept in `userdata.building_ref` and
-  `building_sliver`, migrations 004 and 005; the search finds them,
+  map's tiles (slivers apart), `areas.py` an area's numbers kept in memory for the
+  map in use, nothing stored (migration 007 dropped the old register); the search
+  finds them,
   `search/buildings.py`), `indoor/` (buildings' interiors: `link.py`, each piece's
   building on the background map and each building's floors, a build step,
   `python -m src.fork.indoor`; `/indoor/building/{id}`, its floors), `database.py`
