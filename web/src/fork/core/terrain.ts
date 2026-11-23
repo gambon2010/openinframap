@@ -11,5 +11,8 @@ export const RELIEF_SOURCE = 'terrain_relief'
 /** The Hill shading entry in Data layers: a letter never used before (it's in map
  * addresses). */
 export const HILLSHADE_SWITCHER_ID = 'D'
+/** The relief in 3D, an entry of the Terrain group (no map layer: the 3D view follows
+ * it, map.setTerrain); on at first. Also its prefix, which no layer has. */
+export const RELIEF_SWITCHER_ID = 'relief'
 /** True heights in 3D (the owner's choice: no exaggeration). */
 export const RELIEF_EXAGGERATION = 1

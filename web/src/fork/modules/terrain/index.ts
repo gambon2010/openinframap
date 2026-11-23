@@ -7,7 +7,12 @@ import type { Map, RasterDEMSourceSpecification } from 'maplibre-gl'
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { CONTOURS_URL, TERRAIN_URL } from '../../config.ts'
-import { HILLSHADE_SWITCHER_ID, RELIEF_SOURCE, TERRAIN_SOURCE } from '../../core/terrain.ts'
+import {
+  HILLSHADE_SWITCHER_ID,
+  RELIEF_SOURCE,
+  RELIEF_SWITCHER_ID,
+  TERRAIN_SOURCE
+} from '../../core/terrain.ts'
 import { background, followBackground } from '../../services/background.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { ForkModule } from '../../types.ts'
@@ -99,7 +104,8 @@ const terrain: ForkModule = {
   switcherGroups: () => [
     new LayerGroup(t('layers.terrain', 'Terrain'), [
       new Layer(HILLSHADE_SWITCHER_ID, t('layers.hillshade', 'Hill shading'), HILLSHADE_LAYER, true),
-      new Layer(CONTOURS_SWITCHER_ID, contoursName(), CONTOURS_PREFIX, false)
+      new Layer(CONTOURS_SWITCHER_ID, contoursName(), CONTOURS_PREFIX, false),
+      new Layer(RELIEF_SWITCHER_ID, t('layers.relief', 'Relief in 3D'), RELIEF_SWITCHER_ID, true)
     ])
   ],
 

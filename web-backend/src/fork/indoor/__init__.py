@@ -22,11 +22,39 @@ from ... import Request, get_db
 from ..background.buildings import outline, tiles_over
 from ..background.pois import pois_in
 
-# What a point is, from the first of these tags it has ("bakery", "toilets").
-WHAT_TAGS = ("shop", "amenity", "office", "craft", "healthcare", "tourism", "leisure", "vending", "room")
+# Not listed: the furniture and fittings of a place, not what one goes there for (the
+# owner, 2026-11-23: lifts, waste baskets, outdoor seating, pickup stations, waiting
+# areas...). OpenStreetMap's values, the interiors' and the background map's alike.
+NOT_LISTED = {
+    "elevator",
+    "escalator",
+    "waste_basket",
+    "recycling",
+    "bench",
+    "outdoor_seating",
+    "waiting_area",
+    "parcel_locker",
+    "vending_machine",
+    "information",
+    "ticket_validator",
+    "parking_space",
+    "parking_entrance",
+    "bicycle_parking",
+    "shelter",
+    "pitch",
+    "drinking_water",
+    "telephone",
+    "clock",
+}
+# Unnamed, listed all the same: what one looks for without a name.
+LISTED_UNNAMED = {"toilets"}
 
-# The interiors' points listed: what stands inside, lifts, escalators (not doors or walls).
-LISTED = ("poi", "elevator", "escalator")
+# What a point is, from the first of these tags it has ("bakery", "toilets").
+WHAT_TAGS = ("shop", "amenity", "office", "craft", "healthcare", "tourism", "leisure", "vending")
+
+# The interiors' pieces listed: what stands inside, and named rooms and open areas (a
+# station's shops are often rooms: Relay, Paul); worth_listing keeps what's worth it.
+LISTED = ("poi", "room", "area", "elevator", "escalator")
 
 INSIDE = """
     SELECT name, kind, tags, levels, level_given, ST_X(p), ST_Y(p)
@@ -52,7 +80,8 @@ async def building_inside(request: Request) -> Response:
     # An underground place has no building on the map, so none of its points.
     on_map = await run_in_threadpool(map_points, building, at) if building > 0 else []
     named = {item["name"].lower() for item in with_floor if item["name"]}
-    inside = with_floor + [item for item in on_map if item["name"].lower() not in named]
+    found = with_floor + [item for item in on_map if item["name"].lower() not in named]
+    inside = [item for item in found if worth_listing(item)]
     return JSONResponse({"levels": [level_number(level) for level in levels or []], "inside": inside})
 
 
@@ -62,16 +91,21 @@ async def interior_points(database: AsyncConnection, building: int) -> list[dict
     found = []
     for name, kind, tags, levels, given, lon, lat in rows:
         what = what_of(kind, tags)
-        # Neither a name nor anything saying what it is: nothing to list.
-        if not name and what == "poi":
-            continue
         found.append({"name": name, "what": what, "levels": levels if given else None, "at": [lon, lat]})
     return found
 
 
+def worth_listing(item: dict) -> bool:
+    """Something one goes there for: named (toilets even without), not furniture."""
+    if item["what"] in NOT_LISTED:
+        return False
+    return bool(item["name"]) or item["what"] in LISTED_UNNAMED
+
+
 def what_of(kind: str, tags: dict) -> str:
-    """What a point is: "elevator", or its first WHAT_TAGS value ("bakery")."""
-    if kind != "poi":
+    """What a thing is: its first WHAT_TAGS value ("bakery"); a lift or an escalator
+    as such; "poi" when nothing says (a room named "Hall 4")."""
+    if kind in ("elevator", "escalator"):
         return kind
     return next((str(tags[tag]) for tag in WHAT_TAGS if tag in tags), "poi")
 

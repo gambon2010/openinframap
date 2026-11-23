@@ -3,7 +3,7 @@
 // imagery and raised in the 3D view (look.ts). Every building from zoom 15; zoomed
 // out (12 to 14) those big enough to see there (fork/core/buildings.ts), all from the
 // background map. Clickable anywhere inside: its details (height, area), and My
-// layers' copy tool or the details' copy button make it an item of your own. Their
+// layers' copy tool makes it an item of your own. Their
 // numbers ("WIS-47") a layer of their own (numbers.ts).
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'

@@ -7,7 +7,7 @@
 import type { Map as MapLibreMap, MapGeoJSONFeature } from 'maplibre-gl'
 import { el } from 'redom'
 import { BACKEND_BASE_URL, OIM_TILES } from '../../config.ts'
-import { buildingId, INTERIOR_PREFIX, isBuildingLayer, somePoint } from '../../core/buildings.ts'
+import { buildingId, isBuildingLayer, somePoint } from '../../core/buildings.ts'
 import { t } from '../../core/i18n.ts'
 import type { ForkModule } from '../../types.ts'
 import { toggleChip } from '../../ui/chip.ts'
@@ -33,17 +33,21 @@ const indoor: ForkModule = {
     }
   }),
   layers: indoorLayers,
-  // The buildings' tint and outline, and the names: a click opens what's under them.
-  labelLayers: () => [look.TINT_LAYER, look.TINT_OUTLINE_LAYER, look.PLACE_OUTLINE_LAYER, look.LABEL_LAYER],
+  // The buildings' tint and outline, and a floor's plan: a click opens the building
+  // (or underground place) under them, where its floors are.
+  labelLayers: () => [
+    look.TINT_LAYER,
+    look.TINT_OUTLINE_LAYER,
+    look.PLACE_OUTLINE_LAYER,
+    look.COVER_LAYER,
+    ...look.FLOOR_LAYERS
+  ],
   init: ({ map }) => {
     theMap = map
     addDetailsExtra((feature, content) => void addInside(feature, content))
   },
   popup: {
-    html: (feature) => {
-      if (feature.layer.id === look.PLACE_LAYER) return placeDetails(feature)
-      return feature.layer.id.startsWith(INTERIOR_PREFIX) ? pieceDetails(feature) : undefined
-    }
+    html: (feature) => (feature.layer.id === look.PLACE_LAYER ? placeDetails(feature) : undefined)
   }
 }
 
@@ -113,29 +117,35 @@ function floorChips(building: number, levels: number[], redraw: () => void): HTM
 
 /** "What's inside", a floor at a time; a line clicked: `pin`. */
 function insideList(items: InsideItem[], pin: (item: InsideItem) => void): HTMLElement {
-  const groups = byFloor(items).map((group) =>
+  const groups = byFloor(items)
+  // A building whose things have no floor written: no "Floor not given" heading.
+  const headed = !(groups.length === 1 && groups[0].level === null)
+  const sections = groups.map((group) =>
     el(
       '.oim-indoor-group',
-      el(
-        'h4',
-        group.level === null ? t('indoor.floor-not-given', 'Floor not given') : floorLabel(group.level)
-      ),
-      group.lines.map(({ item, count }) => {
-        // Its name (×4 for four alike), then what it is when known.
-        const name = count > 1 ? `${itemLabel(item)} ×${count}` : itemLabel(item)
-        const what = whatOf(item)
-        const line = el(
-          'button.oim-indoor-item',
-          { type: 'button' },
-          el('span', name),
-          ...(what ? [el('small', what)] : [])
-        ) as HTMLButtonElement
-        line.onclick = () => pin(item)
-        return line
-      })
+      ...(headed ? [el('h4', floorHeading(group.level), el('small', String(group.lines.length)))] : []),
+      group.lines.map(({ item, count }) => insideLine(item, count, pin))
     )
   )
-  return el('section.oim-indoor-inside', el('h3', t('indoor.inside', 'What’s inside')), groups)
+  return el('section.oim-indoor-inside', el('h3', t('indoor.inside', 'What’s inside')), sections)
+}
+
+function floorHeading(level: number | null): string {
+  return level === null ? t('indoor.floor-not-given', 'Floor not given') : floorLabel(level)
+}
+
+/** A line: its name (×4 for four alike), then what it is when known; clicked: `pin`. */
+function insideLine(item: InsideItem, count: number, pin: (item: InsideItem) => void): HTMLElement {
+  const name = count > 1 ? `${itemLabel(item)} ×${count}` : itemLabel(item)
+  const what = whatOf(item)
+  const line = el(
+    'button.oim-indoor-item',
+    { type: 'button' },
+    el('span', name),
+    ...(what ? [el('small', what)] : [])
+  ) as HTMLButtonElement
+  line.onclick = () => pin(item)
+  return line
 }
 
 /** A building's floor drawn, the map under it hidden (null: its interior hidden). */
@@ -162,38 +172,6 @@ function placeDetails(feature: MapGeoJSONFeature): HTMLElement {
   return detailsCard(name ?? t('indoor.underground-place', 'Underground place'), [
     [t('indoor.what', 'What'), name ? t('indoor.underground-place', 'Underground place') : undefined]
   ])
-}
-
-/** A room's or a corridor's details: what it is, its name and floor. */
-function pieceDetails(feature: MapGeoJSONFeature): HTMLElement {
-  const p = feature.properties
-  const what = kindName(String(p.kind))
-  const floors = String(p.levels)
-    .split(';')
-    .map((level) => (Number.isNaN(Number(level)) ? level : floorLabel(Number(level))))
-    .join(', ')
-  const floor =
-    p.level_given === false ? t('indoor.floor-unknown', 'Not given (shown on the ground floor)') : floors
-  return detailsCard(String(p.name || p.ref || what), [
-    [t('indoor.what', 'What'), what],
-    [t('indoor.ref', 'Number'), p.name && p.ref ? String(p.ref) : undefined],
-    [t('indoor.floor', 'Floor'), floor]
-  ])
-}
-
-function kindName(kind: string): string {
-  const names: Record<string, string> = {
-    room: t('indoor.kind.room', 'Room'),
-    area: t('indoor.kind.area', 'Open area'),
-    corridor: t('indoor.kind.corridor', 'Corridor'),
-    level: t('indoor.kind.level', 'Floor outline'),
-    wall: t('indoor.kind.wall', 'Wall'),
-    column: t('indoor.kind.column', 'Column'),
-    stairs: t('indoor.kind.stairs', 'Stairs'),
-    escalator: t('indoor.kind.escalator', 'Escalator'),
-    path: t('indoor.kind.path', 'Walkway')
-  }
-  return names[kind] ?? kind
 }
 
 export default indoor

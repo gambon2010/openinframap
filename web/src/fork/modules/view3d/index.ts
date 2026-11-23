@@ -11,7 +11,13 @@ import type { LayerSwitcher } from '@russss/maplibregl-layer-switcher'
 import { t } from '../../core/i18n.ts'
 import { readJson, writeJson } from '../../core/storage.ts'
 import { BUILDINGS_SWITCHER_ID } from '../../core/buildings.ts'
-import { HILLSHADE_SWITCHER_ID, RELIEF_EXAGGERATION, RELIEF_SOURCE } from '../../core/terrain.ts'
+import {
+  HILLSHADE_SWITCHER_ID,
+  RELIEF_EXAGGERATION,
+  RELIEF_SOURCE,
+  RELIEF_SWITCHER_ID
+} from '../../core/terrain.ts'
+import { onEntriesChange } from '../../services/layer-entries.ts'
 import { background } from '../../services/background.ts'
 import { view3d } from '../../services/view3d.ts'
 import { ForkModule } from '../../types.ts'
@@ -65,10 +71,11 @@ function showShading(layerSwitcher: LayerSwitcher) {
   else switchBackOff(layerSwitcher, HILLSHADE_SWITCHER_ID)
 }
 
-/** The ground's relief and the sky, in 3D only (the relief costs the graphics card). */
-function showRelief(map: Map) {
+/** The ground's relief and the sky, in 3D only (the relief costs the graphics card),
+ * while the Terrain group's Relief in 3D is ticked. */
+function showRelief(map: Map, layerSwitcher: LayerSwitcher) {
   if (!map.getSource(RELIEF_SOURCE)) return
-  if (view3d.on()) {
+  if (view3d.on() && layerSwitcher._visible.includes(RELIEF_SWITCHER_ID)) {
     map.setTerrain({ source: RELIEF_SOURCE, exaggeration: RELIEF_EXAGGERATION })
     map.setSky(SKY)
   } else {
@@ -79,7 +86,7 @@ function showRelief(map: Map) {
 function show(map: Map, layerSwitcher: LayerSwitcher, button: HTMLButtonElement, animate: boolean) {
   const on = view3d.on()
   showPressed(button, on)
-  showRelief(map)
+  showRelief(map, layerSwitcher)
   showShading(layerSwitcher)
   if (on) {
     map.setMaxPitch(MAX_TILT)
@@ -114,7 +121,8 @@ const view3dModule: ForkModule = {
     view3d.onChange(() => show(map, layerSwitcher, button, true))
     background.onChange(() => showShading(layerSwitcher))
     // A new style (another background map) drops the relief.
-    map.on('style.load', () => showRelief(map))
+    map.on('style.load', () => showRelief(map, layerSwitcher))
+    onEntriesChange(layerSwitcher, () => showRelief(map, layerSwitcher))
     // As kept, once the style is there (the layer switcher needs it).
     if (map.isStyleLoaded()) show(map, layerSwitcher, button, false)
     else map.once('load', () => show(map, layerSwitcher, button, false))

@@ -36,6 +36,9 @@ def test_what_a_point_inside_is():
     assert what_of("poi", {"amenity": "toilets"}) == "toilets"
     assert what_of("elevator", {}) == "elevator"
     assert what_of("poi", {}) == "poi"
+    # A room: what its tags say, else nothing known (its room=* is just "shop" or "yes").
+    assert what_of("room", {"shop": "newsagent", "room": "shop"}) == "newsagent"
+    assert what_of("room", {"room": "yes", "name": "Hall 4"}) == "poi"
 
 
 def test_the_maps_points_inside_a_building_named_and_not_street_furniture(monkeypatch):
@@ -64,3 +67,14 @@ def test_the_maps_points_inside_a_building_named_and_not_street_furniture(monkey
     building = to_degrees(box(0, 0, 2048, 2048), tx, ty)
     found = pois.pois_in(building, [(tx, ty)])
     assert [(p["name"], p["what"]) for p in found] == [("Paul", "bakery")]
+
+
+def test_listed_what_one_goes_there_for():
+    from src.fork.indoor import worth_listing
+
+    assert worth_listing({"name": "Paul", "what": "bakery"})
+    assert worth_listing({"name": None, "what": "toilets"})
+    # Furniture, named or not, and unnamed things.
+    assert not worth_listing({"name": "Pickup Station", "what": "parcel_locker"})
+    assert not worth_listing({"name": None, "what": "elevator"})
+    assert not worth_listing({"name": None, "what": "atm"})

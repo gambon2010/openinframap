@@ -11,6 +11,7 @@ import { Layer, LayerGroup, type LayerSwitcher } from '@russss/maplibregl-layer-
 import { t } from '../../core/i18n.ts'
 import { background, followBackground } from '../../services/background.ts'
 import { fadesOnItsOwn } from '../../ui/fade.ts'
+import { onEntriesChange } from '../../services/layer-entries.ts'
 import { ForkModule } from '../../types.ts'
 import { valueFor } from './builder.ts'
 import { LANES_SOURCE, lanesSource } from './lane-layers.ts'
@@ -82,17 +83,6 @@ function reorder(map: Map, order: string[]) {
   const last = Math.max(...order.map((id) => style.indexOf(id)))
   const next = style[last + 1]
   for (const id of order) if (map.getLayer(id)) map.moveLayer(id, next)
-}
-
-/** Calls `changed` after each change of the switcher's entries (a tick, the map's
- * address, the start): when the layers' visibility doesn't change (light already
- * shown), the map doesn't say so. */
-function onEntriesChange(switcher: LayerSwitcher, changed: () => void) {
-  const update = switcher._updateVisibility.bind(switcher)
-  switcher._updateVisibility = () => {
-    update()
-    changed()
-  }
 }
 
 /** Each layer in its look for its entry and the background, the bold over the

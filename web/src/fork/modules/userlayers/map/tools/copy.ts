@@ -66,7 +66,7 @@ function fromInfrastructureTiles(map: Map, source: string): boolean {
 }
 
 /** A map feature (a line, a substation, a building...) into the active layer, once:
- * from a click with the copy tool, or the details' copy button. */
+ * from a click with the copy tool, or in the box Shift + drag draws (copy-box.ts). */
 export async function copyFeature(c: ToolsContext, f: MapGeoJSONFeature): Promise<'copied' | 'already'> {
   if (isBuildingLayer(f.layer.id)) return copyBuilding(c, f)
   const id = Number(f.properties.osm_id ?? f.properties.id)

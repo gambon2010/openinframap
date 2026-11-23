@@ -50,6 +50,7 @@ ui/        shared building blocks you see: dock (right), left column, details
            and its rows on prints (key/; counted-groups.ts: a group's count of the
            kinds the key shows)
 services/  shared state and registries, nothing drawn: live updates (live.ts),
+           the Data layers' entries followed from code (layer-entries.ts),
            who has the map (map-mode.ts: measuring, drawing),
            what a printed map's legend lists (legend.ts), the background map's
            background: the map's colours or imagery, chosen with the satellite

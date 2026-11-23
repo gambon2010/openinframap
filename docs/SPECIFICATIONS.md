@@ -341,7 +341,9 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.119 | Building interiors: everything indoor OpenStreetMap has, things with a floor kept inside interiors and buildings; buildings with one tinted while outlines are shown; floors chosen per building in its details; a room's, a door's or a shop's details. | ✅ (2026-11-23) |
 | 10.120 | Interiors fixed: only what has a floor plan tinted and given floors (3,868 buildings in France, not 47,530); no points drawn; "What's inside" in every building's details (the interiors' points by floor, the map tiles' points of interest); the map hidden under a floor shown; a stronger tint, outlined; underground places outside buildings, dashed, with their own details; no Data layers switch (floors on and off in the building), no room search. | ✅ (2026-11-23) |
 | 10.122 | A building copied into My layers keeping its floors. | 📋 to do (2026-11-23) |
-| 10.121 | The 3D view without the relief (a Relief row under Data layers → Terrain). | 💬 proposed (2026-11-23) |
+| 10.121 | The 3D view without the relief (Relief in 3D, Data layers → Terrain). | ✅ (2026-11-23) |
+| 10.123 | Interiors, second pass: floors with floor space only; the list without fittings, with named rooms; clearer floor headings; the building opened again with a floor shown. No details' copy button. | ✅ (2026-11-23) |
+| 10.124 | Search what's inside buildings (named shops, rooms, offices). | 💬 discussing (2026-11-23) |
 
 ## 11. Quality
 

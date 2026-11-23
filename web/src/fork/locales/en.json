@@ -21,7 +21,8 @@
     "terrain": "Terrain",
     "hillshade": "Hill shading",
     "contours": "Contour lines",
-    "building-numbers": "Building numbers"
+    "building-numbers": "Building numbers",
+    "relief": "Relief in 3D"
   },
   "search": {
     "place": {
@@ -440,11 +441,6 @@
       "already": "Already in this layer.",
       "done": "Copied. Click more, Shift + drag a box for many, or Esc to stop.",
       "nothing-buildings": "Nothing to copy there: click a line, a substation, a site... (buildings: switch on Buildings, zoom 12 or closer)",
-      "into": "Copy into “{{layer}}”",
-      "into-new": "Copy into My layers",
-      "into-help": "Into the layer you draw into (My layers)",
-      "already-in": "Already in “{{layer}}”",
-      "copied-into": "Copied into “{{layer}}”",
       "box-done": "Copied {{count}} (any already in the layer left as they were)."
     },
     "echelon": {
@@ -947,21 +943,7 @@
     "ground-floor": "Ground floor",
     "floor-n": "Floor {{n}}",
     "basement-n": "Basement {{n}}",
-    "floor-unknown": "Not given (shown on the ground floor)",
     "what": "What",
-    "ref": "Number",
-    "floor": "Floor",
-    "kind": {
-      "room": "Room",
-      "area": "Open area",
-      "corridor": "Corridor",
-      "level": "Floor outline",
-      "wall": "Wall",
-      "column": "Column",
-      "stairs": "Stairs",
-      "escalator": "Escalator",
-      "path": "Walkway"
-    },
     "floor-not-given": "Floor not given",
     "inside": "What’s inside",
     "underground-place": "Underground place"

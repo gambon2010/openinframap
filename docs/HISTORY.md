@@ -1640,6 +1640,20 @@ default). Counts are France's OSM data in October 2026.
   over everything, labels too. A stronger tint, outlined. No Data layers switch for
   interiors, no room search (the owner's choice). Interiors aren't copied into My
   layers. 258,294 pieces kept, 110 MB.
+- **Interiors, second pass; the relief in 3D; no copy button** (asked, 2026-11-23):
+  only floors with floor space offered (1,499 of 7,711 floors had none: a hall's
+  floor with three lines), 4,013 plans left; the list without fittings (lifts,
+  benches, waste baskets, waiting areas, parcel lockers, vending machines...),
+  unnamed things only for toilets, named rooms and open areas in it (a station's
+  shops are rooms), each floor's heading with a line and its count, no "Floor not
+  given" heading when it's the only group. **Bug:** with a floor shown, the plan (drawn
+  over everything) took the clicks: the building couldn't be opened again; the plan
+  takes none now (its rooms' card dropped: their names are on the plan). A **Relief in
+  3D** entry under Data layers → Terrain (the 3D view follows it,
+  `services/layer-entries.ts`, moved from the roads). The details' "Copy into" button
+  removed (the owner: the copy tool is the way). building:part=no: 411 objects in
+  France, 62 with a height (Tour Pleyel, the Mercuriales, the Major), all fixed by the
+  Eiffel Tower's rule.
 
 ## Extra data (not from OpenStreetMap)
 

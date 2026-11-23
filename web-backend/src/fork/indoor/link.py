@@ -26,21 +26,27 @@ PIECES = """
       FROM (SELECT id, ST_Transform(ST_PointOnSurface(geometry), 4326) AS p FROM osm_indoor) AS pieces
 """
 
-# A floor plan's pieces (scripts/indoor.py's kinds).
-PLAN = ("room", "area", "corridor", "level", "wall", "column")
+# A floor plan's floor space (scripts/indoor.py's kinds): a floor is offered where it
+# has some; walls or points alone draw next to nothing (a hall's floor with three lines).
+FLOOR_SPACE = ("room", "area", "corridor", "level")
 
-# What has a floor plan, and its floors: every level a piece is on, whole floors
-# between a range's ends.
+# What has a floor plan, and its floors: every level its floor space is on, whole
+# floors between a range's ends.
 FLOORS = """
     INSERT INTO indoor_building (building_id, levels, underground, geometry)
     SELECT building_id, array_agg(DISTINCT level ORDER BY level), building_id < 0,
            ST_GeomFromText('POINT EMPTY', 3857)
-      FROM (SELECT building_id, level_low AS level FROM osm_indoor
-            UNION SELECT building_id, level_high FROM osm_indoor
+      FROM (SELECT building_id, level_low AS level FROM space
+            UNION SELECT building_id, level_high FROM space
             UNION SELECT building_id, generate_series(ceil(level_low)::int, floor(level_high)::int)
-                    FROM osm_indoor) AS floors
-     WHERE building_id IN (SELECT building_id FROM osm_indoor WHERE kind = ANY(:plan))
+                    FROM space) AS floors
      GROUP BY building_id
+"""
+# FLOORS reads this: the floor space of each building and place.
+SPACE = """
+    CREATE TEMP TABLE space ON COMMIT DROP AS
+    SELECT building_id, level_low, level_high FROM osm_indoor
+     WHERE building_id IS NOT NULL AND kind = ANY(:space)
 """
 
 # Underground pieces in no building, grouped (within 50 m of each other: one station's
@@ -152,7 +158,8 @@ async def write_floors(database: AsyncConnection, read_tile: TileReader) -> None
     """indoor_building: what has a floor plan, its floors and outline (a building's
     whole outline from the tiles; an underground place's floor space joined)."""
     await database.execute(text("TRUNCATE indoor_building"))
-    await database.execute(text(FLOORS), {"plan": list(PLAN)})
+    await database.execute(text(SPACE), {"space": list(FLOOR_SPACE)})
+    await database.execute(text(FLOORS))
     await database.execute(text(PLACES))
     # An underground group with no plan (a lift down to the metro, alone): no card shows it.
     await database.execute(

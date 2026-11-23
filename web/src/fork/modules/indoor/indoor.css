@@ -15,11 +15,22 @@
   margin: 10px 0 2px;
   font-size: 0.95rem;
 }
+/* A floor's heading: bold, a line above it, how many things on the right. */
 .oim-indoor-group h4 {
-  margin: 6px 0 2px;
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--oim-grey);
+  font-size: 0.85rem;
+}
+.oim-indoor-group h4 small {
   color: var(--oim-text-color-light);
-  font-size: 0.8rem;
   font-weight: normal;
+}
+/* A line under its floor, set in. */
+.oim-indoor-group .oim-indoor-item {
+  padding-left: 10px;
 }
 .oim-indoor-item {
   display: flex;

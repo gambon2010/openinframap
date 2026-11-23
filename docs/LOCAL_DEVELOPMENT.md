@@ -257,7 +257,8 @@ imagery; *Contour lines* draws them as on military maps (every fifth line heavie
 with its height; 100 m apart zoomed out, then 50, 20 and 10 m closer in; dashed
 supplementary lines at half the interval on level ground; ticks inside hollows),
 made by the backend from the terrain; it unfolds into a tick box for each of those
-parts. The coordinates box at the bottom left shows, besides where the cursor is,
+parts; *Relief in 3D* (on at first): in the 3D view, the ground rises with the
+terrain; unticked, the 3D view stays flat (buildings still raised). The coordinates box at the bottom left shows, besides where the cursor is,
 the ground's height (Alt) and slope (degrees and per cent), the magnetic
 declination (Decl), and the distance and bearing from your last click on the map
 (From click, in the north chosen in My layers' settings; Escape forgets the click);
@@ -669,10 +670,14 @@ centres, universities, hospitals) are tinted violet, and underground places outs
 any building (metro and RER halls, the squares under La Défense) violet dashed; their
 details offer **Floor** with a chip a floor: click one to draw that floor's rooms,
 corridors, walls and stairs, the map under the building hidden (each building on its
-own floor; click the chip again to hide it); click a room for its details. Any
-building's details list **What's inside**, by floor: shops, toilets, lifts mapped
-with a floor, and the background map's points of interest in the building ("Floor
-not given"); click a line to pin it on the map (and show its floor). Read at build from the whole extract (`bash scripts/import-indoor.sh` to
+own floor; click the chip again to hide it); a floor's plan takes no clicks (a click
+there opens the building again), its rooms' names are written on it. Only floors with
+rooms, corridors or open areas are offered. Any building's details list **What's
+inside**, by floor: named shops, rooms and offices, and toilets, mapped with a floor,
+and the background map's points of interest in the building ("Floor not given", left
+out when it's the only group); not the fittings (lifts, benches, waste baskets,
+waiting areas, parcel lockers, vending machines...); alike lines merged ("Gares ×4");
+click a line to pin it on the map (and show its floor). Read at build from the whole extract (`bash scripts/import-indoor.sh` to
 read them again, about half an hour for France). A building's details show its
 number, and its name when OpenStreetMap gives it one ("Cathédrale Notre-Dame":
 names read at build from the whole extract, `scripts/building_names.py` to read
