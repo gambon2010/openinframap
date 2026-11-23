@@ -1627,6 +1627,19 @@ default). Counts are France's OSM data in October 2026.
   building:part=no with the tower's height, and the map's tiles list it with the
   parts (kind_detail "no"); raised, it hid the tower's 56 parts. Parts tagged no
   are left out (`PART_FILTER`, core/buildings.ts).
+- **Interiors fixed** (the owner, 2026-11-23: most Strasbourg buildings' floors
+  were a single dot): 43,662 of the 47,530 buildings had only points with a floor (a
+  shop on floor 0), 3,868 a floor plan. Only a plan counts now (tint, floors): 3,868
+  buildings and 251 underground places outside any building (14,734 underground
+  pieces grouped within 50 m: RER and metro halls, La Défense's squares; dashed,
+  clicked for their own details; the open-air pieces dropped). Points aren't drawn:
+  every building's details list what's inside by floor, from the interiors' points
+  and the background map's points of interest in it (no floor written; Protomaps'
+  pois layer, `background/pois.py`), alike lines merged ("Gares ×4"), clicked to pin
+  and show the floor. A floor shown covers the map under the building and is drawn
+  over everything, labels too. A stronger tint, outlined. No Data layers switch for
+  interiors, no room search (the owner's choice). Interiors aren't copied into My
+  layers. 258,294 pieces kept, 110 MB.
 
 ## Extra data (not from OpenStreetMap)
 

@@ -89,11 +89,13 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                to switch on (clickable: details, copy); look.ts: roofs and shadows over
                imagery, raised to their height in the 3D view; parts.ts: the buildings
                mapped with parts (their parts raised instead)
-  indoor       buildings' interiors (Tegola's indoor map): buildings with one tinted,
-               a building's floors as chips in its details (floors.ts: the floor
-               shown per building, the filter), rooms, walls, doors, stairs and what's
-               inside (style.ts); its layers start with core/buildings.ts's
-               INTERIOR_PREFIX, so the Buildings entry shows and hides them
+  indoor       buildings' interiors (Tegola's indoor map): what has a floor plan
+               tinted (underground places dashed, clickable), a building's floors as
+               chips in its details (floors.ts: the floor shown per building, the
+               filters) and what's inside by floor (inside.ts), the floor's cover,
+               rooms, walls, stairs (style.ts); its layers start with
+               core/buildings.ts's INTERIOR_PREFIX, so the Buildings entry shows and
+               hides them
   terrain      hill shading from the terrain's elevations and the backend's contour
                lines (contours.ts; key.ts: a tick box per part), Data layers →
                Terrain; placement.ts: the shading under the background map's roads,
@@ -262,8 +264,10 @@ every route but logging in needs a session):
   map in use, nothing stored (migration 007 dropped the old register); the search
   finds them,
   `search/buildings.py`), `indoor/` (buildings' interiors: `link.py`, each piece's
-  building on the background map and each building's floors, a build step,
-  `python -m src.fork.indoor`; `/indoor/building/{id}`, its floors), `database.py`
+  building on the background map, underground places, each floor plan's floors, a
+  build step, `python -m src.fork.indoor`; `/indoor/building/{id}`, its floors and
+  what's inside, with `background/pois.py`: the map tiles' points of interest in a
+  building), `database.py`
   (the database the build steps use);
 - `map_data.py` (a map feature's full geometry);
 - `pmtiles_files.py` (the PMTiles files served from `data/map/offline-maps/`: a file open,

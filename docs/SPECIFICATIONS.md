@@ -339,7 +339,8 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.117 | A line of sight's profile opened from its right-click menu; its yellow and red stretches at least a few pixels long on the map and the profile, so a break is seen at a glance. | ✅ (2026-11-23) |
 | 10.118 | Shortcuts: / or Ctrl+K the search; Ctrl+S save; F2 rename; Ctrl+D duplicate; ← → in the history and the line-of-sight profile; ? the list of every shortcut. | ✅ (2026-11-23) |
 | 10.119 | Building interiors: everything indoor OpenStreetMap has, things with a floor kept inside interiors and buildings; buildings with one tinted while outlines are shown; floors chosen per building in its details; a room's, a door's or a shop's details. | ✅ (2026-11-23) |
-| 10.120 | Interiors, next: only buildings with a floor plan count (tint, floors); no points drawn; "What's inside" in a building's card (the interiors' points with their floor, the map tiles' points in the building); the map hidden under a floor shown; a stronger tint; underground interiors outside buildings as places of their own; a building copied into My layers keeping its floors. No room search. | 📋 to do (2026-11-23) |
+| 10.120 | Interiors fixed: only what has a floor plan tinted and given floors (3,868 buildings in France, not 47,530); no points drawn; "What's inside" in every building's details (the interiors' points by floor, the map tiles' points of interest); the map hidden under a floor shown; a stronger tint, outlined; underground places outside buildings, dashed, with their own details; no Data layers switch (floors on and off in the building), no room search. | ✅ (2026-11-23) |
+| 10.122 | A building copied into My layers keeping its floors. | 📋 to do (2026-11-23) |
 | 10.121 | The 3D view without the relief (a Relief row under Data layers → Terrain). | 💬 proposed (2026-11-23) |
 
 ## 11. Quality

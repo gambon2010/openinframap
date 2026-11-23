@@ -1,8 +1,10 @@
 """Fork: buildings' interiors (osm_indoor, filled by scripts/indoor.py): the
 background map's building each piece stands in, from the map's zoom 15 tiles (the
-same buildings and ids the map draws), and indoor_building, each such building's
-floors and outline. A piece with a floor that isn't itself part of an interior (a
-shop, a bench: inside_only) and stands in no building is left out: outdoors."""
+same buildings and ids the map draws); underground pieces in no building grouped into
+places of their own (a metro hall); what's left out of both is in the open air and
+goes. Then indoor_building: what has a floor plan (rooms, corridors, walls, floor
+outlines), with its floors and outline; a building with only points (a shop on
+floor 0) has none, its points listed in its details (the route, __init__.py)."""
 
 from __future__ import annotations
 
@@ -24,15 +26,43 @@ PIECES = """
       FROM (SELECT id, ST_Transform(ST_PointOnSurface(geometry), 4326) AS p FROM osm_indoor) AS pieces
 """
 
-# Each building's floors: every level a piece is on, whole floors between a range's ends.
+# A floor plan's pieces (scripts/indoor.py's kinds).
+PLAN = ("room", "area", "corridor", "level", "wall", "column")
+
+# What has a floor plan, and its floors: every level a piece is on, whole floors
+# between a range's ends.
 FLOORS = """
-    INSERT INTO indoor_building (building_id, levels, geometry)
-    SELECT building_id, array_agg(DISTINCT level ORDER BY level), ST_GeomFromText('POINT EMPTY', 3857)
-      FROM (SELECT building_id, level_low AS level FROM osm_indoor WHERE building_id IS NOT NULL
-            UNION SELECT building_id, level_high FROM osm_indoor WHERE building_id IS NOT NULL
+    INSERT INTO indoor_building (building_id, levels, underground, geometry)
+    SELECT building_id, array_agg(DISTINCT level ORDER BY level), building_id < 0,
+           ST_GeomFromText('POINT EMPTY', 3857)
+      FROM (SELECT building_id, level_low AS level FROM osm_indoor
+            UNION SELECT building_id, level_high FROM osm_indoor
             UNION SELECT building_id, generate_series(ceil(level_low)::int, floor(level_high)::int)
-                    FROM osm_indoor WHERE building_id IS NOT NULL) AS floors
+                    FROM osm_indoor) AS floors
+     WHERE building_id IN (SELECT building_id FROM osm_indoor WHERE kind = ANY(:plan))
      GROUP BY building_id
+"""
+
+# Underground pieces in no building, grouped (within 50 m of each other: one station's
+# halls and platforms) into places, each a negative id.
+UNDERGROUND = """
+    UPDATE osm_indoor o SET building_id = -(g.place + 1)
+      FROM (SELECT id,
+                   ST_ClusterDBSCAN(geometry, eps := 50 * oim_max_stretch(), minpoints := 1) OVER () AS place
+              FROM osm_indoor WHERE building_id IS NULL AND level_high < 0) AS g
+     WHERE g.id = o.id
+"""
+
+# An underground place's outline and name: its floor space joined, its largest named space's.
+PLACES = """
+    UPDATE indoor_building b
+       SET geometry = s.outline, name = s.name
+      FROM (SELECT building_id, ST_Union(geometry) AS outline,
+                   (array_agg(name ORDER BY ST_Area(geometry) DESC)
+                       FILTER (WHERE name IS NOT NULL))[1] AS name
+              FROM osm_indoor WHERE building_id < 0 AND kind IN ('room', 'area', 'corridor', 'level')
+             GROUP BY building_id) AS s
+     WHERE s.building_id = b.building_id
 """
 
 
@@ -52,6 +82,7 @@ async def main() -> None:
         pieces = await pieces_by_tile(database)
         found = buildings_of(pieces, read_tile)
         await write_buildings(database, found)
+        await database.execute(text(UNDERGROUND))
         dropped = await drop_outdoors(database)
         await write_floors(database, read_tile)
         buildings = await database.scalar(text("SELECT count(*) FROM indoor_building"))
@@ -111,21 +142,33 @@ async def write_buildings(database: AsyncConnection, found: dict[int, int]) -> N
 
 
 async def drop_outdoors(database: AsyncConnection) -> int:
-    """What's only kept indoors and stands in no building: outdoors."""
-    result = await database.execute(text("DELETE FROM osm_indoor WHERE inside_only AND building_id IS NULL"))
+    """What's in no building and isn't underground: in the open air (platforms under
+    the sky, a bench with a floor written)."""
+    result = await database.execute(text("DELETE FROM osm_indoor WHERE building_id IS NULL"))
     return int(getattr(result, "rowcount", 0) or 0)
 
 
 async def write_floors(database: AsyncConnection, read_tile: TileReader) -> None:
-    """indoor_building: each building's floors, and its whole outline from the tiles."""
+    """indoor_building: what has a floor plan, its floors and outline (a building's
+    whole outline from the tiles; an underground place's floor space joined)."""
     await database.execute(text("TRUNCATE indoor_building"))
-    await database.execute(text(FLOORS))
+    await database.execute(text(FLOORS), {"plan": list(PLAN)})
+    await database.execute(text(PLACES))
+    # An underground group with no plan (a lift down to the metro, alone): no card shows it.
+    await database.execute(
+        text(
+            """DELETE FROM osm_indoor
+                WHERE building_id < 0 AND building_id NOT IN (SELECT building_id FROM indoor_building)"""
+        )
+    )
     points = await database.execute(
         text(
             """SELECT building_id, ST_X(p), ST_Y(p) FROM (
                  SELECT DISTINCT ON (building_id) building_id,
                         ST_Transform(ST_PointOnSurface(geometry), 4326) AS p
-                   FROM osm_indoor WHERE building_id IS NOT NULL ORDER BY building_id, id) AS one"""
+                   FROM osm_indoor
+                  WHERE building_id IN (SELECT building_id FROM indoor_building WHERE NOT underground)
+                  ORDER BY building_id, id) AS one"""
         )
     )
     in_tile_order = sorted(points.all(), key=lambda row: tile_of(row[1], row[2]))

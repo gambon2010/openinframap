@@ -1,25 +1,75 @@
 // Fork: the interiors' map layers (indoor.constants.ts has their look): the tint of
-// buildings with an interior, then a floor's rooms, walls, paths and stairs, what
-// stands inside, and names. The floor layers draw nothing until a floor is chosen
-// (floors.ts sets their filter).
+// what has a floor plan (buildings, and underground places dashed), then, for a floor
+// chosen (floors.ts sets these layers' filters), a cover hiding the map under the
+// building, its rooms, walls, paths and stairs, and room names. What stands inside
+// isn't drawn: the building's details list it.
+import type { ExpressionSpecification, FilterSpecification } from 'maplibre-gl'
 import type { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { font, text_paint } from '../../../style/common.ts'
 import * as look from './indoor.constants.ts'
 import { NOTHING } from './floors.ts'
 
+const OUTLINES = 'indoor_building'
+const IS_UNDERGROUND: ExpressionSpecification = ['==', ['get', 'underground'], true]
+
 export function indoorLayers(): LayerSpecificationWithZIndex[] {
-  return [tint(), areas(), areaOutlines(), lines(), points(), labels()]
+  return [
+    tint(look.TINT_LAYER, ['!', IS_UNDERGROUND]),
+    tint(look.PLACE_LAYER, IS_UNDERGROUND),
+    outline(look.TINT_OUTLINE_LAYER, ['!', IS_UNDERGROUND], undefined),
+    outline(look.PLACE_OUTLINE_LAYER, IS_UNDERGROUND, look.PLACE_DASHES),
+    cover(),
+    areas(),
+    areaOutlines(),
+    lines(),
+    labels()
+  ]
 }
 
-function tint(): LayerSpecificationWithZIndex {
+function tint(id: string, filter: FilterSpecification): LayerSpecificationWithZIndex {
   return {
     zorder: look.TINT_ZORDER,
-    id: look.TINT_LAYER,
+    id,
     type: 'fill',
     source: look.INDOOR_SOURCE,
-    'source-layer': 'indoor_building',
+    'source-layer': OUTLINES,
     minzoom: look.INDOOR_MIN_ZOOM,
+    filter,
     paint: { 'fill-color': look.TINT_COLOUR, 'fill-opacity': look.TINT_OPACITY }
+  }
+}
+
+function outline(
+  id: string,
+  filter: FilterSpecification,
+  dashes: [number, number] | undefined
+): LayerSpecificationWithZIndex {
+  return {
+    zorder: look.TINT_ZORDER + 0.001,
+    id,
+    type: 'line',
+    source: look.INDOOR_SOURCE,
+    'source-layer': OUTLINES,
+    minzoom: look.INDOOR_MIN_ZOOM,
+    filter,
+    paint: {
+      'line-color': look.TINT_COLOUR,
+      'line-width': look.TINT_OUTLINE_WIDTH,
+      ...(dashes ? { 'line-dasharray': dashes } : {})
+    }
+  }
+}
+
+/** The building under a floor shown, filled: the map under it hidden. */
+function cover(): LayerSpecificationWithZIndex {
+  return {
+    zorder: look.FLOOR_ZORDER - 0.001,
+    id: look.COVER_LAYER,
+    type: 'fill',
+    source: look.INDOOR_SOURCE,
+    'source-layer': OUTLINES,
+    filter: NOTHING,
+    paint: { 'fill-color': look.COVER_COLOUR, 'fill-opacity': 1 }
   }
 }
 
@@ -42,7 +92,7 @@ function areas(): LayerSpecificationWithZIndex {
         look.WALL_COLOUR,
         look.OPEN_COLOUR
       ],
-      'fill-opacity': 0.95
+      'fill-opacity': 1
     }
   }
 }
@@ -60,7 +110,7 @@ function areaOutlines(): LayerSpecificationWithZIndex {
   }
 }
 
-/** Walls solid, paths dashed, stairs and escalators in steps. */
+/** Walls, paths, stairs and escalators; walls thicker. */
 function lines(): LayerSpecificationWithZIndex {
   return {
     zorder: look.FLOOR_ZORDER + 0.002,
@@ -71,31 +121,12 @@ function lines(): LayerSpecificationWithZIndex {
     filter: NOTHING,
     paint: {
       'line-color': look.WALL_COLOUR,
-      'line-width': ['match', ['get', 'kind'], 'wall', 2, 1.5],
-      'line-dasharray': ['match', ['get', 'kind'], 'path', ['literal', [2, 2]], ['literal', [1, 0]]]
+      'line-width': ['match', ['get', 'kind'], 'wall', 2, 1]
     }
   }
 }
 
-/** Doors white with a dark ring, lifts and stairs dark, the rest small dots. */
-function points(): LayerSpecificationWithZIndex {
-  return {
-    zorder: look.FLOOR_ZORDER + 0.003,
-    id: look.POINT_LAYER,
-    type: 'circle',
-    source: look.INDOOR_SOURCE,
-    'source-layer': 'indoor_point',
-    filter: NOTHING,
-    paint: {
-      'circle-radius': ['match', ['get', 'kind'], 'door', 3, 'elevator', 4, 'stairs', 4, 3],
-      'circle-color': ['match', ['get', 'kind'], 'door', '#fff', look.POINT_COLOUR],
-      'circle-stroke-color': look.WALL_COLOUR,
-      'circle-stroke-width': ['match', ['get', 'kind'], 'door', 1.5, 0]
-    }
-  }
-}
-
-/** Names, or references ("204"), of rooms and what's inside. */
+/** Names, or references ("204"), of rooms and spaces. */
 function labels(): LayerSpecificationWithZIndex {
   return {
     zorder: look.FLOOR_ZORDER + 0.004,

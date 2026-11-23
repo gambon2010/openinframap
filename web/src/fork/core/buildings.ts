@@ -113,7 +113,7 @@ export function outlineArea(outline: GeoJSON.Polygon | GeoJSON.MultiPolygon): nu
 }
 
 /** A point of a feature's geometry (its first), to say where it is. */
-function somePoint(g: GeoJSON.Geometry): [number, number] | null {
+export function somePoint(g: GeoJSON.Geometry): [number, number] | null {
   if (g.type === 'Polygon') return g.coordinates[0]?.[0] as [number, number]
   if (g.type === 'MultiPolygon') return g.coordinates[0]?.[0]?.[0] as [number, number]
   return null

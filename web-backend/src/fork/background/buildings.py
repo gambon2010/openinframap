@@ -99,6 +99,14 @@ def tile_of(lon: float, lat: float) -> tuple[int, int]:
     return x, y
 
 
+def tiles_over(bounds: tuple[float, float, float, float]) -> list[tuple[int, int]]:
+    """The zoom 15 tiles covering a box (west, south, east, north, degrees)."""
+    west, south, east, north = bounds
+    x0, y0 = tile_of(west, north)
+    x1, y1 = tile_of(east, south)
+    return [(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)]
+
+
 def area_only(geom: BaseGeometry) -> BaseGeometry:
     """A piece cut back to its tile, its areas only: cutting a shape can leave a
     line or a point along the edge as well."""

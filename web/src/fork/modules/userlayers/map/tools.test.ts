@@ -3,6 +3,7 @@
 // (docs/plans/refactor-5e.md). Pixels: 1000 a degree, y down.
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { OIM_TILES } from '../../../config.ts'
+import { canCopy } from './tools/copy.ts'
 import type { Map as MapLibre, MapGeoJSONFeature } from 'maplibre-gl'
 import { Store } from '../state/store.ts'
 import { Tools } from './tools.ts'
@@ -442,6 +443,16 @@ describe('resizing and copying', () => {
     expect(items()).toHaveLength(2)
     expect(tools.message).toMatch(/Copied 2/)
     expect(map.dragPan.enable).toHaveBeenCalled()
+  })
+
+  test('copy: an interior (an underground place, a room) is not, though from our tile server', () => {
+    const withIndoor = {
+      getStyle: () => ({
+        sources: { indoor: { type: 'vector', tiles: [`${OIM_TILES}/indoor/{z}/{x}/{y}.pbf`] } }
+      })
+    } as unknown as MapLibre
+    const place = { layer: { id: 'buildings_indoor_place' }, source: 'indoor' } as never
+    expect(canCopy(withIndoor, place)).toBe(false)
   })
 
   test("copy: the background map's roads aren't copied, the infrastructure is", async () => {

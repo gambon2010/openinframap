@@ -7,6 +7,7 @@ import { t } from '../../../../core/i18n.ts'
 import { OIM_TILES } from '../../../../config.ts'
 import { sourceGeometry } from '../../../../core/map-data.ts'
 import {
+  INTERIOR_PREFIX,
   buildingId,
   buildingNames,
   copiedBuildingName,
@@ -53,6 +54,8 @@ export function mapFeaturesIn(
 /** Whether a map feature can be copied into a layer: a building, or infrastructure
  * (its source's tiles the tile server's, Tegola). */
 export function canCopy(map: Map, feature: MapGeoJSONFeature): boolean {
+  // Interiors (rooms, underground places) aren't infrastructure, nor a building.
+  if (feature.layer.id.startsWith(INTERIOR_PREFIX)) return false
   return isBuildingLayer(feature.layer.id) || fromInfrastructureTiles(map, feature.source)
 }
 

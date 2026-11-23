@@ -664,11 +664,15 @@ after the backend restarts), the same on every computer with the same background
 map; a newer background map can change them;
 search "STR-NEU-12" or "wis 47" in the search box to go there (pinned; switch the
 numbers on to read the others), the nearest place with that code first. Buildings no one could stand in, a staircase's steps drawn one
-by one, aren't numbered and aren't drawn outside 3D. Buildings with a mapped interior (stations, shopping
-centres, universities, hospitals: 47,530 buildings in France) are tinted violet; their details offer **Inside, floor** with a chip a floor: click one to
-draw that floor's rooms, corridors, walls, doors, stairs, lifts and what's inside
-(each building on its own floor; click again to hide it); click a room or a shop for
-its details. Read at build from the whole extract (`bash scripts/import-indoor.sh` to
+by one, aren't numbered and aren't drawn outside 3D. Buildings with a mapped floor plan (stations, shopping
+centres, universities, hospitals) are tinted violet, and underground places outside
+any building (metro and RER halls, the squares under La Défense) violet dashed; their
+details offer **Floor** with a chip a floor: click one to draw that floor's rooms,
+corridors, walls and stairs, the map under the building hidden (each building on its
+own floor; click the chip again to hide it); click a room for its details. Any
+building's details list **What's inside**, by floor: shops, toilets, lifts mapped
+with a floor, and the background map's points of interest in the building ("Floor
+not given"); click a line to pin it on the map (and show its floor). Read at build from the whole extract (`bash scripts/import-indoor.sh` to
 read them again, about half an hour for France). A building's details show its
 number, and its name when OpenStreetMap gives it one ("Cathédrale Notre-Dame":
 names read at build from the whole extract, `scripts/building_names.py` to read

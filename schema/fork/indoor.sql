@@ -21,18 +21,23 @@ CREATE TABLE IF NOT EXISTS osm_indoor (
     -- Something with a floor that isn't itself part of an interior (a shop, a bench):
     -- kept only where it touches one or stands in a building (the backend decides).
     inside_only boolean NOT NULL,
-    building_id bigint,              -- the background map's building (null: none)
+    building_id bigint,              -- its building or underground place (indoor_building)
     tags jsonb NOT NULL,
     geometry geometry(Geometry, 3857) NOT NULL
 );
 CREATE INDEX IF NOT EXISTS osm_indoor_geometry ON osm_indoor USING gist (geometry);
 CREATE INDEX IF NOT EXISTS osm_indoor_building ON osm_indoor (building_id);
 
--- The background map's buildings with an interior: their floors (in order) and
--- outline (tinted on the map while building outlines are shown).
+-- What has a floor plan (rooms, corridors, walls, floor outlines): the background
+-- map's buildings with one, and underground places outside any building (a metro
+-- hall, the squares under La Défense: a negative id, their pieces' building_id),
+-- with their floors (in order) and outline (tinted on the map while building
+-- outlines are shown; covering the map under a floor shown).
 CREATE TABLE IF NOT EXISTS indoor_building (
     building_id bigint PRIMARY KEY,
     levels real[] NOT NULL,
+    name text,                       -- an underground place's (its largest named space)
+    underground boolean NOT NULL,
     geometry geometry(Geometry, 3857) NOT NULL
 );
 CREATE INDEX IF NOT EXISTS indoor_building_geometry ON indoor_building USING gist (geometry);

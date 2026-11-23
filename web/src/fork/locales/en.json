@@ -943,7 +943,7 @@
     "title": "Keyboard shortcuts"
   },
   "indoor": {
-    "floors": "Inside, floor",
+    "floors": "Floor",
     "ground-floor": "Ground floor",
     "floor-n": "Floor {{n}}",
     "basement-n": "Basement {{n}}",
@@ -958,12 +958,12 @@
       "level": "Floor outline",
       "wall": "Wall",
       "column": "Column",
-      "door": "Door",
       "stairs": "Stairs",
-      "elevator": "Lift",
       "escalator": "Escalator",
-      "path": "Walkway",
-      "poi": "Inside the building"
-    }
+      "path": "Walkway"
+    },
+    "floor-not-given": "Floor not given",
+    "inside": "What’s inside",
+    "underground-place": "Underground place"
   }
 }

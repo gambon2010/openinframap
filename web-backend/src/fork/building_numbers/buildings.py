@@ -16,7 +16,7 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.prepared import prep
 
-from ..background.buildings import area_only, full_tile, tile_of, to_degrees
+from ..background.buildings import area_only, full_tile, tiles_over, to_degrees
 
 MIN_WIDTH_M = 1.5
 MIN_AREA_M2 = 2.0
@@ -75,11 +75,3 @@ def in_metres(outline: BaseGeometry) -> BaseGeometry:
     lat = outline.centroid.y
     across = METRES_PER_DEGREE * math.cos(math.radians(lat))
     return shapely.transform(outline, lambda points: points * [across, METRES_PER_DEGREE])
-
-
-def tiles_over(bounds: tuple[float, float, float, float]) -> list[tuple[int, int]]:
-    """The zoom 15 tiles covering a box (west, south, east, north, degrees)."""
-    west, south, east, north = bounds
-    x0, y0 = tile_of(west, north)
-    x1, y1 = tile_of(east, south)
-    return [(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)]

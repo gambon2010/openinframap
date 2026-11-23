@@ -21,6 +21,12 @@ export function floorFilter(shown: ShownFloors): ExpressionSpecification {
   return ['any', ...onFloor]
 }
 
+/** The cover under the floors shown: those buildings' outlines. */
+export function coverFilter(shown: ShownFloors): ExpressionSpecification {
+  if (!shown.size) return NOTHING
+  return ['in', ['get', 'building_id'], ['literal', [...shown.keys()]]]
+}
+
 /** `shown` with a building's floor chosen, or hidden (null). */
 export function withFloor(shown: ShownFloors, building: number, level: number | null): Map<number, number> {
   const next = new Map(shown)

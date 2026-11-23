@@ -213,11 +213,14 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).
 
-- **Building interiors** (`modules/indoor`, indoor.constants.ts): buildings with
-  one a light violet over the building while building outlines are shown; a floor
-  drawn when chosen in the building's details: rooms in a light warm grey, corridors
-  and open areas lighter, walls and outlines dark grey, doors white dots ringed dark,
-  lifts, stairs and what's inside dark dots, room names in the label style.
+- **Building interiors** (`modules/indoor`, indoor.constants.ts): what has a floor
+  plan violet over the building, outlined, while building outlines are shown
+  (underground places outside any building the same, dashed); a floor drawn when
+  chosen in the building's details, over an opaque cover hiding the map under the
+  building: rooms in a light warm grey, corridors and open areas lighter, walls and
+  outlines dark grey, room names in the label style. What stands inside (shops,
+  lifts) isn't drawn: it's listed in the details, by floor, a line each (its name,
+  then what it is in grey).
 - **Building numbers** ("WIS-47", `modules/buildings/numbers.ts`): in the map's
   label style (`text_paint`), 11 px, from zoom 16; where two would overlap, one waits
   for a closer zoom.

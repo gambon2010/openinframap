@@ -10,3 +10,33 @@
   font-size: 0.85rem;
   white-space: nowrap;
 }
+/* What's inside, by floor: a line each, its name then what it is, clicked to pin it. */
+.oim-indoor-inside h3 {
+  margin: 10px 0 2px;
+  font-size: 0.95rem;
+}
+.oim-indoor-group h4 {
+  margin: 6px 0 2px;
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+.oim-indoor-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  padding: 2px 4px;
+  border: none;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.oim-indoor-item:hover {
+  background: var(--oim-light-grey);
+}
+.oim-indoor-item small {
+  color: var(--oim-text-color-light);
+}

@@ -27,3 +27,40 @@ def test_floors_written_as_people_write_them():
     assert level_number(1.0) == 1
     assert level_number(-2.0) == -2
     assert level_number(0.5) == 0.5
+
+
+def test_what_a_point_inside_is():
+    from src.fork.indoor import what_of
+
+    assert what_of("poi", {"shop": "bakery", "name": "Paul"}) == "bakery"
+    assert what_of("poi", {"amenity": "toilets"}) == "toilets"
+    assert what_of("elevator", {}) == "elevator"
+    assert what_of("poi", {}) == "poi"
+
+
+def test_the_maps_points_inside_a_building_named_and_not_street_furniture(monkeypatch):
+    from shapely.geometry import box
+
+    from src.fork.background import pois
+
+    tx, ty = tile_of(7.75, 48.58)
+
+    def poi(name, kind, x, y):
+        return {
+            "geometry": {"type": "Point", "coordinates": [x, y]},
+            "properties": {"name": name, "kind": kind},
+        }
+
+    monkeypatch.setattr(
+        pois,
+        "tile_pois",
+        lambda x, y: [
+            poi("Paul", "bakery", 1000, 1000),
+            poi("Banc", "bench", 1000, 1100),
+            poi("", "restaurant", 1100, 1000),
+            poi("Far away", "restaurant", 3000, 3000),
+        ],
+    )
+    building = to_degrees(box(0, 0, 2048, 2048), tx, ty)
+    found = pois.pois_in(building, [(tx, ty)])
+    assert [(p["name"], p["what"]) for p in found] == [("Paul", "bakery")]
