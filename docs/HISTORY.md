@@ -1608,6 +1608,12 @@ default). Counts are France's OSM data in October 2026.
   steps rewrite every row: 305 MB of dead rows the first time). Chips moved to
   `ui/chip.ts` (shared); the default database address in one place
   (`src/fork/database.py`).
+- **Bug: a satellite download resumed from half an extraction** (2026-11-23): the
+  queue had stopped on 2026-11-20 while Finistère's archive was being extracted;
+  resuming took the 159 images there as the whole set (and the last one, cut short,
+  stopped the tiles: "opj_decode() failed"). An extraction counts as finished once
+  its archive is gone (extract deletes it then), else it's done again from the parts
+  kept (`bdortho.extracted_images`, a test).
 
 ## Extra data (not from OpenStreetMap)
 
