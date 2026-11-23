@@ -3,6 +3,7 @@ import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { openContextMenuFor } from '../../../../ui/context-menu.ts'
 import { FILTERS } from './constants.ts'
+import { toggleChip } from '../chip.ts'
 import { newFolder } from './editing.ts'
 import { exportEntries } from './menus.ts'
 import type { OutlinerContext } from './types.ts'
@@ -18,19 +19,13 @@ export function filterChips(c: OutlinerContext): HTMLElement | string {
   if (!c.filtersOpen) return ''
   return el(
     '.oim-ul-chips.oim-ul-filters',
-    FILTERS.map(([filter, label]) => {
-      const on = c.filters.has(filter)
-      const b = el(`button.oim-ul-chip${on ? '.oim-on' : ''}`, t(`userlayers.filter.${filter}`, label), {
-        type: 'button',
-        'aria-pressed': String(on)
-      })
-      b.onclick = () => {
-        if (on) c.filters.delete(filter)
-        else c.filters.add(filter)
+    FILTERS.map(([filter, label]) =>
+      toggleChip(t(`userlayers.filter.${filter}`, label), c.filters.has(filter), (on) => {
+        if (on) c.filters.add(filter)
+        else c.filters.delete(filter)
         c.actions.update()
-      }
-      return b
-    })
+      })
+    )
   )
 }
 

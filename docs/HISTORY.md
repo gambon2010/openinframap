@@ -1573,6 +1573,13 @@ default). Counts are France's OSM data in October 2026.
   widened to 8 pixels at least (about their middle, drawn last) on the map, at its
   zoom, and in the profile; the map's and the chart's two ways of cutting the line
   into stretches made one (`sightRuns`, in metres along it).
+- **The picker's keys removed; one line of choices** (asked, 2026-11-23): the arrow
+  keys among the symbols were of no use (a click already places), so taken out; only
+  the symbols scroll, the search, choices and categories stay put. Identity, Echelon
+  (named as on the card), HQ, Task force, Dummy and Planned on one line, Planned a
+  chip like the others (`chip.ts`, the filters' chips too); every My layers dropdown
+  the card's look. The toolbar: tools, then undo, redo, history, then the layer new
+  items go into beside Discard and Save.
 
 ## Extra data (not from OpenStreetMap)
 

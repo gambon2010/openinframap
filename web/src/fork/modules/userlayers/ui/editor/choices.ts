@@ -2,6 +2,7 @@
 // row each (identity, status, condition, how a graphic is drawn, echelon, mobility)
 // and the marks a unit can carry as tick boxes. They're all part of its code
 // (sidc.ts).
+import { el } from 'redom'
 import { t } from '../../../../core/i18n.ts'
 import {
   MOBILITIES,
@@ -148,7 +149,10 @@ function echelonRow(sidc: string, setSidc: (next: string) => void): HTMLElement 
 function marksRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   return formRow(
     t('userlayers.marked-as', 'Marked as'),
-    markChips(unitModifiers(sidc), (marks) => setSidc(withUnitModifiers(sidc, marks))),
+    el(
+      '.oim-ul-chips.oim-ul-marks',
+      ...markChips(unitModifiers(sidc), (marks) => setSidc(withUnitModifiers(sidc, marks)))
+    ),
     undefined,
     t(
       'userlayers.marked-as-help',

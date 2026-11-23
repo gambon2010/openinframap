@@ -377,8 +377,7 @@
       "recent": "Recently used",
       "none": "Nothing with that name.",
       "more": "Showing the first {{n}}: type more to narrow it down.",
-      "mine": "★ Favourites and recent",
-      "units": "Units"
+      "mine": "★ Favourites and recent"
     },
     "unfavourite": "Remove from favourites",
     "favourite": "Add to favourites",

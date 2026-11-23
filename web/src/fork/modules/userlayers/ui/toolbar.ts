@@ -67,14 +67,7 @@ export class Toolbar {
 
   constructor(ws: Workspace) {
     this.ws = ws
-    this.palette = new Palette(
-      (pick) => void this.picked(pick),
-      ws.store.personal,
-      () => {
-        this.closePicker()
-        this.update()
-      }
-    )
+    this.palette = new Palette((pick) => void this.picked(pick), ws.store.personal)
     this.picker = el('.oim-ul-picker', this.palette.el)
     this.fileInput = el('input', {
       type: 'file',
@@ -324,15 +317,16 @@ export class Toolbar {
       disabled: !pending || !!busy || inPlayback,
       title: t('userlayers.discard', 'Discard unsaved changes')
     })
+    // What you do on the left; where it goes and keeping it on the right.
     bar.append(
       tools,
+      el('.oim-ul-toolbar-group', undo, redo, history),
       el(
         '.oim-ul-toolbar-group.oim-ul-into',
         { title: t('userlayers.add-to', 'New items go into this layer') },
         toolIcon('into', 16),
         target
       ),
-      el('.oim-ul-toolbar-group', undo, redo, history),
       el('.oim-ul-toolbar-group', discard, save)
     )
   }

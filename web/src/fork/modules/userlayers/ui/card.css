@@ -42,23 +42,6 @@
 .oim-ul-detail-name {
   color: var(--oim-text-color-light);
 }
-/* Every control the same: full width, one height, one border. */
-.oim-ul-detail > input:not([type='checkbox'], [type='range'], [type='color']),
-.oim-ul-detail > select,
-.oim-ul-detail > textarea,
-.oim-ul-control > input:not([type='checkbox'], [type='range']),
-.oim-ul-control > select,
-.oim-ul-detail > .oim-ul-choice {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 26px;
-  padding: 2px 5px;
-  border: 1px solid var(--oim-grey);
-  border-radius: var(--oim-radius-small);
-  background: #fff;
-  color: var(--oim-text-color);
-  font: inherit;
-}
 .oim-ul-detail > textarea {
   resize: vertical;
 }

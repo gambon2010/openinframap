@@ -84,17 +84,30 @@
   transform: translateX(-50%);
   width: var(--oim-picker-width);
   max-height: calc(100% - 110px);
-  overflow-y: auto;
   padding: 8px 10px;
   border-radius: var(--oim-radius-large);
   background: var(--oim-content-background);
   box-shadow: var(--oim-drop-shadow);
 }
+/* Only the symbols scroll: the search, the choices and the categories stay put. */
 .oim-ul-picker.visible {
-  display: block;
+  display: flex;
+  flex-direction: column;
+}
+.oim-ul-picker .oim-ul-palette {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.oim-ul-picker .oim-ul-palette-body {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
 }
 .oim-ul-picker .oim-ul-palette-results {
   max-height: none;
+  overflow-y: auto;
 }
 /* Categories in a column on the left, the symbols on the right. */
 .oim-ul-palette-body {

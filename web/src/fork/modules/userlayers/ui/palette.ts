@@ -18,7 +18,7 @@ import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_ICONS, CATEGORIES, NO_MARKS } from 
 import { symbolKind, withUnitModifiers, type UnitModifiers } from '../model/sidc.ts'
 import { select } from './editor/controls.ts'
 import { echelonOptions, markChips } from './unit-marks.ts'
-import { nextTile } from './palette-keys.ts'
+import { toggleChip } from './chip.ts'
 
 /** A catalogue code (with * for identity and status) made concrete. */
 export function concreteSidc(code: string, affiliation: string, status: string): string {
@@ -102,15 +102,15 @@ export class Palette {
   private search: HTMLInputElement
   private categories: HTMLElement
   private frames: HTMLElement
-  private planned: HTMLInputElement
+  private planned = false
   private results: HTMLElement
   private affiliation = 'F'
   // The echelon and marks every unit placed gets (none at first).
   private unit: UnitModifiers = NO_MARKS
-  private unitRow = el('.oim-ul-palette-options')
+  private unitRow = el('span.oim-ul-palette-unit')
+  private plannedChip = el('span')
   private group: string | undefined
   private onPick: (pick: Pick) => void
-  private onClose: () => void
   private render?: (sidc: string, size?: number) => string
   // Graphics the renderer can draw (a few catalogue entries are only headings).
   private drawable?: Set<string>
@@ -118,33 +118,28 @@ export class Palette {
   /** Favourites and recently used: yours, kept for your account (state/personal.ts). */
   private personal: PersonalSettings
 
-  constructor(onPick: (pick: Pick) => void, personal: PersonalSettings, onClose: () => void) {
+  constructor(onPick: (pick: Pick) => void, personal: PersonalSettings) {
     this.onPick = onPick
-    this.onClose = onClose
     this.personal = personal
     this.search = el('input.oim-ul-palette-search', { type: 'search' }) as HTMLInputElement
     this.categories = el('nav.oim-ul-palette-categories')
     this.frames = el('.oim-ul-frames')
-    this.planned = el('input', { type: 'checkbox' }) as HTMLInputElement
     this.results = el('.oim-ul-palette-results')
     this.el = el(
       '.oim-ul-palette',
       this.search,
+      // Identity, then what a unit placed gets (symbols only), and Planned: one row.
       el(
         '.oim-ul-palette-options',
         el('span.oim-ul-palette-label', t('userlayers.identity', 'Identity')),
         this.frames,
-        el('label.oim-ul-inline', this.planned, t('userlayers.planned', 'Planned'))
+        this.unitRow,
+        this.plannedChip
       ),
-      this.unitRow,
       // Categories on the left, what's in the chosen one on the right.
       el('.oim-ul-palette-body', this.categories, this.results)
     )
     this.search.oninput = () => this.update()
-    // Keys: ↓ from the search into the tiles, the arrows between them, Enter picks
-    // (the search box: the first), Esc closes.
-    this.el.addEventListener('keydown', (e) => this.key(e))
-    this.planned.onchange = () => this.update()
   }
 
   /** Show the palette for symbols or graphics (loads the symbol library the first time). */
@@ -175,7 +170,7 @@ export class Palette {
   }
 
   private status() {
-    return this.planned.checked ? 'A' : 'P'
+    return this.planned ? 'A' : 'P'
   }
 
   private framesRow() {
@@ -200,35 +195,6 @@ export class Palette {
     }
   }
 
-  private key(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      this.onClose()
-      return
-    }
-    const tiles = [...this.results.querySelectorAll<HTMLButtonElement>('button.oim-ul-symbol')]
-    if (e.target === this.search) {
-      this.keyInSearch(e, tiles)
-      return
-    }
-    const from = tiles.indexOf(e.target as HTMLButtonElement)
-    if (from < 0) return
-    const places = tiles.map((tile) => tile.getBoundingClientRect())
-    const next = nextTile(places, from, e.key)
-    if (next === undefined) return
-    e.preventDefault()
-    if (next === null) this.search.focus()
-    else tiles[next].focus()
-  }
-
-  /** ↓ goes into the tiles, Enter picks the first. */
-  private keyInSearch(e: KeyboardEvent, tiles: HTMLButtonElement[]) {
-    if (!tiles.length || (e.key !== 'ArrowDown' && e.key !== 'Enter')) return
-    e.preventDefault()
-    if (e.key === 'ArrowDown') tiles[0].focus()
-    else tiles[0].click()
-  }
-
   /** The units' echelon and marks, symbols only: what's shown and placed has them. */
   private unitMarksRow() {
     this.unitRow.hidden = this.mode !== 'symbols'
@@ -246,9 +212,15 @@ export class Palette {
       this.update()
     })
     this.unitRow.replaceChildren(
-      el('span.oim-ul-palette-label', t('userlayers.palette.units', 'Units')),
+      el('span.oim-ul-palette-label', t('userlayers.echelon-label', 'Echelon')),
       echelon,
-      marks
+      ...marks
+    )
+    this.plannedChip.replaceChildren(
+      toggleChip(t('userlayers.planned', 'Planned'), this.planned, (on) => {
+        this.planned = on
+        this.update()
+      })
     )
   }
 

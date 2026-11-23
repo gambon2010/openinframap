@@ -34,8 +34,20 @@
 
 .oim-ul-palette-options {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
   margin: 4px 0;
+}
+/* A unit's echelon and marks, set apart from the identity frames. */
+.oim-ul-palette-unit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+}
+.oim-ul-palette-unit + span {
+  margin-left: 12px;
 }
 .oim-ul-palette-results {
   max-height: 300px;
@@ -67,11 +79,6 @@
   border-radius: 4px;
   background: none;
   cursor: pointer;
-}
-/* Reached with the arrow keys (palette-keys.ts): the main blue ring. */
-.oim-ul-symbol:focus-visible {
-  outline: 2px solid var(--oim-primary);
-  outline-offset: 1px;
 }
 .oim-ul-symbol:hover {
   border-color: var(--oim-primary);
@@ -209,12 +216,6 @@
   max-height: 26px;
 }
 /* The identity's label, its frames right after it, Planned at the far end. */
-.oim-ul-palette-options {
-  align-items: center;
-}
-.oim-ul-palette-options > .oim-ul-inline {
-  margin-left: auto;
-}
 .oim-ul-palette h4 {
   margin: 6px 0 2px;
   font-size: 0.85rem;
@@ -236,4 +237,33 @@
   gap: 6px;
   font-size: 0.8rem;
   color: var(--oim-text-color-light);
+}
+
+/* Every control the same: one height, one border (the card's full width; the
+   picker's and the toolbar's dropdowns as wide as their text). */
+.oim-ul-detail > input:not([type='checkbox'], [type='range'], [type='color']),
+.oim-ul-detail > select,
+.oim-ul-detail > textarea,
+.oim-ul-control > input:not([type='checkbox'], [type='range']),
+.oim-ul-control > select,
+.oim-ul-detail > .oim-ul-choice,
+.oim-ul-palette select,
+.oim-ul-toolbar select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: #fff;
+  color: var(--oim-text-color);
+  font: inherit;
+}
+.oim-ul-palette select,
+.oim-ul-toolbar select {
+  width: auto;
+}
+/* The picker's echelon the size of the chips beside it. */
+.oim-ul-palette select {
+  font-size: 0.85rem;
 }

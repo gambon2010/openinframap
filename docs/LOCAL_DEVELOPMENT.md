@@ -775,14 +775,14 @@ on the My layers workspace; click it again to close it. It has two parts:
   one, folds to one line at the bottom ("Route: A → B · 18 km"); click it to unfold.
 - **The toolbar at the top of the map**: six tool buttons (Select, Symbol, Graphic,
   Draw, Copy, Measure; Draw and Measure each hold several tools: the button repeats
-  the one used last, its small ▾ lists them all with their keys), the layer new things
-  go into (after the ✎), undo, redo, history and **Save (n)** (⋯ to discard unsaved
-  changes). Each tool has a key:
+  the one used last, its small ▾ lists the others with their keys); undo, redo,
+  history; then the layer new things go into (after the ✎), **Discard** (asks first)
+  and **Save (n)**. Each tool has a key:
 
 | Key | Tool |
 |---|---|
 | V | Select and move |
-| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search at the top, the identity (friend / hostile / neutral / unknown frames) and Planned under it, then the echelon and marks (HQ, task force, dummy) every unit you place gets, the categories in a column on the left (first your favourites, ☆ on any symbol, and recently used; while searching, how many match in each) and the symbols on the right. Keys: ↓ from the search into the symbols, the arrows between them, Enter places the one ringed (in the search box: the first), Esc closes |
+| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search at the top, on one line under it the identity (friend / hostile / neutral / unknown frames), the echelon and marks (HQ, task force, dummy) every unit you place gets, and Planned, the categories in a column on the left (first your favourites, ☆ on any symbol, and recently used; while searching, how many match in each) and the symbols on the right. |
 | A | Arrow or graphic: axes, attacks, phase lines, areas, obstacles, tasks such as block or breach |
 | L / R | Line / area: click points, double-click or Enter to finish |
 | M | Marker |
