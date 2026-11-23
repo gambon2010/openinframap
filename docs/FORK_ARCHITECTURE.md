@@ -221,7 +221,7 @@ ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          dropdowns, controls.ts the rows and inputs),
          outliner/ (the list: index.ts, rows/ item, layer, folder; menus.ts, editing.ts,
          drag.ts, footer.ts over types.ts's OutlinerContext; filter.ts, order.ts), palette.ts (the picker), toolbar.ts (the tools in groups) and
-         tool-icons.ts (its icons, drawn as ui/icons.ts's);
+         tool-icons.ts (its icons, drawn as ui/icons.ts's), identity-icons.ts (identities as their frames);
          userlayers.css lists the CSS files in order (order matters)
 ```
 

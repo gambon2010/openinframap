@@ -201,6 +201,8 @@ export class Tools implements ToolsContext {
           { type: 'Point', coordinates: lngLat },
           { ...withNewColour(this.tool.properties) }
         )
+        // Shift held: the tool stays on, to place several (a plain click places the last).
+        if (e.originalEvent.shiftKey) break
         this.setTool({ mode: 'select' })
         this.select(id)
         break

@@ -716,6 +716,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   name), then drag layers onto it, or ⋯ → Move to folder. **Drag a layer above or
   below another** to reorder them: the top one is drawn on top. Double-click a name
   to rename it (Enter keeps it, Esc doesn't); a new layer's name is ready to type.
+  While placing a marker, symbol, picture or range rings, **Shift + click** places
+  one and keeps the tool on, to place several (a plain click places the last).
   While placing a marker, symbol or picture, **Shift + scroll** makes it bigger or
   smaller; while drawing an arrow, wider or narrower (plain scrolling still zooms).
   The same works on an item already on the map: select it, then Shift + scroll. It's

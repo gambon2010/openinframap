@@ -1554,6 +1554,13 @@ default). Counts are France's OSM data in October 2026.
   (`--oim-primary`) defined it by itself for a while, every main button white on
   white: a test checks no token is. Number labels aren't clicked (a click opens the
   building); prompts and alerts in the centred window (`ui/ask.ts`).
+- **Place several, identity frames** (asked, 2026-11-23): Shift + click places and
+  keeps the tool on (Shift was already the placing tool's key: Shift + scroll sizes);
+  the identity emoji replaced by small frames drawn in the standard's shapes and
+  colours (`ui/identity-icons.ts`), the card's and the bulk edit's identity a
+  button opening the shared menu (a dropdown's lines can't hold pictures); tower
+  numbers and contour heights label layers; no tooltip on a tool group's ▾ (asked).
+  Indoor plan settled (docs/plans/indoor-maps.md); search ideas to the backlog.
 
 ## Extra data (not from OpenStreetMap)
 

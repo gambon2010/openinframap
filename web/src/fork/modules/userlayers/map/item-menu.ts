@@ -2,6 +2,7 @@
 // list (outliner/rows/item.ts): its identity and present / planned (symbols and
 // graphics), rename, duplicate, copy, move to another layer, lock, delete. Built from
 // the shared context menu's entries (ui/context-menu.ts).
+import { identityIcon } from '../ui/identity-icons.ts'
 import { t } from '../../../core/i18n.ts'
 import type { MenuEntry, MenuItem } from '../../../ui/context-menu.ts'
 import type { Store } from '../state/store.ts'
@@ -82,6 +83,7 @@ function codeEntries(
     disabled: locked,
     entries: identityOptions().map(([code, label]): MenuEntry => ({
       label,
+      icon: identityIcon(code, 16),
       run: () => update({ sidc: withIdentity(sidc, code) }),
       disabled: sidc[1] === code
     }))

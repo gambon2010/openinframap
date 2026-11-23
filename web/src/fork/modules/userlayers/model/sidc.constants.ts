@@ -15,20 +15,6 @@ export const IDENTITIES: [string, string][] = [
 /** The four identities shown first. */
 export const MAIN_IDENTITIES = ['F', 'H', 'N', 'U']
 
-/** Each identity as its frame: friends a blue rectangle, hostiles a red diamond,
- * neutrals a green square, the unknown yellow (MIL-STD-2525C's shapes and colours). */
-export const IDENTITY_ICONS: Record<string, string> = {
-  P: '🟨',
-  U: '🟨',
-  A: '🟦',
-  F: '🟦',
-  N: '🟩',
-  S: '♦️',
-  H: '♦️',
-  J: '♦️',
-  K: '♦️'
-}
-
 /** Status, position 4: present / planned, or the operational condition. */
 export const STATUSES: [string, string][] = [
   ['P', 'Present'],

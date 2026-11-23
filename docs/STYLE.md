@@ -73,8 +73,9 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   middle of the screen (`ui/ask.ts`), never the browser's own boxes (confirm, prompt, alert); its buttons
   say what each does, the main one last. Windows opened once: `showModal`.
 - **No emoji in the interface:** My layers' pictures (the list, the menus, the
-  padlock) are `ui/tool-icons.ts`'s line icons; a dropdown's lines, text only, say
-  "(locked)" in words.
+  padlock) are `ui/tool-icons.ts`'s line icons, identities their frames
+  (`ui/identity-icons.ts`); a choice that needs pictures is a button opening the
+  shared menu (`identityChoice`), a plain dropdown says things in words ("(locked)").
 - **Hints and notes:** 0.85 rem in the light text colour (`.oim-ul-hint`).
 - **Where data comes from** (a source, its licence, when it was updated): only in a
   thing's debug info (Settings → Debug), never in its details (`SOURCE_NOTE`,

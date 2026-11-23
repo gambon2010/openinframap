@@ -11,6 +11,7 @@ import GridRouteControl from './grid-route.ts'
 import type { StationKind } from './grid-route.types.ts'
 import { showLine } from './line.ts'
 import { hideUpstreamTowerLabels, towerDetails, towerNumberLayers } from './towers.ts'
+import { TOWER_NUMBER_LAYER } from './towers.constants.ts'
 
 /** Substations and plants: "Route from here" / "Route to here". */
 function routeButtons(feature: MapGeoJSONFeature, route: GridRouteControl): HTMLElement | null {
@@ -43,6 +44,8 @@ function routeButtons(feature: MapGeoJSONFeature, route: GridRouteControl): HTML
 
 const grid: ForkModule = {
   layers: towerNumberLayers,
+  // A click on a tower's number opens the tower.
+  labelLayers: () => [TOWER_NUMBER_LAYER],
   init: (ctx) => {
     const route = new GridRouteControl(ctx.urlHash)
     leftColumn.addControl(route, LEFT_ORDER.route)

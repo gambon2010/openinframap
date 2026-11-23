@@ -27,20 +27,31 @@ covered or not.)
 
 ## Steps
 
+Decided with the owner (2026-11-23): everything indoor OpenStreetMap has, the
+points inside too (shops, toilets, ticket machines); floors chosen per building, in
+its details card, not one control for the whole map; buildings with an interior a
+slightly different colour while building outlines are on; a building copied into My
+layers takes its floors with it, switched from the same card. No My layers items on
+a floor (confusing fast).
+
 1. **Import** (imposm mapping, `imposm/`): `osm_indoor` (rooms, corridors, areas,
-   walls, columns, doors, stairs and lifts with their `level`, `name`, `ref`,
-   `repeat_on`), polygons and points. Small: tens of thousands of rows. Rebuild.
+   walls, columns, doors, stairs, lifts, escalators with their `level`, `name`,
+   `ref`, `repeat_on`), polygons and points, and the points of interest inside
+   (anything with a `level` inside an indoor area). Small: tens of thousands of
+   rows. Rebuild.
 2. **Tiles** (`tegola/layers.fork.yml`): an `indoor` map with indoorequal's layer
    names, from zoom 17.
-3. **The map** (a module `modules/indoor/`): the plugin's level control (shown only
-   where something indoor is in view), its style redone in our look (STYLE.md: rooms
-   in the panels' light grey, walls in the dark grey, doors as gaps, names in the
-   label style); a "Building interiors" entry in Data layers, off at first.
+3. **The map** (a module `modules/indoor/`): a building's floors chosen in its
+   details card (the plugin's tile schema and style, not its map-wide control),
+   only that building's interior drawn on that floor; its style redone in our look
+   (STYLE.md: rooms in the panels' light grey, walls in the dark grey, doors as
+   gaps, names in the label style); a "Building interiors" entry in Data layers,
+   off at first; buildings with an interior tinted.
 4. **Details:** a room's name, reference and level on click; rooms in the search
    ("Salle 204", "Quai 3").
-5. **My layers:** an item can be on a level (a property), shown only on that level
-   while the control is on it (later, once the rest works).
+5. **My layers:** a copied building keeps its floors (rooms, doors, stairs), one
+   shown at a time, chosen in its card.
 6. **Checked on** Paris Gare du Nord, Lyon Part-Dieu and Rennes, and on a building
    with nothing indoor (no control shown).
 
-About two days for steps 1 to 4.
+About two and a half days.

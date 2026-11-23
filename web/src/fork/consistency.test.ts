@@ -1,5 +1,5 @@
 // Checks that catch a feature added only half-way: a tile layer nothing draws, a
-// map layer the layer switcher can't turn off.
+// map layer the layer switcher can't turn off, a label layer that isn't one.
 import { FOLLOWS } from './modules/extra/follow.ts'
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
@@ -10,6 +10,7 @@ import satellite from './modules/satellite/index.ts'
 import roads from './modules/roads/index.ts'
 import grid from './modules/grid/index.ts'
 import buildings from './modules/buildings/index.ts'
+import terrain from './modules/terrain/index.ts'
 
 const MODULES = [extra, sites, satellite, roads, grid, buildings]
 // Upstream's layer switcher entries that fork layers join (openinframap.ts).
@@ -54,4 +55,12 @@ test('every fork map layer can be turned off in the layer switcher', () => {
     .filter((l) => !prefixes.some((prefix) => l.id.startsWith(prefix)))
     .map((l) => l.id)
   expect(unswitched).toEqual([])
+})
+
+test("a module's label layers are its own map layers (a click on one opens what's under it)", () => {
+  for (const module of [...MODULES, terrain]) {
+    const own = new Set((module.layers?.() ?? []).map((layer) => layer.id))
+    const labels = module.labelLayers?.() ?? []
+    expect(labels.filter((id) => !own.has(id))).toEqual([])
+  }
 })

@@ -20,8 +20,7 @@ import { variantsOf, withKey } from '../../graphics/variants.ts'
 import { axisWidth } from '../../graphics/graphics.ts'
 import { Card } from './types.ts'
 import { CONDITIONS, ECHELON_MARKS } from './constants.ts'
-import { identityOptions } from '../../model/labels.ts'
-import { checkbox, formRow, select } from './controls.ts'
+import { checkbox, formRow, identityChoice, select } from './controls.ts'
 
 /** The rows of a military item's choices (nothing for other items). */
 export function choiceRows(c: Card): HTMLElement[] {
@@ -40,7 +39,7 @@ export function choiceRows(c: Card): HTMLElement[] {
 function identityRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   return formRow(
     t('userlayers.identity', 'Identity'),
-    select(identityOptions(), identity(sidc), (v) => setSidc(withIdentity(sidc, v)), 'identity'),
+    identityChoice(identity(sidc), (v) => setSidc(withIdentity(sidc, v)), 'identity'),
     undefined,
     t(
       'userlayers.identity-help',

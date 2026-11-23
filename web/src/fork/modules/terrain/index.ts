@@ -11,7 +11,7 @@ import { HILLSHADE_SWITCHER_ID, RELIEF_SOURCE, TERRAIN_SOURCE } from '../../core
 import { background, followBackground } from '../../services/background.ts'
 import { addDetailsExtra } from '../../ui/details.ts'
 import { ForkModule } from '../../types.ts'
-import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, contourLayers } from './contours.ts'
+import { CONTOUR_LAYERS, CONTOUR_LINE_LAYERS, LABEL_LAYER, contourLayers } from './contours.ts'
 import { heightRow } from './details.ts'
 import { contoursKey } from './key.ts'
 import { shadingBefore } from './placement.ts'
@@ -93,6 +93,8 @@ const terrain: ForkModule = {
 
   // Low among the data layers; place() moves them (the shading down, the lines up).
   layers: () => [hillshade, ...contourLayers()].map((layer) => ({ ...layer, zorder: 1 })),
+  // A click on a height opens its contour line.
+  labelLayers: () => [LABEL_LAYER],
 
   switcherGroups: () => [
     new LayerGroup(t('layers.terrain', 'Terrain'), [

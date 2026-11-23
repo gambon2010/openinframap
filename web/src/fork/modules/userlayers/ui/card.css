@@ -47,7 +47,8 @@
 .oim-ul-detail > select,
 .oim-ul-detail > textarea,
 .oim-ul-control > input:not([type='checkbox'], [type='range']),
-.oim-ul-control > select {
+.oim-ul-control > select,
+.oim-ul-detail > .oim-ul-choice {
   box-sizing: border-box;
   width: 100%;
   min-height: 26px;
@@ -157,4 +158,18 @@
 .oim-ul-sight-result {
   display: block;
   margin-bottom: 8px;
+}
+
+/* An identity chosen with its frame (editor/controls.ts identityChoice): looks like
+   the dropdowns beside it, its frame before the name, the arrow at the end. */
+.oim-ul-detail > .oim-ul-choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-choice-arrow {
+  margin-left: auto;
+  color: var(--oim-text-color-light);
 }

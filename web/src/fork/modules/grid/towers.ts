@@ -9,6 +9,7 @@ import { BACKEND_BASE_URL } from '../../config.ts'
 import { t } from '../../core/i18n.ts'
 import { LayerSpecificationWithZIndex } from '../../../style/types.ts'
 import { font, text_paint } from '../../../style/common.ts'
+import { TOWER_NUMBER_LAYER } from './towers.constants.ts'
 
 export interface TowerLine {
   /** "23", or "23a" for a tower added later between 23 and 24. */
@@ -37,7 +38,7 @@ export function towerNumberLayers(): LayerSpecificationWithZIndex[] {
     {
       // Just above upstream's towers (power_tower, 264), which label their ref.
       zorder: 266,
-      id: 'power_tower_number',
+      id: TOWER_NUMBER_LAYER,
       type: 'symbol',
       source: 'power',
       'source-layer': 'tower_number',

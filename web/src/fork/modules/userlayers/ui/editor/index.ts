@@ -12,9 +12,8 @@ import { FeatureProps, UserFeature, UserLayer } from '../../model/model.ts'
 import { identity, status, symbolKind, withIdentity, withStatus } from '../../model/sidc.ts'
 import { kindOf } from '../../kinds/index.ts'
 import { BulkActions, Card, CardPart, EditorActions } from './types.ts'
-import { formRow, select } from './controls.ts'
+import { formRow, identityChoice, select } from './controls.ts'
 import { statusOptions } from './choices.ts'
-import { identityOptions } from '../../model/labels.ts'
 import { footerSection, formSection, headerSection, kindSection } from './sections.ts'
 
 export function buildEditor(
@@ -106,11 +105,11 @@ export function buildBulkCard(
         '.oim-ul-form',
         formRow(
           t('userlayers.identity', 'Identity'),
-          select(
-            [mixed, ...identityOptions()],
+          identityChoice(
             shared(identity),
-            (v) => v && setSidc((s) => withIdentity(s, v)),
-            'bulk-identity'
+            (v) => setSidc((s) => withIdentity(s, v)),
+            'bulk-identity',
+            mixed[1]
           )
         ),
         formRow(

@@ -127,6 +127,17 @@ describe('placing', () => {
     expect(tools.selected).toBe(item.id)
   })
 
+  test('Shift + click places several: the tool stays on until a plain click', async () => {
+    tools.setTool({ mode: 'place', properties: { kind: 'marker' } })
+    await click(7.5, 48.5, true)
+    await click(7.6, 48.5, true)
+    expect(items()).toHaveLength(2)
+    expect(tools.tool.mode).toBe('place')
+    await click(7.7, 48.5)
+    expect(items()).toHaveLength(3)
+    expect(tools.tool.mode).toBe('select')
+  })
+
   test('Shift + scroll makes the item being placed bigger', () => {
     tools.setTool({ mode: 'place', properties: { kind: 'marker' } })
     // Shift + three notches up (happy-dom's WheelEvent leaves these out).

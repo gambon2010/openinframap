@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import type { Field } from '../../model/fields.types.ts'
-import { detailRow } from './controls.ts'
+import { detailRow, identityChoice } from './controls.ts'
 
 const speed: Field = { key: 'Z', label: 'Speed', input: 'number', quantity: 'speed', kinds: ['unit'] }
 const direction: Field = { key: 'Q', label: 'Direction', input: 'number', quantity: 'angle', kinds: ['unit'] }
@@ -61,5 +61,26 @@ describe("a detail's row on the card", () => {
     added.row.querySelector<HTMLButtonElement>('.oim-ul-row-remove')!.click()
     expect(added.set).toEqual([''])
     expect(rowFor(date, '', false).row.querySelector('.oim-ul-row-remove')).toBeNull()
+  })
+})
+
+describe('an identity chosen with its frame', () => {
+  test('shows the one chosen, and lists the others with theirs', () => {
+    const chosen: string[] = []
+    const button = identityChoice('F', (v) => chosen.push(v), 'identity')
+    document.body.replaceChildren(button)
+    expect(button.textContent).toContain('Friend')
+    expect(button.querySelector('svg')).not.toBeNull()
+    button.click()
+    const lines = [...document.querySelectorAll<HTMLButtonElement>('.oim-context-menu button')]
+    expect(lines.every((line) => line.querySelector('svg'))).toBe(true)
+    lines.find((line) => line.textContent?.includes('Hostile'))!.click()
+    expect(chosen).toEqual(['H'])
+  })
+
+  test('several different: says so, no frame', () => {
+    const button = identityChoice('', () => {}, 'bulk-identity', '(mixed)')
+    expect(button.textContent).toContain('(mixed)')
+    expect(button.querySelector('svg')).toBeNull()
   })
 })

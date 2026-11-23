@@ -3,6 +3,9 @@
 // the details that can be removed, a tooltip on each label saying what it is; a
 // number outside what's allowed is outlined, says why and isn't kept
 // (docs/plans/item-card-redesign.md).
+import { openContextMenuFor } from '../../../../ui/context-menu.ts'
+import { identityOptions } from '../../model/labels.ts'
+import { identityIcon } from '../identity-icons.ts'
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { Field } from '../../model/fields.types.ts'
@@ -49,6 +52,37 @@ export function select(
   ) as HTMLSelectElement
   s.onchange = () => onchange(s.value)
   return s
+}
+
+/** An identity chosen as from a dropdown, each with its frame (a dropdown's lines
+ * can't hold pictures): a button showing the one chosen ('' for several different:
+ * `unchosen`), opening the list of them. */
+export function identityChoice(
+  value: string,
+  onchange: (value: string) => void,
+  field: string,
+  unchosen = ''
+): HTMLButtonElement {
+  const options = identityOptions()
+  const chosen = options.find(([code]) => code === value)
+  const shown: Node[] = chosen ? [identityIcon(chosen[0], 16), el('span', chosen[1])] : [el('span', unchosen)]
+  const button = el(
+    'button.oim-ul-choice',
+    { type: 'button', 'data-field': field, 'aria-haspopup': 'menu' },
+    ...shown,
+    el('span.oim-ul-choice-arrow', '▾')
+  ) as HTMLButtonElement
+  button.onclick = () =>
+    openContextMenuFor(
+      button,
+      options.map(([code, label]) => ({
+        label,
+        icon: identityIcon(code, 16),
+        disabled: code === value,
+        run: () => onchange(code)
+      }))
+    )
+  return button
 }
 
 /** A dropdown whose first line says what it's for and chooses nothing. */

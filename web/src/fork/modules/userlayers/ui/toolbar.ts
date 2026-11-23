@@ -162,7 +162,7 @@ export class Toolbar {
           { mode: 'place', properties: { kind: 'measure', measure: 'rings', radii: measurePrefs.radii } },
           t(
             'userlayers.rings-hint',
-            'Click the centre of the rings (their distances: on its card). Right-click: stop.'
+            'Click the centre of the rings (their distances: on its card); Shift + click: several. Right-click: stop.'
           )
         )
         break
@@ -171,7 +171,7 @@ export class Toolbar {
           { mode: 'place', properties: { kind: 'marker' } },
           t(
             'userlayers.marker-hint',
-            'Click the map to put a marker there. Shift + scroll: its size; right-click: stop.'
+            'Click the map to put a marker there; Shift + click: several. Shift + scroll: its size; right-click: stop.'
           )
         )
         break
@@ -206,9 +206,9 @@ export class Toolbar {
     main.setAttribute('aria-label', name)
     main.disabled = !live
     if (group.tools.length === 1) return main
+    // No tooltip (asked): the arrow says what it does; its name for screen readers.
     const list = el('button.oim-ul-tool-more', '▾', {
       type: 'button',
-      title: t(`userlayers.tool-group.${group.id}`, group.label),
       'aria-label': t(`userlayers.tool-group.${group.id}`, group.label),
       disabled: !live
     }) as HTMLButtonElement
@@ -356,7 +356,7 @@ export class Toolbar {
         { mode: 'place', properties: { kind: 'symbol', sidc: pick.sidc } },
         t(
           'userlayers.place-hint',
-          'Click the map to put "{{name}}" there. Shift + scroll: its size; right-click: stop.',
+          'Click the map to put "{{name}}" there; Shift + click: several. Shift + scroll: its size; right-click: stop.',
           {
             name: pick.name
           }
@@ -427,7 +427,7 @@ export class Toolbar {
         { mode: 'place', properties: { kind: 'image', image: id, name: '' } },
         t(
           'userlayers.image-hint',
-          'Click the map to put the picture there. Shift + scroll: its size; right-click: stop.'
+          'Click the map to put the picture there; Shift + click: several. Shift + scroll: its size; right-click: stop.'
         )
       )
     })

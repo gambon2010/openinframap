@@ -332,6 +332,9 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.110 | Buildings' names from OpenStreetMap: the details' title, a copy's name ("Cathédrale Notre-Dame · STR-MAI-729"), the search. Molsheim-like towns (one grand quartier) numbered by their IRIS; no two neighbourhoods of a commune with the same name or code. Symbol scale turned off from the layer's menu; a tooltip-wide ▾; prompts and alerts in the centred window; field names checked by the strings check; the main blue a token. | ✅ (2026-11-23) |
 | 10.111 | Search: My layers' items by name, coordinates (degrees, MGRS). | 📋 to do (2026-11-23) |
 | 10.112 | Search: line-of-sight and measurement names. | 🗂 backlog (2026-11-23) |
+| 10.113 | Search, more: streets by name; communes by INSEE code or postcode; neighbourhoods by name or code; rivers, lakes, bridges, tunnels, dams; peaks and passes; the background map's shops and restaurants; OpenStreetMap ids; addresses (Base Adresse Nationale); cadastral parcels; road distance markers; railway kilometre points and level crossings; motorway exits; airports by ICAO/IATA; antennas by ANFR number; IGN 1:25 000 sheets; companies (SIRENE); a kind near a place; only what's in view; recent searches. | 🗂 backlog (2026-11-23) |
+| 10.114 | Place several (Shift + click keeps the placing tool on); no tooltip on a tool group's ▾; identities drawn as their frames in the card, several items' edit and the right-click menu (no emoji); a click on a tower's number or a contour's height opens the tower or the line. | ✅ (2026-11-23) |
+| 10.115 | Building numbers redesigned to take less space (today about 200 bytes a building). | 💬 discussing (2026-11-23) |
 
 ## 11. Quality
 
