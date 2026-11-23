@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest'
-import { DEFAULT_SIGHT, sightKey, sightStretches, type ProfilePoint, type SightResult } from './sight.ts'
+import {
+  DEFAULT_SIGHT,
+  noticeableRuns,
+  sightKey,
+  sightRuns,
+  sightStretches,
+  type ProfilePoint,
+  type SightResult
+} from './sight.ts'
 import { sightBlockLabel, sightVerdict } from './sight-verdict.ts'
 import { niceStep, sightChart } from './sight-chart.ts'
 
@@ -34,18 +42,10 @@ describe('a line of sight on the map', () => {
     // The eye at 202 m, the target's top at 200 m: a rise of 260 m at 50 m and 210 m at
     // 75 m stand above the line.
     const result = answer([row(0, 200, true), row(50, 260, true), row(75, 210, false), row(100, 200, false)])
-    const stretches = sightStretches([0, 0], [1, 0], result)
-    // Each piece takes the state where it ends: red to 75 m, then green.
-    expect(stretches.map((s) => s.state)).toEqual(['blocked', 'clear'])
-    expect(stretches[0].points).toEqual([
-      [0, 0],
-      [0.5, 0],
-      [0.75, 0]
-    ])
-    // Each starts where the last ended.
-    expect(stretches[1].points).toEqual([
-      [0.75, 0],
-      [1, 0]
+    // Each run takes the state where it ends, and starts where the last ended.
+    expect(sightRuns(result)).toEqual([
+      { state: 'blocked', start: 0, end: 75 },
+      { state: 'clear', start: 75, end: 100 }
     ])
   })
 
@@ -58,8 +58,27 @@ describe('a line of sight on the map', () => {
       row(50, 250, false),
       row(100, 200, false)
     ])
-    const stretches = sightStretches([0, 0], [1, 0], result)
-    expect(stretches.map((s) => s.state)).toEqual(['trees', 'blocked', 'clear'])
+    expect(sightRuns(result).map((run) => run.state)).toEqual(['trees', 'blocked', 'clear'])
+  })
+
+  test('drawn green first and red last, each stretch from its start to its end', () => {
+    const result = answer([row(0, 200, true), row(50, 260, true), row(75, 210, false), row(100, 200, false)])
+    expect(sightStretches([0, 0], [1, 0], result)).toEqual([
+      {
+        state: 'clear',
+        points: [
+          [0.75, 0],
+          [1, 0]
+        ]
+      },
+      {
+        state: 'blocked',
+        points: [
+          [0, 0],
+          [0.75, 0]
+        ]
+      }
+    ])
   })
 
   test('no terrain: nothing drawn there', () => {
@@ -121,5 +140,30 @@ describe('the profile chart', () => {
     expect(chart.querySelector('.oim-ul-sight-building')).not.toBeNull()
     expect(chart.querySelector('.oim-ul-sight-block')).not.toBeNull()
     chart.remove()
+  })
+})
+
+describe('a short break in a long line of sight', () => {
+  const runs = [
+    { state: 'clear' as const, start: 0, end: 500 },
+    { state: 'blocked' as const, start: 500, end: 502 },
+    { state: 'clear' as const, start: 502, end: 1000 }
+  ]
+
+  test('widened about its middle to the least length, drawn on top', () => {
+    const drawn = noticeableRuns(runs, 40)
+    expect(drawn.at(-1)).toEqual({ state: 'blocked', start: 481, end: 521 })
+  })
+
+  test('at an end of the line: widened inwards, kept on the line', () => {
+    const atEnd = [
+      { state: 'clear' as const, start: 0, end: 998 },
+      { state: 'trees' as const, start: 998, end: 1000 }
+    ]
+    expect(noticeableRuns(atEnd, 40).at(-1)).toEqual({ state: 'trees', start: 960, end: 1000 })
+  })
+
+  test('long enough already, or clear: as it is', () => {
+    expect(noticeableRuns(runs, 2)).toEqual([runs[0], runs[2], runs[1]])
   })
 })

@@ -739,7 +739,8 @@ on the My layers workspace; click it again to close it. It has two parts:
   or a building does; a ringed mark where the target is first hidden says by what,
   "Ground", "Building 12 m"; its card says whether the target is seen ("Hidden by the
   ground 493 m away (137 m above the line)", "Through trees 475 m away: may be seen
-  (trees taken as 15 m)"); **Open the profile** opens a large panel on the right, the
+  (trees taken as 15 m)"); **Open the profile** (on the card, or first in its
+  right-click menu) opens a large panel on the right, the
   line on the map on the left: there the heights of your eyes, of the target, of trees
   and of buildings OpenStreetMap gives no height for (15 m and 8 m at first: the map
   has no tree heights, most buildings none), and the chart, turned so the line of

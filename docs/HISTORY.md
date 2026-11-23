@@ -1568,6 +1568,11 @@ default). Counts are France's OSM data in October 2026.
   given to every unit placed and shown on the tiles; ↓, the arrows, Enter and Esc
   (`palette-keys.ts`). A unit's marks as chips in one row (`unit-marks.ts`, shared
   with the card), the tick boxes gone.
+- **Line of sight: profile from the menu, breaks seen** (asked, 2026-11-23): "Open
+  the profile" first in a line of sight's right-click menu; yellow and red stretches
+  widened to 8 pixels at least (about their middle, drawn last) on the map, at its
+  zoom, and in the profile; the map's and the chart's two ways of cutting the line
+  into stretches made one (`sightRuns`, in metres along it).
 
 ## Extra data (not from OpenStreetMap)
 

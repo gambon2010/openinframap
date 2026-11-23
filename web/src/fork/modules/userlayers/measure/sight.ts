@@ -147,19 +147,18 @@ export function lineStateAt(result: SightResult, point: ProfilePoint): LineState
   return solidTop <= line ? 'trees' : 'blocked'
 }
 
-/** The line from observer to target cut where its state changes: each stretch's
- * points and its state (the backend samples the line straight between the two
- * points: a sample a fraction of the length along it is that fraction of the way).
- * Stretches without terrain are left out. */
-export function sightStretches(
-  from: LngLat,
-  to: LngLat,
-  result: SightResult
-): { points: LngLat[]; state: LineState }[] {
-  const length = result.profile[result.profile.length - 1]?.[0] || 1
-  const at = (distance: number) => pointAlong(from, to, distance, length)
-  const stretches: { points: LngLat[]; state: LineState }[] = []
-  let current: { points: LngLat[]; state: LineState } | null = null
+/** A stretch of the line in one state, in metres from the observer. */
+export interface SightRun {
+  state: LineState
+  start: number
+  end: number
+}
+
+/** The line from observer to target cut where its state changes, each run starting
+ * where the last ended; left out where there's no terrain. */
+export function sightRuns(result: SightResult): SightRun[] {
+  const runs: SightRun[] = []
+  let current: SightRun | null = null
   for (const point of result.profile) {
     const [distance, ground] = point
     if (ground === null) {
@@ -168,15 +167,46 @@ export function sightStretches(
     }
     const state = lineStateAt(result, point)
     if (current && current.state === state) {
-      current.points.push(at(distance))
+      current.end = distance
       continue
     }
-    // A new stretch starts where the last ended, so they meet.
-    const start: LngLat[] = current ? [current.points[current.points.length - 1]] : []
-    current = { points: [...start, at(distance)], state }
-    stretches.push(current)
+    current = { state, start: current ? current.end : distance, end: distance }
+    runs.push(current)
   }
-  return stretches.filter((s) => s.points.length > 1)
+  return runs.filter((run) => run.end > run.start)
+}
+
+/** The runs to draw: trees and blocked ones at least `least` metres long (widened
+ * about their middle, within the line: a break a few metres long on a long line is
+ * seen at a glance), drawn after the clear ones and the blocked last, so on top. */
+export function noticeableRuns(runs: SightRun[], least: number): SightRun[] {
+  const length = Math.max(0, ...runs.map((run) => run.end))
+  const widen = (run: SightRun) => widenedRun(run, least, length)
+  const inState = (state: LineState) => runs.filter((run) => run.state === state)
+  return [...inState('clear'), ...inState('trees').map(widen), ...inState('blocked').map(widen)]
+}
+
+function widenedRun(run: SightRun, least: number, length: number): SightRun {
+  const missing = least - (run.end - run.start)
+  if (missing <= 0) return run
+  const start = Math.min(Math.max(run.start - missing / 2, 0), Math.max(length - least, 0))
+  return { ...run, start, end: Math.min(start + least, length) }
+}
+
+/** The runs as lines on the map (the backend samples the line straight between the
+ * two points: a run a fraction of the length along is that fraction of the way). */
+export function sightStretches(
+  from: LngLat,
+  to: LngLat,
+  result: SightResult,
+  least = 0
+): { points: LngLat[]; state: LineState }[] {
+  const length = result.profile[result.profile.length - 1]?.[0] || 1
+  const at = (distance: number) => pointAlong(from, to, distance, length)
+  return noticeableRuns(sightRuns(result), least).map((run) => ({
+    points: [at(run.start), at(run.end)],
+    state: run.state
+  }))
 }
 
 /** What a line of sight's answer depends on: its two points and its settings. */

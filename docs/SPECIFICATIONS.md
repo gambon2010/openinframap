@@ -336,6 +336,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.114 | Place several (Shift + click keeps the placing tool on); no tooltip on a tool group's ▾; identities drawn as their frames in the card, several items' edit and the right-click menu (no emoji); a click on a tower's number or a contour's height opens the tower or the line. | ✅ (2026-11-23) |
 | 10.115 | Building numbers redesigned to take less space (today about 200 bytes a building). | 💬 discussing (2026-11-23) |
 | 10.116 | A search result pinned and highlighted, the layers left as they are; a unit's echelon and marks chosen in the picker before placing; the picker's keys (↓ into the tiles, arrows, Enter, Esc); a unit's marks as chips in one row. | ✅ (2026-11-23) |
+| 10.117 | A line of sight's profile opened from its right-click menu; its yellow and red stretches at least a few pixels long on the map and the profile, so a break is seen at a glance. | ✅ (2026-11-23) |
 
 ## 11. Quality
 

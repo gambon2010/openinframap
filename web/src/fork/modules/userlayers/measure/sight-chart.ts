@@ -11,7 +11,8 @@
 import { svg } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { formatDistance } from '../../../core/earth.ts'
-import { lineHeightAt, lineStateAt, type LineState, type ProfilePoint, type SightResult } from './sight.ts'
+import { lineHeightAt, noticeableRuns, sightRuns, type ProfilePoint, type SightResult } from './sight.ts'
+import { NOTICEABLE_PIXELS } from './sight.constants.ts'
 
 const WIDTH = 1000
 const HEIGHT = 520
@@ -42,7 +43,7 @@ export function sightChart(result: SightResult, onHover: (point: ProfilePoint | 
     groundShape(known, scale),
     ...standingShapes(known, scale),
     groundTop(known, scale),
-    ...rayLines(result, known, scale),
+    ...rayLines(result, scale),
     ...blockMark(result, known, scale)
   )
   hoverOn(plot, known, scale, onHover)
@@ -164,29 +165,17 @@ function groundTop(known: Known[], scale: Scale): SVGElement {
 }
 
 /** The eye's line to the target, level at 0, in runs of one state (clear, through
- * trees, blocked). */
-function rayLines(result: SightResult, known: Known[], scale: Scale): SVGElement[] {
-  const lineAt = (distance: number) => `${scale.x(distance)},${scale.y(0)}`
-  const runs: { state: LineState; distances: number[] }[] = []
-  for (const k of known) {
-    const state = lineStateAt(result, k.point)
-    const last = runs[runs.length - 1]
-    if (last && last.state === state) last.distances.push(k.distance)
-    // A new run starts where the last ended, so they meet.
-    else
-      runs.push({
-        state,
-        distances: last ? [last.distances[last.distances.length - 1], k.distance] : [k.distance]
-      })
-  }
-  return runs
-    .filter((run) => run.distances.length > 1)
-    .map((run) =>
-      svg(`polyline.oim-ul-sight-line-${run.state}`, {
-        points: run.distances.map(lineAt).join(' '),
-        fill: 'none'
-      })
-    )
+ * trees, blocked), the short trees and blocked ones widened to be seen. */
+function rayLines(result: SightResult, scale: Scale): SVGElement[] {
+  const metresPerUnit = 1 / (scale.x(1) - scale.x(0))
+  return noticeableRuns(sightRuns(result), NOTICEABLE_PIXELS * metresPerUnit).map((run) =>
+    svg(`line.oim-ul-sight-line-${run.state}`, {
+      x1: scale.x(run.start),
+      x2: scale.x(run.end),
+      y1: scale.y(0),
+      y2: scale.y(0)
+    })
+  )
 }
 
 /** Where the target is first hidden: a mark on what hides it. */

@@ -108,6 +108,10 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   military area mapped around them (a forest's magazines; a strongpoint's bunkers,
   grey as disused sites are) get a base made for them: their hull, titled by its
   kind.
+- **A line of sight's colours, on the map and its profile:** green clear, yellow
+  through trees, red blocked; a yellow or red stretch is never drawn shorter than 8
+  pixels (`NOTICEABLE_PIXELS`, widened about its middle, drawn on top), so a short
+  break shows at a glance.
 - **A line of sight's profile** (`userlayers/measure/sight-panel.ts`, `sight-chart.ts`):
   a split screen: the panel a bubble over the right half (the shared panel chrome,
   rounded, shadowed), clear of the toolbar, the map's buttons and the credits; the map

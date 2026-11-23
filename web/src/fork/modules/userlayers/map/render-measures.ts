@@ -4,6 +4,8 @@
 // only trees rise above it, red where the ground or a building does
 // (measure/sight.ts), and a mark where the target is first hidden, saying by what,
 // once the backend has answered (each answer asked once per points and heights).
+import { NOTICEABLE_PIXELS } from '../measure/sight.constants.ts'
+import { metresPerPixel } from '../../../core/geo.ts'
 import { DEFAULT_COLOR, UserFeature, UserLayer } from '../model/model.ts'
 import { Measurement } from '../measure/features.types.ts'
 import type { TickView } from '../measure/ticks.types.ts'
@@ -69,7 +71,7 @@ export class MeasureDrawer {
       // two, and one asked per frame queued up behind each other. Asked when dropped.
       const dragging = changed?.id === stored.id
       if (!dragging) this.askSight(f, m)
-      features.push(...this.knownSightFeatures(f, m))
+      features.push(...this.knownSightFeatures(f, m, view))
     }
     return features
   }
@@ -91,19 +93,30 @@ export class MeasureDrawer {
   }
 
   /** A line of sight's stretches and the mark where it's hidden, if its answer is had. */
-  private knownSightFeatures(f: UserFeature, m: Measurement): GeoJSON.Feature[] {
+  private knownSightFeatures(f: UserFeature, m: Measurement, view: MeasureView): GeoJSON.Feature[] {
     const ends = sightEnds(m)
     if (!ends) return []
     const { from, to } = ends
     const result = this.sights.get(sightKey(from, to, sightSettingsOf(f.properties)))
     if (!result) return []
-    const stretches: GeoJSON.Feature[] = sightStretches(from, to, result).map((stretch) => ({
+    const stretches: GeoJSON.Feature[] = sightStretches(
+      from,
+      to,
+      result,
+      noticeableMetres(view, from[1])
+    ).map((stretch) => ({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: stretch.points },
       properties: { fid: f.id, color: LINE_COLOURS[stretch.state] }
     }))
     return [...stretches, ...blockFeature(f, from, to, result)]
   }
+}
+
+/** The shortest a red or yellow stretch is drawn at the map's zoom, in metres (at
+ * the line's latitude). */
+function noticeableMetres(view: MeasureView, lat: number): number {
+  return NOTICEABLE_PIXELS * metresPerPixel(lat, view.ticks.zoom)
 }
 
 /** A line of sight's observer and target (null: not two points yet). */

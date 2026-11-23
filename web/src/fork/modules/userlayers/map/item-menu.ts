@@ -1,6 +1,6 @@
 // Fork: an item's right-click menu, the same on the map (interactions.ts) and in the
-// list (outliner/rows/item.ts): its identity and present / planned (symbols and
-// graphics), rename, duplicate, copy, move to another layer, lock, delete. Built from
+// list (outliner/rows/item.ts): a line of sight's profile, its identity and present /
+// planned (symbols and graphics), rename, duplicate, copy, move to another layer, lock, delete. Built from
 // the shared context menu's entries (ui/context-menu.ts).
 import { identityIcon } from '../ui/identity-icons.ts'
 import { t } from '../../../core/i18n.ts'
@@ -10,6 +10,24 @@ import type { UserFeature } from '../model/model.ts'
 import { status, withIdentity, withStatus } from '../model/sidc.ts'
 import { identityOptions } from '../model/labels.ts'
 import { toolIcon } from '../ui/tool-icons.ts'
+import { openSightPanel } from '../measure/sight-panel.ts'
+
+/** A line of sight's profile, as its card's "Open the profile" opens it. */
+function sightEntries(
+  feature: UserFeature,
+  update: (changes: Partial<UserFeature['properties']>) => void
+): MenuItem[] {
+  const isSight = feature.properties.kind === 'measure' && feature.properties.measure === 'sight'
+  if (!isSight) return []
+  return [
+    {
+      label: t('userlayers.sight-open', 'Open the profile'),
+      icon: toolIcon('measure-sight', 16),
+      run: () => openSightPanel(feature.id, update)
+    },
+    'separator'
+  ]
+}
 
 /** What the menu's entries do beyond changing the item (interactions.ts has them). */
 export interface ItemMenuActions {
@@ -28,7 +46,7 @@ export function itemMenu(a: ItemMenuActions, feature: UserFeature, layerId: stri
   const locked = !store.view.canEditItem(layer, feature)
   const update = (changes: Partial<UserFeature['properties']>) =>
     store.updateFeature(layerId, { ...feature, properties: { ...feature.properties, ...changes } })
-  const items: MenuItem[] = [...codeEntries(feature, locked, update)]
+  const items: MenuItem[] = [...sightEntries(feature, update), ...codeEntries(feature, locked, update)]
   items.push(
     { label: t('userlayers.rename', 'Rename'), run: () => a.rename(feature.id), disabled: locked },
     { label: t('userlayers.duplicate', 'Duplicate'), run: () => a.duplicate(feature, layerId) },
