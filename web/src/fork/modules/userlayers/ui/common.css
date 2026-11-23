@@ -1,0 +1,219 @@
+/* Fork: My layers. Shared by My layers' components: buttons, chips, fields, hints, the palette and list basics. (Was the first, version 1 and 2 part of userlayers.css.) */
+
+.oim-ul-hint,
+.oim-ul-step {
+  font-size: 0.75rem;
+}
+.oim-ul-error {
+  margin: 4px 0;
+  padding: 4px 6px;
+  border-left: 3px solid #d32f2f;
+  background: rgba(211, 47, 47, 0.08);
+  font-size: 0.85rem;
+}
+.oim-ul-palette-search {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 3px 5px;
+}
+.oim-ul-layers {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+}
+.oim-ul-layers li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 4px;
+}
+.oim-ul-layers li.active {
+  background: #e3f2fd;
+}
+
+.oim-ul-palette-options {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+.oim-ul-palette-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.oim-ul-palette-results summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 0;
+}
+.oim-ul-symbol-grid {
+  display: flex;
+  flex-direction: column;
+}
+.oim-ul-symbol-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.oim-ul-symbol {
+  flex: none;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.oim-ul-symbol:hover {
+  border-color: #1565c0;
+  background: #e3f2fd;
+}
+.oim-ul-symbol svg {
+  max-width: 38px;
+  max-height: 30px;
+}
+
+.oim-ul-slider {
+  width: 100%;
+}
+.oim-ul-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+/* --- Version 2 layout: tabs, save bar, hint and timeline on the map --- */
+
+.oim-ul-button {
+  padding: 3px 8px;
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-light-grey);
+  color: var(--oim-text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.oim-ul-button:hover:not(:disabled) {
+  background: var(--oim-grey);
+}
+.oim-ul-button.primary {
+  border-color: #1565c0;
+  background: #1565c0;
+  color: #fff;
+}
+/* The main action stays blue on hover (the grey above left its white text unread),
+   a shade darker. */
+.oim-ul-button.primary:hover:not(:disabled) {
+  background: #1565c0;
+  filter: brightness(0.85);
+}
+.oim-ul-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.oim-ul-icon {
+  border-color: transparent;
+  background: none;
+}
+.oim-ul-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.oim-ul-layers > li {
+  display: block;
+}
+
+.oim-ul-items {
+  list-style: none;
+  margin: 2px 0 6px 28px;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.oim-ul-items button {
+  width: 100%;
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.oim-ul-items li:hover {
+  background: var(--oim-light-grey);
+}
+
+.oim-ul-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0;
+  font-size: 0.85rem;
+}
+.oim-ul-field > span {
+  color: var(--oim-text-color-light);
+}
+.oim-ul-field small {
+  color: var(--oim-text-color-light);
+  font-size: 0.75rem;
+}
+.oim-ul-field input[type='text'],
+.oim-ul-field input[type='number'],
+.oim-ul-field input[type='datetime-local'],
+.oim-ul-field textarea,
+.oim-ul-field select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 3px 5px;
+  font: inherit;
+}
+.oim-ul-chips,
+.oim-ul-frames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+.oim-ul-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--oim-grey);
+  border-radius: 12px;
+  background: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.oim-ul-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--oim-radius-small);
+  background: none;
+  cursor: pointer;
+}
+.oim-ul-frame svg {
+  max-width: 30px;
+  max-height: 26px;
+}
+/* The identity's label, its frames right after it, Planned at the far end. */
+.oim-ul-palette-options {
+  align-items: center;
+}
+.oim-ul-palette-options > .oim-ul-inline {
+  margin-left: auto;
+}
+.oim-ul-palette h4 {
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+}
+.oim-ul-symbol {
+  font-size: 1.2rem;
+}

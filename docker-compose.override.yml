@@ -1,9 +1,92 @@
-# Local development overrides.
-# Docker Compose merges this with docker-compose.yml automatically.
-#
-# Exposes the database port to the host so the web-backend (running outside
-# Docker via uvicorn) can connect to postgresql://osm:osm@localhost:5432/osm.
+# Fork: the fork's changes to docker-compose.yml (left as upstream has it).
+# Docker Compose merges this file with docker-compose.yml automatically.
+
 services:
   db:
+    # The database port on the host, for the web-backend when it runs outside
+    # Docker (uvicorn): postgresql://osm:osm@localhost:5432/osm.
+    # This computer only: from the network, everything goes through the gate.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
+    # :z labels the mounts for SELinux (Fedora); same container paths, so these
+    # replace upstream's.
+    volumes:
+      - ./schema/dev-init.sql:/docker-entrypoint-initdb.d/90-dev-init.sql:z
+      - ./schema/functions.sql:/docker-entrypoint-initdb.d/91-functions.sql:z
+    # Ready once it answers over TCP (during its first-start setup it only listens
+    # on its socket): the services below wait for this rather than racing it.
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  tegola:
+    # 7800 rather than upstream's 8080 (often taken); !override replaces the list.
+    ports: !override
+      - "127.0.0.1:7800:80"
+    # Tegola connects to the database once, at start, and exits if it can't (it
+    # did when started together with it): it waits for the database to be ready,
+    # and tries again a few times if it still fails.
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure:5
+
+  # Web backend (stats pages, search, Wikidata popups). The image has its own
+  # Python and packages, so it also runs on a computer without internet once
+  # the image is loaded (scripts/export-db.sh saves it). For development with
+  # auto-reload you can still run it on the host instead (see web-backend/).
+  backend:
+    build: web-backend
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://osm:osm@db:5432/osm"
+    # Run the venv built into the image directly: `uv run` would try to sync
+    # (and download) packages at startup.
+    # --proxy-headers: behind the gate, its X-Forwarded-Proto (https) makes the
+    # backend's own links and redirects https (only the gate reaches port 80 here).
+    entrypoint:
+      ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80", "--proxy-headers", "--forwarded-allow-ips=*"]
+    ports:
+      - "127.0.0.1:8001:80"
+    volumes:
+      # What the app needs, read-only (src/fork/paths.py): the offline maps
+      # (background maps, terrain, satellite imagery) and the Wikidata cache
+      # (scripts/fetch_images.py).
+      - ./data/map:/data/map:ro,z
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # The gate (gate/nginx.conf): the one entry point, https://<this computer>:8800.
+  # Every request needs a logged-in session (docs/plans/archive/sync.md); the other
+  # services above only listen on this computer. The frontend built into its image
+  # (no Node.js needed; saved by the export). On Compose's network (Docker Desktop
+  # on Windows has no host network by default): it reaches the services by name,
+  # and its port is published.
+  gate:
+    build:
+      context: gate
+      additional_contexts:
+        web: ./web
+    ports:
+      - "8800:8800"
+    volumes:
+      # Its HTTPS certificate, made on first start (gate/10-certificate.sh).
+      - ./data/local/gate:/etc/nginx/certs:z
+    depends_on:
+      - backend
+      - tegola
+    restart: unless-stopped
+
+  # Helper image for scripts/build-region.sh. Not started by `docker compose up`.
+  osmium:
+    build: tools/osmium
+    profiles: [tools]
+
+  # LOOM, for scripts/offline_maps/transit.py (the trams' and metros' lanes). Not
+  # started by `docker compose up`.
+  loom:
+    build: tools/loom
+    profiles: [tools]

@@ -1,0 +1,52 @@
+/* Fork: where the cursor is, at the bottom left next to the scale (coordinates/readout.ts). */
+
+.maplibregl-ctrl.oim-coords {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 10px 10px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--oim-radius-small);
+  background: color-mix(in srgb, var(--oim-content-background) 80%, transparent);
+  color: var(--oim-text-color);
+  font-family: var(--oim-font-family-monospace);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.oim-coords.copied .oim-coords-mgrs::after {
+  content: ' ✓';
+}
+
+/* Nothing from the last click yet: no gap for it. */
+.oim-coords-from:empty {
+  display: none;
+}
+
+/* Not wide enough for everything: the grid reference says where, without the
+ * latitude and longitude. */
+@media (max-width: 1200px) {
+  .oim-coords-latlng {
+    display: none;
+  }
+}
+
+/* On a phone: the grid reference and the height only. */
+@media (max-width: 600px) {
+  .oim-coords-latlng,
+  .oim-coords-slope,
+  .oim-coords-declination,
+  .oim-coords-from {
+    display: none;
+  }
+}
+
+/* Beside the scale, in a fixed place: the scale bar grows and shrinks with the zoom
+ * (up to 100 px, MapLibre's default maxWidth, plus its 10 px margin), the readout
+ * stays put just past its widest. */
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl.oim-coords {
+  position: absolute;
+  bottom: 0;
+  left: 120px;
+  white-space: nowrap;
+}

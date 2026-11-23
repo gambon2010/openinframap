@@ -1,0 +1,169 @@
+/* Fork: a line of sight's split screen (sight-panel.ts) and its chart
+   (sight-chart.ts): a bubble over the right half of the screen, clear of the
+   toolbar (top), the map's buttons (right) and the credits (bottom), the map on the
+   left. */
+.oim-panel.oim-ul-sight-panel {
+  position: fixed;
+  top: var(--oim-ul-sight-clear-top);
+  right: var(--oim-ul-sight-clear-right);
+  bottom: var(--oim-ul-sight-clear-bottom);
+  width: calc(50vw - var(--oim-ul-sight-clear-right));
+  max-width: none;
+  max-height: none;
+  overflow-y: auto;
+  border-radius: 12px;
+  /* Over My layers' panels. */
+  z-index: 1000;
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+:root {
+  /* The toolbar's height, the map's buttons' width, the credits' height, with room. */
+  --oim-ul-sight-clear-top: 64px;
+  --oim-ul-sight-clear-right: 60px;
+  --oim-ul-sight-clear-bottom: 40px;
+}
+.oim-ul-sight-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px 12px;
+  margin-bottom: 10px;
+}
+.oim-ul-sight-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85em;
+  color: var(--oim-text-color-light);
+}
+.oim-ul-sight-setting input {
+  width: 100%;
+}
+.oim-ul-sight-debug {
+  margin-top: 10px;
+  font-size: 0.85em;
+}
+.oim-ul-sight-debug:empty {
+  display: none;
+}
+.oim-ul-sight-verdict {
+  display: block;
+  font-size: 1.15em;
+  margin-bottom: 8px;
+}
+.oim-ul-sight-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.85em;
+  color: var(--oim-text-color-light);
+  margin-bottom: 6px;
+}
+.oim-ul-sight-key i {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.oim-ul-sight-key-clear {
+  border-top: 3px dashed var(--oim-success);
+  height: 0 !important;
+}
+.oim-ul-sight-key-through-trees {
+  border-top: 3px dashed var(--oim-caution);
+  height: 0 !important;
+}
+.oim-ul-sight-key-blocked {
+  border-top: 3px dashed var(--oim-error);
+  height: 0 !important;
+}
+.oim-ul-sight-key-ground {
+  background: var(--oim-light-grey);
+  outline: 1px solid var(--oim-dark-grey);
+}
+.oim-ul-sight-key-building {
+  background: #8d8d8d;
+}
+.oim-ul-sight-key-trees {
+  background: #6a9a5b;
+}
+.oim-ul-sight-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+}
+.oim-ul-sight-readout {
+  min-height: 1.4em;
+  margin: 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+.oim-ul-sight-note {
+  font-size: 0.85em;
+  color: var(--oim-text-color-light);
+}
+.oim-ul-sight-grid {
+  stroke: var(--oim-grey);
+  stroke-width: 1;
+}
+.oim-ul-sight-tick {
+  font-size: 13px;
+  fill: var(--oim-text-color-light);
+}
+.oim-ul-sight-ground {
+  fill: var(--oim-light-grey);
+}
+.oim-ul-sight-building {
+  fill: #8d8d8d;
+}
+.oim-ul-sight-trees {
+  fill: #6a9a5b;
+  fill-opacity: 0.8;
+}
+.oim-ul-sight-ground-top {
+  stroke: var(--oim-dark-grey);
+  stroke-width: 1.5;
+  fill: none;
+}
+/* The eye's line to the target: green where it passes over everything, yellow where
+   only trees rise above it, red where the ground or a building does. */
+.oim-ul-sight-line-clear,
+.oim-ul-sight-line-trees,
+.oim-ul-sight-line-blocked {
+  stroke-width: 3;
+  stroke-dasharray: 8 4;
+}
+.oim-ul-sight-line-clear {
+  stroke: var(--oim-success);
+}
+.oim-ul-sight-line-trees {
+  stroke: var(--oim-caution);
+}
+.oim-ul-sight-line-blocked {
+  stroke: var(--oim-error);
+}
+.oim-ul-sight-block {
+  fill: none;
+  stroke: var(--oim-error);
+  stroke-width: 3;
+}
+.oim-ul-sight-block-label {
+  font-size: 13px;
+  font-weight: bold;
+  fill: var(--oim-error);
+}
+.oim-ul-sight-cursor {
+  stroke: var(--oim-text-color);
+  stroke-width: 1;
+}
+.oim-ul-sight-cursor-dot {
+  fill: #fff;
+  stroke: #111;
+  stroke-width: 2;
+}
+/* The last chart faded while the line's new answer is asked. */
+.oim-ul-sight-chart-box.asking {
+  opacity: 0.35;
+  pointer-events: none;
+}

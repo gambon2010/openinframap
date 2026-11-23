@@ -1,0 +1,221 @@
+# Fork: layers of the fork's maps ("extra", "sites", "buildings"), added to layers.yml's by
+# generate_tegola_config.py (it takes more than one layers file). Field sets
+# (geom, name, wiki...) are layers.yml's. See docs/FORK_CHANGES.md.
+layers:
+  # Fork: each tower's label from zoom 15: its ref, short, or its number along its
+  # line (web-backend/src/fork/tower_numbers.py).
+  - name: tower_number
+    map:
+      - power
+    geometry_type: Point
+    min_zoom: 15
+    field_sets: [geom]
+    fields:
+      - name: number
+      - name: text
+    id_field: osm_id
+    from: tower_number
+    where: label AND geometry && !BBOX!
+
+  # Fork: data from outside OpenStreetMap (schema/fork/extra.sql, filled by
+  # scripts/extra_data.py), served as its own map so it stays apart from OSM.
+  - name: extra_power_line
+    map:
+      - extra
+    geometry_type: LineString
+    min_zoom: 10
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: operator
+      - name: voltage_class
+      # Nominal voltage in kV, so the map draws these like OSM lines of that
+      # voltage: French HTA is 20 kV almost everywhere, BT is 230/400 V.
+      - name: voltage
+        sql: CASE voltage_class WHEN 'HTA' THEN 20 WHEN 'BT' THEN 0.4 END
+      - name: location
+      - name: updated
+        sql: updated::text
+    id_field: id
+    from: extra.power_line
+    where: >
+      geometry && !BBOX! AND (!ZOOM! >= 13 OR voltage_class <> 'BT')
+
+  - name: extra_power_substation
+    map:
+      - extra
+    geometry_type: Point
+    min_zoom: 13
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: operator
+      - name: name
+      - name: kind
+      # HTA/BT substations: drawn as 20 kV, their higher voltage (like OSM substations).
+      - name: voltage
+        sql: CASE WHEN kind LIKE 'HTA%' THEN 20 END
+      - name: updated
+        sql: updated::text
+    id_field: id
+    from: extra.power_substation
+    where: geometry && !BBOX!
+
+  - name: extra_pipeline
+    map:
+      - extra
+    geometry_type: LineString
+    min_zoom: 12
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: operator
+      - name: substance
+      # As OSM's pressure tag, so the map draws it like OSM gas pipes: published
+      # medium pressure as intermediate, unknown (most of it) as plain distribution.
+      - name: pressure
+        sql: CASE pressure WHEN 'Moyenne pression' THEN 'intermediate' END
+      - name: pressure_published
+        sql: pressure
+      - name: usage
+        sql: "'distribution'::text"
+      - name: updated
+        sql: updated::text
+    id_field: id
+    from: extra.pipeline
+    where: geometry && !BBOX!
+
+  - name: extra_facility
+    map:
+      - extra
+    geometry_type: Point
+    min_zoom: 5
+    field_sets: [geom]
+    fields:
+      - name: source
+      - name: kind
+      - name: name
+      - name: capacity
+      - name: capacity_unit
+      - name: opened
+        sql: opened::text
+      - name: feedstock
+        sql: details ->> 'feedstock'
+      - name: process
+        sql: details ->> 'process'
+      - name: network
+        sql: details ->> 'network'
+      - name: network_operator
+        sql: details ->> 'network_operator'
+      # ICPE sites (Géorisques)
+      - name: category
+        sql: details ->> 'category'
+      - name: seveso
+        sql: details ->> 'seveso'
+      - name: regime
+        sql: details ->> 'regime'
+      - name: status
+        sql: details ->> 'status'
+      - name: activities
+        sql: (SELECT string_agg(a, '; ') FROM jsonb_array_elements_text(details -> 'activities') a)
+      - name: inspections
+        sql: details ->> 'inspections'
+      - name: last_inspection
+        sql: details ->> 'last_inspection'
+      - name: commune
+        sql: details ->> 'commune'
+      - name: aiot
+        sql: details ->> 'aiot'
+    id_field: id
+    from: extra.facility
+    # 40,000 ICPE sites: Seveso ones from zoom 5, the rest from zoom 9.
+    where: >
+      geometry && !BBOX! AND (kind <> 'icpe' OR !ZOOM! >= 9
+        OR details ->> 'category' IN ('seveso_high', 'seveso_low'))
+
+  # Fork: critical sites (imposm/sites.py, schema/fork/sites.sql), as their own map.
+  # Areas (military zones, ports, airports, landfills, hospitals...) from zoom 8,
+  # 12 or 14 depending on how important they are, and one point per site (an
+  # area's centroid) from zoom 4, nearby ones grouped below zoom 14
+  # (site_points).
+  - name: sites_area
+    map:
+      - sites
+    geometry_type: Polygon
+    min_zoom: 8
+    field_sets: [geom, name]
+    fields:
+      - name: osm_id
+      - name: kind
+      - name: category
+      # A military base's part (site-parts.sql): own_kind, building, zone, and what it
+      # is (bunker, barracks); its base's name; and a base's parts counted
+      # ("bunker:118,barracks:3").
+      - name: part
+      - name: part_what
+      - name: base_name
+      - name: parts
+      # A building part's height in 3D (metres, or floors).
+      - name: height
+        sql: tags -> 'height'
+      - name: levels
+        sql: tags -> 'building:levels'
+    id_field: id
+    from: site_tile
+    where: >
+      geometry && !BBOX! AND area > 0
+      AND (importance = 0 OR (importance = 1 AND !ZOOM! >= 11) OR !ZOOM! >= 13)
+      AND (coalesce(part, '') NOT IN ('building', 'zone') OR !ZOOM! >= 15)
+      AND area > !PIXEL_WIDTH! * !PIXEL_WIDTH! * 4
+
+  - name: sites_point
+    map:
+      - sites
+    geometry_type: Point
+    min_zoom: 4
+    field_sets: [geom_centroid, name, wiki, url]
+    fields:
+      - name: osm_id
+      - name: kind
+      - name: category
+      - name: importance
+      # A group of sites (count > 1): how many, and as shown ("1.2k").
+      - name: count
+      - name: count_label
+      # And how many of each kind (",fuel:12,storage_tank:3,"): the map counts the shown.
+      - name: kinds
+      # As sites_area's.
+      - name: part
+      - name: part_what
+      - name: base_name
+      - name: parts
+      - name: operator
+        sql: tags -> 'operator'
+      - name: religion
+        sql: tags -> 'religion'
+      - name: denomination
+        sql: tags -> 'denomination'
+      - name: government
+        sql: tags -> 'government'
+      - name: iata
+        sql: tags -> 'iata'
+      - name: icao
+        sql: tags -> 'icao'
+    id_field: id
+    from: site_points(!BBOX!, !ZOOM!) AS s
+
+  # Fork: an oil or gas facility (upstream's petroleum sites but the pipelines'
+  # substations, which go with the pipelines) as one point, for its icon zoomed out
+  # (modules/sites: drawn like a fuel depot).
+  - name: petroleum_facility
+    map:
+      - openinframap
+      - petroleum
+    geometry_type: Point
+    min_zoom: 5
+    field_sets: [geom_centroid, name, wiki]
+    fields:
+      - name: type
+    id_field: osm_id
+    from: osm_petroleum_site
+    where: type <> 'substation' AND geometry && !BBOX!

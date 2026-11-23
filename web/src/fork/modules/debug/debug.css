@@ -1,0 +1,62 @@
+/* Fork: the debug box (debug/index.ts): bottom right above the credits, a fixed size,
+   so changing values never move or resize it. */
+.oim-debug {
+  position: absolute;
+  bottom: 44px;
+  right: 10px;
+  z-index: 3;
+  display: none;
+  box-sizing: border-box;
+  width: 360px;
+  padding: 6px 8px;
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-overlay-background);
+  color: var(--oim-overlay-text);
+  font-family: var(--oim-font-family-monospace);
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+.oim-debug > div {
+  overflow: hidden;
+  min-height: 1.35em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.oim-debug.visible {
+  display: block;
+}
+.oim-debug b {
+  color: var(--oim-overlay-accent);
+  font-weight: normal;
+}
+.oim-debug-feature {
+  overflow: hidden;
+  padding-left: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A clicked feature's debug info (debug/index.ts), set apart from its details. */
+.oim-debug-details {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--oim-light-grey);
+  font-size: 12px;
+}
+.oim-debug-details h4 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+/* Where the data comes from (ui/details.ts SOURCE_NOTE), as a hint. */
+.oim-debug-details .oim-source-note {
+  margin: 6px 0 0;
+  color: var(--oim-text-color-light);
+}
+.oim-debug-details td {
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}

@@ -80,7 +80,7 @@ const hvdc_p: ExpressionSpecification = all(
 )
 
 // Stepwise function to assign colour by voltage:
-function voltage_color(field: string): DataDrivenPropertyValueSpecification<string> {
+export function voltage_color(field: string): DataDrivenPropertyValueSpecification<string> {
   const voltage_func: any = ['step', ['to-number', coalesce(get(field), 0)]]
   for (const row of voltage_scale) {
     if (row[0] == null) {
@@ -133,7 +133,7 @@ function voltage_offset(index: number): DataDrivenPropertyValueSpecification<num
 
 // Function to assign power line thickness.
 // Interpolate first by zoom level and then by voltage.
-const voltage_line_thickness: ExpressionSpecification = interpolate(
+export const voltage_line_thickness: ExpressionSpecification = interpolate(
   zoom,
   [
     [1, 0.5],
@@ -174,7 +174,7 @@ const substation_visible_p: ExpressionSpecification = all(
   any(['!=', get('substation'), 'transition'], ['>', zoom, 12])
 )
 
-const substation_radius: ExpressionSpecification = interpolate(zoom, [
+export const substation_radius: ExpressionSpecification = interpolate(zoom, [
   [
     5.5,
     interpolate(voltage, [
@@ -264,7 +264,7 @@ function plant_image(): ExpressionSpecification {
   return expr as ExpressionSpecification
 }
 
-const power_opacity: ExpressionSpecification = interpolate(zoom, [
+export const power_opacity: ExpressionSpecification = interpolate(zoom, [
   [4, case_([[construction_p, 0.3]], 0.6)],
   [8, case_([[construction_p, 0.3]], 1)]
 ])

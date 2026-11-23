@@ -1,0 +1,20 @@
+# Fork: the scripts' Python environment (offline-maps.py and its offline_maps package,
+# netsafe.py, extra_data.py, fetch_images.py, the build's helpers), made and kept up to
+# date by uv: the shell scripts run Python through scripts_python (lib/python.sh).
+[project]
+name = "oim-scripts"
+version = "0"
+requires-python = ">=3.11"
+dependencies = [
+    "mercantile>=1.2.1",  # web Mercator tile maths (offline_maps/tiles.py)
+    "pmtiles>=3.8.1",     # PMTiles headers (offline_maps/pmtiles.py)
+    "filelock>=3.16",     # the offline maps' download lock (offline_maps/inventory.py)
+    "httpx",              # extra data's and the Wikidata cache's downloads
+    "psycopg2-binary",    # extra data and the Wikidata cache: the database
+]
+
+[dependency-groups]
+dev = ["pytest", "mypy", "types-psycopg2>=2.9.21.20261030"]
+
+[tool.uv]
+package = false

@@ -32,6 +32,7 @@ import {
 import { svgLine, svgLineFromLayer, svgRectFromLayer } from './svg.js'
 import './key.css'
 import { manifest } from 'virtual:render-svg'
+import { forkKey } from '../fork/index.ts'
 
 const line_thickness = 6
 
@@ -124,6 +125,7 @@ class KeyControl implements IControl {
     mount(pane, await this.waterTable())
     pane.appendChild(el('h3', t('layers.other-pipelines', 'Other Pipelines')))
     mount(pane, this.otherPipelineTable())
+    await forkKey(this._map!, this._container, pane)
     this._pane = pane
 
     mount(this._container, pane)
@@ -158,7 +160,8 @@ class KeyControl implements IControl {
   async sprite(name: string, size = 25) {
     const spriteDiv = el('img.oim-key-symbol', {
       src: manifest['svg'][name],
-      height: size
+      height: size,
+      'data-icon': name
     })
     setStyle(spriteDiv, {
       'max-width': size + 'px'

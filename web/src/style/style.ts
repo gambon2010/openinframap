@@ -1,5 +1,6 @@
 import i18next from 'i18next'
-import { TILE_BASE_URL, BASEMAP_URL, OIM_TILES } from '../config.js'
+import { BASEMAP_URL, OIM_TILES } from '../fork/config.ts'
+import { forkSources, forkLayers } from '../fork/index.ts'
 import style_base from './style_base.js'
 import style_labels from './style_labels.js'
 import style_oim_power from './style_oim_power.js'
@@ -8,7 +9,6 @@ import style_oim_telecoms from './style_oim_telecoms.js'
 import style_oim_petroleum from './style_oim_petroleum.js'
 import style_oim_water from './style_oim_water.js'
 import style_oim_other_pipelines from './style_oim_other_pipelines.js'
-import style_osmose from './style_osmose.js'
 import { StyleSpecification } from 'maplibre-gl'
 import { interpolate, zoom } from './stylehelpers.js'
 import { LayerSpecificationWithZIndex } from './types.js'
@@ -64,14 +64,6 @@ const style: StyleSpecification = {
       maxzoom: 15,
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
     },
-    blackmarble: {
-      type: 'raster',
-      tiles: [`${TILE_BASE_URL}/black-marble-2024/{z}/{x}/{y}.webp`],
-      tileSize: 256,
-      maxzoom: 8,
-      attribution:
-        '<a href="https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VNP46A4/">NASA Black Marble 2024</a>'
-    },
     power: {
       type: 'vector',
       tiles: [`${OIM_TILES}/power/{z}/{x}/{y}.pbf`],
@@ -108,12 +100,7 @@ const style: StyleSpecification = {
       maxzoom: 17,
       attribution: oim_attribution
     },
-    osmose_errors_power: {
-      type: 'vector',
-      tiles: ['https://osmose.openstreetmap.fr/api/0.3/issues/{z}/{x}/{y}.mvt?tags=power'],
-      maxzoom: 17,
-      minzoom: 11
-    },
+    ...forkSources(),
     circuit_highlight: {
       type: 'geojson',
       data: {
@@ -134,7 +121,7 @@ export function getPrimaryLayers() {
     ...style_oim_telecoms(),
     ...style_oim_water(),
     ...style_oim_other_pipelines(),
-    ...style_osmose()
+    ...forkLayers()
   ]
 }
 

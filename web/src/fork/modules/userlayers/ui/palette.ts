@@ -1,0 +1,314 @@
+// Fork: the symbol and graphics picker of "My layers": MIL-STD-2525C symbols and
+// tactical graphics (catalogue: scripts/make_symbol_catalog.py), one row per type (a
+// graphic's two versions are one row: offeredAs). Point symbols are
+// previewed by @syncpoint/signs; lines, areas and arrows are drawn on the map by the
+// C5ISR renderer (graphics.ts), so the picker shows their kind instead.
+import { toolIcon } from './tool-icons.ts'
+import { standardName } from '../graphics/graphics.ts'
+import { variantsOf } from '../graphics/variants.ts'
+import { graphicKey } from '../graphics/labels.ts'
+import { t } from '../../../core/i18n.ts'
+import { el } from 'redom'
+import catalogue from '../model/symbols-2525c.json'
+import { symbolRenderer } from '../map/symbols.ts'
+import { graphicsLibrary, pointCount } from '../graphics/graphics.ts'
+import type { PersonalSettings } from '../state/personal.ts'
+import type { Entry, PaletteMode, Pick } from './palette.types.ts'
+import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_ICONS, CATEGORIES } from './palette.constants.ts'
+
+/** A catalogue code (with * for identity and status) made concrete. */
+export function concreteSidc(code: string, affiliation: string, status: string): string {
+  const chars = code.split('')
+  if (chars[1] === '*') chars[1] = affiliation
+  if (chars[3] === '*') chars[3] = status
+  return chars.join('')
+}
+
+/** The catalogue code a concrete code comes from (identity and status as *). */
+export function catalogueCode(sidc: string): string {
+  return sidc[0] + '*' + sidc[2] + '*' + sidc.slice(4, 10)
+}
+
+const BY_CODE = new Map<string, Entry>()
+// Graphics by their key (graphicKey), for their versions (variants.ts).
+const BY_KEY = new Map<string, Entry>()
+for (const group of catalogue.groups) {
+  for (const entry of group.symbols as Entry[]) {
+    BY_CODE.set(catalogueCode(entry[0]), entry)
+    if (entry[3]) BY_KEY.set(graphicKey(entry[0]), entry)
+  }
+}
+
+/** The catalogue entry of a concrete code. */
+export function entryOf(sidc: string): Entry | undefined {
+  return BY_CODE.get(catalogueCode(sidc))
+}
+
+/** The catalogue name of a concrete code. */
+/** A symbol's or graphic's name: the catalogue's, else the standard's (a type the
+ * picker no longer offers, an imported code). */
+export function symbolName(sidc: string): string | undefined {
+  return entryOf(sidc)?.[1] ?? standardName(sidc) ?? undefined
+}
+
+/**
+ * The entry a graphic is offered as: a graphic with two versions (graphics/
+ * variants.ts: Block as a task or an obstacle, an arrow as an axis or a direction)
+ * is one row, its first version; the card switches between them.
+ */
+export function offeredAs(entry: Entry): Entry {
+  const versions = entry[3] ? variantsOf(entry[0]) : null
+  if (!versions || versions.index === 0) return entry
+  return BY_KEY.get(versions.variants.keys[0]) ?? entry
+}
+
+/** Entries of the mode (in a category, if given), matching every word of the query;
+ * a graphic's second version is found by its name too, as its first (offeredAs). */
+export function searchCatalogue(query: string, mode: PaletteMode, category?: string): Entry[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  const cat = category ? CATEGORIES.find((c) => c.mode === mode && c.label === category) : undefined
+  const out: Entry[] = []
+  const seen = new Set<string>()
+  for (const g of catalogue.groups) {
+    if (cat && !cat.groups.includes(g.name)) continue
+    for (const entry of g.symbols as Entry[]) {
+      if ((mode === 'graphics') !== Boolean(entry[3])) continue
+      if (cat?.test && !cat.test(entry)) continue
+      const name = entry[1].toLowerCase()
+      if (!words.every((w) => name.includes(w))) continue
+      const offered = offeredAs(entry)
+      if (seen.has(offered[0])) continue
+      seen.add(offered[0])
+      out.push(offered)
+    }
+  }
+  return out
+}
+
+/** The categories of a mode that have entries. */
+export function categoriesFor(mode: PaletteMode): string[] {
+  return CATEGORIES.filter((c) => c.mode === mode && searchCatalogue('', mode, c.label).length).map(
+    (c) => c.label
+  )
+}
+
+export class Palette {
+  el: HTMLElement
+  mode: PaletteMode = 'symbols'
+  private search: HTMLInputElement
+  private categories: HTMLElement
+  private frames: HTMLElement
+  private planned: HTMLInputElement
+  private results: HTMLElement
+  private affiliation = 'F'
+  private group: string | undefined
+  private onPick: (pick: Pick) => void
+  private render?: (sidc: string, size?: number) => string
+  // Graphics the renderer can draw (a few catalogue entries are only headings).
+  private drawable?: Set<string>
+
+  /** Favourites and recently used: yours, kept for your account (state/personal.ts). */
+  private personal: PersonalSettings
+
+  constructor(onPick: (pick: Pick) => void, personal: PersonalSettings) {
+    this.onPick = onPick
+    this.personal = personal
+    this.search = el('input.oim-ul-palette-search', { type: 'search' }) as HTMLInputElement
+    this.categories = el('nav.oim-ul-palette-categories')
+    this.frames = el('.oim-ul-frames')
+    this.planned = el('input', { type: 'checkbox' }) as HTMLInputElement
+    this.results = el('.oim-ul-palette-results')
+    this.el = el(
+      '.oim-ul-palette',
+      this.search,
+      el(
+        '.oim-ul-palette-options',
+        el('span.oim-ul-palette-label', t('userlayers.identity', 'Identity')),
+        this.frames,
+        el('label.oim-ul-inline', this.planned, t('userlayers.planned', 'Planned'))
+      ),
+      // Categories on the left, what's in the chosen one on the right.
+      el('.oim-ul-palette-body', this.categories, this.results)
+    )
+    this.search.oninput = () => this.update()
+    this.planned.onchange = () => this.update()
+  }
+
+  /** Show the palette for symbols or graphics (loads the symbol library the first time). */
+  async open(mode: PaletteMode) {
+    this.mode = mode
+    this.group = undefined
+    this.search.value = ''
+    this.search.placeholder =
+      mode === 'symbols'
+        ? t('userlayers.palette.search', 'Search symbols (fire, hospital, infantry...)')
+        : t('userlayers.palette.search-graphics', 'Search graphics (axis, phase line, block...)')
+    if (!this.render) {
+      this.results.textContent = t('userlayers.palette.loading', 'Loading symbols...')
+      this.render = await symbolRenderer()
+    }
+    if (mode === 'graphics' && !this.drawable) {
+      const lib = await graphicsLibrary()
+      // Every graphic in the catalogue (not a search: that leaves out second versions).
+      this.drawable = new Set(
+        catalogue.groups
+          .flatMap((g) => g.symbols as Entry[])
+          .filter(([code, , , geometry]) => geometry && pointCount(lib, concreteSidc(code, 'F', 'P')))
+          .map(([code]) => code)
+      )
+    }
+    this.update()
+    this.search.focus()
+  }
+
+  private status() {
+    return this.planned.checked ? 'A' : 'P'
+  }
+
+  private framesRow() {
+    this.frames.textContent = ''
+    for (const [value, label] of AFFILIATIONS) {
+      const button = el(`button.oim-ul-frame${value === this.affiliation ? '.oim-on' : ''}`, {
+        type: 'button',
+        title: t(`userlayers.affiliation.${value}`, label),
+        'aria-pressed': String(value === this.affiliation)
+      })
+      try {
+        // An empty frame of that identity (a ground unit without an icon).
+        button.innerHTML = this.render!(`S${value}G${this.status()}U--------`, 14)
+      } catch {
+        button.textContent = value
+      }
+      button.onclick = () => {
+        this.affiliation = value
+        this.update()
+      }
+      this.frames.append(button)
+    }
+  }
+
+  /** The categories, one per line: first your favourites and recent ones (or, while
+   * searching, everything), then each category, with how many match the search. */
+  private categoriesColumn() {
+    this.categories.textContent = ''
+    const query = this.search.value.trim()
+    const entry = (label: string, group: string | undefined) => {
+      const count = query ? searchCatalogue(query, this.mode, group).length : null
+      const button = el(
+        `button.oim-ul-palette-category${this.group === group ? '.oim-on' : ''}`,
+        el('span', label),
+        count === null ? '' : el('small', String(count)),
+        { type: 'button', disabled: count === 0 }
+      )
+      button.onclick = () => {
+        this.group = group
+        this.update()
+      }
+      return button
+    }
+    const first = query
+      ? t('userlayers.palette.all', 'All')
+      : t('userlayers.palette.mine', '★ Favourites and recent')
+    this.categories.append(entry(first, undefined))
+    for (const name of categoriesFor(this.mode))
+      this.categories.append(entry(t(`userlayers.category.${name}`, name), name))
+  }
+
+  private button(entry: Entry): HTMLElement {
+    const [code, name, , geometry] = entry
+    const sidc = concreteSidc(code, this.affiliation, this.status())
+    // Its name is written beside it (labelled): no tooltip saying it again.
+    const button = el('button.oim-ul-symbol', { 'aria-label': name, type: 'button' })
+    if (geometry) {
+      button.append(toolIcon(GEOMETRY_ICONS[geometry] ?? 'graphic', 20))
+    } else {
+      try {
+        button.innerHTML = this.render!(sidc, 18)
+      } catch {
+        button.textContent = '?'
+      }
+    }
+    button.onclick = () => {
+      this.personal.rememberRecent(code)
+      this.onPick({ sidc, name, geometry })
+    }
+    return button
+  }
+
+  private labelled(entry: Entry): HTMLElement {
+    const starred = this.personal.data.favourites.includes(entry[0])
+    const star = el(`button.oim-ul-star${starred ? '.on' : ''}`, starred ? '★' : '☆', {
+      type: 'button',
+      title: starred
+        ? t('userlayers.unfavourite', 'Remove from favourites')
+        : t('userlayers.favourite', 'Add to favourites')
+    })
+    star.onclick = () => {
+      this.personal.toggleFavourite(entry[0])
+      this.update()
+    }
+    // A graphic with two versions: which, chosen on the card.
+    const versions = entry[3] ? variantsOf(entry[0]) : null
+    const name = versions
+      ? el('span', entry[1], el('small.oim-ul-versions', versions.variants.labels().join(' / ')))
+      : el('span', entry[1])
+    return el('.oim-ul-symbol-entry', this.button(entry), name, star)
+  }
+
+  private update() {
+    if (!this.render) return
+    this.framesRow()
+    this.categoriesColumn()
+    this.results.textContent = ''
+    const query = this.search.value.trim()
+    if (!query && !this.group) {
+      const ofMode = (e: Entry | undefined): e is Entry =>
+        Boolean(e) && (this.mode === 'graphics') === Boolean(e![3])
+      // Each type once (both versions of a graphic may have been starred or used).
+      const once = (entries: Entry[]) => [...new globalThis.Map(entries.map((e) => [e[0], e])).values()]
+      const favourites = once(
+        this.personal.data.favourites
+          .map((code) => BY_CODE.get(catalogueCode(code)))
+          .map((e) => e && offeredAs(e))
+          .filter(ofMode)
+      )
+      if (favourites.length) {
+        this.results.append(
+          el('h4', t('userlayers.palette.favourites', 'Favourites')),
+          el('.oim-ul-symbol-grid', ...favourites.map((e) => this.labelled(e)))
+        )
+      }
+      const recent = once(
+        this.personal.data.recent
+          .map((code) => BY_CODE.get(catalogueCode(code)))
+          .map((e) => e && offeredAs(e))
+          .filter(ofMode)
+      )
+      if (recent.length) {
+        this.results.append(
+          el('h4', t('userlayers.palette.recent', 'Recently used')),
+          el('.oim-ul-symbol-grid', ...recent.map((e) => this.labelled(e)))
+        )
+      }
+      return
+    }
+    const matches = searchCatalogue(query, this.mode, this.group).filter(
+      ([code, , , geometry]) => !geometry || !this.drawable || this.drawable.has(code)
+    )
+    const grid = el('.oim-ul-symbol-grid')
+    for (const entry of matches.slice(0, MAX_RESULTS)) grid.append(this.labelled(entry))
+    this.results.append(
+      matches.length ? grid : el('p.oim-ul-hint', t('userlayers.palette.none', 'Nothing with that name.'))
+    )
+    if (matches.length > MAX_RESULTS) {
+      this.results.append(
+        el(
+          'p.oim-ul-hint',
+          t('userlayers.palette.more', 'Showing the first {{n}}: type more to narrow it down.', {
+            n: MAX_RESULTS
+          })
+        )
+      )
+    }
+  }
+}

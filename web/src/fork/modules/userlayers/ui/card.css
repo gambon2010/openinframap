@@ -1,0 +1,160 @@
+/* Fork: My layers. The item card (editor.ts). */
+
+/* The item card (editor/), docs/plans/item-card-redesign.md: the details panel's
+   title bar (ui/details.css), one form of rows, each a label, its control and a ×. */
+.oim-ul-card-header .oim-ul-card-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* The padlock: a title bar button (ui/panel.css), before minimise and close; part
+   of the title bar, so it scrolls away with it. */
+.oim-side-panel.oim-info-panel .oim-ul-card-header {
+  position: relative;
+}
+.oim-ul-card-header .oim-ul-item-lock {
+  position: absolute;
+  top: 0;
+  right: 3.6rem;
+  font-size: 0.95rem;
+}
+.oim-side-panel.oim-info-panel .oim-ul-card-header:has(.oim-ul-item-lock) {
+  padding-right: 5.6rem;
+}
+.oim-ul-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 0 8px;
+}
+.oim-ul-detail {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr) 1.4em;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  font-size: 0.88rem;
+}
+/* A grid cell doesn't shrink below its content by default. */
+.oim-ul-detail > * {
+  min-width: 0;
+}
+.oim-ul-detail-name {
+  color: var(--oim-text-color-light);
+}
+/* Every control the same: full width, one height, one border. */
+.oim-ul-detail > input:not([type='checkbox'], [type='range'], [type='color']),
+.oim-ul-detail > select,
+.oim-ul-detail > textarea,
+.oim-ul-control > input:not([type='checkbox'], [type='range']),
+.oim-ul-control > select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: #fff;
+  color: var(--oim-text-color);
+  font: inherit;
+}
+.oim-ul-detail > textarea {
+  resize: vertical;
+}
+.oim-ul-detail > input[type='color'] {
+  width: 3em;
+}
+/* A control and what goes with it (a unit, "Now", "Reset"): side by side, the
+   first taking the room. */
+.oim-ul-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-control > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.oim-ul-control > :not(:first-child) {
+  flex: 0 0 auto;
+  width: auto;
+}
+.oim-ul-checks {
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.oim-ul-checks > :first-child {
+  flex: 0 0 auto;
+}
+.oim-ul-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+/* A date in words: clicked, it turns into its input. */
+.oim-ul-detail-value {
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: #fff;
+  color: var(--oim-text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* A number outside what's allowed: not kept, its tooltip says why. */
+.oim-ul-detail .oim-ul-invalid {
+  border-color: var(--oim-error);
+  outline: 1px solid var(--oim-error);
+}
+.oim-ul-row-remove {
+  width: 1.4em;
+  height: 1.4em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--oim-text-color-light);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.oim-ul-row-remove:hover {
+  color: var(--oim-error);
+}
+.oim-ul-add-detail {
+  color: var(--oim-link);
+}
+.oim-ul-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--oim-grey);
+}
+.oim-ul-card-footer select {
+  flex: 1;
+  min-width: 6em;
+}
+
+/* A measurement's legs (kinds/measure.ts): the length typed over, the bearing. */
+.oim-ul-legs-title {
+  margin: 8px 0 4px;
+  font-size: 0.9rem;
+}
+
+.oim-ul-leg .oim-ul-leg-length {
+  width: 9em;
+}
+
+.oim-ul-leg small {
+  margin-left: 6px;
+  color: var(--oim-dark-grey);
+}
+/* A line of sight's answer, its profile's button under it. */
+.oim-ul-sight-result {
+  display: block;
+  margin-bottom: 8px;
+}

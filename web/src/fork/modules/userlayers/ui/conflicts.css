@@ -1,0 +1,93 @@
+/* Fork: the conflict window (conflicts.ts), over the map at the bottom left. */
+.oim-ul-conflicts {
+  display: none;
+  position: absolute;
+  bottom: 2.5em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: min(460px, calc(100vw - 32px));
+  padding: 0.6em 0.8em;
+  border-radius: var(--oim-radius-large, 8px);
+  border-top: 4px solid #e8590c;
+  background: var(--oim-content-background, #fff);
+  box-shadow: var(--oim-drop-shadow);
+  font-size: 0.9em;
+}
+
+.oim-ul-conflicts.visible {
+  display: block;
+}
+
+.oim-ul-conflicts:has(.oim-ul-conflicts-bar) {
+  width: auto;
+  padding: 0;
+  border-top: 0;
+}
+
+.oim-ul-conflicts-bar {
+  border: 0;
+  border-radius: var(--oim-radius-large, 8px);
+  padding: 0.5em 1em;
+  background: #e8590c;
+  color: #fff;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.oim-ul-conflicts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.oim-ul-conflicts-what {
+  margin: 0.3em 0;
+}
+
+.oim-ul-conflicts-who {
+  display: block;
+  color: var(--oim-text-color-light, #666);
+  font-size: 0.9em;
+}
+
+.oim-ul-conflicts-fields {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.3em 0 0.5em;
+}
+
+.oim-ul-conflicts-fields th,
+.oim-ul-conflicts-fields td {
+  padding: 0.25em 0.4em;
+  border-bottom: 1px solid var(--oim-light-grey);
+  text-align: left;
+  vertical-align: top;
+}
+
+.oim-ul-conflicts-fields td:nth-child(2) {
+  background: #e7f5ff;
+}
+
+.oim-ul-conflicts-fields td:nth-child(3) {
+  background: #fff4e6;
+}
+
+.oim-ul-conflicts-choose,
+.oim-ul-conflicts-move {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin-top: 0.3em;
+}
+
+.oim-ul-conflicts-choose .primary {
+  font-weight: bold;
+}
+
+.oim-ul-conflict-tag {
+  margin-left: auto;
+  color: #e8590c;
+  cursor: help;
+}

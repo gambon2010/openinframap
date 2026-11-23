@@ -35,7 +35,7 @@ jobs:
 
   build:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.repository == 'openinframap/openinframap'  # fork: upstream's images only
     env:
       IMAGE: ghcr.io/openinframap/web
     runs-on: ubuntu-latest

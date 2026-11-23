@@ -10,6 +10,7 @@ on:
 
 jobs:
   login:
+    if: github.repository == 'openinframap/openinframap'  # fork: upstream's images only
     env:
       IMAGE: ghcr.io/openinframap/openinframap-web-router
     runs-on: ubuntu-latest

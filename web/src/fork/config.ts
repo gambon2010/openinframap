@@ -1,0 +1,93 @@
+// The app is opened through the gate (gate/nginx.conf, http://<this computer>:8800),
+// which checks the login on every request: the local services in web/.env
+// (Tegola, the backend, the background map, on localhost) are reached through it,
+// at the page's own address. Other addresses are left as they are.
+const THROUGH_GATE: [RegExp, string][] = [
+  [/^https?:\/\/(localhost|127\.0\.0\.1):7800/, '/tegola'],
+  [/^https?:\/\/(localhost|127\.0\.0\.1):8001/, '']
+]
+
+/** A local service's address as reached through the gate, from this page. */
+export function throughGate(url: string, origin = globalThis.location?.origin): string {
+  if (!origin) return url
+  for (const [service, path] of THROUGH_GATE) {
+    if (service.test(url)) return url.replace(service, origin + path)
+  }
+  return url
+}
+
+// The local backend (no online fallback: everything comes from this computer).
+const LOCAL_BACKEND = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:8001'
+
+// Basemap (roads, buildings, water, labels) vector tiles in the Protomaps
+// schema: the background maps downloaded into data/map/offline-maps/, served together by
+// the backend (/background; web-backend/src/fork/background/). Only local tiles:
+// where none was downloaded the background is empty. VITE_BASEMAP_URL can point
+// at another Protomaps-schema server; the "Map sources" panel can override it
+// for the current browser tab.
+export const DEFAULT_BASEMAP_URL = `${LOCAL_BACKEND}/background/{z}/{x}/{y}.mvt`
+export const CONFIGURED_BASEMAP_URL: string = throughGate(
+  import.meta.env.VITE_BASEMAP_URL || DEFAULT_BASEMAP_URL
+)
+
+export const BASEMAP_SESSION_KEY = 'oim-basemap-url'
+
+// Optional Photon geocoder (https://github.com/komoot/photon) for searching
+// addresses and places beyond the local database, e.g. http://localhost:2322.
+// Empty = not used. Setting up Photon isn't handled by the scripts.
+export const CONFIGURED_PHOTON_URL: string = import.meta.env.VITE_PHOTON_URL || ''
+export const PHOTON_SESSION_KEY = 'oim-photon-url'
+
+// Per-tab overrides from the Map sources panel. Session storage lasts until the
+// tab is closed. It can be unavailable (privacy settings), so every access is
+// guarded. A null value means "no override".
+export function getSessionUrl(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+export function setSessionUrl(key: string, url: string | null) {
+  try {
+    if (url === null) {
+      sessionStorage.removeItem(key)
+    } else {
+      sessionStorage.setItem(key, url)
+    }
+  } catch {
+    // Not persisted; the change still applies until the page is reloaded.
+  }
+}
+
+export const BASEMAP_URL: string = throughGate(getSessionUrl(BASEMAP_SESSION_KEY) || CONFIGURED_BASEMAP_URL)
+
+/** The Photon URL in use right now ('' = none); read on every search so changes apply live. */
+export function getPhotonUrl(): string {
+  return getSessionUrl(PHOTON_SESSION_KEY) ?? CONFIGURED_PHOTON_URL
+}
+
+export const BACKEND_BASE_URL: string = throughGate(LOCAL_BACKEND)
+
+// The terrain's elevation tiles (hill shading, the 3D relief): every area's
+// <area>.terrain.pmtiles in data/map/offline-maps/, served together by the backend
+// (web-backend/src/fork/terrain/). Only local: none downloaded, no relief.
+export const TERRAIN_URL = `${BACKEND_BASE_URL}/terrain/{z}/{x}/{y}.webp`
+// Contour lines the backend makes from it (vector tiles).
+export const CONTOURS_URL = `${BACKEND_BASE_URL}/terrain/contours/{z}/{x}/{y}.mvt`
+// The satellite imagery the map shows: the list the scripts write, and the files'
+// tiles (the backend's /imagery and /satellite, web-backend/src/fork/imagery.py).
+export const IMAGERY_LIST_URL = `${BACKEND_BASE_URL}/imagery`
+export const IMAGERY_URL = `${BACKEND_BASE_URL}/satellite`
+// The ground's height at a point (?lon=&lat=), for the coordinates box.
+export const ELEVATION_URL = `${BACKEND_BASE_URL}/terrain/elevation`
+// The line of sight between two points (?from=lon,lat&to=lon,lat&observer=&target=).
+export const SIGHT_URL = `${BACKEND_BASE_URL}/terrain/sight`
+/** The numbered buildings in a view ("WIS-47": web-backend building_numbers/). */
+export const BUILDING_NUMBERS_URL = `${BACKEND_BASE_URL}/background/building-numbers`
+
+// Full URL prefix for OIM infrastructure tile layers (power, petroleum, etc.):
+// the local Tegola (VITE_TEGOLA_URL, at /maps/*), through the gate. No online
+// fallback: the map only shows local tiles.
+export const OIM_TILES = `${throughGate(import.meta.env.VITE_TEGOLA_URL || 'http://localhost:7800')}/maps`

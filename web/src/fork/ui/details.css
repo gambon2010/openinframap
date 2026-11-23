@@ -1,0 +1,170 @@
+/* Side panels on the left (feature details, grid connection), in the look of the
+   fork's other panels (ui/panel.css, My layers): a light grey title bar with flat
+   square buttons, a body padded alike, quiet rows of values, small bordered
+   buttons. docs/STYLE.md. */
+.oim-side-panel {
+  position: relative;
+  display: none;
+  width: min(330px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+}
+
+.oim-side-panel.visible {
+  display: block;
+}
+
+.oim-side-panel-buttons {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+}
+
+/* Feature details: text at My layers' size (.oim-ul-sidebar). */
+.oim-info-panel {
+  font-size: 0.95rem;
+}
+
+.oim-info-panel .oim-side-panel-body {
+  max-height: calc(100vh - 170px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 10px 10px;
+}
+
+/* Leave room for the Grid connection panel below when it's open. */
+.oim-info-panel:has(~ .oim-route-panel.visible) .oim-side-panel-body {
+  max-height: 45vh;
+}
+
+/* The title bar: the shared one's (ui/panel.css .oim-panel-header), not upstream's
+   green popup header; room on the right for the minimise and close buttons. */
+.oim-side-panel.oim-info-panel .oim-popup-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 1.98rem;
+  padding: 0.2rem 3.8rem 0.2rem 10px;
+  margin: 0 -10px 8px;
+  background-color: var(--oim-light-grey);
+}
+
+.oim-side-panel.oim-info-panel .oim-popup-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: bold;
+}
+
+/* A second name (the local one under a translated title). */
+.oim-side-panel.oim-info-panel .oim-popup-header h4 {
+  margin: 0;
+  color: var(--oim-text-color-light);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+/* Values: quiet rows, the label light, no boxes: upstream's popup tables have a
+   border and shaded rows (popup/popup.css). */
+.oim-info-panel table.item_info {
+  width: 100%;
+  border: 0;
+  border-collapse: collapse;
+}
+
+.oim-info-panel table.item_info tr {
+  background: none;
+}
+
+.oim-info-panel table.item_info th,
+.oim-info-panel table.item_info td {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  vertical-align: top;
+  text-align: left;
+}
+
+.oim-info-panel table.item_info th {
+  padding-right: 10px;
+  color: var(--oim-text-color-light);
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+/* Buttons: My layers' (userlayers/ui/common.css .oim-ul-button). */
+/* Buttons in the details panel and in windows (ui/confirm.ts): My layers' look. */
+.oim-info-panel .oim-button,
+.oim-modal .oim-button {
+  margin: 6px 4px 0 0;
+  padding: 3px 8px;
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-light-grey);
+  color: var(--oim-text-color);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.oim-info-panel .oim-button:hover:not(:disabled),
+.oim-modal .oim-button:hover:not(:disabled) {
+  background: var(--oim-grey);
+}
+
+/* The main action: blue, a shade darker on hover. */
+.oim-modal .oim-button.primary {
+  border-color: #1565c0;
+  background: #1565c0;
+  color: #fff;
+}
+.oim-modal .oim-button.primary:hover:not(:disabled) {
+  background: #1565c0;
+  filter: brightness(0.85);
+}
+
+.oim-info-panel .oim-button:disabled,
+.oim-modal .oim-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Minimised: only the title stays. */
+.oim-info-panel.minimised .oim-side-panel-body {
+  padding-bottom: 0;
+}
+
+.oim-info-panel.minimised .oim-popup-content > :not(.oim-popup-header) {
+  display: none;
+}
+
+.oim-info-panel.minimised .oim-popup-header {
+  margin-bottom: 0;
+}
+
+/* Photos: fit the panel, small enough not to be what makes it scroll. */
+.oim-info-panel .wikidata_image {
+  max-width: 100%;
+  max-height: min(160px, 18vh);
+  height: auto;
+  width: auto;
+  object-fit: contain;
+}
+
+.oim-info-panel .infobox-image {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Upstream's "View on OpenStreetMap" link: the map shows what OpenStreetMap would;
+   it's in the debug info instead (modules/debug). */
+.oim-info-panel .infobox-external-links a:has(> .osm_link) {
+  display: none;
+}
+
+/* Where a feature's data comes from: only in its debug info (modules/debug). */
+.oim-info-panel .oim-popup-content > .oim-source-note {
+  display: none;
+}

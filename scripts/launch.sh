@@ -16,9 +16,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 cd "$REPO_ROOT"
 
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Open Infrastructure Map — local dev setup${RESET}"
-echo "${BOLD}======================================================${RESET}"
+banner "local dev setup"
 
 # ---------------------------------------------------------------------------
 # 1. Prerequisites — report, never install
@@ -31,9 +29,12 @@ check_cmd npm     "comes with Node.js"                          || MISSING=1
 check_cmd curl    "dnf install curl  /  apt install curl"       || MISSING=1
 check_cmd python3 "dnf install python3  /  apt install python3" || MISSING=1
 check_cmd unzip   "dnf install unzip  /  apt install unzip"     || MISSING=1
-[[ "$MISSING" == 0 ]] || die "Install the missing tools above, then re-run this script."
-# Optional: only needed for the Wikidata cache and to run the backend outside Docker.
-check_cmd uv      "optional — https://docs.astral.sh/uv/ (for the offline Wikidata cache)" || true
+# The scripts' Python packages (scripts/pyproject.toml), extra data, the Wikidata cache.
+check_cmd uv      "https://docs.astral.sh/uv/ (curl -LsSf https://astral.sh/uv/install.sh | sh)" || MISSING=1
+if [[ "$MISSING" != 0 ]]; then
+    point_to_installers
+    die "Install the missing tools above, then re-run this script."
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Frontend .env — before the database step, which may add the offline
@@ -59,7 +60,8 @@ fi
 if [[ -n "$REGION" ]]; then
     ok "Already built: $REGION (OSM data as of $(build_info osm_timestamp))"
     if ask_yes_no "Keep it?" y; then
-        select_basemap "$(build_info region_id)"
+        select_basemap
+        select_satellite
     else
         bash "$REPO_ROOT/scripts/build-region.sh" --no-images
     fi
@@ -91,8 +93,7 @@ fi
 # ---------------------------------------------------------------------------
 section "Starting the Tegola tile server..."
 up_services tegola
-ok "Running on http://localhost:7800"
-start_basemap_if_present
+ok "Running on http://localhost:$TEGOLA_PORT"
 
 # ---------------------------------------------------------------------------
 # 6. Start the app — each server in its own terminal window
@@ -100,7 +101,7 @@ start_basemap_if_present
 section "Starting the app"
 STARTED=0
 if port_in_use "$BACKEND_PORT" && port_in_use "$FRONTEND_PORT"; then
-    ok "The app is already running: $APP_URL"
+    ok "The app is already running: $DEV_URL"
     STARTED=1
 elif ask_yes_no "Start the app now? (backend in Docker, frontend in a new terminal window, then your browser)" y; then
     if start_app; then
@@ -120,13 +121,10 @@ offer_image_cache
 # ---------------------------------------------------------------------------
 # 8. Done
 # ---------------------------------------------------------------------------
-echo ""
-echo "${BOLD}======================================================${RESET}"
-echo "${BOLD} Setup complete!${RESET}"
-echo "${BOLD}======================================================${RESET}"
+done_banner "Setup complete!"
 echo ""
 if [[ "$STARTED" == 1 ]]; then
-    echo "The app is running at: $APP_URL"
+    echo "The app is running at: $DEV_URL (from the network: $APP_URL)"
 else
     print_manual_start
 fi
@@ -134,5 +132,5 @@ echo ""
 echo "Later:"
 echo "  bash scripts/start.sh              # start everything and open the map (no questions)"
 echo "  bash scripts/build-region.sh       # switch to another region / refresh the data"
-echo "  uv run scripts/fetch_images.py     # cache Wikidata text + images for offline popups (slow)"
+echo "  uv run --project scripts scripts/fetch_images.py     # cache Wikidata text + images for offline popups (slow)"
 echo ""

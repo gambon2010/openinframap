@@ -6,21 +6,19 @@ import { mount } from 'redom'
 import { LayerSwitcher, URLHash, Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import '@russss/maplibregl-layer-switcher/maplibregl-layer-switcher.css'
 
-import EditButton from './edit-control.js'
 import InfoPopup from './popup/infopopup.js'
 import KeyControl from './key/key.js'
-import MapSourcesControl from './map-sources/map-sources.ts'
 import WarningBox from './warning-box/warning-box.js'
 import OIMSearch from './search/search.ts'
 
 import { getStyle, getPrimaryLayers } from './style/style.js'
 
-import { ValidationErrorPopup } from './popup/validation-error-popup.js'
 import { SymbolLoader } from './symbol-loader.ts'
 import { ClickRouter } from './click-router.js'
 import { CircuitInspector } from './circuit/circuitinspector.ts'
 import { OpenInfraMapAPI } from './api.ts'
-import { BACKEND_BASE_URL } from './config.js'
+import { BACKEND_BASE_URL } from './fork/config.ts'
+import { forkInit, forkSwitcherGroups } from './fork/index.ts'
 
 export default class OpenInfraMap {
   map?: maplibregl.Map
@@ -56,12 +54,11 @@ export default class OpenInfraMap {
   init() {
     const layer_switcher = new LayerSwitcher(
       [
-        // Background switch hidden: night lights are online-only, and showing the
-        // switch breaks saved map links without an "A" in their layer list (the
-        // background then turns off). See docs/FORK_CHANGES.md.
+        // Fork: background switch removed: the night lights (online only) are gone,
+        // and showing the switch breaks saved map links without an "A" in their
+        // layer list.
         // new LayerGroup(t('layers.background'), [
-        //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true),
-        //   new Layer('N', t('layers.nighttime-lights'), 'black_marble', 'background', false)
+        //   new Layer('A', t('openstreetmap'), 'osm_', 'background', true)
         // ]),
         new LayerGroup(t('layers.overlays'), [
           new Layer('L', t('layers.labels'), 'label_', true),
@@ -77,9 +74,8 @@ export default class OpenInfraMap {
           new Layer('I', t('layers.other-pipelines'), 'pipeline_', false),
           new Layer('W', t('layers.water'), 'water_', false)
         ]),
-        new LayerGroup(t('layers.validation'), [
-          new Layer('E', t('layers.osmose-power'), 'osmose_errors_power', false)
-        ])
+        ...forkSwitcherGroups()
+        // Fork: the Osmose validation layer removed (online only).
       ],
       t('layers.title', 'Layers')
     )
@@ -110,29 +106,27 @@ export default class OpenInfraMap {
 
     url_hash.enable(map)
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-    map.addControl(
-      new maplibregl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true
-      })
-    )
-
     map.addControl(new maplibregl.ScaleControl({}), 'bottom-left')
 
     map.addControl(new KeyControl(), 'top-right')
-    map.addControl(new MapSourcesControl(), 'top-right')
     map.addControl(layer_switcher, 'top-right')
-    map.addControl(new EditButton(), 'bottom-right')
     map.addControl(new OIMSearch(), 'top-left')
-    new InfoPopup({
+    const info_popup = new InfoPopup({
       layers: getPrimaryLayers().map((layer: { [x: string]: any }) => layer['id']),
       min_zoom: 6,
       api,
       circuit_inspector
-    }).add(map, clickRouter)
-    new ValidationErrorPopup(map, clickRouter)
+    })
+    info_popup.add(map, clickRouter)
+    forkInit({
+      map,
+      layerSwitcher: layer_switcher,
+      clickRouter,
+      primaryLayers: getPrimaryLayers,
+      urlHash: url_hash,
+      infoPopup: info_popup,
+      circuitInspector: circuit_inspector
+    })
 
     clickRouter.register()
     this.map = map

@@ -1,0 +1,83 @@
+import { describe, expect, test } from 'vitest'
+import { Layer, LayerSwitcher } from '@russss/maplibregl-layer-switcher'
+import { assignSections, entryTick, followChanges, groupTick, Switcher } from './data-layers.ts'
+
+const styleLayers = [
+  { id: 'power_line_1', type: 'line', paint: { 'line-color': '#ff0000' } },
+  { id: 'power_plant', type: 'fill' },
+  { id: 'telecoms_line', type: 'line' },
+  { id: 'site_points', type: 'symbol' }
+]
+const entries = [
+  { id: 'P', title: 'Power', prefix: 'power_' },
+  { id: 'T', title: 'Telecoms', prefix: 'telecoms_' },
+  { id: 'H', title: 'Health and emergency', prefix: 'site_' },
+  { id: 'M', title: 'Military', prefix: 'site_' },
+  { id: 'S', title: 'Damage and threats', prefix: 'status_' }
+]
+
+describe('Data layers: which entry a key section goes under', () => {
+  test('the entry of the same name, else the one drawing its layers, else none', () => {
+    const owner = assignSections(
+      [
+        { title: 'Power Lines', specs: [{ layers: ['power_line'] }] },
+        { title: 'Power Plants', specs: [{ layers: ['power_plant'] }] },
+        { title: 'Telecoms', specs: [{ layers: ['telecoms_line'] }] },
+        // Sites share their layers: by name.
+        { title: 'Military', specs: [{ layers: ['site_points'] }] },
+        // A key with no tick boxes: by name.
+        { title: 'Damage and threats', specs: [] },
+        { title: 'Something else', specs: [] }
+      ],
+      entries,
+      styleLayers
+    )
+    expect(owner).toEqual({
+      'Power Lines': 'P',
+      'Power Plants': 'P',
+      Telecoms: 'T',
+      Military: 'M',
+      'Damage and threats': 'S',
+      'Something else': null
+    })
+  })
+})
+
+describe('Data layers: a group’s tick box', () => {
+  test('ticked when all its entries are on, half when some are', () => {
+    const group = entries.slice(0, 2)
+    expect(groupTick(group, ['P', 'T'])).toEqual({ checked: true, indeterminate: false })
+    expect(groupTick(group, ['P'])).toEqual({ checked: false, indeterminate: true })
+    expect(groupTick(group, ['H'])).toEqual({ checked: false, indeterminate: false })
+  })
+
+  test('an entry: ticked when on, half when some of its key rows are unticked', () => {
+    expect(entryTick(true, [true, true])).toEqual({ checked: true, indeterminate: false })
+    expect(entryTick(true, [false, true])).toEqual({ checked: true, indeterminate: true })
+    // Off: nothing of it shows, whatever its rows say.
+    expect(entryTick(false, [false, true])).toEqual({ checked: false, indeterminate: false })
+  })
+})
+
+describe('followChanges', () => {
+  const switcherWithBuildings = () =>
+    new LayerSwitcher([new Layer('B', 'Buildings', 'buildings_', false)]) as unknown as Switcher
+
+  test('an entry switched by other code redraws the panel', () => {
+    const switcher = switcherWithBuildings()
+    let redrawn = 0
+    followChanges(switcher, () => redrawn++)
+    switcher.setVisibility('B', true)
+    expect(switcher._visible).toEqual(['B'])
+    expect(redrawn).toBe(1)
+  })
+
+  test('the entries read again from the address redraw the panel', () => {
+    const switcher = switcherWithBuildings() as Switcher & { setURLString(value: string): void }
+    let redrawn = 0
+    followChanges(switcher, () => redrawn++)
+    switcher.setURLString('B')
+    expect(switcher._visible).toEqual(['B'])
+    expect(redrawn).toBe(1)
+  })
+})

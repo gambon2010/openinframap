@@ -1,0 +1,303 @@
+/*
+ * Fork: one look for the fork's panels and upstream's (layers, key, feature
+ * details, grid connection, My layers, settings), after the side panels on the
+ * left: a light grey title bar with square buttons on the right, a body that
+ * scrolls inside the panel.
+ */
+
+/* --- Right dock: panels opened from the buttons on the right (fork/ui/dock.ts) --- */
+.oim-dock {
+  position: absolute;
+  top: 10px;
+  right: 46px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.oim-dock > * {
+  pointer-events: auto;
+}
+
+.oim-dock > :not(.visible) {
+  display: none !important;
+}
+
+.oim-dock > .visible {
+  display: flex !important;
+  flex-direction: column;
+  position: static !important;
+  width: min(340px, calc(100vw - 70px));
+  min-height: 0;
+  margin: 0 !important;
+  overflow: hidden;
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+}
+
+/* --- Fork-wide colours the standard's tokens (web/src/index.css, upstream's) don't
+ * have: a state's colour (an error, a success, a link), a warning's background, and
+ * the dark overlays (the tooltip, the debug box). docs/STYLE.md. */
+:root {
+  --oim-error: #b3261e;
+  --oim-success: #1b7a33;
+  /* Maybe: a line of sight through trees. Deep amber, apart from the selection's yellow. */
+  --oim-caution: #c98a00;
+  --oim-link: #1a5fb4;
+  --oim-warning-background: #fff4e5;
+  --oim-overlay-background: rgb(20 20 30 / 85%);
+  --oim-overlay-text: #f2f2f2;
+  --oim-overlay-accent: #ffd600;
+}
+
+/* --- Fork-wide: something chosen, switched on or selected ---
+ * A chip or option picked, a tool or mode on, a list row selected: class `oim-on`. Its background is highlighted (the map selection's yellow);
+ * its border, text and size stay as they were, so nothing moves. */
+:root {
+  --oim-on-background: #fff3c4;
+}
+html .oim-on,
+html button.oim-on {
+  background-color: var(--oim-on-background);
+}
+
+/* The map's buttons (on the right) pressed, their panel open or their mode on
+ * (ui/map-button.ts showPressed): a soft grey with the button's rounded corners (a
+ * coloured background would hide their icons). Inside panels, chosen things are
+ * `oim-on` (below). */
+.maplibregl-ctrl-group button.oim-pressed {
+  border-radius: 4px;
+  background-color: #dedede;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.maplibregl-ctrl-group button.oim-pressed:hover {
+  background-color: #d4d4d4;
+}
+/* Upstream's Layers button draws its icon on the box around it: that box is shaded
+   instead (the button over it stays clear). */
+.maplibregl-ctrl-group.layer-switcher button.oim-pressed {
+  background-color: transparent;
+  box-shadow: none;
+}
+.maplibregl-ctrl-group.layer-switcher:has(button.oim-pressed) {
+  background-color: #dedede;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Shared title bar --- */
+.oim-panel-header,
+.oim-key-header,
+.oim-route-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 1.98rem;
+  height: auto;
+  padding: 0 0 0 10px;
+  background-color: var(--oim-light-grey);
+}
+
+.oim-panel-header h2,
+.oim-key-header h2,
+.oim-route-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: bold;
+}
+
+/* Square buttons at the end of a title bar (close, minimise). */
+.oim-panel-button,
+.oim-key-close,
+.oim-side-panel-button {
+  position: static;
+  flex: 0 0 auto;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--oim-text-color);
+  font-size: 1.1rem;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.oim-panel-button:hover,
+.oim-key-close:hover,
+.oim-side-panel-button:hover {
+  background-color: var(--oim-grey);
+}
+
+/* Bodies scroll inside the panel. */
+.oim-dock .oim-panel-body,
+.oim-dock .oim-key-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+}
+
+.oim-panel-body {
+  padding: 6px 10px 10px;
+}
+
+/* Section titles inside panels. */
+.oim-panel-body h3,
+.oim-key-body h3 {
+  margin: 10px 0 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--oim-grey);
+  font-size: 0.95rem;
+}
+
+.oim-panel-body h3:first-child,
+.oim-key-body h3:first-child {
+  margin-top: 4px;
+}
+
+/* --- Layers (upstream's list, in a docked panel: fork/ui/index.ts) --- */
+
+/* The list's own "Layers" title: the panel has one. */
+
+/* --- Key (upstream's panel, docked) --- */
+.oim-dock .oim-key-panel {
+  min-width: 0;
+  min-height: 0;
+}
+
+.oim-dock .oim-key-header {
+  height: auto;
+  padding: 0 0 0 10px;
+}
+
+.oim-dock .oim-key-close {
+  order: 2;
+  font-size: 1.1rem;
+}
+
+/* --- Modal window (settings) --- */
+.oim-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10vh 16px 16px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.oim-modal-backdrop.visible {
+  display: flex;
+}
+
+.oim-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100%);
+  max-height: 80vh;
+  overflow: hidden;
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.9rem;
+}
+
+.oim-modal .oim-panel-body {
+  overflow-y: auto;
+}
+
+/* The search box in the top bar, right of the header (search-bar.ts). */
+.maplibregl-ctrl.oim-search.oim-search-top {
+  position: absolute;
+  z-index: 3;
+  margin: 0;
+  width: 17em;
+}
+.oim-search-top .oim-search-control {
+  max-width: none;
+}
+
+/* Buttons of the fork's own among the map's (ui/map-button.ts): a line icon. */
+.oim-map-button svg {
+  display: block;
+  margin: auto;
+}
+/* The map's buttons (top right), in three groups, a wider gap between them: the view
+   (zoom, 3D), what's on the map (Data layers, My layers, satellite imagery), then
+   print, Settings and your account. Placed by order: the modules add them in any. */
+.maplibregl-ctrl-top-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in) {
+  order: 1;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-3d-button) {
+  order: 2;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group.layer-switcher {
+  order: 3;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-ul-control) {
+  order: 4;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-background-button) {
+  order: 5;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
+  order: 6;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-settings-button) {
+  order: 7;
+}
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-account-button) {
+  order: 8;
+}
+/* Each group's first: the gap. */
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group.layer-switcher,
+.maplibregl-ctrl-top-right > .maplibregl-ctrl-group:has(.oim-print-button) {
+  margin-top: 22px;
+}
+
+/* Data layers: the fork's icon (modules/layout), not the package's squares. */
+.maplibregl-ctrl-group.layer-switcher {
+  background-image: none;
+}
+.layer-switcher-button svg {
+  display: block;
+  margin: auto;
+}
+
+/* Something being worked out (a line of sight asked of the backend): a small ring
+   turning, before its text. */
+.oim-spinner {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 0.4em;
+  vertical-align: -0.1em;
+  border: 2px solid var(--oim-grey);
+  border-top-color: var(--oim-text-color);
+  border-radius: 50%;
+  animation: oim-spin 0.8s linear infinite;
+}
+@keyframes oim-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* A question's buttons (ui/confirm.ts): at the bottom right, the main one last. */
+.oim-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+}

@@ -1,0 +1,45 @@
+/* Fork: the "Selected circuit" panel in the left column, below the details (circuit.ts). */
+div.circuit-inspector.oim-circuit-panel {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  width: min(330px, calc(100vw - 32px));
+  max-width: none;
+  min-width: 0;
+  border: 0;
+  border-radius: var(--oim-radius-large);
+  box-shadow: var(--oim-drop-shadow);
+}
+
+.oim-circuit-panel .circuit-inspector-body {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+/* The details above leave it room: they scroll rather than push it off screen. */
+.oim-info-panel:not(.minimised):has(~ .oim-circuit-panel) .oim-side-panel-body {
+  max-height: calc(100vh - 190px - var(--oim-circuit-height, 0px));
+  min-height: 6em;
+}
+
+.oim-circuit-panel .circuit-inspector-header {
+  padding: 0.5em 0 0 0.5em;
+  align-items: flex-start;
+}
+
+.oim-circuit-panel .circuit-inspector-header button {
+  width: 1.8em;
+  height: 1.8em;
+  margin-top: -0.5em;
+  border: 0;
+  background-color: var(--oim-light-grey);
+  color: var(--oim-text-color);
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.oim-circuit-panel .circuit-inspector-header button:hover {
+  background-color: var(--oim-grey);
+  color: var(--oim-text-color-light);
+}

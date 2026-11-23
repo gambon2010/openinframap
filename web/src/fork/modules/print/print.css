@@ -1,0 +1,73 @@
+/* Fork: the Print window (print/). */
+
+.oim-print-note,
+.oim-print-status {
+  margin: 4px 0 8px;
+  color: var(--oim-dark-grey);
+  font-size: 0.9rem;
+}
+
+.oim-print-field {
+  display: grid;
+  grid-template-columns: 7em 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.oim-print-field input,
+.oim-print-field select {
+  min-width: 0;
+  padding: 3px 5px;
+}
+
+.oim-print-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.oim-print-make {
+  padding: 6px 14px;
+  border: 1px solid var(--oim-dark-grey);
+  border-radius: var(--oim-radius-small, 4px);
+  background: var(--oim-light-grey);
+  color: var(--oim-text-color);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.oim-print-make:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* The window: beside the map, not over it (the map is moved under the frame). */
+.oim-print-panel {
+  position: fixed;
+  top: 64px;
+  left: 12px;
+  z-index: 1500;
+  display: none;
+  flex-direction: column;
+  width: min(340px, calc(100vw - 24px));
+  border-radius: var(--oim-radius-large);
+  background-color: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.9rem;
+}
+.oim-print-panel.visible {
+  display: flex;
+}
+
+/* What will be printed: framed, the rest dimmed. */
+.oim-print-frame {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 2px solid #222;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 25%);
+  pointer-events: none;
+}

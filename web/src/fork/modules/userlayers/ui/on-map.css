@@ -1,0 +1,32 @@
+/* Fork: My layers. On the map: the hover tooltip (interactions.ts); the copy tool's
+   box (map/tools/copy-box.ts). Right-click menus are the shared one (ui/context-menu). */
+
+.oim-ul-tooltip {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  flex-direction: column;
+  max-width: 240px;
+  padding: 4px 8px;
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+.oim-ul-tooltip.visible {
+  display: flex;
+}
+.oim-ul-tooltip small {
+  color: var(--oim-text-color-light);
+}
+
+/* The copy tool's box (Shift + drag: map/tools/copy-box.ts). */
+.oim-ul-copy-box {
+  position: absolute;
+  z-index: 4;
+  border: 2px dashed var(--oim-link);
+  background: color-mix(in srgb, var(--oim-link) 10%, transparent);
+  pointer-events: none;
+}

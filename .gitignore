@@ -11,3 +11,7 @@ web/dist
 data/
 data/images/
 data/wikidata_json/
+*.bak
+
+# Fork: the scripts' Python environment (uv: scripts/pyproject.toml)
+scripts/.venv/

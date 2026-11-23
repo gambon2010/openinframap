@@ -4,9 +4,9 @@ ARG TEGOLA_CONFIG=.
 
 WORKDIR /app
 COPY ./*.py ./
-COPY ${TEGOLA_CONFIG}/layers.yml ${TEGOLA_CONFIG}/tegola.yml ./
+COPY ${TEGOLA_CONFIG}/layers.yml ${TEGOLA_CONFIG}/layers.fork.yml ${TEGOLA_CONFIG}/tegola.yml ./
 RUN pip install PyYAML toml
-RUN python generate_tegola_config.py ./tegola.yml ./layers.yml > ./config.toml
+RUN python generate_tegola_config.py ./tegola.yml ./layers.yml ./layers.fork.yml > ./config.toml
 
 FROM gospatial/tegola:v0.20.0
 

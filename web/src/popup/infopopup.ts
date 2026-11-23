@@ -2,7 +2,6 @@ import './infopopup.css'
 
 import i18next, { t } from 'i18next'
 import { LngLat, MapGeoJSONFeature, Popup, Map } from 'maplibre-gl'
-import { BACKEND_BASE_URL } from '../config.js'
 import { titleCase } from 'title-case'
 import { local_name_tags, formatVoltage, formatFrequency, formatPower } from '../l10n.ts'
 import friendlyNames from '../friendlynames.ts'
@@ -12,6 +11,8 @@ import { ClickRouter } from '../click-router.ts'
 import { OpenInfraMapAPI } from '../api.ts'
 import { CircuitInspector } from '../circuit/circuitinspector.ts'
 import ExternalLinks from '../elements/external-links.ts'
+import { BACKEND_BASE_URL } from '../fork/config.ts'
+import { forkPopup } from '../fork/index.ts'
 
 const hidden_keys = [
   'osm_id',
@@ -250,6 +251,9 @@ class InfoPopup {
     if (hidden_keys.includes(key) || key.startsWith('name_') || key.startsWith('voltage') || !value) {
       return null
     }
+    if (forkPopup.hiddenKeys().includes(key)) return null
+    const fork_row = forkPopup.renderKey(key, value)
+    if (fork_row !== undefined) return fork_row as HTMLTableRowElement | null
 
     let prettyValue = value
 
@@ -290,7 +294,7 @@ class InfoPopup {
     }
 
     if (!title_text) {
-      title_text = this.friendlyRender(feature.layer['id'])
+      title_text = forkPopup.title(feature) ?? this.friendlyRender(feature.layer['id'])
     }
 
     let feature_title = el('h3', title_text)
@@ -327,6 +331,8 @@ class InfoPopup {
   }
 
   async popupHtml(feature: MapGeoJSONFeature) {
+    const fork_html = forkPopup.html(feature)
+    if (fork_html) return fork_html
     const layer_id = feature.layer.id
 
     const attrs_table = el('table', { class: 'item_info' })
@@ -396,6 +402,7 @@ class InfoPopup {
   }
 
   async popup(feature: MapGeoJSONFeature, location: LngLat) {
+    if (forkPopup.open(feature)) return
     if (this.popup_obj && this.popup_obj.isOpen()) {
       this.popup_obj.remove()
     }
@@ -435,7 +442,6 @@ class InfoPopup {
   }
 
   async circuits_section(response) {
-    // Fork: no response when the backend is unreachable; show the popup without circuits.
     if (!response?.circuits || response.circuits.length == 0) {
       return []
     }

@@ -1,0 +1,58 @@
+/* Fork: My layers. The hint while a tool is in use (toast.ts) and the history timeline (timeline.ts), at the bottom of the map. */
+
+/* Hint while a tool is in use, and the history timeline: bottom of the map. */
+.oim-ul-toast,
+.oim-ul-timeline {
+  position: absolute;
+  left: 50%;
+  z-index: 4;
+  display: none;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  border-radius: var(--oim-radius-large);
+  background: var(--oim-content-background);
+  box-shadow: var(--oim-drop-shadow);
+  color: var(--oim-text-color);
+}
+.oim-ul-toast {
+  bottom: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.oim-ul-toast.visible {
+  display: flex;
+}
+.oim-ul-toast button {
+  border: 1px solid var(--oim-grey);
+  border-radius: var(--oim-radius-small);
+  background: var(--oim-light-grey);
+  cursor: pointer;
+}
+.oim-ul-timeline {
+  bottom: 30px;
+  width: min(720px, calc(100% - 32px));
+  padding: 8px 10px;
+}
+.oim-ul-timeline.visible {
+  display: block;
+}
+.oim-ul-timeline.visible ~ .oim-ul-toast {
+  bottom: 120px;
+}
+.oim-ul-timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.oim-ul-timeline-controls .oim-ul-slider {
+  flex: 1;
+}
+.oim-ul-timeline-text {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 0.85rem;
+}

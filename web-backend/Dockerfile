@@ -1,4 +1,6 @@
 FROM ghcr.io/astral-sh/uv:debian-slim
+# Fork: the expat library the osmium package needs (docs/FORK_CHANGES.md)
+RUN apt-get update && apt-get install -y --no-install-recommends libexpat1 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . /app

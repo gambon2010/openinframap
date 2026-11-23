@@ -1,0 +1,153 @@
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { PersonalSettings, complete } from './personal.ts'
+import { Store } from './store.ts'
+
+const layer = (id: string) => ({ id })
+
+function answer(value: unknown, ok = true) {
+  return vi.fn(async () => ({ ok, json: async () => ({ value }) }) as Response)
+}
+
+beforeEach(() => {
+  localStorage.clear()
+  vi.useFakeTimers()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+})
+
+describe('personal settings', () => {
+  test('a stored value with keys missing is completed', () => {
+    expect(complete({ hidden: ['a'] })).toEqual({
+      folders: {},
+      hidden: ['a'],
+      expanded: [],
+      folded: [],
+      foldedGroups: [],
+      empty: [],
+      active: null,
+      favourites: [],
+      recent: [],
+      order: []
+    })
+    expect(complete(null).folders).toEqual({})
+  })
+
+  test("a layer's folder is yours: none until you put it in one", () => {
+    const p = new PersonalSettings()
+    expect(p.folderOf(layer('a'))).toBeNull()
+    p.setFolder('a', ' Mine ')
+    expect(p.folderOf(layer('a'))).toBe('Mine')
+    p.setFolder('a', null)
+    expect(p.folderOf(layer('a'))).toBeNull()
+  })
+
+  test('a folder a layer is put in is no longer an empty one', () => {
+    const p = new PersonalSettings()
+    p.toggle('empty', 'New', true)
+    p.setFolder('a', 'New')
+    expect(p.data.empty).toEqual([])
+  })
+
+  test('changes are kept in the browser at once and sent once, a moment later', () => {
+    const fetch = answer(null)
+    vi.stubGlobal('fetch', fetch)
+    const p = new PersonalSettings()
+    p.toggle('hidden', 'a', true)
+    p.toggle('folded', 'Grid', true)
+    p.toggle('hidden', 'a', true)
+    expect(new PersonalSettings().data).toMatchObject({ hidden: ['a'], folded: ['Grid'] })
+    expect(fetch).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(600)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/userdata/settings/userlayers')
+    expect(init.method).toBe('PUT')
+    expect(JSON.parse(init.body as string)).toMatchObject({ hidden: ['a'], folded: ['Grid'] })
+  })
+
+  test("loading: the account's settings replace this browser's, and listeners hear it", async () => {
+    vi.stubGlobal('fetch', answer({ hidden: ['b'], folders: { a: 'Server' } }))
+    const p = new PersonalSettings()
+    p.toggle('hidden', 'a', true)
+    const heard = vi.fn()
+    p.onChange(heard)
+    await p.load()
+    expect(p.data.hidden).toEqual(['b'])
+    expect(p.folderOf(layer('a'))).toBe('Server')
+    expect(heard).toHaveBeenCalled()
+    expect(new PersonalSettings().data.hidden).toEqual(['b'])
+  })
+
+  test("loading for the first time sends this browser's to the account", async () => {
+    const fetch = answer(null)
+    vi.stubGlobal('fetch', fetch)
+    localStorage.setItem('oim-userlayers-personal', '{"hidden": ["a"]}')
+    const p = new PersonalSettings()
+    await p.load()
+    vi.advanceTimersByTime(600)
+    const put = fetch.mock.calls.find((c) => (c as unknown[])[1]) as unknown as [string, RequestInit]
+    expect(JSON.parse(put[1].body as string).hidden).toEqual(['a'])
+  })
+
+  test("the server can't be reached: this browser's are kept", async () => {
+    vi.stubGlobal('fetch', answer(null, false))
+    localStorage.setItem('oim-userlayers-personal', '{"hidden": ["a"]}')
+    const p = new PersonalSettings()
+    await p.load()
+    expect(p.data.hidden).toEqual(['a'])
+  })
+})
+
+describe('symbols', () => {
+  test('favourites: starred and unstarred', () => {
+    const p = new PersonalSettings()
+    p.toggleFavourite('S*G*UCI---------')
+    p.toggleFavourite('G*G*OLAGM------')
+    expect(p.data.favourites).toEqual(['S*G*UCI---------', 'G*G*OLAGM------'])
+    p.toggleFavourite('S*G*UCI---------')
+    expect(new PersonalSettings().data.favourites).toEqual(['G*G*OLAGM------'])
+  })
+
+  test('recently used: most recent first, no repeats, at most 12', () => {
+    const p = new PersonalSettings()
+    for (let i = 0; i < 14; i++) p.rememberRecent(`code${i}`)
+    p.rememberRecent('code5')
+    expect(p.data.recent[0]).toBe('code5')
+    expect(p.data.recent).toHaveLength(12)
+    expect(new Set(p.data.recent).size).toBe(12)
+  })
+})
+
+describe('the store', () => {
+  test('the layer you draw into is remembered; gone, the first one is used', () => {
+    vi.stubGlobal('fetch', answer(null))
+    const store = new Store()
+    const a = store.createLayer('A')
+    const b = store.createLayer('B')
+    store.setActive(a)
+    expect(new Store().personal.data.active).toBe(a)
+    store.deleteLayer(a)
+    expect(store.activeLayer).toBe(b)
+  })
+
+  test('a layer made in a folder is in it for you only: not in its shared style', () => {
+    vi.stubGlobal('fetch', answer(null))
+    const store = new Store()
+    const id = store.createLayer('A', 'Grid')
+    expect(store.layers.get(id)?.style).not.toHaveProperty('folder')
+    expect(store.personal.folderOf(store.layers.get(id)!)).toBe('Grid')
+  })
+
+  test('hidden layers follow the settings loaded from the server', async () => {
+    vi.stubGlobal('fetch', answer({ hidden: ['x'] }))
+    const store = new Store()
+    const heard = vi.fn()
+    store.onChange(heard)
+    await store.personal.load()
+    expect(store.hidden.has('x')).toBe(true)
+    expect(heard).toHaveBeenCalled()
+  })
+})

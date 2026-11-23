@@ -6,7 +6,7 @@ data for the region you choose. Once set up, everything can work without interne
 including searching for places; only street-address search needs an optional Photon
 server.
 
-For *what* the fork changed and *why*, see [FORK_CHANGES.md](./FORK_CHANGES.md).
+For *what* the fork changed and *why*, see [HISTORY.md](./HISTORY.md).
 
 ---
 
@@ -17,7 +17,7 @@ For *what* the fork changed and *why*, see [FORK_CHANGES.md](./FORK_CHANGES.md).
 | Docker + Compose v2 | Docker 24+ | `docker compose` (not `docker-compose`). Runs the database, Tegola and the backend |
 | Node.js + npm | Node 20+ | Runs the frontend |
 | curl, python3, unzip | any | Used by the setup scripts |
-| [uv](https://docs.astral.sh/uv/) | any recent | **Optional:** for the Wikidata cache script, and to run the backend outside Docker |
+| [uv](https://docs.astral.sh/uv/) | any recent | **Required**: the scripts' Python environment (`scripts/pyproject.toml`: made and kept up to date by uv on first use, in `scripts/.venv`), extra data (French electricity/gas networks, biomethane, ICPE: `scripts/extra_data.py`), the Wikidata cache script, and running the backend outside Docker. Install: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | Free disk space | depends on region | The raw extract (46 MB for Luxembourg, 33 GB for Europe, ~95 GB for the world) plus the database (roughly 1 GB for Russia). The script checks before starting |
 
 `launch.sh` checks these and tells you what's missing; it never installs anything.
@@ -39,9 +39,9 @@ bash scripts/launch.sh
    region, or import a ready-made one.
 3. Creates `web/.env` and `web-backend/.env` if they don't exist.
 4. Starts the Tegola tile server.
-5. Asks **"Start the app now?"**: it starts the backend (Docker), opens the frontend
-   in a new terminal window, and opens http://localhost:5173 in your browser once
-   it's up.
+5. Asks **"Start the app now?"**: it starts the backend and the gate (Docker),
+   opens the frontend in a new terminal window, and opens http://localhost:5173 in
+   your browser once it's up.
 6. Offers to fill the Wikidata cache for offline popups (with a time estimate).
 
 For a quick test, pick **Luxembourg**: it builds in under a minute.
@@ -56,6 +56,73 @@ It asks nothing: it starts the database, Tegola and the backend, opens the front
 window and the browser. Anything already running is left alone.
 
 **To stop:** Ctrl+C in the frontend window (or close it), then `docker compose stop`.
+
+### Logging in
+
+The whole app is behind a login. On this computer, `start.sh` opens the frontend's
+dev server, **http://localhost:5173** (your changes show at once). From another
+computer, and on a computer without Node.js, it's the gate: **https://<this
+computer's address>:8800**, serving the page as last built into its image (the gate
+is rebuilt by `start.sh` and the export when the frontend changed).
+
+**The browser warns the first time** ("Your connection is not private"): the gate
+made its own certificate (nobody else vouches for it), so choose **Advanced →
+Proceed**, once per browser. The connection is encrypted all the same: passwords
+and the session don't cross the network in clear. To avoid the warning, install
+`data/local/gate/cert.pem` as a trusted certificate on each computer (browser or system
+settings, "Certificates" → import). The certificate is valid 10 years, for
+`localhost` and this computer's name and network addresses when it was made; if the
+address changes, delete `data/local/gate/` and restart the gate (`docker compose restart
+gate`) to make a new one.
+
+- **The first time**, the page asks you to create the first account: it's an admin.
+- **Admins** add the other accounts in **Settings → Accounts** (nobody can sign up
+  alone), set new passwords, and give the **Admin** right (manage accounts). An
+  account can be disabled.
+- **Log out** (the person among the buttons, top right) ends the session; otherwise it lasts 30 days
+  from the last visit.
+
+Behind it, the **gate** (`gate/nginx.conf`, the `gate` Compose service) is the only
+way in from the network: it checks the session on every request, for the map tiles,
+the background map and the page too. The database, Tegola, the backend and the
+background map server only listen on this computer (127.0.0.1), and the backend
+refuses any call without a session too. The frontend dev server (port 5173) only
+listens on this computer; it passes the same requests to the same services.
+
+---
+
+## Using the map
+
+- **Top left:** the search box. Below it, clicking anything on the map opens its
+  **details** (and highlights it); under those, the **Grid connection** panel when
+  you pick a route (see below). **–** shrinks a panel to its title, **×** closes it.
+- **Bottom left** (next to the scale): where the cursor is: latitude, longitude and the
+  military grid reference (MGRS); press **G** with the pointer on the map to copy the
+  grid reference there. The search box also finds grid references ("32T LT 725 899").
+- **Top right, the buttons,** in three groups: first the view (zoom, **3D**, below),
+  then what's on the map: **Data layers** (the
+  stack: what's on the map and its key: tick a category, unfold it ▸ to tick its rows),
+  **My layers** (the pencil), **satellite** (pressed: satellite imagery under the data;
+  again: the map; greyed where there's no imagery, its tooltip says why). Click a panel's button to open it next to the buttons; click it again
+  (or ×) to close it. Only one is open at a time; the open one's button is outlined.
+  Long panels scroll inside. **3D**: the map tilts, the ground takes its relief
+  (true heights, where terrain is downloaded) under a sky, buildings rise to
+  their height, and over the map the hill shading comes on (the relief is hard to see
+  without it; off again with 3D if 3D switched it on); drag with the right mouse button, or Ctrl and drag, to tilt and turn it;
+  click again for the flat map facing north, which can't be tilted. At the bottom:
+  **print** (the printer), **Settings**
+  (the gear: background map and address search servers, see below; **Debug**: the
+  map's zoom, scale and what is under the pointer, and a clicked thing's raw data
+  under its details; admins: accounts) and **your account** (the person: who is logged in, **Log out**).
+- **About this map** (its region and the date of its data, the datasets, how to use
+  it, credits and licences): in the credits at the bottom right (ⓘ).
+- **Print:** the map as a PDF: title, A4 or
+  A3, landscape or portrait. While the print window is open, a frame on the map
+  shows what will be printed; move or zoom the map under it. The map fills the
+  page (quarter-inch margins, what nearly every printer can print to; print at
+  actual size, 100 %, for the written scale to be true), with a box over its bottom-right
+  corner: the title, the date, a legend of what's shown, the scale, the centre's
+  grid reference; north in the top-right corner.
 
 ---
 
@@ -82,7 +149,7 @@ boundaries, Wikidata cache, recent builds), then shows a menu:
 All questions come first; after that it runs unattended:
 
 1. **Download** from Geofabrik (or planet.openstreetmap.org for the world) to
-   `data/osm/`. Resumable and checksum-verified. If you already have the region and
+   `data/downloads/osm/`. Resumable and checksum-verified. If you already have the region and
    Geofabrik has a newer extract, it asks; the default is to keep yours.
 2. **Filter** it down to infrastructure with osmium. The filter is generated from
    the imposm mapping, so the imported data is the same, just much faster
@@ -108,8 +175,19 @@ bash scripts/build-region.sh --region russia --rebuild --yes   # ignore an expor
 bash scripts/build-region.sh --help                          # all options
 ```
 
-**Build history:** `data/osm/build-history.log` records every build, export and
+**Build history:** `data/downloads/osm/build-history.log` records every build, export and
 import, and whether it finished, failed (and at which step) or was interrupted.
+
+**Losing the internet:** every download (the region, the background map, satellite
+imagery, extra data, the Wikidata cache) waits for the connection to come back, up
+to 15 minutes, and then goes on where it stopped. A download that hangs is stopped
+after 2 minutes without progress and tried again. If the connection doesn't come
+back, the script stops and keeps what was downloaded: run the same command again
+to go on. (Change the wait with `NET_WAIT_SECONDS=1800 bash scripts/...`.)
+If only that server stops answering while the rest of the internet works (for 2
+minutes), it has most likely blocked this computer for asking too much (IGN's
+aerial photo server does after a while): the script says so and stops at once,
+keeping what was downloaded. Try again a few hours later, with a smaller area.
 
 ### Typical times
 
@@ -125,25 +203,177 @@ Measured on this project's dev machine; your download speed dominates.
 
 ## Offline background map
 
-The background map (streets, buildings, place names) comes from openinframap.org
-unless you download it. `build-region.sh` asks, showing the real sizes for the
-region:
-
-```
-      1) Full detail         67MB  streets and individual buildings at every zoom
-      2) Reduced detail      24MB  streets and places; blurry when zoomed in close
-      3) Skip                 —  keep using the online background map
-```
-
-Sizes grow quickly with area. Roughly: France 9.5 GB full / 2.3 GB reduced,
-Russia 26 / 7.4 GB, Europe 49 / 13 GB, the whole world ~139 GB at full detail.
+The background map (streets, buildings, place names) is only ever local: where
+none is downloaded the background is empty. Download it in the offline maps menu (`bash scripts/offline-maps.sh`, or
+in `build-region.sh`): Add, the area, *Background map*. Always full detail (to
+zoom 15, buildings included). The menu shows each area's edition (Protomaps'
+date) and offers it again only when a newer one exists. Several areas can be
+downloaded; they show together. The whole world is Protomaps' file itself
+(~140 GB); the whole world to zoom 8 (560 MB: every country's borders and names
+zoomed out) comes by default with any download and every build. Sizes grow quickly with area: by bounding box (upper bounds) France
+9.5 GB, Russia 26 GB, Europe 49 GB; the menu shows the real size, by outline.
 
 It's cut from [Protomaps](https://protomaps.com)' daily world map and saved as
-`data/basemap/<region>.pmtiles`. A small server (`docker compose up -d basemap`,
-port 8090) serves it, and `web/.env` gets
-`VITE_BASEMAP_URL=http://localhost:8090/<region>/{z}/{x}/{y}.mvt`. Restart the
-frontend after that changes. Re-running the build offers to refresh it with newer
-map data. Unattended: `--basemap full`, `--basemap reduced` or `--basemap none`.
+`data/map/offline-maps/<region>.pmtiles`. The backend serves every background map there
+together (each tile from the first file that has it, so several areas show at
+once), at `/background`, the frontend's default.
+
+Zoomed out: Protomaps' tiles hold every building, small road and path, and the
+tunnel marks, only from zoom 14 or 15. Right after an area is downloaded, what they
+leave out zoomed out is made from its zoom 15 tiles into
+`data/map/offline-maps/<region>.zoomed-out.pmtiles` (France: 17 minutes, about 360 MB): the
+buildings big enough to see at zooms 12 to 14, the roads at zooms 8 to 13 (secondary
+roads from 10, tertiary from 11, small roads from 12, paths from 13, tunnels dotted;
+drawn the way Planetiler draws them, a motorway's two carriageways overlapping into
+one road zoomed out; near a border, the background map's own roads beyond the area), and the railways at zooms 6 to 15, ranked from
+OpenStreetMap: main lines from zoom 6, branch lines from 8, trams, metro and
+industrial lines from 11, sidings and yards from 14, close tracks as one line up to
+zoom 14 (trams and metro at every zoom). From zoom 12 each tram and metro line is
+drawn in its lane and colour, side by side where lines share a track, joined
+through junctions, by LOOM (University of Freiburg, built from `tools/loom`) into
+`data/map/offline-maps/<region>.transit.pmtiles` (France: 9 minutes, 5 MB; the build says
+which lines it couldn't draw). The railways come from the region's OpenStreetMap extract
+(`data/downloads/osm/<region>-latest.osm.pbf`, the build's, downloaded if missing: France
+5 GB), cut into `<region>.railways.osm.pbf` with the tram and metro routes (France:
+3.5 minutes, 20 MB); its taxiways into `<region>.taxiways.osm.pbf`, so the stand
+lead-in lines some airports map as taxiways aren't drawn. The backend adds them to the background
+map's tiles; *Data layers → Background map → Buildings* shows the buildings. For an
+area downloaded before, the menu offers *Buildings, roads and railways zoomed out* (or
+`uv run --project scripts scripts/offline-maps.py zoomed-out --area france`). Removing the area removes them too. Unattended: `build-region.sh --basemap full`, or
+`uv run --project scripts scripts/offline-maps.py maps --source protomaps --area france --yes`.
+
+Terrain comes with it, always: the area's elevations (for contour lines, hill
+shading and the 3D relief), cut from [Mapterhorn](https://mapterhorn.com)'s terrain
+tiles to zoom 13 into `data/map/offline-maps/<region>.terrain.pmtiles` (6.6 m pixels;
+in France IGN's RGE ALTI and LiDAR HD, elsewhere mostly Copernicus' 30 m; France
+5.6 GB, Luxembourg 43 MB). Its size is in the background map's. For an area
+downloaded before, the menu offers *Terrain* (or `uv run --project scripts scripts/offline-maps.py
+terrain --area france --outline data/map/offline-maps/.area-france.geojson`). The
+backend serves every area's terrain together (`/terrain`); *Data layers → Terrain →
+Hill shading* (on at first) shades the hills, over the map and, fainter, over
+imagery; *Contour lines* draws them as on military maps (every fifth line heavier
+with its height; 100 m apart zoomed out, then 50, 20 and 10 m closer in; dashed
+supplementary lines at half the interval on level ground; ticks inside hollows),
+made by the backend from the terrain; it unfolds into a tick box for each of those
+parts. The coordinates box at the bottom left shows, besides where the cursor is,
+the ground's height (Alt) and slope (degrees and per cent), the magnetic
+declination (Decl), and the distance and bearing from your last click on the map
+(From click, in the north chosen in My layers' settings; Escape forgets the click);
+a clicked thing's details show its height (an area's at its middle). Narrower
+windows leave out the latitude and longitude, phones all but the grid reference
+and the height.
+
+## Satellite imagery (offline)
+
+One menu for offline maps (satellite imagery, aerial photos, background maps), in
+`build-region.sh` (after the background map; what you choose is downloaded after
+the build) and on its own, for the region you already have, without rebuilding
+(your map data and layers stay):
+
+```bash
+bash scripts/offline-maps.sh      # the menu; reload the map's page to see what's new
+```
+
+```
+Offline maps                                        273 GB free
+
+ Area         Source              zoom      size
+ World        Blue Marble 500 m   0–8     285 MB
+ France       Sentinel-2 10 m     5–13    512 MB
+ France       IGN 20 cm           12–17   1.3 GB   2/96 départements
+
+ 1 Resume   2 Add   3 Remove   4 Settings      Enter: quit
+```
+
+- **Add**: an area (the region built, one you have, the world, or a search), then
+  what it can have, with what's there and what's left. Only what makes sense is
+  offered: Sentinel-2 stops at zoom 11 where aerial photos take over at 12 ("IGN
+  from 12"); an area inside one you have to the same zoom isn't offered again.
+  Blue Marble and Sentinel-2 come at their most (no zoom question); aerial photos
+  ask the zoom (17 by default, 18 and 19 shown with their sizes), IGN also which
+  départements (Enter: all; `?` lists them, ✓ there, ◐ stopped). Then the plan
+  (kept, download, time, room needed) and *Start?*.
+- **Resume**: a download stopped (no connection, the server blocking, Ctrl+C)
+  goes on from where it was.
+- **Remove**: shows what could be freed (a file another one covers).
+- **Settings**: a speed cap (MB/s) and the aerial photos' usual zoom, kept in
+  `data/map/offline-maps/settings.json`.
+
+One download runs at a time; a second window shows it instead of starting another.
+What's in `data/map/offline-maps/` is listed in `data/map/offline-maps/inventory.json`, made from the
+files themselves each time (copy the folder and it comes along). Unattended:
+`uv run --project scripts scripts/offline-maps.py maps --source fr_ign --units 33 40 --zoom 17 --yes`,
+or `--resume --yes`.
+
+It's shown with the
+**satellite button** (top right) off: the map (each kind of area its own pale shade,
+roads white with a grey edge); on: imagery with place names and borders (buildings,
+when on, filled like roofs). **Data layers → Roads and railways** (*Roads*,
+*Railways*, *Trams and metro*, or the heading for all three) draws them bold, the
+same at every zoom, over the map or over imagery: motorways orange, trunk roads
+(voies express) amber, primary roads yellow, secondary pale yellow, smaller white;
+each tram or metro line in its own colour, side by side where lines share a track
+(in a tunnel see-through inside its outline). Unticked, roads show light over the
+map, railways and trams as the map's own (railways from zoom 11, trams from 14). Clicking a road shows its
+name and numbers (A35, E25) at every zoom; clicking a tram or metro line (from zoom
+12) highlights the whole line and its stops, each named. Each entry unfolds to its kinds, each with a tick box (sidings, yards and depots
+unticked at first).
+
+Three kinds, each adding detail to the one below (sizes are what's kept on disk):
+
+| What | Covers | Size |
+|---|---|---|
+| NASA Blue Marble, 500 m, to zoom 8 | the whole world, one file for every region (`world.sat-overview.pmtiles`), downloaded once | ~330 MB, about an hour |
+| Sentinel-2 10 m, cloud-free composite (2021), zoom 7 to 12 or 13 (Blue Marble further out) | the region you built, **another country or region** (searched by name), or **the whole world** | France to 12: ~200 MB (reads ~13 GB from ESA); to 13: ~800 MB (reads ~51 GB) |
+| Aerial photos, 8 to 60 cm, from zoom 12 (17 by default; France: to 19) | the countries that publish them openly (below), cut to the area chosen | a département to 16: a few GB, hours |
+
+The whole world with Sentinel-2 (land only; no Antarctica), by last zoom:
+
+| To zoom | Kept | Read from ESA |
+|---|---|---|
+| 9 | ~0.8 GB | ~40 GB |
+| 10 (default) | ~3 GB | ~150 GB |
+| 11 | ~12 GB | ~600 GB |
+| 12 | ~47 GB | ~2.4 TB |
+| 13 | ~190 GB | ~9.4 TB |
+
+Aerial photo sources (`uv run --project scripts scripts/offline-maps.py sources`): France (IGN, 20 cm,
+see below), Spain (PNOA, 25 cm), the Netherlands (PDOK, 8 cm), Luxembourg (20 cm), Austria
+(basemap.at, 30 cm), Belgium (Flanders and Wallonia, 25 cm), Germany (North
+Rhine-Westphalia 10 cm, Bavaria 40 cm, Berlin 20 cm), Czechia (ČÚZK, 20 cm), Poland
+(Geoportal, 25 cm), Estonia (25 cm) and the United States (USGS/NAIP, 60 cm–1 m, to
+zoom 16). All open data; each map shows its credit. Not offered: Switzerland (its
+terms want offline copies from its file downloads, not its tile server), Denmark
+(needs a key), Norway, and Google, Bing or Esri imagery (their terms forbid offline
+copies). The menu shows each one's size and time for the area: they're fetched tile
+by tile (about 10–20 a second), so a whole country to zoom 17 takes days. The
+estimates count the region's whole outline, coastal sea included, so they're upper
+bounds. A download that's stopped goes on where it stopped when run again.
+
+**France (IGN's BD ORTHO)** comes as IGN's own files, one département at a time:
+IGN's tile server blocks a computer that asks for its tiles by the million. Each
+département is downloaded whole (its 20 cm photos, about 5 GB per 1,000 km²;
+Bas-Rhin 23 GB) whatever the zoom you keep, made into WebP tiles here (zoom 12 up
+to 15–19), then the download is deleted: the disk holds the tiles and one
+département's files at a time. The menu asks the last zoom, then which départements
+(their codes; Enter: all of the area's). Kept on disk, all of France: ~12 GB to
+zoom 15, ~130 GB to 17, ~2 TB to 19 (one département to 19: ~20–30 GB). Bas-Rhin
+to zoom 17: 1.17 GB from a 22.8 GB download. To cap the download speed (MB/s, all
+parts together): `OIM_MAX_RATE=10 bash scripts/offline-maps.sh`, or `--max-rate 10` on
+`uv run --project scripts scripts/offline-maps.py bdortho …`. Each
+département is its own file (`fr-67.sat-detailed-fr_ign.pmtiles`); one already
+there to the zoom asked is skipped, a higher zoom makes it again.
+
+**Adding more detail later**: run `bash scripts/offline-maps.sh` again, Add, and
+choose a higher zoom. The file is made again up to it, and what you have stays
+until the new one is finished; the menu shows what you have and offers only more.
+
+Everything in `data/map/offline-maps/` is shown, whatever area it's of; past a file's last
+zoom its imagery is stretched (blurry), and where a file has nothing the one below
+shows. Copy `data/map/offline-maps/` along with an export to take it with you. Without
+questions: `build-region.sh --maps "sentinel2 fr_ign"` (downloaded after the build),
+or `uv run --project scripts scripts/offline-maps.py maps --source ID --yes` (`--area`, `--units`,
+`--zoom`; `--help` lists the sources).
 
 ## Sharing a built database (export / import)
 
@@ -154,17 +384,23 @@ bash scripts/export-db.sh
 ```
 
 This writes:
-- `data/exports/<region>.oimdb`: the database, compressed (Luxembourg: 23 MB).
-- `data/exports/<region>.json`: region, OSM data date, checksum.
-- Optionally `data/exports/docker-images.tar.gz` (~460 MB, shared by all exports):
+- `data/map/exports/<region>.oimdb`: the database, compressed (Luxembourg: 23 MB).
+- `data/map/exports/<region>.json`: region, OSM data date, checksum.
+- Optionally `data/map/exports/docker-images.tar.gz` (~460 MB, shared by all exports):
   the project's Docker images, so a computer **without internet** can run it.
+
+Once a region has an export, it's kept up to date: when the database no longer
+matches it (rebuilt, or other extra data), `build-region.sh` (at the end; skip with
+`--no-export`) and `start.sh` (once the map is up) export it again, without asking.
+Ctrl+C skips it; the old export stays until the new one is complete. Your own
+layers don't count (they're kept per computer).
 
 On another computer, copy the project folder (e.g. to a USB drive) and run
 `bash scripts/launch.sh`. The region menu offers the export; importing takes
 seconds to minutes instead of rebuilding. You can import directly too:
 
 ```bash
-bash scripts/import-db.sh data/exports/russia.oimdb
+bash scripts/import-db.sh data/map/exports/russia.oimdb
 ```
 
 The import checks the file isn't damaged and warns if the export was made with a
@@ -174,12 +410,12 @@ different version of the import mapping or views.
 
 | Folder | Copy it? |
 |--------|----------|
-| `data/exports/` | Yes: the databases and Docker images |
-| `data/images/`, `data/wikidata_json/` | Yes, for offline popups |
-| `data/basemap/` | Yes, if you downloaded an offline background map |
-| `data/EEZ_*` | Yes, so future rebuilds don't need the manual download |
+| `data/map/exports/` | Yes: the databases and Docker images |
+| `data/map/images/`, `data/map/wikidata_json/` | Yes, for offline popups |
+| `data/map/offline-maps/` | Yes, if you downloaded an offline background map |
+| `data/downloads/EEZ_*` | Yes, so future rebuilds don't need the manual download |
 | `web/node_modules/` | Yes, so the frontend starts offline |
-| `data/osm/` | No: the raw downloads (4 GB for Russia, ~95 GB for the world), only needed to rebuild |
+| `data/downloads/osm/` | No: the raw downloads (4 GB for Russia, ~95 GB for the world), only needed to rebuild |
 
 ---
 
@@ -230,22 +466,20 @@ uv run uvicorn src.main:app --reload --port 8001
 ### `web/.env`
 
 ```
-# Night-lights tiles, and the background map unless VITE_BASEMAP_URL is set.
-VITE_TILE_BASE_URL=https://openinframap.org
 # Infrastructure tiles from the local Tegola.
 VITE_TEGOLA_URL=http://localhost:7800
 # The local backend.
 VITE_BACKEND_BASE_URL=http://localhost:8001
-# Background map server (Protomaps schema), full {z}/{x}/{y} URL. build-region.sh
-# sets it when you download an offline background map.
-VITE_BASEMAP_URL=http://localhost:8090/luxembourg/{z}/{x}/{y}.mvt
+# Optional: another background map server (Protomaps schema), full {z}/{x}/{y}
+# URL. Unset: the backend's, every background map downloaded (only local tiles).
+# VITE_BASEMAP_URL=http://localhost:8080/region/{z}/{x}/{y}.mvt
 # Optional Photon server for street-address search (not set up by the scripts).
 # VITE_PHOTON_URL=http://localhost:2322
 ```
 
 ### Changing the background map without editing `.env`
 
-The **Map sources** button (the server icon under the key, top right) shows which
+**Settings** (the gear among the buttons, top right) shows which
 background-map URL is in use and where it comes from (built-in default, `web/.env`,
 or this tab). You can paste another `{z}/{x}/{y}` URL there and it switches
 immediately; **"How do I change the default?"** explains the `web/.env` setting.
@@ -262,13 +496,49 @@ DATABASE_URL=postgresql+asyncpg://osm:osm@localhost:5432/osm
 
 ---
 
+## Where the data is
+
+Everything the scripts download or make is in `data/` (never in git), in three
+parts:
+
+| Folder | What | Copy it? |
+|---|---|---|
+| `data/map/` | what the app needs: the offline maps (`offline-maps/`), the Wikidata cache (`images/`, `wikidata_json/`), the exports (`exports/`) | yes, to run the map elsewhere |
+| `data/local/` | this computer's own: the gate's certificate, My layers' copy made during an import, checks, logs | no |
+| `data/downloads/` | what can be downloaded again: OpenStreetMap extracts, extra data's sources, sea boundaries | no: delete it any time to free space |
+| `data/installers/` | Docker and the development tools, for computers without the internet (below) | yes, with the map |
+
+### Installers for computers without the internet
+
+```bash
+uv run --project scripts scripts/fetch_installers.py          # all of them (about 5 GB)
+uv run --project scripts scripts/fetch_installers.py --list   # what it would download
+uv run --project scripts scripts/fetch_installers.py --only windows
+```
+
+It keeps, in `data/installers/`:
+
+- **Docker for Linux:** Docker's own packages for Ubuntu 22.04, 24.04, 26.04 and
+  26.10, Debian 12 and 13, Fedora 43 to 45, RHEL 8 to 10 (also Rocky, Alma, CentOS
+  Stream), each for Intel/AMD and ARM; Docker's standalone programs for any other
+  distribution. Install with `bash data/installers/install-docker.sh`: it picks the
+  right ones.
+- **Docker for Windows:** Docker Desktop and WSL, Intel/AMD and ARM (free for
+  personal use, education and small businesses; larger organisations need Docker's
+  subscription).
+- **Development tools:** Node.js, uv, Python for uv, 7-Zip, for Linux and Windows.
+
+`README.txt` there says which file is for which computer; `manifest.json` lists each
+file's address and checksum. Run it again to add newer versions (what's there stays).
+When Docker or another tool is missing, `launch.sh`, `start.sh`, `build-region.sh`
+and `import-db.sh` point there.
+
 ## What works offline
 
 | Feature | Offline? |
 |---------|----------|
 | Infrastructure map (power, telecoms, pipelines, water) | Yes, from local Tegola |
-| Background map (roads, buildings, labels) | Yes if you downloaded it for the region; otherwise from openinframap.org |
-| Night-lights background | Not available: online only, and its switch is hidden |
+| Background map (roads, buildings, labels) | Yes, where you downloaded it (the world to zoom 8 comes with any download); nothing elsewhere: there's no online one |
 | Search for places (countries, cities, towns, villages, hamlets, suburbs, islands) | Yes, for the built region. Cities and towns are listed before infrastructure with the same name |
 | Search for power plants and substations | Yes. Names that start with what you type come first, then names with a word that does ("vianden" also finds "Centrale de Vianden") |
 | Search for coordinates | Yes |
@@ -293,19 +563,40 @@ one, set it in `web/.env` and restart the frontend:
 VITE_PHOTON_URL=http://localhost:2322
 ```
 
-or try it for the current tab in the **Map sources** panel ("Address search
+or try it for the current tab in **Settings** ("Address search
 (Photon, optional)"), which also checks that the server answers.
+
+## Grid connections between two stations (prototype)
+
+Click a substation or power plant and choose **Route from here**, then another and
+choose **Route to here**. A panel lists up to three distinct paths over lines of
+110 kV and more, each broken down into the stretches between the substations and
+plants it passes through (distance and voltage each), with the total at the end, and the map draws them in
+different colours; click a path to show only that one, × to clear. A station that
+is only on a lower voltage (e.g. a wind farm on a 65 kV line) is connected over
+those lines to the nearest station on the 110 kV+ grid; those stretches show
+their lower voltage in the breakdown. The route is kept
+in the map link, so you can share it.
+
+Clicking anything on the map shows its details in a **panel on the left** (not a
+popup over the map) and highlights it: icons get a glowing circle, areas an
+outline, lines a glow. A **power line** is highlighted up to the stations at its
+ends; the panel names them and the length, and **Show whole line** zooms to it.
+**–** minimises a panel (the highlight stays), **×** closes it (the highlight goes);
+clicking the same thing again also deselects it. Picking a search result opens its
+details the same way. Needs a database built with this feature
+(`build-region.sh` builds the network automatically).
 
 ## Wikidata image cache
 
 When you click a feature with a `wikidata` tag, the popup asks the backend for
-`/wikidata/{id}`. The backend serves `data/wikidata_json/{id}.json` and
-`data/images/{id}.*` if they're cached, and only otherwise calls Wikimedia.
+`/wikidata/{id}`. The backend serves `data/map/wikidata_json/{id}.json` and
+`data/map/images/{id}.*` if they're cached, and only otherwise calls Wikimedia.
 
 ```bash
-uv run scripts/fetch_images.py --json-only   # text only, seconds
-uv run scripts/fetch_images.py               # text and photos, 1 photo/second
-uv run scripts/fetch_images.py --count       # how many are missing
+uv run --project scripts scripts/fetch_images.py --json-only   # text only, seconds
+uv run --project scripts scripts/fetch_images.py               # text and photos, 1 photo/second
+uv run --project scripts scripts/fetch_images.py --count       # how many are missing
 ```
 
 It follows [Wikimedia's API etiquette](https://www.mediawiki.org/wiki/API:Etiquette)
@@ -315,11 +606,255 @@ by Wikidata ID, so it's shared across regions.
 
 ---
 
+## Critical sites
+
+The layer switcher's **Critical sites** group shows infrastructure from OSM that the
+other layers don't: health and emergency services, government offices (town halls,
+prefectures, tax offices, CAF...), places of worship, fuel stations and depots,
+airports and ports, military sites, food supply, dams and landfills. Important ones show from zoom 8, the rest from zoom
+12 or 14; zoomed out, a disc with a number stands for several of a kind nearby (a
+lone one shows as itself). The key lists every kind; untick one to hide it, from
+the discs' numbers too. With debug on, a clicked thing's details link to its page
+on OpenStreetMap.
+
+**Military** sites are sorted into military airfields, naval bases, barracks, schools,
+offices, depots, ranges and training grounds, forts in use, radar and radio stations,
+research, test and weapons establishments, other military areas, and disused
+fortifications (grey, their own grey discs zoomed out; unticked at first). What a
+site is comes from its OSM tags, else its name ("Dépôt de munitions" a depot,
+"Station hertzienne" radio), else the sites around it (the blocks of a Maginot
+ouvrage in use are the fort) or inside it (an unnamed area holding a depot is the
+depot), or what stands in it (a radio tower: a radio station). A "Camp de ..." is a
+training ground from 90 ha, else a garrison. Military airfields are listed under
+Transport too, with one tick box for both: Transport's airports are the civil ones
+(a civil airport's military part is a military airfield of its own); closed
+airfields, civil or military, are drawn in grey with their tick box. A site
+mapped twice under one name (a building and its grounds) is drawn once. To teach it a word, in any language, add a row to
+`schema/fork/site-rules.sql`; to correct one site, add its OSM id, name and kind, with
+why, to `schema/fork/site-overrides.sql`. Then rebuild the sites (with no other
+database work running):
+
+```bash
+(echo "DROP MATERIALIZED VIEW IF EXISTS search_feature;"; cat schema/fork/site-rules.sql \
+  schema/fork/site-overrides.sql schema/fork/site-kinds.sql schema/fork/sites.sql \
+  schema/fork/site-points.sql schema/fork/search.sql) \
+  | docker compose exec -T db psql -U osm -d osm -q -v ON_ERROR_STOP=1
+bash -c 'source scripts/lib/common.sh && source scripts/lib/docker.sh && up_services --force-recreate tegola'
+```
+
+---
+
+## Extra data (not from OpenStreetMap)
+
+Open data published by network operators. For now that's the French distribution
+networks: every low- and medium-voltage line and street-level substation, and the
+gas distribution pipes (`--only gaz` imports just those) and biomethane injection
+points (`--only biomethane`), plus the classified installations (ICPE, Seveso
+sites among them) from Géorisques (`import fr-georisques-icpe`), and the communes'
+and neighbourhoods' outlines to number buildings (`import fr-communes`, 90 MB and
+IGN's IRIS once: Data layers → Background map → **Building numbers**, each building's
+number within its neighbourhood where INSEE splits the commune, "STR-NEU-12" in
+Neudorf, Strasbourg, else within its commune, "WIS-47"; from zoom 16, written whole
+or as the number alone (Settings → Building numbers); an area is numbered the first
+time it's shown, a few seconds for a city, and the numbers never change for anyone;
+search "STR-NEU-12" or "wis 47" in the search box to go there, the nearest place
+with that code first. Buildings no one could stand in, a staircase's steps drawn one
+by one, aren't numbered and aren't drawn outside 3D); from
+[Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
+Europe and the border strips of France's neighbours. Switch it on in the layer
+switcher under **Not from OpenStreetMap** (power and gas are separate entries). It's
+drawn like OSM lines of the same voltage (medium voltage as 20 kV, low voltage as
+< 10 kV) and like OSM gas pipes; click a line to see its
+source.
+
+`build-region.sh` offers it when it covers the region you picked, as a menu: pick any
+of electricity, gas, biomethane and ICPE (each with its size and download time), or
+pass `--extra` (all) or `--extra-only gas,icpe`. Later:
+`uv run --project scripts scripts/extra_data.py import --choose gas,icpe`.
+Rebuilding a region keeps its extra data: it's saved to `data/downloads/extra/` before the
+database is wiped and put back afterwards, without downloading it again. The raw
+downloads are kept too (`data/downloads/extra/agence-ore/`), so importing again, or for
+another French region, reuses them; `uv run --project scripts scripts/extra_data.py import --refresh`
+downloads them again.
+To do it on an existing database:
+
+```bash
+uv run --project scripts scripts/extra_data.py list      # sources that cover your region, and their size
+uv run --project scripts scripts/extra_data.py import    # import them (re-running replaces, never duplicates)
+uv run --project scripts scripts/extra_data.py remove fr-agence-ore
+docker compose up -d --force-recreate tegola   # drop tiles cached before the import
+```
+
+All of France is 16.3 million features, about 5 GB in the database, and took about
+2 h 20 min to download (their server is slow). A French region is a few minutes per
+département. Each finished dataset shows on the map straight away; a failed refresh
+keeps the previous copy of the datasets it didn't get to. Exports include the extra
+data. Lines and substations OpenStreetMap already has are left out (the OSM ones are
+shown); for data imported before that, run `uv run --project scripts scripts/extra_data.py dedupe`.
+
+---
+
+## My layers
+
+**Sharing:** a layer is yours when you make it. **"Share…"** in its menu (⋯) lets you
+give each other account **Can view** (read-only) or **Can change** (its items, name,
+colour). Only you can lock, share or delete it. A layer shared with you shows 👥 (you
+can change it) or 👁 (view only). Layers made before there were accounts are open to
+everyone; an admin who shares one becomes its owner. A situation is seen only by
+those who can see all the layers it covers (the ones shown when it was made).
+
+The **My layers** button (top right, the stacked-layers icon with a red dot) turns
+on the My layers workspace; click it again to close it. It has two parts:
+
+- **The sidebar on the left**, under the search box: a search box (items, and
+  layers and folders by name) and filters (hostile, friend, planned, units...), then
+  your layers, optionally in **folders**: **+ New folder** under the list (type its
+  name), then drag layers onto it, or ⋯ → Move to folder. **Drag a layer above or
+  below another** to reorder them: the top one is drawn on top. Double-click a name
+  to rename it (Enter keeps it, Esc doesn't); a new layer's name is ready to type.
+  While placing a marker, symbol or picture, **Shift + scroll** makes it bigger or
+  smaller; while drawing an arrow, wider or narrower (plain scrolling still zooms).
+  The same works on an item already on the map: select it, then Shift + scroll. It's
+  kept as one change once you stop scrolling (one undo takes it back).
+  Folders fold to one line; their ◉ shows or hides all their layers, 🔒 locks those
+  that are yours, + makes a new layer in it, ✎ renames it. ⋯ → Zoom to its items
+  frames a layer. A long layer shows its first 200 items, then "Show the other…".
+  Tab moves through the list, Enter opens a layer or selects an item. Folders and
+  the order are yours: someone you share a layer with orders and files it their own
+  way. They, the layers hidden, what's folded, the layer you draw into and your
+  favourite symbols follow your account to any computer.
+  **Measuring** is in My layers' toolbar: 📏 a distance (each leg's length and
+  bearing, the total, marks along it like a ruler, finer as you zoom in, down to
+  10 m), ⬠ an area, ◎ range rings (their distances on the ring's card), 👁 a line
+  of sight (key I: click where you stand, then what you want to see; the line turns
+  green where it passes over everything, yellow where only trees rise above it (a
+  signal may still get through, a gap may show the target) and red where the ground
+  or a building does; a ringed mark where the target is first hidden says by what,
+  "Ground", "Building 12 m"; its card says whether the target is seen ("Hidden by the
+  ground 493 m away (137 m above the line)", "Through trees 475 m away: may be seen
+  (trees taken as 15 m)"); **Open the profile** opens a large panel on the right, the
+  line on the map on the left: there the heights of your eyes, of the target, of trees
+  and of buildings OpenStreetMap gives no height for (15 m and 8 m at first: the map
+  has no tree heights, most buildings none), and the chart, turned so the line of
+  sight is level: what rises above it shows at once, and the far ground bends away
+  with the Earth's curvature; point at the chart and a dot shows that place on the
+  map. With debug on (Settings), the panel also shows the answer's raw numbers,
+  checked against themselves (✓ or ✗), and copies it as JSON. Only its two points
+  can be dragged (not the line as a whole); moving one asks again when you let go, the open profile following (a spinner while it's worked
+  out). Trees and buildings are added only in
+  France, where the terrain is bare ground (elsewhere it already holds them), not
+  within 30 m of either end; one sample per terrain pixel (a 92 km line: about
+  14 600, a few seconds); the Earth's curvature counted, as GDAL's viewshed; needs
+  the terrain and the background map). Click
+  points; double-click or Enter to finish; right-click starts again. A measurement
+  is saved and shared like any item; drag its points to change it, or type a leg's
+  length on its card (the following legs keep theirs), and lock it with the padlock in its card's title bar
+  so it stays as it is. Click an area's first point (or double-click, or Enter) to
+  close it; its outline can't cross itself. Bearings from true, magnetic (compass) or grid
+  north: in the list's settings.
+  **Import a file…** under the list puts a GeoJSON, KML or GPX file in a new layer;
+  Until you Save, what you import or draw is kept in this browser (big files too:
+  if it ever can't be, the panel tells you to Save now).
+  **Export…** saves the layers shown as one (⋯ → Export as: one layer). GPX keeps
+  only points and lines; KML and GeoJSON exported here come back with their symbols. Each layer: ◉ show/hide, 🔒 lock (its
+  items can't be changed or moved), colour, its items (click the name), ⋯ to draw
+  into it, rename, move to a folder or delete. Items show their symbol and a status
+  line; drag one onto another layer to move it. Under
+  "Labels and name": how much of the labels the map shows, and the name your
+  changes are saved under. Clicking an item selects it and moves the map to it. Below the
+  layers is the **details** area: the selected item's card, or the details of any
+  map feature you click (the last thing clicked). A grid connection, if you have
+  one, folds to one line at the bottom ("Route: A → B · 18 km"); click it to unfold.
+- **The toolbar at the top of the map**: six tool buttons (Select, Symbol, Graphic,
+  Draw, Copy, Measure; Draw and Measure each hold several tools: the button repeats
+  the one used last, its small ▾ lists them all with their keys), the layer new things
+  go into (after the ✎), undo, redo, history and **Save (n)** (⋯ to discard unsaved
+  changes). Each tool has a key:
+
+| Key | Tool |
+|---|---|
+| V | Select and move |
+| S | Symbol: military and emergency symbols (the ones ODIN uses). A picker opens under the toolbar: search at the top, the identity (friend / hostile / neutral / unknown frames) and Planned under it, the categories in a column on the left (first your favourites, ☆ on any symbol, and recently used; while searching, how many match in each) and the symbols on the right |
+| A | Arrow or graphic: axes, attacks, phase lines, areas, obstacles, tasks such as block or breach |
+| L / R | Line / area: click points, double-click or Enter to finish |
+| M | Marker |
+| P | Picture: your own image or icon |
+| C | Copy from the map: power lines, substations, sites, buildings... (click one, or **Shift + drag** a box to copy everything in it); not the background map's roads or contours (a copy of them couldn't be renamed on the map); copies are drawn like the originals and still shown when you hide the grid; a building keeps its shape (no handles, can't be dragged), goes under **Buildings** in the list, takes its number as its name ("STR-NEU-12") and shows its name on the map |
+
+Esc stops a tool. **Ctrl+Z** undoes the last change and **Ctrl+Shift+Z** redoes
+it. Undo goes on past a Save: a saved change isn't removed from the server, undoing
+it is a new change that puts back only what that change did (a move, a name...),
+saved with the next **Save** like any other; what others changed since stays (the
+history keeps everything).
+
+**Arrows** (axis of advance, main or supporting attack...) are drawn like a line:
+click where the arrow starts, along its path, and double-click where it points to.
+Drag the **handle** at the arrowhead's corner to make it wider or narrower
+(only the width changes, so it stays a proper arrow), and the points of its path to
+move or bend it. Arrows drawn the old way (four free points) are turned into paths
+the next time the map is opened, keeping their width (an unsaved change each: Save).
+
+**The item card** (click one of your items):
+
+- the title bar: its name (or what it is), what it is and its layer, and a padlock
+  to lock it (🔓 unlocked, 🔒 locked: it can't be changed, moved or deleted, and its
+  points and handles aren't shown on the map);
+- one form, a label and a control per row: its name; its identity, status (present,
+  planned), condition (fully capable, damaged, destroyed, full to capacity), how a
+  graphic is drawn, echelon, mobility, each a dropdown; HQ, task force and dummy as
+  tick boxes; the details that matter for its kind (for a unit: higher formation and
+  when it was seen). A speed, distance or altitude has its unit beside it (km/h, kn,
+  mph; m, km, nm; m, ft: changing the unit doesn't convert the number), a direction
+  degrees or mils (converted); the unit you chose last is kept. A number outside
+  what's allowed (a negative speed, a direction past 360°) is outlined in red and not
+  kept. A date reads in words ("30 Oct 12:00 · 2 h ago"): click it to change it;
+  dates aren't written on the map. **+ Add detail…** adds others (type, quantity,
+  direction, speed, rating...); × removes one added by mistake. Each label's tooltip
+  says what it is;
+- notes (yours, never on the map), its size with **Reset size** (change it on the
+  map: Shift + scroll, or its handle), its colour, and at the bottom its layer,
+  Duplicate, Delete.
+
+**Several at once:** Shift-click items on the map or in the list; the details then
+show one card for all of them (identity, planned / present, move, delete), and each
+change to them is one undo step.
+
+**Symbols to scale** (a layer's right-click menu): its symbols, markers and pictures
+drawn as on a paper map at a scale you choose on a slider of fixed steps (1:5 000 to
+1:500 000; switched on, it starts at the step nearest the map's scale): they shrink
+as you zoom out and grow as you zoom in (to 8 times their size); zoomed out past a
+quarter of their size they become small dots of their identity's colour. Off at
+first (the slider's left end: the same size at every zoom); the setting is the
+layer's, saved and shared with it.
+
+On the map or in the list: **right-click** an item for its menu (identity,
+planned / present, rename, duplicate, copy, move to another layer, lock, delete); on
+the map, hover an item to see what it is;
+**double-click** it to rename it; **Ctrl+C / Ctrl+V** copy it and paste it where
+the pointer is. Drag a symbol to move it; drag the round handle at a picture's,
+symbol's or marker's corner to resize it.
+
+**Situations:** at the top of the sidebar, `Situation: Live ▾`. "Save now as a
+situation…" names the current state ("Morning brief"); choosing one later shows the
+map as it was then, read-only, with a banner to go **Back to live**. They take no
+space: they're rebuilt from the history.
+
+Changes are kept in your browser until you press **Save**, which stores them in the
+database. **🕘** opens a timeline at the bottom of the map that steps through every
+saved change and says what changed. Rebuilding or importing a region keeps your
+layers.
+
+**Credits:** military symbols by [@syncpoint/signs](https://github.com/syncpoint/signs)
+(as in ODIN), tactical graphics by the C5ISR renderer (mil-sym-ts), both MIL-STD-2525C.
+Graphics are drawn in their identity's colours (hostile red...): they have no colour
+of their own to set.
+
+
 ## Updating the data
 
 Re-run `bash scripts/build-region.sh` and pick the region. It reuses your download
 unless you choose the newer extract (or pass `--refresh`). Then
-`uv run scripts/fetch_images.py` picks up new Wikidata IDs.
+`uv run --project scripts scripts/fetch_images.py` picks up new Wikidata IDs.
 
 ---
 
@@ -328,13 +863,19 @@ unless you choose the newer extract (or pass `--refresh`). Then
 **A step seems stuck.** Long steps show a timer. The longest are downloading, the
 osmium filter (it reads the whole file) and the imposm import. If the per-country
 stats step takes more than a minute, check you're on the current
-`schema/local-stats.sql`: the production query took 14+ minutes on Russia.
+`schema/fork/local-stats.sql`: the production query took 14+ minutes on Russia.
 
 **"The app already seems to be running", but it isn't working.** Something else is
 on port 8001 or 5173, e.g. a backend you started by hand. Stop it, or use it.
 
 **Search finds nothing / the country pages return 500.** The EEZ boundaries weren't
 imported. Re-run `build-region.sh` with the zip in `data/`.
+
+**Route from here / to here finds nothing, or the backend says there's no network.**
+The grid network is built by `build-region.sh` (`schema/fork/grid.sql`); databases built
+or exported before that don't have it. Rebuild, or build just the network:
+`source scripts/lib/common.sh && run_sql_file schema/fork/grid.sql` (seconds for a small
+country, several minutes for France).
 
 **Place search doesn't find towns.** Places come from the database built after this
 feature was added; rebuild the region (or import a newer export) once. Only places
@@ -356,4 +897,12 @@ If you add your own mounts, add `:z` too.
 
 **Not enough disk space.** Docker keeps its data in `/var/lib/docker` by default,
 often on the system disk. The script shows the estimate before starting. Downloads
-and filtered files in `data/osm/` are reused, so after freeing space just re-run.
+and filtered files in `data/downloads/osm/` are reused, so after freeing space just re-run.
+The scripts remove the project's old images after each build, and keep Docker's
+build cache under 5 GB. On a **btrfs** system disk (Fedora's default) the database
+can stop with "No space left on device" while `df` still shows free space: btrfs has
+handed out all its space to file contents, and its metadata can't grow. Check with
+`btrfs filesystem usage /` ("Device unallocated" near 0); fix with
+`sudo btrfs balance start -dusage=20 /` (packs half-empty chunks, giving their space
+back), then `docker compose restart db`.
+

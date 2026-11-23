@@ -1,0 +1,70 @@
+# shellcheck shell=bash
+# Offline maps for the scripts (scripts/offline-maps.py maps; docs/plans/offline-maps.md):
+# build-region.sh opens the menu to queue downloads (choose_offline_maps) and runs the
+# queue after the build (download_offline_maps); select_satellite writes the map's
+# imagery list.
+
+# Whether any satellite imagery is downloaded (data/map/offline-maps/<area>.sat-*.pmtiles).
+has_satellite() {
+    compgen -G "$OFFLINE_MAPS_DIR/*.sat-*.pmtiles" >/dev/null
+}
+
+# "world overview, france regional, IGN photos of 2 départements (3.4 GB)": the
+# imagery there is, and its total size.
+satellite_summary() {
+    scripts_python "$REPO_ROOT/scripts/offline-maps.py" summary --maps-dir "$OFFLINE_MAPS_DIR"
+}
+
+# Write the map's imagery list (data/map/offline-maps/imagery.json: every imagery file,
+# with its zooms, bounds and credit; the backend serves it, the map reads it when it
+# opens: scripts/offline_maps/inventory.py imagery_list).
+select_satellite() {
+    local count
+    mkdir -p "$OFFLINE_MAPS_DIR"
+    count=$(scripts_python "$REPO_ROOT/scripts/offline-maps.py" imagery --maps-dir "$OFFLINE_MAPS_DIR")
+    if [[ "$count" != 0 ]]; then
+        ok "Satellite imagery: $(satellite_summary). Turn it on with the satellite button."
+    fi
+}
+
+# choose_offline_maps REGION — the offline maps menu (offline-maps.py maps), queuing
+# what's chosen: it's downloaded after the build (download_offline_maps), every
+# question first. Without questions (--yes): MAPS_SOURCES, the sources to queue
+# for the region (build-region.sh --maps "sentinel2 fr_ign"), else nothing.
+choose_offline_maps() {
+    local region="$1" source menu
+    menu=(scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --queue-only
+        --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" --region "$region")
+    mkdir -p "$OFFLINE_MAPS_DIR"
+    if [[ -n "${MAPS_SOURCES:-}" ]]; then
+        for source in $MAPS_SOURCES; do
+            "${menu[@]}" --yes --source "$source" --area "$region" \
+                || warn "Couldn't plan $source; the build goes on without it."
+        done
+        SATELLITE_MENU=1
+    elif [[ "$ASSUME_YES" != 1 ]]; then
+        section "Offline maps (satellite imagery, aerial photos, background maps)"
+        "${menu[@]}" || warn "The offline maps menu stopped; nothing more is downloaded."
+        SATELLITE_MENU=1
+    fi
+    return 0
+}
+
+# run_maps_queue — what the offline maps menu queued (offline-maps.py maps
+# --queued: one after the other, under its lock).
+run_maps_queue() {
+    [[ -f "$OFFLINE_MAPS_DIR/queue.json" ]] || return 0
+    section "Downloading the offline maps chosen..."
+    scripts_python "$REPO_ROOT/scripts/offline-maps.py" maps --queued --yes \
+        --maps-dir "$OFFLINE_MAPS_DIR" --index "$GEOFABRIK_INDEX" \
+        || warn "What was downloaded is kept. To go on: bash scripts/offline-maps.sh, then Resume."
+}
+
+# download_offline_maps — download what was queued (choose_offline_maps), then point
+# the frontend at the imagery there.
+download_offline_maps() {
+    if [[ "${SATELLITE_MENU:-0}" == 1 ]]; then
+        run_maps_queue
+    fi
+    select_satellite
+}

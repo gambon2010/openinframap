@@ -3,6 +3,7 @@ import './popup/popup.css'
 import i18next from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import resources from 'virtual:i18next-loader'
+import { addForkTranslations } from './fork/index.ts'
 
 await i18next.use(LanguageDetector).init({
   fallbackLng: {
@@ -10,6 +11,7 @@ await i18next.use(LanguageDetector).init({
     zh: ['zh-Hans', 'zh-Hant', 'en'],
     'en-US': ['en'],
     'en-GB': ['en'],
+    'pt-PT': ['pt'],
     'zh-Hant': ['zh-Hans', 'en'],
     'zh-Hans': ['zh-Hant', 'en'],
     'zh-TW': ['zh-Hant', 'en'],
@@ -37,6 +39,7 @@ await i18next.use(LanguageDetector).init({
     'no',
     'pl',
     'pt-BR',
+    'pt',
     'ru',
     'sv',
     'ta',
@@ -60,6 +63,8 @@ i18next.on('languageChanged', () => {
   document.documentElement.setAttribute('lang', i18next.language)
   document.documentElement.setAttribute('dir', i18next.dir())
 })
+
+addForkTranslations()
 
 // Translate HTML elements.
 document.querySelectorAll('[data-i18n]').forEach((element) => {

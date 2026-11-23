@@ -1,0 +1,129 @@
+"""Fork: the terrain (docs/plans/terrain.md): the elevation tiles of every area
+downloaded, served together at /terrain/{z}/{x}/{y}.webp (Terrarium encoded,
+512-pixel, lossless WebP: the map's hill shading and 3D relief), and contour lines
+made from them at /terrain/contours/{z}/{x}/{y}.mvt (contours.py); the height at a
+point and the ground's slope there at /terrain/elevation?lon=&lat= (the coordinates
+box); the line of sight between two points at /terrain/sight (sight.py)."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from functools import partial
+
+from starlette.concurrency import run_in_threadpool
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+from starlette.routing import Route
+
+from ..tile_answers import tile_response
+from ... import Request as AppRequest
+from ... import get_db
+from . import contours, elevations, files, obstacles, sight
+from .bare_ground import bare_ground_test
+
+MEDIA_TYPE = "image/webp"
+VECTOR_TILE = "application/vnd.mapbox-vector-tile"
+
+
+def tile_handler(make: Callable[[int, int, int], bytes | None], media_type: str):
+    """A route answering a tile made from the terrain files (tile_answers.py)."""
+
+    async def answer(request: Request) -> Response:
+        return await tile_response(request, files.TERRAIN_FILES.version, make, media_type)
+
+    return answer
+
+
+def elevation_tile(z: int, x: int, y: int) -> bytes | None:
+    return files.TERRAIN_FILES.tile(z, x, y)
+
+
+async def elevation_at(request: Request) -> Response:
+    """{"elevation": metres, "slope": degrees; null where there's no terrain}."""
+    try:
+        lon, lat = float(request.query_params["lon"]), float(request.query_params["lat"])
+    except (KeyError, ValueError):
+        return Response(status_code=400)
+    if not (-180 <= lon <= 180 and -90 <= lat <= 90):
+        return Response(status_code=400)
+    height = await run_in_threadpool(elevations.elevation, lon, lat)
+    steepness = await run_in_threadpool(elevations.slope, lon, lat)
+    return JSONResponse(
+        {
+            "elevation": None if height is None else round(height, 1),
+            "slope": None if steepness is None else round(steepness, 1),
+        }
+    )
+
+
+def point_of(text: str) -> tuple[float, float]:
+    """ "lon,lat" as a point; ValueError if it isn't one."""
+    lon, lat = (float(v) for v in text.split(","))
+    if not (-180 <= lon <= 180 and -90 <= lat <= 90):
+        raise ValueError(text)
+    return lon, lat
+
+
+async def sight_between(request: AppRequest) -> Response:
+    """?from=lon,lat&to=lon,lat[&observer=2&target=0&trees=15&buildings=8]: the line
+    of sight (sight.py; trees and buildings without a height taken as tall as given):
+    {"target_seen", "blocked_at" (metres), "blocked_by" ("ground", "building",
+    "trees"), "margin" (metres the eye's line to the target clears everything by;
+    < 0: what rises above it, by that much), "eye", "target_top" (metres: the eye,
+    and the target's top as seen from it), "obstacles_counted", "through_trees" (hidden only
+    by trees: it may still be seen; blocked_at then names the first trees), "curvature" (its
+    coefficient and the Earth's radius: the debug view checks the profile with them),
+    "profile": [[distance, ground, seen, obstacle height, obstacle kind, surface as
+    seen from the eye]...]}."""
+    try:
+        start, end = point_of(request.query_params["from"]), point_of(request.query_params["to"])
+        observer = float(request.query_params.get("observer", 2))
+        target = float(request.query_params.get("target", 0))
+        defaults = obstacles.Heights()
+        assumed = obstacles.Heights(
+            trees=float(request.query_params.get("trees", defaults.trees)),
+            buildings=float(request.query_params.get("buildings", defaults.buildings)),
+        )
+    except (KeyError, ValueError):
+        return Response(status_code=400)
+    bare = await bare_ground_test(get_db(request))
+    found = await run_in_threadpool(
+        partial(sight.line_of_sight, start, end, observer, target, assumed=assumed, bare_ground=bare)
+    )
+    return JSONResponse(
+        {
+            "target_seen": found.target_seen,
+            "blocked_at": rounded(found.blocked_at, 0),
+            "blocked_by": found.blocked_by,
+            "margin": rounded(found.margin, 1),
+            "eye": rounded(found.eye, 1),
+            "target_top": rounded(found.target_top, 1),
+            "obstacles_counted": found.obstacles_counted,
+            "through_trees": found.through_trees,
+            "curvature": {"coefficient": sight.VISIBLE_LIGHT, "earth_radius": sight.EARTH_RADIUS},
+            "profile": [profile_row(s) for s in found.samples],
+        }
+    )
+
+
+def profile_row(s: sight.Sample) -> list:
+    return [
+        round(s.distance, 1),
+        rounded(s.ground, 1),
+        s.seen,
+        round(s.obstacle.height, 1),
+        s.obstacle.kind,
+        rounded(s.apparent, 1),
+    ]
+
+
+def rounded(value: float | None, digits: int) -> float | None:
+    return None if value is None else round(value, digits)
+
+
+routes = [
+    Route("/terrain/elevation", elevation_at),
+    Route("/terrain/sight", sight_between),
+    Route("/terrain/contours/{z}/{x}/{y}.mvt", tile_handler(contours.tile, VECTOR_TILE)),
+    Route("/terrain/{z}/{x}/{y}.webp", tile_handler(elevation_tile, MEDIA_TYPE)),
+]

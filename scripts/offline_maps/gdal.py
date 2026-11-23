@@ -1,0 +1,48 @@
+"""Fork: satellite imagery. GDAL for the Sentinel-2 composite, pmtiles for the final files (in Docker: docker.py)."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from . import docker
+from .sources import EARTH_CIRCUMFERENCE_M, SENTINEL2
+
+
+def to_pmtiles(mbtiles: Path, out: Path, pmtiles_image: str) -> None:
+    """MBTiles -> PMTiles, with the basemap service's pmtiles CLI."""
+    workdir = mbtiles.parent
+    docker.run(
+        pmtiles_image, ["convert", f"/w/{mbtiles.name}", f"/w/{out.name}.tmp"], workdir
+    )
+    (workdir / f"{out.name}.tmp").replace(out)
+
+
+def regional_pipeline(maxzoom: int, cut: bool = True) -> str:
+    """The GDAL commands (run in the GDAL image) that turn the composite cells
+    (listed in cells.txt) into web tiles: mosaic, reproject and cut to the outline
+    (or the whole world), scale the 16-bit reflectance to 8-bit (one fixed curve
+    for every cell, so tiles match), tile, add lower zooms."""
+    resolution = EARTH_CIRCUMFERENCE_M / 256 / 2**maxzoom
+    # Many cells (the world): their list in a file, not on the command line.
+    sources = "-input_file_list cells.txt"
+    levels = " ".join(str(2**i) for i in range(1, maxzoom - SENTINEL2.first_zoom + 1))
+    scale = " ".join(f"-scale_{b} 0 2200 0 255 -exponent_{b} 0.7" for b in (1, 2, 3))
+    return " && ".join(
+        [
+            f"gdalbuildvrt -q src.vrt {sources}",
+            (
+                f"gdalwarp -q -of VRT -t_srs EPSG:3857 -tr {resolution} {resolution} -r bilinear "
+                + (
+                    "-cutline area.geojson -crop_to_cutline "
+                    if cut
+                    else "-te -20037508.34 -20037508.34 20037508.34 20037508.34 "
+                )
+                + "-dstalpha -overwrite src.vrt warped.vrt"
+            ),
+            (
+                f"gdal_translate -q -of MBTILES -b 1 -b 2 -b 3 -b 5 -ot Byte {scale} -scale_4 0 65535 0 255 "
+                "-co TILE_FORMAT=WEBP -co QUALITY=75 -co ZOOM_LEVEL_STRATEGY=LOWER warped.vrt regional.mbtiles"
+            ),
+        ]
+        + ([f"gdaladdo -q -r average regional.mbtiles {levels}"] if levels else [])
+    )

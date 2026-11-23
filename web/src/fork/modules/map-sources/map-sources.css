@@ -1,0 +1,120 @@
+.oim-map-sources-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.oim-map-sources-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 4px 6px;
+  font-family: var(--oim-font-family-monospace);
+  font-size: 0.8rem;
+  border: 1px solid var(--oim-dark-grey);
+  border-radius: var(--oim-radius-small);
+}
+
+.oim-map-sources-origin,
+.oim-map-sources-note {
+  margin: 4px 0;
+  color: var(--oim-text-color-light);
+  font-size: 0.8rem;
+}
+
+.oim-map-sources-buttons {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.oim-map-sources-buttons button {
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--oim-dark-grey);
+  border-radius: var(--oim-radius-small);
+  background: white;
+  font-size: 0.85rem;
+}
+
+.oim-map-sources-buttons .oim-map-sources-primary {
+  font-weight: bold;
+}
+
+.oim-map-sources-status {
+  margin: 4px 0;
+  font-size: 0.85rem;
+}
+
+.oim-map-sources-status:empty {
+  display: none;
+}
+
+.oim-map-sources-status.ok {
+  color: var(--oim-success);
+}
+
+.oim-map-sources-status.error {
+  color: var(--oim-error);
+}
+
+.oim-map-sources-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--oim-link);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.oim-map-sources-info-icon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.35em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.8em;
+  font-weight: bold;
+  font-style: normal;
+  line-height: 1.1em;
+  text-align: center;
+  vertical-align: 0.05em;
+}
+
+.oim-map-sources-help {
+  display: none;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: var(--oim-radius-small);
+  background-color: var(--oim-light-grey);
+  font-size: 0.8rem;
+}
+
+.oim-map-sources-help.visible {
+  display: block;
+}
+
+.oim-map-sources-help p {
+  margin: 4px 0;
+}
+
+.oim-map-sources-help pre {
+  margin: 4px 0;
+  padding: 4px 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: white;
+  border-radius: var(--oim-radius-small);
+  font-size: 0.75rem;
+}
+
+.oim-map-sources-row + .oim-map-sources-row {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--oim-grey);
+}
+
+.oim-map-sources h3 {
+  margin: 4px 0 6px;
+}

@@ -4,12 +4,13 @@
 import { SearchResult, ISearchProvider } from './search'
 import { formatVoltage, formatPower } from '../l10n'
 import { t } from 'i18next'
-import { BACKEND_BASE_URL } from '../config.js'
+import { BACKEND_BASE_URL } from '../fork/config.ts'
+import { forkSearchDescription, forkSearchParams } from '../fork/index.ts'
+import { BackendSearchResult } from '../fork/types.ts'
 
-type OIMResult = {
+type OIMResult = BackendSearchResult & {
   name: string
   type: string
-  place_type?: string
   operator?: string
   voltage?: number
   output?: number
@@ -39,7 +40,8 @@ export default class OIMSearchProvider implements ISearchProvider {
     const searchParams = new URLSearchParams({
       q: query,
       lang: this.language,
-      v: '2'
+      v: '2',
+      ...forkSearchParams()
     })
 
     const result = await fetch(`${this.url}?${searchParams.toString()}`, {
@@ -61,6 +63,7 @@ export default class OIMSearchProvider implements ISearchProvider {
       longitude: result.geometry.coordinates[0],
       name: result.name,
       description: this.description(result),
+      backend: result,
       score: this.baseScore - index * 0.1
     }))
   }
@@ -71,12 +74,8 @@ export default class OIMSearchProvider implements ISearchProvider {
       description += `${t('names.power.substation')} (${formatVoltage(result.voltage / 1000)})`
     } else if (result.type === 'plant' && result.output) {
       description += `${t('names.power.plant')} (${formatPower(result.output / 1e6)})`
-    } else if (result.type === 'place' && result.place_type) {
-      // Fork: local place search (cities, towns, villages…), see imposm/places.py.
-      const fallback = result.place_type.charAt(0).toUpperCase() + result.place_type.slice(1)
-      description += t(`search.place.${result.place_type}`, fallback)
     } else {
-      description += `${result.type}`
+      description += forkSearchDescription(result) ?? `${result.type}`
     }
     if (result.country) {
       const country = this.regionNames.of(result.country)

@@ -1,0 +1,57 @@
+// Checks that catch a feature added only half-way: a tile layer nothing draws, a
+// map layer the layer switcher can't turn off.
+import { FOLLOWS } from './modules/extra/follow.ts'
+import { readFileSync } from 'node:fs'
+import { expect, test } from 'vitest'
+import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
+import extra from './modules/extra/index.ts'
+import sites from './modules/sites/index.ts'
+import satellite from './modules/satellite/index.ts'
+import roads from './modules/roads/index.ts'
+import grid from './modules/grid/index.ts'
+import buildings from './modules/buildings/index.ts'
+
+const MODULES = [extra, sites, satellite, roads, grid, buildings]
+// Upstream's layer switcher entries that fork layers join (openinframap.ts).
+const UPSTREAM_PREFIXES = ['power_', 'petroleum_', 'boundaries_']
+
+/** Layer names defined in a Tegola layers file (the "  - name:" entries). */
+function tegolaLayers(file: string): string[] {
+  return [...readFileSync(file, 'utf8').matchAll(/^ {2}- name: (\w+)$/gm)].map((m) => m[1])
+}
+
+const forkStyleLayers = MODULES.flatMap((m) => m.layers?.() ?? [])
+
+test("every tile layer the fork adds is drawn, and every style draws one that's served", () => {
+  const forkTiles = tegolaLayers('../tegola/layers.fork.yml')
+  const allTiles = new Set([...forkTiles, ...tegolaLayers('../tegola/layers.yml')])
+  const used = new Set(
+    forkStyleLayers
+      // Drawn from the backend's tiles (the background map's, Protomaps'; the trams'
+      // lanes, LOOM's), not Tegola's.
+      .filter((l) => !('source' in l) || !['basemap', 'transit'].includes(l.source as string))
+      .map((l) => ('source-layer' in l ? l['source-layer'] : undefined))
+      .filter(Boolean)
+  )
+  expect(forkTiles.length).toBeGreaterThan(5) // the files were read
+  expect(forkTiles.filter((name) => !used.has(name))).toEqual([])
+  expect([...used].filter((name) => !allTiles.has(name as string))).toEqual([])
+})
+
+test('every fork map layer can be turned off in the layer switcher', () => {
+  const prefixes = MODULES.flatMap((m) => m.switcherGroups?.() ?? []).flatMap((g: LayerGroup | Layer) =>
+    'layers' in g ? g.layers.map((l) => l.prefix) : [(g as Layer).prefix]
+  )
+  expect(prefixes.length).toBeGreaterThan(5)
+  prefixes.push(...UPSTREAM_PREFIXES)
+  // Background imagery is chosen in Settings, not in the layer switcher. Open data
+  // completing a category follows that category's entry (modules/extra/follow.ts),
+  // which must itself be switchable.
+  for (const [, category] of FOLLOWS) expect(prefixes).toContain(category)
+  const unswitched = forkStyleLayers
+    .filter((l) => !l.id.startsWith('satellite'))
+    .filter((l) => !FOLLOWS.some(([own]) => l.id.startsWith(own)))
+    .filter((l) => !prefixes.some((prefix) => l.id.startsWith(prefix)))
+    .map((l) => l.id)
+  expect(unswitched).toEqual([])
+})
