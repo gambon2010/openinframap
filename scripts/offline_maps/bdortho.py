@@ -322,6 +322,16 @@ def download_archive(
     return work / Path(urllib.parse.urlsplit(parts[0][0]).path).name
 
 
+def extracted_images(work: Path, images_dir: Path) -> list[Path]:
+    """The images of an extraction that finished; [] while its archive is still there
+    (extract deletes it once done: a stop half-way leaves both, the last image cut
+    short, and tiles made from them failed on it)."""
+    archive_left = any(work.glob("*.7z")) or any(work.glob("*.7z.[0-9]*"))
+    if archive_left or not images_dir.exists():
+        return []
+    return sorted(images_dir.rglob("*.jp2"))
+
+
 def extract(first_part: Path, into: Path, gdal_image: str) -> list[Path]:
     """The JPEG 2000 images of an archive (all its parts), extracted into `into`;
     the archive is deleted then. 7-Zip: this computer's, else in Docker."""
@@ -496,7 +506,7 @@ def one_departement(args, folder: Path, code: str, counter: str) -> None:
     (work / "stopped").unlink(missing_ok=True)
     try:
         images_dir = work / "images"
-        images = sorted(images_dir.rglob("*.jp2")) if images_dir.exists() else []
+        images = extracted_images(work, images_dir)
         if not images:
             print(f"{label}: looking for IGN's latest photos...", file=sys.stderr)
             resource = latest_edition(code)

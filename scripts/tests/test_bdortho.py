@@ -247,3 +247,18 @@ def test_a_departement_already_there_is_skipped(tmp_path, monkeypatch, capsys):
         ["bdortho", "--dept", "67", "--maxzoom", "16", "--maps-dir", str(tmp_path)]
     )
     assert "already there to zoom 17" in capsys.readouterr().err
+
+
+def test_an_extraction_stopped_half_way_is_done_again(tmp_path):
+    images = tmp_path / "images"
+    images.mkdir()
+    (images / "a.jp2").write_bytes(b"cut short")
+    (tmp_path / "BDORTHO_D029.7z.001").write_bytes(b"part")
+    assert bdortho.extracted_images(tmp_path, images) == []
+
+
+def test_an_extraction_finished_is_used(tmp_path):
+    images = tmp_path / "images"
+    images.mkdir()
+    (images / "a.jp2").write_bytes(b"image")
+    assert bdortho.extracted_images(tmp_path, images) == [images / "a.jp2"]
