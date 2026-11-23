@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest", "mypy", "types-psycopg2>=2.9.21.20261030"]
+dev = ["pytest", "mypy", "types-psycopg2>=2.9.21.20261030", "pyyaml", "types-pyyaml"]
 
 [tool.uv]
 package = false

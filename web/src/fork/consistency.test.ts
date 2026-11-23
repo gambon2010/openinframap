@@ -11,8 +11,9 @@ import roads from './modules/roads/index.ts'
 import grid from './modules/grid/index.ts'
 import buildings from './modules/buildings/index.ts'
 import terrain from './modules/terrain/index.ts'
+import indoor from './modules/indoor/index.ts'
 
-const MODULES = [extra, sites, satellite, roads, grid, buildings]
+const MODULES = [extra, sites, satellite, roads, grid, buildings, indoor]
 // Upstream's layer switcher entries that fork layers join (openinframap.ts).
 const UPSTREAM_PREFIXES = ['power_', 'petroleum_', 'boundaries_']
 

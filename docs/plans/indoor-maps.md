@@ -1,7 +1,23 @@
 # Indoor maps (plan, 2026-11-22)
 
-Asked (spec 10.104): building interiors where they're mapped, floor by floor. Not
-started.
+Asked (spec 10.104): building interiors where they're mapped, floor by floor.
+
+**Status (2026-11-23):** steps 1 to 3 built, a little differently from below:
+- Read at build from the whole extract by `scripts/indoor.py` (osmium, like the
+  buildings' names), not the Imposm mapping: no full rebuild needed, and keeping
+  everything with a `level` in the import's filtered extract would have bloated it.
+- Things with a floor that aren't part of an interior (shops, toilets, lifts) are
+  kept where they touch an interior or stand in a building of the background map
+  (`src/fork/indoor/link.py`): a centre mapped with shops on floors but no rooms
+  keeps them; a bench on level 0 in a street goes.
+- A piece with no level takes its floor outline's (`indoor=level`), else 0, its
+  details saying the floor wasn't given.
+- Not the indoorequal plugin: its level control is one floor for the whole map, and
+  the owner chose a floor per building, in the building's details. Our own layers
+  (`indoor_area`, `indoor_line`, `indoor_point`, `indoor_building`), our own floor
+  chips.
+Still to do: rooms in the search (step 4); a building copied into My layers keeping
+its floors (step 5).
 
 ## What there is
 

@@ -12,6 +12,7 @@ from . import (
     auth,
     background,
     building_numbers,
+    indoor,
     circuits,
     grid,
     imagery,
@@ -49,6 +50,7 @@ routes: list[BaseRoute] = [
     *background_transit.routes,
     # Numbers for the buildings of a commune ("WIS-47"), kept for everyone.
     *building_numbers.routes,
+    *indoor.routes,
     # The terrain's elevation tiles, from every area downloaded (data/map/offline-maps/).
     *terrain.routes,
     # The satellite imagery the map shows (the list the scripts write).

@@ -338,6 +338,8 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.116 | A search result pinned and highlighted, the layers left as they are; a unit's echelon and marks chosen in the picker before placing (its keys tried, then removed: of no use); a unit's marks as chips in one row; the picker's choices on one line, only its symbols scrolling; one look for every dropdown; the layer choice beside Save. | ✅ (2026-11-23) |
 | 10.117 | A line of sight's profile opened from its right-click menu; its yellow and red stretches at least a few pixels long on the map and the profile, so a break is seen at a glance. | ✅ (2026-11-23) |
 | 10.118 | Shortcuts: / or Ctrl+K the search; Ctrl+S save; F2 rename; Ctrl+D duplicate; ← → in the history and the line-of-sight profile; ? the list of every shortcut. | ✅ (2026-11-23) |
+| 10.119 | Building interiors: everything indoor OpenStreetMap has, things with a floor kept inside interiors and buildings; buildings with one tinted while outlines are shown; floors chosen per building in its details; a room's, a door's or a shop's details. | ✅ (2026-11-23) |
+| 10.120 | Interiors, next: rooms in the search; a building copied into My layers keeping its floors. | 📋 to do (2026-11-23) |
 
 ## 11. Quality
 

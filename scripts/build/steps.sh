@@ -85,7 +85,7 @@ import_osm() {
         -overwritecache
 
     section "Creating views..."
-    run_schema views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers building-names
+    run_schema views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers building-names indoor
     run_with_timer "Creating search indexes" create_search_indexes
     # Extra data kept for this region goes back first; then the extra data tables
     # (which always exist, as Tegola serves them) get whatever is new.
@@ -97,6 +97,8 @@ import_osm() {
             db_psql -c "DROP SCHEMA IF EXISTS extra CASCADE;"
         fi
     fi
+    run_with_timer --keep-going "Reading buildings' interiors (about 10 minutes for France)" import_indoor "$PBF_SOURCE" \
+        || warn "Reading buildings' interiors failed; the map works without them. Retry with: bash scripts/import-indoor.sh"
     run_with_timer --keep-going "Naming buildings (about 4 minutes for France)" name_buildings \
         || warn "Naming buildings failed; the map works without their names. Retry with: uv run --project scripts scripts/building_names.py"
     # Then everything with a name, for the search box (extra_data.py and

@@ -1585,6 +1585,29 @@ default). Counts are France's OSM data in October 2026.
   duplicates it (the menu says so); ← → step through the history and along a line of
   sight's profile (Shift: one sample), before the map's own arrows; ? lists every
   shortcut, each module giving its own (`shortcuts`, ui/shortcuts.ts).
+- **Building interiors** (asked, 2026-11-23; docs/plans/indoor-maps.md): read from
+  the whole extract (`scripts/indoor.py`, osmium: 366,000 objects with an indoor,
+  level or repeat_on tag in France), then matched to the background map's buildings
+  by the backend (`src/fork/indoor`, reading only the tiles under interiors).
+  Things with a floor that aren't part of an interior are kept where they touch one
+  or stand in a building (a side note pointed out that keeping them only inside
+  mapped rooms lost the shops of centres mapped without rooms); a door counts on its
+  building's wall (within a metre). A piece with no level takes its floor outline's,
+  else 0, and says so. France: 271,469 pieces kept, 240,636 in 47,530 buildings
+  (Gare du Nord: floors -3 to 2 and a mezzanine), 67,330 left out as outdoors, 30,833
+  in no building (touching an interior outside the map's buildings: platforms in the
+  open); 132 MB; 26 minutes. **Bugs:** the scripts the build runs isolated
+  (`python -I`) couldn't find their neighbours (`indoor.py`, `building_names.py`:
+  the build would have carried on without them; a test runs them so); a Tegola layer
+  listing its id among its fields stopped Tegola, every map's tiles with it (a
+  test); `/indoor` passed on by the gate and Vite. Buildings with an interior tinted
+  with the Buildings entry; floors as chips in a building's details. Not the
+  indoorequal plugin (one floor for the whole map; the owner chose a floor per
+  building). The tile reader decodes the buildings layer only (twice as fast, for the
+  numbers too); the step remembers 1,024 tiles; the tables vacuumed after (the
+  steps rewrite every row: 305 MB of dead rows the first time). Chips moved to
+  `ui/chip.ts` (shared); the default database address in one place
+  (`src/fork/database.py`).
 
 ## Extra data (not from OpenStreetMap)
 

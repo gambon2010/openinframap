@@ -27,8 +27,12 @@ from pathlib import Path
 
 import psycopg2
 
+# The build runs scripts isolated (python -I, lib/python.sh): Python doesn't look next
+# to them for data_folders and offline_maps.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from data_folders import OSM_DIR
-from offline_maps.osm_extract import run_osmium
+from offline_maps.osm_extract import built_region_extract, run_osmium
 
 # The background map's building ids (Protomaps' tiles): OpenStreetMap's id, its kind
 # in the bits above (web-backend building_numbers/ keys its register by them).
@@ -42,7 +46,7 @@ WORK = OSM_DIR / "building-names"
 def main() -> None:
     args = parse_args()
     connection = psycopg2.connect(args.db_url)
-    extract = args.extract or region_extract(connection)
+    extract = args.extract or built_region_extract(connection)
     try:
         buildings = cut_named_buildings(extract, WORK)
         count = load_names(connection, named_buildings(buildings), WORK / "names.csv")
@@ -65,19 +69,6 @@ def parse_args() -> argparse.Namespace:
         help="leave the search's table as it is (the build makes it next)",
     )
     return parser.parse_args()
-
-
-def region_extract(connection) -> Path:
-    """The built region's extract (data/downloads/osm/<region>-latest.osm.pbf)."""
-    with connection.cursor() as cur:
-        cur.execute("SELECT value FROM oim_build_info WHERE key = 'region_id'")
-        row = cur.fetchone()
-    path = OSM_DIR / f"{row[0]}-latest.osm.pbf" if row else None
-    if not path or not path.exists():
-        sys.exit(
-            f"No extract of the built region in {OSM_DIR}: give one with --extract."
-        )
-    return path
 
 
 def cut_named_buildings(extract: Path, work: Path) -> Path:

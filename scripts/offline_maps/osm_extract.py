@@ -64,3 +64,17 @@ def run_osmium(*args: str | Path) -> None:
         return arg
 
     docker.run_service("osmium", ["osmium", *map(inside, args)], mount, at="/w")
+
+
+def built_region_extract(connection) -> Path:
+    """The extract of the region the database was built for (oim_build_info;
+    data/downloads/osm/<region>-latest.osm.pbf); exits if it isn't there."""
+    with connection.cursor() as cur:
+        cur.execute("SELECT value FROM oim_build_info WHERE key = 'region_id'")
+        row = cur.fetchone()
+    path = OSM_DIR / f"{row[0]}-latest.osm.pbf" if row else None
+    if not path or not path.exists():
+        sys.exit(
+            f"No extract of the built region in {OSM_DIR}: give one with --extract."
+        )
+    return path

@@ -43,7 +43,8 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   `.oim-button` is given the same look). A main action is `.primary` (`--oim-primary`, the one blue, also for drop targets).
   Disabled at half opacity.
 - **Several things each on or off, in a row** (a unit's HQ, task force, dummy;
-  the list's filters): chips (`.oim-ul-chip`), lit when on, not tick boxes.
+  the list's filters, a building's floors): chips (`ui/chip.ts`, `.oim-chip`), lit
+  when on, not tick boxes.
 - **Chosen, on, selected:** class `oim-on`, the map selection's yellow background
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
   buttons when their panel is open: `oim-pressed`.
@@ -212,6 +213,11 @@ metro (`modules/roads`), the same at every zoom over the map and imagery.
   that read as noise at that zoom are not drawn (stand lead-ins at airports,
   sidings and depots until asked for).
 
+- **Building interiors** (`modules/indoor`, indoor.constants.ts): buildings with
+  one a light violet over the building while building outlines are shown; a floor
+  drawn when chosen in the building's details: rooms in a light warm grey, corridors
+  and open areas lighter, walls and outlines dark grey, doors white dots ringed dark,
+  lifts, stairs and what's inside dark dots, room names in the label style.
 - **Building numbers** ("WIS-47", `modules/buildings/numbers.ts`): in the map's
   label style (`text_paint`), 11 px, from zoom 16; where two would overlap, one waits
   for a closer zoom.

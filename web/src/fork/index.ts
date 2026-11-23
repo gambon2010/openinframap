@@ -25,6 +25,7 @@ import satellite from './modules/satellite/index.ts'
 import roads from './modules/roads/index.ts'
 import background from './modules/background/index.ts'
 import buildings from './modules/buildings/index.ts'
+import indoor from './modules/indoor/index.ts'
 import account from './modules/account/index.ts'
 import coordinates from './modules/coordinates/index.ts'
 import debug from './modules/debug/index.ts'
@@ -40,6 +41,7 @@ const MODULES: ForkModule[] = [
   roads,
   background,
   buildings,
+  indoor,
   terrain,
   mapSources,
   extra,

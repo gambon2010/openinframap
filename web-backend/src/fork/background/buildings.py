@@ -14,6 +14,7 @@ shows.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import mapbox_vector_tile  # type: ignore[import-untyped]
 import numpy as np
@@ -27,9 +28,14 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from . import ARCHIVES, unzipped
+from .mvt import keep
 
 FULL_ZOOM = 15
 EXTENT = 4096
+BUILDINGS_LAYER = "buildings"
+
+# A zoom 15 tile's buildings (full_tile, or the same remembered).
+TileReader = Callable[[int, int], list[dict]]
 
 
 def full_tile(x: int, y: int) -> list[dict]:
@@ -38,18 +44,24 @@ def full_tile(x: int, y: int) -> list[dict]:
     found = ARCHIVES.tile(FULL_ZOOM, x, y)
     if not found:
         return []
-    layers = mapbox_vector_tile.decode(unzipped(found[0]), default_options={"y_coord_down": True})
+    # Its buildings only: decoding the roads, water and labels too took twice as long.
+    buildings_only = keep(unzipped(found[0]), {BUILDINGS_LAYER})
+    layers = mapbox_vector_tile.decode(buildings_only, default_options={"y_coord_down": True})
     return [
         f
-        for f in layers.get("buildings", {}).get("features", [])
+        for f in layers.get(BUILDINGS_LAYER, {}).get("features", [])
         if f.get("properties", {}).get("kind") == "building" and f.get("id") is not None
     ]
 
 
-def outline(building_id: int, lon: float, lat: float, most: int = 25) -> dict | None:
+def outline(
+    building_id: int, lon: float, lat: float, most: int = 25, read_tile: TileReader | None = None
+) -> dict | None:
     """A building's whole outline in degrees: its piece in the zoom 15 tile at the
     point, and in each neighbour its piece reaches the edge of (at most `most`
-    tiles). None if it isn't there."""
+    tiles). None if it isn't there. `read_tile`: full_tile, or one that remembers
+    tiles for a step reading many (indoor/link.py)."""
+    read = read_tile or full_tile
     todo: list[tuple[int, int]] = [tile_of(lon, lat)]
     seen: set[tuple[int, int]] = set()
     parts: list[BaseGeometry] = []
@@ -58,7 +70,7 @@ def outline(building_id: int, lon: float, lat: float, most: int = 25) -> dict | 
         if (tx, ty) in seen:
             continue
         seen.add((tx, ty))
-        for f in full_tile(tx, ty):
+        for f in read(tx, ty):
             if int(f["id"]) != building_id:
                 continue
             geom = area_only(shape(f["geometry"]))

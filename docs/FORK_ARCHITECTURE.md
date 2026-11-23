@@ -45,7 +45,8 @@ ui/        shared building blocks you see: dock (right), left column, details
            map buttons (map-button.ts: print, Settings, account),
            the tooltip, the right-click menu (context-menu.ts: withContextMenu),
            fade.ts (data layers fading in and out as their entry is ticked),
-           line icons (icons.ts: the eye, the map's buttons), the key's checkboxes
+           line icons (icons.ts: the eye, the map's buttons), chips on or off
+           (chip.ts), the key's checkboxes
            and its rows on prints (key/; counted-groups.ts: a group's count of the
            kinds the key shows)
 services/  shared state and registries, nothing drawn: live updates (live.ts),
@@ -88,6 +89,11 @@ modules/   one folder per feature, each a ForkModule, listed in MODULES:
                to switch on (clickable: details, copy); look.ts: roofs and shadows over
                imagery, raised to their height in the 3D view; parts.ts: the buildings
                mapped with parts (their parts raised instead)
+  indoor       buildings' interiors (Tegola's indoor map): buildings with one tinted,
+               a building's floors as chips in its details (floors.ts: the floor
+               shown per building, the filter), rooms, walls, doors, stairs and what's
+               inside (style.ts); its layers start with core/buildings.ts's
+               INTERIOR_PREFIX, so the Buildings entry shows and hides them
   terrain      hill shading from the terrain's elevations and the backend's contour
                lines (contours.ts; key.ts: a tick box per part), Data layers →
                Terrain; placement.ts: the shading under the background map's roads,
@@ -222,7 +228,7 @@ ui/      workspace.ts (opens, keyboard, wiring) and its components: toolbar,
          dropdowns, controls.ts the rows and inputs),
          outliner/ (the list: index.ts, rows/ item, layer, folder; menus.ts, editing.ts,
          drag.ts, footer.ts over types.ts's OutlinerContext; filter.ts, order.ts), palette.ts (the picker), toolbar.ts (the tools in groups) and
-         tool-icons.ts (its icons, drawn as ui/icons.ts's), identity-icons.ts (identities as their frames), chip.ts (a chip on or off), unit-marks.ts (a unit's echelon and marks);
+         tool-icons.ts (its icons, drawn as ui/icons.ts's), identity-icons.ts (identities as their frames), unit-marks.ts (a unit's echelon and marks);
          userlayers.css lists the CSS files in order (order matters)
 ```
 
@@ -254,7 +260,10 @@ every route but logging in needs a session):
   `numbering.py` the order, `buildings.py` an area's buildings from the background
   map's tiles (slivers apart), `register.py` kept in `userdata.building_ref` and
   `building_sliver`, migrations 004 and 005; the search finds them,
-  `search/buildings.py`);
+  `search/buildings.py`), `indoor/` (buildings' interiors: `link.py`, each piece's
+  building on the background map and each building's floors, a build step,
+  `python -m src.fork.indoor`; `/indoor/building/{id}`, its floors), `database.py`
+  (the database the build steps use);
 - `map_data.py` (a map feature's full geometry);
 - `pmtiles_files.py` (the PMTiles files served from `data/map/offline-maps/`: a file open,
   its index cached, `Archive`; the files of one kind in the folder, opened again when
@@ -326,8 +335,8 @@ the schema fingerprint builds and exports carry.
 - **The build's steps, in order:** region menu → download to `data/downloads/osm/` → osmium
   filter → `docker compose down -v` → imposm import → `views`, `distances`, `stats`,
   `places`, `sites`, `grid` (the power grid network), `tower-numbers` +
-  `number_towers`, `building-names` → search indexes → the buildings' names
-  (`building_names.py`) → extra data, `extra`, `search` → EEZ →
+  `number_towers`, `building-names`, `indoor` → search indexes → buildings'
+  interiors (`import_indoor`) and names (`building_names.py`) → extra data, `extra`, `search` → EEZ →
   `local-stats` (a fast per-country stats snapshot) → `oim_build_info` → Tegola →
   the offline maps queued in the menu (a background map: `pmtiles extract` of the
   area's outline from Protomaps' daily build, then its buildings, roads and railways
@@ -348,7 +357,8 @@ the schema fingerprint builds and exports carry.
   and kind), `site-overrides.sql` (`site_override`: kinds set by hand, by OSM id and
   name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-parts.sql` (`site_made_base`, bases made for buildings of one kind standing together with none mapped; `site_military`, every military site; `site_part`, a military base's parts: building, own kind or zone; `site_part_count`, a base's parts counted; `site_tile`, what the tiles read), `site-points.sql` (`site_points`, grouped zoomed out, leaving out a base's building and zone parts below zoom 15), `grid.sql` (`grid_node` / `grid_edge`, used by
   `/grid/route` and `/grid/line`), `tower-numbers.sql`, `building-names.sql`
-  (`osm_building_name`, empty until `building_names.py` fills it), `extra.sql` (the `extra`
+  (`osm_building_name`, empty until `building_names.py` fills it), `indoor.sql`
+  (`osm_indoor`, `indoor_building`, empty until `import-indoor.sh`), `extra.sql` (the `extra`
   schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
   `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered
   migrations (`userdata/migrations/`).
@@ -447,6 +457,10 @@ the schema fingerprint builds and exports carry.
     `pmtiles.py` (a file's header), `extract.py` (background maps);
   - `cli.py`: one command per download, `maps`, `tiers` / `summary` (what the map
     is told about the imagery).
+- **`indoor.py`** (with `import-indoor.sh`, which then runs the backend's
+  `src/fork/indoor`): buildings' interiors from the region's whole extract (osmium:
+  everything with an indoor, level or repeat_on tag), into `osm_indoor`; things with
+  a floor kept where they touch an interior or stand in a building.
 - **`building_names.py`:** the names OpenStreetMap gives buildings, from the
   region's whole extract (osmium, `offline_maps/osm_extract.py`'s `run_osmium`: the
   named ways and relations, then the buildings among them), a point inside each,

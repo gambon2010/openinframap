@@ -1,7 +1,7 @@
 // Fork: a unit's echelon and marks (headquarters, task force, dummy), chosen on its
 // card (editor/choices.ts) or before placing it (palette.ts): the echelons as a
 // dropdown's lines, the marks as chips (chip.ts).
-import { toggleChip } from './chip.ts'
+import { toggleChip } from '../../../ui/chip.ts'
 import { t } from '../../../core/i18n.ts'
 import type { UnitModifiers } from '../model/sidc.ts'
 import { ECHELON_MARKS } from './editor/constants.ts'

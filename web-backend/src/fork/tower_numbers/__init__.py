@@ -26,7 +26,6 @@ database.
 
 from __future__ import annotations
 
-import os
 import time
 
 from sqlalchemy import text
@@ -38,6 +37,7 @@ from .labels import base, label_towers, letters
 from .numbering import Line, all_lines, line_name, number_line, start_station
 from .register import number_from_register
 from .write import write
+from ..database import database_url
 
 __all__ = [
     "Line",
@@ -53,11 +53,9 @@ __all__ = [
     "write",
 ]
 
-DEFAULT_URL = "postgresql+asyncpg://osm:osm@localhost:5432/osm"
-
 
 async def main() -> None:
-    engine = create_async_engine(os.environ.get("DATABASE_URL", DEFAULT_URL))
+    engine = create_async_engine(database_url())
     began = time.monotonic()
     async with engine.connect() as database:
         await ensure_schema(database)  # the register (userdata)

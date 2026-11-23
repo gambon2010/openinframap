@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { copiedBuildingName, joinPieces } from './buildings.ts'
+import { copiedBuildingName, isBuildingLayer, joinPieces } from './buildings.ts'
 
 const box = (w: number, s: number, e: number, n: number): GeoJSON.Polygon => ({
   type: 'Polygon',
@@ -86,5 +86,12 @@ describe("a copied building's name", () => {
   })
   test('neither: no name', () => {
     expect(copiedBuildingName({ name: null, number: null })).toBeUndefined()
+  })
+})
+
+describe('a buildings layer', () => {
+  test('its outlines and 3D are; its interiors, shown with it, are not', () => {
+    expect(isBuildingLayer('buildings_outline_hit')).toBe(true)
+    expect(isBuildingLayer('buildings_indoor_area')).toBe(false)
   })
 })

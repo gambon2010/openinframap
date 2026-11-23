@@ -1,0 +1,15 @@
+/* Chips (chip.ts): on or off, lit when on (oim-on, panel.css), in a row. */
+.oim-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+.oim-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--oim-grey);
+  border-radius: 12px;
+  background: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+}

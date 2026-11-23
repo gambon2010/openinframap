@@ -18,7 +18,7 @@ import { AFFILIATIONS, MAX_RESULTS, GEOMETRY_ICONS, CATEGORIES, NO_MARKS } from 
 import { symbolKind, withUnitModifiers, type UnitModifiers } from '../model/sidc.ts'
 import { select } from './editor/controls.ts'
 import { echelonOptions, markChips } from './unit-marks.ts'
-import { toggleChip } from './chip.ts'
+import { toggleChip } from '../../../ui/chip.ts'
 
 /** A catalogue code (with * for identity and status) made concrete. */
 export function concreteSidc(code: string, affiliation: string, status: string): string {

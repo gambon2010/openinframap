@@ -22,8 +22,14 @@ export const BUILDINGS_SWITCHER_ID = 'K'
 /** Every buildings layer's id starts with this (the layer switcher's prefix too). */
 export const BUILDINGS_PREFIX = 'buildings_'
 
-/** Whether a map layer is one of the buildings' (outlines, insides, zoomed out or not). */
-export const isBuildingLayer = (id: string) => id.startsWith(BUILDINGS_PREFIX)
+/** The interiors' layers (modules/indoor): shown and hidden with the buildings, but
+ * rooms and doors, not buildings. */
+export const INTERIOR_PREFIX = `${BUILDINGS_PREFIX}indoor_`
+
+/** Whether a map layer is one of the buildings' (outlines, insides, zoomed out or not;
+ * not their interiors). */
+export const isBuildingLayer = (id: string) =>
+  id.startsWith(BUILDINGS_PREFIX) && !id.startsWith(INTERIOR_PREFIX)
 export const BUILDINGS_SOURCE = 'basemap'
 export const BUILDINGS_SOURCE_LAYER = 'buildings'
 /** Every building is in the tiles from this zoom. */

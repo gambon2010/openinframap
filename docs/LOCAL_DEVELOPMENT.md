@@ -662,7 +662,12 @@ or as the number alone (Settings → Building numbers); an area is numbered the 
 time it's shown, a few seconds for a city, and the numbers never change for anyone;
 search "STR-NEU-12" or "wis 47" in the search box to go there (pinned; switch the
 numbers on to read the others), the nearest place with that code first. Buildings no one could stand in, a staircase's steps drawn one
-by one, aren't numbered and aren't drawn outside 3D. A building's details show its
+by one, aren't numbered and aren't drawn outside 3D. Buildings with a mapped interior (stations, shopping
+centres, universities, hospitals: 47,530 buildings in France) are tinted violet; their details offer **Inside, floor** with a chip a floor: click one to
+draw that floor's rooms, corridors, walls, doors, stairs, lifts and what's inside
+(each building on its own floor; click again to hide it); click a room or a shop for
+its details. Read at build from the whole extract (`bash scripts/import-indoor.sh` to
+read them again, about half an hour for France). A building's details show its
 number, and its name when OpenStreetMap gives it one ("Cathédrale Notre-Dame":
 names read at build from the whole extract, `scripts/building_names.py` to read
 them again; found by the search too); from

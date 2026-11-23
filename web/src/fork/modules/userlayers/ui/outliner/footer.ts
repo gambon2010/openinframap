@@ -3,7 +3,7 @@ import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { openContextMenuFor } from '../../../../ui/context-menu.ts'
 import { FILTERS } from './constants.ts'
-import { toggleChip } from '../chip.ts'
+import { toggleChip } from '../../../../ui/chip.ts'
 import { newFolder } from './editing.ts'
 import { exportEntries } from './menus.ts'
 import type { OutlinerContext } from './types.ts'
@@ -18,7 +18,7 @@ export function filterChips(c: OutlinerContext): HTMLElement | string {
   c.filterButton.setAttribute('aria-expanded', String(c.filtersOpen))
   if (!c.filtersOpen) return ''
   return el(
-    '.oim-ul-chips.oim-ul-filters',
+    '.oim-chips.oim-ul-filters',
     FILTERS.map(([filter, label]) =>
       toggleChip(t(`userlayers.filter.${filter}`, label), c.filters.has(filter), (on) => {
         if (on) c.filters.add(filter)

@@ -18,7 +18,6 @@ import argparse
 import asyncio
 import csv
 import json
-import os
 from collections import Counter
 from pathlib import Path
 
@@ -27,8 +26,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 
 from .line_trace import GridIndex, load_index, trace_line
 from .paths import LOCAL_DIR, OSM_DIR
+from .database import database_url
 
-DEFAULT_URL = "postgresql+asyncpg://osm:osm@localhost:5432/osm"
 # A line end this close to the region's outline leaves the region (metres).
 REGION_EDGE = 2000
 # An open end this close to a station or another line probably should be joined to it.
@@ -75,7 +74,7 @@ def loose_ends(index: GridIndex, min_voltage: int) -> dict[int, tuple[str, int, 
 
 
 async def main(min_kv: int, csv_path: Path) -> None:
-    engine = create_async_engine(os.environ.get("DATABASE_URL", DEFAULT_URL))
+    engine = create_async_engine(database_url())
     async with engine.connect() as database:
         index = await load_index(database)
         print(f"Network: {len(index.edges):,} stretches, {len(index.nodes):,} nodes.")

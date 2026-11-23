@@ -1,0 +1,12 @@
+/* A building's floors under its details (index.ts): the label, then a chip a floor. */
+.oim-indoor-floors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.oim-indoor-floors-label {
+  color: var(--oim-text-color-light);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}

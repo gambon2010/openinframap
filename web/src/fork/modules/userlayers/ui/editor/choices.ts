@@ -150,7 +150,7 @@ function marksRow(sidc: string, setSidc: (next: string) => void): HTMLElement {
   return formRow(
     t('userlayers.marked-as', 'Marked as'),
     el(
-      '.oim-ul-chips.oim-ul-marks',
+      '.oim-chips.oim-ul-marks',
       ...markChips(unitModifiers(sidc), (marks) => setSidc(withUnitModifiers(sidc, marks)))
     ),
     undefined,

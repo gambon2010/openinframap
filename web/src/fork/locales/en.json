@@ -941,5 +941,29 @@
     "menu": "The right-click menu of what has the focus",
     "escape": "Close a menu or a window, stop a tool",
     "title": "Keyboard shortcuts"
+  },
+  "indoor": {
+    "floors": "Inside, floor",
+    "ground-floor": "Ground floor",
+    "floor-n": "Floor {{n}}",
+    "basement-n": "Basement {{n}}",
+    "floor-unknown": "Not given (shown on the ground floor)",
+    "what": "What",
+    "ref": "Number",
+    "floor": "Floor",
+    "kind": {
+      "room": "Room",
+      "area": "Open area",
+      "corridor": "Corridor",
+      "level": "Floor outline",
+      "wall": "Wall",
+      "column": "Column",
+      "door": "Door",
+      "stairs": "Stairs",
+      "elevator": "Lift",
+      "escalator": "Escalator",
+      "path": "Walkway",
+      "poi": "Inside the building"
+    }
   }
 }

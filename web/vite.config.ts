@@ -12,7 +12,7 @@ const env = loadEnv('development', process.cwd(), '')
 const backendUrl = env.VITE_BACKEND_BASE_URL || 'http://localhost:8001'
 const tegolaUrl = env.VITE_TEGOLA_URL || 'http://localhost:7800'
 const BACKEND_PATHS =
-  '^/(login|auth|userdata|api|grid|background|terrain|imagery|satellite|search|stats|about|copyright|static|local-images|wikidata|sitemap\\.xml|heatmap\\.json)(/|$|\\?)'
+  '^/(login|auth|userdata|api|grid|background|indoor|terrain|imagery|satellite|search|stats|about|copyright|static|local-images|wikidata|sitemap\\.xml|heatmap\\.json)(/|$|\\?)'
 
 export default defineConfig({
   build: {

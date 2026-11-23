@@ -219,3 +219,79 @@ layers:
     id_field: osm_id
     from: osm_petroleum_site
     where: type <> 'substation' AND geometry && !BBOX!
+
+  # Fork: buildings' interiors (schema/fork/indoor.sql, scripts/import-indoor.sh), in
+  # three layers by shape; the map draws a building's pieces only for the floor
+  # chosen in its details (modules/indoor).
+  # An interior's rooms, areas, corridors, columns and floor outlines.
+  - name: indoor_area
+    map:
+      - indoor
+    geometry_type: Polygon
+    min_zoom: 16
+    field_sets: [geom]
+    fields:
+      - name: kind
+      - name: name
+      - name: ref
+      - name: levels
+      - name: level_low
+      - name: level_high
+      - name: level_given
+      - name: building_id
+    id_field: id
+    from: osm_indoor
+    where: building_id IS NOT NULL AND ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon') AND geometry && !BBOX!
+
+  # Fork: an interior's walls, paths, stairs and escalators drawn as lines.
+  - name: indoor_line
+    map:
+      - indoor
+    geometry_type: LineString
+    min_zoom: 16
+    field_sets: [geom]
+    fields:
+      - name: kind
+      - name: name
+      - name: ref
+      - name: levels
+      - name: level_low
+      - name: level_high
+      - name: level_given
+      - name: building_id
+    id_field: id
+    from: osm_indoor
+    where: building_id IS NOT NULL AND ST_GeometryType(geometry) IN ('ST_LineString', 'ST_MultiLineString') AND geometry && !BBOX!
+
+  # Fork: an interior's doors, lifts and what stands inside.
+  - name: indoor_point
+    map:
+      - indoor
+    geometry_type: Point
+    min_zoom: 16
+    field_sets: [geom]
+    fields:
+      - name: kind
+      - name: name
+      - name: ref
+      - name: levels
+      - name: level_low
+      - name: level_high
+      - name: level_given
+      - name: building_id
+    id_field: id
+    from: osm_indoor
+    where: building_id IS NOT NULL AND ST_GeometryType(geometry) IN ('ST_Point', 'ST_MultiPoint') AND geometry && !BBOX!
+
+  # Fork: the background map's buildings with an interior, tinted while building
+  # outlines are shown (indoor_building).
+  - name: indoor_building
+    map:
+      - indoor
+    geometry_type: Polygon
+    min_zoom: 13
+    field_sets: [geom]
+    # Its id is sent as a field too (generate_tegola_config.py): not listed again.
+    id_field: building_id
+    from: indoor_building
+    where: NOT ST_IsEmpty(geometry) AND geometry && !BBOX!

@@ -64,7 +64,7 @@ project_images() {
 # functions.sql when the database is created, eez.sql with the country boundaries,
 # the rest in build-region.sh. A test (scripts/tests) checks every schema file is
 # either here or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in order.
-SCHEMA_FILES=(functions views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers building-names extra search eez local-stats)
+SCHEMA_FILES=(functions views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers building-names indoor extra search eez local-stats)
 
 # Not part of a build: database creation (dev-init, prod-init) and production jobs.
 SCHEMA_NOT_BUILT=(dev-init prod-init refresh_matviews)
@@ -84,6 +84,7 @@ declare -A SCHEMA_LABELS=(
     [grid]="Building the power grid network"
     [tower-numbers]="Preparing tower numbers"
     [building-names]="Preparing building names"
+    [indoor]="Preparing building interiors"
     [extra]="Creating extra data tables"
     [search]="Preparing search"
     [local-stats]="Computing per-country stats"
@@ -119,6 +120,20 @@ schema_hash() {
 # grid.sql and tower-numbers.sql (the empty tables).
 number_towers() {
     backend_python -m src.fork.tower_numbers >/dev/null
+}
+
+# Buildings' interiors (scripts/indoor.py fills osm_indoor from EXTRACT, or the built
+# region's), then each piece's building on the background map (the backend's
+# src/fork/indoor). After indoor.sql.
+import_indoor() {
+    local extract="${1:-}" args=()
+    [[ -n "$extract" ]] && args+=(--extract "$extract")
+    # Each step after the last has worked (run with --keep-going, errexit is off here).
+    scripts_python "$REPO_ROOT/scripts/indoor.py" \
+        --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" "${args[@]}" || return
+    backend_python -m src.fork.indoor || return
+    # Both steps rewrite every row (its building, its floors): the old copies freed.
+    db_psql -c "VACUUM (FULL, ANALYZE) osm_indoor, indoor_building;"
 }
 
 # --- Replacing the database (build-region.sh, import-db.sh) ------------------------
