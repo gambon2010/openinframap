@@ -18,7 +18,7 @@ export function openSymbolScale(store: Store, layer: UserLayer, mapScale: number
     store.updateLayer(layer.id, { style: { ...layer.style, symbolScale } })
   if (layer.style.symbolScale === undefined) choose(scale)
   // Position 0: the same size at every zoom; then each step.
-  const slider = el('input', {
+  const slider = el('input.oim-ul-scale-slider', {
     type: 'range',
     min: 0,
     max: SCALE_STEPS.length,
@@ -44,7 +44,7 @@ export function openSymbolScale(store: Store, layer: UserLayer, mapScale: number
   }
   const ticks = el(
     '.oim-ul-scale-ticks',
-    el('span', '—'),
+    el('span', t('userlayers.scale-tick-off', 'Off')),
     ...SCALE_STEPS.map((step) => el('span', scaleLabel(step).replace(' 000', 'k')))
   )
   showModal(

@@ -1,5 +1,5 @@
 // Fork: My layers' Import and Export (formats.ts): choosing a file, downloading one.
-import { askToConfirm } from '../../../ui/confirm.ts'
+import { askToConfirm, tell } from '../../../ui/ask.ts'
 import { Map as MapLibreMap } from 'maplibre-gl'
 import { t } from '../../../core/i18n.ts'
 import { UserLayer } from '../model/model.ts'
@@ -42,7 +42,7 @@ export async function importFile(store: Store, map: MapLibreMap) {
   try {
     items = readFile(file.name, await file.text())
   } catch (e) {
-    window.alert(
+    void tell(
       t('userlayers.import-failed', "This file can't be read ({{error}}). GeoJSON, KML and GPX files can.", {
         error: (e as Error).message
       })
@@ -50,7 +50,7 @@ export async function importFile(store: Store, map: MapLibreMap) {
     return
   }
   if (!items.length) {
-    window.alert(t('userlayers.import-empty', 'There is nothing to put on the map in this file.'))
+    void tell(t('userlayers.import-empty', 'There is nothing to put on the map in this file.'))
     return
   }
   if (

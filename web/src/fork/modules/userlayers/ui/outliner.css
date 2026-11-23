@@ -62,11 +62,11 @@
   cursor: help;
 }
 .oim-ul-active-tag {
-  color: #1565c0;
+  color: var(--oim-primary);
   font-weight: bold;
 }
 .oim-ul-drop {
-  outline: 2px dashed #1565c0;
+  outline: 2px dashed var(--oim-primary);
   background: #e3f2fd !important;
 }
 .oim-ul-drop-out {
@@ -195,10 +195,10 @@
 
 /* A layer dragged over another: a line where it will go (above or below). */
 .oim-ul-drop-before {
-  box-shadow: inset 0 3px 0 #1565c0;
+  box-shadow: inset 0 3px 0 var(--oim-primary);
 }
 .oim-ul-drop-after {
-  box-shadow: inset 0 -3px 0 #1565c0;
+  box-shadow: inset 0 -3px 0 var(--oim-primary);
 }
 
 /* A name typed in place (ui/outliner.ts). */
@@ -219,7 +219,7 @@
 .oim-ul-layer-row:focus-visible,
 .oim-ul-folder-row:focus-visible,
 .oim-ul-item:focus-visible {
-  outline: 2px solid #1565c0;
+  outline: 2px solid var(--oim-primary);
   outline-offset: -2px;
 }
 
@@ -258,7 +258,7 @@
   flex: 1;
 }
 .oim-ul-item-group:focus-visible {
-  outline: 2px solid #1565c0;
+  outline: 2px solid var(--oim-primary);
   outline-offset: -2px;
 }
 /* Under a group's heading, the items' pictures start where the heading does. */

@@ -7,11 +7,13 @@
 // numbers ("WIS-47") a layer of their own (numbers.ts).
 import { Layer, LayerGroup } from '@russss/maplibregl-layer-switcher'
 import type { Map, MapGeoJSONFeature } from 'maplibre-gl'
+import { el } from 'redom'
 import { t } from '../../core/i18n.ts'
 import { formatArea } from '../../core/geo.ts'
 import {
   BUILDINGS_PREFIX,
   BUILDINGS_SWITCHER_ID,
+  buildingNames,
   buildingOutline,
   isBuildingLayer,
   outlineArea
@@ -41,14 +43,25 @@ const buildings: ForkModule = {
     followNumbers(map)
   },
 
+  // A click on a number opens its building.
+  labelLayers: () => [NUMBERS_LAYER],
+
   popup: {
     html: (feature) => (isBuildingLayer(feature.layer.id) ? details(feature) : undefined)
   }
 }
 
 /** What there is to say about a building: little (the background map keeps its
- * outline, height and kind), plus its area on the ground. */
+ * outline, height and kind), plus its area on the ground; its name and number once
+ * the backend has answered. */
 function details(feature: MapGeoJSONFeature): HTMLElement {
+  const card = measuredDetails(feature)
+  void showNames(card, feature)
+  return card
+}
+
+/** The card with what the map itself knows: height, where it starts, area. */
+function measuredDetails(feature: MapGeoJSONFeature): HTMLElement {
   const p = feature.properties
   const area = groundArea(feature)
   return detailsCard(t('buildings.building', 'Building'), [
@@ -59,6 +72,15 @@ function details(feature: MapGeoJSONFeature): HTMLElement {
     ],
     [t('buildings.area', 'Area (on the ground)'), area ? formatArea(area) : undefined]
   ])
+}
+
+/** The building's own name as the card's title, its number as the first row. */
+async function showNames(card: HTMLElement, feature: MapGeoJSONFeature): Promise<void> {
+  const { name, number } = await buildingNames(feature)
+  const title = card.querySelector('.oim-popup-header h3')
+  if (name && title) title.textContent = name
+  const rows = card.querySelector('table.item_info')
+  if (number && rows) rows.prepend(el('tr', el('th', t('buildings.number', 'Number')), el('td', number)))
 }
 
 /** Square metres: zoomed out, measured whole when the tiles were made; closer, from

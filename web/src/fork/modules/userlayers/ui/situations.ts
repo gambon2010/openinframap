@@ -1,7 +1,7 @@
 // Fork: situations in My layers' sidebar: a selector (live, a saved situation,
 // save now as one, delete) and, while one is shown, a banner over the map with
 // "Back to live". A situation is shown read-only (store.view).
-import { askToConfirm } from '../../../ui/confirm.ts'
+import { askForText, askToConfirm } from '../../../ui/ask.ts'
 import { el } from 'redom'
 import { t, tn } from '../../../core/i18n.ts'
 import { Situation } from '../state/api.types.ts'
@@ -54,7 +54,7 @@ export class Situations {
     )
     if (this.viewing)
       options.push(
-        el('option', `🗑 ${t('userlayers.delete-situation', 'Delete this situation')}`, { value: 'delete' })
+        el('option', t('userlayers.delete-situation', 'Delete this situation'), { value: 'delete' })
       )
     const choice = el('select', options, {
       title: t('userlayers.situation-title', 'A situation is a named moment: your layers as they were then')
@@ -71,9 +71,11 @@ export class Situations {
       return
     }
     if (value === 'save') {
-      const name = window.prompt(
+      const name = await askForText(
+        t('userlayers.situation-save', 'Save situation'),
         t('userlayers.situation-name', 'Name of the situation'),
-        t('userlayers.situation-default', 'Situation {{date}}', { date: new Date().toLocaleString() })
+        t('userlayers.situation-default', 'Situation {{date}}', { date: new Date().toLocaleString() }),
+        t('userlayers.save', 'Save')
       )
       if (name && name.trim()) {
         // A situation is made of saved changes: offer to save the unsaved ones first.

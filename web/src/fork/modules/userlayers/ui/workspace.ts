@@ -8,6 +8,7 @@
 //   (timeline.ts) and the banner while a situation is shown (situations.ts);
 // - the keyboard shortcuts.
 // What's shown and what may be changed is the store's view (state/view.ts).
+import { tell } from '../../../ui/ask.ts'
 import type { UserFeature } from '../model/model.ts'
 import type { MenuItem } from '../../../ui/context-menu.ts'
 import { el } from 'redom'
@@ -143,13 +144,13 @@ export class Workspace implements IControl {
       if (e instanceof StaleError) {
         // Merged with what they saved: the conflict window shows what's left to choose.
         if (!this.store.conflicts.length)
-          window.alert(
+          void tell(
             t(
               'userlayers.stale-merged',
               'Someone else saved some of these items meanwhile. Their changes and yours were put together: check, then Save again.'
             )
           )
-      } else window.alert(`${label}: ${(e as Error).message ?? e}`)
+      } else void tell(`${label}: ${(e as Error).message ?? e}`)
     } finally {
       this.busy = ''
       this.update()

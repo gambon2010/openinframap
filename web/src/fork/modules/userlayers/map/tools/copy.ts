@@ -6,7 +6,13 @@ import type { Map, MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl'
 import { t } from '../../../../core/i18n.ts'
 import { OIM_TILES } from '../../../../config.ts'
 import { sourceGeometry } from '../../../../core/map-data.ts'
-import { buildingId, buildingNumber, exactOutline, isBuildingLayer } from '../../../../core/buildings.ts'
+import {
+  buildingId,
+  buildingNames,
+  copiedBuildingName,
+  exactOutline,
+  isBuildingLayer
+} from '../../../../core/buildings.ts'
 import { withNewColour } from '../new-colour.ts'
 import type { FeatureProps } from '../../model/model.ts'
 import type { ToolsContext } from '../tools.types.ts'
@@ -104,12 +110,14 @@ async function copyBuilding(c: ToolsContext, f: MapGeoJSONFeature): Promise<'cop
       return 'already'
     }
   }
-  const [outline, number] = await Promise.all([exactOutline(c.map, f), buildingNumber(f)])
+  const [outline, names] = await Promise.all([exactOutline(c.map, f), buildingNames(f)])
   const geometry = outline || f.geometry
+  const name = copiedBuildingName(names)
   const properties: FeatureProps = {
     kind: 'building',
-    // Its number as its name ("STR-NEU-12"): the same on everyone's map.
-    ...(number ? { name: number } : {}),
+    // Its own name and number ("Cathédrale Notre-Dame · STR-CAT-3"): the number the
+    // same on everyone's map.
+    ...(name ? { name } : {}),
     ...(id !== undefined ? { building_id: id } : {}),
     ...(typeof f.properties.height === 'number' ? { height: f.properties.height } : {})
   }

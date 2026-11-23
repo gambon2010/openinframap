@@ -85,7 +85,7 @@ import_osm() {
         -overwritecache
 
     section "Creating views..."
-    run_schema views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers
+    run_schema views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers building-names
     run_with_timer "Creating search indexes" create_search_indexes
     # Extra data kept for this region goes back first; then the extra data tables
     # (which always exist, as Tegola serves them) get whatever is new.
@@ -97,10 +97,19 @@ import_osm() {
             db_psql -c "DROP SCHEMA IF EXISTS extra CASCADE;"
         fi
     fi
-    # Then everything with a name, for the search box (extra_data.py refreshes it
-    # when the extra data changes).
+    run_with_timer --keep-going "Naming buildings (about 4 minutes for France)" name_buildings \
+        || warn "Naming buildings failed; the map works without their names. Retry with: uv run --project scripts scripts/building_names.py"
+    # Then everything with a name, for the search box (extra_data.py and
+    # building_names.py refresh it when they change).
     run_schema extra search
     put_back_my_layers
+}
+
+# Buildings' names from the whole extract (scripts/building_names.py), into
+# osm_building_name (building-names.sql).
+name_buildings() {
+    scripts_python "$REPO_ROOT/scripts/building_names.py" \
+        --db-url "postgresql://$DB_USER:osm@localhost:5432/$DB_NAME" --extract "$PBF_SOURCE" --no-search
 }
 
 # Country boundaries and the per-country stats.

@@ -329,6 +329,9 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.107 | Symbol scale as a slider of fixed steps from the zoom when switched on; copied buildings named by their number; slivers (staircase steps) hidden outside 3D and not numbered; numbers per neighbourhood in large communes ("STR-NEU-12"); labels whole or the number alone; the tool list without the tool already on its button; the identity row tidied; hover tooltips back; drawn icons across My layers (list, menus, padlock); Discard a button with a centred question; roads and contours not copied; no colour for a line of sight; a named measurement's name on the map; "Seen at" for the date-time group; icons in the tool lists; building numbers in the search. | ✅ (2026-11-26) |
 | 10.108 | A click selects the whole feature: a street by name, a contour line, anything cut in tile pieces; renaming a copied street shows the new name. | 🗂 backlog (2026-11-26) |
 | 10.109 | SNCF Réseau's open railway data (level crossings, passages, footbridges, electrification, speeds, line status). | 🗂 backlog (2026-11-26) |
+| 10.110 | Buildings' names from OpenStreetMap: the details' title, a copy's name ("Cathédrale Notre-Dame · STR-MAI-729"), the search. Molsheim-like towns (one grand quartier) numbered by their IRIS; no two neighbourhoods of a commune with the same name or code. Symbol scale turned off from the layer's menu; a tooltip-wide ▾; prompts and alerts in the centred window; field names checked by the strings check; the main blue a token. | ✅ (2026-11-23) |
+| 10.111 | Search: My layers' items by name, coordinates (degrees, MGRS). | 📋 to do (2026-11-23) |
+| 10.112 | Search: line-of-sight and measurement names. | 🗂 backlog (2026-11-23) |
 
 ## 11. Quality
 

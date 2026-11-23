@@ -654,12 +654,16 @@ sites among them) from Géorisques (`import fr-georisques-icpe`), and the commun
 and neighbourhoods' outlines to number buildings (`import fr-communes`, 90 MB and
 IGN's IRIS once: Data layers → Background map → **Building numbers**, each building's
 number within its neighbourhood where INSEE splits the commune, "STR-NEU-12" in
-Neudorf, Strasbourg, else within its commune, "WIS-47"; from zoom 16, written whole
+Neudorf, Strasbourg, "MLS-NOR-12" in Molsheim's north, else within its commune,
+"WIS-47"; from zoom 16, written whole
 or as the number alone (Settings → Building numbers); an area is numbered the first
 time it's shown, a few seconds for a city, and the numbers never change for anyone;
 search "STR-NEU-12" or "wis 47" in the search box to go there, the nearest place
 with that code first. Buildings no one could stand in, a staircase's steps drawn one
-by one, aren't numbered and aren't drawn outside 3D); from
+by one, aren't numbered and aren't drawn outside 3D. A building's details show its
+number, and its name when OpenStreetMap gives it one ("Cathédrale Notre-Dame":
+names read at build from the whole extract, `scripts/building_names.py` to read
+them again; found by the search too); from
 [Agence ORE](https://opendata.agenceore.fr), so it applies to France, French regions,
 Europe and the border strips of France's neighbours. Switch it on in the layer
 switcher under **Not from OpenStreetMap** (power and gas are separate entries). It's

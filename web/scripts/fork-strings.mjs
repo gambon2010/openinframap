@@ -48,6 +48,18 @@ for (const file of files(root)) {
   }
 }
 
+// My layers' field names: their keys are built in the code (fieldName,
+// model/fields.ts: userlayers.f.<stringKey or key>), so read from the field list.
+const fieldsFile = 'modules/userlayers/model/fields.constants.ts'
+const field = /\bkey: '(\w+)',\s*(?:stringKey: '([\w-]+)',\s*)?label: '((?:[^'\\]|\\.)*)'/g
+for (const m of readFileSync(join(root, fieldsFile), 'utf8').matchAll(field)) {
+  const key = `userlayers.f.${m[2] ?? m[1]}`
+  const text = m[3].replace(/\\(['"\\])/g, '$1')
+  const before = found.get(key)
+  if (!before) found.set(key, { text, file: fieldsFile })
+  else if (before.text !== text) twice.push(`${key}: "${before.text}" (${before.file}) and "${text}" (${fieldsFile})`)
+}
+
 const en = JSON.parse(readFileSync(localeFile, 'utf8'))
 const problems = twice.map((p) => `${p}: one key, two texts`)
 let added = 0

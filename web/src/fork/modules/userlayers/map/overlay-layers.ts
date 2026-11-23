@@ -4,6 +4,7 @@
 import { FilterSpecification, LayerSpecification } from 'maplibre-gl'
 import {
   DRAFT,
+  DRAFT_COLOUR,
   GHOST,
   HANDLE,
   HIGHLIGHT,
@@ -73,7 +74,7 @@ export function overlayLayers(): LayerSpecification[] {
       id: `${DRAFT}_line`,
       type: 'line',
       source: DRAFT,
-      paint: { 'line-color': '#1565c0', 'line-width': 3, 'line-dasharray': [2, 1] }
+      paint: { 'line-color': DRAFT_COLOUR, 'line-width': 3, 'line-dasharray': [2, 1] }
     },
     {
       id: `${DRAFT}_point`,
@@ -83,7 +84,7 @@ export function overlayLayers(): LayerSpecification[] {
       paint: {
         'circle-radius': 5,
         'circle-color': '#fff',
-        'circle-stroke-color': '#1565c0',
+        'circle-stroke-color': DRAFT_COLOUR,
         'circle-stroke-width': 2
       }
     },
@@ -107,7 +108,7 @@ export function overlayLayers(): LayerSpecification[] {
       source: DRAFT,
       filter: ['has', 'label'],
       layout: MEASURE_LABEL_LAYOUT,
-      paint: { 'text-color': '#1565c0', 'text-halo-color': '#fff', 'text-halo-width': 2 }
+      paint: { 'text-color': DRAFT_COLOUR, 'text-halo-color': '#fff', 'text-halo-width': 2 }
     }
   ]
 }

@@ -37,14 +37,19 @@
 }
 
 /* --- Fork-wide colours the standard's tokens (web/src/index.css, upstream's) don't
- * have: a state's colour (an error, a success, a link), a warning's background, and
- * the dark overlays (the tooltip, the debug box). docs/STYLE.md. */
+ * have: a state's colour (an error, a success, a link), the main action's blue, a
+ * warning's background, and the dark overlays (the tooltip, the debug box).
+ * docs/STYLE.md. */
 :root {
   --oim-error: #b3261e;
   --oim-success: #1b7a33;
   /* Maybe: a line of sight through trees. Deep amber, apart from the selection's yellow. */
   --oim-caution: #c98a00;
   --oim-link: #1a5fb4;
+  /* The main action (a window's or a panel's main button), a drop target, a row
+     dragged over: the one blue. */
+  --oim-primary: #1565c0;
+  --oim-on-primary: #fff;
   --oim-warning-background: #fff4e5;
   --oim-overlay-background: rgb(20 20 30 / 85%);
   --oim-overlay-text: #f2f2f2;
@@ -294,10 +299,19 @@ html button.oim-on {
     transform: rotate(360deg);
   }
 }
-/* A question's buttons (ui/confirm.ts): at the bottom right, the main one last. */
-.oim-confirm-buttons {
+/* A question's buttons (ui/ask.ts): at the bottom right, the main one last. */
+.oim-ask-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
   margin-top: 10px;
+}
+/* A text asked for (ui/ask.ts): its label above the field, the field full width. */
+.oim-ask-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.oim-ask-text input {
+  padding: 3px 5px;
 }

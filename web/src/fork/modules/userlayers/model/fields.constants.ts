@@ -81,6 +81,7 @@ export const FIELDS: Field[] = [
   },
   {
     key: 'W',
+    stringKey: 'W-from',
     label: 'Effective from',
     input: 'datetime',
     kinds: ['graphic'],

@@ -1,6 +1,7 @@
 // Fork: playing back the history of "My layers": every saved change, in order,
 // from the backend's log (userdata.change). Step k shows the layers as they were
 // after the first k changes.
+import { fieldName } from '../model/fields.ts'
 import { t } from '../../../core/i18n.ts'
 import { Map, LngLatBounds } from 'maplibre-gl'
 import { Change, SavedChange, UserFeature, UserLayer } from '../model/model.ts'
@@ -68,7 +69,7 @@ export function changedFields(
   for (const key of keys) {
     if ((a.modifiers?.[key] ?? '') !== (b.modifiers?.[key] ?? '')) {
       const field = FIELDS.find((f) => f.key === key)
-      out.push(t(`userlayers.f.${key}`, field?.label ?? key).toLowerCase())
+      out.push((field ? fieldName(field) : key).toLowerCase())
     }
   }
   for (const [key, text] of [

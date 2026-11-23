@@ -148,7 +148,10 @@ map's icon buttons, whose open panel gets a dark ring) gets the class `oim-on`: 
 (`withContextMenu`, which also opens with the Menu key / Shift+F10), not in buttons
 on the row; preferences go in Settings (`addSettingsSection`), not in panels. Tooltips: give the element a `title`; `ui/tooltip.ts`
 shows it as the page's own tooltip (never the browser's), for every title on the
-page, upstream's included.
+page, upstream's included. Questions and messages: `ui/ask.ts` (`askToConfirm`,
+`askForText`, `tell`), a window in the middle of the screen, never the browser's
+`confirm`, `prompt` or `alert`. A module's label-only layers (`labelLayers`) aren't
+clicked: a click opens what's under them.
 
 **Types and constants:** a file's types go in `X.types.ts` and its constants and
 tables in `X.constants.ts`, next to it (`render.ts`, `render.types.ts`,
@@ -322,7 +325,8 @@ the schema fingerprint builds and exports carry.
 - **The build's steps, in order:** region menu → download to `data/downloads/osm/` → osmium
   filter → `docker compose down -v` → imposm import → `views`, `distances`, `stats`,
   `places`, `sites`, `grid` (the power grid network), `tower-numbers` +
-  `number_towers` → search indexes → extra data, `extra`, `search` → EEZ →
+  `number_towers`, `building-names` → search indexes → the buildings' names
+  (`building_names.py`) → extra data, `extra`, `search` → EEZ →
   `local-stats` (a fast per-country stats snapshot) → `oim_build_info` → Tegola →
   the offline maps queued in the menu (a background map: `pmtiles extract` of the
   area's outline from Protomaps' daily build, then its buildings, roads and railways
@@ -342,7 +346,8 @@ the schema fingerprint builds and exports carry.
   (`military_name_rule`: what a military site's name says it is, a row per language
   and kind), `site-overrides.sql` (`site_override`: kinds set by hand, by OSM id and
   name, with why), `site-kinds.sql` (what a site is: `site_kind`, `military_kind`, `site_category`, `site_importance`; reads the rules), `sites.sql` (`site_feature`, the sites the map shows; reads the overrides), `site-parts.sql` (`site_made_base`, bases made for buildings of one kind standing together with none mapped; `site_military`, every military site; `site_part`, a military base's parts: building, own kind or zone; `site_part_count`, a base's parts counted; `site_tile`, what the tiles read), `site-points.sql` (`site_points`, grouped zoomed out, leaving out a base's building and zone parts below zoom 15), `grid.sql` (`grid_node` / `grid_edge`, used by
-  `/grid/route` and `/grid/line`), `tower-numbers.sql`, `extra.sql` (the `extra`
+  `/grid/route` and `/grid/line`), `tower-numbers.sql`, `building-names.sql`
+  (`osm_building_name`, empty until `building_names.py` fills it), `extra.sql` (the `extra`
   schema), `search.sql` (`search_feature`, rebuilt after extra data changes),
   `eez.sql`, `local-stats.sql`. My layers' schema is the backend's numbered
   migrations (`userdata/migrations/`).
@@ -441,6 +446,11 @@ the schema fingerprint builds and exports carry.
     `pmtiles.py` (a file's header), `extract.py` (background maps);
   - `cli.py`: one command per download, `maps`, `tiers` / `summary` (what the map
     is told about the imagery).
+- **`building_names.py`:** the names OpenStreetMap gives buildings, from the
+  region's whole extract (osmium, `offline_maps/osm_extract.py`'s `run_osmium`: the
+  named ways and relations, then the buildings among them), a point inside each,
+  keyed like the background map's buildings, into `osm_building_name`; run by the
+  build, or by hand after a new extract.
 - **`extra_data.py`** is the command line for `extradata/`: `base.py`, one file per
   source (`communes.py`: France's communes and their short codes, with
   `neighbourhoods.py`: the larger communes' neighbourhoods from INSEE's IRIS, for

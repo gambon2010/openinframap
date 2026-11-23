@@ -69,7 +69,8 @@
       "biomethane-injection": "Biomethane injection point",
       "distribution-substation": "Distribution substation",
       "power-tower": "Tower, numbered along its line",
-      "building-number": "Building, numbered in its area"
+      "building-number": "Building, numbered in its area",
+      "named-building": "Building"
     }
   },
   "sources": {
@@ -258,7 +259,9 @@
     "minimise": "Minimise",
     "restore": "Restore",
     "close": "Close",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "ok": "OK",
+    "note": "Note"
   },
   "settings": {
     "title": "Settings"
@@ -293,7 +296,9 @@
       "Z": "Speed",
       "X": "Altitude / depth",
       "AM": "Width / radius / length",
-      "AN": "Attitude"
+      "AN": "Attitude",
+      "G": "Staff comments",
+      "W-from": "Effective from"
     },
     "name": "Name",
     "status": {
@@ -752,7 +757,10 @@
     "save-first": "Save first",
     "leave-out": "Leave out",
     "discard-button": "Discard",
-    "delete-situation-title": "Delete situation"
+    "delete-situation-title": "Delete situation",
+    "scale-off": "Symbols: same size at every zoom",
+    "scale-tick-off": "Off",
+    "save": "Save"
   },
   "tower": {
     "unnamed-line": "a line",
@@ -833,7 +841,8 @@
     "numbers-full": "With their place (STR-NEU-12)",
     "numbers-short": "The number only (12)",
     "numbers-title": "Building numbers",
-    "numbers-labels": "Written"
+    "numbers-labels": "Written",
+    "number": "Number"
   },
   "view3d": {
     "button": "3D view: tilt the map, buildings rise"

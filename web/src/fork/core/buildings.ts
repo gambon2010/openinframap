@@ -9,6 +9,7 @@ import polygonClipping, { type MultiPolygon, type Polygon } from 'polygon-clippi
 import type { ExpressionSpecification, Map, MapGeoJSONFeature } from 'maplibre-gl'
 import { groundArea } from './geo.ts'
 import { tilesShownFrom } from './tile-zooms.ts'
+import type { BuildingNames } from './buildings.types.ts'
 
 /** The outlines' map layer (modules/buildings); its clickable inside is `<id>_hit`. */
 export const BUILDINGS_LAYER = 'buildings_outline'
@@ -127,20 +128,28 @@ export async function exactOutline(
   return buildingOutline(map, feature)
 }
 
-/** A building's number ("STR-NEU-12", web-backend building_numbers/), or null if it
- * has none (a sliver, no commune outlines imported, the backend out of reach). */
-export async function buildingNumber(
+/** A building's number ("STR-NEU-12", web-backend building_numbers/) and the name
+ * OpenStreetMap gives it ("Cathédrale Notre-Dame"); each null when it has none (a
+ * sliver, no commune outlines imported, an unnamed building, the backend out of reach). */
+export async function buildingNames(
   feature: Pick<MapGeoJSONFeature, 'id' | 'geometry'>
-): Promise<string | null> {
+): Promise<BuildingNames> {
+  const none: BuildingNames = { number: null, name: null }
   const id = buildingId(feature)
   const at = somePoint(feature.geometry)
-  if (id === undefined || !at) return null
+  if (id === undefined || !at) return none
   try {
     const query = new URLSearchParams({ id: String(id), lon: String(at[0]), lat: String(at[1]) })
-    const response = await fetch(`/background/building-number?${query}`)
-    return response.ok ? ((await response.json()).label as string) : null
+    const response = await fetch(`/background/building-names?${query}`)
+    return response.ok ? ((await response.json()) as BuildingNames) : none
   } catch {
-    // Offline from the backend: no number.
-    return null
+    // Offline from the backend: neither.
+    return none
   }
+}
+
+/** What a copied building is called: its own name and its number, or either. */
+export function copiedBuildingName({ number, name }: BuildingNames): string | undefined {
+  if (name && number) return `${name} · ${number}`
+  return name ?? number ?? undefined
 }

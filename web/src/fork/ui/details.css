@@ -96,7 +96,7 @@
 }
 
 /* Buttons: My layers' (userlayers/ui/common.css .oim-ul-button). */
-/* Buttons in the details panel and in windows (ui/confirm.ts): My layers' look. */
+/* Buttons in the details panel and in windows (ui/ask.ts): My layers' look. */
 .oim-info-panel .oim-button,
 .oim-modal .oim-button {
   margin: 6px 4px 0 0;
@@ -116,12 +116,12 @@
 
 /* The main action: blue, a shade darker on hover. */
 .oim-modal .oim-button.primary {
-  border-color: #1565c0;
-  background: #1565c0;
-  color: #fff;
+  border-color: var(--oim-primary);
+  background: var(--oim-primary);
+  color: var(--oim-on-primary);
 }
 .oim-modal .oim-button.primary:hover:not(:disabled) {
-  background: #1565c0;
+  background: var(--oim-primary);
   filter: brightness(0.85);
 }
 

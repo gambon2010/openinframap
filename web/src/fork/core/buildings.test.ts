@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { joinPieces } from './buildings.ts'
+import { copiedBuildingName, joinPieces } from './buildings.ts'
 
 const box = (w: number, s: number, e: number, n: number): GeoJSON.Polygon => ({
   type: 'Polygon',
@@ -73,5 +73,18 @@ describe('a building on the ground', () => {
     })
     expect(outline).toMatchObject({ id: 'buildings_outline', type: 'line', 'source-layer': 'buildings' })
     expect(outline.zorder).toBeGreaterThan(hit.zorder)
+  })
+})
+
+describe("a copied building's name", () => {
+  test('its own name and its number', () => {
+    expect(copiedBuildingName({ name: 'Mairie', number: 'WIS-47' })).toBe('Mairie · WIS-47')
+  })
+  test('either alone', () => {
+    expect(copiedBuildingName({ name: null, number: 'WIS-47' })).toBe('WIS-47')
+    expect(copiedBuildingName({ name: 'Mairie', number: null })).toBe('Mairie')
+  })
+  test('neither: no name', () => {
+    expect(copiedBuildingName({ name: null, number: null })).toBeUndefined()
   })
 })

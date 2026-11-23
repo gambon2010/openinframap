@@ -1,5 +1,5 @@
 // Fork: My layers' list (outliner/index.ts): the right-click menus of layers and folders, and what they do: folders, export.
-import { askToConfirm } from '../../../../ui/confirm.ts'
+import { askToConfirm } from '../../../../ui/ask.ts'
 import { openSymbolScale } from '../symbol-scale.ts'
 import { toolIcon } from '../tool-icons.ts'
 import { scaleLabel } from '../../map/scale.ts'
@@ -97,7 +97,7 @@ export function layerMenu(
       icon: toolIcon(locked ? 'unlock' : 'lock', 16),
       run: () => store.updateLayer(layer.id, { style: { ...layer.style, locked: !locked || undefined } })
     })
-  if (changeable) items.push(scaleEntry(c, layer))
+  if (changeable) items.push(...scaleEntries(c, layer))
   if (owner && layer.access !== undefined)
     items.push({ label: t('userlayers.share', 'Share…'), run: () => openSharing(layer) })
   // Your own folders: even a layer you may only view goes in one.
@@ -130,18 +130,23 @@ export function layerMenu(
   return items
 }
 
-/** Its symbols drawn to scale, or not: the slider of steps (ui/symbol-scale.ts),
- * turning it on at the step nearest the map's scale now. */
-function scaleEntry(c: OutlinerContext, layer: UserLayer): MenuItem {
-  const scaled = layer.style.symbolScale !== undefined
-  return {
-    label: scaled
-      ? t('userlayers.scale-change', 'Symbol scale: {{scale}}…', {
-          scale: scaleLabel(layer.style.symbolScale!)
-        })
-      : t('userlayers.scale-on', 'Symbols to scale (smaller zoomed out)…'),
+/** Its symbols drawn to scale: the slider of steps (ui/symbol-scale.ts), turning it
+ * on at the step nearest the map's scale now; once on, an entry turning it off too. */
+function scaleEntries(c: OutlinerContext, layer: UserLayer): MenuItem[] {
+  const scale = layer.style.symbolScale
+  const slider: MenuItem = {
+    label:
+      scale === undefined
+        ? t('userlayers.scale-on', 'Symbols to scale (smaller zoomed out)…')
+        : t('userlayers.scale-change', 'Symbol scale: {{scale}}…', { scale: scaleLabel(scale) }),
     run: () => openSymbolScale(c.store, layer, c.actions.mapScale())
   }
+  if (scale === undefined) return [slider]
+  const off: MenuItem = {
+    label: t('userlayers.scale-off', 'Symbols: same size at every zoom'),
+    run: () => c.store.updateLayer(layer.id, { style: { ...layer.style, symbolScale: undefined } })
+  }
+  return [slider, off]
 }
 
 /** A folder's right-click menu: a new layer in it, rename, lock, export, remove. */

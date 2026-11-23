@@ -60,6 +60,9 @@ export interface ForkModule {
   sources?: () => Record<string, SourceSpecification>
   /** Map layers, added to the data layers (style.ts getPrimaryLayers). */
   layers?: () => LayerSpecificationWithZIndex[]
+  /** Of its layers, those only read, never clicked (labels): a click on one opens
+   * what's under it. */
+  labelLayers?: () => string[]
   /** Layer switcher groups, before upstream's Validation group. */
   switcherGroups?: () => LayerGroup[]
   /** Runs once the map exists. */

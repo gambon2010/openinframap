@@ -1,6 +1,7 @@
 // Fork: playing back My layers' history (history.ts): a timeline at the bottom of
 // the map, step by step or played, the map showing each step (read-only,
 // store.view) and following the item it changed.
+import { tell } from '../../../ui/ask.ts'
 import { el } from 'redom'
 import { t } from '../../../core/i18n.ts'
 import { action } from './buttons.ts'
@@ -19,7 +20,7 @@ export class Timeline {
   async open() {
     const { store, tools, playback } = this.ws
     if (store.unsavedCount) {
-      window.alert(
+      void tell(
         t(
           'userlayers.history-save-first',
           'Save or discard your changes first: the history only has saved ones.'

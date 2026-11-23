@@ -1,7 +1,7 @@
 // Fork: what the left details panel shows for My layers: the selected item's card
 // (editor.ts), one card for several selected items, nothing while a past version
 // is shown. A locked layer's card can be looked at, not changed.
-import { askToConfirm } from '../../../ui/confirm.ts'
+import { askToConfirm } from '../../../ui/ask.ts'
 import { el } from 'redom'
 import { toolIcon } from './tool-icons.ts'
 import { t } from '../../../core/i18n.ts'

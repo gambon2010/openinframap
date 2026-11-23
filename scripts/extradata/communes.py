@@ -22,7 +22,7 @@ from .neighbourhoods import (
     commune_of,
     iris_of_department,
     neighbourhood_names,
-    neighbourhood_of,
+    neighbourhoods_of,
 )
 
 # Words left out of a commune's short code ("Saint-Jean-de-Luz": JEL... from Jean, Luz).
@@ -131,7 +131,8 @@ class FrenchCommunes(FrenchSource):
             for department in areas
             for feature in iris_of_department(self.http, department, self.IRIS_CACHE)
         ]
-        names = neighbourhood_names(iris)
+        of = neighbourhoods_of(iris)
+        names = neighbourhood_names(iris, of)
         codes = short_codes(names, commune_of)
         cur.execute(
             "CREATE TEMP TABLE IF NOT EXISTS extra_iris (neighbourhood text, outline text)"
@@ -142,7 +143,7 @@ class FrenchCommunes(FrenchSource):
             "INSERT INTO extra_iris VALUES %s",
             [
                 (
-                    neighbourhood_of(f["properties"]["code_iris"]),
+                    of[f["properties"]["code_iris"]],
                     json.dumps(f["geometry"]),
                 )
                 for f in iris

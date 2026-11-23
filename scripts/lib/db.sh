@@ -64,7 +64,7 @@ project_images() {
 # functions.sql when the database is created, eez.sql with the country boundaries,
 # the rest in build-region.sh. A test (scripts/tests) checks every schema file is
 # either here or in SCHEMA_NOT_BUILT, and that build-region.sh runs these in order.
-SCHEMA_FILES=(functions views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers extra search eez local-stats)
+SCHEMA_FILES=(functions views distances stats places site-rules site-overrides site-kinds sites site-parts site-points grid tower-numbers building-names extra search eez local-stats)
 
 # Not part of a build: database creation (dev-init, prod-init) and production jobs.
 SCHEMA_NOT_BUILT=(dev-init prod-init refresh_matviews)
@@ -83,6 +83,7 @@ declare -A SCHEMA_LABELS=(
     [site-points]="Grouping critical sites"
     [grid]="Building the power grid network"
     [tower-numbers]="Preparing tower numbers"
+    [building-names]="Preparing building names"
     [extra]="Creating extra data tables"
     [search]="Preparing search"
     [local-stats]="Computing per-country stats"

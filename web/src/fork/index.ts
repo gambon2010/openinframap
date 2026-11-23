@@ -102,7 +102,16 @@ export function forkInit(ctx: ForkContext) {
   mapMode.install(ctx.map, ctx.clickRouter)
   // One tooltip for every title on the page.
   tooltips.install()
+  leaveLabelsUnclicked(ctx.clickRouter)
   for (const m of MODULES) m.init?.(ctx)
+}
+
+/** The modules' label layers out of the click router (all data layers are in it,
+ * openinframap.ts): before it starts listening (register). */
+function leaveLabelsUnclicked(clickRouter: ForkContext['clickRouter']) {
+  // Upstream's router keeps its handlers private: the one field used here.
+  const router = clickRouter as unknown as { handlers: Record<string, unknown> }
+  for (const id of MODULES.flatMap((m) => m.labelLayers?.() ?? [])) delete router.handlers[id]
 }
 
 /** key/key.ts: once upstream's sections are in the pane. */

@@ -27,7 +27,7 @@
   transform: translateX(-50%);
   max-width: calc(100% - 32px);
   padding: 6px 10px;
-  border-left: 4px solid #1565c0;
+  border-left: 4px solid var(--oim-primary);
   border-radius: var(--oim-radius-large);
   background: #e3f2fd;
   box-shadow: var(--oim-drop-shadow);

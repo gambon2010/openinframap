@@ -49,23 +49,18 @@ def downloaded_counter():
 def cut_out(area: str, out: Path, filters: list[str]) -> None:
     """What osmium's tags-filter `filters` keep of the area's extract, into `out`
     (the ways' nodes with them)."""
-    extract = osm_extract(area)
-    mount = Path(os.path.commonpath([extract.resolve().parent, out.resolve().parent]))
+    run_osmium("tags-filter", osm_extract(area), *filters, "-o", out, "--overwrite")
 
-    def inside(path: Path) -> str:
-        return f"/w/{path.resolve().relative_to(mount)}"
 
-    docker.run_service(
-        "osmium",
-        [
-            "osmium",
-            "tags-filter",
-            inside(extract),
-            *filters,
-            "-o",
-            inside(out),
-            "--overwrite",
-        ],
-        mount,
-        at="/w",
-    )
+def run_osmium(*args: str | Path) -> None:
+    """osmium (in Docker) with `args`; the files among them (Paths) seen through the
+    one folder holding them all, mounted."""
+    files = [arg.resolve() for arg in args if isinstance(arg, Path)]
+    mount = Path(os.path.commonpath([file.parent for file in files]))
+
+    def inside(arg: str | Path) -> str:
+        if isinstance(arg, Path):
+            return f"/w/{arg.resolve().relative_to(mount)}"
+        return arg
+
+    docker.run_service("osmium", ["osmium", *map(inside, args)], mount, at="/w")

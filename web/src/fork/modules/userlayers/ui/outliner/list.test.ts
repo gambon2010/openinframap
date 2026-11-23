@@ -308,6 +308,18 @@ describe('right-click menus', () => {
     expect(store.layers.get(units)!.style.symbolScale).toBeUndefined()
   })
 
+  test('a layer to scale: its menu turns it off directly', () => {
+    const { units } = sampleLayers()
+    store.updateLayer(units, { style: { symbolScale: 25_000 } })
+    outliner.draw()
+    expect(menuOf(rowNamed('Units'))).toContain('Symbols: same size at every zoom')
+    rowNamed('Units').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    ;[...document.querySelectorAll<HTMLButtonElement>('.oim-context-menu button')]
+      .find((b) => b.textContent?.startsWith('Symbols: same size'))!
+      .click()
+    expect(store.layers.get(units)!.style.symbolScale).toBeUndefined()
+  })
+
   test("an item's row: the item's menu (the map's)", () => {
     const { units } = sampleLayers()
     store.personal.toggle('expanded', units, true)

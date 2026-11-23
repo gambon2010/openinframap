@@ -10,8 +10,9 @@ out of the buildings outside 3D.
         (GeoJSON points: "prefix" "STR-NEU", "number" 12) and its slivers' ids
         ("hidden"); the areas it touches numbered first (a few seconds the first
         time). Asked for zoomed in only.
-    /background/building-number?lon=&lat=&id=     one building's number ("label"),
-        for My layers' copy of it.
+    /background/building-names?lon=&lat=&id=      one building's number and its own
+        name from OpenStreetMap ("number", "name", each null when it has none), for
+        its details and My layers' copy of it.
 """
 
 from __future__ import annotations
@@ -88,16 +89,24 @@ async def numbers_in_view(request: Request) -> Response:
     )
 
 
-async def building_number(request: Request) -> Response:
+async def building_names(request: Request) -> Response:
+    """A building's number and its own name, each null when it has none."""
     try:
         lon, lat = float(request.query_params["lon"]), float(request.query_params["lat"])
         building = int(request.query_params["id"])
     except (KeyError, ValueError):
         return JSONResponse({"error": "lon, lat and id"}, status_code=400)
     database = get_db(request)
-    missing = await missing_outlines(database)
-    if missing:
-        return missing
+    return JSONResponse(
+        {"number": await number_of(database, building, lon, lat), "name": await osm_name(database, building)}
+    )
+
+
+async def number_of(database: AsyncConnection, building: int, lon: float, lat: float) -> str | None:
+    """A building's number ("STR-NEU-12"), its area numbered first if it wasn't; None
+    for a sliver, or without the communes' outlines."""
+    if await missing_outlines(database):
+        return None
     point = {"w": lon, "s": lat, "e": lon, "n": lat}
     areas = await numbered_areas(database, point, MOST_AREAS) or []
     prefixes = {code: prefix for code, prefix in areas}
@@ -107,9 +116,20 @@ async def building_number(request: Request) -> Response:
         )
     ).first()
     if not found or found[0] not in prefixes:
-        return JSONResponse({"error": "No number for this building"}, status_code=404)
+        return None
     area, number = found
-    return JSONResponse({"label": label(prefixes[area], number)})
+    return label(prefixes[area], number)
+
+
+async def osm_name(database: AsyncConnection, building: int) -> str | None:
+    """The name OpenStreetMap gives a building (osm_building_name, filled at build by
+    scripts/building_names.py; a database exported before it has none)."""
+    if not await database.scalar(text("SELECT to_regclass('osm_building_name') IS NOT NULL")):
+        return None
+    found = await database.scalar(
+        text("SELECT name FROM osm_building_name WHERE building_id = :id"), {"id": building}
+    )
+    return str(found) if found else None
 
 
 async def missing_outlines(database: AsyncConnection) -> Response | None:
@@ -137,5 +157,5 @@ async def numbered_areas(database: AsyncConnection, box: dict, most: int) -> lis
 
 routes = [
     Route("/background/building-numbers", numbers_in_view),
-    Route("/background/building-number", building_number),
+    Route("/background/building-names", building_names),
 ]

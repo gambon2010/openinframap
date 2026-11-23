@@ -503,9 +503,9 @@ describe('resizing and copying', () => {
     const asked: string[] = []
     vi.stubGlobal('fetch', async (url: string) => {
       asked.push(url)
-      // Its number, and its outline.
-      const answer = url.startsWith('/background/building-number')
-        ? { label: 'WIS-47' }
+      // Its number and name, and its outline.
+      const answer = url.startsWith('/background/building-names')
+        ? { number: 'WIS-47', name: 'Mairie' }
         : { geometry: square(0, 2.5) }
       return new Response(JSON.stringify(answer))
     })
@@ -513,7 +513,7 @@ describe('resizing and copying', () => {
     await click(0.5, 0.5)
     const [copy] = items()
     expect(asked).toContain(`/background/building/${building}?lon=0&lat=0`)
-    expect(copy.properties).toMatchObject({ kind: 'building', height: 12, name: 'WIS-47' })
+    expect(copy.properties).toMatchObject({ kind: 'building', height: 12, name: 'Mairie · WIS-47' })
     expect(copy.properties.color).toBeTruthy()
     const xs = (copy.geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
     expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 2.5])
@@ -528,7 +528,7 @@ describe('resizing and copying', () => {
     await click(0.5, 0.5)
     const xs2 = (items()[0].geometry as GeoJSON.Polygon).coordinates[0].map(([x]) => x)
     expect([Math.min(...xs2), Math.max(...xs2)]).toEqual([0, 2])
-    // And no number to name it by.
+    // And no name or number to call it by.
     expect(items()[0].properties.name).toBeUndefined()
     vi.unstubAllGlobals()
   })

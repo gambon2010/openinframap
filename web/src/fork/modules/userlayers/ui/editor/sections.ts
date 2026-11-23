@@ -5,7 +5,7 @@ import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { DEFAULT_COLOR } from '../../model/model.ts'
 import { DEFAULT_FIELDS } from '../../model/fields.constants.ts'
-import { addableFields, cardFields, toDtg } from '../../model/fields.ts'
+import { addableFields, cardFields, fieldName, toDtg } from '../../model/fields.ts'
 import { Card, CardPart } from './types.ts'
 import { choiceRows } from './choices.ts'
 import { detailRow, formRow, promptSelect, select } from './controls.ts'
@@ -84,7 +84,7 @@ function addDetailRow(c: Card): HTMLElement[] {
   if (!fields.length) return []
   const add = promptSelect(
     `+ ${t('userlayers.add-detail', 'Add detail')}…`,
-    fields.map((field): [string, string] => [field.key, t(`userlayers.f.${field.key}`, field.label)]),
+    fields.map((field): [string, string] => [field.key, fieldName(field)]),
     (key) => {
       const field = fields.find((f) => f.key === key)
       // A blank value makes the row appear, ready to fill in.

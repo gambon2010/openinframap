@@ -1539,6 +1539,21 @@ default). Counts are France's OSM data in October 2026.
   `window.confirm` replaced). Drawn icons for the list, menus and padlock; a line of
   sight has no colour; a named measurement shows its name. Backlog: whole features on
   select, SNCF railway data.
+- **Buildings' names, neighbourhoods again** (asked, 2026-11-23): the names
+  OpenStreetMap gives buildings, read at build from the whole extract (osmium keeps
+  one tag or another, never two: the named ways and relations, then the buildings
+  among them; France: 463,239 named buildings in 4¼ minutes, 49 MB, and 109 MB more
+  in the search's table with 368,904 of them, the rest already found as a site of
+  that name), shown as a building's title, in a copy's name, found by the search.
+  A commune whose IRIS are all in one grand quartier (Molsheim: Nord, Est, Sud-Est,
+  Sud-Ouest) has its IRIS as neighbourhoods (it was numbered whole as "MLS-NOR");
+  names unique within a commune (Strasbourg's two "Canardière"); numbered again
+  (migration 006). **Bug:** a graphic's "Effective from" showed as "Seen at" (both
+  field W, one string key): fields can have their own key (`stringKey`), and the
+  strings check reads the field list. **Bug:** making the main blue a token
+  (`--oim-primary`) defined it by itself for a while, every main button white on
+  white: a test checks no token is. Number labels aren't clicked (a click opens the
+  building); prompts and alerts in the centred window (`ui/ask.ts`).
 
 ## Extra data (not from OpenStreetMap)
 

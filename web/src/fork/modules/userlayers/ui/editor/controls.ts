@@ -6,7 +6,7 @@
 import { t } from '../../../../core/i18n.ts'
 import { el } from 'redom'
 import { Field } from '../../model/fields.types.ts'
-import { displayValue, fromDtg, toDtg } from '../../model/fields.ts'
+import { displayValue, fieldName, fromDtg, toDtg } from '../../model/fields.ts'
 import { UNITS } from '../../model/units.constants.ts'
 import {
   angleFrom,
@@ -84,7 +84,7 @@ export function detailRow(
   set: (value: string) => void,
   removable: boolean
 ): HTMLElement {
-  const label = t(`userlayers.f.${field.key}`, field.label)
+  const label = fieldName(field)
   const control = detailControl(field, value.trim(), set, `${field.key}:${field.label}`)
   return formRow(label, control, removable ? () => set('') : undefined, field.help ?? '')
 }

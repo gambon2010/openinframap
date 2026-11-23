@@ -66,23 +66,54 @@ def iris_of_department(
     return features
 
 
-def neighbourhood_of(code_iris: str) -> str:
-    """An IRIS's neighbourhood: its commune's code and the IRIS's first two digits
-    (INSEE's grand quartier): "674821205" is in "6748212"."""
-    return code_iris[:7]
+def neighbourhoods_of(iris: list[dict]) -> dict[str, str]:
+    """Each IRIS's neighbourhood (its code to the neighbourhood's): its grand quartier
+    (the commune's code and the IRIS's first two digits: "674821205" is in "6748212")
+    where the commune has several; else the IRIS itself (Molsheim's four IRIS are all
+    in one grand quartier: Nord, Est, Sud-Est, Sud-Ouest are its neighbourhoods)."""
+    quarters: dict[str, set[str]] = {}
+    for feature in iris:
+        code = feature["properties"]["code_iris"]
+        quarters.setdefault(code[:5], set()).add(code[:7])
+    found: dict[str, str] = {}
+    for feature in iris:
+        code = feature["properties"]["code_iris"]
+        found[code] = code[:7] if len(quarters[code[:5]]) > 1 else code
+    return found
 
 
-def neighbourhood_names(iris: list[dict]) -> dict[str, str]:
-    """Each neighbourhood's name, from its IRIS's: the words they all start with
-    ("Neudorf" from "Neudorf Ouest" and "Neudorf Est"), else the first word most of
-    them start with."""
-    names: dict[str, list[str]] = {}
+def neighbourhood_names(iris: list[dict], of: dict[str, str]) -> dict[str, str]:
+    """Each neighbourhood's name, unique within its commune: an IRIS's own, or what its
+    IRIS's names start with ("Neudorf" from "Neudorf Ouest" and "Neudorf Est", else the
+    first word most of them start with); two alike in a commune ("Canardière" twice
+    in Strasbourg) are named by their first IRIS in full instead, then numbered."""
+    names: dict[str, list[tuple[str, str]]] = {}
     for feature in iris:
         props = feature["properties"]
-        names.setdefault(neighbourhood_of(props["code_iris"]), []).append(
-            props["nom_iris"]
+        names.setdefault(of[props["code_iris"]], []).append(
+            (props["code_iris"], props["nom_iris"])
         )
-    return {code: shared_start(found) for code, found in names.items()}
+    chosen = {
+        code: shared_start([name for _, name in sorted(found)])
+        for code, found in names.items()
+    }
+    return unique_in_communes(
+        chosen, {code: min(found)[1] for code, found in names.items()}
+    )
+
+
+def unique_in_communes(
+    chosen: dict[str, str], fuller: dict[str, str]
+) -> dict[str, str]:
+    """Names made unique within each commune: a name two neighbourhoods share becomes
+    their fuller one; if still shared, the neighbourhood's code's last digits added."""
+    for step in (lambda code: fuller[code], lambda code: f"{chosen[code]} {code[-2:]}"):
+        counts = Counter((code[:5], name) for code, name in chosen.items())
+        chosen = {
+            code: step(code) if counts[(code[:5], name)] > 1 else name
+            for code, name in chosen.items()
+        }
+    return chosen
 
 
 def shared_start(names: list[str]) -> str:

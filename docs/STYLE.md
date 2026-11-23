@@ -40,7 +40,7 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
 - **Values:** label and value rows, the label in the light text colour, no boxes
   or striped backgrounds; only rows a person needs.
 - **Buttons:** small, bordered, square-ish: `.oim-ul-button` (the details panel's
-  `.oim-button` is given the same look). A main action is `.primary` (blue).
+  `.oim-button` is given the same look). A main action is `.primary` (`--oim-primary`, the one blue, also for drop targets).
   Disabled at half opacity.
 - **Chosen, on, selected:** class `oim-on`, the map selection's yellow background
   (`ui/panel.css`); the size and border never change, so nothing moves. The map's
@@ -70,7 +70,7 @@ The reference is My layers (`modules/userlayers/ui`); the shared pieces are in
   picture, its name under it); no hint text, no credits, no tooltip repeating a name
   written on screen.
 - **Questions** before what can't be undone (deleting, discarding): a window in the
-  middle of the screen (`ui/confirm.ts`), never the browser's own box; its buttons
+  middle of the screen (`ui/ask.ts`), never the browser's own boxes (confirm, prompt, alert); its buttons
   say what each does, the main one last. Windows opened once: `showModal`.
 - **No emoji in the interface:** My layers' pictures (the list, the menus, the
   padlock) are `ui/tool-icons.ts`'s line icons; a dropdown's lines, text only, say

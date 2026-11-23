@@ -9,7 +9,7 @@ import { graphicsLibrary, isAxis, pointCount } from '../graphics/graphics.ts'
 import { uploadImage } from '../state/api.ts'
 import { action } from './buttons.ts'
 import { toolIcon } from './tool-icons.ts'
-import { askToConfirm } from '../../../ui/confirm.ts'
+import { askToConfirm, tell } from '../../../ui/ask.ts'
 import { openContextMenuFor } from '../../../ui/context-menu.ts'
 import { prepareImage } from './images.ts'
 import type { Workspace } from './workspace.ts'
@@ -367,9 +367,7 @@ export class Toolbar {
     const lib = await graphicsLibrary()
     const count = pointCount(lib, pick.sidc)
     if (!count) {
-      window.alert(
-        t('userlayers.graphic-unsupported', '"{{name}}" can\'t be drawn yet.', { name: pick.name })
-      )
+      void tell(t('userlayers.graphic-unsupported', '"{{name}}" can\'t be drawn yet.', { name: pick.name }))
       this.ws.update()
       return
     }

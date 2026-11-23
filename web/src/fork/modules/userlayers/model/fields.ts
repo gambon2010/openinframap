@@ -3,9 +3,15 @@
 // `modifiers` ({T: "2nd Bn", W: "301200ZOCT26"...}) and drawn around the symbol.
 // Identity, status, echelon and mobility live in the code itself (sidc.ts).
 import { SymbolKind } from './sidc.ts'
+import { t } from '../../../core/i18n.ts'
 import { joinValue, splitValue } from './units.ts'
 import type { Field, LabelLevel } from './fields.types.ts'
 import { FIELDS, MONTHS, DEFAULT_FIELDS, DATE_KEYS, RELIABILITY, CREDIBILITY } from './fields.constants.ts'
+
+/** A field's name, as the card and the history say it (en.json first). */
+export function fieldName(field: Field): string {
+  return t(`userlayers.f.${field.stringKey ?? field.key}`, field.label)
+}
 
 /** The fields of a kind of symbol, in order. */
 export function fieldsFor(kind: SymbolKind): Field[] {

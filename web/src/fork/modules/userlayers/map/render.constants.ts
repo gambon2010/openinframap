@@ -71,3 +71,7 @@ export const MAX_SIZE = 8
 
 /** The selection's box around a picture, symbol or marker: this far out (px). */
 export const OUTLINE_PAD_PX = 4
+
+/** What's being drawn: the main action's blue (ui/panel.css's --oim-primary; MapLibre's
+ * paint can't read CSS variables). */
+export const DRAFT_COLOUR = '#1565c0'

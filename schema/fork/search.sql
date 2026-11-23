@@ -5,8 +5,8 @@
 -- entry that shows it (layer), and the nearest town to tell apart the many
 -- features with the same name ("Mairie", "Château d'eau"...).
 --
--- Run after schema/fork/sites.sql and schema/fork/extra.sql; scripts/extra_data.py refreshes
--- it when the extra data changes. Safe to run more than once.
+-- Run after schema/fork/sites.sql, building-names.sql and extra.sql; scripts/extra_data.py
+-- and building_names.py refresh it when they change. Safe to run more than once.
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS unaccent;
@@ -118,6 +118,15 @@ WITH named AS (
     UNION ALL
     SELECT 'osm', 'water_well', NULL, tags -> 'name', tags, tags -> 'operator', NULL, 2, 'W', ST_Centroid(geometry)
       FROM osm_water_well WHERE tags -> 'name' <> ''
+    -- Buildings' names (building-names.sql), on the Buildings entry (K); not those
+    -- already found as a critical site of that name (a church, a town hall).
+    UNION ALL
+    SELECT 'osm', 'named_building', NULL, b.name, NULL, NULL, NULL, 2, 'K', b.geometry
+      FROM osm_building_name b
+     WHERE NOT EXISTS (SELECT 1 FROM site_feature s
+                        WHERE s.name = b.name
+                          AND ST_DWithin(s.geometry, b.geometry, 200 * oim_max_stretch())
+                          AND ST_DWithin(s.geometry, b.geometry, oim_units(200, b.geometry)))
     -- Extra data (schema/fork/extra.sql): ICPE sites, biomethane injection points (shown
     -- with Oil & Natural Gas, O), distribution substations (with Power, P)
     UNION ALL
