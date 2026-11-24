@@ -21,27 +21,52 @@ and every other one ("Paul · bakery, Molsheim"). Not started.
   infrastructure, named buildings, extra data; places; tower and building numbers;
   coordinates and MGRS. The interiors' named things (62,698) aren't.
 
+## Decided (the owner, 2026-11-24)
+
+No car parks; artworks kept; the cards' details kept (address, opening hours, phone,
+website); kind words in French and English.
+
+## No double imports
+
+Today the build reads the France extract four times besides the main import (the
+buildings' names twice, the interiors once, railways and taxiways for the offline
+maps), and the same object can land in several tables (a town hall as a critical
+site, a named building, a point of interest), told apart in the search by "same name
+within 200 m". Instead:
+
+- **One read** for everything outside the main import: one osmium pass keeping what
+  any later step needs (named objects, indoor, level, repeat_on), into one smaller
+  file (data/downloads/osm/, about 1.2 GB for France, kept until the next build);
+  the buildings' names, the interiors and the points of interest each read that file
+  (seconds to a minute each, not 2½ minutes each from the 5 GB extract).
+- **One row per object** across the tables, by its OpenStreetMap id (kind and id,
+  "w4487769"): a point of interest already in the interiors takes its floor and
+  building from there and isn't a second row; the search leaves out a point of
+  interest or a building's name whose object is already a critical site (the sites
+  keep their OpenStreetMap id), instead of guessing by name.
+- The "What's inside" lists and the search read the same `osm_poi` (step 5): one
+  source for points of interest.
+
 ## Proposed
 
-1. **Import** (`scripts/pois.py`, a build step after the buildings' names; by hand
-   `uv run --project scripts scripts/pois.py`): the two osmium passes; one point each
-   (inside its outline); kept per point: OpenStreetMap id, name, kind (`shop=bakery`
-   as key and value), floor (level, when written), the building it's in when the
-   interiors linked it, a few details for its card (address, opening hours, phone,
-   website), into `osm_poi`. The named pass is shared with `building_names.py` (one
-   pass for both: 2½ minutes saved).
+1. **Import** (`scripts/pois.py`, a build step after the interiors; by hand
+   `uv run --project scripts scripts/pois.py`): from the one read (above); one point
+   each (inside its outline); kept per point: OpenStreetMap id, name, kind
+   (`shop=bakery` as key and value), floor (level, when written), the building it's
+   in when the interiors linked it, its details for its card (address, opening
+   hours, phone, website), into `osm_poi`.
 2. **Left out**, one list for the search and the buildings' "What's inside"
    (a SQL function in `schema/fork/poi.sql`, the backend's list replaced by it, so
    both stay alike): the fittings already left out of the lists (lifts, benches,
    waste baskets, waiting areas, parcel lockers, vending machines, information
    boards, ticket validators, parking spaces and entrances, bicycle parking,
-   shelters, pitches); `tourism=information` (68,000 boards and guideposts) too.
-   About 1.2 million kept.
+   shelters, pitches); `tourism=information` (68,000 boards and guideposts) and car
+   parks (33,000) too. About 1.2 million kept.
 3. **Search** (`search.sql`, `search/pois.py`):
    - by name ("paul"), name and town ("paul molsheim"), as now;
-   - by kind and town ("boulangerie molsheim", "bakery molsheim"): a table of the
-     common kinds' words in French and English (the 100 most frequent, which cover
-     90% of the points);
+   - by kind and town ("boulangerie molsheim", "bakery molsheim"): OpenStreetMap
+     writes kinds in English codes (`shop=bakery`), so a table gives the 100 most
+     frequent kinds (90% of the points) their words in French and English;
    - the nearest to the map first among equally good matches (the search already
      sends the map's centre): 900 "Paul" bakeries in France, the one near you first;
    - each result says what and where: "Paul · bakery, Molsheim", inside a building
@@ -72,15 +97,10 @@ and every other one ("Paul · bakery, Molsheim"). Not started.
 
 ## Steps and time
 
-1. Import and measure (`osm_poi`, the shared named pass, tests): half a day.
+1. The one read, the names and interiors moved onto it; the import (`osm_poi`, one
+   row per object, tests), measured: a day.
 2. Search: the table, names, kind words, nearest first, towns: a day.
 3. Picked: the card, the floor shown: half a day.
 4. "What's inside" from `osm_poi`, `background/pois.py` removed: a few hours.
 
-About two and a half days.
-
-## To decide
-
-- Keep car parks (33,000, many named only "Parking")? Artworks (12,700)?
-- The cards' details (opening hours, phone, website): kept (50 MB), or not?
-- Kind words in French and English only, or more languages?
+About three days.
