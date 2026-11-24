@@ -673,7 +673,7 @@ corridors, walls and stairs, the map under the building hidden (each building on
 own floor; click the chip again to hide it); a floor's plan takes no clicks (a click
 there opens the building again), its rooms' names are written on it. Only floors with
 rooms, corridors or open areas are offered. Any building's details list **What's
-inside**, by floor: named shops, rooms and offices, and toilets, mapped with a floor,
+inside**, by floor: named shops, rooms and offices mapped with a floor,
 and the background map's points of interest in the building ("Floor not given", left
 out when it's the only group); not the fittings (lifts, benches, waste baskets,
 waiting areas, parcel lockers, vending machines...); alike lines merged ("Gares ×4");

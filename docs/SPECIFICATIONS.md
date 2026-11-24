@@ -343,7 +343,7 @@ How the work is organised: [FORK_ARCHITECTURE.md](./FORK_ARCHITECTURE.md) (the c
 | 10.122 | A building copied into My layers keeping its floors. | 📋 to do (2026-11-23) |
 | 10.121 | The 3D view without the relief (Relief in 3D, Data layers → Terrain). | ✅ (2026-11-23) |
 | 10.123 | Interiors, second pass: floors with floor space only; the list without fittings, with named rooms; clearer floor headings; the building opened again with a floor shown. No details' copy button. | ✅ (2026-11-23) |
-| 10.124 | Search what's inside buildings (named shops, rooms, offices). | 💬 discussing (2026-11-23) |
+| 10.124 | Search points of interest by name, kind and town, nearest first, those inside buildings with their floor (docs/plans/poi-search.md). | 💬 planned (2026-11-24) |
 
 ## 11. Quality
 

@@ -73,8 +73,8 @@ def test_listed_what_one_goes_there_for():
     from src.fork.indoor import worth_listing
 
     assert worth_listing({"name": "Paul", "what": "bakery"})
-    assert worth_listing({"name": None, "what": "toilets"})
-    # Furniture, named or not, and unnamed things.
+    # Furniture, named or not, and unnamed things (toilets too: the owner's choice).
+    assert not worth_listing({"name": None, "what": "toilets"})
     assert not worth_listing({"name": "Pickup Station", "what": "parcel_locker"})
     assert not worth_listing({"name": None, "what": "elevator"})
     assert not worth_listing({"name": None, "what": "atm"})

@@ -46,9 +46,6 @@ NOT_LISTED = {
     "telephone",
     "clock",
 }
-# Unnamed, listed all the same: what one looks for without a name.
-LISTED_UNNAMED = {"toilets"}
-
 # What a point is, from the first of these tags it has ("bakery", "toilets").
 WHAT_TAGS = ("shop", "amenity", "office", "craft", "healthcare", "tourism", "leisure", "vending")
 
@@ -96,10 +93,8 @@ async def interior_points(database: AsyncConnection, building: int) -> list[dict
 
 
 def worth_listing(item: dict) -> bool:
-    """Something one goes there for: named (toilets even without), not furniture."""
-    if item["what"] in NOT_LISTED:
-        return False
-    return bool(item["name"]) or item["what"] in LISTED_UNNAMED
+    """Something one goes there for: named, not furniture."""
+    return bool(item["name"]) and item["what"] not in NOT_LISTED
 
 
 def what_of(kind: str, tags: dict) -> str:

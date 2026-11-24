@@ -1654,6 +1654,9 @@ default). Counts are France's OSM data in October 2026.
   removed (the owner: the copy tool is the way). building:part=no: 411 objects in
   France, 62 with a height (Tour Pleyel, the Mercuriales, the Major), all fixed by the
   Eiffel Tower's rule.
+- **No unnamed things in "What's inside"** (asked, 2026-11-24): toilets were the
+  one exception; gone too. A plan for searching points of interest
+  (docs/plans/poi-search.md): 1,323,168 named ones in France, measured.
 
 ## Extra data (not from OpenStreetMap)
 
